@@ -14,19 +14,34 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
-    // LocalStorage থেকে ইউজার বা টোকেন চেক করা
-    const user = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    // Helper function: Cookie থেকে টোকেন বের করার জন্য
+    const getCookie = (name: string) => {
+      if (typeof document === "undefined") return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
 
-    if (!user && !token) {
-      // লগইন করা না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
+    const tokenLocal = localStorage.getItem("token");
+    const tokenCookie = getCookie("token");
+
+    // LocalStorage অথবা Cookie যেকোনো একটিতে টোকেন থাকলেই লগইন পারমিশন পাবে
+    const activeToken = tokenLocal || tokenCookie;
+
+    if (!activeToken) {
+      // টোকেন না থাকলে সরাসরি /login পেজে পাঠাবে
       router.replace("/login");
     } else {
+      // Cookie তে টোকেন আছে কিন্তু LocalStorage এ মুছে গিয়ে থাকলে সিঙ্ক করে নেওয়া
+      if (tokenCookie && !tokenLocal) {
+        localStorage.setItem("token", tokenCookie);
+      }
       setIsAuthenticated(true);
     }
   }, [router]);
 
-  // অথেন্টিকেশন চেক না হওয়া পর্যন্ত ফাঁকা বা লোডিং দেখাবে
+  // অথেন্টিকেশন চেক না হওয়া পর্যন্ত লোডিং দেখাবে
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#FDFBF9] flex items-center justify-center font-sans">

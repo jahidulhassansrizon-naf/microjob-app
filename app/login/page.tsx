@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Mail,
   Lock,
@@ -53,7 +52,6 @@ const translations = {
 };
 
 export default function LoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [lang, setLang] = useState<"EN" | "BN">("EN");
   const [loading, setLoading] = useState(false);
@@ -62,7 +60,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
-    rememberMe: false,
+    rememberMe: true, // ডিফল্ট সত্য রাখা যাতে কুকি পারসিস্টেন্ট হয়
   });
 
   const t = translations[lang];
@@ -97,11 +95,13 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // 🟢 Cookie তে টোকেন সেট করা (যাতে Next.js Middleware পড়তে পারে)
-      const maxAge = formData.rememberMe ? 86400 * 7 : 86400; // ৭ দিন অথবা ১ দিন
-      document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      // 🟢 Cookie তে সিকিউরভাবে টোকেন সেট করা (Middleware এর জন্য)
+      const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7; // ৩০ দিন অথবা ৭ দিন
+      const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
 
-      router.push("/dashboard");
+      // router.push এর জায়গায় window.location.href দিলে Middleware প্রপারলি কুকি পায়
+      window.location.href = "/dashboard";
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
