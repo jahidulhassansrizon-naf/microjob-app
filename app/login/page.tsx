@@ -41,7 +41,7 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phoneNumber: formData.identifier, // ব্যাকএন্ডে phoneNumber ফিল্ড হিসেবে পাঠানো হচ্ছে[cite: 2]
+          identifier: formData.identifier, // ইমেইল বা ফোন নম্বর সঠিকভাবে পাঠানোর জন্য
           password: formData.password,
         }),
       });
@@ -52,12 +52,12 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials!");
       }
 
-      // টোকেন এবং ইউজার ডাটা ব্রাউজারে সেভ করা হচ্ছে[cite: 2]
+      // টোকেন এবং ইউজার ডাটা ব্রাউজারে সেভ করা হচ্ছে
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       alert("Login successful!");
-      router.push("/dashboard"); // সফলভাবে লগইন হলে সরাসরি নতুন ড্যাশবোর্ডে রিডাইরেক্ট করবে[cite: 2]
+      router.push("/dashboard"); // সফলভাবে লগইন হলে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট করবে
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
