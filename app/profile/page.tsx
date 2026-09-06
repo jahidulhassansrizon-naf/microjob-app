@@ -1,7 +1,7 @@
-// app/profile/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
   AlertCircle,
@@ -11,10 +11,96 @@ import {
   ChevronRight,
   User,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 
+interface UserProfile {
+  fullName?: string;
+  phoneNumber?: string;
+  email?: string;
+  country?: string;
+  district?: string;
+  profession?: string;
+  gender?: string;
+  dob?: string;
+  address?: string;
+  thana?: string;
+  postcode?: string;
+  about?: string;
+}
+
 export default function ProfilePage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
   const [activeTab, setActiveTab] = useState("Personal Information");
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 1. Auth Protection Check
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      router.push("/login"); // লগইন না থাকলে /login পেজে পাঠিয়ে দেবে
+      return;
+    } else {
+      setIsAuthenticated(true);
+    }
+
+    // 2. LocalStorage অথবা Backend API থেকে ডাটা নেওয়া
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Failed to parse user from localStorage", err);
+      }
+    }
+
+    // 3. API এর মাধ্যমে লেটেস্ট প্রোফাইল ডাটা ফেচ করা
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [router]);
+
+  // ইউজারের নামের দুইটা বর্ণ সংক্ষেপে বের করার ফাংশন (যেমন: Sami Chisty -> SC)
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // অথেনটিকেশন চেক চলাকালীন লোডার স্ক্রিন
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
+          <Loader2 size={16} className="animate-spin text-amber-500" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans pb-12">
@@ -34,17 +120,17 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0">
-              JH
+              {getInitials(user?.fullName)}
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">
-                Jahidul Hassan Srizon
+                {user?.fullName || "Guest User"}
               </h2>
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
-                <span>📞 01783666743</span>
-                <span>✉️ jahidulhassansrizon@gmail.com</span>
+                <span>📞 {user?.phoneNumber || "Not provided"}</span>
+                <span>✉️ {user?.email || "Not provided"}</span>
                 <span className="inline-flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                  🇧🇩 Bangladesh
+                  🇧🇩 {user?.country || "Bangladesh"}
                 </span>
               </div>
             </div>
@@ -141,7 +227,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
               <User size={16} className="text-amber-500" />
-              <span>Jahidul Hassan Srizon</span>
+              <span>{user?.fullName || "Guest User"}</span>
             </div>
             <button className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-lg flex items-center gap-1 transition-colors">
               <Edit size={12} />
@@ -155,7 +241,7 @@ export default function ProfilePage() {
             <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
               <p className="text-[10px] font-bold text-gray-400">Full Name</p>
               <p className="font-semibold text-gray-800 mt-0.5">
-                Jahidul Hassan Srizon
+                {user?.fullName || "Not provided"}
               </p>
             </div>
 
@@ -164,14 +250,16 @@ export default function ProfilePage() {
               <p className="text-[10px] font-bold text-gray-400">
                 Phone Number
               </p>
-              <p className="font-semibold text-gray-800 mt-0.5">01783666743</p>
+              <p className="font-semibold text-gray-800 mt-0.5">
+                {user?.phoneNumber || "Not provided"}
+              </p>
             </div>
 
             {/* Country */}
             <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
               <p className="text-[10px] font-bold text-gray-400">Country</p>
               <p className="font-semibold text-gray-800 mt-0.5 flex items-center gap-1.5">
-                🇧🇩 Bangladesh
+                🇧🇩 {user?.country || "Bangladesh"}
               </p>
             </div>
 
@@ -180,7 +268,7 @@ export default function ProfilePage() {
               <p className="text-[10px] font-bold text-gray-400">Email</p>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-gray-800">
-                  jahidulhassansrizon@gmail.com
+                  {user?.email || "Not provided"}
                 </span>
                 <span className="bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded">
                   Not verified
@@ -197,59 +285,67 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Highlighted Yellow Boxes for Empty Info */}
+            {/* Profession */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">
                 Profession / Designation
               </p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.profession || "Not provided"}
               </p>
             </div>
 
+            {/* Gender */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">Gender</p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.gender || "Not provided"}
               </p>
             </div>
 
+            {/* Date of Birth */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">
                 Date of Birth
               </p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.dob || "Not provided"}
               </p>
             </div>
 
+            {/* Address */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">Address</p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.address || "Not provided"}
               </p>
             </div>
 
+            {/* District */}
             <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
               <p className="text-[10px] font-bold text-gray-400">District</p>
-              <p className="font-semibold text-gray-800 mt-0.5">গাজীপুর</p>
+              <p className="font-semibold text-gray-800 mt-0.5">
+                {user?.district || "Not provided"}
+              </p>
             </div>
 
+            {/* Thana */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">
                 Thana / Upazila
               </p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.thana || "Not provided"}
               </p>
             </div>
 
+            {/* Postcode */}
             <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
               <p className="text-[10px] font-bold text-amber-700/70">
                 Postcode
               </p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.postcode || "Not provided"}
               </p>
             </div>
 
@@ -259,7 +355,7 @@ export default function ProfilePage() {
                 About yourself
               </p>
               <p className="text-amber-800/60 font-medium italic mt-0.5">
-                Not provided
+                {user?.about || "Not provided"}
               </p>
             </div>
           </div>

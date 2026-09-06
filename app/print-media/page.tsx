@@ -1,7 +1,7 @@
-// app/print-media/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import {
   Search,
@@ -15,9 +15,25 @@ import {
   Check,
   Heart,
   SlidersHorizontal,
+  Loader2,
 } from "lucide-react";
 
 export default function PrintMediaPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Auth Protection Logic
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      router.push("/login"); // লগইন না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedPricing, setSelectedPricing] = useState("All");
@@ -47,6 +63,21 @@ export default function PrintMediaPage() {
     setSelectedDateFilter("All time");
   };
 
+  // অথেনটিকেশন চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন
+  if (isAuthenticated === null) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "#F8F2EF" }}
+      >
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-200/80 shadow-xs">
+          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F2EF]">
       {/* ড্যাশবোর্ড নেভবার */}
@@ -62,7 +93,7 @@ export default function PrintMediaPage() {
             </p>
           </div>
 
-          {/* টপ রাইট অ্যাকশন বাটন সেকশন (image_6246de.png এর সাথে হুবহু মিল রেখে) */}
+          {/* টপ রাইট অ্যাকশন বাটন সেকশন */}
           <div className="flex items-center gap-2.5 overflow-x-auto pb-1 sm:pb-0">
             {/* ১. প্রথম সিগমেন্টেড পিল (Featured order + Newest first) */}
             <div className="flex items-center bg-white border border-gray-200/90 rounded-2xl p-1 shadow-xs">

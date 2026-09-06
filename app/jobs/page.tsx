@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import {
   Search,
@@ -13,6 +14,7 @@ import {
   Users,
   Clock,
   Globe,
+  Loader2,
 } from "lucide-react";
 
 interface Job {
@@ -28,6 +30,21 @@ interface Job {
 }
 
 export default function JobsPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Auth Protection Logic
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      router.push("/login"); // লগইন না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -157,6 +174,21 @@ export default function JobsPage() {
     },
   ];
 
+  // অথেনটিকেশন চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন
+  if (isAuthenticated === null) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "#F8F2EF" }}
+      >
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-200/80 shadow-xs">
+          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F2EF]">
       {/* ড্যাশবোর্ড নেভবার */}
@@ -183,16 +215,16 @@ export default function JobsPage() {
 
         {/* টপ অ্যাকশন বাটনস */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <button className="flex items-center justify-center gap-2 bg-[#F3A847] hover:bg-[#e0973d] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs">
+          <button className="flex items-center justify-center gap-2 bg-[#F3A847] hover:bg-[#e0973d] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs cursor-pointer">
             <Sparkles size={16} /> Form Auto Fill-up
           </button>
-          <button className="flex items-center justify-center gap-2 bg-[#8B4513] hover:bg-[#72370f] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs">
+          <button className="flex items-center justify-center gap-2 bg-[#8B4513] hover:bg-[#72370f] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs cursor-pointer">
             <FileText size={16} /> Create Advertisement
           </button>
-          <button className="flex items-center justify-center gap-2 bg-[#2E7D32] hover:bg-[#256628] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs">
+          <button className="flex items-center justify-center gap-2 bg-[#2E7D32] hover:bg-[#256628] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs cursor-pointer">
             <Briefcase size={16} /> Age Calculator
           </button>
-          <button className="flex items-center justify-center gap-2 bg-[#1565C0] hover:bg-[#104f94] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs">
+          <button className="flex items-center justify-center gap-2 bg-[#1565C0] hover:bg-[#104f94] text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-xs cursor-pointer">
             <LinkIcon size={16} /> Useful Links
           </button>
         </div>
@@ -215,16 +247,16 @@ export default function JobsPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
-              <button className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition">
+              <button className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition cursor-pointer">
                 <Bookmark size={14} className="text-gray-400" /> Saved
               </button>
-              <button className="bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition">
+              <button className="bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition cursor-pointer">
                 Deadline
               </button>
-              <button className="bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition">
+              <button className="bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 transition cursor-pointer">
                 More posts
               </button>
-              <button className="bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-xl text-xs font-bold text-[#FF5D00] transition">
+              <button className="bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-xl text-xs font-bold text-[#FF5D00] transition cursor-pointer">
                 Newest
               </button>
             </div>
@@ -244,7 +276,7 @@ export default function JobsPage() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition cursor-pointer ${
                   activeFilter === filter
                     ? "bg-[#FF5D00] text-white shadow-xs"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-600"
@@ -281,7 +313,7 @@ export default function JobsPage() {
                       </p>
                     </div>
                   </div>
-                  <button className="text-gray-300 hover:text-[#FF5D00] transition">
+                  <button className="text-gray-300 hover:text-[#FF5D00] transition cursor-pointer">
                     <Bookmark size={16} />
                   </button>
                 </div>
@@ -321,10 +353,10 @@ export default function JobsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button className="border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-white transition shadow-xs">
+                  <button className="border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-white transition shadow-xs cursor-pointer">
                     Details
                   </button>
-                  <button className="bg-[#FF5D00] hover:bg-[#e05200] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs">
+                  <button className="bg-[#FF5D00] hover:bg-[#e05200] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer">
                     Apply →
                   </button>
                 </div>

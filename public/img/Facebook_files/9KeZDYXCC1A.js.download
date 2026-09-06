@@ -1,0 +1,3 @@
+;/*FB_PKG_DELIM*/
+
+__d("logComposerCancelEvent",["cometComposerLogger"],(function(t,n,r,o,a,i,l){"use strict";function e(e,t,n,o){r("cometComposerLogger")({fields:{composerEntryPointName:t,composerSourceSurface:n,webComposerSize:o},type:"COMPOSER_CANCEL"},e)}l.default=e}),98);

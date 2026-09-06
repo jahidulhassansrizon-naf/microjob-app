@@ -1,16 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileEdit, QrCode, Upload, Check } from "lucide-react";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 
 export default function ManualEditorPage() {
-  const [selectedSize, setSelectedSize] = useState("passport");
-  const [selectedBg, setSelectedBg] = useState("orange");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [selectedSize, setSelectedSize] = useState<string>("passport");
+  const [selectedBg, setSelectedBg] = useState<string>("orange");
+
+  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
+  useEffect(() => {
+    const cookies = document.cookie.split("; ");
+    const tokenCookie = cookies.find((row) => row.startsWith("token="));
+    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+    const storedUser = localStorage.getItem("user");
+
+    if (!token || !storedUser) {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie =
+        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      window.location.href = "/login";
+    } else {
+      setIsAuthenticated(true);
+      setLoading(false);
+    }
+  }, []);
+
+  // লোডিং স্পিনার
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-gray-500">
+            যাচাই করা হচ্ছে...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col">
-      {/* ড্যাশবোর্ড নেভবার */}
+      {/* Dashboard Navbar */}
       <DashboardNavbar />
 
       {/* Main Container */}
@@ -41,7 +81,7 @@ export default function ManualEditorPage() {
                 <button
                   key={item.id}
                   onClick={() => setSelectedSize(item.id)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-bold transition relative ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-bold transition relative cursor-pointer ${
                     selectedSize === item.id
                       ? "border-blue-500 bg-blue-50/20 text-gray-900 shadow-xs"
                       : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
@@ -81,11 +121,11 @@ export default function ManualEditorPage() {
                   color:
                     "bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white text-[10px]",
                 },
-              ].map((bg, idx) => (
+              ].map((bg) => (
                 <button
-                  key={idx}
+                  key={bg.id}
                   onClick={() => setSelectedBg(bg.id)}
-                  className={`h-9 rounded-xl ${bg.color} transition relative shadow-2xs hover:scale-105 flex items-center justify-center`}
+                  className={`h-9 rounded-xl ${bg.color} transition relative shadow-2xs hover:scale-105 flex items-center justify-center cursor-pointer`}
                 >
                   {bg.id === "custom" && <span className="text-xs">🎨</span>}
                   {selectedBg === bg.id && bg.id !== "custom" && (
@@ -98,7 +138,7 @@ export default function ManualEditorPage() {
             </div>
           </div>
 
-          {/* AI Tools / Manual Tools Section */}
+          {/* Manual Tools Section */}
           <div className="flex flex-col gap-3">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
               Manual Tools
@@ -109,9 +149,9 @@ export default function ManualEditorPage() {
                 { label: "Rotate", icon: "🔄" },
                 { label: "Brightness", icon: "☀️" },
                 { label: "Contrast", icon: "🌓" },
-              ].map((tool, i) => (
+              ].map((tool) => (
                 <div
-                  key={i}
+                  key={tool.label}
                   className="p-2 bg-gray-50/60 border border-gray-200 rounded-xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer hover:bg-gray-100 transition"
                 >
                   <span className="text-base">{tool.icon}</span>
@@ -143,7 +183,7 @@ export default function ManualEditorPage() {
               </p>
             </div>
 
-            <button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-95 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+            <button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-95 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
               <Upload size={14} /> Upload Photo
             </button>
           </div>
@@ -164,7 +204,7 @@ export default function ManualEditorPage() {
               </div>
             </div>
 
-            <button className="w-full bg-[#181C2E] hover:bg-gray-900 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs">
+            <button className="w-full bg-[#181C2E] hover:bg-gray-900 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer">
               <QrCode size={14} /> Scan
             </button>
           </div>

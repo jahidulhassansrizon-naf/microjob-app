@@ -1,6 +1,8 @@
+// app/create-question/page.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import {
   Search,
@@ -15,9 +17,25 @@ import {
   Plus,
   Minus,
   Check,
+  Loader2,
 } from "lucide-react";
 
 export default function CreateQuestionPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Auth Protection Logic
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      router.push("/login"); // লগইন না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
   const [selectedTab, setSelectedTab] = useState("browse");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -126,6 +144,21 @@ export default function CreateQuestionPage() {
     "Descriptive Questions",
   ];
 
+  // অথেনটিকেশন চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন
+  if (isAuthenticated === null) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "#F8F2EF" }}
+      >
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-200/80 shadow-xs">
+          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F2EF]">
       <DashboardNavbar />
@@ -145,13 +178,13 @@ export default function CreateQuestionPage() {
             <span>Classic</span>
             <ChevronDown size={14} className="text-gray-400" />
           </div>
-          <button className="flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-white transition shadow-xs">
+          <button className="flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-white transition shadow-xs cursor-pointer">
             <Save size={14} className="text-gray-500" /> Save
           </button>
-          <button className="flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-white transition shadow-xs">
+          <button className="flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-white transition shadow-xs cursor-pointer">
             <Printer size={14} className="text-gray-500" /> Print
           </button>
-          <button className="flex items-center gap-1.5 bg-[#FF5D00] hover:bg-[#e05200] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
+          <button className="flex items-center gap-1.5 bg-[#FF5D00] hover:bg-[#e05200] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer">
             <Download size={14} /> Download PDF
           </button>
         </div>
@@ -162,7 +195,7 @@ export default function CreateQuestionPage() {
           <div className="flex bg-white p-1 rounded-2xl border border-gray-200/80 shadow-xs">
             <button
               onClick={() => setSelectedTab("browse")}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
                 selectedTab === "browse"
                   ? "bg-orange-50 text-[#FF5D00]"
                   : "text-gray-500"
@@ -172,7 +205,7 @@ export default function CreateQuestionPage() {
             </button>
             <button
               onClick={() => setSelectedTab("auto")}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
                 selectedTab === "auto"
                   ? "bg-orange-50 text-[#FF5D00]"
                   : "text-gray-500"
@@ -324,7 +357,9 @@ export default function CreateQuestionPage() {
               </div>
 
               <div
-                className={`flex items-center gap-2 border border-gray-200 rounded-2xl px-3.5 py-2.5 ${!selectedChapter ? "opacity-50 bg-gray-50" : "bg-white"}`}
+                className={`flex items-center gap-2 border border-gray-200 rounded-2xl px-3.5 py-2.5 ${
+                  !selectedChapter ? "opacity-50 bg-gray-50" : "bg-white"
+                }`}
               >
                 <Search size={14} className="text-gray-400" />
                 <input
@@ -341,7 +376,7 @@ export default function CreateQuestionPage() {
                 disabled={
                   !selectedClass || !selectedSubject || !selectedChapter
                 }
-                className={`w-full font-bold py-3 rounded-2xl text-xs transition shadow-sm ${
+                className={`w-full font-bold py-3 rounded-2xl text-xs transition shadow-sm cursor-pointer ${
                   !selectedClass || !selectedSubject || !selectedChapter
                     ? "bg-amber-100/60 text-amber-400 cursor-not-allowed"
                     : "bg-[#F3A847] hover:bg-[#e0973d] text-white"
@@ -354,7 +389,7 @@ export default function CreateQuestionPage() {
 
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-semibold text-gray-600">0 found</span>
-            <button className="flex items-center gap-1.5 border border-gray-200 bg-white px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 shadow-xs">
+            <button className="flex items-center gap-1.5 border border-gray-200 bg-white px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 shadow-xs cursor-pointer">
               <span className="text-gray-400">☐</span> Select all
             </button>
           </div>
@@ -384,7 +419,7 @@ export default function CreateQuestionPage() {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   Logo
                 </span>
-                <button className="flex items-center justify-center gap-1.5 border border-dashed border-gray-300 hover:border-gray-400 px-3 py-2 rounded-xl bg-white text-xs font-semibold text-gray-600 transition">
+                <button className="flex items-center justify-center gap-1.5 border border-dashed border-gray-300 hover:border-gray-400 px-3 py-2 rounded-xl bg-white text-xs font-semibold text-gray-600 transition cursor-pointer">
                   <ImageIcon size={14} className="text-gray-400" /> Add logo
                 </button>
               </div>
@@ -394,11 +429,11 @@ export default function CreateQuestionPage() {
                   Font
                 </span>
                 <div className="flex items-center border border-gray-200 rounded-xl bg-white px-2 py-1.5 justify-between">
-                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer">
                     <Minus size={14} />
                   </button>
                   <span className="text-xs font-bold text-gray-700">100%</span>
-                  <button className="text-gray-400 hover:text-gray-600 p-0.5">
+                  <button className="text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer">
                     <Plus size={14} />
                   </button>
                 </div>
@@ -411,7 +446,7 @@ export default function CreateQuestionPage() {
                 <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 text-xs font-semibold">
                   <button
                     onClick={() => setPageSize("A4")}
-                    className={`flex-1 py-1.5 rounded-lg transition ${
+                    className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
                       pageSize === "A4"
                         ? "bg-[#F3A847] text-white font-bold shadow-xs"
                         : "text-gray-600 hover:text-gray-900"
@@ -421,7 +456,7 @@ export default function CreateQuestionPage() {
                   </button>
                   <button
                     onClick={() => setPageSize("A5")}
-                    className={`flex-1 py-1.5 rounded-lg transition ${
+                    className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
                       pageSize === "A5"
                         ? "bg-[#F3A847] text-white font-bold shadow-xs"
                         : "text-gray-600 hover:text-gray-900"
@@ -431,7 +466,7 @@ export default function CreateQuestionPage() {
                   </button>
                   <button
                     onClick={() => setPageSize("Joint")}
-                    className={`flex-1 py-1.5 rounded-lg transition ${
+                    className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
                       pageSize === "Joint"
                         ? "bg-[#F3A847] text-white font-bold shadow-xs"
                         : "text-gray-600 hover:text-gray-900"
@@ -472,7 +507,7 @@ export default function CreateQuestionPage() {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   Layout
                 </span>
-                <button className="flex items-center justify-center gap-1.5 border border-gray-200 px-3 py-1.5 rounded-xl bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50">
+                <button className="flex items-center justify-center gap-1.5 border border-gray-200 px-3 py-1.5 rounded-xl bg-white text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 cursor-pointer">
                   <SlidersHorizontal size={12} className="text-gray-400" />{" "}
                   Options
                 </button>

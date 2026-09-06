@@ -1,8 +1,7 @@
-// app/my-files/page.tsx
 "use client";
 
-import { useState } from "react";
-import DashboardNavbar from "../dashboard/_components/DashboardNavbar"; // আপনার পাথ অনুযায়ী Navbar ইমপোর্ট করুন
+import { useState, useEffect } from "react";
+import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
   Sparkles,
   FileText,
@@ -14,10 +13,56 @@ import {
 } from "lucide-react";
 
 export default function MyFilesPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [activeTab, setActiveTab] = useState("generated-images");
   const [subTab, setSubTab] = useState("ai-photo-edit");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
+
+  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
+  useEffect(() => {
+    // ১. কুকি থেকে টোকেন বের করার নির্ভুল উপায়
+    const cookies = document.cookie.split("; ");
+    const tokenCookie = cookies.find((row) => row.startsWith("token="));
+    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+    // ২. লোকাল স্টোরেজ থেকে ইউজার ডেটা
+    const storedUser = localStorage.getItem("user");
+
+    // ৩. টোকেন বা ইউজার না থাকলে পুরোপুরি লগআউট ও রিডাইরেক্ট
+    if (!token || !storedUser) {
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // কুকি ডিলিট
+      document.cookie =
+        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      window.location.href = "/login";
+    } else {
+      setIsAuthenticated(true);
+      setLoading(false);
+    }
+  }, []);
+
+  // লোডিং হওয়ার সময় ক্লিন স্পিনার
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-gray-500">
+            যাচাই করা হচ্ছে...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // অথেন্টিকেটেড না হলে পেজ রেন্ডার হবে না
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
@@ -33,7 +78,7 @@ export default function MyFilesPage() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <button
             onClick={() => setActiveTab("generated-images")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "generated-images"
                 ? "bg-gray-900 text-white shadow-md"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
@@ -52,7 +97,7 @@ export default function MyFilesPage() {
 
           <button
             onClick={() => setActiveTab("print-media")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "print-media"
                 ? "bg-gray-900 text-white shadow-md"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
@@ -64,7 +109,7 @@ export default function MyFilesPage() {
 
           <button
             onClick={() => setActiveTab("regular-documents")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "regular-documents"
                 ? "bg-gray-900 text-white shadow-md"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
@@ -76,7 +121,7 @@ export default function MyFilesPage() {
 
           <button
             onClick={() => setActiveTab("question-papers")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "question-papers"
                 ? "bg-gray-900 text-white shadow-md"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
@@ -92,7 +137,7 @@ export default function MyFilesPage() {
           <div className="flex flex-wrap items-center gap-2 mb-6 bg-white p-2 rounded-2xl border border-gray-200 shadow-xs">
             <button
               onClick={() => setSubTab("ai-photo-edit")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 subTab === "ai-photo-edit"
                   ? "bg-gray-900 text-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -102,7 +147,7 @@ export default function MyFilesPage() {
             </button>
             <button
               onClick={() => setSubTab("manually-edited")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 subTab === "manually-edited"
                   ? "bg-gray-900 text-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -112,7 +157,7 @@ export default function MyFilesPage() {
             </button>
             <button
               onClick={() => setSubTab("ai-template-generated")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 subTab === "ai-template-generated"
                   ? "bg-gray-900 text-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -122,7 +167,7 @@ export default function MyFilesPage() {
             </button>
             <button
               onClick={() => setSubTab("bulk-photo-edit")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 subTab === "bulk-photo-edit"
                   ? "bg-gray-900 text-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -188,10 +233,10 @@ export default function MyFilesPage() {
 
           {/* View Toggle Icons (Grid / List) */}
           <div className="flex items-center gap-1 justify-end bg-white border border-gray-200 rounded-xl px-2 py-1">
-            <button className="p-1.5 bg-amber-600 text-white rounded-lg shadow-xs">
+            <button className="p-1.5 bg-amber-600 text-white rounded-lg shadow-xs cursor-pointer">
               <Grid size={14} />
             </button>
-            <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg">
+            <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer">
               <List size={14} />
             </button>
           </div>

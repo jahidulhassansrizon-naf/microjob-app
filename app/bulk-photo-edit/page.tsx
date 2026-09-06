@@ -1,12 +1,34 @@
-// app/bulk-photo-edit/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { Upload, Plus, Sparkles } from "lucide-react";
 
 export default function BulkPhotoEditPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [images, setImages] = useState<string[]>([]);
+
+  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
+  useEffect(() => {
+    const cookies = document.cookie.split("; ");
+    const tokenCookie = cookies.find((row) => row.startsWith("token="));
+    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+    const storedUser = localStorage.getItem("user");
+
+    if (!token || !storedUser) {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie =
+        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      window.location.href = "/login";
+    } else {
+      setIsAuthenticated(true);
+      setLoading(false);
+    }
+  }, []);
 
   const stylePresets = [
     {
@@ -41,14 +63,30 @@ export default function BulkPhotoEditPage() {
     },
   ];
 
+  // লোডিং স্পিনার
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-gray-500">
+            যাচাই করা হচ্ছে...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* ড্যাশবোর্ড নেভবার */}
+      {/* Dashboard Navbar */}
       <DashboardNavbar />
 
-      {/* মূল কন্টেন্ট এরিয়া */}
+      {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ১. বাম পাশের সাইডবার */}
+        {/* 1. Left Sidebar */}
         <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col gap-4 overflow-y-auto">
           <div className="border-2 border-dashed border-gray-200 hover:border-orange-500 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition h-36 bg-orange-50/20">
             <div className="w-8 h-8 rounded-full bg-orange-100 text-[#FF5D00] flex items-center justify-center font-bold mb-1">
@@ -60,7 +98,7 @@ export default function BulkPhotoEditPage() {
           </div>
         </div>
 
-        {/* ২. মাঝখানের মূল আপলোড জোন (অরিজিনাল ওয়েবসাইটের মতো সিম্পল এবং ক্লিন করা হয়েছে) */}
+        {/* 2. Middle Main Upload Zone */}
         <div className="flex-1 flex items-center justify-center p-8 bg-gray-50/30">
           <div className="bg-white border border-gray-200/80 shadow-xs rounded-2xl w-full max-w-md h-[380px] flex flex-col items-center justify-center p-6 text-center relative">
             <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-3 border border-gray-100">
@@ -84,7 +122,7 @@ export default function BulkPhotoEditPage() {
           </div>
         </div>
 
-        {/* ৩. ডান পাশের স্টাইল প্রিসেট প্যানেল */}
+        {/* 3. Right Style Presets Panel */}
         <div className="w-80 bg-white border-l border-gray-200 p-4 flex flex-col gap-3 overflow-y-auto">
           <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
             Style presets
@@ -115,10 +153,10 @@ export default function BulkPhotoEditPage() {
             ))}
           </div>
 
-          {/* নিচে Enhance বাটন */}
+          {/* Bottom Enhance Button */}
           <div className="mt-auto pt-4">
-            <button className="w-full bg-[#E5B573] hover:bg-[#d4a563] text-gray-900 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-xs">
-              <Sparkles size={16} /> Enhance 0 photos
+            <button className="w-full bg-[#E5B573] hover:bg-[#d4a563] text-gray-900 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-xs cursor-pointer">
+              <Sparkles size={16} /> Enhance {images.length} photos
             </button>
           </div>
         </div>

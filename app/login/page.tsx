@@ -1,3 +1,4 @@
+// app/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,7 +11,46 @@ import {
   EyeOff,
   MessageCircle,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
+
+// Translations
+const translations = {
+  EN: {
+    backToHome: "Back to Home",
+    loginTitle: "Login to your account",
+    phoneOrEmail: "Phone or Email",
+    phoneOrEmailPlaceholder: "Enter phone or email",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot password?",
+    signIn: "Sign in",
+    signingIn: "Signing in...",
+    noAccount: "Don't have an account?",
+    signUp: "Sign up",
+    heroTitle:
+      "Create documents, designs, and print media with photo editing, AI photo editing, manual editing, and bulk editing -",
+    heroSub: "easy to use.",
+  },
+  BN: {
+    backToHome: "হোমে ফিরে যান",
+    loginTitle: "আপনার অ্যাকাউন্টে লগইন করুন",
+    phoneOrEmail: "ফোন অথবা ইমেইল",
+    phoneOrEmailPlaceholder: "ফোন বা ইমেইল লিখুন",
+    password: "পাসওয়ার্ড",
+    passwordPlaceholder: "আপনার পাসওয়ার্ড লিখুন",
+    rememberMe: "মনে রাখুন",
+    forgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
+    signIn: "লগইন করুন",
+    signingIn: "লগইন হচ্ছে...",
+    noAccount: "অ্যাকাউন্ট নেই?",
+    signUp: "সাইন আপ করুন",
+    heroTitle:
+      "ফটো এডিটিং, এআই এডিটিং এবং বাল্ক এডিটিং সহ যেকোনো ডিজাইন বা ডকুমেন্টস তৈরি করুন -",
+    heroSub: "সহজেই ব্যবহারযোগ্য।",
+  },
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +64,8 @@ export default function LoginPage() {
     password: "",
     rememberMe: false,
   });
+
+  const t = translations[lang];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +82,7 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          identifier: formData.identifier,
+          phoneNumber: formData.identifier,
           password: formData.password,
         }),
       });
@@ -51,13 +93,21 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials!");
       }
 
+      // LocalStorage এ টোকেন ও ইউজার ডাটা সেভ
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert("Login successful!");
+      // 🟢 Cookie তে টোকেন সেট করা (যাতে Next.js Middleware পড়তে পারে)
+      const maxAge = formData.rememberMe ? 86400 * 7 : 86400; // ৭ দিন অথবা ১ দিন
+      document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
       router.push("/dashboard");
-    } catch (error: any) {
-      setErrorMessage(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
@@ -65,7 +115,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
-      {/* ---------------- LEFT SIDE: DARK HERO SECTION (#222835) (Displays at bottom on mobile) ---------------- */}
+      {/* Left Visual Banner */}
       <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
         <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
@@ -77,28 +127,27 @@ export default function LoginPage() {
 
         <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
           <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block">
-              Create documents, designs, and print media with photo editing, AI
-              photo editing, manual editing, and bulk editing -
-            </span>
-            <span className="block mt-1">easy to use.</span>
+            <span className="block">{t.heroTitle}</span>
+            <span className="block mt-1">{t.heroSub}</span>
           </p>
         </div>
       </div>
 
-      {/* ---------------- RIGHT SIDE: LOGIN FORM SECTION (Displays at top on mobile) ---------------- */}
+      {/* Right Form Container */}
       <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
+        {/* Navigation & Language Selector */}
         <div className="flex justify-between items-center w-full">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors"
           >
             <ArrowLeft size={16} />
-            <span>Back to Home</span>
+            <span>{t.backToHome}</span>
           </Link>
 
           <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
             <button
+              type="button"
               onClick={() => setLang("EN")}
               className={`px-3 py-1 rounded transition-all ${
                 lang === "EN"
@@ -109,6 +158,7 @@ export default function LoginPage() {
               EN
             </button>
             <button
+              type="button"
               onClick={() => setLang("BN")}
               className={`px-3 py-1 rounded transition-all ${
                 lang === "BN"
@@ -121,6 +171,7 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Form Body */}
         <div className="w-full max-w-md mx-auto my-auto py-6">
           <div className="flex flex-col items-center mb-6">
             <Link href="/" className="flex items-center gap-2 mb-1.5 group">
@@ -136,14 +187,12 @@ export default function LoginPage() {
                 </span>
               </div>
             </Link>
-            <p className="text-xs text-gray-500 font-medium">
-              Login to your account
-            </p>
+            <p className="text-xs text-gray-500 font-medium">{t.loginTitle}</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8">
             {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
                 {errorMessage}
               </div>
             )}
@@ -151,7 +200,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-700">
-                  Phone or Email <span className="text-red-500">*</span>
+                  {t.phoneOrEmail} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-gray-400">
@@ -160,7 +209,8 @@ export default function LoginPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Enter phone or email"
+                    autoComplete="username"
+                    placeholder={t.phoneOrEmailPlaceholder}
                     value={formData.identifier}
                     onChange={(e) =>
                       setFormData({ ...formData, identifier: e.target.value })
@@ -172,7 +222,7 @@ export default function LoginPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-700">
-                  Password <span className="text-red-500">*</span>
+                  {t.password} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-gray-400">
@@ -181,7 +231,8 @@ export default function LoginPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    placeholder={t.passwordPlaceholder}
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
@@ -192,6 +243,9 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -211,41 +265,48 @@ export default function LoginPage() {
                     }
                     className="w-4 h-4 rounded border-gray-300 text-[#FF5D00] focus:ring-[#FF5D00]"
                   />
-                  <span>Remember me</span>
+                  <span>{t.rememberMe}</span>
                 </label>
 
                 <Link
                   href="/forgot-password"
                   className="text-[#FF5D00] hover:underline font-semibold"
                 >
-                  Forgot password?
+                  {t.forgotPassword}
                 </Link>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer"
+                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>{t.signingIn}</span>
+                  </>
+                ) : (
+                  <span>{t.signIn}</span>
+                )}
               </button>
             </form>
           </div>
 
           <div className="text-center mt-6">
             <p className="text-xs text-gray-600">
-              Don't have an account?{" "}
+              {t.noAccount}{" "}
               <Link
                 href="/register"
                 className="text-[#FF5D00] font-bold hover:underline ml-0.5"
               >
-                Sign up
+                {t.signUp}
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Floating WhatsApp Support Button */}
+        {/* WhatsApp Support Button */}
         <div className="fixed bottom-5 right-5 z-50">
           <a
             href="https://wa.me/8801700559595"

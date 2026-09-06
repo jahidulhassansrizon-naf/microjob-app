@@ -1,9 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
-const Otp = require("../models/Otp"); // OTP Model
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { db } = require("../firebase");
+const {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  query,
+  where,
+} = require("firebase/firestore");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
 
@@ -25,18 +33,12 @@ const countryPhoneRules = {
     maxLen: 10,
     example: "7911123456",
   },
-  // প্রয়োজন অনুযায়ী অন্যান্য দেশের রুলস এখানে যোগ করতে পারেন
 };
 
-// হেল্পার ফাংশন: ফোন নম্বর সঠিক দেশ অনুযায়ী ভ্যালিড করার জন্য
 const validatePhoneNumber = (countryString, phoneNumber) => {
   if (!phoneNumber) return "Phone number is required!";
-
-  // country স্ট্রিং থেকে দেশের নাম বের করা (যেমন: "Bangladesh (+880)" থেকে "Bangladesh")
   const countryName = countryString ? countryString.split(" (")[0].trim() : "";
   const rule = countryPhoneRules[countryName];
-
-  // যদি নির্দিষ্ট দেশের রুলস ব্যাকএন্ডে না থাকে, তবে সাধারণ একটি বেসিক চেক (যেমন ৫ থেকে ১৫ ডিজিট) করতে পারেন
   const cleanNum = phoneNumber.toString().trim();
 
   if (rule) {
@@ -48,17 +50,16 @@ const validatePhoneNumber = (countryString, phoneNumber) => {
       return "Please enter a valid phone number!";
     }
   }
-  return null; // কোনো এরর না থাকলে null রিটার্ন করবে
+  return null;
 };
 
 // ==========================================
-// ১.১ SMS-এ OTP পাঠানোর এন্ডপয়েন্ট (Send SMS OTP)
+// ১.১ SMS-এ OTP পাঠানোর এন্ডপয়েন্ট
 // ==========================================
 router.post("/send-sms-otp", async (req, res) => {
   try {
     const { phoneNumber, country } = req.body;
 
-    // কান্ট্রি ও ফোন নম্বর ভ্যালিডেশন চেক
     const validationError = validatePhoneNumber(country, phoneNumber);
     if (validationError) {
       return res.status(400).json({ message: validationError });
@@ -66,20 +67,31 @@ router.post("/send-sms-otp", async (req, res) => {
 
     const cleanPhone = phoneNumber.toString().trim();
 
-    // ফোন নম্বরটি আগে থেকে রেজিস্টার্ড কি না চেক
-    const existingUser = await User.findOne({ phoneNumber: cleanPhone });
-    if (existingUser) {
+    const usersRef = collection(db, "users");
+    const qUser = query(usersRef, where("phoneNumber", "==", cleanPhone));
+    const userSnap = await getDocs(qUser);
+
+    if (!userSnap.empty) {
       return res
         .status(400)
         .json({ message: "This phone number is already registered!" });
     }
 
-    // ৬ ডিজিটের র্যান্ডম OTP কোড জেনারেট
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // আগের কোনো পেন্ডিং OTP থাকলে মুছে নতুনটি সেভ করা
-    await Otp.deleteMany({ phoneNumber: cleanPhone });
-    await new Otp({ phoneNumber: cleanPhone, otp: otpCode }).save();
+    const otpsRef = collection(db, "otps");
+    const qOtp = query(otpsRef, where("phoneNumber", "==", cleanPhone));
+    const otpSnap = await getDocs(qOtp);
+
+    for (const d of otpSnap.docs) {
+      await deleteDoc(doc(db, "otps", d.id));
+    }
+
+    await setDoc(doc(db, "otps", cleanPhone), {
+      phoneNumber: cleanPhone,
+      otp: otpCode,
+      createdAt: new Date(),
+    });
 
     console.log(`[TEST MODE] Phone OTP for ${cleanPhone} is: ${otpCode}`);
 
@@ -92,7 +104,7 @@ router.post("/send-sms-otp", async (req, res) => {
 });
 
 // ==========================================
-// ১.২ জিমেইলে OTP পাঠানোর এন্ডপয়েন্ট (Send Email OTP via Google Script)
+// ১.২ জিমেইলে OTP পাঠানোর এন্ডপয়েন্ট
 // ==========================================
 router.post("/send-email-otp", async (req, res) => {
   try {
@@ -104,9 +116,11 @@ router.post("/send-email-otp", async (req, res) => {
 
     const cleanEmail = email.toString().toLowerCase().trim();
 
-    // ইমেইলটি আগে থেকে রেজিস্টার্ড কি না চেক
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
+    const usersRef = collection(db, "users");
+    const qUser = query(usersRef, where("email", "==", cleanEmail));
+    const userSnap = await getDocs(qUser);
+
+    if (!userSnap.empty) {
       return res
         .status(400)
         .json({ message: "This email is already registered!" });
@@ -120,14 +134,23 @@ router.post("/send-email-otp", async (req, res) => {
       });
     }
 
-    // ৬ ডিজিটের র্যান্ডম OTP কোড জেনারেট
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // আগের কোনো পেন্ডিং OTP থাকলে মুছে নতুনটি সেভ করা
-    await Otp.deleteMany({ email: cleanEmail });
-    await new Otp({ email: cleanEmail, otp: otpCode }).save();
+    const otpsRef = collection(db, "otps");
+    const qOtp = query(otpsRef, where("email", "==", cleanEmail));
+    const otpSnap = await getDocs(qOtp);
 
-    // Google Script ইমেইল টেমপ্লেট
+    for (const d of otpSnap.docs) {
+      await deleteDoc(doc(db, "otps", d.id));
+    }
+
+    const emailDocId = cleanEmail.replace(/[^a-zA-Z0-9]/g, "_");
+    await setDoc(doc(db, "otps", emailDocId), {
+      email: cleanEmail,
+      otp: otpCode,
+      createdAt: new Date(),
+    });
+
     const emailHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
         <h2 style="color: #FF5D00; margin-bottom: 10px;">SohozKaj Email Verification</h2>
@@ -140,7 +163,6 @@ router.post("/send-email-otp", async (req, res) => {
       </div>
     `;
 
-    // Google Apps Script এ রিকোয়েস্ট পাঠানো
     const googleResponse = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -157,14 +179,14 @@ router.post("/send-email-otp", async (req, res) => {
     try {
       googleResult = JSON.parse(responseText);
     } catch (err) {
-      await Otp.deleteMany({ email: cleanEmail });
+      await deleteDoc(doc(db, "otps", emailDocId));
       return res.status(500).json({
         message: "Google Script did not return valid JSON response.",
       });
     }
 
     if (!googleResult.success) {
-      await Otp.deleteMany({ email: cleanEmail });
+      await deleteDoc(doc(db, "otps", emailDocId));
       return res.status(500).json({
         message: "Failed to send email via Google Script.",
       });
@@ -181,7 +203,7 @@ router.post("/send-email-otp", async (req, res) => {
 });
 
 // ==========================================
-// ২. OTP ভ্যালিডেশন সহ রেজিস্ট্রেশন (Register with OTP)
+// ২. OTP ভ্যালিডেশন সহ রেজিস্ট্রেশন
 // ==========================================
 router.post("/register", async (req, res) => {
   try {
@@ -194,7 +216,6 @@ router.post("/register", async (req, res) => {
         .json({ message: "Phone number, Email, and OTP code are required!" });
     }
 
-    // কান্ট্রি ও ফোন নম্বর ভ্যালিডেশন চেক
     const validationError = validatePhoneNumber(country, phoneNumber);
     if (validationError) {
       return res.status(400).json({ message: validationError });
@@ -203,88 +224,118 @@ router.post("/register", async (req, res) => {
     const cleanPhone = phoneNumber.toString().trim();
     const cleanEmail = email.toString().toLowerCase().trim();
 
-    // ১. OTP কোড ডাটাবেজে সঠিক আছে কি না চেক (Phone বা Email যেটার মাধ্যমেই আসুক)
-    const validOtp = await Otp.findOne({
-      $or: [
-        { phoneNumber: cleanPhone, otp: otp.trim() },
-        { email: cleanEmail, otp: otp.trim() },
-      ],
-    });
+    const otpsRef = collection(db, "otps");
+    const qPhoneOtp = query(
+      otpsRef,
+      where("phoneNumber", "==", cleanPhone),
+      where("otp", "==", otp.trim()),
+    );
+    const qEmailOtp = query(
+      otpsRef,
+      where("email", "==", cleanEmail),
+      where("otp", "==", otp.trim()),
+    );
 
-    if (!validOtp) {
+    const [phoneSnap, emailSnap] = await Promise.all([
+      getDocs(qPhoneOtp),
+      getDocs(qEmailOtp),
+    ]);
+
+    if (phoneSnap.empty && emailSnap.empty) {
       return res.status(400).json({ message: "Invalid or expired OTP code!" });
     }
 
-    // ২. ইমেইল বা ফোন নম্বর ডুপ্লিকেট আছে কি না চেক
-    const existingUser = await User.findOne({
-      $or: [{ phoneNumber: cleanPhone }, { email: cleanEmail }],
-    });
+    const usersRef = collection(db, "users");
+    const qUserPhone = query(usersRef, where("phoneNumber", "==", cleanPhone));
+    const qUserEmail = query(usersRef, where("email", "==", cleanEmail));
 
-    if (existingUser) {
-      if (existingUser.phoneNumber === cleanPhone) {
-        return res
-          .status(400)
-          .json({ message: "This phone number is already registered!" });
-      }
-      if (existingUser.email === cleanEmail) {
-        return res
-          .status(400)
-          .json({ message: "This email is already registered!" });
-      }
+    const [existingPhoneSnap, existingEmailSnap] = await Promise.all([
+      getDocs(qUserPhone),
+      getDocs(qUserEmail),
+    ]);
+
+    if (!existingPhoneSnap.empty) {
+      return res
+        .status(400)
+        .json({ message: "This phone number is already registered!" });
+    }
+    if (!existingEmailSnap.empty) {
+      return res
+        .status(400)
+        .json({ message: "This email is already registered!" });
     }
 
-    // ৩. পাসওয়ার্ড হ্যাশ করা
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // ৪. নতুন ইউজার সেভ করা
-    const newUser = new User({
+    const newUserRef = doc(collection(db, "users"));
+    const userData = {
+      id: newUserRef.id,
       country,
       phoneNumber: cleanPhone,
       email: cleanEmail,
       fullName,
       district,
       password: hashedPassword,
+      createdAt: new Date(),
+    };
+
+    await setDoc(newUserRef, userData);
+
+    for (const d of phoneSnap.docs) await deleteDoc(doc(db, "otps", d.id));
+    for (const d of emailSnap.docs) await deleteDoc(doc(db, "otps", d.id));
+
+    res.status(201).json({
+      message: "User registered successfully!",
+      user: {
+        id: newUserRef.id,
+        fullName,
+        phoneNumber: cleanPhone,
+        email: cleanEmail,
+        district,
+      },
     });
-
-    await newUser.save();
-
-    // ৫. রেজিস্ট্রেশন সফল হলে ব্যবহৃত OTP টি মুছে দেওয়া
-    await Otp.deleteMany({
-      $or: [{ phoneNumber: cleanPhone }, { email: cleanEmail }],
-    });
-
-    res
-      .status(201)
-      .json({ message: "User registered successfully!", user: newUser });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
 // ==========================================
-// ৩. লগইন (Login Route)
+// ৩. লগইন
 // ==========================================
 router.post("/login", async (req, res) => {
   try {
     const { phoneNumber, password } = req.body;
     const formattedInput = phoneNumber ? phoneNumber.toLowerCase().trim() : "";
 
-    const user = await User.findOne({
-      $or: [{ phoneNumber: phoneNumber }, { email: formattedInput }],
-    });
+    const usersRef = collection(db, "users");
 
-    if (!user) {
+    const qPhone = query(usersRef, where("phoneNumber", "==", phoneNumber));
+    const qEmail = query(usersRef, where("email", "==", formattedInput));
+
+    const [phoneSnap, emailSnap] = await Promise.all([
+      getDocs(qPhone),
+      getDocs(qEmail),
+    ]);
+
+    let userDoc = null;
+    if (!phoneSnap.empty) {
+      userDoc = phoneSnap.docs[0].data();
+    } else if (!emailSnap.empty) {
+      userDoc = emailSnap.docs[0].data();
+    }
+
+    if (!userDoc) {
       return res.status(400).json({ message: "User not found!" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, userDoc.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password!" });
     }
 
     const token = jwt.sign(
-      { userId: user._id, phoneNumber: user.phoneNumber },
+      { userId: userDoc.id, phoneNumber: userDoc.phoneNumber },
       JWT_SECRET,
       { expiresIn: "7d" },
     );
@@ -293,15 +344,48 @@ router.post("/login", async (req, res) => {
       message: "Login successful!",
       token,
       user: {
-        id: user._id,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        email: user.email,
-        district: user.district,
+        id: userDoc.id,
+        fullName: userDoc.fullName,
+        phoneNumber: userDoc.phoneNumber,
+        email: userDoc.email,
+        district: userDoc.district,
+        country: userDoc.country,
       },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ==========================================
+// ৪. বর্তমান লগইনকৃত ইউজার প্রোফাইল ডাটা পাওয়া
+// ==========================================
+router.get("/me", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided!" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("id", "==", decoded.userId));
+    const userSnap = await getDocs(q);
+
+    if (userSnap.empty) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    const userData = userSnap.docs[0].data();
+    delete userData.password; // সিকিউরিটির জন্য পাসওয়ার্ড বাদ দেওয়া হলো
+
+    res.status(200).json({ user: userData });
+  } catch (error) {
+    res
+      .status(401)
+      .json({ message: "Invalid or expired token!", error: error.message });
   }
 });
 

@@ -1,16 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, QrCode, Upload, Check } from "lucide-react";
-import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar"; // পাথ আপনার প্রজেক্ট অনুযায়ী ঠিক করে নিতে পারেন
+import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 
 export default function AIEditorPage() {
-  const [selectedSize, setSelectedSize] = useState("passport");
-  const [selectedBg, setSelectedBg] = useState("orange");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [selectedSize, setSelectedSize] = useState<string>("passport");
+  const [selectedBg, setSelectedBg] = useState<string>("orange");
+
+  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
+  useEffect(() => {
+    const cookies = document.cookie.split("; ");
+    const tokenCookie = cookies.find((row) => row.startsWith("token="));
+    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+    const storedUser = localStorage.getItem("user");
+
+    if (!token || !storedUser) {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie =
+        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      window.location.href = "/login";
+    } else {
+      setIsAuthenticated(true);
+      setLoading(false);
+    }
+  }, []);
+
+  // লোডিং স্পিনার
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-gray-500">
+            যাচাই করা হচ্ছে...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col">
-      {/* ড্যাশবোর্ড নেভবার এখানে যুক্ত করা হলো */}
+      {/* Dashboard Navbar */}
       <DashboardNavbar />
 
       {/* Main Container */}
@@ -41,7 +81,7 @@ export default function AIEditorPage() {
                 <button
                   key={item.id}
                   onClick={() => setSelectedSize(item.id)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-bold transition relative ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-bold transition relative cursor-pointer ${
                     selectedSize === item.id
                       ? "border-orange-500 bg-orange-50/20 text-gray-900 shadow-xs"
                       : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
@@ -81,11 +121,11 @@ export default function AIEditorPage() {
                   color:
                     "bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white text-[10px]",
                 },
-              ].map((bg, idx) => (
+              ].map((bg) => (
                 <button
-                  key={idx}
+                  key={bg.id}
                   onClick={() => setSelectedBg(bg.id)}
-                  className={`h-9 rounded-xl ${bg.color} transition relative shadow-2xs hover:scale-105 flex items-center justify-center`}
+                  className={`h-9 rounded-xl ${bg.color} transition relative shadow-2xs hover:scale-105 flex items-center justify-center cursor-pointer`}
                 >
                   {bg.id === "custom" && <span className="text-xs">🎨</span>}
                   {selectedBg === bg.id && bg.id !== "custom" && (
@@ -111,7 +151,7 @@ export default function AIEditorPage() {
             <div className="grid grid-cols-5 gap-2">
               {[...Array(15)].map((_, i) => (
                 <div
-                  key={i}
+                  key={`cloth-${i}`}
                   className={`h-11 bg-gray-50 border rounded-xl flex items-center justify-center cursor-pointer hover:border-orange-500 transition ${
                     i === 0
                       ? "border-orange-500 bg-orange-50/30"
@@ -149,9 +189,9 @@ export default function AIEditorPage() {
                 { label: "Straighten Head" },
                 { label: "Keep Marks" },
                 { label: "Custom Instruction" },
-              ].map((item, i) => (
+              ].map((item) => (
                 <div
-                  key={i}
+                  key={item.label}
                   className="p-2 bg-gray-50/60 border border-gray-200 rounded-xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer hover:bg-gray-100 transition"
                 >
                   <span className="text-gray-600 text-xs">✨</span>
@@ -180,7 +220,7 @@ export default function AIEditorPage() {
               </p>
             </div>
 
-            <button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+            <button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
               <Upload size={14} /> Upload Photo
             </button>
 
@@ -191,7 +231,7 @@ export default function AIEditorPage() {
 
           {/* Bottom Action Button */}
           <div className="absolute bottom-6">
-            <button className="bg-[#242942] hover:bg-[#2D3352] text-amber-400 border border-gray-700 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+            <button className="bg-[#242942] hover:bg-[#2D3352] text-amber-400 border border-gray-700 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
               👥 Upload 2 separate images
             </button>
           </div>
@@ -212,7 +252,7 @@ export default function AIEditorPage() {
               </div>
             </div>
 
-            <button className="w-full bg-[#181C2E] hover:bg-gray-900 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs">
+            <button className="w-full bg-[#181C2E] hover:bg-gray-900 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer">
               <QrCode size={14} /> Scan
             </button>
           </div>

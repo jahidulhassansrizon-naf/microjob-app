@@ -1,7 +1,7 @@
-// app/sohoj-tools/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
   Search,
@@ -57,6 +57,7 @@ import {
   Scan,
   FileUser,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 
 interface ToolItem {
@@ -579,9 +580,24 @@ const categories = [
 ];
 
 export default function SohojToolsPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
   const [activeTab, setActiveTab] = useState("Free");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    // Auth Protection Check
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      router.push("/login");
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
 
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
@@ -606,6 +622,18 @@ export default function SohojToolsPage() {
         return true;
     }
   });
+
+  // Auth চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন দেখাবে
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
+          <Loader2 size={16} className="animate-spin text-orange-500" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans">

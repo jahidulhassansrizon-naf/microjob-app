@@ -1,4 +1,3 @@
-// app/dashboard/_components/DashboardNavbar.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -80,10 +79,31 @@ export default function DashboardNavbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Logout Handler (কুকি এবং স্টোরেজ সম্পূর্ণ পরিষ্কার করবে)
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/login");
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 🟢 Token Cookie নির্দিষ্টভাবে মুছে ফেলা
+    document.cookie =
+      "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+    // অন্যান্য কুকি মুছে ফেলা
+    document.cookie.split(";").forEach((cookie) => {
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
+      document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    });
+
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   const aiTemplateItems = [
@@ -397,20 +417,14 @@ export default function DashboardNavbar() {
               className="flex items-center gap-1.5 sm:gap-2.5 border border-gray-200 rounded-2xl px-1.5 sm:px-2.5 py-1 hover:bg-gray-50 transition-all text-left"
             >
               <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                {user?.fullName
-                  ? user.fullName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                  : "JH"}
+                {getInitials(user?.fullName)}
               </div>
               <div className="hidden md:flex flex-col leading-tight">
                 <span className="text-xs font-bold text-gray-800 truncate max-w-[120px]">
-                  {user?.fullName || "Jahidul Hassan Srizon"}
+                  {user?.fullName || "User Account"}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">
-                  {user?.phoneNumber || "01783666743"}
+                <span className="text-[10px] text-gray-400 font-medium truncate max-w-[120px]">
+                  {user?.phoneNumber || user?.email || "User"}
                 </span>
               </div>
               <ChevronDown size={14} className="text-gray-400" />
@@ -420,10 +434,10 @@ export default function DashboardNavbar() {
               <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-[100] text-xs">
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="font-bold text-gray-900">
-                    {user?.fullName || "Jahidul Hassan Srizon"}
+                    {user?.fullName || "User Account"}
                   </p>
                   <p className="text-gray-400 truncate">
-                    {user?.phoneNumber || user?.email || "01783666743"}
+                    {user?.phoneNumber || user?.email || "User"}
                   </p>
                 </div>
                 <Link
@@ -447,7 +461,7 @@ export default function DashboardNavbar() {
                 <div className="border-t border-gray-100 my-1"></div>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-semibold transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-semibold transition-colors cursor-pointer"
                 >
                   <LogOut size={14} /> Logout
                 </button>
