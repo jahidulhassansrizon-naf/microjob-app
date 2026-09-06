@@ -1,6 +1,7 @@
 // app/dashboard/_components/DashboardSidebar.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   X,
@@ -24,6 +25,7 @@ import {
   Printer,
   Briefcase,
   Wrench,
+  ChevronDown,
 } from "lucide-react";
 
 interface UserData {
@@ -45,7 +47,13 @@ export default function DashboardSidebar({
   user,
   onLogout,
 }: DashboardSidebarProps) {
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
+
   if (!isOpen) return null;
+
+  const toggleSubMenu = (menu: string) => {
+    setOpenSubMenu(openSubMenu === menu ? null : menu);
+  };
 
   return (
     <div className="fixed inset-0 z-[999] flex justify-start">
@@ -126,7 +134,7 @@ export default function DashboardSidebar({
 
           <hr className="border-gray-100" />
 
-          {/* Features & Tools (সবগুলো লিংক হুবহু যুক্ত করা হলো) */}
+          {/* Features & Tools */}
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
               Features & Tools
@@ -182,19 +190,47 @@ export default function DashboardSidebar({
                 <span>AI Template</span>
               </Link>
 
-              <Link
-                href="/question-papers"
-                onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2.5">
-                  <FileText size={16} className="text-red-500" />
-                  <span>Question Papers</span>
-                </div>
-                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  New
-                </span>
-              </Link>
+              {/* Question Papers Submenu */}
+              <div>
+                <button
+                  onClick={() => toggleSubMenu("question-papers")}
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <FileText size={16} className="text-red-500" />
+                    <span>Question Papers</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                      New
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-gray-400 transition-transform ${
+                        openSubMenu === "question-papers" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
+                {openSubMenu === "question-papers" && (
+                  <div className="ml-7 pl-2 border-l border-gray-200 space-y-1 my-1">
+                    <Link
+                      href="/questions-create/create"
+                      onClick={onClose}
+                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                    >
+                      Create Question
+                    </Link>
+                    <Link
+                      href="/questions-create/manual"
+                      onClick={onClose}
+                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                    >
+                      Manual Question
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               <Link
                 href="/print-media"
@@ -205,19 +241,54 @@ export default function DashboardSidebar({
                 <span>Print Media</span>
               </Link>
 
-              <Link
-                href="/sohoz-tools"
-                onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Wrench size={16} className="text-pink-500" />
-                  <span>SohozTools</span>
-                </div>
-                <span className="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  FREE
-                </span>
-              </Link>
+              {/* 🟢 SohozTools Submenu (Fixed Correct Routes) */}
+              <div>
+                <button
+                  onClick={() => toggleSubMenu("sohoz-tools")}
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Wrench size={16} className="text-pink-500" />
+                    <span>SohozTools</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                      FREE
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-gray-400 transition-transform ${
+                        openSubMenu === "sohoz-tools" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
+                {openSubMenu === "sohoz-tools" && (
+                  <div className="ml-7 pl-2 border-l border-gray-200 space-y-1 my-1">
+                    <Link
+                      href="/sohoj-tools"
+                      onClick={onClose}
+                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                    >
+                      All Free Tools
+                    </Link>
+                    <Link
+                      href="/sohoj-tools?category=pdf"
+                      onClick={onClose}
+                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                    >
+                      PDF Tools
+                    </Link>
+                    <Link
+                      href="/sohoj-tools?category=image"
+                      onClick={onClose}
+                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                    >
+                      Image Tools
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               <Link
                 href="/jobs"
