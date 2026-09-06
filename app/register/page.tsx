@@ -681,7 +681,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // ডাইনামিক ব্যাকএন্ড ইউআরএল সেটআপ
       const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const endpoint = `${API_URL}/api/auth/send-email-otp`;
@@ -723,7 +722,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // ডাইনামিক ব্যাকএন্ড ইউআরএল সেটআপ
       const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -758,20 +756,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white font-sans overflow-x-hidden relative">
-      {/* ---------------- LEFT SIDE: DARK HERO SECTION ---------------- */}
-      <div className="lg:w-1/2 bg-[#222835] min-h-[400px] lg:min-h-screen flex flex-col items-center justify-center p-6 lg:p-8 relative overflow-hidden">
-        <div className="relative w-full max-w-[620px] aspect-square flex items-center justify-center">
+    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
+      {/* ---------------- LEFT SIDE: DARK HERO SECTION (Displays at bottom on mobile) ---------------- */}
+      <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
+        <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
             src="https://app.sohozkaj.com/images/authImage.svg"
             alt="SohozKaj Workflow Illustration"
-            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-105"
+            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-100 lg:scale-105"
           />
         </div>
 
-        <div className="mt-2 text-center w-full max-w-[680px] z-10 px-2">
+        <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
           <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block whitespace-nowrap">
+            <span className="block">
               Create documents, designs, and print media with photo editing, AI
               photo editing, manual editing, and bulk editing -
             </span>
@@ -780,8 +778,8 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ---------------- RIGHT SIDE: REGISTER FORM SECTION ---------------- */}
-      <div className="lg:w-1/2 min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-12 relative bg-white">
+      {/* ---------------- RIGHT SIDE: REGISTER FORM SECTION (Displays at top on mobile) ---------------- */}
+      <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
         <div className="flex justify-between items-center w-full">
           <Link
             href="/"
@@ -835,7 +833,7 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-6 sm:p-8 relative">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8 relative">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF5D00] to-orange-300 rounded-t-2xl" />
 
             {errorMessage && (
@@ -1053,7 +1051,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none"
+                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none cursor-pointer"
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -1086,7 +1084,7 @@ export default function RegisterPage() {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none"
+                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none cursor-pointer"
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={15} />
@@ -1124,7 +1122,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2"
+                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer"
               >
                 Register
               </button>
@@ -1144,7 +1142,8 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-6 right-6 z-50">
+        {/* Floating WhatsApp Support Button */}
+        <div className="fixed bottom-5 right-5 z-50">
           <a
             href="https://wa.me/8801700559595"
             target="_blank"
@@ -1163,7 +1162,7 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsMethodModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -1247,7 +1246,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleSendOtp}
                 disabled={loading}
-                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50"
+                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Sending OTP..." : "Send OTP"}
               </button>
@@ -1262,7 +1261,7 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsOtpModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -1304,7 +1303,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleVerifyAndRegister}
                 disabled={loading}
-                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50"
+                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Verifying..." : "Verify & Complete Registration"}
               </button>
@@ -1312,7 +1311,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleSendOtp}
                 type="button"
-                className="mt-3 text-xs text-gray-500 hover:text-[#FF5D00] font-medium transition-colors"
+                className="mt-3 text-xs text-gray-500 hover:text-[#FF5D00] font-medium transition-colors cursor-pointer"
               >
                 Didn't receive code? Resend OTP
               </button>

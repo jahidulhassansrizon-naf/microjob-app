@@ -100,28 +100,28 @@ export default function ReviewsPage() {
       {/* Navbar */}
 
       {/* Main Review Section */}
-      <main className="flex-grow max-w-[1200px] mx-auto px-6 pt-16 pb-24 w-full flex flex-col items-center">
+      <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-16 sm:pb-24 w-full flex flex-col items-center">
         {/* Heading */}
-        <h1 className="text-4xl md:text-5xl font-black text-center tracking-tight text-gray-900 mb-3">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-center tracking-tight text-gray-900 mb-3">
           What Our{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
             Customers Say
           </span>
         </h1>
 
-        <p className="text-sm md:text-base text-gray-500 text-center max-w-xl mb-12 font-medium">
+        <p className="text-xs sm:text-sm md:text-base text-gray-500 text-center max-w-xl mb-8 sm:mb-12 font-medium leading-relaxed">
           Print shops, digital centers and shop owners across the country share
           their experiences with SohojKaj.
         </p>
 
         {/* 1. Video Thumbnail Reviews Section (8 Cards) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full mb-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 w-full mb-16 sm:mb-24">
           {videoReviewsData.map((item, index) => {
             const itemNumber = index + 1;
             return (
               <div
                 key={itemNumber}
-                className="rounded-[24px] overflow-hidden shadow-lg relative h-[420px] flex flex-col justify-end p-6 text-white group bg-cover bg-center cursor-pointer"
+                className="rounded-3xl sm:rounded-[24px] overflow-hidden shadow-lg relative h-[380px] sm:h-[420px] flex flex-col justify-end p-5 sm:p-6 text-white group bg-cover bg-center cursor-pointer"
                 style={{
                   backgroundImage: `url('/reviews/review-${itemNumber}.jpg')`,
                 }}
@@ -134,7 +134,7 @@ export default function ReviewsPage() {
                   <Star size={12} fill="currentColor" /> 5.0 Rating
                 </div>
 
-                {/* Center White Glassmorphism Play Button (সাদা ব্লার ও শাইনি লুক) */}
+                {/* Center White Glassmorphism Play Button */}
                 <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                   <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] flex items-center justify-center text-white transition-transform duration-300 group-hover:scale-110">
                     <Play
@@ -158,12 +158,12 @@ export default function ReviewsPage() {
         </div>
 
         {/* Divider / Section Header for Text Reviews */}
-        <div className="w-full flex items-center gap-3 mb-8 bg-orange-50 border border-orange-100 p-4 rounded-2xl">
-          <div className="bg-orange-500 text-white p-2 rounded-xl">
+        <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-orange-50 border border-orange-100 p-4 rounded-2xl">
+          <div className="bg-orange-500 text-white p-2 rounded-xl shrink-0">
             <MessageSquareText size={20} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="bg-orange-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-md">
                 Text Reviews
               </span>
@@ -178,17 +178,17 @@ export default function ReviewsPage() {
         </div>
 
         {/* 2. Text Reviews Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mb-16 sm:mb-20">
           {textReviews.map((rev, index) => (
             <div
               key={index}
-              className="bg-white border border-gray-100 rounded-3xl p-7 shadow-sm hover:shadow-md transition flex flex-col justify-between relative group"
+              className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm hover:shadow-md transition flex flex-col justify-between relative group"
             >
               <div>
                 <div className="text-orange-500 mb-4 bg-orange-50 w-10 h-10 rounded-2xl flex items-center justify-center">
                   <Quote size={20} />
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed font-normal mb-8">
+                <p className="text-gray-700 text-xs sm:text-sm leading-relaxed font-normal mb-6 sm:mb-8">
                   &ldquo;{rev.quote}&rdquo;
                 </p>
               </div>
@@ -198,10 +198,10 @@ export default function ReviewsPage() {
                   {rev.name.charAt(0)}
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-900">
                     {rev.name}
                   </h4>
-                  <p className="text-[11px] text-gray-400 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium">
                     {rev.shop}
                   </p>
                 </div>
@@ -211,16 +211,16 @@ export default function ReviewsPage() {
         </div>
 
         {/* 3. Share Your Review Section */}
-        <div className="w-full bg-white border border-gray-100 rounded-[32px] p-8 md:p-12 shadow-sm flex flex-col items-center text-center">
-          <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
+        <div className="w-full bg-white border border-gray-100 rounded-3xl sm:rounded-[32px] p-6 sm:p-8 md:p-12 shadow-sm flex flex-col items-center text-center">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 mb-2">
             Share your review
           </h3>
-          <p className="text-xs md:text-sm text-gray-400 font-semibold mb-10">
+          <p className="text-xs md:text-sm text-gray-400 font-semibold mb-8 sm:mb-10">
             4 simple steps - text or video
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl mb-10 relative">
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-8 sm:mb-10 relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 1
               </div>
@@ -235,7 +235,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 2
               </div>
@@ -250,7 +250,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 3
               </div>
@@ -265,7 +265,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 4
               </div>
@@ -285,14 +285,14 @@ export default function ReviewsPage() {
             href="https://wa.me/your-number"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs md:text-sm px-6 py-3.5 rounded-full flex items-center gap-2 shadow-md transition mb-8"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs md:text-sm px-6 py-3.5 rounded-full flex items-center gap-2 shadow-md transition mb-6 sm:mb-8 text-center"
           >
             <MessageCircle size={18} fill="currentColor" /> Send review on
             WhatsApp
           </a>
 
-          <div className="bg-[#FFF8F0] border border-orange-200/60 rounded-2xl px-6 py-3.5 flex items-center justify-center gap-2 text-xs font-medium text-gray-700 max-w-xl w-full">
-            <span className="text-orange-500">
+          <div className="bg-[#FFF8F0] border border-orange-200/60 rounded-2xl px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs font-medium text-gray-700 max-w-xl w-full text-center sm:text-left">
+            <span className="text-orange-500 shrink-0">
               <Gift size={16} />
             </span>
             <span>

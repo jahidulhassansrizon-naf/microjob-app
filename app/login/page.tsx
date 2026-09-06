@@ -31,7 +31,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // লোকাল এবং লাইভ সার্ভারের জন্য ডায়নামিক ব্যাকএন্ড ইউআরএল সেটআপ
       const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -41,7 +40,7 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          identifier: formData.identifier, // ইমেইল বা ফোন নম্বর সঠিকভাবে পাঠানোর জন্য
+          identifier: formData.identifier,
           password: formData.password,
         }),
       });
@@ -52,12 +51,11 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials!");
       }
 
-      // টোকেন এবং ইউজার ডাটা ব্রাউজারে সেভ করা হচ্ছে
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       alert("Login successful!");
-      router.push("/dashboard"); // সফলভাবে লগইন হলে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট করবে
+      router.push("/dashboard");
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -66,20 +64,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white font-sans overflow-x-hidden relative">
-      {/* ---------------- LEFT SIDE: DARK HERO SECTION (#222835) ---------------- */}
-      <div className="lg:w-1/2 bg-[#222835] min-h-[400px] lg:min-h-screen flex flex-col items-center justify-center p-6 lg:p-8 relative overflow-hidden">
-        <div className="relative w-full max-w-[620px] aspect-square flex items-center justify-center">
+    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
+      {/* ---------------- LEFT SIDE: DARK HERO SECTION (#222835) (Displays at bottom on mobile) ---------------- */}
+      <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
+        <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
             src="https://app.sohozkaj.com/images/authImage.svg"
             alt="SohozKaj Workflow Illustration"
-            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-105"
+            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-100 lg:scale-105"
           />
         </div>
 
-        <div className="mt-2 text-center w-full max-w-[680px] z-10 px-2">
+        <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
           <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block whitespace-nowrap">
+            <span className="block">
               Create documents, designs, and print media with photo editing, AI
               photo editing, manual editing, and bulk editing -
             </span>
@@ -88,8 +86,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ---------------- RIGHT SIDE: LOGIN FORM SECTION ---------------- */}
-      <div className="lg:w-1/2 min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-12 relative bg-white">
+      {/* ---------------- RIGHT SIDE: LOGIN FORM SECTION (Displays at top on mobile) ---------------- */}
+      <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
         <div className="flex justify-between items-center w-full">
           <Link
             href="/"
@@ -143,7 +141,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-6 sm:p-8">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8">
             {errorMessage && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center">
                 {errorMessage}
@@ -227,7 +225,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2"
+                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
@@ -247,7 +245,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-6 right-6 z-50">
+        {/* Floating WhatsApp Support Button */}
+        <div className="fixed bottom-5 right-5 z-50">
           <a
             href="https://wa.me/8801700559595"
             target="_blank"

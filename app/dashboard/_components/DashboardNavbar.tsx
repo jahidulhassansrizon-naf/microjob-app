@@ -128,7 +128,7 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-4">
+      <header className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2 sm:gap-4">
         {/* Left Section: Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
@@ -146,7 +146,7 @@ export default function DashboardNavbar() {
           </Link>
         </div>
 
-        {/* Center Section: Navigation Links Centered */}
+        {/* Center Section: Navigation Links Centered (Desktop Only) */}
         <nav className="hidden lg:flex items-center justify-center flex-1 gap-3 xl:gap-5 text-[13px] font-semibold text-gray-700 mx-auto">
           {/* My Files */}
           <Link
@@ -354,13 +354,13 @@ export default function DashboardNavbar() {
           </button>
         </nav>
 
-        {/* Right Section: Credit Bonus Badge + Search Button + Profile */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Right Section: Credit Bonus Badge + Search Button + Profile + Mobile Menu Button */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Credit Bonus Link */}
           {showCreditBonus && (
             <Link
               href="/profile"
-              className="hidden sm:flex items-center gap-1.5 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-full p-1 pl-2 text-xs transition-all cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-full p-1 pl-2 text-xs transition-all cursor-pointer"
             >
               <span className="w-5 h-5 rounded-full bg-orange-200 text-[#FF5D00] text-[10px] font-bold flex items-center justify-center">
                 16
@@ -394,7 +394,7 @@ export default function DashboardNavbar() {
           <div className="relative z-50">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 border border-gray-200 rounded-2xl px-2.5 py-1 hover:bg-gray-50 transition-all text-left"
+              className="flex items-center gap-1.5 sm:gap-2.5 border border-gray-200 rounded-2xl px-1.5 sm:px-2.5 py-1 hover:bg-gray-50 transition-all text-left"
             >
               <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
                 {user?.fullName
@@ -454,6 +454,15 @@ export default function DashboardNavbar() {
               </div>
             )}
           </div>
+
+          {/* Mobile Menu / Sidebar Trigger Button */}
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer bg-white"
+            aria-label="Open Menu"
+          >
+            <Menu size={18} />
+          </button>
         </div>
       </header>
 
