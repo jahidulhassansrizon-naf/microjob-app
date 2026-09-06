@@ -29,12 +29,11 @@ export default function AiTemplatePage() {
 
   // Auth Protection Logic
   useEffect(() => {
-    // আপনার প্রজেক্টের টোকেন বা কাস্টম অথেনটিকেশন চেক
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
-      router.push("/login"); // লগইন না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
+      router.push("/login");
     } else {
       setIsAuthenticated(true);
     }
@@ -273,7 +272,6 @@ export default function AiTemplatePage() {
     sortOrder,
   ]);
 
-  // অথেনটিকেশন চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন
   if (isAuthenticated === null) {
     return (
       <div
@@ -297,7 +295,7 @@ export default function AiTemplatePage() {
 
       {/* সাব-হেডার অপশন */}
       <div
-        className="border-b border-gray-200/80 px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+        className="border-b border-gray-200/80 px-4 md:px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
         style={{ backgroundColor: "#F8F2EF" }}
       >
         <div>
@@ -307,12 +305,12 @@ export default function AiTemplatePage() {
             same look for you in seconds.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs font-semibold">
-          {/* কম্বাইন্ড টগল বক্স: Newest first & Popular */}
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold w-full lg:w-auto">
+          {/* কম্বাইন্ড টগল বক্স */}
           <div className="flex items-center bg-white border border-gray-200/80 rounded-2xl p-1 shadow-xs">
             <button
               onClick={() => setSelectedSort("Newest first")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition ${
                 selectedSort === "Newest first"
                   ? "bg-[#FF5D00] text-white shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
@@ -322,7 +320,7 @@ export default function AiTemplatePage() {
             </button>
             <button
               onClick={() => setSelectedSort("Popular")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition ${
                 selectedSort === "Popular"
                   ? "bg-[#FF5D00] text-white shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
@@ -342,7 +340,7 @@ export default function AiTemplatePage() {
             onClick={() =>
               setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
             }
-            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-3.5 py-2 rounded-xl shadow-xs transition cursor-pointer"
+            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-3.5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
           >
             <ArrowUpDown size={14} className="text-gray-400" /> Sort:{" "}
             {sortOrder.toUpperCase()}
@@ -353,7 +351,7 @@ export default function AiTemplatePage() {
               showFavoritesOnly
                 ? "border-red-500 text-red-600 bg-red-50/50"
                 : "border-gray-200 hover:border-gray-300 text-gray-700"
-            } px-3.5 py-2 rounded-xl shadow-xs transition cursor-pointer`}
+            } px-3.5 py-2.5 rounded-xl shadow-xs transition cursor-pointer`}
           >
             <Heart
               size={14}
@@ -368,9 +366,9 @@ export default function AiTemplatePage() {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden p-6 gap-6">
-        {/* বাম পাশের ফিল্টার সাইডবার */}
-        <div className="w-80 bg-white border border-gray-200/80 rounded-3xl p-5 flex flex-col gap-6 overflow-y-auto shrink-0 shadow-xs">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 md:p-6 gap-6">
+        {/* বাম পাশের ফিল্টার সাইডবার (মোবাইলে ফুল উইথ, ডেস্কটপে w-80) */}
+        <div className="w-full lg:w-80 bg-white border border-gray-200/80 rounded-3xl p-5 flex flex-col gap-6 overflow-y-auto shrink-0 shadow-xs max-h-none lg:max-h-[calc(100vh-180px)]">
           <div className="flex items-center justify-between pb-2 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={16} className="text-[#FF5D00]" />
@@ -424,7 +422,7 @@ export default function AiTemplatePage() {
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
               Gender
             </h4>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-3 gap-2">
               {[
                 { name: "All", icon: <Users size={14} /> },
                 { name: "Male", icon: <User size={14} /> },
@@ -510,7 +508,7 @@ export default function AiTemplatePage() {
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
               Orientation
             </h4>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
               {["All", "Portrait", "Landscape", "Square"].map((ori, idx) => (
                 <button
                   key={idx}
@@ -645,8 +643,8 @@ export default function AiTemplatePage() {
           </div>
 
           {/* হ্যাশট্যাগ চিপস এবং ডানের SORT ড্রপডাউন মেনু */}
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1 w-full">
               {popularTags.map((tag, idx) => (
                 <button
                   key={idx}
@@ -656,30 +654,36 @@ export default function AiTemplatePage() {
                   {tag}
                 </button>
               ))}
-              <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap pl-2">
-                {filteredTemplates.length} templates found
-              </span>
             </div>
 
-            {/* সর্ট ড্রপডাউন বক্স */}
-            <div className="relative shrink-0">
-              <button
-                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                className="flex items-center gap-2 bg-white border border-gray-200/80 hover:border-gray-300 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 shadow-xs transition cursor-pointer"
-              >
-                <ArrowUpDown size={14} className="text-[#FF5D00]" />
-                <span>Sort</span>
-                <ChevronDown size={14} className="text-gray-400" />
-              </button>
+            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+              <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap">
+                {filteredTemplates.length} templates found
+              </span>
 
-              {sortDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-30 text-xs font-medium text-gray-700">
-                  <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                    <ArrowUpDown size={12} /> Sort By
-                  </div>
-                  <div className="space-y-0.5 mb-2">
-                    {["Popular", "Newest first", "Oldest first", "By name"].map(
-                      (opt, i) => (
+              {/* সর্ট ড্রপডাউন বক্স */}
+              <div className="relative">
+                <button
+                  onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                  className="flex items-center gap-2 bg-white border border-gray-200/80 hover:border-gray-300 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 shadow-xs transition cursor-pointer"
+                >
+                  <ArrowUpDown size={14} className="text-[#FF5D00]" />
+                  <span>Sort</span>
+                  <ChevronDown size={14} className="text-gray-400" />
+                </button>
+
+                {sortDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-30 text-xs font-medium text-gray-700">
+                    <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                      <ArrowUpDown size={12} /> Sort By
+                    </div>
+                    <div className="space-y-0.5 mb-2">
+                      {[
+                        "Popular",
+                        "Newest first",
+                        "Oldest first",
+                        "By name",
+                      ].map((opt, i) => (
                         <button
                           key={i}
                           onClick={() => {
@@ -705,52 +709,52 @@ export default function AiTemplatePage() {
                             {opt}
                           </span>
                         </button>
-                      ),
-                    )}
-                  </div>
+                      ))}
+                    </div>
 
-                  <div className="border-t border-gray-100 my-2"></div>
+                    <div className="border-t border-gray-100 my-2"></div>
 
-                  <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                    <Calendar size={12} /> Date
-                  </div>
-                  <div className="space-y-0.5">
-                    {[
-                      "All time",
-                      "Today",
-                      "Last 3 days",
-                      "Last 7 days",
-                      "Last 30 days",
-                    ].map((dateOpt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setSelectedDate(dateOpt);
-                          setSortDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-orange-50 hover:text-[#FF5D00] text-left transition"
-                      >
-                        <div
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            selectedDate === dateOpt
-                              ? "bg-[#FF5D00]"
-                              : "bg-transparent"
-                          }`}
-                        ></div>
-                        <span
-                          className={
-                            selectedDate === dateOpt
-                              ? "font-bold text-gray-900"
-                              : "text-gray-600"
-                          }
+                    <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                      <Calendar size={12} /> Date
+                    </div>
+                    <div className="space-y-0.5">
+                      {[
+                        "All time",
+                        "Today",
+                        "Last 3 days",
+                        "Last 7 days",
+                        "Last 30 days",
+                      ].map((dateOpt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setSelectedDate(dateOpt);
+                            setSortDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-orange-50 hover:text-[#FF5D00] text-left transition"
                         >
-                          {dateOpt}
-                        </span>
-                      </button>
-                    ))}
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              selectedDate === dateOpt
+                                ? "bg-[#FF5D00]"
+                                : "bg-transparent"
+                            }`}
+                          ></div>
+                          <span
+                            className={
+                              selectedDate === dateOpt
+                                ? "font-bold text-gray-900"
+                                : "text-gray-600"
+                            }
+                          >
+                            {dateOpt}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
@@ -775,7 +779,7 @@ export default function AiTemplatePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredTemplates.map((tpl) => (
                 <div
                   key={tpl.id}

@@ -18,6 +18,12 @@ import {
   MessageCircle,
   Video,
   LogOut,
+  Sparkles,
+  Edit3,
+  Layers,
+  Printer,
+  Briefcase,
+  Wrench,
 } from "lucide-react";
 
 interface UserData {
@@ -120,6 +126,7 @@ export default function DashboardSidebar({
 
           <hr className="border-gray-100" />
 
+          {/* Features & Tools (সবগুলো লিংক হুবহু যুক্ত করা হলো) */}
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
               Features & Tools
@@ -133,6 +140,99 @@ export default function DashboardSidebar({
                 <FileText size={16} className="text-blue-500" />
                 <span>Document Toiri</span>
               </Link>
+
+              <Link
+                href="/ai-editor"
+                onClick={onClose}
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <Sparkles size={16} className="text-orange-500" />
+                <span>AI Editor</span>
+              </Link>
+
+              <Link
+                href="/manual-editor"
+                onClick={onClose}
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <Edit3 size={16} className="text-blue-600" />
+                <span>Manual Editor</span>
+              </Link>
+
+              <Link
+                href="/bulk-photo-edit"
+                onClick={onClose}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Layers size={16} className="text-emerald-600" />
+                  <span>Bulk Photo Edit</span>
+                </div>
+                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                  New
+                </span>
+              </Link>
+
+              <Link
+                href="/ai-template"
+                onClick={onClose}
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <LayoutGrid size={16} className="text-purple-500" />
+                <span>AI Template</span>
+              </Link>
+
+              <Link
+                href="/question-papers"
+                onClick={onClose}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileText size={16} className="text-red-500" />
+                  <span>Question Papers</span>
+                </div>
+                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                  New
+                </span>
+              </Link>
+
+              <Link
+                href="/print-media"
+                onClick={onClose}
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <Printer size={16} className="text-orange-600" />
+                <span>Print Media</span>
+              </Link>
+
+              <Link
+                href="/sohoz-tools"
+                onClick={onClose}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Wrench size={16} className="text-pink-500" />
+                  <span>SohozTools</span>
+                </div>
+                <span className="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                  FREE
+                </span>
+              </Link>
+
+              <Link
+                href="/jobs"
+                onClick={onClose}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Briefcase size={16} className="text-amber-600" />
+                  <span>Jobs</span>
+                </div>
+                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                  New
+                </span>
+              </Link>
+
               <Link
                 href="#"
                 onClick={onClose}

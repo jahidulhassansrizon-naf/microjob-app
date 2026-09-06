@@ -11,21 +11,26 @@ export default function BulkPhotoEditPage() {
 
   // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
   useEffect(() => {
-    const cookies = document.cookie.split("; ");
-    const tokenCookie = cookies.find((row) => row.startsWith("token="));
-    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+    try {
+      const cookies = document.cookie.split("; ");
+      const tokenCookie = cookies.find((row) => row.startsWith("token="));
+      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
 
-    const storedUser = localStorage.getItem("user");
+      const storedUser = localStorage.getItem("user");
 
-    if (!token || !storedUser) {
-      localStorage.clear();
-      sessionStorage.clear();
-      document.cookie =
-        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      if (!token || !storedUser) {
+        localStorage.clear();
+        sessionStorage.clear();
+        document.cookie =
+          "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
 
-      window.location.href = "/login";
-    } else {
-      setIsAuthenticated(true);
+        window.location.href = "/login";
+      } else {
+        setIsAuthenticated(true);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
       setLoading(false);
     }
   }, []);
@@ -85,10 +90,10 @@ export default function BulkPhotoEditPage() {
       <DashboardNavbar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* 1. Left Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col gap-4 overflow-y-auto">
-          <div className="border-2 border-dashed border-gray-200 hover:border-orange-500 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition h-36 bg-orange-50/20">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* 1. Left Sidebar (Hidden or compact on mobile, full sidebar on desktop) */}
+        <div className="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-4 flex flex-row lg:flex-col gap-4 overflow-x-auto lg:overflow-y-auto shrink-0">
+          <div className="border-2 border-dashed border-gray-200 hover:border-orange-500 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition h-32 lg:h-36 w-full bg-orange-50/20">
             <div className="w-8 h-8 rounded-full bg-orange-100 text-[#FF5D00] flex items-center justify-center font-bold mb-1">
               <Plus size={18} />
             </div>
@@ -99,7 +104,7 @@ export default function BulkPhotoEditPage() {
         </div>
 
         {/* 2. Middle Main Upload Zone */}
-        <div className="flex-1 flex items-center justify-center p-8 bg-gray-50/30">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gray-50/30 overflow-y-auto">
           <div className="bg-white border border-gray-200/80 shadow-xs rounded-2xl w-full max-w-md h-[380px] flex flex-col items-center justify-center p-6 text-center relative">
             <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-3 border border-gray-100">
               <Upload size={20} />
@@ -116,14 +121,14 @@ export default function BulkPhotoEditPage() {
               <input type="file" multiple className="hidden" />
             </label>
 
-            <span className="absolute bottom-4 text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded">
+            <span className="absolute bottom-4 text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded hidden sm:inline-block">
               Ctrl+U
             </span>
           </div>
         </div>
 
         {/* 3. Right Style Presets Panel */}
-        <div className="w-80 bg-white border-l border-gray-200 p-4 flex flex-col gap-3 overflow-y-auto">
+        <div className="w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
           <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
             Style presets
           </h4>
@@ -131,7 +136,7 @@ export default function BulkPhotoEditPage() {
             Select one or more images first, then pick a style
           </p>
 
-          <div className="grid grid-cols-2 gap-2.5 mt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 mt-1">
             {stylePresets.map((preset) => (
               <div
                 key={preset.id}
@@ -154,7 +159,7 @@ export default function BulkPhotoEditPage() {
           </div>
 
           {/* Bottom Enhance Button */}
-          <div className="mt-auto pt-4">
+          <div className="mt-4 lg:mt-auto pt-2">
             <button className="w-full bg-[#E5B573] hover:bg-[#d4a563] text-gray-900 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-xs cursor-pointer">
               <Sparkles size={16} /> Enhance {images.length} photos
             </button>

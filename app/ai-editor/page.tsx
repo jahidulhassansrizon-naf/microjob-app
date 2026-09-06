@@ -13,21 +13,26 @@ export default function AIEditorPage() {
 
   // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
   useEffect(() => {
-    const cookies = document.cookie.split("; ");
-    const tokenCookie = cookies.find((row) => row.startsWith("token="));
-    const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+    try {
+      const cookies = document.cookie.split("; ");
+      const tokenCookie = cookies.find((row) => row.startsWith("token="));
+      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
 
-    const storedUser = localStorage.getItem("user");
+      const storedUser = localStorage.getItem("user");
 
-    if (!token || !storedUser) {
-      localStorage.clear();
-      sessionStorage.clear();
-      document.cookie =
-        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      if (!token || !storedUser) {
+        localStorage.clear();
+        sessionStorage.clear();
+        document.cookie =
+          "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
 
-      window.location.href = "/login";
-    } else {
-      setIsAuthenticated(true);
+        window.location.href = "/login";
+      } else {
+        setIsAuthenticated(true);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
       setLoading(false);
     }
   }, []);
@@ -55,8 +60,8 @@ export default function AIEditorPage() {
 
       {/* Main Container */}
       <div className="max-w-[1600px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
-        {/* Left Sidebar: Generation Settings (Span 3) */}
-        <div className="lg:col-span-3 bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-6 shadow-xs overflow-y-auto max-h-[85vh]">
+        {/* Left Sidebar: Generation Settings (Span 3 on Desktop, Full on Mobile) */}
+        <div className="lg:col-span-3 bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-6 shadow-xs overflow-y-auto lg:max-h-[85vh]">
           {/* Header */}
           <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <Sparkles size={18} className="text-orange-500" />
@@ -204,10 +209,10 @@ export default function AIEditorPage() {
           </div>
         </div>
 
-        {/* Center: Workspace / Upload Area (Span 6) */}
-        <div className="lg:col-span-6 bg-[#181C2E] border border-gray-800 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[550px] shadow-lg">
+        {/* Center: Workspace / Upload Area (Span 6 on Desktop, Full on Mobile) */}
+        <div className="lg:col-span-6 bg-[#181C2E] border border-gray-800 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[450px] lg:min-h-[550px] shadow-lg">
           {/* Inner Dotted Box */}
-          <div className="max-w-md w-full border-2 border-dashed border-gray-600/80 rounded-2xl p-10 flex flex-col items-center justify-center text-center gap-4 bg-[#1E2337]/50">
+          <div className="max-w-md w-full border-2 border-dashed border-gray-600/80 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center gap-4 bg-[#1E2337]/50 my-auto">
             <div className="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 border border-gray-700">
               <Upload size={24} className="text-gray-300" />
             </div>
@@ -224,20 +229,20 @@ export default function AIEditorPage() {
               <Upload size={14} /> Upload Photo
             </button>
 
-            <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-mono">
+            <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-mono hidden sm:inline-block">
               Ctrl+U
             </span>
           </div>
 
           {/* Bottom Action Button */}
-          <div className="absolute bottom-6">
-            <button className="bg-[#242942] hover:bg-[#2D3352] text-amber-400 border border-gray-700 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
+          <div className="mt-6 lg:absolute lg:bottom-6">
+            <button className="bg-[#242942] hover:bg-[#2D3352] text-amber-400 border border-gray-700 text-xs font-bold px-4 sm:px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
               👥 Upload 2 separate images
             </button>
           </div>
         </div>
 
-        {/* Right Sidebar: Scan QR Code (Span 3) */}
+        {/* Right Sidebar: Scan QR Code (Span 3 on Desktop, Full on Mobile) */}
         <div className="lg:col-span-3 flex flex-col gap-6">
           <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-4">
             <div className="bg-[#181C2E] text-white p-4 rounded-xl flex items-center justify-between shadow-xs">

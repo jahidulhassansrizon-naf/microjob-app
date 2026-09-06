@@ -83,48 +83,50 @@ export default function PrintMediaPage() {
       {/* ড্যাশবোর্ড নেভবার */}
       <DashboardNavbar />
 
-      <div className="flex-1 p-4 md:p-6 w-full space-y-4">
-        {/* ১. টপ হেডার (Print Media টাইটেল এবং ডানপাশের টপ বাটনগুলো হুবহু রেফারেন্স ছবির মতো) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200/60 pb-3">
+      <div className="flex-1 p-3 sm:p-4 md:p-6 w-full space-y-4">
+        {/* ১. টপ হেডার (Print Media টাইটেল এবং ডানপাশের টপ বাটনগুলো) */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-gray-200/60 pb-3">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Print Media</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+              Print Media
+            </h1>
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Choose a template and customize it on the canvas.
             </p>
           </div>
 
-          {/* টপ রাইট অ্যাকশন বাটন সেকশন */}
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-1 sm:pb-0">
-            {/* ১. প্রথম সিগমেন্টেড পিল (Featured order + Newest first) */}
-            <div className="flex items-center bg-white border border-gray-200/90 rounded-2xl p-1 shadow-xs">
-              <button className="flex items-center gap-1.5 bg-[#E0672A] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs transition">
+          {/* টপ রাইট অ্যাকশন বাটন সেকশন (রেসপন্সিভ স্ক্রোলযোগ্য) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full lg:w-auto no-scrollbar">
+            {/* ১. প্রথম সিগমেন্টেড পিল */}
+            <div className="flex items-center bg-white border border-gray-200/90 rounded-2xl p-1 shadow-xs shrink-0">
+              <button className="flex items-center gap-1.5 bg-[#E0672A] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition">
                 <ArrowUpDown size={13} />
                 <span>Featured order</span>
               </button>
-              <button className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900 text-xs font-bold px-3.5 py-1.5 rounded-xl transition">
+              <button className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl transition">
                 <Clock size={13} className="text-[#E0672A]" />
                 <span>Newest first</span>
               </button>
             </div>
 
             {/* ২. দ্বিতীয় পিল (Sort: ASC) */}
-            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xs transition">
+            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
               <SlidersHorizontal size={13} className="text-[#E0672A]" />
               <span>Sort: ASC</span>
             </button>
 
             {/* ৩. তৃতীয় পিল (My Favorites) */}
-            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xs transition">
+            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
               <Heart size={13} className="text-[#E0672A]" />
               <span>My Favorites</span>
             </button>
           </div>
         </div>
 
-        {/* ২. মূল বডি (সাইডবার এবং মেইন কন্টেন্ট একই উচ্চতা থেকে পাশাপাশি শুরু) */}
+        {/* ২. মূল বডি (সাইডবার এবং মেইন কন্টেন্ট) */}
         <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
           {/* বাম দিকের কলাম: ফিল্টার সাইডবার */}
-          <aside className="w-full lg:w-64 shrink-0 bg-white border border-gray-200/80 p-5 rounded-3xl shadow-xs space-y-6 lg:sticky lg:top-6">
+          <aside className="w-full lg:w-64 shrink-0 bg-white border border-gray-200/80 p-4 sm:p-5 rounded-3xl shadow-xs space-y-5 lg:sticky lg:top-6">
             {/* ফিল্টার হেডার ও রিসেট বাটন */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2 font-black text-xs text-gray-900">
@@ -132,7 +134,7 @@ export default function PrintMediaPage() {
               </div>
               <button
                 onClick={handleResetFilter}
-                className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-[#FF5D00] transition-colors"
+                className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-[#FF5D00] transition-colors cursor-pointer"
               >
                 <RotateCcw size={12} /> Reset
               </button>
@@ -143,7 +145,7 @@ export default function PrintMediaPage() {
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
                 Category
               </p>
-              <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+              <div className="space-y-1 max-h-48 sm:max-h-56 overflow-y-auto pr-1">
                 {categories.map((cat, idx) => {
                   const isSelected = selectedCategory === cat.name;
                   return (
@@ -263,15 +265,15 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            {/* ক্যাটাগরি পিলস + ৮৬ টেমপ্লেট কাউন্ট + সর্ট ড্রপডাউন */}
-            <div className="flex items-center justify-between gap-4 w-full">
+            {/* ক্যাটাগরি পিলস + টেমপ্লেট কাউন্ট + সর্ট ড্রপডাউন */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
               {/* স্ক্রোলযোগ্য ক্যাটাগরি পিলস */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-1">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1 w-full">
                 {categories.map((cat, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedCategory(cat.name)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       selectedCategory === cat.name
                         ? "bg-[#FF5D00] text-white shadow-xs"
                         : "bg-white hover:bg-gray-100 border border-gray-200 text-gray-700"
@@ -283,7 +285,7 @@ export default function PrintMediaPage() {
               </div>
 
               {/* কাউন্ট ও সর্ট বাটন */}
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                 <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                   86 templates found
                 </span>
@@ -291,7 +293,7 @@ export default function PrintMediaPage() {
                 <div className="relative">
                   <button
                     onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 shadow-xs transition"
+                    className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 shadow-xs transition cursor-pointer"
                   >
                     <ArrowUpDown size={12} className="text-gray-500" />
                     <span>Sort</span>
@@ -305,7 +307,7 @@ export default function PrintMediaPage() {
 
                   {/* সর্ট ড্রপডাউন পপআপ */}
                   {isSortDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200/90 rounded-2xl shadow-xl z-50 p-2 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200/90 rounded-2xl shadow-xl z-50 p-2 space-y-3">
                       <div>
                         <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
                           Sort By
@@ -324,7 +326,7 @@ export default function PrintMediaPage() {
                                 setSelectedSort(option);
                                 setIsSortDropdownOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 selectedSort === option
                                   ? "bg-[#FFF4EE] text-[#FF5D00]"
                                   : "text-gray-700 hover:bg-gray-50"
@@ -357,7 +359,7 @@ export default function PrintMediaPage() {
                                 setSelectedDateFilter(timeOption);
                                 setIsSortDropdownOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 selectedDateFilter === timeOption
                                   ? "bg-[#FFF4EE] text-[#FF5D00]"
                                   : "text-gray-700 hover:bg-gray-50"
@@ -377,8 +379,8 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            {/* টেমপ্লেট কার্ড গ্রিড */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pt-1">
+            {/* টেমপ্লেট কার্ড গ্রিড (রেসপন্সিভ কলাম) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pt-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
                 (item) => (
                   <div
