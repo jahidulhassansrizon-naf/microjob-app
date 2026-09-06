@@ -31,13 +31,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      // লোকাল এবং লাইভ সার্ভারের জন্য ডায়নামিক ব্যাকএন্ড ইউআরএল সেটআপ
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phoneNumber: formData.identifier, // ব্যাকএন্ডে phoneNumber ফিল্ড হিসেবে পাঠানো হচ্ছে
+          phoneNumber: formData.identifier, // ব্যাকএন্ডে phoneNumber ফিল্ড হিসেবে পাঠানো হচ্ছে[cite: 2]
           password: formData.password,
         }),
       });
@@ -48,12 +52,12 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials!");
       }
 
-      // টোকেন এবং ইউজার ডাটা ব্রাউজারে সেভ করা হচ্ছে
+      // টোকেন এবং ইউজার ডাটা ব্রাউজারে সেভ করা হচ্ছে[cite: 2]
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       alert("Login successful!");
-      router.push("/dashboard"); // সফলভাবে লগইন হলে সরাসরি নতুন ড্যাশবোর্ডে রিডাইরেক্ট করবে
+      router.push("/dashboard"); // সফলভাবে লগইন হলে সরাসরি নতুন ড্যাশবোর্ডে রিডাইরেক্ট করবে[cite: 2]
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
