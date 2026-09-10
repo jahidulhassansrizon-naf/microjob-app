@@ -12,38 +12,84 @@ import {
   Loader2,
 } from "lucide-react";
 
+export interface PhotoSizeOption {
+  id: string;
+  label: string;
+  tooltip?: string;
+}
+
+export interface VisaSizeOption {
+  label: string;
+}
+
+export interface BgColorOption {
+  type?: string;
+  className?: string;
+}
+
+export interface GenerationSettingsProps {
+  photoSizes?: PhotoSizeOption[];
+  selectedSize?: string;
+  handleSizeClick?: (id: string) => void;
+  showVisaPopup?: boolean;
+  setShowVisaPopup?: (show: boolean) => void;
+  visaSizesList?: VisaSizeOption[];
+  selectedVisaSize?: string;
+  setSelectedVisaSize?: (size: string) => void;
+  setSelectedSize?: (size: string) => void;
+  isDualMode?: boolean;
+  exitDualMode?: () => void;
+  backgroundColors?: BgColorOption[];
+  selectedBg?: number;
+  setSelectedBg?: (bg: number) => void;
+  setShowColorPicker?: React.Dispatch<React.SetStateAction<boolean>>;
+  showColorPicker?: boolean;
+  customBgColor?: string;
+  setCustomBgColor?: (color: string) => void;
+  selectedClothing?: number;
+  setSelectedClothing?: (clothing: number) => void;
+  leftClothing?: number;
+  setLeftClothing?: (clothing: number) => void;
+  rightClothing?: number;
+  setRightClothing?: (clothing: number) => void;
+  colorPickerRef?: React.RefObject<HTMLDivElement | null>;
+  visaPopupRef?: React.RefObject<HTMLDivElement | null>;
+  onGenerate?: () => void;
+  isGenerating?: boolean;
+}
+
 export default function GenerationSettings({
-  photoSizes,
-  selectedSize,
-  handleSizeClick,
-  showVisaPopup,
-  setShowVisaPopup,
-  visaSizesList,
-  selectedVisaSize,
-  setSelectedVisaSize,
-  setSelectedSize,
-  isDualMode,
-  exitDualMode,
-  backgroundColors,
-  selectedBg,
-  setSelectedBg,
-  setShowColorPicker,
-  showColorPicker,
-  customBgColor,
-  setCustomBgColor,
-  selectedClothing,
-  setSelectedClothing,
-  leftClothing,
-  setLeftClothing,
-  rightClothing,
-  setRightClothing,
+  photoSizes = [],
+  selectedSize = "",
+  handleSizeClick = () => {},
+  showVisaPopup = false,
+  setShowVisaPopup = () => {},
+  visaSizesList = [],
+  selectedVisaSize = "",
+  setSelectedVisaSize = () => {},
+  setSelectedSize = () => {},
+  isDualMode = false,
+  exitDualMode = () => {},
+  backgroundColors = [],
+  selectedBg = 0,
+  setSelectedBg = () => {},
+  setShowColorPicker = () => {},
+  showColorPicker = false,
+  customBgColor = "#FFFFFF",
+  setCustomBgColor = () => {},
+  selectedClothing = 0,
+  setSelectedClothing = () => {},
+  leftClothing = 0,
+  setLeftClothing = () => {},
+  rightClothing = 0,
+  setRightClothing = () => {},
   colorPickerRef,
   visaPopupRef,
-  onGenerate,
-  isGenerating,
-}) {
+  onGenerate = () => {},
+  isGenerating = false,
+}: GenerationSettingsProps) {
   return (
-    <div className="w-[320px] bg-white rounded-2xl p-4 shadow-sm overflow-y-auto max-h-[calc(100vh-100px)] flex flex-col justify-between relative">
+    <div className="w-full max-w-full lg:w-[320px] bg-white rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] flex flex-col justify-between relative shrink-0">
       <div>
         <div className="flex items-center justify-between mb-4">
           <span className="font-semibold text-sm text-gray-800 flex items-center gap-2">
@@ -61,7 +107,7 @@ export default function GenerationSettings({
               className="cursor-pointer text-orange-500 hover:rotate-180 transition-transform duration-300"
             />
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
             {photoSizes.map((size) => {
               const isActive = selectedSize === size.id;
               return (
@@ -78,7 +124,7 @@ export default function GenerationSettings({
                   <div className="w-6 h-6 mb-1 rounded bg-gray-100 flex items-center justify-center text-gray-500">
                     <ImageIcon size={14} />
                   </div>
-                  <span>{size.label}</span>
+                  <span className="truncate max-w-full">{size.label}</span>
                   {isActive && (
                     <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
                       <Check size={8} />
@@ -90,11 +136,11 @@ export default function GenerationSettings({
           </div>
 
           {showVisaPopup && (
-            <div className="absolute left-0 top-[85px] w-[300px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
+            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
               <h4 className="text-xs font-semibold text-gray-800 mb-3">
                 Visa Photo Size
               </h4>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {visaSizesList.map((vItem, idx) => (
                   <button
                     key={idx}
@@ -156,7 +202,7 @@ export default function GenerationSettings({
                     setSelectedBg(idx);
                     setShowColorPicker(false);
                   }}
-                  className={`h-9 rounded-xl ${bg.className} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${
+                  className={`h-9 rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${
                     isSelected ? "ring-2 ring-orange-500 ring-offset-2" : ""
                   }`}
                 >
@@ -171,7 +217,7 @@ export default function GenerationSettings({
           </div>
 
           {showColorPicker && (
-            <div className="absolute left-0 top-[90px] w-[260px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
+            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-semibold text-gray-800">
                   Custom Background Color
@@ -302,7 +348,7 @@ export default function GenerationSettings({
               7/22
             </span>
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
             {[
               "Glow & Makeup",
               "Smooth Skin",
