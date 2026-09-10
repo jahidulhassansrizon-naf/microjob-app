@@ -1,13 +1,29 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: "/api/:path*",
-        destination: "http://localhost:5000/api/:path*",
+        protocol: "https",
+        hostname: "fal.media",
       },
-    ];
+      {
+        protocol: "https",
+        hostname: "*.fal.media",
+      },
+      {
+        protocol: "https",
+        hostname: "fal.run",
+      },
+      {
+        protocol: "https",
+        hostname: "image.pollinations.ai",
+      },
+      {
+        protocol: "https",
+        hostname: "replicate.delivery",
+      },
+    ],
   },
 };
 

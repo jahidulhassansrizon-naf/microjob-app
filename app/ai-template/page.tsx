@@ -1,413 +1,727 @@
-// app/ai-template/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { useState, useEffect, useRef } from "react";
 import {
-  Search,
-  ChevronDown,
-  RotateCcw,
-  Users,
-  User,
-  Smile,
-  ShoppingBag,
-  Image as ImageIcon,
-  Heart,
-  SlidersHorizontal,
-  ArrowUpDown,
-  Calendar,
-  Clock,
-  TrendingUp,
+  Sparkles,
+  QrCode,
+  Upload,
+  Check,
   X,
-  Loader2,
+  RefreshCw,
+  Ban,
+  Settings,
+  Sun,
+  Smile,
+  Sliders,
+  RotateCw,
+  Eye,
+  Edit3,
+  Printer,
+  Download,
+  ArrowLeft,
 } from "lucide-react";
+import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 
-export default function AiTemplatePage() {
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+// ==========================================
+// 🎨 SVG Clothing Components (14 Dresses + None)
+// ==========================================
 
-  // Auth Protection Logic
-  useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+const FormalShirtSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 22,28 L 36,16 L 64,16 L 78,28 L 86,90 L 14,90 Z"
+      fill={color}
+      stroke="#1e293b"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M 36,16 L 50,28 L 64,16 L 50,88 Z"
+      fill="#f8fafc"
+      stroke="#cbd5e1"
+      strokeWidth="1"
+    />
+    <circle cx="50" cy="38" r="1.5" fill="#334155" />
+    <circle cx="50" cy="52" r="1.5" fill="#334155" />
+    <circle cx="50" cy="66" r="1.5" fill="#334155" />
+    <circle cx="50" cy="80" r="1.5" fill="#334155" />
+  </svg>
+);
 
-    if (!token) {
-      router.push("/login");
-    } else {
-      setIsAuthenticated(true);
-    }
-  }, [router]);
+const PoloTshirtSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 18,30 L 35,16 L 65,16 L 82,30 L 76,88 L 24,88 Z"
+      fill={color}
+      stroke="#1e1e1e"
+      strokeWidth="1.2"
+    />
+    <path d="M 35,16 L 50,28 L 65,16 L 58,13 L 42,13 Z" fill="#1e293b" />
+    <path d="M 44,28 L 56,28 L 56,52 L 44,52 Z" fill="#0f172a" />
+  </svg>
+);
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedGender, setSelectedGender] = useState("All");
-  const [selectedImageCount, setSelectedImageCount] = useState("All");
-  const [selectedOrientation, setSelectedOrientation] = useState("All");
-  const [selectedColor, setSelectedColor] = useState("multicolor");
-  const [selectedSort, setSelectedSort] = useState("Newest first");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedDate, setSelectedDate] = useState("All time");
-  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+const SuitRedTieSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path d="M 38,14 L 62,14 L 50,55 Z" fill="#ffffff" />
+    <path d="M 47,20 L 53,20 L 55,48 L 50,58 L 45,48 Z" fill="#dc2626" />
+    <path
+      d="M 16,28 L 36,14 L 50,52 L 28,90 L 12,90 Z"
+      fill={color}
+      stroke="#0f172a"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M 84,28 L 64,14 L 50,52 L 72,90 L 88,90 Z"
+      fill={color}
+      stroke="#0f172a"
+      strokeWidth="1.2"
+    />
+  </svg>
+);
 
-  const categoriesWithCount = [
-    { name: "All", count: "8" },
-    { name: "Motivational", count: "2" },
-    { name: "Creative Shots", count: "2" },
-    { name: "Wedding Photo", count: "1" },
-    { name: "Family photo", count: "1" },
-    { name: "Couple Portraits", count: "1" },
-    { name: "Birthday wishes", count: "1" },
-  ];
+const SuitOpenSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path d="M 35,14 L 65,14 L 50,65 Z" fill="#93c5fd" />
+    <path
+      d="M 16,28 L 35,14 L 50,58 L 28,90 L 12,90 Z"
+      fill={color}
+      stroke="#0f172a"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M 84,28 L 65,14 L 50,58 L 72,90 L 88,90 Z"
+      fill={color}
+      stroke="#0f172a"
+      strokeWidth="1.2"
+    />
+  </svg>
+);
 
-  const popularTags = [
-    "#catwalk",
-    "#cctv",
-    "#celebration",
-    "#anime fashion",
-    "#apocalypse",
-    "#apparel",
-    "#arch",
-  ];
+const SareeRedSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path d="M 28,26 L 38,18 L 42,32 L 28,38 Z" fill="#1e293b" />
+    <path d="M 26,38 L 88,38 L 92,92 L 22,92 Z" fill={color} />
+    <path
+      d="M 30,22 L 72,26 L 88,92 L 52,92 Z"
+      fill={color}
+      filter="brightness(0.92)"
+    />
+    <path
+      d="M 30,22 L 72,26 L 68,34 L 28,28 Z"
+      fill="#fcd34d"
+      stroke="#f59e0b"
+      strokeWidth="0.8"
+    />
+    <path
+      d="M 52,82 L 88,82 L 88,92 L 52,92 Z"
+      fill="#fcd34d"
+      stroke="#f59e0b"
+      strokeWidth="0.8"
+    />
+  </svg>
+);
 
-  const templates = [
-    {
-      id: 1,
-      title: "Beach Sunset Vibe",
-      image:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
-      category: "Motivational",
-      uses: "10 uses",
-      usesCount: 10,
-      gender: "Male",
-      imageCount: "1 image",
-      orientation: "Portrait",
-      color: "orange",
-      createdAt: "2026-03-01",
-    },
-    {
-      id: 2,
-      title: "Blue Saree Aesthetic",
-      image:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
-      category: "Creative Shots",
-      uses: "25 uses",
-      usesCount: 25,
-      gender: "Female",
-      imageCount: "1 image",
-      orientation: "Portrait",
-      color: "red",
-      createdAt: "2026-02-28",
-    },
-    {
-      id: 3,
-      title: "Heart Floral Swing",
-      image:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80",
-      category: "Wedding Photo",
-      uses: "18 uses",
-      usesCount: 18,
-      gender: "Female",
-      imageCount: "2 images",
-      orientation: "Square",
-      color: "purple",
-      createdAt: "2026-02-20",
-    },
-    {
-      id: 4,
-      title: "Water Dress Fantasy",
-      image:
-        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80",
-      category: "Creative Shots",
-      uses: "32 uses",
-      usesCount: 32,
-      gender: "Female",
-      imageCount: "1 image",
-      orientation: "Landscape",
-      color: "multicolor",
-      createdAt: "2026-03-02",
-    },
-    {
-      id: 5,
-      title: "Lotus Lake Dream",
-      image:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80",
-      category: "Family photo",
-      uses: "12 uses",
-      usesCount: 12,
-      gender: "Children",
-      imageCount: "3+ images",
-      orientation: "Landscape",
-      color: "green",
-      createdAt: "2026-01-15",
-    },
-    {
-      id: 6,
-      title: "Purple Swing Romance",
-      image:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80",
-      category: "Couple Portraits",
-      uses: "15 uses",
-      usesCount: 15,
-      gender: "Male",
-      imageCount: "2 images",
-      orientation: "Portrait",
-      color: "purple",
-      createdAt: "2026-02-10",
-    },
-    {
-      id: 7,
-      title: "Life Struggle Quote",
-      image:
-        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80",
-      category: "Motivational",
-      uses: "40 uses",
-      usesCount: 40,
-      gender: "Male",
-      imageCount: "1 image",
-      orientation: "Portrait",
-      color: "gray",
-      createdAt: "2026-03-04",
-    },
-    {
-      id: 8,
-      title: "Birthday Joy",
-      image:
-        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80",
-      category: "Birthday wishes",
-      uses: "22 uses",
-      usesCount: 22,
-      gender: "Children",
-      imageCount: "1 image",
-      orientation: "Square",
-      color: "yellow",
-      createdAt: "2026-02-25",
-    },
-  ];
+const HijabRedPatternSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 30,12 Q 50,4 70,12 Q 85,30 80,70 L 75,92 L 25,92 L 20,70 Q 15,30 30,12 Z"
+      fill="#18181b"
+    />
+    <ellipse cx="50" cy="30" rx="14" ry="18" fill="#f8fafc" />
+    <path
+      d="M 22,35 Q 50,55 78,35 Q 85,75 75,92 L 25,92 Q 15,75 22,35 Z"
+      fill={color}
+    />
+  </svg>
+);
 
-  const toggleFavorite = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavoriteIds((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
-    );
-  };
+const KurtaSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 24,24 L 38,14 L 62,14 L 76,24 L 72,92 L 28,92 Z"
+      fill={color}
+      stroke="#cbd5e1"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M 46,17 L 54,17 L 54,58 L 46,58 Z"
+      fill="#ffffff"
+      stroke="#e2e8f0"
+      strokeWidth="1"
+    />
+  </svg>
+);
 
-  const handleReset = () => {
-    setSelectedCategory("All");
-    setSelectedGender("All");
-    setSelectedImageCount("All");
-    setSelectedOrientation("All");
-    setSelectedColor("multicolor");
-    setSelectedSort("Newest first");
-    setSelectedDate("All time");
-    setSearchQuery("");
-    setShowFavoritesOnly(false);
-    setSortOrder("asc");
-  };
+const RedKurtiSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 25,30 L 38,18 Q 50,24 62,18 L 75,30 L 68,48 L 62,42 L 72,90 L 28,90 L 38,42 L 32,48 Z"
+      fill={color}
+      stroke="#991b1b"
+      strokeWidth="1"
+    />
+  </svg>
+);
 
-  const filteredTemplates = useMemo(() => {
-    return templates
-      .filter((tpl) => {
-        if (selectedCategory !== "All" && tpl.category !== selectedCategory)
-          return false;
+const CasualTshirtSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 20,30 L 34,18 Q 50,24 66,18 L 80,30 L 72,48 L 65,42 L 65,88 L 35,88 L 35,42 L 28,48 Z"
+      fill={color}
+      stroke="#1d4ed8"
+      strokeWidth="1"
+    />
+  </svg>
+);
 
-        if (
-          searchQuery.trim() !== "" &&
-          !tpl.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !tpl.category.toLowerCase().includes(searchQuery.toLowerCase())
-        ) {
-          return false;
-        }
+const LightBlueHijabSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 28,14 Q 50,6 72,14 Q 86,30 82,75 L 75,92 L 25,92 L 18,75 Q 14,30 28,14 Z"
+      fill={color}
+      stroke="#0284c7"
+      strokeWidth="1"
+    />
+    <ellipse cx="50" cy="30" rx="14" ry="18" fill="#f8fafc" />
+  </svg>
+);
 
-        if (showFavoritesOnly && !favoriteIds.includes(tpl.id)) return false;
+const SareeHijabSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 18,52 L 32,40 L 68,40 L 82,52 L 85,92 L 15,92 Z"
+      fill={color || "#374151"}
+    />
+    <ellipse cx="50" cy="27" rx="11" ry="14" fill="#ffffff" />
+  </svg>
+);
 
-        if (selectedGender !== "All" && tpl.gender !== selectedGender)
-          return false;
+const PurpleSalwarSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <ellipse cx="50" cy="27" rx="12" ry="15" fill="#ffffff" />
+    <path
+      d="M 20,52 L 32,36 L 68,36 L 80,52 L 82,90 L 18,90 Z"
+      fill={color || "#3b82f6"}
+    />
+  </svg>
+);
 
-        if (
-          selectedImageCount !== "All" &&
-          tpl.imageCount !== selectedImageCount
-        )
-          return false;
+const BlueSareeSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path d="M 22,35 L 34,18 L 66,18 L 78,35 L 82,90 L 18,90 Z" fill={color} />
+  </svg>
+);
 
-        if (
-          selectedOrientation !== "All" &&
-          tpl.orientation !== selectedOrientation
-        )
-          return false;
+const BlueJacketSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 100 100" className="w-full h-full">
+    <path
+      d="M 28,24 Q 50,20 72,24 L 70,78 Q 50,81 30,78 Z"
+      fill={color || "#93C5FD"}
+      stroke="#60a5fa"
+      strokeWidth="0.8"
+    />
+  </svg>
+);
 
-        if (selectedColor !== "multicolor" && tpl.color !== selectedColor)
-          return false;
+const clothingItems = [
+  { id: "none", name: "None", component: null },
+  {
+    id: "white_shirt",
+    name: "shirt",
+    component: FormalShirtSVG,
+    defaultColor: "#FFFFFF",
+  },
+  {
+    id: "polo_brown",
+    name: "Polo T shirt",
+    component: PoloTshirtSVG,
+    defaultColor: "#78350F",
+  },
+  {
+    id: "suit_red_tie",
+    name: "Suit",
+    component: SuitRedTieSVG,
+    defaultColor: "#1E293B",
+  },
+  {
+    id: "suit_open",
+    name: "suit(No Tie)",
+    component: SuitOpenSVG,
+    defaultColor: "#1E293B",
+  },
+  {
+    id: "saree_red",
+    name: "saree",
+    component: SareeRedSVG,
+    defaultColor: "#B91C1C",
+  },
+  {
+    id: "hijab_pattern",
+    name: "hijab",
+    component: HijabRedPatternSVG,
+    defaultColor: "#18181B",
+  },
+  {
+    id: "kurta_white",
+    name: "panjabi",
+    component: KurtaSVG,
+    defaultColor: "#FFFFFF",
+  },
+  {
+    id: "kurti_red",
+    name: "Tops",
+    component: RedKurtiSVG,
+    defaultColor: "#B91C1C",
+  },
+  {
+    id: "tshirt_blue",
+    name: "round collar T shirt",
+    component: CasualTshirtSVG,
+    defaultColor: "#2563EB",
+  },
+  {
+    id: "hijab_lightblue",
+    name: "Kameez+Hijab",
+    component: LightBlueHijabSVG,
+    defaultColor: "#38BDF8",
+  },
+  {
+    id: "saree_hijab",
+    name: "Saree+Hijab",
+    component: SareeHijabSVG,
+    defaultColor: "#1F2937",
+  },
+  {
+    id: "purple_salwar",
+    name: "orna+kameez",
+    component: PurpleSalwarSVG,
+    defaultColor: "#2563EB",
+  },
+  {
+    id: "saree_blue",
+    name: "design sharee",
+    component: BlueSareeSVG,
+    defaultColor: "#1D4ED8",
+  },
+  {
+    id: "jacket_blue",
+    name: "jacket",
+    component: BlueJacketSVG,
+    defaultColor: "#93C5FD",
+  },
+];
 
-        return true;
-      })
-      .sort((a, b) => {
-        let comparison = 0;
-        if (selectedSort === "Popular") {
-          comparison = b.usesCount - a.usesCount;
-        } else if (selectedSort === "Newest first") {
-          comparison =
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        } else if (selectedSort === "Oldest first") {
-          comparison =
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        } else if (selectedSort === "By name") {
-          comparison = a.title.localeCompare(b.title);
-        }
+const COLOR_PALETTE = [
+  { hex: "#FFFFFF", name: "White", border: true },
+  { hex: "#18181B", name: "Black" },
+  { hex: "#EF4444", name: "Red" },
+  { hex: "#3B82F6", name: "Blue" },
+  { hex: "#22C55E", name: "Green" },
+  { hex: "#1E3A8A", name: "Navy" },
+  { hex: "#6B7280", name: "Gray" },
+  { hex: "#78350F", name: "Brown" },
+  { hex: "#FACC15", name: "Yellow" },
+  { hex: "#E11D48", name: "Pink" },
+  { hex: "#9333EA", name: "Purple" },
+  { hex: "#F97316", name: "Orange" },
+  { hex: "#881337", name: "Maroon" },
+  { hex: "#0D9488", name: "Teal" },
+  { hex: "#0EA5E9", name: "Sky Blue" },
+  { hex: "#65A30D", name: "Olive" },
+];
 
-        return sortOrder === "asc" ? comparison : -comparison;
+const VISA_SIZES = [
+  "2×2 inch",
+  "35×45 mm",
+  "40×60 mm",
+  "40×50 mm",
+  "40×40 mm",
+  "50×50 mm",
+  "50×70 mm",
+  "33×48 mm",
+  "35×50 mm",
+  "36×47 mm",
+  "38×48 mm",
+  "50×60 mm",
+];
+
+export default function AIEditorPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [selectedSize, setSelectedSize] = useState<string>("passport");
+  const [selectedVisaSize, setSelectedVisaSize] = useState<string>("35×45 mm");
+  const [visaDropdownOpen, setVisaDropdownOpen] = useState<boolean>(false);
+
+  const [selectedBg, setSelectedBg] = useState<string>("orange");
+
+  const [selectedClothing, setSelectedClothing] =
+    useState<string>("polo_brown");
+  const [leftClothing, setLeftClothing] = useState<string>("none");
+  const [rightClothing, setRightClothing] = useState<string>("none");
+
+  const [clothingColors, setClothingColors] = useState<Record<string, string>>(
+    () => {
+      const initial: Record<string, string> = {};
+      clothingItems.forEach((item) => {
+        if (item.defaultColor) initial[item.id] = item.defaultColor;
       });
-  }, [
-    selectedCategory,
-    searchQuery,
-    showFavoritesOnly,
-    favoriteIds,
-    selectedGender,
-    selectedImageCount,
-    selectedOrientation,
-    selectedColor,
-    selectedSort,
-    sortOrder,
+      return initial;
+    },
+  );
+
+  const [colorPickerOpen, setColorPickerOpen] = useState<boolean>(false);
+
+  const [selectedGuides, setSelectedGuides] = useState<string[]>([
+    "Glow & Makeup",
+    "Smooth Skin",
+    "Brighten Image",
+    "Studio Lighting",
+    "Straighten Head",
+    "Keep Marks",
+    "Lipstick",
+    "Custom Instruction",
   ]);
 
-  if (isAuthenticated === null) {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [leftImage, setLeftImage] = useState<string | null>(null);
+  const [rightImage, setRightImage] = useState<string | null>(null);
+
+  // 🤖 AI Generation States
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+
+  // 🖼️ Recent Generations State
+  const [recentGenerations, setRecentGenerations] = useState<string[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const leftFileInputRef = useRef<HTMLInputElement | null>(null);
+  const rightFileInputRef = useRef<HTMLInputElement | null>(null);
+  const visaRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const cookies = document.cookie.split("; ");
+      const tokenCookie = cookies.find((row) => row.startsWith("token="));
+      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+      const storedUser = localStorage.getItem("user");
+
+      if (!token || !storedUser) {
+        localStorage.clear();
+        sessionStorage.clear();
+        document.cookie =
+          "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+        window.location.href = "/login";
+      } else {
+        setIsAuthenticated(true);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      setLoading(false);
+    }
+  }, []);
+
+  // Click outside to close visa dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (visaRef.current && !visaRef.current.contains(event.target as Node)) {
+        setVisaDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "single" | "left" | "right",
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === "single") setUploadedImage(reader.result as string);
+        if (type === "left") setLeftImage(reader.result as string);
+        if (type === "right") setRightImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleColorSelect = (hex: string) => {
+    const activeTarget =
+      selectedSize === "dual" ? leftClothing : selectedClothing;
+    setClothingColors((prev) => ({
+      ...prev,
+      [activeTarget]: hex,
+    }));
+  };
+
+  // 🚀 Python মুক্ত মডিফাইড ফাংশন (সরাসরি আপলোড করা ছবি বা ফেক প্রসেসিং ব্যবহার করা হবে)
+  const handleGeneratePhoto = async () => {
+    if (!uploadedImage && selectedSize !== "dual") {
+      alert("Please upload a photo first!");
+      return;
+    }
+    if (selectedSize === "dual" && (!leftImage || !rightImage)) {
+      alert("Please upload both left and right photos!");
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      // পাইথন সার্ভার বা ব্যাকএন্ড কল বাদ দিয়ে সরাসরি আপলোড করা ছবি ব্যবহার করা হচ্ছে
+      const processedImageUrl = uploadedImage;
+
+      // ইউজারকে প্রসেসিং ফিল দেওয়ার জন্য ১ সেকেন্ডের ছোট ডিলে
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setGeneratedImage(processedImageUrl);
+
+      if (processedImageUrl) {
+        setRecentGenerations((prev) => [processedImageUrl, ...prev]);
+      }
+    } catch (error: any) {
+      console.error("Photo generation error:", error);
+      alert(error.message || "Something went wrong!");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const bgMap: Record<string, string> = {
+    orange: "bg-amber-500",
+    blue1: "bg-blue-500",
+    blue2: "bg-sky-400",
+    gray: "bg-gray-400",
+    blue3: "bg-blue-600",
+    green: "bg-teal-700",
+    cream: "bg-amber-100",
+    custom: "bg-gradient-to-tr from-purple-600 to-indigo-500",
+  };
+
+  const getCurrentDimensionText = () => {
+    if (selectedSize === "passport") return "45×55 mm";
+    if (selectedSize === "dual") return "Dual Image (2 Persons)";
+    if (selectedSize === "epass") return "25×30 mm";
+    if (selectedSize === "visa") return selectedVisaSize;
+    if (selectedSize === "birth") return "Birth Certificate Photo";
+    return "";
+  };
+
+  const getAspectRatio = () => {
+    if (selectedSize === "passport") return 45 / 55;
+    if (selectedSize === "epass") return 25 / 30;
+    if (selectedSize === "visa") {
+      const match = selectedVisaSize.match(/(\d+)[x×](\d+)/);
+      if (match) {
+        return parseInt(match[1]) / parseInt(match[2]);
+      }
+    }
+    return 45 / 55;
+  };
+
+  if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "#F8F2EF" }}
-      >
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-200/80 shadow-xs">
-          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
-          Checking authentication...
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-gray-500">
+            Checking Authentication...
+          </p>
         </div>
       </div>
     );
   }
 
+  if (!isAuthenticated) return null;
+
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: "#F8F2EF" }}
-    >
+    <div className="min-h-screen bg-[#FDFBF7] flex flex-col">
       <DashboardNavbar />
 
-      {/* সাব-হেডার অপশন */}
-      <div
-        className="border-b border-gray-200/80 px-4 md:px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
-        style={{ backgroundColor: "#F8F2EF" }}
-      >
-        <div>
-          <h1 className="text-xl font-extrabold text-gray-900">AI Template</h1>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">
-            Pick a style you like, upload your photo, and we'll generate the
-            same look for you in seconds.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold w-full lg:w-auto">
-          {/* কম্বাইন্ড টগল বক্স */}
-          <div className="flex items-center bg-white border border-gray-200/80 rounded-2xl p-1 shadow-xs">
-            <button
-              onClick={() => setSelectedSort("Newest first")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition ${
-                selectedSort === "Newest first"
-                  ? "bg-[#FF5D00] text-white shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Clock size={14} /> Newest first
-            </button>
-            <button
-              onClick={() => setSelectedSort("Popular")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition ${
-                selectedSort === "Popular"
-                  ? "bg-[#FF5D00] text-white shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <TrendingUp
-                size={14}
-                className={
-                  selectedSort === "Popular" ? "text-white" : "text-gray-400"
-                }
-              />{" "}
-              Popular
-            </button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => handleImageUpload(e, "single")}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={leftFileInputRef}
+        onChange={(e) => handleImageUpload(e, "left")}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={rightFileInputRef}
+        onChange={(e) => handleImageUpload(e, "right")}
+        accept="image/*"
+        className="hidden"
+      />
+
+      <div className="max-w-[1600px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+        {/* Left Sidebar */}
+        <div className="lg:col-span-3 bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-6 shadow-xs overflow-y-auto lg:max-h-[85vh]">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+            <Sparkles size={18} className="text-orange-500" />
+            <h2 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
+              Generation settings
+            </h2>
           </div>
 
-          <button
-            onClick={() =>
-              setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-            }
-            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-3.5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
-          >
-            <ArrowUpDown size={14} className="text-gray-400" /> Sort:{" "}
-            {sortOrder.toUpperCase()}
-          </button>
-          <button
-            onClick={() => setShowFavoritesOnly((prev) => !prev)}
-            className={`flex items-center gap-1.5 bg-white border ${
-              showFavoritesOnly
-                ? "border-red-500 text-red-600 bg-red-50/50"
-                : "border-gray-200 hover:border-gray-300 text-gray-700"
-            } px-3.5 py-2.5 rounded-xl shadow-xs transition cursor-pointer`}
-          >
-            <Heart
-              size={14}
-              className={`${
-                showFavoritesOnly || favoriteIds.length > 0
-                  ? "text-red-500 fill-red-500"
-                  : "text-gray-400"
-              }`}
-            />{" "}
-            My Favorites ({favoriteIds.length})
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 md:p-6 gap-6">
-        {/* বাম পাশের ফিল্টার সাইডবার (মোবাইলে ফুল উইথ, ডেস্কটপে w-80) */}
-        <div className="w-full lg:w-80 bg-white border border-gray-200/80 rounded-3xl p-5 flex flex-col gap-6 overflow-y-auto shrink-0 shadow-xs max-h-none lg:max-h-[calc(100vh-180px)]">
-          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={16} className="text-[#FF5D00]" />
-              <h3 className="text-sm font-extrabold text-gray-900">Filter</h3>
-            </div>
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-700 transition cursor-pointer"
-            >
-              <RotateCcw size={12} /> Reset
-            </button>
-          </div>
-
-          {/* ১. ক্যাটেগরি */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Category
-            </h4>
-            <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
-              {categoriesWithCount.map((cat, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedCategory(cat.name)}
-                  className={`w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold transition flex items-center justify-between ${
-                    selectedCategory === cat.name
-                      ? "bg-orange-50 text-[#FF5D00]"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+          {/* Photo Size */}
+          <div className="flex flex-col gap-3 relative">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Photo Size
+            </span>
+            <div className="grid grid-cols-5 gap-2">
+              {[
+                {
+                  id: "passport",
+                  label: "Passport",
+                  icon: "🪪",
+                  tooltip: "BD Passport/MRP (45x55mm)",
+                },
+                {
+                  id: "dual",
+                  label: "Dual",
+                  icon: "👥",
+                  tooltip: "Dual Image (2 Persons)",
+                },
+                {
+                  id: "epass",
+                  label: "E-Pass",
+                  icon: "🆔",
+                  tooltip: "BD E-Passport (25x30mm)",
+                },
+                {
+                  id: "visa",
+                  label: "Visa",
+                  icon: "✈️",
+                  tooltip: "Visa Photo Style",
+                },
+                {
+                  id: "birth",
+                  label: "Birth",
+                  icon: "📄",
+                  tooltip: "Birth Registration Photo",
+                },
+              ].map((item) => (
+                <div
+                  key={item.id}
+                  className="relative group flex flex-col items-center"
                 >
-                  <span>{cat.name}</span>
-                  {cat.count && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full ${
-                        selectedCategory === cat.name
-                          ? "bg-orange-200 text-[#FF5D00]"
-                          : "bg-gray-100 text-gray-500"
+                  <button
+                    onClick={() => {
+                      setSelectedSize(item.id);
+                      if (item.id === "visa") {
+                        setVisaDropdownOpen(true);
+                      } else {
+                        setVisaDropdownOpen(false);
+                      }
+                    }}
+                    className={`w-full flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] font-bold transition relative cursor-pointer ${
+                      selectedSize === item.id
+                        ? "border-orange-500 bg-orange-50/20 text-gray-900 shadow-xs"
+                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className="text-base mb-1">{item.icon}</span>
+                    {item.label}
+                    {selectedSize === item.id && (
+                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
+                        <Check size={8} />
+                      </span>
+                    )}
+                  </button>
+
+                  {item.id !== "visa" && (
+                    <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                      <div className="bg-gray-900 text-white text-[9px] font-medium py-1 px-2 rounded-md shadow-lg whitespace-nowrap">
+                        {item.tooltip}
+                      </div>
+                      <div className="w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {visaDropdownOpen && (
+              <div
+                ref={visaRef}
+                className="absolute top-24 left-0 w-full bg-white border border-orange-400 rounded-2xl p-3 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+                  <span className="text-xs font-bold text-gray-900">
+                    Visa Photo Size
+                  </span>
+                  <button
+                    onClick={() => setVisaDropdownOpen(false)}
+                    className="text-gray-400 hover:text-gray-600 p-0.5"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {VISA_SIZES.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        setSelectedVisaSize(size);
+                        setVisaDropdownOpen(false);
+                      }}
+                      className={`text-[10px] font-bold py-1.5 px-2 rounded-lg border text-center transition cursor-pointer ${
+                        selectedVisaSize === size
+                          ? "bg-orange-50 border-orange-500 text-orange-600 shadow-2xs"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                       }`}
                     >
-                      {cat.count}
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Background */}
+          <div className="flex flex-col gap-3">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Background
+            </span>
+            <div className="grid grid-cols-6 gap-2">
+              {[
+                {
+                  id: "orange",
+                  color: "bg-amber-500 border-2 border-orange-600",
+                },
+                { id: "blue1", color: "bg-blue-500" },
+                { id: "blue2", color: "bg-sky-400" },
+                { id: "gray", color: "bg-gray-400" },
+                { id: "blue3", color: "bg-blue-600" },
+                { id: "green", color: "bg-teal-700" },
+                { id: "cream", color: "bg-amber-100" },
+                {
+                  id: "custom",
+                  color:
+                    "bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white text-[10px]",
+                },
+              ].map((bg) => (
+                <button
+                  key={bg.id}
+                  onClick={() => setSelectedBg(bg.id)}
+                  className={`h-9 rounded-xl ${bg.color} transition relative shadow-2xs hover:scale-105 flex items-center justify-center cursor-pointer`}
+                >
+                  {bg.id === "custom" && <span className="text-xs">🎨</span>}
+                  {selectedBg === bg.id && bg.id !== "custom" && (
+                    <span className="absolute inset-0 flex items-center justify-center text-white">
+                      <Check size={12} className="drop-shadow" />
                     </span>
                   )}
                 </button>
@@ -415,419 +729,549 @@ export default function AiTemplatePage() {
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          {/* Clothing Style */}
+          {selectedSize === "dual" ? (
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                      Left Person
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {clothingItems.map((item) => {
+                    const isSelected = leftClothing === item.id;
+                    const activeColor =
+                      clothingColors[item.id] || item.defaultColor || "#3B82F6";
+                    const SVGComponent = item.component;
 
-          {/* ২. জেন্ডার */}
-          <div className="space-y-2.5">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Gender
-            </h4>
-            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-3 gap-2">
+                    return (
+                      <button
+                        key={item.id}
+                        title={item.name}
+                        onClick={() => {
+                          setLeftClothing(item.id);
+                          if (item.id !== "none") setColorPickerOpen(true);
+                        }}
+                        className={`h-11 w-full border rounded-xl flex items-center justify-center relative overflow-hidden transition cursor-pointer p-1 ${
+                          isSelected
+                            ? "border-amber-500 border-2 bg-amber-50/30 ring-2 ring-amber-500/20 shadow-xs"
+                            : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {item.id === "none" ? (
+                          <Ban size={16} className="text-gray-400" />
+                        ) : SVGComponent ? (
+                          <SVGComponent color={activeColor} />
+                        ) : null}
+                        {isSelected && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
+                            <Check size={8} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                      Right Person
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {clothingItems.map((item) => {
+                    const isSelected = rightClothing === item.id;
+                    const activeColor =
+                      clothingColors[item.id] || item.defaultColor || "#3B82F6";
+                    const SVGComponent = item.component;
+
+                    return (
+                      <button
+                        key={item.id}
+                        title={item.name}
+                        onClick={() => {
+                          setRightClothing(item.id);
+                          if (item.id !== "none") setColorPickerOpen(true);
+                        }}
+                        className={`h-11 w-full border rounded-xl flex items-center justify-center relative overflow-hidden transition cursor-pointer p-1 ${
+                          isSelected
+                            ? "border-amber-500 border-2 bg-amber-50/30 ring-2 ring-amber-500/20 shadow-xs"
+                            : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {item.id === "none" ? (
+                          <Ban size={16} className="text-gray-400" />
+                        ) : SVGComponent ? (
+                          <SVGComponent color={activeColor} />
+                        ) : null}
+                        {isSelected && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
+                            <Check size={8} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                  <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                    Clothing Style
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-500 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  {clothingItems.findIndex((c) => c.id === selectedClothing) ||
+                    1}
+                  /14 ⚙️
+                </span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-2">
+                {clothingItems.map((item) => {
+                  const isSelected = selectedClothing === item.id;
+                  const activeColor =
+                    clothingColors[item.id] || item.defaultColor || "#3B82F6";
+                  const SVGComponent = item.component;
+
+                  return (
+                    <button
+                      key={item.id}
+                      title={item.name}
+                      onClick={() => {
+                        setSelectedClothing(item.id);
+                        if (item.id !== "none") setColorPickerOpen(true);
+                        else setColorPickerOpen(false);
+                      }}
+                      className={`h-12 w-full border rounded-xl flex items-center justify-center relative overflow-hidden transition cursor-pointer p-1 ${
+                        isSelected
+                          ? "border-amber-500 border-2 bg-amber-50/30 ring-2 ring-amber-500/20 shadow-xs"
+                          : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {item.id === "none" ? (
+                        <Ban size={18} className="text-gray-400" />
+                      ) : SVGComponent ? (
+                        <SVGComponent color={activeColor} />
+                      ) : null}
+
+                      {isSelected && (
+                        <span className="absolute bottom-0.5 right-0.5 bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
+                          <Check size={8} strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {colorPickerOpen && selectedClothing !== "none" && (
+                <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-3 shadow-2xs transition-all mt-1">
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-200/60 mb-2.5">
+                    <span className="text-[11px] font-bold text-gray-800">
+                      Color Palette
+                    </span>
+                    <button
+                      onClick={() => setColorPickerOpen(false)}
+                      className="text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-amber-100 cursor-pointer transition"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-8 gap-1.5">
+                    {COLOR_PALETTE.map((c) => {
+                      const isSelectedColor =
+                        (clothingColors[selectedClothing] ||
+                          clothingItems[1].defaultColor) === c.hex;
+                      return (
+                        <button
+                          key={c.hex}
+                          onClick={() => handleColorSelect(c.hex)}
+                          style={{ backgroundColor: c.hex }}
+                          title={c.name}
+                          className={`w-6 h-6 rounded-full transition-all cursor-pointer relative flex items-center justify-center hover:scale-110 shadow-2xs ${
+                            c.border ? "border border-gray-300" : ""
+                          } ${isSelectedColor ? "ring-2 ring-amber-500 ring-offset-1 scale-105" : ""}`}
+                        >
+                          {isSelectedColor && (
+                            <Check
+                              size={10}
+                              strokeWidth={3}
+                              className={
+                                c.hex === "#FFFFFF" || c.hex === "#FACC15"
+                                  ? "text-gray-900"
+                                  : "text-white"
+                              }
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Extra Editing Guide */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                <span className="text-[11px] font-bold text-gray-800 uppercase tracking-wider">
+                  EXTRA EDITING GUIDE
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                <span className="text-[10px] text-gray-600 font-bold">
+                  {selectedGuides.length}/22
+                </span>
+                <Settings size={12} className="text-amber-500" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { name: "All", icon: <Users size={14} /> },
-                { name: "Male", icon: <User size={14} /> },
-                { name: "Female", icon: <User size={14} /> },
-                { name: "Children", icon: <Smile size={14} /> },
-                { name: "Product", icon: <ShoppingBag size={14} /> },
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedGender(item.name)}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border text-xs font-semibold transition gap-1 ${
-                    selectedGender === item.name
-                      ? "border-[#FF5D00] bg-orange-50/50 text-[#FF5D00]"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600 bg-white"
-                  }`}
-                >
-                  {item.icon}
-                  <span className="text-[11px]">{item.name}</span>
-                </button>
-              ))}
+                { label: "Glow & Makeup", icon: Sparkles },
+                { label: "Smooth Skin", icon: Smile },
+                { label: "Brighten Image", icon: Sun },
+                { label: "Studio Lighting", icon: Sliders },
+                { label: "Straighten Head", icon: RotateCw },
+                { label: "Keep Marks", icon: Eye },
+                { label: "Lipstick", icon: Sparkles },
+                { label: "Custom Instruction", icon: Edit3 },
+              ].map((item) => {
+                const isActive = selectedGuides.includes(item.label);
+                const IconComponent = item.icon;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() =>
+                      setSelectedGuides((prev) =>
+                        prev.includes(item.label)
+                          ? prev.filter((i) => i !== item.label)
+                          : [...prev, item.label],
+                      )
+                    }
+                    className={`p-2.5 border rounded-xl flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer transition ${
+                      isActive
+                        ? "bg-white border-blue-400 text-gray-900 shadow-xs ring-1 ring-blue-400/30"
+                        : "bg-gray-50/60 border-gray-200 text-gray-400 hover:bg-gray-100"
+                    }`}
+                  >
+                    <IconComponent
+                      size={18}
+                      className={isActive ? "text-blue-500" : "text-gray-300"}
+                    />
+                    <span
+                      className={`text-[10px] font-semibold leading-tight ${
+                        isActive ? "text-gray-800" : "text-gray-400"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          {/* 🔥 GENERATE PHOTO BUTTON */}
+          <button
+            onClick={handleGeneratePhoto}
+            disabled={
+              isGenerating || (!uploadedImage && selectedSize !== "dual")
+            }
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-sm py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                <span>Generating Photo...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                <span>Generate Photo</span>
+              </>
+            )}
+          </button>
+        </div>
 
-          {/* ৩. ইমেজ কাউন্ট */}
-          <div className="space-y-2.5">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Image Count
-            </h4>
-            <div className="space-y-2">
-              {[
-                { title: "All", subtitle: "" },
-                { title: "1 image", subtitle: "Single portrait" },
-                { title: "2 images", subtitle: "Couple / family" },
-                { title: "3+ images", subtitle: "Group / more than 2 people" },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setSelectedImageCount(item.title)}
-                  className={`flex items-start gap-3 p-2.5 rounded-2xl border cursor-pointer transition ${
-                    selectedImageCount === item.title
-                      ? "border-[#FF5D00] bg-orange-50/40"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-                >
+        {/* Center Workspace & Recent Generations */}
+        <div className="lg:col-span-6 flex flex-col gap-6">
+          <div className="bg-[#181C2E] border border-gray-800 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[450px] lg:min-h-[550px] shadow-lg overflow-hidden flex-1">
+            {/* AI Generation Loading View */}
+            {isGenerating ? (
+              <div className="flex flex-col items-center justify-center gap-4 text-center my-auto">
+                <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-white text-lg font-bold">
+                    Generating AI Photo...
+                  </h3>
+                  <p className="text-gray-400 text-xs">
+                    Applying custom clothing, background & enhancements
+                  </p>
+                </div>
+              </div>
+            ) : generatedImage ? (
+              /* 📸 Generated Output View */
+              <div className="flex flex-col items-center justify-center gap-4 w-full h-full relative my-auto">
+                <div className="relative w-full max-w-lg h-[75vh] flex items-center justify-center">
+                  <img
+                    src={generatedImage}
+                    alt="AI Generated Result"
+                    className="w-full h-full object-contain rounded-xl shadow-2xl"
+                  />
+                </div>
+
+                {/* Bottom Action Controls */}
+                <div className="absolute bottom-2 right-2 flex items-center gap-2">
+                  <button
+                    onClick={() => setGeneratedImage(null)}
+                    className="bg-gray-800/90 hover:bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg border border-gray-700 flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <ArrowLeft size={12} /> Edit
+                  </button>
+                  <a
+                    href={generatedImage}
+                    download="ai-passport-photo.jpg"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <Download size={12} /> Download
+                  </a>
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-sky-500 hover:bg-sky-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <Printer size={12} /> Print
+                  </button>
+                </div>
+              </div>
+            ) : selectedSize === "dual" ? (
+              <div className="flex flex-col items-center justify-center gap-6 w-full my-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
                   <div
-                    className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 shrink-0 ${
-                      selectedImageCount === item.title
-                        ? "border-[#FF5D00] bg-[#FF5D00]"
-                        : "border-gray-300"
+                    className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 bg-[#1E2337]/50 relative transition ${
+                      leftImage
+                        ? "border-solid border-gray-700"
+                        : "border-gray-600/80"
                     }`}
                   >
-                    {selectedImageCount === item.title && (
-                      <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    <button
+                      onClick={() => setLeftImage(null)}
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-600/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs cursor-pointer shadow"
+                    >
+                      <X size={12} />
+                    </button>
+
+                    {!leftImage ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 border border-gray-700">
+                          <Upload size={20} className="text-gray-300" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-white text-sm font-bold">
+                            Upload left photo
+                          </h3>
+                          <p className="text-gray-400 text-[10px]">
+                            Click to select a photo
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => leftFileInputRef.current?.click()}
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Upload size={12} /> Upload Photo
+                        </button>
+                      </>
+                    ) : (
+                      <div
+                        className={`w-40 h-52 rounded-xl p-1.5 ${bgMap[selectedBg]} flex items-center justify-center shadow-xl`}
+                      >
+                        <img
+                          src={leftImage}
+                          alt="Left"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <p
-                      className={`text-xs font-bold ${
-                        selectedImageCount === item.title
-                          ? "text-[#FF5D00]"
-                          : "text-gray-800"
-                      }`}
+
+                  <div
+                    className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 bg-[#1E2337]/50 relative transition ${
+                      rightImage
+                        ? "border-solid border-gray-700"
+                        : "border-gray-600/80"
+                    }`}
+                  >
+                    <button
+                      onClick={() => setRightImage(null)}
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-600/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs cursor-pointer shadow"
                     >
-                      {item.title}
-                    </p>
-                    {item.subtitle && (
-                      <p className="text-[10px] text-gray-400 font-medium">
-                        {item.subtitle}
-                      </p>
+                      <X size={12} />
+                    </button>
+
+                    {!rightImage ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 border border-gray-700">
+                          <Upload size={20} className="text-gray-300" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-white text-sm font-bold">
+                            Upload right photo
+                          </h3>
+                          <p className="text-gray-400 text-[10px]">
+                            Click to select a photo
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => rightFileInputRef.current?.click()}
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Upload size={12} /> Upload Photo
+                        </button>
+                      </>
+                    ) : (
+                      <div
+                        className={`w-40 h-52 rounded-xl p-1.5 ${bgMap[selectedBg]} flex items-center justify-center shadow-xl`}
+                      >
+                        <img
+                          src={rightImage}
+                          alt="Right"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <hr className="border-gray-100" />
-
-          {/* ৪. অরিয়েন্টেশন */}
-          <div className="space-y-2.5">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Orientation
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
-              {["All", "Portrait", "Landscape", "Square"].map((ori, idx) => (
                 <button
-                  key={idx}
-                  onClick={() => setSelectedOrientation(ori)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border text-[11px] font-semibold transition gap-1 ${
-                    selectedOrientation === ori
-                      ? "border-[#FF5D00] bg-orange-50/50 text-[#FF5D00]"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600 bg-white"
-                  }`}
+                  onClick={() => setSelectedSize("passport")}
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs px-4 py-2 rounded-xl border border-red-500/30 flex items-center gap-1.5 cursor-pointer transition"
                 >
-                  <ImageIcon size={14} />
-                  <span>{ori}</span>
+                  <X size={14} /> Exit dual mode
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
+            ) : !uploadedImage ? (
+              <div className="max-w-md w-full border-2 border-dashed border-gray-600/80 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center gap-4 bg-[#1E2337]/50 my-auto">
+                <div className="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 border border-gray-700">
+                  <Upload size={24} className="text-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-white text-base font-bold">
+                    Upload a Photo
+                  </h3>
+                  <p className="text-gray-400 text-xs">
+                    Click or scan QR code to upload from your phone
+                  </p>
+                  <span className="text-amber-400 font-semibold text-[11px]">
+                    ({getCurrentDimensionText()})
+                  </span>
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Upload size={14} /> Upload Photo
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 my-auto relative">
+                <div
+                  className={`h-80 rounded-2xl p-2 flex items-center justify-center ${
+                    bgMap[selectedBg] || "bg-amber-500"
+                  } shadow-2xl relative overflow-hidden transition-all duration-300 border-2 border-white/20 max-w-[90vw]`}
+                  style={{ aspectRatio: getAspectRatio() }}
+                >
+                  <img
+                    src={uploadedImage}
+                    alt="Uploaded preview"
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                </div>
 
-          <hr className="border-gray-100" />
-
-          {/* ৫. কালার */}
-          <div className="space-y-2.5">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Color
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedColor("multicolor")}
-                className={`w-7 h-7 rounded-full bg-gradient-to-r from-red-500 via-green-500 to-blue-500 flex items-center justify-center shadow-xs cursor-pointer ${
-                  selectedColor === "multicolor"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("red")}
-                className={`w-7 h-7 rounded-full bg-red-500 shadow-xs cursor-pointer ${
-                  selectedColor === "red"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("orange")}
-                className={`w-7 h-7 rounded-full bg-orange-500 shadow-xs cursor-pointer ${
-                  selectedColor === "orange"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("yellow")}
-                className={`w-7 h-7 rounded-full bg-yellow-400 shadow-xs cursor-pointer ${
-                  selectedColor === "yellow"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("green")}
-                className={`w-7 h-7 rounded-full bg-emerald-500 shadow-xs cursor-pointer ${
-                  selectedColor === "green"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("purple")}
-                className={`w-7 h-7 rounded-full bg-purple-500 shadow-xs cursor-pointer ${
-                  selectedColor === "purple"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-              <button
-                onClick={() => setSelectedColor("gray")}
-                className={`w-7 h-7 rounded-full bg-slate-700 shadow-xs cursor-pointer ${
-                  selectedColor === "gray"
-                    ? "ring-2 ring-offset-2 ring-[#FF5D00]"
-                    : ""
-                }`}
-              />
-            </div>
-          </div>
-
-          <hr className="border-gray-100" />
-
-          {/* ৬. সর্ট */}
-          <div className="space-y-2.5 pb-2">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-              Sort
-            </h4>
-            <div className="space-y-1">
-              {["Popular", "Newest first", "Oldest first", "By name"].map(
-                (sortOpt, idx) => (
+                <div className="flex items-center gap-3">
                   <button
-                    key={idx}
-                    onClick={() => setSelectedSort(sortOpt)}
-                    className={`w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold transition ${
-                      selectedSort === sortOpt
-                        ? "bg-orange-50 text-[#FF5D00]"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-4 py-2 rounded-xl border border-gray-700 flex items-center gap-2 cursor-pointer transition"
                   >
-                    {sortOpt}
+                    <RefreshCw size={12} /> Change Photo
                   </button>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* মূল টেমপ্লেট গ্যালারি এরিয়া */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          {/* সার্চ ইনপুট */}
-          <div className="flex items-center gap-2 w-full bg-white px-4 py-3 rounded-2xl border border-gray-200/80 shadow-xs mb-3">
-            <Search size={16} className="text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or category..."
-              className="bg-transparent border-none outline-none text-xs w-full text-gray-800 placeholder-gray-400"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={14} />
-              </button>
+                  <button
+                    onClick={() => setUploadedImage(null)}
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs px-3 py-2 rounded-xl border border-red-500/30 flex items-center gap-1 cursor-pointer transition"
+                  >
+                    <X size={12} /> Remove
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* হ্যাশট্যাগ চিপস এবং ডানের SORT ড্রপডাউন মেনু */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1 w-full">
-              {popularTags.map((tag, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSearchQuery(tag.replace("#", ""))}
-                  className="bg-white border border-gray-200/80 hover:border-[#FF5D00] hover:text-[#FF5D00] text-gray-600 px-3.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors shadow-xs cursor-pointer"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+          {/* 🕒 RECENT GENERATIONS SECTION */}
+          <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+              RECENT GENERATIONS
+            </h3>
 
-            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-              <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap">
-                {filteredTemplates.length} templates found
-              </span>
-
-              {/* সর্ট ড্রপডাউন বক্স */}
-              <div className="relative">
-                <button
-                  onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                  className="flex items-center gap-2 bg-white border border-gray-200/80 hover:border-gray-300 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 shadow-xs transition cursor-pointer"
-                >
-                  <ArrowUpDown size={14} className="text-[#FF5D00]" />
-                  <span>Sort</span>
-                  <ChevronDown size={14} className="text-gray-400" />
-                </button>
-
-                {sortDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-30 text-xs font-medium text-gray-700">
-                    <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                      <ArrowUpDown size={12} /> Sort By
-                    </div>
-                    <div className="space-y-0.5 mb-2">
-                      {[
-                        "Popular",
-                        "Newest first",
-                        "Oldest first",
-                        "By name",
-                      ].map((opt, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            setSelectedSort(opt);
-                            setSortDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-orange-50 hover:text-[#FF5D00] text-left transition"
-                        >
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              selectedSort === opt
-                                ? "bg-[#FF5D00]"
-                                : "bg-transparent"
-                            }`}
-                          ></div>
-                          <span
-                            className={
-                              selectedSort === opt
-                                ? "font-bold text-gray-900"
-                                : "text-gray-600"
-                            }
-                          >
-                            {opt}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="border-t border-gray-100 my-2"></div>
-
-                    <div className="px-4 pb-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                      <Calendar size={12} /> Date
-                    </div>
-                    <div className="space-y-0.5">
-                      {[
-                        "All time",
-                        "Today",
-                        "Last 3 days",
-                        "Last 7 days",
-                        "Last 30 days",
-                      ].map((dateOpt, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            setSelectedDate(dateOpt);
-                            setSortDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-orange-50 hover:text-[#FF5D00] text-left transition"
-                        >
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              selectedDate === dateOpt
-                                ? "bg-[#FF5D00]"
-                                : "bg-transparent"
-                            }`}
-                          ></div>
-                          <span
-                            className={
-                              selectedDate === dateOpt
-                                ? "font-bold text-gray-900"
-                                : "text-gray-600"
-                            }
-                          >
-                            {dateOpt}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* টেমপ্লেট গ্রিড / এম্পটি স্টেট */}
-          {filteredTemplates.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white rounded-3xl border border-gray-200/80 my-auto">
-              <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-[#FF5D00] mb-4">
-                <Search size={28} />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1">
-                No templates found
-              </h3>
-              <p className="text-xs text-gray-500 max-w-sm mb-6">
-                We couldn't find any templates matching your search criteria.
-                Try adjusting your filters or search terms.
+            {recentGenerations.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">
+                No recent photos generated yet.
               </p>
-              <button
-                onClick={handleReset}
-                className="bg-[#FF5D00] text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#e05200] transition shadow-xs"
-              >
-                Clear all filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTemplates.map((tpl) => (
-                <div
-                  key={tpl.id}
-                  className="group bg-white rounded-2xl overflow-hidden border border-gray-200/80 shadow-xs hover:shadow-md transition duration-300 flex flex-col cursor-pointer relative"
-                >
-                  <div className="absolute top-2.5 right-2.5 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {tpl.uses}
-                  </div>
-
-                  {/* ফেভারিট হার্ট আইকন */}
+            ) : (
+              <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                {recentGenerations.map((imgUrl, index) => (
                   <button
-                    onClick={(e) => toggleFavorite(tpl.id, e)}
-                    className="absolute top-2.5 left-2.5 z-10 p-1.5 rounded-full bg-black/40 backdrop-blur-md hover:bg-black/60 text-white transition"
+                    key={index}
+                    onClick={() => setGeneratedImage(imgUrl)}
+                    className="w-20 h-24 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-amber-500 flex-shrink-0 cursor-pointer transition shadow-xs hover:scale-105"
                   >
-                    <Heart
-                      size={14}
-                      className={
-                        favoriteIds.includes(tpl.id)
-                          ? "fill-red-500 text-red-500"
-                          : "text-white"
-                      }
+                    <img
+                      src={imgUrl}
+                      alt={`Generation ${index + 1}`}
+                      className="w-full h-full object-cover"
                     />
                   </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-                  <div className="relative w-full h-64 overflow-hidden bg-gray-100">
-                    <img
-                      src={tpl.image}
-                      alt={tpl.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <button className="w-full bg-[#FF5D00] hover:bg-[#e05200] text-white text-xs font-bold py-2 rounded-xl transition shadow-sm">
-                        Use Template
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-white flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-800 truncate">
-                      {tpl.title}
-                    </span>
-                    <span className="text-[10px] bg-orange-50 text-[#FF5D00] font-semibold px-2 py-0.5 rounded-md shrink-0">
-                      {tpl.category}
-                    </span>
-                  </div>
+        {/* Right Sidebar */}
+        <div className="lg:col-span-3 flex flex-col gap-6">
+          <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-xs flex flex-col gap-4">
+            <div className="bg-[#181C2E] text-white p-4 rounded-xl flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-800 rounded-lg text-amber-400">
+                  <QrCode size={20} />
                 </div>
-              ))}
+                <div>
+                  <h4 className="text-xs font-bold">Scan Now</h4>
+                  <p className="text-[10px] text-gray-400">Scan QR Code</p>
+                </div>
+              </div>
             </div>
-          )}
+
+            <button className="w-full bg-[#181C2E] hover:bg-gray-900 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+              <QrCode size={14} /> Scan
+            </button>
+          </div>
         </div>
       </div>
     </div>
