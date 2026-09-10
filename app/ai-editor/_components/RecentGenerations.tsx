@@ -8,40 +8,64 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+export interface GenerationItem {
+  id?: string | number;
+  url: string;
+  bgColor?: string;
+  [key: string]: unknown;
+}
+
+export interface RecentGenerationsProps {
+  generations?: GenerationItem[];
+  onImageClick?: (item: GenerationItem) => void;
+  isLoading?: boolean;
+}
+
 export default function RecentGenerations({
-  generations,
-  onImageClick,
-  isLoading = false, // 🚀 নতুন লোডিং প্রপস
-}) {
+  generations = [],
+  onImageClick = () => {},
+  isLoading = false,
+}: RecentGenerationsProps) {
   return (
     <div className="w-full max-w-[1400px] bg-white rounded-2xl p-4 sm:p-6 shadow-sm mt-4">
-      <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-5 bg-orange-500 rounded-full"></span>
           <h3 className="font-semibold text-sm text-gray-800">
             RECENT GENERATIONS
           </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+          >
             <ChevronLeft size={16} />
           </button>
-          <button className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer">
+          <button
+            type="button"
+            className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+          >
             <ChevronRight size={16} />
           </button>
-          <button className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer">
+          <button
+            type="button"
+            className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer"
+          >
             <ExternalLink size={14} /> View all images
           </button>
-          <button className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer">
+          <button
+            type="button"
+            className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+          >
             <Settings size={16} />
           </button>
         </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-2 min-h-[150px] items-center">
-        {/* 🚀 লোডিং চলাকালীন স্কেলিটন অ্যানিমেশন দেখাবে */}
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, idx) => (
+          Array.from({ length: 5 }).map((_, idx: number) => (
             <div
               key={idx}
               className="w-28 h-36 rounded-xl bg-gray-200 animate-pulse shrink-0 border border-gray-100 flex items-center justify-center relative overflow-hidden"
@@ -55,9 +79,9 @@ export default function RecentGenerations({
             here.
           </p>
         ) : (
-          generations.map((item, idx) => (
+          generations.map((item: GenerationItem, idx: number) => (
             <div
-              key={idx}
+              key={item.id ?? idx}
               onClick={() => onImageClick(item)}
               className="w-28 h-36 rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:border-orange-500 hover:shadow-md transition relative group shrink-0 bg-gray-50 flex items-center justify-center"
             >
