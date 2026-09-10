@@ -60,6 +60,7 @@ export default function ImagePreviewModal({
   const [isSaving, setIsSaving] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [selectedAspect, setSelectedAspect] = useState<string>("original");
 
@@ -227,7 +228,6 @@ export default function ImagePreviewModal({
 
       if (editedCanvas) {
         if (format === "jpg") {
-          // Flatten canvas with white background for JPG
           const jpgCanvas = document.createElement("canvas");
           jpgCanvas.width = editedCanvas.width;
           jpgCanvas.height = editedCanvas.height;
@@ -257,7 +257,7 @@ export default function ImagePreviewModal({
     }
   };
 
-  // Download 4x6" Print Sheet (8 Copies) Handler
+  // Download 4x6" Print Sheet Handler
   const handleDownloadPrintSheet = async () => {
     setShowDownloadMenu(false);
     setIsDownloading(true);
@@ -276,7 +276,6 @@ export default function ImagePreviewModal({
         imgToDraw.onerror = reject;
       });
 
-      // 4x6 inch paper at 300 DPI = 1200 x 1800 px
       const printCanvas = document.createElement("canvas");
       printCanvas.width = 1200;
       printCanvas.height = 1800;
@@ -325,8 +324,9 @@ export default function ImagePreviewModal({
   return (
     <div className="fixed inset-0 z-[999] bg-[#111827] flex flex-col justify-between overflow-hidden select-none">
       {/* Top Bar Actions */}
-      <div className="h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-6 shrink-0 z-10">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="min-h-[56px] py-2 sm:py-0 sm:h-16 bg-[#1f2937] border-b border-gray-700 flex items-center justify-between px-2 sm:px-6 shrink-0 z-30 overflow-visible relative">
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           <button
             onMouseDown={() => setIsComparing(true)}
             onMouseUp={() => setIsComparing(false)}
@@ -334,17 +334,28 @@ export default function ImagePreviewModal({
             onTouchStart={() => setIsComparing(true)}
             onTouchEnd={() => setIsComparing(false)}
             onClick={() => setIsComparing((prev) => !prev)}
-            className={`px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer border ${
+            className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer border ${
               isComparing
                 ? "bg-amber-500 text-black border-amber-400 font-bold"
                 : "bg-white/10 hover:bg-white/20 text-white border-transparent"
             }`}
             title="Press & hold or click to view original photo"
           >
-            <Eye size={14} /> {isComparing ? "Original Photo" : "Compare"}
+            <Eye size={14} />
+            <span className="hidden sm:inline">
+              {isComparing ? "Original Photo" : "Compare"}
+            </span>
+            <span className="sm:hidden">{isComparing ? "Orig" : "Comp"}</span>
           </button>
 
-          <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer">
+          <button
+            onClick={() => setShowMobileInfo((prev) => !prev)}
+            className="lg:hidden bg-white/10 hover:bg-white/20 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer"
+          >
+            <Info size={14} />
+          </button>
+
+          <button className="hidden md:flex bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer">
             <Share2 size={14} /> Share
           </button>
 
@@ -352,36 +363,42 @@ export default function ImagePreviewModal({
             <button
               onClick={handleSaveEditedImage}
               disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer"
             >
               {isSaving ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <Save size={14} />
               )}
-              {isSaving ? "Saving..." : "Save Changes"}
+              <span className="hidden sm:inline">
+                {isSaving ? "Saving..." : "Save Changes"}
+              </span>
+              <span className="sm:hidden">Save</span>
             </button>
           )}
 
           <button
             onClick={handleRegenerateClick}
             disabled={isRegenerating}
-            className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             {isRegenerating ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <RotateCw size={14} />
             )}
-            {isRegenerating ? "Processing..." : "Regenerate"}
+            <span className="hidden sm:inline">
+              {isRegenerating ? "Processing..." : "Regenerate"}
+            </span>
+            <span className="sm:hidden">Retry</span>
           </button>
 
-          {/* DOWNLOAD DROPDOWN BUTTON */}
-          <div className="relative" ref={downloadMenuRef}>
+          {/* DOWNLOAD DROPDOWN BUTTON (Pointers & Overflow fixed) */}
+          <div className="relative z-50" ref={downloadMenuRef}>
             <button
               onClick={() => setShowDownloadMenu((prev) => !prev)}
               disabled={isDownloading}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md"
+              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer shadow-md"
             >
               {isDownloading ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -394,33 +411,31 @@ export default function ImagePreviewModal({
 
             {/* DOWNLOAD OPTIONS POPUP DROPDOWN */}
             {showDownloadMenu && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-[#1f2937] text-gray-200 rounded-xl shadow-2xl border border-gray-700 py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-0 top-full mt-2 w-60 sm:w-64 bg-[#1f2937] text-gray-200 rounded-xl shadow-2xl border border-gray-700 py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-3 py-1.5 border-b border-gray-700 font-semibold text-gray-400 text-[10px] uppercase">
                   Select Format
                 </div>
 
-                {/* OPTION 1: JPG */}
                 <button
                   onClick={() => handleDownloadFormat("jpg")}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition cursor-pointer"
+                  className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-white/10 flex items-center gap-2.5 transition cursor-pointer"
                 >
-                  <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                  <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0">
                     <FileImage size={16} />
                   </div>
                   <div>
                     <div className="font-semibold text-white">Standard JPG</div>
                     <div className="text-[10px] text-gray-400">
-                      Recommended for Passport & Visa Apply
+                      Recommended for Passport & Visa
                     </div>
                   </div>
                 </button>
 
-                {/* OPTION 2: PNG */}
                 <button
                   onClick={() => handleDownloadFormat("png")}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition cursor-pointer"
+                  className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-white/10 flex items-center gap-2.5 transition cursor-pointer"
                 >
-                  <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg">
+                  <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg shrink-0">
                     <FileImage size={16} />
                   </div>
                   <div>
@@ -433,12 +448,11 @@ export default function ImagePreviewModal({
 
                 <div className="my-1 border-t border-gray-700"></div>
 
-                {/* OPTION 3: PRINT SHEET */}
                 <button
                   onClick={handleDownloadPrintSheet}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 flex items-center gap-3 transition cursor-pointer"
+                  className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-white/10 flex items-center gap-2.5 transition cursor-pointer"
                 >
-                  <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg">
+                  <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg shrink-0">
                     <Grid size={16} />
                   </div>
                   <div>
@@ -446,7 +460,7 @@ export default function ImagePreviewModal({
                       Print Sheet (4×6")
                     </div>
                     <div className="text-[10px] text-gray-400">
-                      8 Copies grid layout for photo paper
+                      8 Copies Grid Layout
                     </div>
                   </div>
                 </button>
@@ -456,16 +470,17 @@ export default function ImagePreviewModal({
 
           <button
             onClick={() => window.print()}
-            className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="hidden md:flex bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer"
           >
             <Printer size={14} /> Print
           </button>
 
           <button
             onClick={handleDelete}
-            className="bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="bg-red-600/80 hover:bg-red-600 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer"
           >
-            <Trash2 size={14} /> Delete
+            <Trash2 size={14} />
+            <span className="hidden sm:inline">Delete</span>
           </button>
 
           <button
@@ -474,7 +489,7 @@ export default function ImagePreviewModal({
               isEditOpen
                 ? "bg-orange-500 text-white"
                 : "bg-white/10 hover:bg-white/20 text-white"
-            } px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer`}
+            } px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer`}
           >
             <Edit3 size={14} /> Edit
           </button>
@@ -482,24 +497,36 @@ export default function ImagePreviewModal({
 
         <button
           onClick={onClose}
-          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition cursor-pointer"
+          className="bg-red-600 hover:bg-red-700 text-white p-1.5 sm:p-2 rounded-lg transition cursor-pointer shrink-0 ml-1"
         >
           <X size={18} />
         </button>
       </div>
 
-      {/* Main Content Area: Left Info Panel + Center Preview + Right Edit Sidebar */}
-      <div className="flex-1 w-full flex items-center justify-between overflow-hidden relative bg-[#111827] p-4 gap-4">
+      {/* Main Content Area */}
+      <div className="flex-1 w-full flex flex-col lg:flex-row items-center justify-between overflow-hidden relative bg-[#111827] p-2 sm:p-4 gap-3">
         {/* Left Generation Info Panel */}
-        <div className="w-64 bg-[#1f2937]/90 border border-gray-700 rounded-xl p-4 text-white flex flex-col gap-3 shadow-xl shrink-0">
-          <div className="flex items-center gap-2 border-b border-gray-700 pb-2">
-            <Info size={16} className="text-orange-400" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-200">
-              Generation Info
-            </h3>
+        <div
+          className={`w-full lg:w-64 bg-[#1f2937]/90 border border-gray-700 rounded-xl p-3 sm:p-4 text-white flex-col gap-3 shadow-xl shrink-0 ${
+            showMobileInfo ? "flex" : "hidden lg:flex"
+          }`}
+        >
+          <div className="flex items-center justify-between border-b border-gray-700 pb-2">
+            <div className="flex items-center gap-2">
+              <Info size={16} className="text-orange-400" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-200">
+                Generation Info
+              </h3>
+            </div>
+            <button
+              onClick={() => setShowMobileInfo(false)}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          <div className="flex flex-col gap-2.5 text-xs text-gray-300">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 text-xs text-gray-300">
             <div className="flex justify-between items-center bg-black/20 px-3 py-2 rounded-lg">
               <span className="text-gray-400">Photo Size:</span>
               <span className="font-bold text-orange-400">
@@ -519,16 +546,18 @@ export default function ImagePreviewModal({
             </div>
 
             <div className="flex justify-between items-center bg-black/20 px-3 py-2 rounded-lg">
-              <span className="text-gray-400">Clothing Style:</span>
-              <span className="font-medium text-white">{clothingInfo}</span>
+              <span className="text-gray-400">Clothing:</span>
+              <span className="font-medium text-white truncate max-w-[100px]">
+                {clothingInfo}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Center Image Display */}
-        <div className="flex-1 h-full flex items-center justify-center overflow-hidden relative">
+        <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden relative p-2">
           <div
-            className="max-h-[78vh] max-w-[85vw] flex items-center justify-center transition-all duration-200 ease-out overflow-hidden rounded-lg shadow-2xl relative"
+            className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] flex items-center justify-center transition-all duration-200 ease-out overflow-hidden rounded-lg shadow-2xl relative"
             style={{
               backgroundColor: bgHexColor,
               transform: `scale(${previewZoom / 100}) rotate(${
@@ -545,7 +574,7 @@ export default function ImagePreviewModal({
             <img
               src={isComparing ? displayOriginalUrl : image.url}
               alt="Full Preview"
-              className="max-h-[78vh] max-w-[85vw] object-contain block transition-[filter] duration-150"
+              className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150"
               style={{
                 filter: filterStyleString,
               }}
@@ -566,30 +595,32 @@ export default function ImagePreviewModal({
       </div>
 
       {/* Bottom Zoom Control Bar */}
-      <div className="h-14 bg-[#1f2937] border-t border-gray-700 flex items-center justify-center gap-3 shrink-0 text-white text-xs select-none z-10">
+      <div className="h-12 sm:h-14 bg-[#1f2937] border-t border-gray-700 flex items-center justify-center gap-2 sm:gap-3 shrink-0 text-white text-xs select-none z-10 px-2">
         <button
           onClick={() => setPreviewZoom((prev) => Math.max(prev - 10, 100))}
-          className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded font-bold transition cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded font-bold transition cursor-pointer"
         >
           -
         </button>
-        <span className="w-12 text-center font-medium">{previewZoom}%</span>
+        <span className="w-10 text-center font-medium text-xs">
+          {previewZoom}%
+        </span>
         <button
           onClick={() => setPreviewZoom((prev) => Math.min(prev + 10, 300))}
-          className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded font-bold transition cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded font-bold transition cursor-pointer"
         >
           +
         </button>
         <button
           onClick={() => setPreviewRotate((prev) => (prev + 90) % 360)}
-          className="bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded transition cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 p-1.5 rounded transition cursor-pointer"
           title="Rotate"
         >
           <RotateCw size={14} />
         </button>
         <button
           onClick={handleResetAll}
-          className="bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded text-[11px] transition ml-2 cursor-pointer"
+          className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-[11px] transition ml-1 cursor-pointer"
         >
           Reset All
         </button>
