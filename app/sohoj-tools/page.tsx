@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
   Search,
@@ -58,6 +59,7 @@ import {
   FileUser,
   UserCheck,
   Loader2,
+  ClipboardList,
 } from "lucide-react";
 
 interface ToolItem {
@@ -358,6 +360,14 @@ const toolsData: ToolItem[] = [
     icon: Sparkles,
   },
   {
+    id: "37_1",
+    name: "Notice Generator",
+    category: "Text",
+    bgColor: "bg-[#c026d3]",
+    icon: ClipboardList,
+    badge: "New",
+  },
+  {
     id: "38",
     name: "Bijoy - Unicode",
     category: "Text",
@@ -432,7 +442,7 @@ const toolsData: ToolItem[] = [
   },
   {
     id: "48",
-    name: "Add Watermark",
+    name: "Add Watermark to video",
     category: "Video",
     bgColor: "bg-[#d97706]",
     icon: Stamp,
@@ -599,6 +609,15 @@ export default function SohojToolsPage() {
     }
   }, [router]);
 
+  // Helper function to create URL slug from Tool Name
+  const getSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9 -]/g, "") // Special character remove
+      .replace(/\s+/g, "-") // Space to hyphen
+      .replace(/-+/g, "-"); // Multiple hyphen to single hyphen
+  };
+
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -730,9 +749,12 @@ export default function SohojToolsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-7 pt-3">
           {filteredTools.map((tool) => {
             const IconComponent = tool.icon;
+            const slug = getSlug(tool.name);
+
             return (
-              <div
+              <Link
                 key={tool.id}
+                href={`/sohoj-tools/${slug}`}
                 className="flex flex-col items-center group cursor-pointer"
               >
                 {/* Square Card Container with Squircle Corners */}
@@ -753,7 +775,7 @@ export default function SohojToolsPage() {
                   {/* Icon */}
                   <IconComponent
                     size={42}
-                    className="text-white stroke-[1.75]"
+                    className="text-[#ffffff] stroke-[1.75]"
                   />
                 </div>
 
@@ -761,7 +783,7 @@ export default function SohojToolsPage() {
                 <span className="mt-2.5 text-xs font-bold text-gray-800 text-center line-clamp-1 group-hover:text-[#FF5D00] transition-colors">
                   {tool.name}
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>

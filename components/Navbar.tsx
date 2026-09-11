@@ -165,7 +165,8 @@ export default function Navbar() {
     pathname.startsWith("/jobs") ||
     pathname.startsWith("/print-media") ||
     pathname.startsWith("/sohoj-tools") ||
-    pathname.startsWith("/profile")
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/free-tools")
   ) {
     return null;
   }
