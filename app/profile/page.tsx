@@ -59,10 +59,10 @@ export default function ProfilePage() {
       }
     }
 
-    // 3. API এর মাধ্যমে লেটেস্ট প্রোফাইল ডাটা ফেচ করা
+    // 3. API এর মাধ্যমে লেটেস্ট প্রোফাইল ডাটা ফেচ করা (পোর্ট ৫০০০ সরিয়ে দিয়ে সঠিক নেক্সট জেএস রাউট করা হয়েছে)
     const fetchUserProfile = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/auth/me", {
+        const res = await fetch("/api/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

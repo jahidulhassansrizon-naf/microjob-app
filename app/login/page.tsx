@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -60,7 +59,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
-    rememberMe: true, // ডিফল্ট সত্য রাখা যাতে কুকি পারসিস্টেন্ট হয়
+    rememberMe: true,
   });
 
   const t = translations[lang];
@@ -71,10 +70,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      // Next.js Internal API Route
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,15 +89,14 @@ export default function LoginPage() {
       }
 
       // LocalStorage এ টোকেন ও ইউজার ডাটা সেভ
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.token) localStorage.setItem("token", data.token);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      // 🟢 Cookie তে সিকিউরভাবে টোকেন সেট করা (Middleware এর জন্য)
-      const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7; // ৩০ দিন অথবা ৭ দিন
+      // Cookie তে সিকিউরভাবে টোকেন সেট করা (Middleware এর জন্য)
+      const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
       const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
 
-      // router.push এর জায়গায় window.location.href দিলে Middleware প্রপারলি কুকি পায়
       window.location.href = "/dashboard";
     } catch (error: unknown) {
       if (error instanceof Error) {

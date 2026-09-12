@@ -20,7 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-// পৃথিবীর সমস্ত দেশের তালিকা (সঠিক লেন্থ এবং কড়া Regex সহ)
+// পৃথিবীর সমস্ত দেশের তালিকা
 const countriesList = [
   {
     name: "Bangladesh",
@@ -578,12 +578,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // কান্ট্রি ড্রপডাউন কন্ট্রোল করার স্টেট
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // OTP ও মেথড সিলেকশন স্টেটসমূহ
   const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
   const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email");
   const [methodNotice, setMethodNotice] = useState("");
@@ -605,7 +603,6 @@ export default function RegisterPage() {
     agreeTerms: false,
   });
 
-  // ড্রপডাউনের বাইরে ক্লিক করলে ড্রপডাউন বন্ধ হয়ে যাওয়ার লজিক
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -619,14 +616,12 @@ export default function RegisterPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // সার্চ ফিল্টার অনুযায়ী দেশ ফিল্টার করা
   const filteredCountries = countriesList.filter(
     (c) =>
       c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
       c.code.includes(countrySearch),
   );
 
-  // কঠোর ফোন নম্বর প্যাটার্ন (Regex) ভ্যালিডেশন চেক করার ফাংশন
   const validatePhonePattern = () => {
     const selectedCountryObj = countriesList.find(
       (c) => c.name === formData.countryName,
@@ -636,7 +631,6 @@ export default function RegisterPage() {
 
     const cleanPhone = formData.phone.trim();
 
-    // দেশের নিজস্ব রেজেক্স দিয়ে চেক করা হচ্ছে
     if (!selectedCountryObj.regex.test(cleanPhone)) {
       setErrorMessage(
         `Invalid phone number format for ${selectedCountryObj.name}! Expected format: ${selectedCountryObj.example}`,
@@ -646,19 +640,16 @@ export default function RegisterPage() {
     return true;
   };
 
-  // ১. রেজিস্ট্রেশন সাবমিট করলে আগে ফোন নম্বর সঠিক প্যাটার্নে আছে কিনা চেক হবে
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setMethodNotice("");
 
-    // পাসওয়ার্ড ম্যাচ চেক
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage("Passwords do not match!");
       return;
     }
 
-    // কান্ট্রি ওয়াইজ ফোন নম্বর সঠিক প্যাটার্ন মেনেছে কি না চেক
     if (!validatePhonePattern()) {
       return;
     }
@@ -666,7 +657,7 @@ export default function RegisterPage() {
     setIsMethodModalOpen(true);
   };
 
-  // ২. মাধ্যম কনফার্ম করার পর OTP পাঠাবে
+  // OTP পাঠানোর ফাংশন (এখানে identifier যুক্ত করা হয়েছে)
   const handleSendOtp = async () => {
     setMethodNotice("");
     setErrorMessage("");
@@ -681,13 +672,12 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const endpoint = `${API_URL}/api/auth/send-email-otp`;
+      const endpoint = "/api/auth/send-email-otp";
       const payload = {
         email: formData.email,
         phoneNumber: formData.phone,
         country: `${formData.countryName} (${formData.countryCode})`,
+        identifier: otpMethod === "email" ? formData.email : formData.phone, // এটি যোগ করা হয়েছে
       };
 
       const response = await fetch(endpoint, {
@@ -711,7 +701,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ৩. OTP ইনপুট দেওয়ার পর ফাইনাল রেজিস্ট্রেশন সম্পন্ন করবে
+  // Next.js Internal API Route দিয়ে ইউজার রেজিস্টার করা
   const handleVerifyAndRegister = async () => {
     setOtpError("");
     if (!otp || otp.length < 6) {
@@ -722,10 +712,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-      const response = await fetch(`${API_URL}/api/auth/register`, {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -757,7 +744,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
-      {/* ---------------- LEFT SIDE: DARK HERO SECTION (Displays at bottom on mobile) ---------------- */}
       <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
         <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
@@ -778,7 +764,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ---------------- RIGHT SIDE: REGISTER FORM SECTION (Displays at top on mobile) ---------------- */}
       <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
         <div className="flex justify-between items-center w-full">
           <Link
@@ -844,7 +829,6 @@ export default function RegisterPage() {
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* ---------------- CUSTOM COUNTRY SEARCH DROPDOWN ---------------- */}
                 <div className="space-y-1 relative" ref={dropdownRef}>
                   <label className="text-xs font-semibold text-gray-700">
                     Country <span className="text-red-500">*</span>
@@ -1142,7 +1126,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Floating WhatsApp Support Button */}
         <div className="fixed bottom-5 right-5 z-50">
           <a
             href="https://wa.me/8801700559595"
@@ -1156,7 +1139,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ---------------- 2. OTP METHOD SELECTION MODAL ---------------- */}
       {isMethodModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
@@ -1255,7 +1237,6 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* ---------------- 3. OTP INPUT POPUP MODAL ---------------- */}
       {isOtpModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
