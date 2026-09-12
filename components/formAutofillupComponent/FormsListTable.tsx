@@ -133,6 +133,7 @@ export interface FormDataItem {
 interface FormsListTableProps {
   formsList: FormDataItem[];
   searchQuery: string;
+  isLoading: boolean;
   onOpenCreate: () => void;
   onEditForm: (item: FormDataItem) => void;
   onDeleteForm: (id: string) => void;
@@ -318,6 +319,7 @@ const additionalQuestionsList = [
 export default function FormsListTable({
   formsList,
   searchQuery,
+  isLoading,
   onOpenCreate,
   onEditForm,
   onDeleteForm,
@@ -454,6 +456,18 @@ export default function FormsListTable({
       father.includes(q)
     );
   });
+
+  // Loading state UI
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center min-h-[320px] flex flex-col items-center justify-center shadow-2xs">
+        <div className="w-8 h-8 border-4 border-[#E88000] border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-xs font-semibold text-gray-600">
+          Loading saved forms...
+        </p>
+      </div>
+    );
+  }
 
   if (formsList.length === 0) {
     return (
@@ -767,7 +781,6 @@ export default function FormsListTable({
                   ref={pdfRef}
                   className="bg-white rounded-lg border border-gray-300 w-full max-w-4xl p-5 text-gray-800 space-y-4 shadow-sm font-sans h-fit text-[11px]"
                 >
-                  {/* Top Header Section with Photo Only */}
                   <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
                     <div className="w-20 h-24 bg-gray-50 border border-gray-300 rounded-lg flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-sm">
                       {previewItem.photoSignature?.photoUrl ? (

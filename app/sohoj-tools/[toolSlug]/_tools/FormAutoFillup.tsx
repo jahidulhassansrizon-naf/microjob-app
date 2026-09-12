@@ -117,9 +117,10 @@ export default function FormAutoFillup() {
     "basic" | "details" | "photo" | "additional"
   >("basic");
 
-  // Forms List State
+  // Forms List State & Loading State
   const [formsList, setFormsList] = useState<FormDataItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form State Management
   const [basicFormData, setBasicFormData] =
@@ -132,13 +133,14 @@ export default function FormAutoFillup() {
     Record<number, string>
   >(initialAdditionalInfoData);
 
-  // 1. পেজ লোড হওয়ার সাথে সাথে MongoDB API থেকে ডেটা ফেচ করা
+  // পেজ লোড হওয়ার সাথে সাথে MongoDB API থেকে ডেটা ফেচ করা
   useEffect(() => {
     fetchFormsFromMongo();
   }, []);
 
   const fetchFormsFromMongo = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch("/api/saved-forms");
       const result = await response.json();
 
@@ -158,6 +160,8 @@ export default function FormAutoFillup() {
       }
     } catch (error) {
       console.error("Error fetching forms from MongoDB:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -209,7 +213,7 @@ export default function FormAutoFillup() {
     setActiveTab("basic");
   };
 
-  // 2. Save / Create / Update Form Handler (MongoDB API Sync)
+  // Save / Create / Update Form Handler (MongoDB API Sync)
   const handleSaveForm = async () => {
     if (!basicFormData.applicantNameEnglish && !basicFormData.mobileNumber) {
       alert("Please fill at least Applicant Name or Mobile Number!");
@@ -296,7 +300,7 @@ export default function FormAutoFillup() {
     setActiveTab("basic");
   };
 
-  // 3. Delete Form Handler (MongoDB API Sync)
+  // Delete Form Handler (MongoDB API Sync)
   const handleDeleteForm = async (id: string) => {
     if (confirm("Are you sure you want to delete this form?")) {
       try {
@@ -525,10 +529,11 @@ export default function FormAutoFillup() {
         </div>
       </div>
 
-      {/* Forms List Table Component */}
+      {/* Forms List Table Component with isLoading prop */}
       <FormsListTable
         formsList={formsList}
         searchQuery={searchQuery}
+        isLoading={isLoading}
         onOpenCreate={handleOpenCreate}
         onEditForm={(item: any) => handleEditForm(item)}
         onDeleteForm={handleDeleteForm}
