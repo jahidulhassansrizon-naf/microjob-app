@@ -326,6 +326,11 @@ export default function FormsListTable({
 }: FormsListTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuStyle, setMenuStyle] = useState<{
+    top?: number;
+    bottom?: number;
+    right: number;
+  } | null>(null);
   const [previewItem, setPreviewItem] = useState<FormDataItem | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -334,11 +339,44 @@ export default function FormsListTable({
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpenMenuId(null);
+        setMenuStyle(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleToggleMenu = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    id: string,
+  ) => {
+    e.stopPropagation();
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+      setMenuStyle(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 180; // আনুমানিক মেনুর উচ্চতা
+
+      const rightPos = Math.max(10, window.innerWidth - rect.right);
+
+      if (spaceBelow < menuHeight) {
+        // যদি নিচের দিকে জায়গা কম থাকে, তবে ড্রপডাউন উপরে ওপেন হবে
+        setMenuStyle({
+          bottom: window.innerHeight - rect.top + 6,
+          right: rightPos,
+        });
+      } else {
+        // নিচে পর্যাপ্ত জায়গা থাকলে নিচে ওপেন হবে
+        setMenuStyle({
+          top: rect.bottom + 6,
+          right: rightPos,
+        });
+      }
+      setOpenMenuId(id);
+    }
+  };
 
   const handleCopyPhone = (phone: string, id: string) => {
     navigator.clipboard.writeText(phone);
@@ -457,7 +495,6 @@ export default function FormsListTable({
     );
   });
 
-  // Loading state UI
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center min-h-[320px] flex flex-col items-center justify-center shadow-2xs">
@@ -574,7 +611,7 @@ export default function FormsListTable({
         }
       `}</style>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl relative">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-xl relative">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <span className="text-xs font-bold text-gray-700">
             {filteredForms.length}{" "}
@@ -582,8 +619,8 @@ export default function FormsListTable({
           </span>
         </div>
 
-        <div className="overflow-x-visible pb-24">
-          <table className="w-full text-left border-collapse">
+        <div className="pb-24 overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">
                 <th className="py-3 px-6">Applicant Name</th>
@@ -593,16 +630,10 @@ export default function FormsListTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-xs">
-              {filteredForms.map((item, index) => (
+              {filteredForms.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-gray-50 transition-colors relative"
-                  style={{
-                    zIndex:
-                      openMenuId === item.id
-                        ? 50
-                        : filteredForms.length - index,
-                  }}
+                  className="hover:bg-gray-50 transition-colors"
                 >
                   <td className="py-4 px-6 font-semibold text-gray-800 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200 overflow-hidden">
@@ -652,7 +683,7 @@ export default function FormsListTable({
                   <td className="py-4 px-6 text-gray-600">
                     {item.details?.fatherNameEnglish || "—"}
                   </td>
-                  <td className="py-4 px-6 text-right relative">
+                  <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
@@ -663,76 +694,13 @@ export default function FormsListTable({
                         Edit
                       </button>
 
-                      <div
-                        className="relative"
-                        ref={openMenuId === item.id ? menuRef : null}
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleMenu(e, item.id)}
+                        className="p-1.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-lg transition-colors cursor-pointer"
                       >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === item.id ? null : item.id,
-                            )
-                          }
-                          className="p-1.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {openMenuId === item.id && (
-                          <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-200 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[999999] py-1 text-left">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                setPreviewItem(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-4 h-4 text-amber-500" />
-                              Preview form
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handlePrint(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                              <Printer className="w-4 h-4 text-purple-500" />
-                              Print form
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleDirectDownloadPDF(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                              <Download className="w-4 h-4 text-emerald-500" />
-                              Download as PDF
-                            </button>
-
-                            <div className="h-px bg-gray-100 my-1" />
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                onDeleteForm(item.id);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -741,31 +709,114 @@ export default function FormsListTable({
           </table>
         </div>
 
+        {/* স্মার্ট ড্রপডাউন পজিশনিং যাতে স্ক্রিনের নিচে চলে গেলে অটো উপরে চলে আসে এবং স্ক্রিন কালো না হয় */}
+        {openMenuId && menuStyle && (
+          <div
+            ref={menuRef}
+            style={{
+              position: "fixed",
+              ...(menuStyle.top !== undefined
+                ? { top: `${menuStyle.top}px` }
+                : {}),
+              ...(menuStyle.bottom !== undefined
+                ? { bottom: `${menuStyle.bottom}px` }
+                : {}),
+              right: `${menuStyle.right}px`,
+            }}
+            className="w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[999999] py-1 text-left"
+          >
+            {(() => {
+              const currentItem = formsList.find((f) => f.id === openMenuId);
+              if (!currentItem) return null;
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setMenuStyle(null);
+                      setPreviewItem(currentItem);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4 text-amber-500" />
+                    Preview form
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setMenuStyle(null);
+                      handlePrint(currentItem);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-purple-500" />
+                    Print form
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setMenuStyle(null);
+                      handleDirectDownloadPDF(currentItem);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-emerald-500" />
+                    Download as PDF
+                  </button>
+
+                  <div className="h-px bg-gray-100 my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setMenuStyle(null);
+                      onDeleteForm(currentItem.id);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* প্রিভিউ মডাল */}
         {previewItem && (
-          <div className="fixed inset-0 bg-black/60 z-[9999999] flex items-center justify-center p-2 sm:p-4 modal-backdrop-area">
+          <div className="fixed inset-0 bg-black/60 z-[999999] flex items-center justify-center p-2 sm:p-4 modal-backdrop-area">
             <div className="bg-[#f0f2f5] rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
-              <div className="bg-white px-6 py-3 border-b border-gray-200 flex items-center justify-between no-print shrink-0">
-                <span className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-amber-600" />
-                  Applicant Application Form —{" "}
-                  {previewItem.basic?.applicantNameBangla ||
-                    previewItem.basic?.applicantNameEnglish ||
-                    "Applicant"}
+              <div className="bg-white px-4 sm:px-6 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 no-print shrink-0">
+                <span className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-2 truncate max-w-[200px] sm:max-w-md">
+                  <FileText className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="truncate">
+                    Applicant Application Form —{" "}
+                    {previewItem.basic?.applicantNameBangla ||
+                      previewItem.basic?.applicantNameEnglish ||
+                      "Applicant"}
+                  </span>
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={() => handleDirectDownloadPDF(previewItem)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-semibold transition cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-[11px] sm:text-xs font-semibold transition cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-gray-500" />
-                    Download PDF
+                    <span className="hidden xs:inline">Download</span> PDF
                   </button>
                   <button
                     onClick={() => window.print()}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#E88000] hover:bg-[#d17300] text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+                    className="flex items-center gap-1 px-3 sm:px-3.5 py-1.5 bg-[#E88000] hover:bg-[#d17300] text-white rounded-lg text-[11px] sm:text-xs font-semibold transition cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    Print Form
+                    Print
                   </button>
                   <button
                     onClick={() => setPreviewItem(null)}
@@ -776,10 +827,10 @@ export default function FormsListTable({
                 </div>
               </div>
 
-              <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex justify-center printable-form-area bg-[#f3f4f6]">
+              <div className="p-2 sm:p-6 overflow-y-auto flex-1 flex justify-center printable-form-area bg-[#f3f4f6]">
                 <div
                   ref={pdfRef}
-                  className="bg-white rounded-lg border border-gray-300 w-full max-w-4xl p-5 text-gray-800 space-y-4 shadow-sm font-sans h-fit text-[11px]"
+                  className="bg-white rounded-lg border border-gray-300 w-full max-w-4xl p-3 sm:p-5 text-gray-800 space-y-4 shadow-sm font-sans h-fit text-[11px]"
                 >
                   <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
                     <div className="w-20 h-24 bg-gray-50 border border-gray-300 rounded-lg flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-sm">
@@ -797,7 +848,7 @@ export default function FormsListTable({
                       )}
                     </div>
                     <div>
-                      <h1 className="text-lg font-bold text-gray-900">
+                      <h1 className="text-base sm:text-lg font-bold text-gray-900">
                         {previewItem.basic?.applicantNameBangla ||
                           previewItem.basic?.applicantNameEnglish ||
                           "—"}
@@ -818,7 +869,7 @@ export default function FormsListTable({
                         1. Personal Information
                       </h3>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-[#f9fafb] p-2.5 rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[#f9fafb] p-2.5 rounded-lg border border-gray-200">
                       <div>
                         <span className="text-gray-500 block text-[10px]">
                           Applicant's Name (English)
@@ -1168,7 +1219,7 @@ export default function FormsListTable({
                             <span className="font-bold text-gray-600 block text-[10px]">
                               Qualification {idx + 1}
                             </span>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                               <div>
                                 <span className="text-gray-500 text-[10px]">
                                   Education Level:{" "}
@@ -1233,7 +1284,7 @@ export default function FormsListTable({
                                   {edu.passingYear || "—"}
                                 </span>
                               </div>
-                              <div className="col-span-2">
+                              <div className="col-span-1 sm:col-span-2">
                                 <span className="text-gray-500 text-[10px]">
                                   Registration Number:{" "}
                                 </span>
@@ -1269,7 +1320,7 @@ export default function FormsListTable({
                             <span className="font-bold text-gray-600 block text-[10px]">
                               Experience {idx + 1}
                             </span>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                               <div>
                                 <span className="text-gray-500 text-[10px]">
                                   Employed On:{" "}
@@ -1334,7 +1385,7 @@ export default function FormsListTable({
                                   {exp.currentlyWorking ? "Yes" : "No"}
                                 </span>
                               </div>
-                              <div className="col-span-2">
+                              <div className="col-span-1 sm:col-span-2">
                                 <span className="text-gray-500 text-[10px] block mb-0.5">
                                   Job Description:
                                 </span>
@@ -1366,9 +1417,9 @@ export default function FormsListTable({
                           {answeredAdditionalQuestions.map((q) => (
                             <div
                               key={q.id}
-                              className="flex items-start justify-between border-b border-gray-100 pb-1 last:border-none"
+                              className="flex items-start justify-between border-b border-gray-100 pb-1 last:border-none gap-2"
                             >
-                              <p className="text-gray-700 pr-3">
+                              <p className="text-gray-700 pr-2">
                                 <span className="font-semibold text-gray-500 mr-1">
                                   Q{q.id}.
                                 </span>
