@@ -358,10 +358,6 @@ export default function NidToPdf() {
   const [copies, setCopies] = useState<number>(1);
   const [roundedCorners, setRoundedCorners] = useState(false);
 
-  // গ্লোবাল রোটেশন (সেটিংস প্যানেল এবং ফ্লোটিং গ্লোবাল বাটনের জন্য)
-  const [rotation, setRotation] = useState<number>(0);
-
-  // পৃথক কার্ড রোটেশন স্টেট (সিঙ্গেল কার্ডের হোভার মেনু দিয়ে ঘোরানোর জন্য)
   const [frontRotation, setFrontRotation] = useState<number>(0);
   const [backRotation, setBackRotation] = useState<number>(0);
 
@@ -410,7 +406,6 @@ export default function NidToPdf() {
     setFrontImage(backImage);
     setBackImage(temp);
 
-    // সোয়াপ করার সময় রোটেশনও এক্সচেঞ্জ করে দিতে পারেন চাইলে
     const tempRot = frontRotation;
     setFrontRotation(backRotation);
     setBackRotation(tempRot);
@@ -419,7 +414,6 @@ export default function NidToPdf() {
   const handleReset = () => {
     setFrontImage(null);
     setBackImage(null);
-    setRotation(0);
     setFrontRotation(0);
     setBackRotation(0);
     setFilterPreset("plain");
@@ -435,10 +429,8 @@ export default function NidToPdf() {
     setZoom(100);
   };
 
-  // সেটিংস প্যানেল থেকে গ্লোবাল রোটেশন চেঞ্জ হলে ফ্রন্ট ও ব্যাক উভয়ের রোটেশন সিঙ্ক করে দেওয়া যায় অথবা গ্লোবাল রাখা যায়
   const handleGlobalRotate = () => {
-    const nextRot = (rotation + 90) % 360;
-    setRotation(nextRot);
+    const nextRot = (frontRotation + 90) % 360;
     setFrontRotation(nextRot);
     setBackRotation(nextRot);
   };
@@ -457,6 +449,32 @@ export default function NidToPdf() {
 
     return `brightness(${brightness}%) contrast(${contrast}%) saturate(${sat}%) grayscale(${gray}%)`;
   }, [shadowRemoval, blackBoost, saturation, textDeepen, filterPreset]);
+
+  // ==========================================
+  // ADDED: Exact dimensions mapping to simulate perfect rotation bounds
+  // ==========================================
+  const cardDim = useMemo(() => {
+    if (layout === "stacked") {
+      return { width: 260, height: 260 / (85.6 / 53.98) };
+    }
+    // Portrait sheet width logic
+    if (orientation === "portrait") {
+      return { width: 232, height: 232 / (85.6 / 53.98) };
+    }
+    // Landscape sheet width logic
+    return { width: 342, height: 342 / (85.6 / 53.98) };
+  }, [layout, orientation]);
+
+  const isFrontPortrait = frontRotation % 180 !== 0;
+  const isBackPortrait = backRotation % 180 !== 0;
+
+  // Swap width and height for bounding box depending on rotation
+  const frontWrapperWidth = isFrontPortrait ? cardDim.height : cardDim.width;
+  const frontWrapperHeight = isFrontPortrait ? cardDim.width : cardDim.height;
+
+  const backWrapperWidth = isBackPortrait ? cardDim.height : cardDim.width;
+  const backWrapperHeight = isBackPortrait ? cardDim.width : cardDim.height;
+  // ==========================================
 
   const handlePrint = () => {
     const sheet = document.getElementById("printable-sheet");
@@ -684,11 +702,15 @@ export default function NidToPdf() {
           setOrientation={setOrientation}
           layout={layout}
           setLayout={setLayout}
-          rotation={rotation}
+          rotation={frontRotation}
           setRotation={(val) => {
-            setRotation(val);
-            setFrontRotation(val);
-            setBackRotation(val);
+            if (typeof val === "function") {
+              setFrontRotation(val);
+              setBackRotation(val);
+            } else {
+              setFrontRotation(val);
+              setBackRotation(val);
+            }
           }}
           position={position}
           setPosition={setPosition}
@@ -774,10 +796,10 @@ export default function NidToPdf() {
                 {Array.from({ length: copies }).map((_, copyIndex) => (
                   <div
                     key={copyIndex}
-                    className={`relative w-full ${
+                    className={`relative w-full flex justify-center items-center ${
                       layout === "side-by-side"
-                        ? "grid grid-cols-2 gap-3 items-center"
-                        : "flex flex-col items-center gap-4"
+                        ? "flex-row gap-3"
+                        : "flex-col gap-4"
                     }`}
                   >
                     {copyIndex === 0 && imageCount > 0 && (
@@ -815,172 +837,188 @@ export default function NidToPdf() {
 
                     {/* FRONT CARD CONTAINER */}
                     <div
-                      className={`aspect-[85.6/53.98] overflow-hidden ${
-                        roundedCorners ? "rounded-[14px]" : "rounded-none"
-                      } ${
-                        layout === "side-by-side"
-                          ? "w-full"
-                          : "w-[260px] max-w-full"
-                      }`}
+                      className="relative flex justify-center items-center shrink-0 transition-all duration-300"
+                      style={{
+                        width: frontWrapperWidth,
+                        height: frontWrapperHeight,
+                      }}
                     >
-                      {frontImageUrl ? (
-                        <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
-                          <img
-                            src={frontImageUrl}
-                            alt="Front NID"
-                            className="w-full h-full object-cover transition-all duration-200"
-                            style={{
-                              transform: `rotate(${frontRotation}deg)`,
-                              filter: imageFilterStyle,
-                            }}
-                          />
-                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
-                            <button
-                              onClick={() => setCroppingSide("front")}
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Crop"
-                            >
-                              <Crop size={13} />
-                            </button>
-                            <label
-                              htmlFor="front-change-input"
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Change Image"
-                            >
-                              <Upload size={13} />
-                            </label>
-                            <button
-                              onClick={() =>
-                                setFrontRotation((r) => (r + 90) % 360)
-                              }
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Rotate Front 90°"
-                            >
-                              <RotateCw size={13} />
-                            </button>
-                            <button
-                              onClick={() => setFrontImage(null)}
-                              className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                              title="Delete"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                      <div
+                        className={`absolute overflow-hidden transition-all duration-300 ${
+                          roundedCorners ? "rounded-[14px]" : "rounded-none"
+                        }`}
+                        style={{
+                          width: cardDim.width,
+                          height: cardDim.height,
+                          transform: `rotate(${frontRotation}deg)`,
+                        }}
+                      >
+                        {frontImageUrl ? (
+                          <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                            <img
+                              src={frontImageUrl}
+                              alt="Front NID"
+                              className="w-full h-full object-cover"
+                              style={{
+                                filter: imageFilterStyle,
+                              }}
+                            />
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
+                              <button
+                                onClick={() => setCroppingSide("front")}
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Crop"
+                              >
+                                <Crop size={13} />
+                              </button>
+                              <label
+                                htmlFor="front-change-input"
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Change Image"
+                              >
+                                <Upload size={13} />
+                              </label>
+                              <button
+                                onClick={() =>
+                                  setFrontRotation((prev) => (prev + 90) % 360)
+                                }
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Rotate 90°"
+                              >
+                                <RotateCw size={13} />
+                              </button>
+                              <button
+                                onClick={() => setFrontImage(null)}
+                                className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                            <input
+                              id="front-change-input"
+                              type="file"
+                              accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
+                              onChange={handleFrontImage}
+                              className="hidden"
+                            />
                           </div>
-                          <input
-                            id="front-change-input"
-                            type="file"
-                            accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
-                            onChange={handleFrontImage}
-                            className="hidden"
-                          />
-                        </div>
-                      ) : (
-                        <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer h-full transition-all">
-                          <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
-                            <Upload size={16} />
-                          </div>
-                          <span className="text-xs font-bold text-gray-900">
-                            Front of NID card
-                          </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5">
-                            Upload front side photo
-                          </span>
-                          <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
-                            JPG · PNG · HEIC
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
-                            onChange={handleFrontImage}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
+                        ) : (
+                          <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
+                              <Upload size={16} />
+                            </div>
+                            <span className="text-xs font-bold text-gray-900">
+                              Front of NID card
+                            </span>
+                            <span className="text-[10px] text-gray-400 mt-0.5">
+                              Upload front side photo
+                            </span>
+                            <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                              JPG · PNG · HEIC
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
+                              onChange={handleFrontImage}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
                     </div>
 
                     {/* BACK CARD CONTAINER */}
                     <div
-                      className={`aspect-[85.6/53.98] overflow-hidden ${
-                        roundedCorners ? "rounded-[14px]" : "rounded-none"
-                      } ${
-                        layout === "side-by-side"
-                          ? "w-full"
-                          : "w-[260px] max-w-full"
-                      }`}
+                      className="relative flex justify-center items-center shrink-0 transition-all duration-300"
+                      style={{
+                        width: backWrapperWidth,
+                        height: backWrapperHeight,
+                      }}
                     >
-                      {backImageUrl ? (
-                        <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
-                          <img
-                            src={backImageUrl}
-                            alt="Back NID"
-                            className="w-full h-full object-cover transition-all duration-200"
-                            style={{
-                              transform: `rotate(${backRotation}deg)`,
-                              filter: imageFilterStyle,
-                            }}
-                          />
-                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
-                            <button
-                              onClick={() => setCroppingSide("back")}
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Crop"
-                            >
-                              <Crop size={13} />
-                            </button>
-                            <label
-                              htmlFor="back-change-input"
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Change Image"
-                            >
-                              <Upload size={13} />
-                            </label>
-                            <button
-                              onClick={() =>
-                                setBackRotation((r) => (r + 90) % 360)
-                              }
-                              className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
-                              title="Rotate Back 90°"
-                            >
-                              <RotateCw size={13} />
-                            </button>
-                            <button
-                              onClick={() => setBackImage(null)}
-                              className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                              title="Delete"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                      <div
+                        className={`absolute overflow-hidden transition-all duration-300 ${
+                          roundedCorners ? "rounded-[14px]" : "rounded-none"
+                        }`}
+                        style={{
+                          width: cardDim.width,
+                          height: cardDim.height,
+                          transform: `rotate(${backRotation}deg)`,
+                        }}
+                      >
+                        {backImageUrl ? (
+                          <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                            <img
+                              src={backImageUrl}
+                              alt="Back NID"
+                              className="w-full h-full object-cover"
+                              style={{
+                                filter: imageFilterStyle,
+                              }}
+                            />
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
+                              <button
+                                onClick={() => setCroppingSide("back")}
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Crop"
+                              >
+                                <Crop size={13} />
+                              </button>
+                              <label
+                                htmlFor="back-change-input"
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Change Image"
+                              >
+                                <Upload size={13} />
+                              </label>
+                              <button
+                                onClick={() =>
+                                  setBackRotation((prev) => (prev + 90) % 360)
+                                }
+                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                title="Rotate 90°"
+                              >
+                                <RotateCw size={13} />
+                              </button>
+                              <button
+                                onClick={() => setBackImage(null)}
+                                className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                            <input
+                              id="back-change-input"
+                              type="file"
+                              accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
+                              onChange={handleBackImage}
+                              className="hidden"
+                            />
                           </div>
-                          <input
-                            id="back-change-input"
-                            type="file"
-                            accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
-                            onChange={handleBackImage}
-                            className="hidden"
-                          />
-                        </div>
-                      ) : (
-                        <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer h-full transition-all">
-                          <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
-                            <Upload size={16} />
-                          </div>
-                          <span className="text-xs font-bold text-gray-900">
-                            Back of NID card
-                          </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5">
-                            Upload back side photo
-                          </span>
-                          <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
-                            JPG · PNG · HEIC
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
-                            onChange={handleBackImage}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
+                        ) : (
+                          <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
+                              <Upload size={16} />
+                            </div>
+                            <span className="text-xs font-bold text-gray-900">
+                              Back of NID card
+                            </span>
+                            <span className="text-[10px] text-gray-400 mt-0.5">
+                              Upload back side photo
+                            </span>
+                            <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                              JPG · PNG · HEIC
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/jpeg, image/jpg, image/png, image/heic, image/heif"
+                              onChange={handleBackImage}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
