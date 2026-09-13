@@ -35,3 +35,40 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { message: "Form ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const body = await request.json();
+    await connectDB();
+
+    const updatedForm = await SavedForm.findByIdAndUpdate(
+      id,
+      { formData: body },
+      { new: true },
+    );
+
+    if (!updatedForm) {
+      return NextResponse.json({ message: "Form not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { message: "Form updated successfully", data: updatedForm },
+      { status: 200 },
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { message: "Failed to update form", error: error.message },
+      { status: 500 },
+    );
+  }
+}
