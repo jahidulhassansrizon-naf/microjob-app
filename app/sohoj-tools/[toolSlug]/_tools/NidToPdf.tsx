@@ -378,6 +378,9 @@ export default function NidToPdf() {
     null,
   );
 
+  // State for loading state while downloading PDF on Mobile/Desktop
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   const imageCount = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
 
   const frontImageUrl = useMemo(
@@ -450,9 +453,7 @@ export default function NidToPdf() {
     return `brightness(${brightness}%) contrast(${contrast}%) saturate(${sat}%) grayscale(${gray}%)`;
   }, [shadowRemoval, blackBoost, saturation, textDeepen, filterPreset]);
 
-  // ==========================================
-  // ADDED: Exact dimensions mapping to simulate perfect rotation bounds
-  // ==========================================
+  // Exact dimensions mapping to simulate perfect rotation bounds
   const cardDim = useMemo(() => {
     if (layout === "stacked") {
       return { width: 260, height: 260 / (85.6 / 53.98) };
@@ -474,7 +475,6 @@ export default function NidToPdf() {
 
   const backWrapperWidth = isBackPortrait ? cardDim.height : cardDim.width;
   const backWrapperHeight = isBackPortrait ? cardDim.width : cardDim.height;
-  // ==========================================
 
   const handlePrint = () => {
     const sheet = document.getElementById("printable-sheet");
@@ -514,11 +514,18 @@ export default function NidToPdf() {
     const sheet = document.getElementById("printable-sheet");
     if (!sheet) return;
 
+    setIsGeneratingPdf(true);
+
     try {
       const canvas = await html2canvas(sheet, {
         scale: 2,
         useCORS: true,
         logging: false,
+        // মোবাইল স্ক্রিনের লিমিটেশন ইগনোর করার জন্য ফোর্সড রেজুলেশন উইন্ডো
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1200,
+        windowHeight: 1200,
         ignoreElements: (element) => {
           return (
             element.classList.contains("print:hidden") ||
@@ -526,10 +533,36 @@ export default function NidToPdf() {
           );
         },
         onclone: (clonedDoc) => {
-          // ১. ক্লোন করা ডকুমেন্টের জুম (transform) রিমুভ করে দিচ্ছি যাতে ঠিকমতো ক্যাপচার হয়
           const clonedSheet = clonedDoc.getElementById("printable-sheet");
           if (clonedSheet) {
+            // ১. ক্লোন করা ডকুমেন্টের জুম (transform) রিমুভ করে দিচ্ছি যাতে ঠিকমতো ক্যাপচার হয়
             clonedSheet.style.transform = "none";
+
+            // ২. মোবাইলে যেন উইডথ/হাইট স্ক্রিনের মাপে ছোট না হয়ে যায় তাই ফিক্সড সাইজ দেওয়া হচ্ছে
+            clonedSheet.style.maxWidth = "none";
+            clonedSheet.style.maxHeight = "none";
+
+            if (orientation === "portrait") {
+              clonedSheet.style.width = "540px";
+              clonedSheet.style.minWidth = "540px";
+              clonedSheet.style.height = "760px";
+              clonedSheet.style.minHeight = "760px";
+            } else {
+              clonedSheet.style.width = "760px";
+              clonedSheet.style.minWidth = "760px";
+              clonedSheet.style.height = "540px";
+              clonedSheet.style.minHeight = "540px";
+            }
+
+            // ৩. প্যারেন্ট এলিমেন্টগুলোর রেস্ট্রিকশন সরাচ্ছি যাতে স্ক্রিনের বাইরে থাকলেও ক্যাপচার হয়
+            let parent = clonedSheet.parentElement;
+            while (parent && parent.tagName !== "BODY") {
+              parent.style.overflow = "visible";
+              parent.style.transform = "none";
+              parent.style.maxWidth = "none";
+              parent.style.maxHeight = "none";
+              parent = parent.parentElement;
+            }
           }
 
           const elements = clonedDoc.querySelectorAll("*");
@@ -553,7 +586,6 @@ export default function NidToPdf() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // ২. ক্যানভাস এবং A4 পেইজের রেশিও বের করে হাইট/উইথ ঠিক করা
       const imgRatio = canvas.width / canvas.height;
       const pageRatio = pdfWidth / pdfHeight;
 
@@ -568,15 +600,15 @@ export default function NidToPdf() {
         finalWidth = pdfHeight * imgRatio;
       }
 
-      // ৩. এক্স্যাক্ট সেন্টারের (X এবং Y) পজিশন ক্যালকুলেট করা
       const x = (pdfWidth - finalWidth) / 2;
       const y = (pdfHeight - finalHeight) / 2;
 
-      // ৪. সেন্টারে ইমেজটা বসানো
       pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
       pdf.save("nid-card.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -1078,14 +1110,21 @@ export default function NidToPdf() {
           </button>
           <button
             onClick={handleCreatePdf}
-            disabled={!frontImage && !backImage}
+            disabled={(!frontImage && !backImage) || isGeneratingPdf}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               frontImage || backImage
                 ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600 cursor-pointer"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
+            } ${isGeneratingPdf ? "opacity-75 !cursor-wait" : ""}`}
           >
-            <span>Create PDF</span>
+            {isGeneratingPdf ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              <span>Create PDF</span>
+            )}
           </button>
         </div>
       </div>
