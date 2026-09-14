@@ -423,6 +423,10 @@ export default function ImageSizeReducer() {
         next[activeCompareIndex] = updatedResult;
         return next;
       });
+
+      // সেভ করার পর সাইডবার বন্ধ করা এবং স্লাইডার রিসেট করা
+      setIsEditing(false);
+      setEditSettings({ brightness: 100, contrast: 100, saturation: 100 });
     } catch (err) {
       console.error("Editing save error:", err);
     }
@@ -1108,6 +1112,9 @@ export default function ImageSizeReducer() {
                   }
                   alt="After"
                   className="max-h-[75vh] max-w-full object-contain shadow-2xl transition-all duration-100"
+                  style={{
+                    filter: `brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%)`,
+                  }}
                 />
               </div>
 
