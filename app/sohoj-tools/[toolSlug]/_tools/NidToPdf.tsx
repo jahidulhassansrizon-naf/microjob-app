@@ -526,6 +526,12 @@ export default function NidToPdf() {
           );
         },
         onclone: (clonedDoc) => {
+          // ১. ক্লোন করা ডকুমেন্টের জুম (transform) রিমুভ করে দিচ্ছি যাতে ঠিকমতো ক্যাপচার হয়
+          const clonedSheet = clonedDoc.getElementById("printable-sheet");
+          if (clonedSheet) {
+            clonedSheet.style.transform = "none";
+          }
+
           const elements = clonedDoc.querySelectorAll("*");
           elements.forEach((el) => {
             const htmlEl = el as HTMLElement;
@@ -543,10 +549,31 @@ export default function NidToPdf() {
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF(orientation === "portrait" ? "p" : "l", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // ২. ক্যানভাস এবং A4 পেইজের রেশিও বের করে হাইট/উইথ ঠিক করা
+      const imgRatio = canvas.width / canvas.height;
+      const pageRatio = pdfWidth / pdfHeight;
+
+      let finalWidth = pdfWidth;
+      let finalHeight = pdfHeight;
+
+      if (imgRatio > pageRatio) {
+        finalWidth = pdfWidth;
+        finalHeight = pdfWidth / imgRatio;
+      } else {
+        finalHeight = pdfHeight;
+        finalWidth = pdfHeight * imgRatio;
+      }
+
+      // ৩. এক্স্যাক্ট সেন্টারের (X এবং Y) পজিশন ক্যালকুলেট করা
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = (pdfHeight - finalHeight) / 2;
+
+      // ৪. সেন্টারে ইমেজটা বসানো
+      pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
       pdf.save("nid-card.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
