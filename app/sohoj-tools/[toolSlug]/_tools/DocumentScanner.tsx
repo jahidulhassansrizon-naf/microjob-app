@@ -42,7 +42,10 @@ const DEFAULT_CORNERS: Point[] = [
   { x: 10, y: 90 },
 ];
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://microjob-backend-6mxg.onrender.com"
+).replace(/\/+$/, "");
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -494,7 +497,10 @@ export default function DocumentScanner() {
         const formData = new FormData();
         formData.append("file", blob, "document.png");
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const cleanEndpoint = endpoint.startsWith("/")
+          ? endpoint
+          : `/${endpoint}`;
+        const response = await fetch(`${API_BASE_URL}${cleanEndpoint}`, {
           method: "POST",
           body: formData,
         });
@@ -521,6 +527,10 @@ export default function DocumentScanner() {
       setProcessedImageSrc("");
       return;
     }
+
+    // ম্যানুয়াল ক্রপের পয়েন্ট ড্র্যাগ করা অবস্থায় ব্যাকএন্ড API কল স্থগিত রাখা হবে
+    if (draggingCorner !== null) return;
+
     const currentProcessingId = ++processingIdRef.current;
     try {
       const img = await loadImage(images[selectedIndex]);
@@ -533,9 +543,7 @@ export default function DocumentScanner() {
         setIsPythonLoading(false);
         if (currentProcessingId !== processingIdRef.current) return;
         if (croppedCanvas) workingCanvas = croppedCanvas;
-      }
-
-      if (!autoCrop && cropReady && corners.length === 4) {
+      } else if (cropReady && corners.length === 4) {
         const warpedCanvas = applyPerspectiveWarp(workingCanvas, corners);
         if (warpedCanvas) workingCanvas = warpedCanvas;
       }
@@ -634,6 +642,7 @@ export default function DocumentScanner() {
     cropReady,
     corners,
     isManualCropping,
+    draggingCorner,
     loadImage,
     createRotatedCanvas,
     applyPerspectiveWarp,
@@ -684,7 +693,11 @@ export default function DocumentScanner() {
     });
     setCropReady(true);
   };
-  const handlePointerRelease = () => setDraggingCorner(null);
+  const handlePointerRelease = () => {
+    if (draggingCorner !== null) {
+      setDraggingCorner(null);
+    }
+  };
 
   const handleDownloadPDF = async () => {
     if (!processedImageSrc) return;
