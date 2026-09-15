@@ -811,19 +811,19 @@ export default function DocumentScanner() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-4 lg:p-6 select-none flex flex-col justify-between">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
       <canvas ref={processedCanvasRef} className="hidden" />
 
       <div>
         {errorMessage && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center justify-between text-xs font-medium shadow-xs">
             <div className="flex items-center gap-2">
-              <AlertCircle size={16} className="text-red-600" />
+              <AlertCircle size={16} className="text-red-600 shrink-0" />
               <span>{errorMessage}</span>
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="p-1 hover:bg-red-100 rounded-lg cursor-pointer"
+              className="p-1 hover:bg-red-100 rounded-lg cursor-pointer shrink-0"
             >
               <X size={14} />
             </button>
@@ -831,80 +831,80 @@ export default function DocumentScanner() {
         )}
 
         {/* Top Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               href="/sohoj-tools"
-              className="p-2 text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
               title="Back to Tools"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
             </Link>
-            <div className="w-9 h-9 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold shadow-xs">
-              <Printer size={20} />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Printer size={18} className="sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                 Document Print
               </h1>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
                 All kind of documents print ready.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 shadow-xs mr-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 sm:p-1 shadow-xs mr-1 sm:mr-2">
               <button
                 onClick={handleReset}
-                className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                className="p-1 sm:p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                 title="Reset"
               >
-                <Undo size={16} />
+                <Undo size={15} />
               </button>
               <button
-                className="p-1.5 text-slate-300 rounded-md cursor-not-allowed"
+                className="p-1 sm:p-1.5 text-slate-300 rounded-md cursor-not-allowed"
                 title="Redo"
               >
-                <Redo size={16} />
+                <Redo size={15} />
               </button>
               <button
                 onClick={handleReset}
-                className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                className="p-1 sm:p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                 title="Reload"
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={15} />
               </button>
               <button
                 onClick={() => setIsComparing(!isComparing)}
                 disabled={images.length === 0}
-                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                className={`p-1 sm:p-1.5 rounded-md transition-colors cursor-pointer ${
                   isComparing
                     ? "bg-emerald-600 text-white"
                     : "text-slate-600 hover:bg-slate-100"
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
                 title="Compare Original & Cleaned"
               >
-                <Columns size={16} />
+                <Columns size={15} />
               </button>
             </div>
 
             <button
               onClick={handlePrint}
               disabled={images.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Printer size={15} />
-              Print
+              <Printer size={14} />
+              <span>Print</span>
             </button>
 
             <button
               onClick={handleDownloadPDF}
               disabled={images.length === 0 || isPythonLoading}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FileDown size={15} />
-              PDF download
+              <FileDown size={14} />
+              <span>PDF download</span>
             </button>
 
             <button
@@ -916,22 +916,22 @@ export default function DocumentScanner() {
                 link.click();
               }}
               disabled={images.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download size={15} />
-              Download
+              <Download size={14} />
+              <span>Download</span>
             </button>
           </div>
         </div>
 
         {/* Main Work Area */}
         <div className="flex flex-col lg:flex-row gap-4 items-start">
-          <div className="flex-1 w-full bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between min-h-[720px] shadow-xs">
-            <div className="flex gap-4 h-full flex-1">
-              {/* Thumbnails */}
-              <div className="flex flex-col gap-3 shrink-0">
-                <label className="w-16 h-20 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center cursor-pointer transition-colors">
-                  <Plus size={24} className="text-slate-600" />
+          <div className="flex-1 w-full bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[500px] sm:min-h-[600px] lg:min-h-[720px]">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 h-full flex-1">
+              {/* Thumbnails - Mobile: Horizontal Scroll, Desktop: Vertical Stack */}
+              <div className="flex md:flex-col gap-2.5 shrink-0 overflow-x-auto md:overflow-y-auto max-h-none md:max-h-[600px] pb-2 md:pb-0 scrollbar-thin">
+                <label className="w-14 h-18 sm:w-16 sm:h-20 shrink-0 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center cursor-pointer transition-colors">
+                  <Plus size={20} className="text-slate-600 sm:w-6 sm:h-6" />
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -946,7 +946,7 @@ export default function DocumentScanner() {
                   <div
                     key={idx}
                     onClick={() => setSelectedIndex(idx)}
-                    className={`w-16 h-20 rounded-xl border-2 overflow-hidden relative cursor-pointer shadow-xs transition-all ${
+                    className={`w-14 h-18 sm:w-16 sm:h-20 shrink-0 rounded-xl border-2 overflow-hidden relative cursor-pointer shadow-xs transition-all ${
                       selectedIndex === idx
                         ? "border-emerald-600 ring-2 ring-emerald-500/20 scale-102"
                         : "border-slate-200 opacity-80 hover:opacity-100"
@@ -971,9 +971,9 @@ export default function DocumentScanner() {
               </div>
 
               {/* Preview */}
-              <div className="flex-1 bg-slate-200/60 border border-slate-200 rounded-xl flex items-center justify-center p-4 relative overflow-hidden min-h-[640px]">
+              <div className="flex-1 bg-slate-200/60 border border-slate-200 rounded-xl flex items-center justify-center p-2 sm:p-4 relative overflow-hidden min-h-[380px] sm:min-h-[480px] lg:min-h-[620px]">
                 {images.length === 0 ? (
-                  <label className="flex flex-col items-center justify-center gap-3 cursor-pointer text-slate-500 hover:text-slate-700 transition-colors">
+                  <label className="flex flex-col items-center justify-center gap-3 cursor-pointer text-slate-500 hover:text-slate-700 transition-colors p-6 text-center">
                     <Upload size={32} className="text-emerald-600" />
                     <span className="text-xs font-semibold px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-xs cursor-pointer">
                       Upload Document
@@ -998,10 +998,10 @@ export default function DocumentScanner() {
                       transform: `scale(${zoom / 100})`,
                       transition: "transform 0.1s ease",
                     }}
-                    className="bg-white w-full h-full max-h-[620px] aspect-[1/1.414] shadow-md border border-slate-300 rounded relative flex items-center justify-center overflow-hidden"
+                    className="bg-white w-full max-w-full h-full max-h-[450px] sm:max-h-[580px] lg:max-h-[620px] aspect-[1/1.414] shadow-md border border-slate-300 rounded relative flex items-center justify-center overflow-hidden"
                   >
                     {isPythonLoading && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-30 flex flex-col items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-30 flex flex-col items-center justify-center gap-2 p-4 text-center">
                         <Loader2
                           size={32}
                           className="text-emerald-600 animate-spin"
@@ -1075,7 +1075,7 @@ export default function DocumentScanner() {
                               top: `${corner.y}%`,
                               touchAction: "none",
                             }}
-                            className="w-6 h-6 bg-emerald-600 border-2 border-white rounded-full absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing shadow-lg flex items-center justify-center z-30"
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-emerald-600 border-2 border-white rounded-full absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing shadow-lg flex items-center justify-center z-30"
                           >
                             <span className="w-2 h-2 bg-white rounded-full" />
                           </div>
@@ -1088,8 +1088,8 @@ export default function DocumentScanner() {
             </div>
 
             {/* Bottom Controls Bar for Zoom */}
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-              <div className="flex items-center gap-2">
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2 items-center justify-between text-xs text-slate-600">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setZoom((z) => Math.max(50, z - 10))}
                   className="w-7 h-7 bg-white rounded-md border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
@@ -1107,18 +1107,18 @@ export default function DocumentScanner() {
                   className="px-2.5 py-1 bg-white rounded-md border border-slate-200 font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw size={12} />
-                  Reset view
+                  <span>Reset view</span>
                 </button>
               </div>
 
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
                 {(zoom / 100).toFixed(1)}x - scroll to zoom, drag to pan
               </span>
             </div>
           </div>
 
           {/* Right Sidebar Controls */}
-          <div className="w-full lg:w-[320px] shrink-0 space-y-4">
+          <div className="w-full lg:w-[320px] shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             {/* CROP CARD */}
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -1209,7 +1209,7 @@ export default function DocumentScanner() {
 
             {/* ADJUSTMENTS CARD */}
             <div
-              className={`bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 transition-all ${
+              className={`bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1 ${
                 mode !== "magic-color" ? "opacity-50 pointer-events-none" : ""
               }`}
             >
@@ -1282,7 +1282,7 @@ export default function DocumentScanner() {
       </div>
 
       <div className="mt-4 pt-2 text-xs text-slate-600 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-600" />
+        <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
         <span>
           Document Clean দিয়ে Document আরও সুন্দর ও Clean করুন A4 Print Ready
         </span>
