@@ -449,6 +449,9 @@ export default function DocumentScanner() {
 
   const processWithPythonAutoCrop = useCallback(
     async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElement | null> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       try {
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob((b) => resolve(b), "image/png"),
@@ -461,7 +464,11 @@ export default function DocumentScanner() {
         const response = await fetch(`${API_BASE_URL}/api/auto-crop`, {
           method: "POST",
           body: formData,
+          signal: controller.signal,
+          cache: "no-store",
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) return null;
 
@@ -477,6 +484,7 @@ export default function DocumentScanner() {
         revokeTrackedObjectURL(url);
         return newCanvas;
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error("Python Auto Crop Error:", error);
         return null;
       }
@@ -489,6 +497,9 @@ export default function DocumentScanner() {
       canvas: HTMLCanvasElement,
       endpoint: string = "/api/clean-document",
     ): Promise<string | null> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       try {
         setErrorMessage(null);
         const blob = await new Promise<Blob | null>((resolve) =>
@@ -503,10 +514,15 @@ export default function DocumentScanner() {
         const cleanEndpoint = endpoint.startsWith("/")
           ? endpoint
           : `/${endpoint}`;
+
         const response = await fetch(`${API_BASE_URL}${cleanEndpoint}`, {
           method: "POST",
           body: formData,
+          signal: controller.signal,
+          cache: "no-store",
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`Python API error: ${response.statusText}`);
@@ -514,11 +530,19 @@ export default function DocumentScanner() {
 
         const responseBlob = await response.blob();
         return createTrackedObjectURL(responseBlob);
-      } catch (error) {
+      } catch (error: any) {
+        clearTimeout(timeoutId);
         console.error("Python Backend Integration Error:", error);
-        setErrorMessage(
-          "পাইথন সার্ভারের সাথে কানেক্ট করা যায়নি। সার্ভারটি সঠিকভাবে চালু আছে কিনা তা নিশ্চিত করুন।",
-        );
+
+        if (error.name === "AbortError") {
+          setErrorMessage(
+            "সার্ভার সাড়া দিতে সময় নিচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+          );
+        } else {
+          setErrorMessage(
+            "পাইথন সার্ভারে কানেক্ট করা যায়নি। সার্ভিসটি রিস্টার্ট হচ্ছে, কয়েক সেকেন্ড পর আবার চেষ্টা করুন।",
+          );
+        }
         return null;
       }
     },
@@ -543,7 +567,6 @@ export default function DocumentScanner() {
       if (autoCrop && !isManualCropping) {
         setIsPythonLoading(true);
         const croppedCanvas = await processWithPythonAutoCrop(workingCanvas);
-        setIsPythonLoading(false);
         if (currentProcessingId !== processingIdRef.current) return;
         if (croppedCanvas) workingCanvas = croppedCanvas;
       } else if (cropReady && corners.length === 4) {
@@ -551,35 +574,24 @@ export default function DocumentScanner() {
         if (warpedCanvas) workingCanvas = warpedCanvas;
       }
 
-      // ফিল্টার প্রয়োগ করার আগে ক্রপ করা অরিজিনাল ছবিটি সেভ করে রাখা (Compare এর জন্য)
       setCroppedOriginalSrc(workingCanvas.toDataURL("image/png"));
 
       if (currentProcessingId !== processingIdRef.current) return;
 
-      if (mode === "python-clean") {
+      if (mode === "python-clean" || mode === "python-color") {
         setIsPythonLoading(true);
-        const cleanedUrl = await processWithPythonBackend(
+        const endpoint =
+          mode === "python-clean"
+            ? "/api/clean-document"
+            : "/api/color-document";
+        const resultUrl = await processWithPythonBackend(
           workingCanvas,
-          "/api/clean-document",
+          endpoint,
         );
-        setIsPythonLoading(false);
-        if (currentProcessingId !== processingIdRef.current) return;
-        if (cleanedUrl) {
-          setProcessedImageSrc(cleanedUrl);
-          return;
-        }
-      }
 
-      if (mode === "python-color") {
-        setIsPythonLoading(true);
-        const colorUrl = await processWithPythonBackend(
-          workingCanvas,
-          "/api/color-document",
-        );
-        setIsPythonLoading(false);
         if (currentProcessingId !== processingIdRef.current) return;
-        if (colorUrl) {
-          setProcessedImageSrc(colorUrl);
+        if (resultUrl) {
+          setProcessedImageSrc(resultUrl);
           return;
         }
       }
