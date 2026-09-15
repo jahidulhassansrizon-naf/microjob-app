@@ -61,6 +61,7 @@ export default function DocumentScanner() {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [processedImageSrc, setProcessedImageSrc] = useState<string>("");
   const [uncroppedSrc, setUncroppedSrc] = useState<string>("");
+  const [croppedOriginalSrc, setCroppedOriginalSrc] = useState<string>("");
 
   const [autoCrop, setAutoCrop] = useState<boolean>(false);
   const [isManualCropping, setIsManualCropping] = useState<boolean>(false);
@@ -186,6 +187,7 @@ export default function DocumentScanner() {
       });
     } else {
       setUncroppedSrc("");
+      setCroppedOriginalSrc("");
     }
     return () => {
       active = false;
@@ -340,6 +342,7 @@ export default function DocumentScanner() {
     if (updated.length === 0) {
       setProcessedImageSrc("");
       setUncroppedSrc("");
+      setCroppedOriginalSrc("");
       resetCorners();
       setCropReady(false);
       setAutoCrop(false);
@@ -525,10 +528,10 @@ export default function DocumentScanner() {
   const applyFilters = useCallback(async () => {
     if (images.length === 0 || selectedIndex < 0 || !images[selectedIndex]) {
       setProcessedImageSrc("");
+      setCroppedOriginalSrc("");
       return;
     }
 
-    // ম্যানুয়াল ক্রপের পয়েন্ট ড্র্যাগ করা অবস্থায় ব্যাকএন্ড API কল স্থগিত রাখা হবে
     if (draggingCorner !== null) return;
 
     const currentProcessingId = ++processingIdRef.current;
@@ -547,6 +550,9 @@ export default function DocumentScanner() {
         const warpedCanvas = applyPerspectiveWarp(workingCanvas, corners);
         if (warpedCanvas) workingCanvas = warpedCanvas;
       }
+
+      // ফিল্টার প্রয়োগ করার আগে ক্রপ করা অরিজিনাল ছবিটি সেভ করে রাখা (Compare এর জন্য)
+      setCroppedOriginalSrc(workingCanvas.toDataURL("image/png"));
 
       if (currentProcessingId !== processingIdRef.current) return;
 
@@ -997,8 +1003,12 @@ export default function DocumentScanner() {
                     {isComparing && processedImageSrc ? (
                       <div className="w-full h-full relative flex items-center justify-center cursor-ew-resize">
                         <ReactCompareImage
-                          leftImage={processedImageSrc || images[selectedIndex]}
-                          rightImage={images[selectedIndex]}
+                          leftImage={processedImageSrc}
+                          rightImage={
+                            croppedOriginalSrc ||
+                            uncroppedSrc ||
+                            images[selectedIndex]
+                          }
                           leftImageLabel="Cleaned"
                           rightImageLabel="Original"
                           sliderLineWidth={3}
