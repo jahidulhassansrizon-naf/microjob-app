@@ -79,16 +79,16 @@ export default function DashboardNavbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Logout Handler (কুকি এবং স্টোরেজ সম্পূর্ণ পরিষ্কার করবে)
+  // Logout Handler (ব্রাউজার হিস্ট্রি রিপ্লেস করবে যাতে ব্যাক বাটনে রিডাইরেক্ট লুপ না হয়)
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
 
-    // 🟢 Token Cookie নির্দিষ্টভাবে মুছে ফেলা
+    // Token Cookie মুছে ফেলা
     document.cookie =
       "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
 
-    // অন্যান্য কুকি মুছে ফেলা
+    // অন্যান্য সমস্ত কুকি পরিষ্কার করা
     document.cookie.split(";").forEach((cookie) => {
       const eqPos = cookie.indexOf("=");
       const name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
@@ -96,7 +96,9 @@ export default function DashboardNavbar() {
     });
 
     setUser(null);
-    window.location.href = "/login";
+
+    // window.location.href এর বদলে replace ব্যবহার করে হিস্ট্রি স্ট্যাক ওভাররাইট করা হয়েছে
+    window.location.replace("/login");
   };
 
   const getInitials = (name?: string) => {

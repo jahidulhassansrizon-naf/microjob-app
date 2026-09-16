@@ -1,55 +1,67 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
 import {
   LayoutGrid,
   FileEdit,
   Image,
   ArrowRight,
   Printer,
-  Share2,
   FolderDown,
+  X,
 } from "lucide-react";
 
 export default function PrintMediaSection() {
+  const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
+
   const cards = [
     {
       title: "Massive print-ready design library",
       desc: "This huge collection of various categories (AI, PSD & preview) is completely free",
       icon: <LayoutGrid className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: 0,
     },
     {
       title: "Replace text in a flash",
       desc: "Create, edit and print with different information all at once",
       icon: <FileEdit className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: 62,
     },
     {
       title: "Replace logos, images and other photos",
       desc: "This huge collection of various categories (AI, PSD & preview) is completely free",
       icon: <Image className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: 73,
     },
     {
       title: "Create your file instantly",
       desc: "Create your file easily in the print media service.",
       icon: <ArrowRight className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: 118,
     },
     {
       title: "Share or email your created file",
       desc: "Instantly download or email your created file at any time.",
       icon: <Printer className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: null,
     },
     {
       title: "AI, PSD, PNG, CMYK, RGB — whatever you need",
       desc: "Save the final version in any format with one click.",
       icon: <FolderDown className="text-white" size={20} />,
       iconBg: "bg-[#7C3AED]",
+      videoStart: 130,
     },
   ];
 
   return (
-    <section className="bg-[#FAF7FD] py-20 px-6 md:px-12">
+    <section className="bg-[#FBEFFF] py-20 px-6 md:px-12">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-16">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -92,13 +104,27 @@ export default function PrintMediaSection() {
               </div>
 
               <div className="pt-5">
-                <a
-                  href="#"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B5CF6] hover:underline"
-                >
-                  <span>Learn more</span>
-                  <ArrowRight size={13} />
-                </a>
+                {card.videoStart !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideoStart(card.videoStart)}
+                    className="group inline-flex items-center gap-1 text-xs font-bold text-[#8B5CF6] no-underline cursor-pointer"
+                  >
+                    <span>Learn more</span>
+                    <ArrowRight
+                      size={13}
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    />
+                  </button>
+                ) : (
+                  <span className="group inline-flex items-center gap-1 text-xs font-bold text-[#8B5CF6] select-none cursor-default no-underline">
+                    <span>Learn more</span>
+                    <ArrowRight
+                      size={13}
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    />
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -119,12 +145,49 @@ export default function PrintMediaSection() {
             everything included.
           </p>
 
-          <button className="bg-white text-[#7C3AED] hover:bg-gray-50 font-bold px-8 py-3.5 rounded-full text-sm inline-flex items-center gap-2 shadow-lg transition hover:scale-105">
+          <Link
+            href="/dashboard"
+            className="group bg-white text-[#7C3AED] hover:bg-gray-50 font-bold px-8 py-3.5 rounded-full text-sm inline-flex items-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer no-underline"
+          >
             <span>Get Started Now</span>
-            <ArrowRight size={16} />
-          </button>
+            <ArrowRight
+              size={16}
+              className="transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </Link>
         </div>
       </div>
+
+      {/* Demo Video Popup Modal */}
+      {activeVideoStart !== null && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setActiveVideoStart(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setActiveVideoStart(null)}
+              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+              aria-label="Close video"
+            >
+              <X size={26} />
+            </button>
+
+            {/* Youtube Embedded Video */}
+            <iframe
+              src={`https://www.youtube.com/embed/gDJK6EXjG4Q?autoplay=1&rel=0&start=${activeVideoStart}`}
+              title="SohozKaj Print Media Solution Tutorial"
+              className="w-full h-full border-0 rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

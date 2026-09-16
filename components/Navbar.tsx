@@ -21,27 +21,47 @@ import {
 
 // Our Services ডেটা
 const serviceItems = [
-  { label: "AI Photo Edit", icon: Sparkles, href: "/login" },
-  { label: "Manual Photo Edit", icon: Edit3, href: "/login" },
-  { label: "Bulk Photo Edit", icon: Copy, href: "/login" },
-  { label: "AI Template", icon: FileCode, href: "/login" },
+  {
+    label: "AI Photo Edit",
+    icon: Sparkles,
+    href: "/login?redirect=/ai-editor",
+  },
+  {
+    label: "Manual Photo Edit",
+    icon: Edit3,
+    href: "/login?redirect=/manual-editor",
+  },
+  {
+    label: "Bulk Photo Edit",
+    icon: Copy,
+    href: "/login?redirect=/bulk-photo-edit",
+  },
+  {
+    label: "AI Template",
+    icon: FileCode,
+    href: "/login?redirect=/ai-template",
+  },
   { label: "Document Templates", icon: FileText, href: "/login" },
-  { label: "Print Media", icon: Printer, href: "/login" },
-  { label: "Questions Create", icon: HelpCircle, href: "/login" },
+  { label: "Print Media", icon: Printer, href: "/login?redirect=/print-media" },
+  {
+    label: "Questions Create",
+    icon: HelpCircle,
+    href: "/login?redirect=/questions-create/create",
+  },
 ];
 
-// SohozTools মেগা-মেনু ডেটা
+// SohozTools মেগা-মেনু বক্সের ভেতরের ডেটা -> redirect=/sohoj-tools
 const sohozToolsCategories = [
   {
     title: "PDF Tools",
     count: "15 tools",
     tools: [
-      { name: "Compress PDF", href: "/tools" },
-      { name: "Merge PDFs", href: "/tools" },
-      { name: "Create PDF", href: "/tools" },
-      { name: "Split PDF", href: "/tools" },
-      { name: "PDF to Image", href: "/tools" },
-      { name: "Lock / Unlock PDF", href: "/tools" },
+      { name: "Compress PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Merge PDFs", href: "/login?redirect=/sohoj-tools" },
+      { name: "Create PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Split PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "PDF to Image", href: "/login?redirect=/sohoj-tools" },
+      { name: "Lock / Unlock PDF", href: "/login?redirect=/sohoj-tools" },
     ],
     moreText: "+9 more >",
   },
@@ -49,12 +69,15 @@ const sohozToolsCategories = [
     title: "Image Tools",
     count: "18 tools",
     tools: [
-      { name: "Image Size Reducer", href: "/tools" },
-      { name: "NID to PDF", href: "/tools" },
-      { name: "Remove Background", href: "/tools" },
-      { name: "Govt Job Photo & Sign Resizer", href: "/tools" },
-      { name: "Passport to PDF", href: "/tools" },
-      { name: "Image Convert", href: "/tools" },
+      { name: "Image Size Reducer", href: "/login?redirect=/sohoj-tools" },
+      { name: "NID to PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Remove Background", href: "/login?redirect=/sohoj-tools" },
+      {
+        name: "Govt Job Photo & Sign Resizer",
+        href: "/login?redirect=/sohoj-tools",
+      },
+      { name: "Passport to PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Image Convert", href: "/login?redirect=/sohoj-tools" },
     ],
     moreText: "+12 more >",
   },
@@ -62,24 +85,24 @@ const sohozToolsCategories = [
     title: "Text Tools",
     count: "6 tools",
     tools: [
-      { name: "Bijoy ↔ Unicode", href: "/tools" },
-      { name: "Banglish Typing", href: "/tools" },
-      { name: "Number to Words", href: "/tools" },
-      { name: "Image to Text", href: "/tools" },
-      { name: "Text Analyzer", href: "/tools" },
-      { name: "Date Format Converter", href: "/tools" },
+      { name: "Bijoy ↔ Unicode", href: "/login?redirect=/sohoj-tools" },
+      { name: "Banglish Typing", href: "/login?redirect=/sohoj-tools" },
+      { name: "Number to Words", href: "/login?redirect=/sohoj-tools" },
+      { name: "Image to Text", href: "/login?redirect=/sohoj-tools" },
+      { name: "Text Analyzer", href: "/login?redirect=/sohoj-tools" },
+      { name: "Date Format Converter", href: "/login?redirect=/sohoj-tools" },
     ],
   },
   {
     title: "Video Tools",
     count: "10 tools",
     tools: [
-      { name: "Compress Video", href: "/tools" },
-      { name: "Trim/Cut Video", href: "/tools" },
-      { name: "Merge Videos", href: "/tools" },
-      { name: "Video to Audio", href: "/tools" },
-      { name: "Add Watermark", href: "/tools" },
-      { name: "Audio Volume Booster", href: "/tools" },
+      { name: "Compress Video", href: "/login?redirect=/sohoj-tools" },
+      { name: "Trim/Cut Video", href: "/login?redirect=/sohoj-tools" },
+      { name: "Merge Videos", href: "/login?redirect=/sohoj-tools" },
+      { name: "Video to Audio", href: "/login?redirect=/sohoj-tools" },
+      { name: "Add Watermark", href: "/login?redirect=/sohoj-tools" },
+      { name: "Audio Volume Booster", href: "/login?redirect=/sohoj-tools" },
     ],
     moreText: "+4 more >",
   },
@@ -87,16 +110,16 @@ const sohozToolsCategories = [
     title: "General Tools",
     count: "5 tools",
     tools: [
-      { name: "Family Card Form", href: "/tools" },
-      { name: "Fuel Card Form", href: "/tools" },
-      { name: "ATS Friendly CV Maker", href: "/tools" },
-      { name: "Age Calculator", href: "/tools" },
-      { name: "EMI Calculator", href: "/tools" },
+      { name: "Family Card Form", href: "/login?redirect=/sohoj-tools" },
+      { name: "Fuel Card Form", href: "/login?redirect=/sohoj-tools" },
+      { name: "ATS Friendly CV Maker", href: "/login?redirect=/sohoj-tools" },
+      { name: "Age Calculator", href: "/login?redirect=/sohoj-tools" },
+      { name: "EMI Calculator", href: "/login?redirect=/sohoj-tools" },
     ],
   },
 ];
 
-// Important Links ডেটা (প্রথমটিতে /dorkar-link এবং বাকিগুলো #)
+// Important Links ডেটা
 const importantLinksItems = [
   {
     title: "Govt Websites & Links",
@@ -146,12 +169,10 @@ export default function Navbar() {
   const [isImportantOpen, setIsImportantOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // মোবাইল ড্রয়ারের ভেতরে অ্যাকর্ডিয়ন ওপেন/ক্লোজ রাখার স্টেট
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
 
-  // ড্যাশবোর্ড, অথেন্টিকেশন বা নির্দিষ্ট পেজ হলে মূল নেভবার হাইড থাকবে
   if (
     pathname === "/login" ||
     pathname === "/register" ||
@@ -173,7 +194,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs py-4 md:py-5">
+      <header className="sticky top-0 z-[999] w-full bg-white backdrop-blur-md border-b border-gray-100 shadow-xs py-4 md:py-5">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
           {/* Left: Logo */}
           <Link href="/" className="flex items-center gap-2.5">
@@ -219,6 +240,7 @@ export default function Navbar() {
                       <Link
                         key={index}
                         href={item.href}
+                        onClick={() => setIsServicesOpen(false)}
                         className="flex items-center gap-3 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00] transition"
                       >
                         <IconComponent size={16} className="text-gray-400" />
@@ -236,9 +258,10 @@ export default function Navbar() {
               onMouseEnter={() => setIsToolsOpen(true)}
               onMouseLeave={() => setIsToolsOpen(false)}
             >
+              {/* মেইন নেভবার লিঙ্ক -> সরাসরি /tools পেজে যাবে */}
               <Link
                 href="/tools"
-                onClick={() => setIsToolsOpen(!isToolsOpen)}
+                onClick={() => setIsToolsOpen(false)}
                 className="flex items-center gap-1 hover:text-amber-500 transition py-2 cursor-pointer"
               >
                 SohozTools{" "}
@@ -250,6 +273,7 @@ export default function Navbar() {
                 />
               </Link>
 
+              {/* হভার ড্রপডাউন বক্সের ভেতরের লিঙ্কস -> redirect=/sohoj-tools */}
               {isToolsOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1050px] bg-white border border-gray-100 rounded-3xl shadow-2xl p-6 z-[1000] grid grid-cols-5 gap-4">
                   {sohozToolsCategories.map((cat, idx) => (
@@ -268,6 +292,7 @@ export default function Navbar() {
                           <Link
                             key={tIdx}
                             href={tool.href}
+                            onClick={() => setIsToolsOpen(false)}
                             className="text-[11px] font-semibold text-gray-600 hover:text-[#FF5D00] hover:bg-orange-50/50 px-2.5 py-1.5 rounded-lg transition truncate"
                           >
                             {tool.name}
@@ -275,7 +300,8 @@ export default function Navbar() {
                         ))}
                         {cat.moreText && (
                           <Link
-                            href="/tools"
+                            href="/login?redirect=/sohoj-tools"
+                            onClick={() => setIsToolsOpen(false)}
                             className="text-[11px] font-bold text-orange-500 hover:underline px-2.5 py-1"
                           >
                             {cat.moreText}
@@ -287,7 +313,8 @@ export default function Navbar() {
 
                   <div className="col-span-5 pt-3 border-t border-gray-100 text-center">
                     <Link
-                      href="/tools"
+                      href="/login?redirect=/sohoj-tools"
+                      onClick={() => setIsToolsOpen(false)}
                       className="text-xs font-bold text-orange-500 hover:text-orange-600 inline-flex items-center gap-1"
                     >
                       View all tools &gt;
@@ -297,7 +324,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Important Links Dropdown (মূল লেখায় ক্লিক করলে /dorkar-link এ যাবে) */}
+            {/* Important Links Dropdown */}
             <div
               className="relative"
               onMouseEnter={() => setIsImportantOpen(true)}

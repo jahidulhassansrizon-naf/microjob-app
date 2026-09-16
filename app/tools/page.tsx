@@ -13,24 +13,32 @@ import {
   LayoutGrid,
 } from "lucide-react";
 
+// টুলসের নাম অনুযায়ী ডাইনামিক রিডাইরেক্ট লিংক তৈরি করার ফাংশন
+const getLoginRedirectUrl = (toolTitle?: string) => {
+  const targetPath = toolTitle
+    ? `/sohoj-tools?search=${encodeURIComponent(toolTitle)}`
+    : "/sohoj-tools";
+  return `/login?redirect=${encodeURIComponent(targetPath)}`;
+};
+
 const categoriesData = [
   {
     name: "PDF Tools",
     description: "Merge, split, compress, and secure your PDF files",
     icon: FileText,
     tools: [
-      { title: "Compress PDF", subtitle: "Compress PDF", href: "#" },
-      { title: "Merge PDFs", subtitle: "Merge PDFs", href: "#" },
-      { title: "Create PDF", subtitle: "Create PDF", href: "#" },
-      { title: "Split PDF", subtitle: "Split PDF", href: "#" },
-      { title: "PDF to Image", subtitle: "PDF to Image", href: "#" },
-      { title: "Lock / Unlock PDF", subtitle: "Lock / Unlock PDF", href: "#" },
-      { title: "Rotate PDF", subtitle: "Rotate PDF", href: "#" },
-      { title: "Remove Pages", subtitle: "Remove Pages", href: "#" },
-      { title: "PDF Watermark", subtitle: "PDF Watermark", href: "#" },
-      { title: "Extract Images", subtitle: "Extract Images", href: "#" },
-      { title: "PDF Permissions", subtitle: "PDF Permissions", href: "#" },
-      { title: "Reduce PDF", subtitle: "Reduce PDF", href: "#" },
+      { title: "Compress PDF", subtitle: "Compress PDF" },
+      { title: "Merge PDFs", subtitle: "Merge PDFs" },
+      { title: "Create PDF", subtitle: "Create PDF" },
+      { title: "Split PDF", subtitle: "Split PDF" },
+      { title: "PDF to Image", subtitle: "PDF to Image" },
+      { title: "Lock / Unlock PDF", subtitle: "Lock / Unlock PDF" },
+      { title: "Rotate PDF", subtitle: "Rotate PDF" },
+      { title: "Remove Pages", subtitle: "Remove Pages" },
+      { title: "PDF Watermark", subtitle: "PDF Watermark" },
+      { title: "Extract Images", subtitle: "Extract Images" },
+      { title: "PDF Permissions", subtitle: "PDF Permissions" },
+      { title: "Reduce PDF", subtitle: "Reduce PDF" },
     ],
   },
   {
@@ -38,26 +46,21 @@ const categoriesData = [
     description: "Compress, convert, and edit your images",
     icon: ImageIcon,
     tools: [
-      {
-        title: "Image Size Reducer",
-        subtitle: "Image Size Reducer",
-        href: "#",
-      },
-      { title: "NID to PDF", subtitle: "NID to PDF", href: "#" },
-      { title: "Remove Background", subtitle: "Remove Background", href: "#" },
+      { title: "Image Size Reducer", subtitle: "Image Size Reducer" },
+      { title: "NID to PDF", subtitle: "NID to PDF" },
+      { title: "Remove Background", subtitle: "Remove Background" },
       {
         title: "Govt Job Photo & Sign",
         subtitle: "Govt Job Photo & Sign Resizer",
-        href: "#",
       },
-      { title: "Passport to PDF", subtitle: "Passport to PDF", href: "#" },
-      { title: "Image Convert", subtitle: "Image Convert", href: "#" },
-      { title: "QR Code Generator", subtitle: "QR Code Generator", href: "#" },
-      { title: "Image Resize", subtitle: "Image Resize", href: "#" },
-      { title: "Crop Image", subtitle: "Crop Image", href: "#" },
-      { title: "Images to PDF", subtitle: "Images to PDF", href: "#" },
-      { title: "Add Watermark", subtitle: "Add Watermark", href: "#" },
-      { title: "Flatten Image", subtitle: "Flatten Image", href: "#" },
+      { title: "Passport to PDF", subtitle: "Passport to PDF" },
+      { title: "Image Convert", subtitle: "Image Convert" },
+      { title: "QR Code Generator", subtitle: "QR Code Generator" },
+      { title: "Image Resize", subtitle: "Image Resize" },
+      { title: "Crop Image", subtitle: "Crop Image" },
+      { title: "Images to PDF", subtitle: "Images to PDF" },
+      { title: "Add Watermark", subtitle: "Add Watermark" },
+      { title: "Flatten Image", subtitle: "Flatten Image" },
     ],
   },
   {
@@ -65,15 +68,14 @@ const categoriesData = [
     description: "Convert, analyze, and extract your text",
     icon: Type,
     tools: [
-      { title: "Bijoy ⇄ Unicode", subtitle: "Bijoy ⇄ Unicode", href: "#" },
-      { title: "Banglish Typing", subtitle: "Banglish Typing", href: "#" },
-      { title: "Number to Words", subtitle: "Number to Words", href: "#" },
-      { title: "Image to Text", subtitle: "Image to Text", href: "#" },
-      { title: "Text Analyzer", subtitle: "Text Analyzer", href: "#" },
+      { title: "Bijoy ⇄ Unicode", subtitle: "Bijoy ⇄ Unicode" },
+      { title: "Banglish Typing", subtitle: "Banglish Typing" },
+      { title: "Number to Words", subtitle: "Number to Words" },
+      { title: "Image to Text", subtitle: "Image to Text" },
+      { title: "Text Analyzer", subtitle: "Text Analyzer" },
       {
         title: "Date Format Converter",
         subtitle: "Date Format Converter",
-        href: "#",
       },
     ],
   },
@@ -82,20 +84,19 @@ const categoriesData = [
     description: "Compress, convert, and edit your videos",
     icon: Video,
     tools: [
-      { title: "Compress Video", subtitle: "Compress Video", href: "#" },
-      { title: "Trim/Cut Video", subtitle: "Trim/Cut Video", href: "#" },
-      { title: "Merge Videos", subtitle: "Merge Videos", href: "#" },
-      { title: "Video to Audio", subtitle: "Video to Audio", href: "#" },
-      { title: "Add Watermark", subtitle: "Add Watermark", href: "#" },
+      { title: "Compress Video", subtitle: "Compress Video" },
+      { title: "Trim/Cut Video", subtitle: "Trim/Cut Video" },
+      { title: "Merge Videos", subtitle: "Merge Videos" },
+      { title: "Video to Audio", subtitle: "Video to Audio" },
+      { title: "Add Watermark", subtitle: "Add Watermark" },
       {
         title: "Audio Volume Booster",
         subtitle: "Audio Volume Booster/Reducer",
-        href: "#",
       },
-      { title: "Change Speed", subtitle: "Change Speed", href: "#" },
-      { title: "Video to GIF", subtitle: "Video to GIF", href: "#" },
-      { title: "Rotate / Flip", subtitle: "Rotate / Flip", href: "#" },
-      { title: "Remove Audio", subtitle: "Remove Audio", href: "#" },
+      { title: "Change Speed", subtitle: "Change Speed" },
+      { title: "Video to GIF", subtitle: "Video to GIF" },
+      { title: "Rotate / Flip", subtitle: "Rotate / Flip" },
+      { title: "Remove Audio", subtitle: "Remove Audio" },
     ],
   },
   {
@@ -103,15 +104,14 @@ const categoriesData = [
     description: "Everyday forms and utilities for Bangladesh",
     icon: LayoutGrid,
     tools: [
-      { title: "Family Card Form", subtitle: "Family Card Form", href: "#" },
-      { title: "Fuel Card Form", subtitle: "Fuel Card Form", href: "#" },
+      { title: "Family Card Form", subtitle: "Family Card Form" },
+      { title: "Fuel Card Form", subtitle: "Fuel Card Form" },
       {
         title: "ATS Friendly CV Maker",
         subtitle: "ATS Friendly CV Maker",
-        href: "#",
       },
-      { title: "Age Calculator", subtitle: "Age Calculator", href: "#" },
-      { title: "EMI Calculator", subtitle: "EMI Calculator", href: "#" },
+      { title: "Age Calculator", subtitle: "Age Calculator" },
+      { title: "EMI Calculator", subtitle: "EMI Calculator" },
     ],
   },
 ];
@@ -217,7 +217,7 @@ export default function ToolsPage() {
                   </div>
                 </div>
                 <Link
-                  href="#"
+                  href={getLoginRedirectUrl()}
                   className="text-xs font-bold text-gray-500 hover:text-orange-500 transition self-end sm:self-auto"
                 >
                   See all tools &gt;
@@ -229,7 +229,7 @@ export default function ToolsPage() {
                 {category.tools.map((tool, tIdx) => (
                   <Link
                     key={tIdx}
-                    href={tool.href}
+                    href={getLoginRedirectUrl(tool.title)}
                     className="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-orange-200 transition flex items-start gap-3.5 group"
                   >
                     <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white transition">

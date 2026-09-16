@@ -1,6 +1,46 @@
+"use client";
+
+import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function Footer() {
+  const serviceLinks = [
+    { title: "AI Photo Edit", href: "/login?redirect=/ai-editor" },
+    { title: "Manual Photo Edit", href: "/login?redirect=/manual-editor" },
+    { title: "Bulk Photo Edit", href: "/login?redirect=/bulk-photo-edit" },
+    { title: "AI Photo", href: "/login?redirect=/ai-template" },
+    { title: "Document Templates", href: "/login" },
+    { title: "Print Media", href: "/login?redirect=/print-media" },
+    {
+      title: "Create Questions",
+      href: "/login?redirect=/questions-create/create",
+    },
+    { title: "Job Circular", href: "/login?redirect=/jobs" },
+    { title: "SohozTools", href: "/login?redirect=/sohoj-tools" },
+  ];
+
+  const pagesLinks = [
+    "What is SohozKaj?",
+    "About Us",
+    "Our Team",
+    "Important Articles",
+    "Contact",
+    "Document Templates",
+    "AI Photo",
+    "Package",
+    "Contest",
+  ];
+
+  const supportLinks = [
+    "Terms of Service",
+    "Privacy Policy",
+    "Copyright Policy",
+    "Refund Policy",
+  ];
+
+  const linkHoverStyle =
+    "relative inline-block hover:text-[#F78310] transition-colors duration-200 after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:w-0 after:h-[2px] after:bg-[#F78310] hover:after:w-full after:transition-all after:duration-300 cursor-pointer";
+
   return (
     <footer className="bg-[#0B101D] text-gray-300 font-sans relative overflow-hidden">
       {/* Top Colorful Gradient Border Line */}
@@ -12,7 +52,7 @@ export default function Footer() {
           {/* Column 1: Logo & Contact Info */}
           <div className="lg:col-span-2 space-y-6 pr-4">
             {/* Logo */}
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 w-fit">
               <div className="w-9 h-9 bg-[#FF5D00] rounded-lg flex items-center justify-center font-black text-white text-lg tracking-wider">
                 SK
               </div>
@@ -24,7 +64,7 @@ export default function Footer() {
                   WWW.SOHOZKAJ.COM
                 </span>
               </div>
-            </div>
+            </Link>
 
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
               SohozKaj Platform — document creation, design, print media, and AI
@@ -53,51 +93,13 @@ export default function Footer() {
               Services
             </h3>
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  AI Photo Edit
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Manual Photo Edit
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Bulk Photo Edit
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  AI Photo
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Document Templates
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Print Media
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Create Questions
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Job Circular
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  SohozTools
-                </a>
-              </li>
+              {serviceLinks.map((service, index) => (
+                <li key={index}>
+                  <Link href={service.href} className={linkHoverStyle}>
+                    {service.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -107,51 +109,17 @@ export default function Footer() {
               Pages
             </h3>
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  What is SohozKaj?
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Our Team
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Important Articles
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Contact
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Document Templates
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  AI Photo
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Package
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Contest
-                </a>
-              </li>
+              {pagesLinks.map((page, index) => (
+                <li key={index}>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className={linkHoverStyle}
+                  >
+                    {page}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -161,26 +129,17 @@ export default function Footer() {
               Support
             </h3>
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Copyright Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Refund Policy
-                </a>
-              </li>
+              {supportLinks.map((support, index) => (
+                <li key={index}>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className={linkHoverStyle}
+                  >
+                    {support}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -190,8 +149,12 @@ export default function Footer() {
           <p>© 2026 SohozKaj. All rights reserved.</p>
 
           <div className="flex items-center gap-3">
+            {/* Facebook */}
             <a
-              href="#"
+              href="https://www.facebook.com/SohozKaj/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
               className="w-9 h-9 rounded-lg bg-gray-800/70 hover:bg-gray-700 flex items-center justify-center text-gray-300 hover:text-white transition"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -199,8 +162,12 @@ export default function Footer() {
               </svg>
             </a>
 
+            {/* TikTok */}
             <a
-              href="#"
+              href="https://www.tiktok.com/@sohozkaj"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
               className="w-9 h-9 rounded-lg bg-gray-800/70 hover:bg-gray-700 flex items-center justify-center text-gray-300 hover:text-white transition"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -208,8 +175,12 @@ export default function Footer() {
               </svg>
             </a>
 
+            {/* YouTube */}
             <a
-              href="#"
+              href="https://www.youtube.com/@SohozKaj"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
               className="w-9 h-9 rounded-lg bg-gray-800/70 hover:bg-gray-700 flex items-center justify-center text-gray-300 hover:text-white transition"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">

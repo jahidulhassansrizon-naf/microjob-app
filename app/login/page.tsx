@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Mail,
   Lock,
@@ -15,7 +16,7 @@ import {
 // Translations
 const translations = {
   EN: {
-    backToHome: "Back to Home",
+    backToHome: "Back",
     loginTitle: "Login to your account",
     phoneOrEmail: "Phone or Email",
     phoneOrEmailPlaceholder: "Enter phone or email",
@@ -32,7 +33,7 @@ const translations = {
     heroSub: "easy to use.",
   },
   BN: {
-    backToHome: "হোমে ফিরে যান",
+    backToHome: "পিছনে ফিরে যান",
     loginTitle: "আপনার অ্যাকাউন্টে লগইন করুন",
     phoneOrEmail: "ফোন অথবা ইমেইল",
     phoneOrEmailPlaceholder: "ফোন বা ইমেইল লিখুন",
@@ -50,7 +51,14 @@ const translations = {
   },
 };
 
-export default function LoginPage() {
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL parameters detection
+  const callbackUrl =
+    searchParams.get("callbackUrl") || searchParams.get("redirect") || "";
+
   const [showPassword, setShowPassword] = useState(false);
   const [lang, setLang] = useState<"EN" | "BN">("EN");
   const [loading, setLoading] = useState(false);
@@ -64,13 +72,16 @@ export default function LoginPage() {
 
   const t = translations[lang];
 
+  const handleBack = () => {
+    router.replace("/");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setLoading(true);
 
     try {
-      // Next.js Internal API Route
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -88,16 +99,18 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid credentials!");
       }
 
-      // LocalStorage এ টোকেন ও ইউজার ডাটা সেভ
       if (data.token) localStorage.setItem("token", data.token);
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Cookie তে সিকিউরভাবে টোকেন সেট করা (Middleware এর জন্য)
       const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
       const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
 
-      window.location.href = "/dashboard";
+      // Login Successful -> Redirect to target page or /dashboard
+      const targetUrl = callbackUrl
+        ? decodeURIComponent(callbackUrl)
+        : "/dashboard";
+      window.location.href = targetUrl;
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
@@ -133,13 +146,14 @@ export default function LoginPage() {
       <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
         {/* Navigation & Language Selector */}
         <div className="flex justify-between items-center w-full">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors"
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span>{t.backToHome}</span>
-          </Link>
+          </button>
 
           <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
             <button
@@ -233,7 +247,7 @@ export default function LoginPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] focus:ring-1 focus:ring-[#FF5D00] transition-all"
+                    className="w-full pl-10 pr-10 py-2.5 bg-[#ffffff] border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] focus:ring-1 focus:ring-[#FF5D00] transition-all"
                   />
                   <button
                     type="button"
@@ -293,7 +307,11 @@ export default function LoginPage() {
             <p className="text-xs text-gray-600">
               {t.noAccount}{" "}
               <Link
-                href="/register"
+                href={
+                  callbackUrl
+                    ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
+                    : "/register"
+                }
                 className="text-[#FF5D00] font-bold hover:underline ml-0.5"
               >
                 {t.signUp}
@@ -316,5 +334,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

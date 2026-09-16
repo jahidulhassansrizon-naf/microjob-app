@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-// import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import HeroFeatures from "@/components/HeroFeatures";
 import AiEditorSection from "@/components/AiEditorSection";
@@ -38,6 +37,32 @@ export default function Home() {
       setIsChecking(false);
     }
   }, [router]);
+
+  // Scroll Restoration (রিলোড দিলে ঠিক একই পজিশনে ধরে রাখার লজিক)
+  useEffect(() => {
+    if (isChecking) return;
+
+    // ১. আগের সেভ থাকা স্ক্রোল পজিশনে ফিরিয়ে নিয়ে যাওয়া
+    const savedScrollPos = sessionStorage.getItem("home_scroll_pos");
+    if (savedScrollPos) {
+      setTimeout(() => {
+        window.scrollTo({
+          top: parseInt(savedScrollPos, 10),
+          behavior: "instant" as ScrollBehavior,
+        });
+      }, 50);
+    }
+
+    // ২. ইউজার যখনই স্ক্রোল করবে, বর্তমান পজিশন সেভ রাখা
+    const handleScroll = () => {
+      sessionStorage.setItem("home_scroll_pos", window.scrollY.toString());
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isChecking]);
 
   // চেক করার সময় ফ্লিকার প্রতিরোধ করতে হালকা লোডিং
   if (isChecking) {

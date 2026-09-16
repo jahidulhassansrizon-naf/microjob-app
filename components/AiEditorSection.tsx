@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowUpRight,
   Sparkles,
@@ -5,24 +9,36 @@ import {
   Shirt,
   Image,
   Share2,
+  X,
 } from "lucide-react";
 
 export default function AiEditorSection() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [videoStartTime, setVideoStartTime] = useState(0);
+
+  const handleOpenVideo = (startTime: number = 0) => {
+    setVideoStartTime(startTime);
+    setIsVideoOpen(true);
+  };
+
   const bottomCards = [
     {
       title: "Background & outfit changes",
       desc: "Change background color, hair color, and skin tone however you want with one click",
       icon: <Shirt size={22} />,
+      startTime: 61, // 1 minute 1 second
     },
     {
       title: "Any size, any format, print ready",
       desc: "Save photos in specific sizes for passport, visa, NID, birth registration in JPG format",
       icon: <Image size={22} />,
+      startTime: 256, // 4 minutes 16 seconds
     },
     {
       title: "Share, print, download with ease",
       desc: "On ShohozKaj, instantly download, share, or email your photos without any hassle.",
       icon: <Share2 size={22} />,
+      startTime: 212, // 3 minutes 32 seconds
     },
   ];
 
@@ -81,19 +97,22 @@ export default function AiEditorSection() {
               </div>
             </div>
 
-            {/* Action Button */}
+            {/* Action Button Redirecting to Dashboard */}
             <div>
-              <button className="bg-white text-gray-900 font-extrabold text-xs sm:text-sm px-6 sm:px-8 py-3.5 sm:py-4 rounded-full flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition w-full sm:w-auto cursor-pointer">
+              <Link
+                href="/dashboard"
+                className="bg-white text-gray-900 font-extrabold text-xs sm:text-sm px-6 sm:px-8 py-3.5 sm:py-4 rounded-full inline-flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition w-full sm:w-auto cursor-pointer"
+              >
                 <span>Start using AI Tools</span>
                 <ArrowUpRight size={18} strokeWidth={2.5} />
-              </button>
+              </Link>
             </div>
           </div>
 
           {/* Right Column: 2 Stacked Cards */}
           <div className="lg:col-span-6 flex flex-col justify-between gap-6">
             {/* Card 1 */}
-            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px]">
+            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10">
               <div>
                 <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
                   <Sparkles size={24} />
@@ -106,16 +125,16 @@ export default function AiEditorSection() {
                   seconds—no Photoshop required
                 </p>
               </div>
-              <a
-                href="#"
-                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6"
+              <button
+                onClick={() => handleOpenVideo(0)}
+                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
-              </a>
+              </button>
             </div>
 
-            {/* Card 2 */}
-            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px]">
+            {/* Card 2 (Starts video at 40s) */}
+            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10">
               <div>
                 <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
                   <Palette size={24} />
@@ -129,12 +148,12 @@ export default function AiEditorSection() {
                   as casual and traditional outfits.
                 </p>
               </div>
-              <a
-                href="#"
-                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6"
+              <button
+                onClick={() => handleOpenVideo(40)}
+                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -144,7 +163,7 @@ export default function AiEditorSection() {
           {bottomCards.map((card, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-3xl md:rounded-[32px] p-6 sm:p-8 border border-gray-100 shadow-2xs flex flex-col justify-between min-h-[240px] sm:min-h-[260px]"
+              className="bg-white rounded-3xl md:rounded-[32px] p-6 sm:p-8 border border-gray-100 shadow-2xs flex flex-col justify-between min-h-[240px] sm:min-h-[260px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
             >
               <div>
                 <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
@@ -157,16 +176,45 @@ export default function AiEditorSection() {
                   {card.desc}
                 </p>
               </div>
-              <a
-                href="#"
-                className="inline-flex items-center gap-1 text-xs font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6"
+              <button
+                onClick={() => handleOpenVideo(card.startTime)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
-              </a>
+              </button>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Demo Video Popup Modal */}
+      {isVideoOpen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setIsVideoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsVideoOpen(false)}
+              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+              aria-label="Close video"
+            >
+              <X size={26} />
+            </button>
+
+            <iframe
+              src={`https://www.youtube.com/embed/ssUbVT5-b10?autoplay=1&rel=0&start=${videoStartTime}`}
+              title="ShohozKaj AI Photo Edit Tutorial"
+              className="w-full h-full border-0 rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   FileEdit,
   FileText,
@@ -6,9 +9,12 @@ import {
   FileCheck,
   Eye,
   Keyboard,
+  X,
 } from "lucide-react";
 
 export default function DocumentSection() {
+  const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
+
   const cards = [
     {
       title: "Update information in a flash",
@@ -19,6 +25,7 @@ export default function DocumentSection() {
       icon: <FileEdit className="text-white" size={22} />,
       btnColor: "text-[#05B066]",
       arrowBg: "bg-[#05B066]",
+      videoStart: 132, // 2 min 12 sec = 132 seconds
     },
     {
       title: "Export files as PDF",
@@ -29,6 +36,7 @@ export default function DocumentSection() {
       icon: <FileText className="text-white" size={22} />,
       btnColor: "text-[#F95700]",
       arrowBg: "bg-[#F95700]",
+      videoStart: 230, // 3 min 50 sec = 230 seconds
     },
     {
       title: "Share or email your document",
@@ -39,6 +47,7 @@ export default function DocumentSection() {
       icon: <Send className="text-white" size={22} />,
       btnColor: "text-[#8B3DFF]",
       arrowBg: "bg-[#8B3DFF]",
+      videoStart: null, // No video modal & no page jump
     },
   ];
 
@@ -117,17 +126,31 @@ export default function DocumentSection() {
               </div>
 
               <div className="pt-6">
-                <a
-                  href="#"
-                  className={`inline-flex items-center gap-2 text-xs font-bold ${card.btnColor} transition group`}
-                >
-                  <span>Learn more</span>
-                  <div
-                    className={`w-5 h-5 ${card.arrowBg} text-white rounded-full flex items-center justify-center transition group-hover:translate-x-0.5`}
+                {card.videoStart !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideoStart(card.videoStart)}
+                    className={`inline-flex items-center gap-2 text-xs font-bold ${card.btnColor} transition group cursor-pointer`}
                   >
-                    <ArrowRight size={12} strokeWidth={3} />
-                  </div>
-                </a>
+                    <span>Learn more</span>
+                    <div
+                      className={`w-5 h-5 ${card.arrowBg} text-white rounded-full flex items-center justify-center transition group-hover:translate-x-0.5`}
+                    >
+                      <ArrowRight size={12} strokeWidth={3} />
+                    </div>
+                  </button>
+                ) : (
+                  <span
+                    className={`inline-flex items-center gap-2 text-xs font-bold ${card.btnColor} select-none cursor-default`}
+                  >
+                    <span>Learn more</span>
+                    <div
+                      className={`w-5 h-5 ${card.arrowBg} text-white rounded-full flex items-center justify-center`}
+                    >
+                      <ArrowRight size={12} strokeWidth={3} />
+                    </div>
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -174,6 +197,37 @@ export default function DocumentSection() {
           </div>
         </div>
       </div>
+
+      {/* Demo Video Popup Modal */}
+      {activeVideoStart !== null && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setActiveVideoStart(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setActiveVideoStart(null)}
+              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+              aria-label="Close video"
+            >
+              <X size={26} />
+            </button>
+
+            {/* Youtube Embedded Video with Start Time */}
+            <iframe
+              src={`https://www.youtube.com/embed/HWwuSrGQmSw?autoplay=1&rel=0&start=${activeVideoStart}`}
+              title="SohozKaj Document Creation Tutorial"
+              className="w-full h-full border-0 rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

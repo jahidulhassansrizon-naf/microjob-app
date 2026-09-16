@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
@@ -589,33 +589,60 @@ const categories = [
   { name: "Educational Tools", icon: GraduationCap },
 ];
 
-export default function SohojToolsPage() {
+function SohojToolsContent() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const searchParams = useSearchParams();
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState("Free");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // ১. ইনিশিয়াল পেজ লোড ও Auth Check
   useEffect(() => {
-    // Auth Protection Check
+    const searchFromUrl = searchParams.get("search");
+    if (searchFromUrl) {
+      setSearchQuery(searchFromUrl);
+    }
+
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
-      router.push("/login");
+      const targetPath = searchFromUrl
+        ? `/sohoj-tools?search=${encodeURIComponent(searchFromUrl)}`
+        : "/sohoj-tools";
+      router.push(`/login?redirect=${encodeURIComponent(targetPath)}`);
     } else {
       setIsAuthenticated(true);
     }
-  }, [router]);
+  }, []);
+
+  // ২. সার্চ বক্সে ইউজার কিছু টাইপ বা ডিলিট করলে URL সিঙ্ক করার হ্যান্ডলার
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (value.trim()) {
+      params.set("search", value);
+    } else {
+      params.delete("search"); // খালি থাকলে URL থেকে মুছে দেবে
+    }
+
+    const newQuery = params.toString();
+    const newPath = newQuery ? `/sohoj-tools?${newQuery}` : "/sohoj-tools";
+
+    // router.replace ব্যবহার করায় ব্রাউজার হিস্ট্রিতে প্রতি অক্ষরে নতুন পেজ জমা হবে না
+    router.replace(newPath, { scroll: false });
+  };
 
   // Helper function to create URL slug from Tool Name
   const getSlug = (name: string) => {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, "") // Special character remove
-      .replace(/\s+/g, "-") // Space to hyphen
-      .replace(/-+/g, "-"); // Multiple hyphen to single hyphen
+      .replace(/[^a-z0-9 -]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
   };
 
   const filteredTools = toolsData.filter((tool) => {
@@ -642,7 +669,6 @@ export default function SohojToolsPage() {
     }
   });
 
-  // Auth চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন দেখাবে
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
@@ -715,7 +741,7 @@ export default function SohojToolsPage() {
             type="text"
             placeholder="Search tools... e.g. PDF, image, video"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-xs placeholder:text-gray-400"
           />
         </div>
@@ -757,7 +783,7 @@ export default function SohojToolsPage() {
                 href={`/sohoj-tools/${slug}`}
                 className="flex flex-col items-center group cursor-pointer"
               >
-                {/* Square Card Container with Squircle Corners */}
+                {/* Square Card Container */}
                 <div
                   className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
                 >
@@ -789,5 +815,22 @@ export default function SohojToolsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SohojToolsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
+            <Loader2 size={16} className="animate-spin text-orange-500" />
+            Loading tools...
+          </div>
+        </div>
+      }
+    >
+      <SohojToolsContent />
+    </Suspense>
   );
 }

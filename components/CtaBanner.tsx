@@ -1,6 +1,12 @@
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, X } from "lucide-react";
 
 export default function CtaBanner() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   const highlights = [
     "Create files in one click",
     "All tools in one place",
@@ -27,12 +33,19 @@ export default function CtaBanner() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-          <button className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 font-bold px-7 py-3.5 rounded-full text-sm inline-flex items-center justify-center gap-2 shadow-lg transition hover:scale-105">
+          <Link
+            href="/dashboard"
+            className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 font-bold px-7 py-3.5 rounded-full text-sm inline-flex items-center justify-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer"
+          >
             <span>Start for Free</span>
             <ArrowRight size={16} />
-          </button>
+          </Link>
 
-          <button className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/40 backdrop-blur-sm text-white font-bold px-7 py-3.5 rounded-full text-sm transition">
+          <button
+            type="button"
+            onClick={() => setIsVideoOpen(true)}
+            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/40 backdrop-blur-sm text-white font-bold px-7 py-3.5 rounded-full text-sm transition cursor-pointer"
+          >
             Watch Demo Video
           </button>
         </div>
@@ -50,6 +63,37 @@ export default function CtaBanner() {
           ))}
         </div>
       </div>
+
+      {/* Demo Video Popup Modal */}
+      {isVideoOpen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setIsVideoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsVideoOpen(false)}
+              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+              aria-label="Close video"
+            >
+              <X size={26} />
+            </button>
+
+            {/* Youtube Embedded Video */}
+            <iframe
+              src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
+              title="SohozKaj Demo Video"
+              className="w-full h-full border-0 rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

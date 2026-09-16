@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   Play,
@@ -7,9 +11,12 @@ import {
   Layers,
   Check,
   Info,
+  X,
 } from "lucide-react";
 
 export default function Hero() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   return (
     <section className="w-full bg-transparent min-h-[calc(100vh-90px)] flex items-center py-8 lg:py-12 relative overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -36,10 +43,19 @@ export default function Hero() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 w-full">
-            <button className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 sm:px-7 py-3 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-orange-300/50 text-xs sm:text-sm cursor-pointer w-full sm:w-auto">
+            {/* Get Started Now -> Login Page Link */}
+            <Link
+              href="/login"
+              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 sm:px-7 py-3 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-orange-300/50 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"
+            >
               Get Started Now <ArrowRight size={16} />
-            </button>
-            <button className="flex items-center justify-center gap-2 text-gray-700 bg-white/80 border border-gray-200 px-6 py-3 rounded-full font-semibold text-xs sm:text-sm hover:bg-white transition shadow-xs cursor-pointer w-full sm:w-auto">
+            </Link>
+
+            {/* Watch Demo Video Button */}
+            <button
+              onClick={() => setIsVideoOpen(true)}
+              className="flex items-center justify-center gap-2 text-gray-700 bg-white/80 border border-gray-200 px-6 py-3 rounded-full font-semibold text-xs sm:text-sm hover:bg-white transition shadow-xs cursor-pointer w-full sm:w-auto"
+            >
               <Play size={14} className="text-amber-500 fill-amber-500" /> Watch
               Demo Video
             </button>
@@ -165,6 +181,37 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* Demo Video Popup Modal */}
+      {isVideoOpen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setIsVideoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsVideoOpen(false)}
+              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+              aria-label="Close video"
+            >
+              <X size={26} />
+            </button>
+
+            {/* Youtube Embedded Video */}
+            <iframe
+              src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
+              title="SohozKaj Demo Video"
+              className="w-full h-full border-0 rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

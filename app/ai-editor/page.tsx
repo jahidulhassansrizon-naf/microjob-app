@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import GenerationSettings from "./_components/GenerationSettings";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
@@ -39,6 +40,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 export default function PhotoEditorPage() {
+  const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
+
   const [selectedSize, setSelectedSize] = useState("Passport");
   const [selectedBg, setSelectedBg] = useState(1);
   const [customBgColor, setCustomBgColor] = useState("#8B1E1E");
@@ -90,9 +94,20 @@ export default function PhotoEditorPage() {
   const visaPopupRef = useRef<HTMLDivElement | null>(null);
   const colorPickerRef = useRef<HTMLDivElement | null>(null);
 
+  // Authentication Check
   useEffect(() => {
+    const hasTokenCookie = document.cookie
+      .split("; ")
+      .some((row) => row.startsWith("token="));
     const savedUserStr =
       localStorage.getItem("user") || localStorage.getItem("userData");
+
+    // যদি কুকিতে টোকেন এবং লোকালস্টোরেজে ইউজার কোনোটিই না থাকে, তবে /login এ রিডাইরেক্ট করবে
+    if (!hasTokenCookie && !savedUserStr) {
+      router.replace("/login");
+      return;
+    }
+
     if (savedUserStr) {
       try {
         const parsedUser = JSON.parse(savedUserStr);
@@ -105,11 +120,14 @@ export default function PhotoEditorPage() {
       } catch (e) {
         console.error("Failed to parse user from localStorage:", e);
         setIsFetching(false);
+        router.replace("/login");
+        return;
       }
     } else {
       setIsFetching(false);
     }
-  }, []);
+    setAuthChecking(false);
+  }, [router]);
 
   const fetchUserGenerationsFromFirebase = async (userId: string) => {
     setIsFetching(true);
@@ -210,11 +228,10 @@ export default function PhotoEditorPage() {
     return found ? found.dims : "35×45 mm";
   };
 
-  // সিলেক্ট করা সাইজের একজ্যাক্ট Aspect Ratio বের করার লজিক
   const getSelectedTargetAspect = (): number => {
-    let sizeLabel = getCurrentSizeLabel(); // e.g. "33×48 mm" or "2×2 inch"
+    let sizeLabel = getCurrentSizeLabel();
     if (sizeLabel.includes("inch")) {
-      return 1.0; // 2x2 inch = 1:1
+      return 1.0;
     }
     const match = sizeLabel.match(/(\d+)×(\d+)/);
     if (match) {
@@ -225,7 +242,6 @@ export default function PhotoEditorPage() {
     return 35 / 45;
   };
 
-  // Canvas দিয়ে ছবিটিকে কেন্দ্র রেখে একজ্যাক্ট Aspect Ratio তে ক্রপ ও রি-সাইজ করার ফাংশন
   const cropImageToExactRatio = (
     imageSrc: string,
     targetAspect: number,
@@ -494,7 +510,6 @@ export default function PhotoEditorPage() {
     }
   };
 
-  // জেনারেট করার সময় সিলেক্টেড সাইজ অনুযায়ী ইমেজটিকে প্রপারলি ক্রপ করার হ্যান্ডলার
   const handleGeneratePhoto = async () => {
     const rawImage = uploadedImage || leftImage || originalImageForDual;
     if (!rawImage) return;
@@ -502,10 +517,7 @@ export default function PhotoEditorPage() {
     setIsGenerating(true);
 
     try {
-      // ১. সিলেক্টেড সাইজের Aspect Ratio বের করা
       const targetAspect = getSelectedTargetAspect();
-
-      // ২. ইমেজকে একজ্যাক্ট সাইজ/রেশিওতে Canvas দিয়ে ক্রপ করা
       const processedImage = await cropImageToExactRatio(
         rawImage,
         targetAspect,
@@ -524,7 +536,7 @@ export default function PhotoEditorPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image: processedImage, // একজ্যাক্ট ক্রপ হওয়া ইমেজ যাচ্ছে
+          image: processedImage,
           size: currentSizeLabel,
           bgColor: currentBgHex,
           clothing: selectedClothing,
@@ -644,6 +656,14 @@ export default function PhotoEditorPage() {
       setIsDeleting(false);
     }
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-[#f3efe6] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f3efe6] flex flex-col relative select-none">
