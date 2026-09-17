@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Phone, Mail, Clock } from "lucide-react";
+import { Phone, Mail, Clock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import emailjs from "@emailjs/browser";
 
 export default function ContactHero() {
   const [formData, setFormData] = useState({
@@ -13,17 +14,53 @@ export default function ContactHero() {
     details: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setLoading(true);
+    setStatus(null);
+
+    // EmailJS এ ডেটা পাঠানোর ফরম্যাট
+    const templateParams = {
+      from_name: formData.name,
+      from_email: formData.email,
+      phone_number: formData.phone,
+      subject: formData.subject,
+      message: formData.details,
+    };
+
+    try {
+      await emailjs.send(
+        "service_qblb0l8", // আপনার Service ID
+        "template_7a9yiov", // আপনার Template ID
+        templateParams,
+        "Q7oRWHz649z3LiY0f", // আপনার Public Key
+      );
+
+      setStatus({ type: "success", msg: "Message sent successfully!" });
+      setFormData({ name: "", email: "", phone: "", subject: "", details: "" });
+    } catch (error) {
+      console.error("EmailJS Error:", error);
+      setStatus({
+        type: "error",
+        msg: "Failed to send message. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <section className="relative overflow-hidden bg-[#e5e7eb] px-4 sm:px-6 lg:px-8">
-      {/* Darker & Richer top background gradient for better contrast */}
+      {/* Background Gradient */}
       <div className="absolute inset-x-0 top-0 h-[680px] bg-gradient-to-b from-[#ffe6d0] via-[#fadae2] to-[#dbe0f0]" />
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="relative z-10 mx-auto max-w-[1100px] pt-[102px] pb-24">
         {/* Header */}
         <motion.div
@@ -36,7 +73,7 @@ export default function ContactHero() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="inline-flex h-[35px] items-center rounded-full border border-[#ff8a00] bg-white/40 px-[17px] text-[13px] font-semibold leading-none text-[#ff7a00] backdrop-blur-sm shadow-sm"
+            className="inline-flex h-[35px] items-center rounded-full border border-[#ff8a00] bg-white/40 px-[17px] text-[13px] font-semibold leading-none text-[#ff7a00] shadow-sm backdrop-blur-sm"
           >
             Do you have questions?
           </motion.span>
@@ -92,6 +129,7 @@ export default function ContactHero() {
                 </label>
                 <input
                   type="text"
+                  required
                   placeholder="Enter your full name......."
                   value={formData.name}
                   onChange={(e) =>
@@ -164,13 +202,34 @@ export default function ContactHero() {
                 />
               </div>
 
+              {/* Status Message */}
+              {status && (
+                <p
+                  className={`text-[13px] font-semibold ${
+                    status.type === "success"
+                      ? "text-green-600"
+                      : "text-red-500"
+                  }`}
+                >
+                  {status.msg}
+                </p>
+              )}
+
               <motion.button
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="mt-[3px] h-[45px] w-full rounded-[7px] bg-[#ff5a00] px-6 text-[13px] font-bold text-white transition hover:bg-[#f45100]"
+                disabled={loading}
+                className="mt-[3px] flex h-[45px] w-full cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-[#ff5a00] px-6 text-[13px] font-bold text-white transition hover:bg-[#f45100] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Send us
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send us"
+                )}
               </motion.button>
             </form>
           </motion.div>
