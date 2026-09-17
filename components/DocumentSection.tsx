@@ -11,6 +11,7 @@ import {
   Keyboard,
   X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DocumentSection() {
   const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
@@ -75,11 +76,37 @@ export default function DocumentSection() {
     },
   ];
 
+  // স্ট্যাগার্ড অ্যানিমেশন ভ্যারিয়েন্ট
+  const cardContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+  };
+
   return (
-    <section className="bg-[#F8F9FA] py-16 px-6 md:px-12">
+    <section className="bg-[#F8F9FA] py-16 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-12">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="text-center max-w-3xl mx-auto space-y-4"
+        >
           <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             Document Creation
           </div>
@@ -94,13 +121,21 @@ export default function DocumentSection() {
             Change text in contracts and other papers in moments through a
             simple form
           </p>
-        </div>
+        </motion.div>
 
         {/* 3 Main Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          variants={cardContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           {cards.map((card, idx) => (
-            <div
+            <motion.div
               key={idx}
+              variants={cardVariants}
+              whileHover={{ y: -6, transition: { duration: 0.2 } }}
               className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[290px] relative transition hover:shadow-md"
             >
               <div>
@@ -152,12 +187,18 @@ export default function DocumentSection() {
                   </span>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* And More Container */}
-        <div className="bg-[#F0F2F5]/80 rounded-[36px] p-8 md:p-10 border border-gray-200/50 flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="bg-[#F0F2F5]/80 rounded-[36px] p-8 md:p-10 border border-gray-200/50 flex flex-col items-center"
+        >
           <h3 className="text-2xl font-black text-gray-950 mb-1 tracking-tight">
             And more
           </h3>
@@ -167,8 +208,9 @@ export default function DocumentSection() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
             {extraFeatures.map((item, idx) => (
-              <div
+              <motion.div
                 key={idx}
+                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                 className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100/80 shadow-2xs flex items-center justify-between gap-3 transition hover:shadow-xs"
               >
                 <div className="flex items-center gap-3.5">
@@ -192,42 +234,52 @@ export default function DocumentSection() {
                 >
                   <ArrowRight size={11} strokeWidth={3} />
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Demo Video Popup Modal */}
-      {activeVideoStart !== null && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setActiveVideoStart(null)}
-        >
-          <div
-            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {activeVideoStart !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setActiveVideoStart(null)}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveVideoStart(null)}
-              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
-              aria-label="Close video"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={26} />
-            </button>
+              {/* Close Button */}
+              <button
+                onClick={() => setActiveVideoStart(null)}
+                className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+                aria-label="Close video"
+              >
+                <X size={26} />
+              </button>
 
-            {/* Youtube Embedded Video with Start Time */}
-            <iframe
-              src={`https://www.youtube.com/embed/HWwuSrGQmSw?autoplay=1&rel=0&start=${activeVideoStart}`}
-              title="SohozKaj Document Creation Tutorial"
-              className="w-full h-full border-0 rounded-xl"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
+              {/* Youtube Embedded Video with Start Time */}
+              <iframe
+                src={`https://www.youtube.com/embed/HWwuSrGQmSw?autoplay=1&rel=0&start=${activeVideoStart}`}
+                title="SohozKaj Document Creation Tutorial"
+                className="w-full h-full border-0 rounded-xl"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

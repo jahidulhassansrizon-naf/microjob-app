@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Clock,
   ShieldCheck,
@@ -6,6 +8,7 @@ import {
   Zap,
   Bookmark,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function WhyChooseUs() {
   const benefits = [
@@ -47,11 +50,37 @@ export default function WhyChooseUs() {
     },
   ];
 
+  // স্ট্যাগার্ড অ্যানিমেশন ভ্যারিয়েন্ট
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+  };
+
   return (
-    <section className="bg-[#F8F9FA] py-20 px-6 md:px-12">
+    <section className="bg-[#F8F9FA] py-20 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-14">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="text-center max-w-3xl mx-auto space-y-4"
+        >
           <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             Why Choose Us
           </div>
@@ -65,13 +94,21 @@ export default function WhyChooseUs() {
             We provide fast, safe, and reliable solutions to simplify your daily
             work
           </p>
-        </div>
+        </motion.div>
 
         {/* 6 Grid Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {benefits.map((item, idx) => (
-            <div
+            <motion.div
               key={idx}
+              variants={cardVariants}
+              whileHover={{ y: -6, transition: { duration: 0.2 } }}
               className="bg-white rounded-[28px] p-7 border border-gray-100 shadow-xs flex flex-col justify-start min-h-[190px] transition hover:shadow-md"
             >
               <div
@@ -86,9 +123,9 @@ export default function WhyChooseUs() {
               <p className="text-xs text-gray-400 font-medium leading-relaxed">
                 {item.desc}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

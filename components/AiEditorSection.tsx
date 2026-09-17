@@ -11,6 +11,7 @@ import {
   Share2,
   X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AiEditorSection() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -42,13 +43,39 @@ export default function AiEditorSection() {
     },
   ];
 
+  // অ্যানিমেশন ভ্যারিয়েন্ট (Bottom Cards এর জন্য)
+  const bottomContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const bottomCardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+  };
+
   return (
-    <section className="bg-[#F8F9FA] py-12 sm:py-16 md:py-20 lg:pb-24 px-4 sm:px-6 md:px-8">
+    <section className="bg-[#F8F9FA] py-12 sm:py-16 md:py-20 lg:pb-24 px-4 sm:px-6 md:px-8 overflow-hidden">
       <div className="max-w-[1280px] mx-auto flex flex-col gap-6">
         {/* Top Row: Green Banner + 2 Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left Green Banner Card */}
-          <div className="lg:col-span-6 bg-gradient-to-b from-[#05B066] via-[#04A25E] to-[#038E52] text-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col justify-between shadow-xs relative overflow-hidden min-h-[480px] sm:min-h-[520px]">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="lg:col-span-6 bg-gradient-to-b from-[#05B066] via-[#04A25E] to-[#038E52] text-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col justify-between shadow-xs relative overflow-hidden min-h-[480px] sm:min-h-[520px]"
+          >
             <div>
               {/* Top Badge */}
               <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold px-3.5 py-1.5 rounded-full mb-6 sm:mb-8 tracking-wider">
@@ -107,12 +134,19 @@ export default function AiEditorSection() {
                 <ArrowUpRight size={18} strokeWidth={2.5} />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Column: 2 Stacked Cards */}
           <div className="lg:col-span-6 flex flex-col justify-between gap-6">
             {/* Card 1 */}
-            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
+            >
               <div>
                 <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
                   <Sparkles size={24} />
@@ -131,10 +165,17 @@ export default function AiEditorSection() {
               >
                 See details &rsaquo;
               </button>
-            </div>
+            </motion.div>
 
-            {/* Card 2 (Starts video at 40s) */}
-            <div className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10">
+            {/* Card 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
+            >
               <div>
                 <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
                   <Palette size={24} />
@@ -154,15 +195,23 @@ export default function AiEditorSection() {
               >
                 See details &rsaquo;
               </button>
-            </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Bottom Row: 3 Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          variants={bottomContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           {bottomCards.map((card, idx) => (
-            <div
+            <motion.div
               key={idx}
+              variants={bottomCardVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
               className="bg-white rounded-3xl md:rounded-[32px] p-6 sm:p-8 border border-gray-100 shadow-2xs flex flex-col justify-between min-h-[240px] sm:min-h-[260px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
             >
               <div>
@@ -182,39 +231,49 @@ export default function AiEditorSection() {
               >
                 See details &rsaquo;
               </button>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Demo Video Popup Modal */}
-      {isVideoOpen && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setIsVideoOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {isVideoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setIsVideoOpen(false)}
           >
-            <button
-              onClick={() => setIsVideoOpen(false)}
-              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
-              aria-label="Close video"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={26} />
-            </button>
+              <button
+                onClick={() => setIsVideoOpen(false)}
+                className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+                aria-label="Close video"
+              >
+                <X size={26} />
+              </button>
 
-            <iframe
-              src={`https://www.youtube.com/embed/ssUbVT5-b10?autoplay=1&rel=0&start=${videoStartTime}`}
-              title="ShohozKaj AI Photo Edit Tutorial"
-              className="w-full h-full border-0 rounded-xl"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
+              <iframe
+                src={`https://www.youtube.com/embed/ssUbVT5-b10?autoplay=1&rel=0&start=${videoStartTime}`}
+                title="ShohozKaj AI Photo Edit Tutorial"
+                className="w-full h-full border-0 rounded-xl"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

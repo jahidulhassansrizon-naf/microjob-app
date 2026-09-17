@@ -68,7 +68,7 @@ const categoriesData = [
     description: "Convert, analyze, and extract your text",
     icon: Type,
     tools: [
-      { title: "Bijoy ⇄ Unicode", subtitle: "Bijoy ⇄ Unicode" },
+      { title: "Bijoy - Unicode", subtitle: "Bijoy ⇄ Unicode" },
       { title: "Banglish Typing", subtitle: "Banglish Typing" },
       { title: "Number to Words", subtitle: "Number to Words" },
       { title: "Image to Text", subtitle: "Image to Text" },

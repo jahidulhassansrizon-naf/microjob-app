@@ -598,13 +598,9 @@ function SohojToolsContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ১. ইনিশিয়াল পেজ লোড ও Auth Check
+  // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (Typewriter Effect)
   useEffect(() => {
     const searchFromUrl = searchParams.get("search");
-    if (searchFromUrl) {
-      setSearchQuery(searchFromUrl);
-    }
-
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -613,12 +609,30 @@ function SohojToolsContent() {
         ? `/sohoj-tools?search=${encodeURIComponent(searchFromUrl)}`
         : "/sohoj-tools";
       router.push(`/login?redirect=${encodeURIComponent(targetPath)}`);
-    } else {
-      setIsAuthenticated(true);
+      return;
     }
-  }, []);
 
-  // ২. সার্চ বক্সে ইউজার কিছু টাইপ বা ডিলিট করলে URL সিঙ্ক করার হ্যান্ডলার
+    setIsAuthenticated(true);
+
+    // টাইপিং অ্যানিমেশন লজিক
+    if (searchFromUrl) {
+      let currentIndex = 0;
+      setSearchQuery(""); // শুরুতে খালি রাখবে
+
+      const timer = setInterval(() => {
+        if (currentIndex < searchFromUrl.length) {
+          setSearchQuery(searchFromUrl.slice(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          clearInterval(timer);
+        }
+      }, 70); // প্রতি ৭০ মিলিসেকেন্ডে একটি করে অক্ষর টাইপ হবে
+
+      return () => clearInterval(timer);
+    }
+  }, [searchParams]);
+
+  // ২. টাইপ বা ডিলিট করলে URL সিঙ্ক করার হ্যান্ডলার
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
 
@@ -626,17 +640,15 @@ function SohojToolsContent() {
     if (value.trim()) {
       params.set("search", value);
     } else {
-      params.delete("search"); // খালি থাকলে URL থেকে মুছে দেবে
+      params.delete("search"); // ডিলিট করলে URL থেকে মুছে দেবে
     }
 
     const newQuery = params.toString();
     const newPath = newQuery ? `/sohoj-tools?${newQuery}` : "/sohoj-tools";
 
-    // router.replace ব্যবহার করায় ব্রাউজার হিস্ট্রিতে প্রতি অক্ষরে নতুন পেজ জমা হবে না
     router.replace(newPath, { scroll: false });
   };
 
-  // Helper function to create URL slug from Tool Name
   const getSlug = (name: string) => {
     return name
       .toLowerCase()
@@ -682,12 +694,9 @@ function SohojToolsContent() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans">
-      {/* Header Navigation */}
       <DashboardNavbar />
 
-      {/* Main Container */}
       <main className="max-w-[1320px] mx-auto px-4 py-6 space-y-5">
-        {/* Top Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center shrink-0">
@@ -706,7 +715,6 @@ function SohojToolsContent() {
             </div>
           </div>
 
-          {/* Free / Paid Switcher Button */}
           <div className="bg-gray-200/80 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
             <button
               onClick={() => setActiveTab("Free")}
@@ -731,7 +739,7 @@ function SohojToolsContent() {
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar With Typing Effect */}
         <div className="relative">
           <Search
             size={18}
@@ -742,7 +750,7 @@ function SohojToolsContent() {
             placeholder="Search tools... e.g. PDF, image, video"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-xs placeholder:text-gray-400"
+            className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-xs placeholder:text-gray-400 transition-all"
           />
         </div>
 
@@ -783,11 +791,9 @@ function SohojToolsContent() {
                 href={`/sohoj-tools/${slug}`}
                 className="flex flex-col items-center group cursor-pointer"
               >
-                {/* Square Card Container */}
                 <div
                   className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
                 >
-                  {/* Badge */}
                   {tool.badge && (
                     <span
                       className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${
@@ -798,14 +804,12 @@ function SohojToolsContent() {
                     </span>
                   )}
 
-                  {/* Icon */}
                   <IconComponent
                     size={42}
                     className="text-[#ffffff] stroke-[1.75]"
                   />
                 </div>
 
-                {/* Tool Title */}
                 <span className="mt-2.5 text-xs font-bold text-gray-800 text-center line-clamp-1 group-hover:text-[#FF5D00] transition-colors">
                   {tool.name}
                 </span>
