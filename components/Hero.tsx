@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   ArrowRight,
   Play,
@@ -14,19 +15,53 @@ import {
   X,
 } from "lucide-react";
 
+// Left Content Animation Variants
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+};
+
 export default function Hero() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   return (
     <section className="w-full bg-transparent min-h-[calc(100vh-90px)] flex items-center py-8 lg:py-12 relative overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-        {/* Left Column */}
-        <div className="lg:col-span-6 xl:col-span-6 space-y-5 text-center lg:text-left flex flex-col items-center lg:items-start">
-          <div className="inline-block bg-orange-100/80 border border-[#FEA51F] text-black text-xs sm:text-[14px] font-medium px-4 py-1.5 rounded-full shadow-xs">
+        {/* Left Column with Motion */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="lg:col-span-6 xl:col-span-6 space-y-5 text-center lg:text-left flex flex-col items-center lg:items-start"
+        >
+          {/* Active Users Tag */}
+          <motion.div
+            variants={itemVariants}
+            className="inline-block bg-orange-100/80 border border-[#FEA51F] text-black text-xs sm:text-[14px] font-medium px-4 py-1.5 rounded-full shadow-xs"
+          >
             35000+ Active Users
-          </div>
+          </motion.div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-tight sm:leading-tight lg:leading-[81px] font-black text-gray-950 tracking-tight">
+          {/* Main Heading */}
+          <motion.h1
+            variants={itemVariants}
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-tight sm:leading-tight lg:leading-[81px] font-black text-gray-950 tracking-tight"
+          >
             <span className="whitespace-normal sm:whitespace-nowrap">
               All your <span className="text-amber-500">digital work</span>
             </span>{" "}
@@ -34,35 +69,53 @@ export default function Hero() {
             <span className="text-[#FC4D0B]">in one place,</span> simple{" "}
             <br className="hidden lg:inline" />
             and secure
-          </h1>
+          </motion.h1>
 
-          <p className="text-gray-800 text-sm sm:text-base max-w-xl leading-relaxed font-semibold">
+          {/* Subtitle */}
+          <motion.p
+            variants={itemVariants}
+            className="text-gray-800 text-sm sm:text-base max-w-xl leading-relaxed font-semibold"
+          >
             Photo edit, AI photo edit, manual edit and bulk edit, plus
             documents, design and print media — use them all with ease.
-          </p>
+          </motion.p>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 w-full">
-            {/* Get Started Now -> Login Page Link */}
-            <Link
-              href="/login"
-              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 sm:px-7 py-3 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-orange-300/50 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 w-full"
+          >
+            {/* Get Started Button */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="w-full sm:w-auto"
             >
-              Get Started Now <ArrowRight size={16} />
-            </Link>
+              <Link
+                href="/login"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 sm:px-7 py-3 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-orange-300/50 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"
+              >
+                Get Started Now <ArrowRight size={16} />
+              </Link>
+            </motion.div>
 
             {/* Watch Demo Video Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setIsVideoOpen(true)}
               className="flex items-center justify-center gap-2 text-gray-700 bg-white/80 border border-gray-200 px-6 py-3 rounded-full font-semibold text-xs sm:text-sm hover:bg-white transition shadow-xs cursor-pointer w-full sm:w-auto"
             >
               <Play size={14} className="text-amber-500 fill-amber-500" /> Watch
               Demo Video
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Feature Bullets */}
-          <div className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-5 text-xs text-gray-600 pt-4 sm:pt-6 font-semibold">
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-5 text-xs text-gray-600 pt-4 sm:pt-6 font-semibold"
+          >
             <span className="flex items-center gap-1.5">
               <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />{" "}
               Photo edit in one click
@@ -75,13 +128,18 @@ export default function Hero() {
               <CheckCircle2 size={16} className="text-purple-500 shrink-0" />{" "}
               Save time, reduce hassle
             </span>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        {/* Right Column */}
+        {/* Right Column Visuals with Framer Motion */}
         <div className="lg:col-span-6 xl:col-span-6 relative flex justify-center items-center min-h-[380px] sm:min-h-[420px] px-2 sm:px-4 lg:px-0 mt-6 lg:mt-0">
           {/* Main Base Card */}
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/80 relative z-10 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/80 relative z-10 overflow-hidden"
+          >
             {/* Top Header Bar */}
             <div className="bg-gradient-to-r from-[#C22361] via-[#A01A8A] to-[#8C00FF] h-14 sm:h-16 px-6 flex items-center justify-end gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-white/40"></span>
@@ -135,10 +193,27 @@ export default function Hero() {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Floating Card 1 */}
-          <div className="absolute -top-3 sm:-top-1 left-2 sm:left-6 md:left-12 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-xl border border-gray-100 flex flex-col justify-center gap-2 w-52 sm:w-60 h-[96px] sm:h-[104px]">
+          {/* Floating Card 1 (Animated with Floating Effect) */}
+          <motion.div
+            initial={{ opacity: 0, x: -40, y: -20 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              y: [0, -10, 0], // Continuous float animation
+            }}
+            transition={{
+              opacity: { duration: 0.6, delay: 0.4 },
+              x: { duration: 0.6, delay: 0.4 },
+              y: {
+                repeat: Infinity,
+                duration: 4,
+                ease: "easeInOut",
+              },
+            }}
+            className="absolute -top-3 sm:-top-1 left-2 sm:left-6 md:left-12 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-xl border border-gray-100 flex flex-col justify-center gap-2 w-52 sm:w-60 h-[96px] sm:h-[104px]"
+          >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-md shrink-0">
                 <Check size={16} strokeWidth={3} />
@@ -153,12 +228,34 @@ export default function Hero() {
               </div>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-1.5 sm:h-2 overflow-hidden">
-              <div className="bg-emerald-500 h-full w-[75%] rounded-full"></div>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "75%" }}
+                transition={{ duration: 1, delay: 0.8 }}
+                className="bg-emerald-500 h-full rounded-full"
+              />
             </div>
-          </div>
+          </motion.div>
 
-          {/* Floating Card 2 */}
-          <div className="absolute bottom-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 -right-2 sm:-right-4 md:-right-6 z-20 bg-gradient-to-r from-orange-500 via-rose-500 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-2xl w-48 sm:w-60 h-[130px] sm:h-[150px] flex flex-col justify-between">
+          {/* Floating Card 2 (Animated with Floating Effect) */}
+          <motion.div
+            initial={{ opacity: 0, x: 40, y: 20 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              y: [0, 10, 0], // Continuous float animation
+            }}
+            transition={{
+              opacity: { duration: 0.6, delay: 0.5 },
+              x: { duration: 0.6, delay: 0.5 },
+              y: {
+                repeat: Infinity,
+                duration: 4.5,
+                ease: "easeInOut",
+              },
+            }}
+            className="absolute bottom-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 -right-2 sm:-right-4 md:-right-6 z-20 bg-gradient-to-r from-orange-500 via-rose-500 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-2xl w-48 sm:w-60 h-[130px] sm:h-[150px] flex flex-col justify-between"
+          >
             <div className="flex items-center justify-between">
               <p className="text-[10px] sm:text-[11px] opacity-90 font-medium">
                 Total documents created
@@ -178,40 +275,50 @@ export default function Hero() {
             <p className="text-[10px] sm:text-[11px] opacity-90 font-light">
               edited using SohozKaj
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Demo Video Popup Modal */}
-      {isVideoOpen && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setIsVideoOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
-            onClick={(e) => e.stopPropagation()}
+      {/* Demo Video Popup Modal with AnimatePresence */}
+      <AnimatePresence>
+        {isVideoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setIsVideoOpen(false)}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setIsVideoOpen(false)}
-              className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
-              aria-label="Close video"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={26} />
-            </button>
+              {/* Close Button */}
+              <button
+                onClick={() => setIsVideoOpen(false)}
+                className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
+                aria-label="Close video"
+              >
+                <X size={26} />
+              </button>
 
-            {/* Youtube Embedded Video */}
-            <iframe
-              src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
-              title="SohozKaj Demo Video"
-              className="w-full h-full border-0 rounded-xl"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
+              {/* Youtube Embedded Video */}
+              <iframe
+                src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
+                title="SohozKaj Demo Video"
+                className="w-full h-full border-0 rounded-xl"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

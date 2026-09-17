@@ -24,9 +24,41 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var path = window.location.pathname;
+                  
+                  // পেজ অনুযায়ী ব্যাকগ্রাউন্ড কালার ম্যাপ
+                  var bgMap = {
+                    "/tools": "#FFFBF7",
+                    "/pricing": "#FEF4ED",      
+                    "/reviews": "#FFFBF7",       
+                    "/dorkar-link": "#FCF9F9",   
+                  };
+
+                  var bg = "#FAF7FD"; // ডিফল্ট (Home Page) কালার
+
+                  for (var key in bgMap) {
+                    if (path.startsWith(key)) {
+                      bg = bgMap[key];
+                      break;
+                    }
+                  }
+
+                  document.documentElement.style.backgroundColor = bg;
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning={true}
       >
         <Navbar />
