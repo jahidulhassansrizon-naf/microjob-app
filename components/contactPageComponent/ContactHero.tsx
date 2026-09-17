@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Phone, Mail, Clock } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ContactHero() {
   const [formData, setFormData] = useState({
@@ -18,39 +19,64 @@ export default function ContactHero() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#f3f4f6] px-4 sm:px-6 lg:px-8">
-      {/* Reference-style top background */}
-      <div className="absolute inset-x-0 top-0 h-[650px] bg-gradient-to-b from-[#fcf5f1] via-[#f9f4f5] to-[#f1f1f8]" />
+    <section className="relative overflow-hidden bg-[#e5e7eb] px-4 sm:px-6 lg:px-8">
+      {/* Darker & Richer top background gradient for better contrast */}
+      <div className="absolute inset-x-0 top-0 h-[680px] bg-gradient-to-b from-[#ffe6d0] via-[#fadae2] to-[#dbe0f0]" />
 
       {/* Main content */}
       <div className="relative z-10 mx-auto max-w-[1100px] pt-[102px] pb-24">
         {/* Header */}
-        <div className="mx-auto max-w-[760px] text-center">
-          <span className="inline-flex h-[35px] items-center rounded-full border border-[#ff8a00] bg-white/20 px-[17px] text-[13px] font-medium leading-none text-[#ff7a00]">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mx-auto max-w-[760px] text-center"
+        >
+          <motion.span
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="inline-flex h-[35px] items-center rounded-full border border-[#ff8a00] bg-white/40 px-[17px] text-[13px] font-semibold leading-none text-[#ff7a00] backdrop-blur-sm shadow-sm"
+          >
             Do you have questions?
-          </span>
+          </motion.span>
 
-          <h1 className="mt-[25px] text-center text-[52px] font-extrabold leading-[1.36] tracking-[-1.7px] text-black sm:text-[54px]">
-            <span className="text-[#ff7a00]">Easy communication</span>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+            className="mt-[25px] text-center text-[52px] font-extrabold leading-[1.36] tracking-[-1.7px] text-black sm:text-[54px]"
+          >
+            <span className="text-[#ff7a00]">Easy communication</span>{" "}
             <span>Do it,</span>
             <br />
             <span>you will get the solution</span>
             <br />
             <span>quickly.</span>
-          </h1>
+          </motion.h1>
 
-          <p className="mx-auto mt-[30px] max-w-[700px] text-[17px] font-normal leading-[1.55] text-[#15243a]">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            className="mx-auto mt-[30px] max-w-[700px] text-[17px] font-normal leading-[1.55] text-[#15243a]"
+          >
             Our team is ready to answer your questions and support you. Fill out
             the form below
             <br className="hidden sm:block" />
             and we will get back to you shortly.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Form + contact cards */}
         <div className="mx-auto mt-[96px] grid max-w-[764px] grid-cols-1 items-start gap-5 lg:grid-cols-[500px_242px]">
           {/* Form */}
-          <div className="rounded-[26px] bg-white px-[34px] py-[31px] shadow-[0_8px_30px_rgba(26,31,44,0.04)]">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+            className="rounded-[26px] bg-white px-[34px] py-[31px] shadow-[0_12px_40px_rgba(26,31,44,0.08)]"
+          >
             <h2 className="text-[29px] font-extrabold leading-[1.25] tracking-[-0.8px] text-black">
               Send your <span className="text-[#ff7a00]">message.</span>
             </h2>
@@ -138,19 +164,27 @@ export default function ContactHero() {
                 />
               </div>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.015 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="mt-[3px] h-[45px] w-full rounded-[7px] bg-[#ff5a00] px-6 text-[13px] font-bold text-white transition hover:bg-[#f45100] active:scale-[0.995]"
+                className="mt-[3px] h-[45px] w-full rounded-[7px] bg-[#ff5a00] px-6 text-[13px] font-bold text-white transition hover:bg-[#f45100]"
               >
                 Send us
-              </button>
+              </motion.button>
             </form>
-          </div>
+          </motion.div>
 
           {/* Contact information */}
           <div className="space-y-5">
             {/* Phone */}
-            <div className="min-h-[167px] rounded-[24px] border border-black bg-white px-[26px] py-[25px]">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="min-h-[167px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+            >
               <div className="flex items-start gap-[16px]">
                 <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#00cc67] text-white">
                   <Phone className="h-[27px] w-[27px]" strokeWidth={2.1} />
@@ -172,10 +206,16 @@ export default function ContactHero() {
                 <p>+88 01700-559595</p>
                 <p>+88 01718-542596</p>
               </div>
-            </div>
+            </motion.div>
 
             {/* Email */}
-            <div className="min-h-[167px] rounded-[24px] border border-black bg-white px-[26px] py-[25px]">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6, ease: "easeOut" }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="min-h-[167px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+            >
               <div className="flex items-start gap-[16px]">
                 <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#1e9eff] text-white">
                   <Mail className="h-[27px] w-[27px]" strokeWidth={2.1} />
@@ -197,10 +237,16 @@ export default function ContactHero() {
                 <p>hello@sohozkaj.com</p>
                 <p>support@sohozkaj.com</p>
               </div>
-            </div>
+            </motion.div>
 
             {/* Office hours */}
-            <div className="min-h-[175px] rounded-[24px] border border-black bg-white px-[26px] py-[25px]">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="min-h-[175px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+            >
               <div className="flex items-start gap-[16px]">
                 <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#d43ce8] text-white">
                   <Clock className="h-[27px] w-[27px]" strokeWidth={2.1} />
@@ -229,7 +275,7 @@ export default function ContactHero() {
                   <p className="mt-[3px] text-[#98a2b3]">Weekend</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

@@ -2,28 +2,56 @@
 
 import React from "react";
 import { MapPin, Phone, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function RegisteredAddress() {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50/50">
       <div className="max-w-7xl mx-auto text-center">
         {/* Top Badge & Header */}
-        <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-4 py-1.5 rounded-full mb-4">
+        <motion.span
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-4 py-1.5 rounded-full mb-4"
+        >
           + Organization information
-        </span>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
+        </motion.span>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+          className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3"
+        >
           Registered{" "}
           <span className="text-orange-500">Address and license</span>
-        </h2>
-        <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-12">
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          className="text-gray-500 text-sm max-w-2xl mx-auto mb-12"
+        >
           Easy Work is a service of Sigmative. Below is our registered office
           and trade license information.
-        </p>
+        </motion.p>
 
         {/* Address Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* Bangladesh Head Office Card */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-left flex flex-col justify-between">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-left flex flex-col justify-between"
+          >
             <div>
               <span className="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full mb-6">
                 Bangladesh · Head Office
@@ -48,10 +76,17 @@ export default function RegisteredAddress() {
                 <strong className="text-gray-900">26867</strong>
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* United States Hub Card */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-left flex flex-col justify-between">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-left flex flex-col justify-between"
+          >
             <div>
               <span className="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full mb-6">
                 United States · Hub
@@ -76,7 +111,7 @@ export default function RegisteredAddress() {
                 <strong className="text-gray-900">36-5158602</strong>
               </span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
