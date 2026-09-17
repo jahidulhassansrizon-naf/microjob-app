@@ -164,7 +164,7 @@ const importantLinksItems = [
   {
     title: "Contact",
     subtitle: "Get in touch with us",
-    href: "#",
+    href: "/contact", // updated path to contact page
   },
 ];
 
