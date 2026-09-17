@@ -20,15 +20,15 @@ export default function Footer() {
   ];
 
   const pagesLinks = [
-    "What is SohozKaj?",
-    "About Us",
-    "Our Team",
-    "Important Articles",
-    "Contact",
-    "Document Templates",
-    "AI Photo",
-    "Package",
-    "Contest",
+    { title: "What is SohozKaj?", href: "/help" },
+    { title: "About Us" },
+    { title: "Our Team" },
+    { title: "Important Articles" },
+    { title: "Contact" },
+    { title: "Document Templates" },
+    { title: "AI Photo" },
+    { title: "Package" },
+    { title: "Contest" },
   ];
 
   const supportLinks = [
@@ -111,13 +111,19 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
               {pagesLinks.map((page, index) => (
                 <li key={index}>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className={linkHoverStyle}
-                  >
-                    {page}
-                  </a>
+                  {page.href ? (
+                    <Link href={page.href} className={linkHoverStyle}>
+                      {page.title}
+                    </Link>
+                  ) : (
+                    <a
+                      href="#"
+                      onClick={(e) => e.preventDefault()}
+                      className={linkHoverStyle}
+                    >
+                      {page.title}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

@@ -52,10 +52,10 @@ export default function ContactMap() {
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            href="https://maps.google.com/?q=Latifpur+Colony+Bogra+Bangladesh"
+            href="https://www.google.com/maps/place/Sigmative/@24.8231196,89.3823844,19z/data=!4m6!3m5!1s0x39fc554fe68abeb1:0x1643c8713b7b0ddd!8m2!3d24.8234024!4d89.3841042!16s%2Fg%2F11x1skt6f0?entry=ttu&g_ep=EgoyMDI2MDkxNS4wIKXMDSoASAFQAw%3D%3D"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-[58px] min-w-[248px] items-center justify-center gap-[10px] rounded-full bg-gradient-to-r from-[#ffae00] via-[#ff7900] to-[#ff3b19] px-7 text-[16px] font-semibold text-white shadow-[0_3px_7px_rgba(255,108,0,0.24)] transition hover:brightness-105"
+            className="inline-flex h-[58px] min-w-[248px] items-center justify-center gap-[10px] rounded-full bg-gradient-to-r from-[#ffae00] via-[#ff7900] to-[#ff3b19] px-7 text-[16px] font-semibold text-white shadow-[0_3px_7px_rgba(255,108,0,0.24)] transition hover:brightness-105 cursor-pointer"
           >
             <span>View location on map</span>
             <span className="text-[25px] leading-none">→</span>
@@ -65,7 +65,7 @@ export default function ContactMap() {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             type="button"
-            className="inline-flex h-[58px] min-w-[292px] items-center justify-center gap-[10px] rounded-full border border-[#ececef] bg-white px-7 text-[16px] font-medium text-[#344054] shadow-[0_2px_6px_rgba(20,20,40,0.06)] transition hover:bg-[#fafafa]"
+            className="inline-flex h-[58px] min-w-[292px] items-center justify-center gap-[10px] rounded-full border border-[#ececef] bg-white px-7 text-[16px] font-medium text-[#344054] shadow-[0_2px_6px_rgba(20,20,40,0.06)] transition hover:bg-[#fafafa] cursor-pointer"
           >
             <span className="flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#67758a]">
               <Play className="h-[8px] w-[8px] fill-[#67758a] text-[#67758a]" />
