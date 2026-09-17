@@ -1,9 +1,11 @@
+// app/pricing/page.tsx
 "use client";
 
 import Link from "next/link";
 import {
   Sparkles,
   Gift,
+  Check,
   Edit3,
   FileCode,
   FileText,
@@ -15,100 +17,105 @@ import {
 } from "lucide-react";
 
 import FaqSection from "@/components/FaqSection";
-import CtaBanner from "@/components/CtaBanner"; // CTA Banner কম্পোনেন্ট
-import Footer from "@/components/Footer"; // Footer কম্পোনেন্ট
+import CtaBanner from "@/components/CtaBanner";
+import Footer from "@/components/Footer";
 
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#FFFBF7] text-gray-900 flex flex-col">
-      {/* Navbar */}
-
       {/* Main Pricing Section */}
-      <main className="flex-grow max-w-[1200px] mx-auto px-6 pt-16 pb-24 w-full flex flex-col items-center">
-        {/* Top Tag */}
-        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-orange-100/60 border border-orange-200/60 text-orange-600 text-xs font-bold mb-6 shadow-2xs">
-          <Sparkles size={14} />
-          <span>Simple Credit System</span>
+      <main className="flex-grow w-full flex flex-col items-center">
+        {/* Top Hero Section with Full-Width Background Gradient */}
+        <div className="w-full bg-gradient-to-b from-[#FFF5EE] via-[#FAF0E6]/70 to-[#F2E5D5]/50 pt-12 md:pt-16 pb-28 md:pb-36 px-4 sm:px-8 flex flex-col items-center border-b border-orange-100/60">
+          <div className="max-w-[1240px] w-full flex flex-col items-center">
+            {/* Top Tag - Pixel-Perfect as Reference Image */}
+            <div className="inline-flex items-center px-5 py-1 rounded-full bg-[#FFF6EB] border border-[#F5A021] text-[#9A2200] text-xs md:text-sm font-medium mb-6 shadow-2xs">
+              <span>Simple Credit System</span>
+            </div>
+
+            {/* Main Heading */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-center tracking-tight text-gray-900 mb-4">
+              Pay only for <span className="text-[#FF5500]">what you use</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-sm md:text-base text-gray-500 text-center max-w-xl font-medium leading-relaxed">
+              No subscriptions, no hidden fees. Use credits to generate
+              documents, images and print media. Every new account gets 20 bonus
+              credits.
+            </p>
+          </div>
         </div>
 
-        {/* Main Heading */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-center tracking-tight text-gray-900 mb-4">
-          Pay only for{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
-            what you use
-          </span>
-        </h1>
+        {/* Overlapping Banner Card Container */}
+        <div className="w-full max-w-[1240px] px-4 sm:px-8 flex flex-col items-center -mt-20 md:-mt-28 z-10 mb-16">
+          {/* Banner Card - Floating over the background boundary */}
+          <div className="w-full max-w-[1140px] bg-gradient-to-r from-[#FF4E00] via-[#FF3300] to-[#C01D00] rounded-[30px] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Background Glow Overlay Circles */}
+            <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+            <div className="absolute right-16 bottom-0 w-72 h-72 bg-black/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        {/* Subtitle */}
-        <p className="text-sm md:text-base text-gray-500 text-center max-w-xl mb-14 font-medium leading-relaxed">
-          No subscriptions, no hidden fees. Use credits to generate documents,
-          images and print media. Every new account gets 20 bonus credits.
-        </p>
-
-        {/* Banner Card */}
-        <div className="w-full bg-gradient-to-r from-[#FF6B00] via-[#FF453A] to-[#D938E2] rounded-[32px] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8 mb-24">
-          {/* Background Glow Effect */}
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          {/* Left Side: 20 Bonus Credits */}
-          <div className="flex items-center gap-6 z-10 w-full lg:w-auto">
-            <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 flex flex-col items-center justify-center shadow-inner">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/80">
-                # New User Bonus
-              </span>
-              <span className="text-6xl md:text-7xl font-black tracking-tight text-white">
+            {/* Left Column: Bonus Credits */}
+            <div className="lg:col-span-4 flex flex-col items-start lg:border-r lg:border-white/20 lg:pr-8">
+              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-extrabold text-white uppercase tracking-wider mb-3 border border-white/20">
+                <span>#</span>
+                <span>New User Bonus</span>
+              </div>
+              <span className="text-6xl md:text-7xl font-black tracking-tight text-white leading-none">
                 20
               </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-2">
                 Bonus Credits
               </span>
-              <span className="text-xs text-white/80 font-medium max-w-[200px] mt-1">
+              <span className="text-[11px] text-white/80 font-medium leading-tight mt-1.5 max-w-[210px]">
                 (2 credits for register & 18 credits for profile completion)
               </span>
             </div>
-          </div>
 
-          {/* Right Side: Description & Button */}
-          <div className="flex flex-col items-start lg:items-end gap-5 z-10 w-full lg:w-auto">
-            <div className="flex flex-col lg:items-end">
-              <h3 className="text-lg md:text-xl font-bold tracking-tight">
-                Start creating for free —{" "}
-                <span className="underline decoration-white/50">right now</span>
+            {/* Right Column: Title, Pills & CTA */}
+            <div className="lg:col-span-8 flex flex-col items-start lg:pl-4 z-10">
+              <h3 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                Start creating for free — right now
               </h3>
-              <p className="text-xs text-white/80 font-medium mt-1">
+              <p className="text-xs md:text-sm text-white/85 font-medium mt-1.5 mb-6">
                 Get 20 bonus credits to create documents, images and more.
               </p>
-            </div>
 
-            {/* Feature Pills */}
-            <div className="flex flex-wrap lg:justify-end gap-2">
-              <span className="bg-white/20 backdrop-blur-sm text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/10">
-                ✓ 20 Documents
-              </span>
-              <span className="bg-white/20 backdrop-blur-sm text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/10">
-                ✓ 10 AI Edits
-              </span>
-              <span className="bg-white/20 backdrop-blur-sm text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/10">
-                ✓ 20 Print Exports
-              </span>
-              <span className="bg-white/20 backdrop-blur-sm text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/10">
-                ✓ 5 AI Templates
-              </span>
-            </div>
+              {/* Feature Pills */}
+              <div className="flex flex-wrap gap-2.5 mb-7">
+                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <Check size={13} className="stroke-[3]" />
+                  <span>40 Documents</span>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <Check size={13} className="stroke-[3]" />
+                  <span>10 AI Edits</span>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <Check size={13} className="stroke-[3]" />
+                  <span>40 Print Exports</span>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <Check size={13} className="stroke-[3]" />
+                  <span>5 AI Templates</span>
+                </div>
+              </div>
 
-            {/* Action Button */}
-            <button className="bg-white text-gray-900 hover:bg-gray-100 transition font-extrabold text-sm px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2 mt-2 cursor-pointer">
-              <Gift size={16} className="text-orange-500" />
-              Claim 20 Free Credits
-            </button>
+              {/* Action Button */}
+              <button className="bg-white text-[#FF4E00] hover:bg-orange-50 transition font-extrabold text-xs md:text-sm px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 cursor-pointer group">
+                <Gift
+                  size={16}
+                  className="text-[#FF4E00] group-hover:scale-110 transition-transform"
+                />
+                <span>Claim 20 Free Credits</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* What are credits, really? Section */}
-        <div className="w-full flex flex-col items-center mb-20">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+        <div className="max-w-[1240px] w-full px-4 sm:px-8 flex flex-col items-center mb-24">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3 text-center">
             What are credits, really?
           </h2>
           <p className="text-sm md:text-base text-gray-500 text-center max-w-xl mb-12 font-medium">

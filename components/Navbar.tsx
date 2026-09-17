@@ -17,6 +17,8 @@ import {
   HelpCircle,
   Menu,
   X,
+  Gift,
+  ArrowRight,
 } from "lucide-react";
 
 // Our Services ডেটা
@@ -50,7 +52,7 @@ const serviceItems = [
   },
 ];
 
-// SohozTools মেগা-মেনু বক্সের ভেতরের ডেটা -> redirect=/sohoj-tools
+// SohozTools মেগা-মেনু বক্সের ভেতরের ডেটা
 const sohozToolsCategories = [
   {
     title: "PDF Tools",
@@ -119,30 +121,33 @@ const sohozToolsCategories = [
   },
 ];
 
-// Important Links ডেটা
+// Important Links ডেটা (Job Circular লিংক লগইন রিডাইরেক্টসহ আপডেট করা)
 const importantLinksItems = [
   {
     title: "Govt Websites & Links",
     subtitle: "National essential services",
     count: "14",
-    href: "/dorkar-link",
+    countBg: "bg-orange-100/80 text-orange-600",
+    href: "/dorkar-link?category=govt",
   },
   {
     title: "Visa & International",
     subtitle: "Visa, passport & expat services",
     count: "15",
-    href: "#",
+    countBg: "bg-sky-100/80 text-sky-600",
+    href: "/dorkar-link?category=visa",
   },
   {
     title: "Other Links",
     subtitle: "Results & other useful sites",
     count: "12",
-    href: "#",
+    countBg: "bg-purple-100/80 text-purple-600",
+    href: "/dorkar-link?category=other",
   },
   {
     title: "Job Circular",
     subtitle: "Latest job circulars",
-    href: "#",
+    href: "/login?redirect=/jobs",
   },
   {
     title: "Important Articles",
@@ -153,6 +158,7 @@ const importantLinksItems = [
     title: "Contest",
     subtitle: "Use SohojKaj & win prizes!",
     isNew: true,
+    isFeatured: true, // স্পেশাল কার্ড স্টাইল
     href: "#",
   },
   {
@@ -258,7 +264,6 @@ export default function Navbar() {
               onMouseEnter={() => setIsToolsOpen(true)}
               onMouseLeave={() => setIsToolsOpen(false)}
             >
-              {/* মেইন নেভবার লিঙ্ক -> সরাসরি /tools পেজে যাবে */}
               <Link
                 href="/tools"
                 onClick={() => setIsToolsOpen(false)}
@@ -273,7 +278,6 @@ export default function Navbar() {
                 />
               </Link>
 
-              {/* হভার ড্রপডাউন বক্সের ভেতরের লিঙ্কস -> redirect=/sohoj-tools */}
               {isToolsOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 w-[1050px] bg-white border border-gray-100 rounded-3xl shadow-2xl p-6 z-[1000] grid grid-cols-5 gap-4">
                   {sohozToolsCategories.map((cat, idx) => (
@@ -345,36 +349,80 @@ export default function Navbar() {
               </Link>
 
               {isImportantOpen && (
-                <div className="absolute top-full left-0 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-[1000] flex flex-col">
-                  {importantLinksItems.map((item, index) => (
-                    <Link
-                      key={index}
-                      href={item.href}
-                      onClick={() => setIsImportantOpen(false)}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-orange-50 transition group"
-                    >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-gray-800 group-hover:text-[#FF5D00]">
-                            {item.title}
-                          </span>
-                          {item.isNew && (
-                            <span className="bg-orange-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md">
-                              NEW
+                <div className="absolute top-full left-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl p-2.5 z-[1000] flex flex-col gap-0.5">
+                  {importantLinksItems.map((item, index) => {
+                    // Contest বিশেষ হাইলাইটেড কার্ড
+                    if (item.isFeatured) {
+                      return (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={() => setIsImportantOpen(false)}
+                          className="flex items-center justify-between p-2.5 my-1 bg-orange-50/70 border border-orange-200/80 rounded-xl transition hover:bg-orange-100/60 group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+                              <Gift size={16} />
+                            </div>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-gray-900 group-hover:text-orange-600">
+                                  {item.title}
+                                </span>
+                                {item.isNew && (
+                                  <span className="bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider">
+                                    NEW
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-gray-500 font-medium">
+                                {item.subtitle}
+                              </span>
+                            </div>
+                          </div>
+                          <ArrowRight
+                            size={14}
+                            className="text-orange-500 group-hover:translate-x-0.5 transition-transform shrink-0"
+                          />
+                        </Link>
+                      );
+                    }
+
+                    // সাধারণ লিঙ্কস
+                    return (
+                      <Link
+                        key={index}
+                        href={item.href}
+                        onClick={() => setIsImportantOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-orange-50/50 transition group cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-800 group-hover:text-[#FF5D00]">
+                              {item.title}
                             </span>
-                          )}
+                            {item.isNew && (
+                              <span className="bg-orange-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {item.subtitle}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          {item.subtitle}
-                        </span>
-                      </div>
-                      {item.count && (
-                        <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {item.count}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+                        {item.count && (
+                          <span
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                              item.countBg || "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            {item.count}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -553,7 +601,11 @@ export default function Navbar() {
                       >
                         <span>{imp.title}</span>
                         {imp.count && (
-                          <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              imp.countBg || "bg-gray-100"
+                            }`}
+                          >
                             {imp.count}
                           </span>
                         )}
