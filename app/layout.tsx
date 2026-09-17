@@ -37,7 +37,7 @@ export default function RootLayout({
                   var bgMap = {
                     "/tools": "#FFFBF7",
                     "/pricing": "#FEF4ED",      
-                    "/reviews": "#FFFBF7",       
+                    "/reviews": "#F5ECE5",       
                     "/dorkar-link": "#FCF9F9",   
                   };
 

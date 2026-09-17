@@ -96,25 +96,53 @@ export default function ReviewsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFBF7] text-gray-900 flex flex-col">
-      {/* Navbar */}
+    <div className="min-h-screen bg-[#F3F4F5] text-gray-900 flex flex-col">
+      {/* 1. Header Banner Block (রেফারেন্স ছবির মতো পারফেক্ট স্পেসিং ও গ্যাপিং) */}
+      <section
+        className="w-full py-12 sm:py-16 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(100% 100% at 50% 50%, #F7F4F9 0%, #F0EAE6 50%, #EBE2DD 100%)",
+        }}
+      >
+        {/* Customer Reviews Badge */}
+        <div className="inline-flex items-center px-4 py-1 rounded-full border border-[#FF8C00]/60 bg-white/40 text-[#C84B15] text-xs sm:text-sm font-medium mb-6 shadow-2xs">
+          Customer Reviews
+        </div>
 
-      {/* Main Review Section */}
-      <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-16 sm:pb-24 w-full flex flex-col items-center">
         {/* Heading */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-center tracking-tight text-gray-900 mb-3">
-          What Our{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
-            Customers Say
-          </span>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-4">
+          What Our <span className="text-[#FF6B00]">Customers Say</span>
         </h1>
 
-        <p className="text-xs sm:text-sm md:text-base text-gray-500 text-center max-w-xl mb-8 sm:mb-12 font-medium leading-relaxed">
+        {/* Subtitle */}
+        <p className="text-xs sm:text-sm md:text-base text-gray-700 max-w-xl font-normal leading-relaxed">
           Print shops, digital centers and shop owners across the country share
-          their experiences with SohojKaj.
+          their real experiences with SohojKaj.
         </p>
+      </section>
 
-        {/* 1. Video Thumbnail Reviews Section (8 Cards) */}
+      {/* 2. Main Content Section */}
+      <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 pt-8 pb-16 sm:pb-24 w-full flex flex-col items-center">
+        {/* Video Review Sub-header Strip */}
+        <div className="w-full flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-700 font-medium mb-6 sm:mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full border border-gray-900 flex items-center justify-center">
+              <Play size={8} className="fill-gray-900 text-gray-900 ml-0.5" />
+            </div>
+            <span className="font-bold text-gray-900">ভিডিও রিভিউ</span>
+          </div>
+          <span className="text-gray-600 font-normal">
+            <strong className="font-semibold text-gray-800">8টি ভিডিও</strong>—
+            গ্রাহকদের সরাসরি কথা
+          </span>
+          <span className="text-gray-300 hidden sm:inline">•</span>
+          <span className="text-gray-500 font-normal">
+            সম্পাদনা ছাড়াই - নিজের মুখেই
+          </span>
+        </div>
+
+        {/* Video Thumbnail Reviews Section (8 Cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 w-full mb-16 sm:mb-24">
           {videoReviewsData.map((item, index) => {
             const itemNumber = index + 1;
@@ -177,12 +205,12 @@ export default function ReviewsPage() {
           </div>
         </div>
 
-        {/* 2. Text Reviews Grid */}
+        {/* Text Reviews Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mb-16 sm:mb-20">
           {textReviews.map((rev, index) => (
             <div
               key={index}
-              className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm hover:shadow-md transition flex flex-col justify-between relative group"
+              className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-xs hover:shadow-md transition flex flex-col justify-between relative group"
             >
               <div>
                 <div className="text-orange-500 mb-4 bg-orange-50 w-10 h-10 rounded-2xl flex items-center justify-center">
@@ -210,8 +238,8 @@ export default function ReviewsPage() {
           ))}
         </div>
 
-        {/* 3. Share Your Review Section */}
-        <div className="w-full bg-white border border-gray-100 rounded-3xl sm:rounded-[32px] p-6 sm:p-8 md:p-12 shadow-sm flex flex-col items-center text-center">
+        {/* Share Your Review Section */}
+        <div className="w-full bg-white border border-gray-100 rounded-3xl sm:rounded-[32px] p-6 sm:p-8 md:p-12 shadow-xs flex flex-col items-center text-center">
           <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 mb-2">
             Share your review
           </h3>
@@ -220,7 +248,7 @@ export default function ReviewsPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-8 sm:mb-10 relative">
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 1
               </div>
@@ -235,7 +263,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 2
               </div>
@@ -250,7 +278,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 3
               </div>
@@ -265,7 +293,7 @@ export default function ReviewsPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-xs flex flex-col items-center relative">
+            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
               <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 4
               </div>
