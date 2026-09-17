@@ -1,18 +1,82 @@
 "use client";
 
+import { useState } from "react";
 import Footer from "@/components/Footer";
 import {
   Star,
   MessageSquareText,
+  MessageSquare,
   Quote,
   Wrench,
   MessageCircle,
   Globe,
   Gift,
   Play,
+  X,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ReviewsPage() {
+  // ৮ জন কাস্টমারের ভিডিও তথ্য ও ইউটিউব শর্টস আইডি
+  const videoReviewsData = [
+    {
+      id: 1,
+      name: "অনম",
+      shop: "দোকান নং ১২৯, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া",
+      youtubeId: "t-4E7lvZ-AE",
+      title: "Customer Review 01 | SohozKaj",
+    },
+    {
+      id: 2,
+      name: "নাহিদ হাসান",
+      shop: "ফকির ইন্টারন্যাশনাল, জেলা পরিষদ, বগুড়া",
+      youtubeId: "4DCxByiuKsE",
+      title: "Customer Review 02 | SohozKaj",
+    },
+    {
+      id: 3,
+      name: "ইমতিয়াজ হোসেন",
+      shop: "তাজমা কম্পিউটার এন্ড সিস্টেম, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া",
+      youtubeId: "7pfHV_1T3Xo",
+      title: "Customer Review 03 | SohozKaj",
+    },
+    {
+      id: 4,
+      name: "নাহিদ হাসান",
+      shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া",
+      youtubeId: "dVGVNzj86kQ",
+      title: "Customer Review 04 | SohozKaj",
+    },
+    {
+      id: 5,
+      name: "মো: সোহাগ",
+      shop: "মলি কম্পিউটার, সপ্তপদী মার্কেট, ২য় তলা, সাতমাথা, বগুড়া",
+      youtubeId: "uJjuPlc5n68",
+      title: "Customer Review 05 | SohozKaj",
+    },
+    {
+      id: 6,
+      name: "আপেল মাহমুদ",
+      shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া",
+      youtubeId: "dZMI2R-7dTQ",
+      title: "Customer Review 06 | SohozKaj",
+    },
+    {
+      id: 7,
+      name: "মাসুদ রানা",
+      shop: "মিল্লাত প্লাজা, জজ কোর্ট সংলগ্ন, জেলা পরিষদ, বগুড়া",
+      youtubeId: "1oOrDZ6a3HI",
+      title: "Customer Review 07 | SohozKaj",
+    },
+    {
+      id: 8,
+      name: "মো: শাকিল মিয়া",
+      shop: "পুলিশ সুপার কার্যালয়ের অপজিটে, বগুড়া সদর, বগুড়া",
+      youtubeId: "4uPC1QAjmQY",
+      title: "Customer Review 08 | SohozKaj",
+    },
+  ];
+
   // টেক্সট রিভিউ ডাটা
   const textReviews = [
     {
@@ -71,33 +135,14 @@ export default function ReviewsPage() {
     },
   ];
 
-  // ৮ জন রিয়েল কাস্টমারদের তথ্য (ভিডিও থাম্বনেইল কার্ডের জন্য)
-  const videoReviewsData = [
-    { name: "অনম", shop: "দোকান নং ১২৯, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া" },
-    { name: "নাহিদ হাসান", shop: "ফকির ইন্টারন্যাশনাল, জেলা পরিষদ, বগুড়া" },
-    {
-      name: "ইমতিয়াজ হোসেন",
-      shop: "তাজমা কম্পিউটার এন্ড সিস্টেম, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া",
-    },
-    { name: "নাহিদ হাসান", shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া" },
-    {
-      name: "মো: সোহাগ",
-      shop: "মলি কম্পিউটার, সপ্তপদী মার্কেট, ২য় তলা, সাতমাথা, বগুড়া",
-    },
-    { name: "আপেল মাহমুদ", shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া" },
-    {
-      name: "মাসুদ রানা",
-      shop: "মিল্লাত প্লাজা, জজ কোর্ট সংলগ্ন, জেলা পরিষদ, বগুড়া",
-    },
-    {
-      name: "মো: শাকিল মিয়া",
-      shop: "পুলিশ সুপার কার্যালয়ের অপজিটে, বগুড়া সদর, বগুড়া",
-    },
-  ];
+  // পপআপ প্লেয়ারের জন্য স্টেট
+  const [selectedVideo, setSelectedVideo] = useState<
+    (typeof videoReviewsData)[0] | null
+  >(null);
 
   return (
-    <div className="min-h-screen bg-[#F3F4F5] text-gray-900 flex flex-col">
-      {/* 1. Header Banner Block (রেফারেন্স ছবির মতো পারফেক্ট স্পেসিং ও গ্যাপিং) */}
+    <div className="min-h-screen bg-[#F8F9FA] text-gray-900 flex flex-col relative">
+      {/* 1. Header Banner Block */}
       <section
         className="w-full py-12 sm:py-16 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden"
         style={{
@@ -105,17 +150,14 @@ export default function ReviewsPage() {
             "radial-gradient(100% 100% at 50% 50%, #F7F4F9 0%, #F0EAE6 50%, #EBE2DD 100%)",
         }}
       >
-        {/* Customer Reviews Badge */}
         <div className="inline-flex items-center px-4 py-1 rounded-full border border-[#FF8C00]/60 bg-white/40 text-[#C84B15] text-xs sm:text-sm font-medium mb-6 shadow-2xs">
           Customer Reviews
         </div>
 
-        {/* Heading */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-4">
           What Our <span className="text-[#FF6B00]">Customers Say</span>
         </h1>
 
-        {/* Subtitle */}
         <p className="text-xs sm:text-sm md:text-base text-gray-700 max-w-xl font-normal leading-relaxed">
           Print shops, digital centers and shop owners across the country share
           their real experiences with SohojKaj.
@@ -148,13 +190,14 @@ export default function ReviewsPage() {
             const itemNumber = index + 1;
             return (
               <div
-                key={itemNumber}
-                className="rounded-3xl sm:rounded-[24px] overflow-hidden shadow-lg relative h-[380px] sm:h-[420px] flex flex-col justify-end p-5 sm:p-6 text-white group bg-cover bg-center cursor-pointer"
+                key={item.id}
+                onClick={() => setSelectedVideo(item)}
+                className="rounded-3xl sm:rounded-[24px] overflow-hidden shadow-lg relative h-[380px] sm:h-[420px] flex flex-col justify-end p-5 sm:p-6 text-white group bg-cover bg-center cursor-pointer transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
                 style={{
                   backgroundImage: `url('/reviews/review-${itemNumber}.jpg')`,
                 }}
               >
-                {/* Dark Overlay for text readability */}
+                {/* Dark Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10 z-0 transition-opacity group-hover:opacity-90"></div>
 
                 {/* Rating Badge */}
@@ -163,7 +206,7 @@ export default function ReviewsPage() {
                 </div>
 
                 {/* Center White Glassmorphism Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center z-10">
                   <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] flex items-center justify-center text-white transition-transform duration-300 group-hover:scale-110">
                     <Play
                       size={22}
@@ -238,99 +281,191 @@ export default function ReviewsPage() {
           ))}
         </div>
 
-        {/* Share Your Review Section */}
-        <div className="w-full bg-white border border-gray-100 rounded-3xl sm:rounded-[32px] p-6 sm:p-8 md:p-12 shadow-xs flex flex-col items-center text-center">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 mb-2">
+        {/* Share Your Review Section - White transition pushed lower down */}
+        <div
+          className="w-full border border-[#F2E8DC]/80 rounded-[32px] p-6 sm:p-10 md:p-12 flex flex-col items-center text-center shadow-2xs overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(180deg, #FFF7ED 0%, #FFF7ED 25%, #FFFFFF 58%)",
+          }}
+        >
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-1.5">
             Share your review
           </h3>
-          <p className="text-xs md:text-sm text-gray-400 font-semibold mb-8 sm:mb-10">
-            4 simple steps - text or video
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mb-10">
+            4 simple steps &middot; text or video
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-5xl mb-8 sm:mb-10 relative">
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
-              <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                1
+          {/* 4 Steps Container */}
+          <div className="w-full max-w-5xl mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-3 items-center relative">
+              {/* Step 1 */}
+              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+                <div className="relative mb-5">
+                  <div className="w-14 h-14 bg-[#FFF3E0] text-[#FB8C00] rounded-2xl flex items-center justify-center">
+                    <Wrench size={24} />
+                  </div>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF9800] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                    1
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                  Use SohojKaj
+                </h4>
+                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                  Try documents, tools or print media yourself first.
+                </p>
               </div>
-              <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mb-4">
-                <Wrench size={22} />
-              </div>
-              <h4 className="text-xs font-bold text-gray-900 mb-1">
-                Use SohojKaj
-              </h4>
-              <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-                Try documents, tools or print media yourself first.
-              </p>
-            </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
-              <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                2
+              {/* Chevron Arrow 1-2 */}
+              <div className="hidden lg:flex absolute left-[24.2%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+                <ChevronRight size={18} strokeWidth={2.5} />
               </div>
-              <div className="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center mb-4">
-                <MessageSquareText size={22} />
-              </div>
-              <h4 className="text-xs font-bold text-gray-900 mb-1">
-                Write your feedback
-              </h4>
-              <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-                Prepare a short written note or a one-minute video.
-              </p>
-            </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
-              <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                3
+              {/* Step 2 */}
+              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+                <div className="relative mb-5">
+                  <div className="w-14 h-14 bg-[#F3E5F5] text-[#8E24AA] rounded-2xl flex items-center justify-center">
+                    <MessageSquare size={22} />
+                  </div>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#7C4DFF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                    2
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                  Write your feedback
+                </h4>
+                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                  Prepare a short written note or a one-minute video.
+                </p>
               </div>
-              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-4">
-                <MessageCircle size={22} />
-              </div>
-              <h4 className="text-xs font-bold text-gray-900 mb-1">
-                Send on WhatsApp
-              </h4>
-              <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-                Send on WhatsApp with your name, shop and area.
-              </p>
-            </div>
 
-            <div className="bg-white border border-gray-100 p-5 sm:p-6 rounded-2xl shadow-2xs flex flex-col items-center relative">
-              <div className="absolute top-3 right-3 bg-orange-100 text-orange-600 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                4
+              {/* Chevron Arrow 2-3 */}
+              <div className="hidden lg:flex absolute left-[49.5%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+                <ChevronRight size={18} strokeWidth={2.5} />
               </div>
-              <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-4">
-                <Globe size={22} />
+
+              {/* Step 3 */}
+              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+                <div className="relative mb-5">
+                  <div className="w-14 h-14 bg-[#E8F5E9] text-[#2E7D32] rounded-2xl flex items-center justify-center">
+                    <MessageCircle size={24} />
+                  </div>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#10B981] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                    3
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                  Send on WhatsApp
+                </h4>
+                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                  Send on WhatsApp with your name, shop and area.
+                </p>
               </div>
-              <h4 className="text-xs font-bold text-gray-900 mb-1">
-                We publish
-              </h4>
-              <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-                We verify and publish it on this page.
-              </p>
+
+              {/* Chevron Arrow 3-4 */}
+              <div className="hidden lg:flex absolute left-[74.8%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+                <ChevronRight size={18} strokeWidth={2.5} />
+              </div>
+
+              {/* Step 4 */}
+              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+                <div className="relative mb-5">
+                  <div className="w-14 h-14 bg-[#E0F2F1] text-[#00897B] rounded-2xl flex items-center justify-center">
+                    <Globe size={24} />
+                  </div>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#009688] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                    4
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                  We publish
+                </h4>
+                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                  We verify and publish it on this page.
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* WhatsApp Button */}
           <a
-            href="https://wa.me/your-number"
+            href="https://api.whatsapp.com/send/?phone=8801700559595&text=Assalamu+Alaikum%2C+I+want+to+submit+a+review+about+SohozKaj.&type=phone_number&app_absent=0"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs md:text-sm px-6 py-3.5 rounded-full flex items-center gap-2 shadow-md transition mb-6 sm:mb-8 text-center"
+            className="bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs md:text-sm px-7 py-3 rounded-full flex items-center gap-2.5 shadow-md shadow-emerald-200/50 transition mb-10 cursor-pointer"
           >
             <MessageCircle size={18} fill="currentColor" /> Send review on
             WhatsApp
           </a>
 
-          <div className="bg-[#FFF8F0] border border-orange-200/60 rounded-2xl px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs font-medium text-gray-700 max-w-xl w-full text-center sm:text-left">
-            <span className="text-orange-500 shrink-0">
-              <Gift size={16} />
-            </span>
-            <span>
-              <strong className="text-gray-900">Monthly gift:</strong> Every
-              month, 3 reviewers will be chosen by lottery to receive a t-shirt
-              gift.
-            </span>
+          {/* Monthly Gift Banner */}
+          <div className="w-full max-w-5xl bg-[#FFF8F0] border border-[#FFE8D1] rounded-2xl p-3.5 sm:px-6 flex items-center justify-center gap-3 text-xs sm:text-sm">
+            <div className="w-8 h-8 rounded-lg bg-[#FFE0B2] text-[#D84315] flex items-center justify-center shrink-0">
+              <Gift size={18} />
+            </div>
+            <div className="text-left font-normal text-gray-700">
+              <strong className="font-bold text-[#B71C1C]">
+                Monthly gift:
+              </strong>{" "}
+              Every month, 3 reviewers will be chosen by lottery to receive a
+              T-shirt gift.
+            </div>
           </div>
         </div>
       </main>
+
+      {/* 3. VIDEO REVIEW POPUP MODAL */}
+      {selectedVideo && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-all duration-300"
+          onClick={() => setSelectedVideo(null)}
+        >
+          <div
+            className="relative w-full max-w-[380px] sm:max-w-[400px] h-[82vh] max-h-[720px] bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Right Close Button */}
+            <div className="absolute top-3 right-3 z-30 pointer-events-none">
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 flex items-center justify-center text-white transition cursor-pointer shrink-0 pointer-events-auto shadow-lg"
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* YouTube Shorts Embed Player */}
+            <div className="w-full h-full relative z-10 bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
+                title={selectedVideo.name}
+                className="w-full h-full object-cover"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+
+            {/* Bottom Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none flex items-end justify-between">
+              <div className="flex flex-col text-white max-w-[80%]">
+                <h4 className="text-sm font-bold text-white leading-snug drop-shadow-md">
+                  {selectedVideo.name}
+                </h4>
+                <p className="text-[11px] text-gray-200 font-normal leading-relaxed drop-shadow-sm">
+                  {selectedVideo.shop}
+                </p>
+              </div>
+
+              {/* Shorts Badge */}
+              <div className="flex items-center bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-bold border border-white/10 shrink-0">
+                Shorts
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />
