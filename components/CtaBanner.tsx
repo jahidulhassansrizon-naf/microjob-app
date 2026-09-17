@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function CtaBanner() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -14,8 +14,7 @@ export default function CtaBanner() {
     "Save time, reduce hassle",
   ];
 
-  // অ্যানিমেশন ভ্যারিয়েন্ট
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -28,7 +27,7 @@ export default function CtaBanner() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -37,7 +36,7 @@ export default function CtaBanner() {
     },
   };
 
-  const pillsVariants = {
+  const pillsVariants: Variants = {
     hidden: { opacity: 0, scale: 0.9, y: 10 },
     visible: {
       opacity: 1,
@@ -56,7 +55,6 @@ export default function CtaBanner() {
         viewport={{ once: true, margin: "-50px" }}
         className="max-w-4xl mx-auto flex flex-col items-center gap-6 relative z-10"
       >
-        {/* Badge */}
         <motion.div
           variants={itemVariants}
           className="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-xs"
@@ -64,7 +62,6 @@ export default function CtaBanner() {
           Our Specialty
         </motion.div>
 
-        {/* Main Heading */}
         <motion.h2
           variants={itemVariants}
           className="text-4xl md:text-6xl font-black tracking-tight leading-tight"
@@ -72,7 +69,6 @@ export default function CtaBanner() {
           Get Started for Free Now!
         </motion.h2>
 
-        {/* Subtitle */}
         <motion.p
           variants={itemVariants}
           className="text-white/80 text-xs md:text-sm font-medium max-w-lg"
@@ -80,7 +76,6 @@ export default function CtaBanner() {
           Join our platform today and make your daily work easier with SohozKaj.
         </motion.p>
 
-        {/* Action Buttons */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
@@ -102,7 +97,6 @@ export default function CtaBanner() {
           </button>
         </motion.div>
 
-        {/* Feature Pills */}
         <motion.div
           variants={itemVariants}
           className="flex flex-wrap items-center justify-center gap-3 pt-6"
@@ -121,7 +115,6 @@ export default function CtaBanner() {
         </motion.div>
       </motion.div>
 
-      {/* Demo Video Popup Modal */}
       <AnimatePresence>
         {isVideoOpen && (
           <motion.div
@@ -140,7 +133,6 @@ export default function CtaBanner() {
               className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={() => setIsVideoOpen(false)}
                 className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
@@ -149,7 +141,6 @@ export default function CtaBanner() {
                 <X size={26} />
               </button>
 
-              {/* Youtube Embedded Video */}
               <iframe
                 src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
                 title="SohozKaj Demo Video"

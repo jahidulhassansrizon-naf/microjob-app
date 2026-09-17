@@ -11,7 +11,7 @@ import {
   Keyboard,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function DocumentSection() {
   const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
@@ -26,7 +26,7 @@ export default function DocumentSection() {
       icon: <FileEdit className="text-white" size={22} />,
       btnColor: "text-[#05B066]",
       arrowBg: "bg-[#05B066]",
-      videoStart: 132, // 2 min 12 sec = 132 seconds
+      videoStart: 132,
     },
     {
       title: "Export files as PDF",
@@ -37,7 +37,7 @@ export default function DocumentSection() {
       icon: <FileText className="text-white" size={22} />,
       btnColor: "text-[#F95700]",
       arrowBg: "bg-[#F95700]",
-      videoStart: 230, // 3 min 50 sec = 230 seconds
+      videoStart: 230,
     },
     {
       title: "Share or email your document",
@@ -48,7 +48,7 @@ export default function DocumentSection() {
       icon: <Send className="text-white" size={22} />,
       btnColor: "text-[#8B3DFF]",
       arrowBg: "bg-[#8B3DFF]",
-      videoStart: null, // No video modal & no page jump
+      videoStart: null,
     },
   ];
 
@@ -76,8 +76,7 @@ export default function DocumentSection() {
     },
   ];
 
-  // স্ট্যাগার্ড অ্যানিমেশন ভ্যারিয়েন্ট
-  const cardContainerVariants = {
+  const cardContainerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -87,7 +86,7 @@ export default function DocumentSection() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -99,7 +98,6 @@ export default function DocumentSection() {
   return (
     <section className="bg-[#F8F9FA] py-16 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-12">
-        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -123,7 +121,6 @@ export default function DocumentSection() {
           </p>
         </motion.div>
 
-        {/* 3 Main Cards Grid */}
         <motion.div
           variants={cardContainerVariants}
           initial="hidden"
@@ -191,7 +188,6 @@ export default function DocumentSection() {
           ))}
         </motion.div>
 
-        {/* And More Container */}
         <motion.div
           initial={{ opacity: 0, y: 35 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -240,7 +236,6 @@ export default function DocumentSection() {
         </motion.div>
       </div>
 
-      {/* Demo Video Popup Modal */}
       <AnimatePresence>
         {activeVideoStart !== null && (
           <motion.div
@@ -259,7 +254,6 @@ export default function DocumentSection() {
               className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={() => setActiveVideoStart(null)}
                 className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
@@ -268,7 +262,6 @@ export default function DocumentSection() {
                 <X size={26} />
               </button>
 
-              {/* Youtube Embedded Video with Start Time */}
               <iframe
                 src={`https://www.youtube.com/embed/HWwuSrGQmSw?autoplay=1&rel=0&start=${activeVideoStart}`}
                 title="SohozKaj Document Creation Tutorial"

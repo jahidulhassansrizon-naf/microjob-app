@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Edit3, FileText, Briefcase, Wrench, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function HeroFeatures() {
   const router = useRouter();
@@ -82,7 +82,7 @@ export default function HeroFeatures() {
   ];
 
   // অ্যানিমেশন ভ্যারিয়েন্ট
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -92,7 +92,7 @@ export default function HeroFeatures() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 35 },
     visible: {
       opacity: 1,

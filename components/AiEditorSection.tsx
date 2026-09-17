@@ -11,7 +11,7 @@ import {
   Share2,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function AiEditorSection() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -27,24 +27,24 @@ export default function AiEditorSection() {
       title: "Background & outfit changes",
       desc: "Change background color, hair color, and skin tone however you want with one click",
       icon: <Shirt size={22} />,
-      startTime: 61, // 1 minute 1 second
+      startTime: 61,
     },
     {
       title: "Any size, any format, print ready",
       desc: "Save photos in specific sizes for passport, visa, NID, birth registration in JPG format",
       icon: <Image size={22} />,
-      startTime: 256, // 4 minutes 16 seconds
+      startTime: 256,
     },
     {
       title: "Share, print, download with ease",
       desc: "On ShohozKaj, instantly download, share, or email your photos without any hassle.",
       icon: <Share2 size={22} />,
-      startTime: 212, // 3 minutes 32 seconds
+      startTime: 212,
     },
   ];
 
   // অ্যানিমেশন ভ্যারিয়েন্ট (Bottom Cards এর জন্য)
-  const bottomContainerVariants = {
+  const bottomContainerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -54,7 +54,7 @@ export default function AiEditorSection() {
     },
   };
 
-  const bottomCardVariants = {
+  const bottomCardVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,

@@ -8,7 +8,7 @@ import {
   Zap,
   Bookmark,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 export default function WhyChooseUs() {
   const benefits = [
@@ -50,8 +50,7 @@ export default function WhyChooseUs() {
     },
   ];
 
-  // স্ট্যাগার্ড অ্যানিমেশন ভ্যারিয়েন্ট
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -61,7 +60,7 @@ export default function WhyChooseUs() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -73,7 +72,6 @@ export default function WhyChooseUs() {
   return (
     <section className="bg-[#F8F9FA] py-20 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-14">
-        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -96,7 +94,6 @@ export default function WhyChooseUs() {
           </p>
         </motion.div>
 
-        {/* 6 Grid Cards */}
         <motion.div
           variants={containerVariants}
           initial="hidden"

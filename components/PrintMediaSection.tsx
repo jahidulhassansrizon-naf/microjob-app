@@ -11,7 +11,7 @@ import {
   FolderDown,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function PrintMediaSection() {
   const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
@@ -61,8 +61,7 @@ export default function PrintMediaSection() {
     },
   ];
 
-  // কার্ড গ্রিডের জন্য স্ট্যাগার্ড অ্যানিমেশন ভ্যারিয়েন্ট
-  const cardContainerVariants = {
+  const cardContainerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -72,7 +71,7 @@ export default function PrintMediaSection() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -84,7 +83,6 @@ export default function PrintMediaSection() {
   return (
     <section className="bg-[#FBEFFF] py-20 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-16">
-        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -108,7 +106,6 @@ export default function PrintMediaSection() {
           </p>
         </motion.div>
 
-        {/* 6 Cards Grid (2 rows x 3 cols) */}
         <motion.div
           variants={cardContainerVariants}
           initial="hidden"
@@ -165,7 +162,6 @@ export default function PrintMediaSection() {
           ))}
         </motion.div>
 
-        {/* Special Offer CTA Banner */}
         <motion.div
           initial={{ opacity: 0, y: 35 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -199,7 +195,6 @@ export default function PrintMediaSection() {
         </motion.div>
       </div>
 
-      {/* Demo Video Popup Modal */}
       <AnimatePresence>
         {activeVideoStart !== null && (
           <motion.div
@@ -218,7 +213,6 @@ export default function PrintMediaSection() {
               className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={() => setActiveVideoStart(null)}
                 className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
@@ -227,7 +221,6 @@ export default function PrintMediaSection() {
                 <X size={26} />
               </button>
 
-              {/* Youtube Embedded Video */}
               <iframe
                 src={`https://www.youtube.com/embed/gDJK6EXjG4Q?autoplay=1&rel=0&start=${activeVideoStart}`}
                 title="SohozKaj Print Media Solution Tutorial"
