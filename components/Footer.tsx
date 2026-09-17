@@ -21,7 +21,7 @@ export default function Footer() {
 
   const pagesLinks = [
     { title: "What is SohozKaj?", href: "/help" },
-    { title: "About Us" },
+    { title: "About Us", href: "/about" },
     { title: "Our Team" },
     { title: "Important Articles" },
     { title: "Contact" },
@@ -155,7 +155,6 @@ export default function Footer() {
           <p>© 2026 SohozKaj. All rights reserved.</p>
 
           <div className="flex items-center gap-3">
-            {/* Facebook */}
             <a
               href="https://www.facebook.com/SohozKaj/"
               target="_blank"
@@ -168,7 +167,6 @@ export default function Footer() {
               </svg>
             </a>
 
-            {/* TikTok */}
             <a
               href="https://www.tiktok.com/@sohozkaj"
               target="_blank"
@@ -181,7 +179,6 @@ export default function Footer() {
               </svg>
             </a>
 
-            {/* YouTube */}
             <a
               href="https://www.youtube.com/@SohozKaj"
               target="_blank"
@@ -196,7 +193,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Container-aligned Payment Gateway Strip */}
+        {/* Payment Gateway Strip */}
         <div className="w-full bg-white rounded flex justify-center items-center overflow-hidden py-1">
           <img
             src="https://files.sohozkaj.com/SSLCommerz-Pay-With-logo.webp"
