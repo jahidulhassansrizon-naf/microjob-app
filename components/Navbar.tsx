@@ -1,4 +1,3 @@
-// app/components/Navbar.tsx
 "use client";
 
 import Link from "next/link";
@@ -153,14 +152,14 @@ const importantLinksItems = [
   {
     title: "Important Articles",
     subtitle: "Blog & helpful articles",
-    href: "#",
+    href: "https://blog.sohozkaj.com/",
   },
   {
     title: "Contest",
     subtitle: "Use SohojKaj & win prizes!",
     isNew: true,
     isFeatured: true,
-    href: "#",
+    href: "https://contest.sohozkaj.com/",
   },
   {
     title: "Contact",
@@ -385,11 +384,15 @@ export default function Navbar() {
                     className="absolute top-full left-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl p-2.5 z-[1000] flex flex-col gap-0.5"
                   >
                     {importantLinksItems.map((item, index) => {
+                      const isExternal = item.href.startsWith("http");
+
                       if (item.isFeatured) {
                         return (
                           <Link
                             key={index}
                             href={item.href}
+                            target={isExternal ? "_blank" : undefined}
+                            rel={isExternal ? "noopener noreferrer" : undefined}
                             onClick={() => setIsImportantOpen(false)}
                             className="flex items-center justify-between p-2.5 my-1 bg-orange-50/70 border border-orange-200/80 rounded-xl transition hover:bg-orange-100/60 group cursor-pointer"
                           >
@@ -425,6 +428,8 @@ export default function Navbar() {
                         <Link
                           key={index}
                           href={item.href}
+                          target={isExternal ? "_blank" : undefined}
+                          rel={isExternal ? "noopener noreferrer" : undefined}
                           onClick={() => setIsImportantOpen(false)}
                           className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-orange-50/50 transition group cursor-pointer"
                         >
@@ -646,25 +651,31 @@ export default function Navbar() {
                   </button>
                   {mobileImportantOpen && (
                     <div className="flex flex-col gap-1 pl-3 border-l-2 border-orange-100 mt-1">
-                      {importantLinksItems.map((imp, iIdx) => (
-                        <Link
-                          key={iIdx}
-                          href={imp.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="flex items-center justify-between py-1.5 text-xs text-gray-600 hover:text-[#FF5D00]"
-                        >
-                          <span>{imp.title}</span>
-                          {imp.count && (
-                            <span
-                              className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                                imp.countBg || "bg-gray-100"
-                              }`}
-                            >
-                              {imp.count}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
+                      {importantLinksItems.map((imp, iIdx) => {
+                        const isExternal = imp.href.startsWith("http");
+
+                        return (
+                          <Link
+                            key={iIdx}
+                            href={imp.href}
+                            target={isExternal ? "_blank" : undefined}
+                            rel={isExternal ? "noopener noreferrer" : undefined}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center justify-between py-1.5 text-xs text-gray-600 hover:text-[#FF5D00]"
+                          >
+                            <span>{imp.title}</span>
+                            {imp.count && (
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                  imp.countBg || "bg-gray-100"
+                                }`}
+                              >
+                                {imp.count}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
