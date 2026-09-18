@@ -1,3 +1,4 @@
+// app/login/page.tsx
 "use client";
 
 import { useState, Suspense, useEffect } from "react";
@@ -86,6 +87,9 @@ function LoginContent() {
       const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
       const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
+
+      // 🟢 ড্যাশবোর্ডে পপআপ দেখানোর জন্য ফ্লাগ সেট করা হলো
+      sessionStorage.setItem("justLoggedIn", "true");
 
       // Login Successful -> Redirect to target page or /dashboard
       const targetUrl = callbackUrl
