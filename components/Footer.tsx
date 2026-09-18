@@ -40,10 +40,10 @@ export default function Footer() {
   ];
 
   const supportLinks = [
-    "Terms of Service",
-    "Privacy Policy",
-    "Copyright Policy",
-    "Refund Policy",
+    { title: "Terms of Service", href: "/terms" },
+    { title: "Privacy Policy", href: "/privacy" },
+    { title: "Copyright Policy", href: "/copyright" },
+    { title: "Refund Policy", href: "/refund" },
   ];
 
   const linkHoverStyle =
@@ -154,13 +154,19 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
               {supportLinks.map((support, index) => (
                 <li key={index}>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className={linkHoverStyle}
-                  >
-                    {support}
-                  </a>
+                  {support.href ? (
+                    <Link href={support.href} className={linkHoverStyle}>
+                      {support.title}
+                    </Link>
+                  ) : (
+                    <a
+                      href="#"
+                      onClick={(e) => e.preventDefault()}
+                      className={linkHoverStyle}
+                    >
+                      {support.title}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
