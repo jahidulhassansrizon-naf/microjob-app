@@ -22,13 +22,21 @@ export default function Footer() {
   const pagesLinks = [
     { title: "What is SohozKaj?", href: "/help" },
     { title: "About Us", href: "/about" },
-    { title: "Our Team" },
-    { title: "Important Articles" },
-    { title: "Contact" },
-    { title: "Document Templates" },
-    { title: "AI Photo" },
-    { title: "Package" },
-    { title: "Contest" },
+    { title: "Our Team", href: "/our-team" },
+    {
+      title: "Important Articles",
+      href: "https://blog.sohozkaj.com/",
+      target: "_blank",
+    },
+    { title: "Contact", href: "/contact" },
+    { title: "Document Templates", href: "/dorkari-document" },
+    { title: "AI Photo", href: "/ai-photo" },
+    { title: "Package", href: "/pricing" },
+    {
+      title: "Contest",
+      href: "https://contest.sohozkaj.com/",
+      target: "_blank",
+    },
   ];
 
   const supportLinks = [
@@ -112,7 +120,16 @@ export default function Footer() {
               {pagesLinks.map((page, index) => (
                 <li key={index}>
                   {page.href ? (
-                    <Link href={page.href} className={linkHoverStyle}>
+                    <Link
+                      href={page.href}
+                      className={linkHoverStyle}
+                      target={page.target}
+                      rel={
+                        page.target === "_blank"
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                    >
                       {page.title}
                     </Link>
                   ) : (
