@@ -312,8 +312,9 @@ const templates: Template[] = [
   {
     id: 32,
     category: "Personal",
-    title: "Family Certificate",
-    description: "Official certification of family members",
+    title: "Income Certificate Application",
+    description:
+      "Application template for obtaining official income certification",
   },
   {
     id: 33,
@@ -476,12 +477,13 @@ function DocumentIcon() {
   return (
     <div className="document-preview-paper-wrap" aria-hidden="true">
       <div className="document-preview-paper">
-        <div className="document-preview-paper-line document-preview-line-a" />
-        <div className="document-preview-paper-line document-preview-line-b" />
-        <div className="document-preview-paper-line document-preview-line-c" />
-        <div className="document-preview-paper-line document-preview-line-d" />
-        <div className="document-preview-paper-line document-preview-line-e" />
-        <div className="document-preview-paper-line document-preview-line-f" />
+        <div className="document-preview-paper-line line-1" />
+        <div className="document-preview-paper-line line-2" />
+        <div className="document-preview-paper-line line-3" />
+        <div className="document-preview-paper-line line-4" />
+        <div className="document-preview-paper-line line-5" />
+        <div className="document-preview-paper-line line-6" />
+        <div className="document-preview-paper-line line-7" />
       </div>
     </div>
   );
@@ -586,13 +588,13 @@ function ArrowRight() {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="15"
-      height="15"
+      width="14"
+      height="14"
       style={{
-        width: "15px",
-        height: "15px",
-        minWidth: "15px",
-        minHeight: "15px",
+        width: "14px",
+        height: "14px",
+        minWidth: "14px",
+        minHeight: "14px",
         flexShrink: 0,
         display: "block",
       }}
@@ -600,10 +602,10 @@ function ArrowRight() {
       aria-hidden="true"
     >
       <path
-        d="M8 12h8M13 7l5 5-5 5"
+        d="M9 18l6-6-6-6"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -620,12 +622,14 @@ export default function UsefulDocumentTemplatesPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut for Ctrl+K
+  // Keyboard shortcut for Ctrl+K and Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         searchInputRef.current?.focus();
+      } else if (e.key === "Escape") {
+        setIsDocDropdownOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -660,17 +664,23 @@ export default function UsefulDocumentTemplatesPage() {
     setOpenFaq((prev) => (prev === id ? null : id));
   };
 
+  const handleResetFilters = () => {
+    setSearch("");
+    setActiveCategory("All Templates");
+    setDocType("All Documents");
+  };
+
   return (
     <>
       <main className="documents-page">
         <style jsx>{`
           .documents-page {
-            --page-bg: #f4f4f4;
+            --page-bg: #f5f5f7;
             --hero-bg: #f8f8fb;
-            --card-border: #e4e4e6;
-            --muted: #7d7d84;
-            --text: #111214;
-            --orange: #f79b14;
+            --card-border: #e8e8ec;
+            --muted: #8c8e96;
+            --text: #121316;
+            --orange: #d86c00;
             --orange-deep: #ed8507;
             --pink: #d54e90;
             --chip-bg: #eff0f3;
@@ -1003,17 +1013,17 @@ export default function UsefulDocumentTemplatesPage() {
           .grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 16px;
+            gap: 18px;
             align-items: start;
           }
 
           .card {
             min-width: 0;
             overflow: hidden;
-            border: 1px solid #e5e5e5;
-            border-radius: 15px;
+            border: 1px solid #e7e7eb;
+            border-radius: 16px;
             background: #fff;
-            box-shadow: 0 2px 7px rgba(0, 0, 0, 0.055);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
             transition:
               transform 0.18s ease,
               box-shadow 0.18s ease;
@@ -1021,71 +1031,79 @@ export default function UsefulDocumentTemplatesPage() {
 
           .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
           }
 
           .preview {
             position: relative;
-            height: 147px;
+            height: 155px;
             overflow: hidden;
             isolation: isolate;
-            background-color: #f3efe9;
-            background-image: radial-gradient(#d8d1c9 1px, transparent 1px);
-            background-size: 8px 8px;
+            background-color: #ede9e3;
+            background-image: radial-gradient(#d3cecb 1.2px, transparent 1.2px);
+            background-size: 10px 10px;
           }
 
           .document-preview-paper-wrap {
             position: absolute;
             z-index: 2;
             left: 50%;
-            top: 0;
-            width: 146px;
-            height: 190px;
+            top: 14px;
+            bottom: 0;
+            width: 142px;
             transform: translateX(-50%);
             pointer-events: none;
           }
 
           .document-preview-paper {
-            width: 146px;
-            height: 190px;
-            padding: 35px 27px 30px;
+            width: 100%;
+            height: 100%;
+            padding: 22px 18px 10px;
             background: #ffffff;
-            border: 1px solid #ebebeb;
-            box-shadow: 0 2px 9px rgba(0, 0, 0, 0.09);
+            border-radius: 4px 4px 0 0;
+            box-shadow:
+              0 -2px 10px rgba(0, 0, 0, 0.03),
+              0 2px 6px rgba(0, 0, 0, 0.04);
           }
 
           .document-preview-paper-line {
             display: block;
-            height: 3px;
-            margin-bottom: 9px;
+            height: 4px;
             border-radius: 999px;
-            background: #dedee3;
+            background: #e2e4e8;
+            margin-bottom: 7px;
           }
 
-          .document-preview-line-a {
-            width: 34%;
-            margin-left: 29%;
-            background: #bcbcc2;
+          .document-preview-paper-line.line-1 {
+            width: 32px;
+            margin-left: auto;
+            margin-bottom: 10px;
+            background: #c8cad0;
           }
 
-          .document-preview-line-b {
-            width: 62%;
+          .document-preview-paper-line.line-2 {
+            width: 55px;
+            background: #c8cad0;
           }
 
-          .document-preview-line-c {
-            width: 77%;
+          .document-preview-paper-line.line-3 {
+            width: 70px;
           }
 
-          .document-preview-line-d {
-            width: 72%;
+          .document-preview-paper-line.line-4 {
+            width: 60px;
           }
 
-          .document-preview-line-e {
-            width: 79%;
+          .document-preview-paper-line.line-5 {
+            width: 65px;
           }
 
-          .document-preview-line-f {
-            width: 57%;
+          .document-preview-paper-line.line-6 {
+            width: 42px;
+          }
+
+          .document-preview-paper-line.line-7 {
+            width: 68px;
           }
 
           .stamp {
@@ -1125,27 +1143,27 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .card-body {
-            min-height: 170px;
-            padding: 13px 13px 11px;
+            min-height: 175px;
+            padding: 16px 16px 14px;
             display: flex;
             flex-direction: column;
           }
 
           .category {
             margin-bottom: 8px;
-            color: #92939a;
-            font-size: 9px;
+            color: #8c8e96;
+            font-size: 11px;
             font-weight: 800;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
           }
 
           .title {
-            color: #151619;
-            font-size: 13px;
-            line-height: 1.38;
+            color: #121316;
+            font-size: 14px;
+            line-height: 1.35;
             font-weight: 800;
-            letter-spacing: -0.18px;
+            letter-spacing: -0.2px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -1153,10 +1171,10 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .description {
-            margin-top: 9px;
-            color: #777980;
-            font-size: 11px;
-            line-height: 1.42;
+            margin-top: 8px;
+            color: #6e7078;
+            font-size: 12px;
+            line-height: 1.45;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -1165,8 +1183,8 @@ export default function UsefulDocumentTemplatesPage() {
 
           .card-footer {
             margin-top: auto;
-            padding-top: 11px;
-            border-top: 1px solid #ececef;
+            padding-top: 12px;
+            border-top: 1px solid #ededf0;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1176,19 +1194,23 @@ export default function UsefulDocumentTemplatesPage() {
           .details {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            color: #ba6900;
+            gap: 3px;
+            color: #d86c00;
             text-decoration: none;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 12px;
+            font-weight: 700;
             white-space: nowrap;
           }
 
+          .details:hover {
+            color: #b55a00;
+          }
+
           .file-types {
-            color: #92939a;
-            font-size: 8px;
+            color: #8c8e96;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.1px;
+            letter-spacing: 0.2px;
           }
 
           .empty-state {
@@ -1199,6 +1221,25 @@ export default function UsefulDocumentTemplatesPage() {
             text-align: center;
             background: #fafafa;
             color: #7f8087;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .reset-btn {
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: #7c53ff;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+          }
+
+          .reset-btn:hover {
+            background: #683ee3;
           }
 
           .faq-section {
@@ -1352,6 +1393,12 @@ export default function UsefulDocumentTemplatesPage() {
             color: #fff;
             box-shadow: 0 99px 25px rgba(37, 211, 102, 0.3);
             z-index: 20;
+            text-decoration: none;
+            transition: transform 0.15s ease;
+          }
+
+          .whatsapp:hover {
+            transform: scale(1.06);
           }
 
           .whatsapp svg {
@@ -1413,6 +1460,9 @@ export default function UsefulDocumentTemplatesPage() {
             .select-box {
               width: 100%;
             }
+            .doc-dropdown {
+              width: 100%;
+            }
             .grid-shell {
               padding-top: 25px;
               padding-left: 12px;
@@ -1426,7 +1476,7 @@ export default function UsefulDocumentTemplatesPage() {
               font-size: 35px;
             }
             .card-body {
-              min-height: 140px;
+              min-height: 150px;
             }
           }
         `}</style>
@@ -1449,7 +1499,7 @@ export default function UsefulDocumentTemplatesPage() {
                   ref={searchInputRef}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search documents... (eg agreement"
+                  placeholder="Search documents... (e.g., agreement)"
                   aria-label="Find documents"
                 />
                 <span className="kbd">Ctrl K</span>
@@ -1460,6 +1510,8 @@ export default function UsefulDocumentTemplatesPage() {
                 <button
                   type="button"
                   className="select-box"
+                  aria-expanded={isDocDropdownOpen}
+                  aria-label="Select document type"
                   onClick={() => setIsDocDropdownOpen((prev) => !prev)}
                 >
                   <span className="select-label">{docType}</span>
@@ -1474,11 +1526,13 @@ export default function UsefulDocumentTemplatesPage() {
                     />
                     <div className="doc-dropdown">
                       <div className="dropdown-arrow" />
-                      <div className="dropdown-menu">
+                      <div className="dropdown-menu" role="listbox">
                         {docTypes.map((type) => (
                           <button
                             key={type}
                             type="button"
+                            role="option"
+                            aria-selected={docType === type}
                             className={`dropdown-item ${docType === type ? "selected" : ""}`}
                             onClick={() => {
                               setDocType(type);
@@ -1521,6 +1575,7 @@ export default function UsefulDocumentTemplatesPage() {
                 className={`filter-chip ${activeCategory === category ? "active" : ""}`}
                 onClick={() => setActiveCategory(category)}
                 type="button"
+                aria-pressed={activeCategory === category}
               >
                 {category}
               </button>
@@ -1553,7 +1608,7 @@ export default function UsefulDocumentTemplatesPage() {
                       href="#details"
                       onClick={(e) => e.preventDefault()}
                     >
-                      <span>View Details</span>
+                      <span>See details</span>
                       <ArrowRight />
                     </a>
                     <span className="file-types">
@@ -1566,7 +1621,14 @@ export default function UsefulDocumentTemplatesPage() {
 
             {visibleTemplates.length === 0 ? (
               <div className="empty-state">
-                No matching document templates found.
+                <p>No matching document templates found.</p>
+                <button
+                  type="button"
+                  className="reset-btn"
+                  onClick={handleResetFilters}
+                >
+                  Reset Filters
+                </button>
               </div>
             ) : null}
           </div>
@@ -1595,6 +1657,8 @@ export default function UsefulDocumentTemplatesPage() {
                     <button
                       type="button"
                       className="faq-header"
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-answer-${faq.id}`}
                       onClick={() => toggleFaq(faq.id)}
                     >
                       <div className="faq-left">
@@ -1605,7 +1669,11 @@ export default function UsefulDocumentTemplatesPage() {
                         {isOpen ? <ChevronUp /> : <ChevronDown />}
                       </div>
                     </button>
-                    {isOpen && <div className="faq-answer">{faq.answer}</div>}
+                    {isOpen && (
+                      <div id={`faq-answer-${faq.id}`} className="faq-answer">
+                        {faq.answer}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1613,7 +1681,13 @@ export default function UsefulDocumentTemplatesPage() {
           </div>
         </section>
 
-        <div className="whatsapp" aria-label="WhatsApp">
+        <a
+          href="https://wa.me/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="whatsapp"
+          aria-label="Contact us on WhatsApp"
+        >
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle
               cx="12"
@@ -1633,7 +1707,7 @@ export default function UsefulDocumentTemplatesPage() {
               fill="currentColor"
             />
           </svg>
-        </div>
+        </a>
       </main>
       <Footer />
     </>
