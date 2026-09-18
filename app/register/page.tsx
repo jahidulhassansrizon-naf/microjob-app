@@ -603,6 +603,27 @@ export default function RegisterPage() {
     agreeTerms: false,
   });
 
+  // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
+  const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
+    setLang(targetLang);
+    const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
+    document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=${googleLangCode}; path=/`;
+    window.location.reload();
+  };
+
+  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
+  useEffect(() => {
+    const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
+    if (match) {
+      if (match[2].includes("bn")) {
+        setLang("BN");
+      } else {
+        setLang("EN");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -657,7 +678,6 @@ export default function RegisterPage() {
     setIsMethodModalOpen(true);
   };
 
-  // OTP পাঠানোর ফাংশন (এখানে identifier যুক্ত করা হয়েছে)
   const handleSendOtp = async () => {
     setMethodNotice("");
     setErrorMessage("");
@@ -677,7 +697,7 @@ export default function RegisterPage() {
         email: formData.email,
         phoneNumber: formData.phone,
         country: `${formData.countryName} (${formData.countryCode})`,
-        identifier: otpMethod === "email" ? formData.email : formData.phone, // এটি যোগ করা হয়েছে
+        identifier: otpMethod === "email" ? formData.email : formData.phone,
       };
 
       const response = await fetch(endpoint, {
@@ -701,7 +721,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Next.js Internal API Route দিয়ে ইউজার রেজিস্টার করা
   const handleVerifyAndRegister = async () => {
     setOtpError("");
     if (!otp || otp.length < 6) {
@@ -776,8 +795,9 @@ export default function RegisterPage() {
 
           <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
             <button
-              onClick={() => setLang("EN")}
-              className={`px-3 py-1 rounded transition-all ${
+              type="button"
+              onClick={() => changeGoogleLanguage("EN")}
+              className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "EN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -786,8 +806,9 @@ export default function RegisterPage() {
               EN
             </button>
             <button
-              onClick={() => setLang("BN")}
-              className={`px-3 py-1 rounded transition-all ${
+              type="button"
+              onClick={() => changeGoogleLanguage("BN")}
+              className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "BN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"

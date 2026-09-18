@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -12,44 +12,6 @@ import {
   ArrowLeft,
   Loader2,
 } from "lucide-react";
-
-// Translations
-const translations = {
-  EN: {
-    backToHome: "Back",
-    loginTitle: "Login to your account",
-    phoneOrEmail: "Phone or Email",
-    phoneOrEmailPlaceholder: "Enter phone or email",
-    password: "Password",
-    passwordPlaceholder: "Enter your password",
-    rememberMe: "Remember me",
-    forgotPassword: "Forgot password?",
-    signIn: "Sign in",
-    signingIn: "Signing in...",
-    noAccount: "Don't have an account?",
-    signUp: "Sign up",
-    heroTitle:
-      "Create documents, designs, and print media with photo editing, AI photo editing, manual editing, and bulk editing -",
-    heroSub: "easy to use.",
-  },
-  BN: {
-    backToHome: "পিছনে ফিরে যান",
-    loginTitle: "আপনার অ্যাকাউন্টে লগইন করুন",
-    phoneOrEmail: "ফোন অথবা ইমেইল",
-    phoneOrEmailPlaceholder: "ফোন বা ইমেইল লিখুন",
-    password: "পাসওয়ার্ড",
-    passwordPlaceholder: "আপনার পাসওয়ার্ড লিখুন",
-    rememberMe: "মনে রাখুন",
-    forgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
-    signIn: "লগইন করুন",
-    signingIn: "লগইন হচ্ছে...",
-    noAccount: "অ্যাকাউন্ট নেই?",
-    signUp: "সাইন আপ করুন",
-    heroTitle:
-      "ফটো এডিটিং, এআই এডিটিং এবং বাল্ক এডিটিং সহ যেকোনো ডিজাইন বা ডকুমেন্টস তৈরি করুন -",
-    heroSub: "সহজেই ব্যবহারযোগ্য।",
-  },
-};
 
 function LoginContent() {
   const router = useRouter();
@@ -70,7 +32,26 @@ function LoginContent() {
     rememberMe: true,
   });
 
-  const t = translations[lang];
+  // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
+  const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
+    setLang(targetLang);
+    const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
+    document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=${googleLangCode}; path=/`;
+    window.location.reload();
+  };
+
+  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
+  useEffect(() => {
+    const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
+    if (match) {
+      if (match[2].includes("bn")) {
+        setLang("BN");
+      } else {
+        setLang("EN");
+      }
+    }
+  }, []);
 
   const handleBack = () => {
     router.replace("/");
@@ -136,8 +117,11 @@ function LoginContent() {
 
         <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
           <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block">{t.heroTitle}</span>
-            <span className="block mt-1">{t.heroSub}</span>
+            <span className="block">
+              Create documents, designs, and print media with photo editing, AI
+              photo editing, manual editing, and bulk editing -
+            </span>
+            <span className="block mt-1">easy to use.</span>
           </p>
         </div>
       </div>
@@ -152,14 +136,14 @@ function LoginContent() {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
-            <span>{t.backToHome}</span>
+            <span>Back</span>
           </button>
 
           <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
             <button
               type="button"
-              onClick={() => setLang("EN")}
-              className={`px-3 py-1 rounded transition-all ${
+              onClick={() => changeGoogleLanguage("EN")}
+              className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "EN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -169,8 +153,8 @@ function LoginContent() {
             </button>
             <button
               type="button"
-              onClick={() => setLang("BN")}
-              className={`px-3 py-1 rounded transition-all ${
+              onClick={() => changeGoogleLanguage("BN")}
+              className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "BN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -197,7 +181,9 @@ function LoginContent() {
                 </span>
               </div>
             </Link>
-            <p className="text-xs text-gray-500 font-medium">{t.loginTitle}</p>
+            <p className="text-xs text-gray-500 font-medium">
+              Login to your account
+            </p>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8">
@@ -210,7 +196,7 @@ function LoginContent() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-700">
-                  {t.phoneOrEmail} <span className="text-red-500">*</span>
+                  Phone or Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-gray-400">
@@ -220,7 +206,7 @@ function LoginContent() {
                     type="text"
                     required
                     autoComplete="username"
-                    placeholder={t.phoneOrEmailPlaceholder}
+                    placeholder="Enter phone or email"
                     value={formData.identifier}
                     onChange={(e) =>
                       setFormData({ ...formData, identifier: e.target.value })
@@ -232,7 +218,7 @@ function LoginContent() {
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-700">
-                  {t.password} <span className="text-red-500">*</span>
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-gray-400">
@@ -242,7 +228,7 @@ function LoginContent() {
                     type={showPassword ? "text" : "password"}
                     required
                     autoComplete="current-password"
-                    placeholder={t.passwordPlaceholder}
+                    placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
@@ -252,7 +238,7 @@ function LoginContent() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="absolute right-3.5 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -275,14 +261,14 @@ function LoginContent() {
                     }
                     className="w-4 h-4 rounded border-gray-300 text-[#FF5D00] focus:ring-[#FF5D00]"
                   />
-                  <span>{t.rememberMe}</span>
+                  <span>Remember me</span>
                 </label>
 
                 <Link
                   href="/forgot-password"
                   className="text-[#FF5D00] hover:underline font-semibold"
                 >
-                  {t.forgotPassword}
+                  Forgot password?
                 </Link>
               </div>
 
@@ -294,10 +280,10 @@ function LoginContent() {
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>{t.signingIn}</span>
+                    <span>Signing in...</span>
                   </>
                 ) : (
-                  <span>{t.signIn}</span>
+                  <span>Sign in</span>
                 )}
               </button>
             </form>
@@ -305,7 +291,7 @@ function LoginContent() {
 
           <div className="text-center mt-6">
             <p className="text-xs text-gray-600">
-              {t.noAccount}{" "}
+              Don't have an account?{" "}
               <Link
                 href={
                   callbackUrl
@@ -314,7 +300,7 @@ function LoginContent() {
                 }
                 className="text-[#FF5D00] font-bold hover:underline ml-0.5"
               >
-                {t.signUp}
+                Sign up
               </Link>
             </p>
           </div>

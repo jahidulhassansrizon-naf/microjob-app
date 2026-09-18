@@ -1,7 +1,7 @@
 // app/dashboard/_components/DashboardSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   X,
@@ -48,6 +48,30 @@ export default function DashboardSidebar({
   onLogout,
 }: DashboardSidebarProps) {
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
+
+  // ভাষা পরিবর্তনের স্টেট (EN / BN)
+  const [lang, setLang] = useState<"EN" | "BN">("EN");
+
+  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
+  useEffect(() => {
+    const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
+    if (match) {
+      if (match[2].includes("bn")) {
+        setLang("BN");
+      } else {
+        setLang("EN");
+      }
+    }
+  }, []);
+
+  // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
+  const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
+    setLang(targetLang);
+    const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
+    document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=${googleLangCode}; path=/`;
+    window.location.reload();
+  };
 
   if (!isOpen) return null;
 
@@ -417,15 +441,29 @@ export default function DashboardSidebar({
                 <MessageCircle size={16} className="text-emerald-500" />
                 <span>WhatsApp Support Group</span>
               </Link>
-              <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+
+              {/* Language Switcher Interactive Button */}
+              <div
+                onClick={() =>
+                  changeGoogleLanguage(lang === "EN" ? "BN" : "EN")
+                }
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
                 <div className="flex items-center gap-2.5">
                   <Globe size={16} className="text-gray-500" />
                   <span>Language</span>
                 </div>
-                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
+                    lang === "BN"
+                      ? "bg-[#FF5D00] text-white"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
                   EN | বাংলা
                 </span>
               </div>
+
               <Link
                 href="#"
                 onClick={onClose}
