@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Play } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -61,18 +62,20 @@ export default function ContactMap() {
             <span className="text-[25px] leading-none">→</span>
           </motion.a>
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            type="button"
-            className="inline-flex h-[58px] min-w-[292px] items-center justify-center gap-[10px] rounded-full border border-[#ececef] bg-white px-7 text-[16px] font-medium text-[#344054] shadow-[0_2px_6px_rgba(20,20,40,0.06)] transition hover:bg-[#fafafa] cursor-pointer"
-          >
-            <span className="flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#67758a]">
-              <Play className="h-[8px] w-[8px] fill-[#67758a] text-[#67758a]" />
-            </span>
+          <Link href="/help">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              type="button"
+              className="inline-flex h-[58px] min-w-[292px] items-center justify-center gap-[10px] rounded-full border border-[#ececef] bg-white px-7 text-[16px] font-medium text-[#344054] shadow-[0_2px_6px_rgba(20,20,40,0.06)] transition hover:bg-[#fafafa] cursor-pointer"
+            >
+              <span className="flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#67758a]">
+                <Play className="h-[8px] w-[8px] fill-[#67758a] text-[#67758a]" />
+              </span>
 
-            <span>Watch the video tutorial</span>
-          </motion.button>
+              <span>Watch the video tutorial</span>
+            </motion.button>
+          </Link>
         </motion.div>
 
         {/* World Map */}
