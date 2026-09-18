@@ -38,4 +38,47 @@
 body {
   color: var(--foreground);
   font-family: var(--font-sans);
+  top: 0px !important;
+  position: static !important;
+}
+
+/* =========================================================
+   Google Translate Bar, Banner & Tooltip Complete Hide CSS
+   ========================================================= */
+
+/* ১. সব ধরণের ব্যানার, আইফ্রেম এবং বেলুন ফ্রেম হাইড */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+.goog-te-balloon-frame,
+.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+/* ২. বডি এলিমেন্টের জন্য মার্জিন/পজিশন রিসেট */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* ৩. মাউস ওভার করলে আসা গুগল টুলটিপ ও পপআপ সম্পূর্ণ হাইড */
+#goog-gt-tt,
+.goog-gt-tt-outer,
+.goog-gt-tt-inner {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* ৪. টেক্সট হাইলাইট বা ব্যাকগ্রাউন্ড কালার চেঞ্জ বন্ধ করা */
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ৫. লোডিং স্পিনার হাইড */
+.goog-te-spinner-pos {
+  display: none !important;
 }

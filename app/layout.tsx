@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 
@@ -61,6 +62,39 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning={true}
       >
+        {/* গুগল ট্রান্সলেট অফিশিয়াল স্ক্রিপ্ট */}
+        <Script
+          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
+        <Script id="google-translate-init" strategy="afterInteractive">
+          {`
+            function googleTranslateElementInit() {
+              new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,bn',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+              }, 'google_translate_element');
+            }
+
+            // গুগল ট্রান্সলেট ব্যানার DOM-এ আসাবামাত্র রিমুভ করার লজিক
+            if (typeof window !== 'undefined') {
+              const observer = new MutationObserver(function() {
+                const frame = document.querySelector('.goog-te-banner-frame');
+                if (frame) {
+                  frame.remove();
+                }
+                document.body.style.top = '0px';
+              });
+              observer.observe(document.documentElement, { childList: true, subtree: true });
+            }
+          `}
+        </Script>
+
+        {/* এই হিডেন ডিভটি ব্যাকগ্রাউন্ডে গুগল ট্রান্সলেটরের কাজ সম্পন্ন করবে */}
+        <div id="google_translate_element" style={{ display: "none" }}></div>
+
         <Navbar />
         {children}
       </body>

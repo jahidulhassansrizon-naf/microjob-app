@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -164,7 +164,7 @@ const importantLinksItems = [
   {
     title: "Contact",
     subtitle: "Get in touch with us",
-    href: "/contact", // updated path to contact page
+    href: "/contact",
   },
 ];
 
@@ -178,6 +178,26 @@ export default function Navbar() {
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
+
+  // ল্যাঙ্গুয়েজ ট্র্যাকিং স্টেট
+  const [currentLang, setCurrentLang] = useState("en");
+
+  useEffect(() => {
+    // আগের সেভ হওয়া কুকি থেকে বর্তমান ভাষা চেক করা
+    const match = document.cookie.match(/googtrans=\/en\/(en|bn)/);
+    if (match) {
+      setCurrentLang(match[1]);
+    }
+  }, []);
+
+  const changeLanguage = (lang: string) => {
+    // গুগল ট্রান্সলেটের প্রয়োজনীয় কুকি সেটিং
+    document.cookie = `googtrans=/en/${lang}; path=/; domain=${window.location.hostname}`;
+    document.cookie = `googtrans=/en/${lang}; path=/`;
+
+    setCurrentLang(lang);
+    window.location.reload(); // ট্রান্সলেশন সঠিকভাবে প্রয়োগ করতে রিলোড
+  };
 
   if (
     pathname === "/login" ||
@@ -483,16 +503,31 @@ export default function Navbar() {
 
           {/* Right: Language, Login & Mobile Hamburger Trigger */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Desktop Language Toggle Button */}
             <div className="hidden sm:flex bg-[#F3F4F5] border border-gray-200/80 p-0.5 rounded-full items-center text-[11px] font-bold shadow-2xs">
-              <button className="text-[#555555] px-2.5 py-1 rounded-full cursor-pointer">
+              <button
+                onClick={() => changeLanguage("bn")}
+                className={`px-2.5 py-1 rounded-full cursor-pointer transition ${
+                  currentLang === "bn"
+                    ? "bg-[#6B52FF] text-white shadow-2xs"
+                    : "text-[#555555]"
+                }`}
+              >
                 বাং
               </button>
-              <button className="bg-[#6B52FF] text-white px-2.5 py-1 rounded-full shadow-2xs cursor-pointer">
+              <button
+                onClick={() => changeLanguage("en")}
+                className={`px-2.5 py-1 rounded-full cursor-pointer transition ${
+                  currentLang === "en"
+                    ? "bg-[#6B52FF] text-white shadow-2xs"
+                    : "text-[#555555]"
+                }`}
+              >
                 EN
               </button>
             </div>
 
-            {/* Login Button with Hover / Tap scale */}
+            {/* Login Button */}
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
                 href="/login"
@@ -515,7 +550,7 @@ export default function Navbar() {
         </div>
       </motion.header>
 
-      {/* Mobile Drawer / Off-canvas Menu with Framer Motion */}
+      {/* Mobile Drawer / Off-canvas Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-[1100] lg:hidden flex">
@@ -699,15 +734,30 @@ export default function Navbar() {
                   </Link>
                 </div>
 
+                {/* Mobile Language Toggle Button */}
                 <div className="border-t border-gray-100 pt-4 sm:hidden flex items-center justify-between">
                   <span className="text-xs text-gray-500 font-bold">
                     Language
                   </span>
                   <div className="bg-[#F3F4F5] border border-gray-200 p-0.5 rounded-full flex items-center text-[11px] font-bold">
-                    <button className="text-[#555555] px-3 py-1 rounded-full">
+                    <button
+                      onClick={() => changeLanguage("bn")}
+                      className={`px-3 py-1 rounded-full transition ${
+                        currentLang === "bn"
+                          ? "bg-[#6B52FF] text-white shadow-2xs"
+                          : "text-[#555555]"
+                      }`}
+                    >
                       বাং
                     </button>
-                    <button className="bg-[#6B52FF] text-white px-3 py-1 rounded-full">
+                    <button
+                      onClick={() => changeLanguage("en")}
+                      className={`px-3 py-1 rounded-full transition ${
+                        currentLang === "en"
+                          ? "bg-[#6B52FF] text-white shadow-2xs"
+                          : "text-[#555555]"
+                      }`}
+                    >
                       EN
                     </button>
                   </div>
