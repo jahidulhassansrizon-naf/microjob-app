@@ -798,7 +798,7 @@ export default function UsefulDocumentTemplatesPage() {
             border: 0;
           }
 
-          .hero {
+          .documents-page .hero {
             min-height: 307px;
             padding: 40px 20px 42px;
             display: flex;
@@ -821,12 +821,12 @@ export default function UsefulDocumentTemplatesPage() {
             border-bottom: 1px solid #e1e1e6;
           }
 
-          .hero-inner {
+          .documents-page .hero-inner {
             width: min(100%, 1040px);
             margin: 0 auto;
           }
 
-          .eyebrow {
+          .documents-page .eyebrow {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -841,7 +841,7 @@ export default function UsefulDocumentTemplatesPage() {
             letter-spacing: -0.1px;
           }
 
-          .hero h1 {
+          .documents-page .hero h1 {
             margin: 18px 0 13px;
             font-size: clamp(38px, 3.6vw, 49px);
             line-height: 1.05;
@@ -849,11 +849,11 @@ export default function UsefulDocumentTemplatesPage() {
             font-weight: 800;
           }
 
-          .hero h1 span {
+          .documents-page .hero h1 span {
             color: var(--orange-deep);
           }
 
-          .hero-copy {
+          .documents-page .hero-copy {
             width: min(100%, 710px);
             margin: 0 auto;
             font-size: 16px;
@@ -862,7 +862,7 @@ export default function UsefulDocumentTemplatesPage() {
             letter-spacing: -0.25px;
           }
 
-          .search-row {
+          .documents-page .search-row {
             margin: 20px auto 0;
             display: flex;
             justify-content: center;
@@ -871,7 +871,7 @@ export default function UsefulDocumentTemplatesPage() {
             flex-wrap: wrap;
           }
 
-          .search-box {
+          .documents-page .search-box {
             height: 49px;
             border-radius: 999px;
             background: #fff;
@@ -885,7 +885,7 @@ export default function UsefulDocumentTemplatesPage() {
             padding: 0 14px 0 19px;
           }
 
-          .search-box input {
+          .documents-page .search-box input {
             width: 100%;
             min-width: 0;
             border: 0;
@@ -895,11 +895,11 @@ export default function UsefulDocumentTemplatesPage() {
             font-size: 15px;
           }
 
-          .search-box input::placeholder {
+          .documents-page .search-box input::placeholder {
             color: #a1a2a7;
           }
 
-          .kbd {
+          .documents-page .kbd {
             flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
@@ -917,12 +917,12 @@ export default function UsefulDocumentTemplatesPage() {
             white-space: nowrap;
           }
 
-          .select-wrapper {
+          .documents-page .select-wrapper {
             position: relative;
             display: inline-block;
           }
 
-          .select-box {
+          .documents-page .select-box {
             height: 49px;
             border-radius: 999px;
             background: #fff;
@@ -943,17 +943,17 @@ export default function UsefulDocumentTemplatesPage() {
             transition: border-color 0.15s ease;
           }
 
-          .select-box:hover {
+          .documents-page .select-box:hover {
             border-color: #c5c8d0;
           }
 
-          .dropdown-overlay {
+          .documents-page .dropdown-overlay {
             position: fixed;
             inset: 0;
             z-index: 40;
           }
 
-          .doc-dropdown {
+          .documents-page .doc-dropdown {
             position: absolute;
             top: calc(100% + 10px);
             right: 0;
@@ -973,7 +973,7 @@ export default function UsefulDocumentTemplatesPage() {
             }
           }
 
-          .dropdown-arrow {
+          .documents-page .dropdown-arrow {
             position: absolute;
             top: -5px;
             left: 50%;
@@ -986,7 +986,7 @@ export default function UsefulDocumentTemplatesPage() {
             z-index: 2;
           }
 
-          .dropdown-menu {
+          .documents-page .dropdown-menu {
             position: relative;
             background: #ffffff;
             border-radius: 16px;
@@ -1000,7 +1000,7 @@ export default function UsefulDocumentTemplatesPage() {
             z-index: 1;
           }
 
-          .dropdown-item {
+          .documents-page .dropdown-item {
             width: 100%;
             height: 44px;
             padding: 0 16px;
@@ -1017,27 +1017,27 @@ export default function UsefulDocumentTemplatesPage() {
             text-align: left;
           }
 
-          .dropdown-item:hover:not(.selected) {
+          .documents-page .dropdown-item:hover:not(.selected) {
             background: #f4f4f7;
             color: #111;
           }
 
-          .dropdown-item.selected {
+          .documents-page .dropdown-item.selected {
             background: #7c53ff;
             color: #ffffff;
           }
 
-          .check-icon {
+          .documents-page .check-icon {
             width: 16px;
             height: 16px;
             flex-shrink: 0;
           }
 
-          .select-label {
+          .documents-page .select-label {
             white-space: nowrap;
           }
 
-          .filter-bar {
+          .documents-page .filter-bar {
             background: #fff;
             border-bottom: 1px solid #dedfe3;
             min-height: 38px;
@@ -1045,7 +1045,7 @@ export default function UsefulDocumentTemplatesPage() {
             align-items: center;
           }
 
-          .filter-inner {
+          .documents-page .filter-inner {
             width: min(100%, 1050px);
             padding: 7px 16px;
             margin: 0 auto;
@@ -1056,11 +1056,11 @@ export default function UsefulDocumentTemplatesPage() {
             scrollbar-width: none;
           }
 
-          .filter-inner::-webkit-scrollbar {
+          .documents-page .filter-inner::-webkit-scrollbar {
             display: none;
           }
 
-          .filter-chip {
+          .documents-page .filter-chip {
             flex: 0 0 auto;
             min-height: 26px;
             padding: 0 14px;
@@ -1073,11 +1073,11 @@ export default function UsefulDocumentTemplatesPage() {
             transition: 0.15s ease;
           }
 
-          .filter-chip:hover {
+          .documents-page .filter-chip:hover {
             transform: translateY(-1px);
           }
 
-          .filter-chip.active {
+          .documents-page .filter-chip.active {
             color: #fff;
             background: linear-gradient(
               90deg,
@@ -1088,20 +1088,20 @@ export default function UsefulDocumentTemplatesPage() {
             box-shadow: 0 3px 7px rgba(225, 129, 26, 0.18);
           }
 
-          .grid-shell {
+          .documents-page .grid-shell {
             width: min(100%, 1180px);
             margin: 0 auto;
             padding: 29px 16px 72px;
           }
 
-          .grid {
+          .documents-page .grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 18px;
             align-items: start;
           }
 
-          .card {
+          .documents-page .card {
             min-width: 0;
             overflow: hidden;
             border: 1px solid #dedfe3;
@@ -1115,14 +1115,14 @@ export default function UsefulDocumentTemplatesPage() {
               box-shadow 0.18s ease;
           }
 
-          .card:hover {
+          .documents-page .card:hover {
             transform: translateY(-2px);
             box-shadow:
               0 4px 10px rgba(18, 19, 22, 0.05),
               0 12px 26px rgba(18, 19, 22, 0.07);
           }
 
-          .preview {
+          .documents-page .preview {
             position: relative;
             height: 155px;
             overflow: hidden;
@@ -1132,7 +1132,7 @@ export default function UsefulDocumentTemplatesPage() {
             background: #f1ede7;
           }
 
-          .document-preview-paper-wrap {
+          .documents-page .document-preview-paper-wrap {
             position: absolute;
             inset: 0;
             z-index: 2;
@@ -1141,11 +1141,11 @@ export default function UsefulDocumentTemplatesPage() {
             pointer-events: none;
           }
 
-          .document-preview-paper {
+          .documents-page .document-preview-paper {
             box-sizing: border-box;
           }
 
-          .stamp {
+          .documents-page .stamp {
             position: absolute;
             z-index: 4;
             right: 10px;
@@ -1165,7 +1165,7 @@ export default function UsefulDocumentTemplatesPage() {
             box-shadow: 0 3px 7px rgba(191, 111, 0, 0.25);
           }
 
-          .stamp-dot {
+          .documents-page .stamp-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
@@ -1173,7 +1173,7 @@ export default function UsefulDocumentTemplatesPage() {
             position: relative;
           }
 
-          .stamp-dot::after {
+          .documents-page .stamp-dot::after {
             content: "";
             position: absolute;
             inset: 1px;
@@ -1181,14 +1181,14 @@ export default function UsefulDocumentTemplatesPage() {
             border-radius: 50%;
           }
 
-          .card-body {
+          .documents-page .card-body {
             min-height: 171px;
             padding: 14px 14px 13px;
             display: flex;
             flex-direction: column;
           }
 
-          .category {
+          .documents-page .category {
             margin-bottom: 7px;
             color: #858891;
             font-size: 10px;
@@ -1197,7 +1197,7 @@ export default function UsefulDocumentTemplatesPage() {
             text-transform: uppercase;
           }
 
-          .title {
+          .documents-page .title {
             color: #111216;
             font-size: 13px;
             line-height: 1.35;
@@ -1209,7 +1209,7 @@ export default function UsefulDocumentTemplatesPage() {
             overflow: hidden;
           }
 
-          .description {
+          .documents-page .description {
             margin-top: 7px;
             color: #686a72;
             font-size: 12px;
@@ -1220,7 +1220,7 @@ export default function UsefulDocumentTemplatesPage() {
             overflow: hidden;
           }
 
-          .card-footer {
+          .documents-page .card-footer {
             margin-top: auto;
             padding-top: 11px;
             border-top: 1px solid #ededf0;
@@ -1230,7 +1230,7 @@ export default function UsefulDocumentTemplatesPage() {
             gap: 8px;
           }
 
-          .details {
+          .documents-page .details {
             display: inline-flex;
             align-items: center;
             gap: 3px;
@@ -1241,18 +1241,18 @@ export default function UsefulDocumentTemplatesPage() {
             white-space: nowrap;
           }
 
-          .details:hover {
+          .documents-page .details:hover {
             color: #b55a00;
           }
 
-          .file-types {
+          .documents-page .file-types {
             color: #8c8e96;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.2px;
           }
 
-          .empty-state {
+          .documents-page .empty-state {
             grid-column: 1 / -1;
             border: 1px dashed #d6d6db;
             border-radius: 14px;
@@ -1266,7 +1266,7 @@ export default function UsefulDocumentTemplatesPage() {
             gap: 12px;
           }
 
-          .reset-btn {
+          .documents-page .reset-btn {
             padding: 8px 18px;
             border-radius: 999px;
             background: #7c53ff;
@@ -1277,23 +1277,23 @@ export default function UsefulDocumentTemplatesPage() {
             transition: background 0.15s ease;
           }
 
-          .reset-btn:hover {
+          .documents-page .reset-btn:hover {
             background: #683ee3;
           }
 
-          .faq-section {
+          .documents-page .faq-section {
             padding: 60px 16px 84px;
             background: linear-gradient(180deg, #f8f8fb 0%, #f1f1f5 100%);
             border-top: 1px solid #e3e3e8;
           }
 
-          .faq-inner {
+          .documents-page .faq-inner {
             width: min(100%, 780px);
             margin: 0 auto;
             text-align: center;
           }
 
-          .faq-eyebrow {
+          .documents-page .faq-eyebrow {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1308,7 +1308,7 @@ export default function UsefulDocumentTemplatesPage() {
             letter-spacing: -0.1px;
           }
 
-          .faq-title {
+          .documents-page .faq-title {
             margin: 18px 0 12px;
             font-size: clamp(30px, 3.8vw, 48px);
             line-height: 1.1;
@@ -1317,25 +1317,25 @@ export default function UsefulDocumentTemplatesPage() {
             color: #0c0c0e;
           }
 
-          .faq-title span {
+          .documents-page .faq-title span {
             color: var(--orange-deep);
           }
 
-          .faq-subtitle {
+          .documents-page .faq-subtitle {
             font-size: 15px;
             color: #63646b;
             margin: 0 0 36px;
             letter-spacing: -0.2px;
           }
 
-          .faq-list {
+          .documents-page .faq-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
             text-align: left;
           }
 
-          .faq-item {
+          .documents-page .faq-item {
             background: #ffffff;
             border: 1px solid #e5e6eb;
             border-radius: 16px;
@@ -1346,12 +1346,12 @@ export default function UsefulDocumentTemplatesPage() {
               box-shadow 0.15s ease;
           }
 
-          .faq-item.open {
+          .documents-page .faq-item.open {
             border-color: #d2d4dc;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
           }
 
-          .faq-header {
+          .documents-page .faq-header {
             width: 100%;
             display: flex;
             align-items: center;
@@ -1363,27 +1363,27 @@ export default function UsefulDocumentTemplatesPage() {
             gap: 16px;
           }
 
-          .faq-left {
+          .documents-page .faq-left {
             display: flex;
             align-items: center;
             gap: 16px;
           }
 
-          .faq-num {
+          .documents-page .faq-num {
             font-size: 13px;
             font-weight: 700;
             color: #b5b6be;
             min-width: 22px;
           }
 
-          .faq-question {
+          .documents-page .faq-question {
             font-size: 14px;
             font-weight: 700;
             color: #1a1b1e;
             letter-spacing: -0.1px;
           }
 
-          .faq-icon-btn {
+          .documents-page .faq-icon-btn {
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -1396,11 +1396,11 @@ export default function UsefulDocumentTemplatesPage() {
             transition: background 0.15s ease;
           }
 
-          .faq-item:hover .faq-icon-btn {
+          .documents-page .faq-item:hover .faq-icon-btn {
             background: #eaeaf0;
           }
 
-          .faq-answer {
+          .documents-page .faq-answer {
             padding: 0 20px 18px 58px;
             font-size: 13px;
             line-height: 1.6;
@@ -1408,18 +1408,7 @@ export default function UsefulDocumentTemplatesPage() {
             animation: faqFadeIn 0.18s ease-out;
           }
 
-          @keyframes faqFadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(-4px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .whatsapp {
+          .documents-page .whatsapp {
             position: fixed;
             right: 22px;
             bottom: 22px;
@@ -1436,85 +1425,85 @@ export default function UsefulDocumentTemplatesPage() {
             transition: transform 0.15s ease;
           }
 
-          .whatsapp:hover {
+          .documents-page .whatsapp:hover {
             transform: scale(1.06);
           }
 
-          .whatsapp svg {
+          .documents-page .whatsapp svg {
             width: 27px;
             height: 27px;
           }
 
           @media (max-width: 1060px) {
-            .grid-shell {
+            .documents-page .grid-shell {
               padding-left: 20px;
               padding-right: 20px;
             }
-            .grid {
+            .documents-page .grid {
               grid-template-columns: repeat(3, minmax(0, 1fr));
             }
-            .filter-inner {
+            .documents-page .filter-inner {
               padding-left: 20px;
               padding-right: 20px;
             }
           }
 
           @media (max-width: 760px) {
-            .hero {
+            .documents-page .hero {
               min-height: 330px;
               padding: 50px 18px 44px;
             }
 
-            .hero h1 {
+            .documents-page .hero h1 {
               font-size: 39px;
               letter-spacing: -1.7px;
             }
 
-            .hero-copy {
+            .documents-page .hero-copy {
               font-size: 15px;
             }
 
-            .grid {
+            .documents-page .grid {
               grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .whatsapp {
+            .documents-page .whatsapp {
               right: 16px;
               bottom: 16px;
               width: 49px;
               height: 49px;
             }
 
-            .faq-answer {
+            .documents-page .faq-answer {
               padding-left: 20px;
             }
           }
 
           @media (max-width: 520px) {
-            .search-row {
+            .documents-page .search-row {
               align-items: stretch;
             }
-            .search-box,
-            .select-wrapper,
-            .select-box {
+            .documents-page .search-box,
+            .documents-page .select-wrapper,
+            .documents-page .select-box {
               width: 100%;
             }
-            .doc-dropdown {
+            .documents-page .doc-dropdown {
               width: 100%;
             }
-            .grid-shell {
+            .documents-page .grid-shell {
               padding-top: 25px;
               padding-left: 12px;
               padding-right: 12px;
             }
-            .grid {
+            .documents-page .grid {
               gap: 12px;
               grid-template-columns: 1fr;
             }
-            .hero h1 {
+            .documents-page .hero h1 {
               font-size: 35px;
             }
-            .card-body {
+            .documents-page .card-body {
               min-height: 150px;
             }
           }
