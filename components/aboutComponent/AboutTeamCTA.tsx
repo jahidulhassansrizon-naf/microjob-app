@@ -2,8 +2,11 @@
 
 import React from "react";
 import { motion, Variants } from "framer-motion";
+import { useRouter } from "next/navigation"; // Notun import kora hoyeche
 
 export default function AboutTeamCTA() {
+  const router = useRouter(); // Router initialize kora hoyeche
+
   // Container variants for card reveal and staggered children
   const containerVariants: Variants = {
     hidden: { opacity: 0, y: 30, scale: 0.97 },
@@ -58,6 +61,7 @@ export default function AboutTeamCTA() {
         </motion.p>
 
         <motion.button
+          onClick={() => router.push("/our-team")} // Eikhane onClick add kora hoyeche
           variants={itemVariants}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import Footer from "@/components/Footer";
 
 type Template = {
@@ -474,16 +475,99 @@ const templates: Template[] = [
 ];
 
 function DocumentIcon() {
+  const lineBase: CSSProperties = {
+    height: "3px",
+    borderRadius: "2px",
+    flexShrink: 0,
+  };
+
   return (
-    <div className="document-preview-paper-wrap" aria-hidden="true">
-      <div className="document-preview-paper">
-        <div className="document-preview-paper-line line-1" />
-        <div className="document-preview-paper-line line-2" />
-        <div className="document-preview-paper-line line-3" />
-        <div className="document-preview-paper-line line-4" />
-        <div className="document-preview-paper-line line-5" />
-        <div className="document-preview-paper-line line-6" />
-        <div className="document-preview-paper-line line-7" />
+    <div
+      className="document-preview-paper-wrap"
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 2,
+        display: "grid",
+        placeItems: "center",
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        className="document-preview-paper"
+        style={{
+          width: "52%",
+          aspectRatio: "0.74 / 1",
+          background: "rgb(255, 255, 255)",
+          boxShadow:
+            "rgba(20, 20, 30, 0.28) 0px 10px 26px -8px, rgba(20, 20, 30, 0.08) 0px 2px 6px",
+          borderRadius: "3px",
+          padding: "13% 12%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6%",
+        }}
+      >
+        <div
+          style={{
+            ...lineBase,
+            width: "46%",
+            background: "rgb(196, 196, 203)",
+            alignSelf: "flex-end",
+            marginBottom: "4%",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "72%",
+            background: "rgb(196, 196, 203)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "94%",
+            background: "rgb(228, 228, 234)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "88%",
+            background: "rgb(228, 228, 234)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "96%",
+            background: "rgb(228, 228, 234)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "60%",
+            background: "rgb(228, 228, 234)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "90%",
+            background: "rgb(228, 228, 234)",
+          }}
+        />
+        <div
+          style={{
+            ...lineBase,
+            width: "40%",
+            background: "rgb(196, 196, 203)",
+            marginTop: "auto",
+          }}
+        />
       </div>
     </div>
   );
@@ -673,7 +757,7 @@ export default function UsefulDocumentTemplatesPage() {
   return (
     <>
       <main className="documents-page">
-        <style jsx>{`
+        <style>{`
           .documents-page {
             --page-bg: #f5f5f7;
             --hero-bg: #f8f8fb;
@@ -1020,10 +1104,12 @@ export default function UsefulDocumentTemplatesPage() {
           .card {
             min-width: 0;
             overflow: hidden;
-            border: 1px solid #e7e7eb;
+            border: 1px solid #dedfe3;
             border-radius: 16px;
-            background: #fff;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            background: #ffffff;
+            box-shadow:
+              0 1px 3px rgba(18, 19, 22, 0.03),
+              0 6px 16px rgba(18, 19, 22, 0.035);
             transition:
               transform 0.18s ease,
               box-shadow 0.18s ease;
@@ -1031,7 +1117,9 @@ export default function UsefulDocumentTemplatesPage() {
 
           .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            box-shadow:
+              0 4px 10px rgba(18, 19, 22, 0.05),
+              0 12px 26px rgba(18, 19, 22, 0.07);
           }
 
           .preview {
@@ -1039,71 +1127,22 @@ export default function UsefulDocumentTemplatesPage() {
             height: 155px;
             overflow: hidden;
             isolation: isolate;
-            background-color: #ede9e3;
-            background-image: radial-gradient(#d3cecb 1.2px, transparent 1.2px);
-            background-size: 10px 10px;
+            display: grid;
+            place-items: center;
+            background: #f1ede7;
           }
 
           .document-preview-paper-wrap {
             position: absolute;
+            inset: 0;
             z-index: 2;
-            left: 50%;
-            top: 14px;
-            bottom: 0;
-            width: 142px;
-            transform: translateX(-50%);
+            display: grid;
+            place-items: center;
             pointer-events: none;
           }
 
           .document-preview-paper {
-            width: 100%;
-            height: 100%;
-            padding: 22px 18px 10px;
-            background: #ffffff;
-            border-radius: 4px 4px 0 0;
-            box-shadow:
-              0 -2px 10px rgba(0, 0, 0, 0.03),
-              0 2px 6px rgba(0, 0, 0, 0.04);
-          }
-
-          .document-preview-paper-line {
-            display: block;
-            height: 4px;
-            border-radius: 999px;
-            background: #e2e4e8;
-            margin-bottom: 7px;
-          }
-
-          .document-preview-paper-line.line-1 {
-            width: 32px;
-            margin-left: auto;
-            margin-bottom: 10px;
-            background: #c8cad0;
-          }
-
-          .document-preview-paper-line.line-2 {
-            width: 55px;
-            background: #c8cad0;
-          }
-
-          .document-preview-paper-line.line-3 {
-            width: 70px;
-          }
-
-          .document-preview-paper-line.line-4 {
-            width: 60px;
-          }
-
-          .document-preview-paper-line.line-5 {
-            width: 65px;
-          }
-
-          .document-preview-paper-line.line-6 {
-            width: 42px;
-          }
-
-          .document-preview-paper-line.line-7 {
-            width: 68px;
+            box-sizing: border-box;
           }
 
           .stamp {
@@ -1143,24 +1182,24 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .card-body {
-            min-height: 175px;
-            padding: 16px 16px 14px;
+            min-height: 171px;
+            padding: 14px 14px 13px;
             display: flex;
             flex-direction: column;
           }
 
           .category {
-            margin-bottom: 8px;
-            color: #8c8e96;
-            font-size: 11px;
+            margin-bottom: 7px;
+            color: #858891;
+            font-size: 10px;
             font-weight: 800;
             letter-spacing: 0.5px;
             text-transform: uppercase;
           }
 
           .title {
-            color: #121316;
-            font-size: 14px;
+            color: #111216;
+            font-size: 13px;
             line-height: 1.35;
             font-weight: 800;
             letter-spacing: -0.2px;
@@ -1171,8 +1210,8 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .description {
-            margin-top: 8px;
-            color: #6e7078;
+            margin-top: 7px;
+            color: #686a72;
             font-size: 12px;
             line-height: 1.45;
             display: -webkit-box;
@@ -1183,7 +1222,7 @@ export default function UsefulDocumentTemplatesPage() {
 
           .card-footer {
             margin-top: auto;
-            padding-top: 12px;
+            padding-top: 11px;
             border-top: 1px solid #ededf0;
             display: flex;
             align-items: center;
@@ -1587,7 +1626,18 @@ export default function UsefulDocumentTemplatesPage() {
           <div className="grid">
             {visibleTemplates.map((item) => (
               <article className="card" key={item.id}>
-                <div className="preview">
+                <div
+                  className="preview"
+                  style={{
+                    position: "relative",
+                    height: "155px",
+                    overflow: "hidden",
+                    isolation: "isolate",
+                    display: "grid",
+                    placeItems: "center",
+                    background: "#f1ede7",
+                  }}
+                >
                   <DocumentIcon />
                   {item.stamp ? (
                     <span className="stamp">
