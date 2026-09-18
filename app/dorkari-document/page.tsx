@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 
 type Template = {
@@ -698,6 +699,7 @@ function ArrowRight() {
 }
 
 export default function UsefulDocumentTemplatesPage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All Templates");
   const [docType, setDocType] = useState("All Documents");
   const [isDocDropdownOpen, setIsDocDropdownOpen] = useState(false);
@@ -1113,6 +1115,7 @@ export default function UsefulDocumentTemplatesPage() {
             transition:
               transform 0.18s ease,
               box-shadow 0.18s ease;
+            cursor: pointer;
           }
 
           .documents-page .card:hover {
@@ -1614,7 +1617,11 @@ export default function UsefulDocumentTemplatesPage() {
         <section className="grid-shell">
           <div className="grid">
             {visibleTemplates.map((item) => (
-              <article className="card" key={item.id}>
+              <article
+                className="card"
+                key={item.id}
+                onClick={() => router.push("/login")}
+              >
                 <div
                   className="preview"
                   style={{
@@ -1642,14 +1649,10 @@ export default function UsefulDocumentTemplatesPage() {
                   <div className="description">{item.description}</div>
 
                   <div className="card-footer">
-                    <a
-                      className="details"
-                      href="#details"
-                      onClick={(e) => e.preventDefault()}
-                    >
+                    <span className="details">
                       <span>See details</span>
                       <ArrowRight />
-                    </a>
+                    </span>
                     <span className="file-types">
                       PDF&nbsp;&nbsp;·&nbsp;&nbsp;DOCX
                     </span>
