@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Footer from "../../components/Footer";
 
 type Card = {
@@ -1175,10 +1176,15 @@ function ArrowUp() {
 }
 
 export default function AITemplatePage() {
+  const router = useRouter();
   const [active, setActive] = useState("all");
   const [query, setQuery] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleCardClick = () => {
+    router.push("/login?redirect=/ai-template");
+  };
 
   const filteredSections = useMemo(() => {
     return sections
@@ -1306,6 +1312,7 @@ export default function AITemplatePage() {
                       <button
                         className="template-card"
                         key={card.image + card.title}
+                        onClick={handleCardClick}
                       >
                         <img src={card.image} alt={card.title} loading="lazy" />
                         <span className="usage-badge">
@@ -1764,7 +1771,7 @@ export default function AITemplatePage() {
           color: white;
           background: linear-gradient(90deg, #ff9d00, #ff7b27);
           padding: 10px 16px;
-          border-radius: 9px;
+          border-radius: 999px;
           cursor: pointer;
           font-weight: 700;
         }
