@@ -13,6 +13,8 @@ import {
 interface NidSettingsPanelProps {
   autoCrop: boolean;
   setAutoCrop: (val: boolean) => void;
+  processingSide?: "front" | "back" | null;
+  processingError?: string | null;
   orientation: "portrait" | "landscape";
   setOrientation: (val: "portrait" | "landscape") => void;
   layout: "side-by-side" | "stacked";
@@ -41,6 +43,8 @@ interface NidSettingsPanelProps {
 export default function NidSettingsPanel({
   autoCrop,
   setAutoCrop,
+  processingSide = null,
+  processingError = null,
   orientation,
   setOrientation,
   layout,
@@ -72,16 +76,88 @@ export default function NidSettingsPanel({
       </h2>
 
       {/* Auto crop Toggle */}
-      <div className="flex items-center justify-between bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-        <span className="text-xs font-bold text-gray-700">Auto crop</span>
-        <button
-          onClick={() => setAutoCrop(!autoCrop)}
-          className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center cursor-pointer ${
-            autoCrop ? "bg-amber-500 justify-end" : "bg-gray-300 justify-start"
+      <div
+        className={`rounded-xl border p-2.5 transition-all ${
+          autoCrop
+            ? "bg-amber-50/80 border-amber-200"
+            : "bg-gray-50/80 border-gray-100"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-800">Auto crop</span>
+              <span
+                className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                  autoCrop
+                    ? "bg-amber-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {autoCrop ? "ON" : "OFF"}
+              </span>
+            </div>
+            <span className="text-[10px] text-gray-500 block mt-0.5 leading-relaxed">
+              {processingSide
+                ? `Detecting ${processingSide === "front" ? "front" : "back"} card edges…`
+                : autoCrop
+                  ? "New uploads are cropped automatically."
+                  : "Images stay original. Use Crop manually."}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            aria-pressed={autoCrop}
+            title={autoCrop ? "Turn Auto crop off" : "Turn Auto crop on"}
+            onClick={() => setAutoCrop(!autoCrop)}
+            disabled={processingSide !== null}
+            className={`w-12 h-7 rounded-full transition-all p-0.5 flex items-center shrink-0 ${
+              processingSide !== null
+                ? "opacity-60 cursor-not-allowed"
+                : "cursor-pointer"
+            } ${
+              autoCrop
+                ? "bg-amber-500 justify-end shadow-sm"
+                : "bg-gray-300 justify-start"
+            }`}
+          >
+            <div className="w-6 h-6 rounded-full bg-white shadow-md" />
+          </button>
+        </div>
+
+        <div
+          className={`mt-2 rounded-lg px-2 py-1.5 text-[10px] font-semibold flex items-center gap-1.5 ${
+            processingSide
+              ? "bg-slate-900 text-white"
+              : autoCrop
+                ? "bg-white text-amber-700 border border-amber-200"
+                : "bg-white text-gray-500 border border-gray-100"
           }`}
         >
-          <div className="w-5 h-5 rounded-full bg-white shadow-md" />
-        </button>
+          {processingSide ? (
+            <RotateCw size={11} className="animate-spin shrink-0" />
+          ) : (
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                autoCrop ? "bg-amber-500" : "bg-gray-400"
+              }`}
+            />
+          )}
+          <span>
+            {processingSide
+              ? "Auto crop is working — please wait"
+              : autoCrop
+                ? "Auto crop active"
+                : "Auto crop inactive"}
+          </span>
+        </div>
+
+        {processingError && (
+          <div className="mt-2 rounded-lg bg-red-50 border border-red-100 text-red-600 px-2 py-1.5 text-[10px] font-medium leading-relaxed">
+            {processingError}
+          </div>
+        )}
       </div>
 
       {/* Page settings */}

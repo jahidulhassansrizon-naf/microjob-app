@@ -26,6 +26,51 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import NidSettingsPanel from "@/components/nidToPdfComponent/NidSettingsPanel";
 
+const PYTHON_API_BASE_URL = (
+  process.env.NEXT_PUBLIC_PYTHON_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://127.0.0.1:8000"
+).replace(/\/$/, "");
+
+const AUTO_CROP_ERROR =
+  "Auto crop is temporarily unavailable. You can turn Auto crop off and use manual Crop instead.";
+
+async function autoCropFile(file: File): Promise<File> {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${PYTHON_API_BASE_URL}/api/nid-auto-crop`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    const detail =
+      error instanceof Error && error.message ? ` (${error.message})` : "";
+    throw new Error(`${AUTO_CROP_ERROR}${detail}`);
+  }
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(
+      message.trim() ? `Auto crop failed: ${message.trim()}` : AUTO_CROP_ERROR,
+    );
+  }
+
+  const blob = await response.blob();
+  if (!blob.size) {
+    throw new Error("Auto crop returned an empty image.");
+  }
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, ".png"), {
+    type: "image/png",
+    lastModified: Date.now(),
+  });
+}
+
 // --- PERSPECTIVE WARP HELPER FUNCTIONS ---
 function solveLinearSystem(A: number[][], B: number[]): number[] {
   const n = A.length;
@@ -347,7 +392,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
 
 // --- MAIN NID TO PDF PAGE ---
 export default function NidToPdf() {
-  const [autoCrop, setAutoCrop] = useState(true);
+  const [autoCrop, setAutoCrop] = useState(false);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
     "portrait",
   );
@@ -380,6 +425,12 @@ export default function NidToPdf() {
 
   // State for loading state while downloading PDF on Mobile/Desktop
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [processingSide, setProcessingSide] = useState<"front" | "back" | null>(
+    null,
+  );
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [frontAutoCropped, setFrontAutoCropped] = useState(false);
+  const [backAutoCropped, setBackAutoCropped] = useState(false);
 
   const imageCount = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
 
@@ -392,19 +443,121 @@ export default function NidToPdf() {
     [backImage],
   );
 
-  const handleFrontImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFrontImage(e.target.files[0]);
+  const handleAutoCropToggle = async (enabled: boolean) => {
+    setAutoCrop(enabled);
+    setProcessingError(null);
+
+    if (!enabled) {
+      setProcessingSide(null);
+      return;
+    }
+
+    // Make the switch meaningful immediately: when the user turns Auto crop ON
+    // after already uploading images, re-process those images right away.
+    const currentFront = frontImage;
+    const currentBack = backImage;
+
+    if (!currentFront && !currentBack) return;
+
+    if (currentFront) {
+      setProcessingSide("front");
+      try {
+        const croppedFile = await autoCropFile(currentFront);
+        setFrontImage(croppedFile);
+        setFrontAutoCropped(true);
+      } catch (error) {
+        console.error("Front NID auto-crop failed:", error);
+        setFrontAutoCropped(false);
+        setProcessingError(
+          error instanceof Error ? error.message : AUTO_CROP_ERROR,
+        );
+      }
+    }
+
+    if (currentBack) {
+      setProcessingSide("back");
+      try {
+        const croppedFile = await autoCropFile(currentBack);
+        setBackImage(croppedFile);
+        setBackAutoCropped(true);
+      } catch (error) {
+        console.error("Back NID auto-crop failed:", error);
+        setBackAutoCropped(false);
+        setProcessingError(
+          error instanceof Error ? error.message : AUTO_CROP_ERROR,
+        );
+      }
+    }
+
+    setProcessingSide(null);
+  };
+
+  const handleFrontImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+
+    if (!file) return;
+
+    setProcessingError(null);
+
+    if (!autoCrop) {
+      setFrontAutoCropped(false);
+      setFrontImage(file);
+      return;
+    }
+
+    setProcessingSide("front");
+
+    try {
+      const croppedFile = await autoCropFile(file);
+      setFrontImage(croppedFile);
+      setFrontAutoCropped(true);
+    } catch (error) {
+      console.error("Front NID auto-crop failed:", error);
+      setFrontAutoCropped(false);
+      setFrontImage(file);
+      setProcessingError(
+        error instanceof Error ? error.message : AUTO_CROP_ERROR,
+      );
+    } finally {
+      setProcessingSide(null);
     }
   };
 
-  const handleBackImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setBackImage(e.target.files[0]);
+  const handleBackImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+
+    if (!file) return;
+
+    setProcessingError(null);
+
+    if (!autoCrop) {
+      setBackAutoCropped(false);
+      setBackImage(file);
+      return;
+    }
+
+    setProcessingSide("back");
+
+    try {
+      const croppedFile = await autoCropFile(file);
+      setBackImage(croppedFile);
+      setBackAutoCropped(true);
+    } catch (error) {
+      console.error("Back NID auto-crop failed:", error);
+      setBackAutoCropped(false);
+      setBackImage(file);
+      setProcessingError(
+        error instanceof Error ? error.message : AUTO_CROP_ERROR,
+      );
+    } finally {
+      setProcessingSide(null);
     }
   };
 
   const handleSwap = () => {
+    setProcessingError(null);
     const temp = frontImage;
     setFrontImage(backImage);
     setBackImage(temp);
@@ -412,11 +565,19 @@ export default function NidToPdf() {
     const tempRot = frontRotation;
     setFrontRotation(backRotation);
     setBackRotation(tempRot);
+
+    const tempAutoCropped = frontAutoCropped;
+    setFrontAutoCropped(backAutoCropped);
+    setBackAutoCropped(tempAutoCropped);
   };
 
   const handleReset = () => {
+    setProcessingError(null);
+    setProcessingSide(null);
     setFrontImage(null);
     setBackImage(null);
+    setFrontAutoCropped(false);
+    setBackAutoCropped(false);
     setFrontRotation(0);
     setBackRotation(0);
     setFilterPreset("plain");
@@ -483,12 +644,73 @@ export default function NidToPdf() {
 
     const originalParent = sheet.parentNode;
     const originalNextSibling = sheet.nextSibling;
+    const printContent = sheet.firstElementChild as HTMLElement | null;
+
+    // Print uses the real card dimensions instead of scaling the entire
+    // document down. The browser is then free to paginate naturally: as many
+    // complete copies as fit on one A4 sheet stay on that page, and the next
+    // copy starts on the following page.
+    const pageWidthPx = orientation === "portrait" ? 793.7008 : 1122.5197;
+    const pageHeightPx = orientation === "portrait" ? 1122.5197 : 793.7008;
+    const printPaddingPx = (20 / 25.4) * 96; // 20mm print padding
+    const availableHeightPx = Math.max(1, pageHeightPx - printPaddingPx * 2);
+
+    const rowGapPx = 24;
+    const cardGapPx = layout === "stacked" ? 16 : 12;
+
+    const naturalRowHeight =
+      layout === "stacked"
+        ? frontWrapperHeight + backWrapperHeight + cardGapPx
+        : Math.max(frontWrapperHeight, backWrapperHeight);
+
+    const naturalContentHeight =
+      copies * naturalRowHeight + Math.max(0, copies - 1) * rowGapPx;
+
+    const fitsOnSinglePage = naturalContentHeight <= availableHeightPx;
+
+    const previousTransform = printContent?.style.transform ?? "";
+    const previousTransformOrigin = printContent?.style.transformOrigin ?? "";
+    const previousHeight = printContent?.style.height ?? "";
+    const previousWidth = printContent?.style.width ?? "";
+    const previousSheetJustify = sheet.style.justifyContent;
+
+    if (printContent) {
+      // No print scaling. Keep the real layout size so pagination remains
+      // readable and predictable.
+      printContent.style.transform = "none";
+      printContent.style.transformOrigin = "top center";
+      printContent.style.height = "auto";
+      printContent.style.width = "100%";
+    }
+
+    // Position control is preserved when everything fits on one page. When
+    // the content needs multiple pages, start from the top so every page is
+    // packed naturally without creating a large blank area before page 2.
+    if (fitsOnSinglePage) {
+      sheet.style.justifyContent =
+        position === "top"
+          ? "flex-start"
+          : position === "center"
+            ? "center"
+            : "flex-end";
+    } else {
+      sheet.style.justifyContent = "flex-start";
+    }
 
     document.body.classList.add("nid-print-mode");
     document.body.appendChild(sheet);
 
     const restoreSheet = () => {
       document.body.classList.remove("nid-print-mode");
+
+      if (printContent) {
+        printContent.style.transform = previousTransform;
+        printContent.style.transformOrigin = previousTransformOrigin;
+        printContent.style.height = previousHeight;
+        printContent.style.width = previousWidth;
+      }
+
+      sheet.style.justifyContent = previousSheetJustify;
 
       if (originalParent) {
         if (originalNextSibling) {
@@ -505,9 +727,10 @@ export default function NidToPdf() {
 
     setTimeout(() => {
       window.print();
-    }, 100);
+    }, 150);
 
-    setTimeout(restoreSheet, 3000);
+    // Fallback for browsers that do not fire afterprint.
+    setTimeout(restoreSheet, 5000);
   };
 
   const handleCreatePdf = async () => {
@@ -617,21 +840,22 @@ export default function NidToPdf() {
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
+            size: A4 ${orientation};
             margin: 0;
           }
 
           html,
           body {
-            width: 210mm !important;
-            height: 297mm !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
           }
 
           body.nid-print-mode {
-            overflow: hidden !important;
+            overflow: visible !important;
           }
 
           body.nid-print-mode > *:not(#printable-sheet) {
@@ -643,38 +867,67 @@ export default function NidToPdf() {
             visibility: visible !important;
           }
 
-          body.nid-print-mode #printable-sheet .absolute.left-1\\/2.-translate-x-1\\/2,
+          body.nid-print-mode #printable-sheet .absolute.left-1\/2.-translate-x-1\/2,
           body.nid-print-mode #printable-sheet .absolute.z-20 {
             display: none !important;
           }
 
+          /*
+           * Keep the sheet at the real A4 width but let its height grow.
+           * This is the key to natural browser pagination.
+           */
           body.nid-print-mode #printable-sheet {
             position: static !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
+            justify-content: flex-start !important;
 
-            width: 210mm !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
+            width: ${orientation === "portrait" ? "210mm" : "297mm"} !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
 
             margin: 0 !important;
             padding: 20mm !important;
             box-sizing: border-box !important;
 
-            overflow: hidden !important;
+            overflow: visible !important;
             background: white !important;
             box-shadow: none !important;
             border: none !important;
 
             transform: none !important;
-            transform-origin: top left !important;
+            transform-origin: top center !important;
 
-            page-break-before: avoid !important;
-            page-break-after: avoid !important;
-            break-before: avoid-page !important;
-            break-after: avoid-page !important;
+            page-break-before: auto !important;
+            page-break-after: auto !important;
+            page-break-inside: auto !important;
+            break-before: auto !important;
+            break-after: auto !important;
+            break-inside: auto !important;
+          }
+
+          body.nid-print-mode #printable-sheet > div:first-child {
+            transform: none !important;
+            transform-origin: top center !important;
+            height: auto !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            flex: 0 0 auto !important;
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+
+          /*
+           * Each copy is atomic: front + back must stay together. The browser
+           * may place 1, 2, 3, or 4 complete copies on a page depending on
+           * the selected layout/orientation and the available A4 space.
+           */
+          body.nid-print-mode #printable-sheet > div:first-child > div {
+            page-break-inside: avoid !important;
+            break-inside: avoid-page !important;
           }
 
           body.nid-print-mode #printable-sheet button,
@@ -692,7 +945,9 @@ export default function NidToPdf() {
           sideTitle="Front of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
+            setProcessingError(null);
             setFrontImage(croppedFile);
+            setFrontAutoCropped(false);
             setCroppingSide(null);
           }}
         />
@@ -704,7 +959,9 @@ export default function NidToPdf() {
           sideTitle="Back of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
+            setProcessingError(null);
             setBackImage(croppedFile);
+            setBackAutoCropped(false);
             setCroppingSide(null);
           }}
         />
@@ -756,7 +1013,9 @@ export default function NidToPdf() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <NidSettingsPanel
           autoCrop={autoCrop}
-          setAutoCrop={setAutoCrop}
+          setAutoCrop={handleAutoCropToggle}
+          processingSide={processingSide}
+          processingError={processingError}
           orientation={orientation}
           setOrientation={setOrientation}
           layout={layout}
@@ -831,6 +1090,29 @@ export default function NidToPdf() {
               </button>
             </div>
           </div>
+
+          {(processingSide || processingError) && (
+            <div className="mt-3 space-y-2">
+              {processingSide && (
+                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
+                  <RefreshCw size={13} className="animate-spin shrink-0" />
+                  <span>
+                    Auto cropping{" "}
+                    {processingSide === "front" ? "front" : "back"} NID photo…
+                  </span>
+                </div>
+              )}
+
+              {processingError && !processingSide && (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700"
+                >
+                  {processingError}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="relative bg-[#f3f4f6] border border-gray-200/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-[620px] overflow-auto [background-image:radial-gradient(#94a3b8_1.2px,transparent_1.2px)] [background-size:16px_16px]">
             <div
@@ -914,10 +1196,26 @@ export default function NidToPdf() {
                       >
                         {frontImageUrl ? (
                           <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                            {processingSide === "front" && (
+                              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+                                  <RefreshCw
+                                    size={12}
+                                    className="animate-spin"
+                                  />
+                                  Auto cropping front…
+                                </div>
+                              </div>
+                            )}
+                            {frontAutoCropped && processingSide !== "front" && (
+                              <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden">
+                                Auto crop applied
+                              </span>
+                            )}
                             <img
                               src={frontImageUrl}
                               alt="Front NID"
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain bg-white"
                               style={{
                                 filter: imageFilterStyle,
                               }}
@@ -947,7 +1245,10 @@ export default function NidToPdf() {
                                 <RotateCw size={13} />
                               </button>
                               <button
-                                onClick={() => setFrontImage(null)}
+                                onClick={() => {
+                                  setFrontImage(null);
+                                  setFrontAutoCropped(false);
+                                }}
                                 className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                                 title="Delete"
                               >
@@ -1007,10 +1308,26 @@ export default function NidToPdf() {
                       >
                         {backImageUrl ? (
                           <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                            {processingSide === "back" && (
+                              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+                                  <RefreshCw
+                                    size={12}
+                                    className="animate-spin"
+                                  />
+                                  Auto cropping back…
+                                </div>
+                              </div>
+                            )}
+                            {backAutoCropped && processingSide !== "back" && (
+                              <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden">
+                                Auto crop applied
+                              </span>
+                            )}
                             <img
                               src={backImageUrl}
                               alt="Back NID"
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain bg-white"
                               style={{
                                 filter: imageFilterStyle,
                               }}
@@ -1040,7 +1357,10 @@ export default function NidToPdf() {
                                 <RotateCw size={13} />
                               </button>
                               <button
-                                onClick={() => setBackImage(null)}
+                                onClick={() => {
+                                  setBackImage(null);
+                                  setBackAutoCropped(false);
+                                }}
                                 className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                                 title="Delete"
                               >
@@ -1110,7 +1430,11 @@ export default function NidToPdf() {
           </button>
           <button
             onClick={handleCreatePdf}
-            disabled={(!frontImage && !backImage) || isGeneratingPdf}
+            disabled={
+              (!frontImage && !backImage) ||
+              isGeneratingPdf ||
+              processingSide !== null
+            }
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               frontImage || backImage
                 ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600 cursor-pointer"

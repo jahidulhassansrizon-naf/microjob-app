@@ -11,6 +11,7 @@ import color_document_processor
 from photo_processor import remove_background
 from clothing_processor import apply_clothing
 from gemini_processor import generate_virtual_try_on
+from nid_autocrop_processor import auto_crop_and_deskew
 
 
 # =========================================================
@@ -450,6 +451,60 @@ async def auto_crop_endpoint(
 
         return Response(
             content="Auto crop failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# NID AUTO CROP
+# =========================================================
+
+@app.post("/api/nid-auto-crop")
+async def nid_auto_crop_endpoint(
+    file: UploadFile = File(...),
+):
+    """NID-only auto crop endpoint.
+
+    This endpoint intentionally uses nid_autocrop_processor so the existing
+    /api/auto-crop flow used by other pages remains untouched.
+    """
+    try:
+        contents = await file.read()
+
+        if not contents:
+            return Response(
+                content="Empty image file.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        output_bytes = auto_crop_and_deskew(
+            contents
+        )
+
+        return Response(
+            content=output_bytes,
+            media_type="image/png",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    except ValueError as error:
+        print(
+            f"[NID Auto Crop Validation] {error}"
+        )
+        return Response(
+            content=str(error),
+            status_code=400,
+            media_type="text/plain",
+        )
+
+    except Exception as error:
+        print(
+            f"[NID Auto Crop] {error}"
+        )
+        return Response(
+            content="NID auto crop failed.",
             status_code=500,
             media_type="text/plain",
         )
