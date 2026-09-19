@@ -48,13 +48,9 @@ export default function DashboardNavbar() {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // AI Template dropdown state
+  // Dropdown States
   const [aiTemplateOpen, setAiTemplateOpen] = useState<boolean>(false);
-
-  // Question Papers dropdown state
   const [questionPaperOpen, setQuestionPaperOpen] = useState<boolean>(false);
-
-  // Print Media dropdown state
   const [printMediaOpen, setPrintMediaOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -77,7 +73,6 @@ export default function DashboardNavbar() {
     window.location.reload();
   };
 
-  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
   useEffect(() => {
     const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
     if (match) {
@@ -89,7 +84,6 @@ export default function DashboardNavbar() {
     }
   }, []);
 
-  // Keyboard shortcut (Ctrl+K or Cmd+K) to open search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -104,7 +98,6 @@ export default function DashboardNavbar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Logout Handler
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -171,9 +164,9 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2">
+      <header className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2 w-full">
         {/* Left Section: Logo */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-[#FF5D00] rounded-xl flex items-center justify-center font-black text-white text-base">
               SK
@@ -189,63 +182,63 @@ export default function DashboardNavbar() {
           </Link>
         </div>
 
-        {/* Center Section: Navigation Links Centered (Desktop Only) - Added min-w-0 and optimized gaps to prevent breaking layout */}
-        <nav className="hidden lg:flex items-center justify-center flex-1 min-w-0 gap-2 xl:gap-3 text-[12px] xl:text-[13px] font-semibold text-gray-700 mx-2 overflow-x-auto scrollbar-none">
+        {/* Center Section: Navigation Links Centered (Desktop Only) */}
+        <nav className="hidden xl:flex items-center justify-start 2xl:justify-center flex-1 min-w-0 gap-1 xl:gap-1.5 2xl:gap-2.5 text-[11px] xl:text-[11.5px] 2xl:text-[13px] font-semibold text-gray-700 mx-1">
           {/* My Files */}
           <Link
             href="/my-files"
-            className="flex items-center gap-1.5 hover:text-[#FF5D00] transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
           >
-            <FileText size={15} className="text-blue-500 shrink-0" />
+            <FileText size={14} className="text-blue-500 shrink-0" />
             <span>My Files</span>
           </Link>
 
           {/* AI Editor */}
           <Link
             href="/ai-editor"
-            className="flex items-center gap-1.5 hover:text-[#FF5D00] transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
           >
-            <Sparkles size={15} className="text-orange-500 shrink-0" />
+            <Sparkles size={14} className="text-orange-500 shrink-0" />
             <span>AI Editor</span>
           </Link>
 
           {/* Manual Editor */}
           <Link
             href="/manual-editor"
-            className="flex items-center gap-1.5 hover:text-[#FF5D00] transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
           >
-            <FileEdit size={15} className="text-blue-600 shrink-0" />
+            <FileEdit size={14} className="text-blue-600 shrink-0" />
             <span>Manual Editor</span>
           </Link>
 
           {/* Bulk Photo Edit */}
-          <div className="relative flex items-center gap-1 whitespace-nowrap">
+          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
             <Link
               href="/bulk-photo-edit"
-              className="flex items-center gap-1.5 hover:text-[#FF5D00] transition-colors"
+              className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors"
             >
-              <Copy size={15} className="text-emerald-500 shrink-0" />
+              <Copy size={14} className="text-emerald-500 shrink-0" />
               <span>Bulk Photo Edit</span>
             </Link>
-            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase leading-tight">
+            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
               New
             </span>
           </div>
 
           {/* AI Template Dropdown */}
           <div
-            className="relative py-2 whitespace-nowrap"
+            className="relative py-1 whitespace-nowrap shrink-0"
             onMouseEnter={() => setAiTemplateOpen(true)}
             onMouseLeave={() => setAiTemplateOpen(false)}
           >
             <Link
               href="/ai-template"
-              className="flex items-center gap-1 hover:text-[#FF5D00] cursor-pointer"
+              className="flex items-center gap-0.5 hover:text-[#FF5D00] cursor-pointer"
             >
-              <LayoutGrid size={15} className="text-purple-500 shrink-0" />
+              <LayoutGrid size={14} className="text-purple-500 shrink-0" />
               <span>AI Template</span>
               <ChevronDown
-                size={14}
+                size={13}
                 className={`text-gray-400 transition-transform duration-200 ${
                   aiTemplateOpen ? "rotate-180" : ""
                 }`}
@@ -269,24 +262,24 @@ export default function DashboardNavbar() {
 
           {/* Question Papers Dropdown */}
           <div
-            className="relative py-2 whitespace-nowrap"
+            className="relative py-1 whitespace-nowrap shrink-0"
             onMouseEnter={() => setQuestionPaperOpen(true)}
             onMouseLeave={() => setQuestionPaperOpen(false)}
           >
             <div
-              className={`relative flex items-center gap-1 cursor-pointer ${
+              className={`relative flex items-center gap-0.5 cursor-pointer ${
                 pathname?.startsWith("/questions-create")
                   ? "text-[#FF5D00]"
                   : "hover:text-[#FF5D00]"
               }`}
             >
-              <FileText size={15} className="text-red-500 shrink-0" />
+              <FileText size={14} className="text-red-500 shrink-0" />
               <span>Question Papers</span>
-              <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase leading-tight">
+              <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
                 New
               </span>
               <ChevronDown
-                size={14}
+                size={13}
                 className={`text-gray-400 transition-transform duration-200 ${
                   questionPaperOpen ? "rotate-180" : ""
                 }`}
@@ -320,39 +313,39 @@ export default function DashboardNavbar() {
           </div>
 
           {/* Jobs Link */}
-          <div className="relative flex items-center gap-1 whitespace-nowrap">
+          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
             <Link
               href="/jobs"
-              className={`flex items-center gap-1.5 transition-colors ${
+              className={`flex items-center gap-1 transition-colors ${
                 pathname === "/jobs" ? "text-[#FF5D00]" : "hover:text-[#FF5D00]"
               }`}
             >
-              <Briefcase size={15} className="text-amber-500 shrink-0" />
+              <Briefcase size={14} className="text-amber-500 shrink-0" />
               <span>Jobs</span>
             </Link>
-            <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase leading-tight">
+            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
               New
             </span>
           </div>
 
           {/* Print Media Dropdown */}
           <div
-            className="relative py-2 whitespace-nowrap"
+            className="relative py-1 whitespace-nowrap shrink-0"
             onMouseEnter={() => setPrintMediaOpen(true)}
             onMouseLeave={() => setPrintMediaOpen(false)}
           >
             <Link
               href="/print-media"
-              className={`flex items-center gap-1 transition-colors ${
+              className={`flex items-center gap-0.5 transition-colors ${
                 pathname === "/print-media"
                   ? "text-[#FF5D00]"
                   : "hover:text-[#FF5D00] text-gray-700"
               }`}
             >
-              <Printer size={15} className="text-orange-600 shrink-0" />
+              <Printer size={14} className="text-orange-600 shrink-0" />
               <span>Print Media</span>
               <ChevronDown
-                size={14}
+                size={13}
                 className={`text-gray-400 transition-transform duration-200 ${
                   printMediaOpen ? "rotate-180" : ""
                 }`}
@@ -375,36 +368,37 @@ export default function DashboardNavbar() {
           </div>
 
           {/* SohozTools Link */}
-          <Link
-            href="/sohoj-tools"
-            className="relative flex items-center gap-1 hover:text-[#FF5D00] cursor-pointer whitespace-nowrap"
-          >
-            <ShoppingBag size={15} className="text-rose-500 shrink-0" />
-            <span>SohozTools</span>
-            <span className="bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase leading-tight">
+          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
+            <Link
+              href="/sohoj-tools"
+              className="flex items-center gap-1 hover:text-[#FF5D00] cursor-pointer"
+            >
+              <ShoppingBag size={14} className="text-rose-500 shrink-0" />
+              <span>SohozTools</span>
+            </Link>
+            <span className="bg-emerald-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
               Free
             </span>
-            <ChevronDown size={14} className="text-gray-400 shrink-0" />
-          </Link>
+          </div>
 
           {/* All Menu Button */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="flex items-center gap-1 text-gray-700 hover:text-[#FF5D00] cursor-pointer pl-1 whitespace-nowrap bg-transparent border-0"
+            className="flex items-center gap-1 text-gray-700 hover:text-[#FF5D00] cursor-pointer pl-1 whitespace-nowrap bg-transparent border-0 shrink-0"
           >
-            <Menu size={15} className="shrink-0" />
+            <Menu size={14} className="shrink-0" />
             <span>All Menu</span>
           </button>
         </nav>
 
-        {/* Right Section: Language Switcher + Credit Bonus Badge + Search Button + Profile (Locked with shrink-0) */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        {/* Right Section: Language Switcher + Credit Bonus Badge + Search Button + Profile */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Desktop Language Switcher */}
           <div className="hidden sm:inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
-              className={`px-2 py-1 rounded transition-all cursor-pointer ${
+              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                 lang === "EN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -415,7 +409,7 @@ export default function DashboardNavbar() {
             <button
               type="button"
               onClick={() => changeGoogleLanguage("BN")}
-              className={`px-2 py-1 rounded transition-all cursor-pointer ${
+              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                 lang === "BN"
                   ? "bg-[#FF5D00] text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -429,7 +423,7 @@ export default function DashboardNavbar() {
           {showCreditBonus && (
             <Link
               href="/profile"
-              className="hidden md:flex items-center gap-1 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-full p-1 pl-1.5 text-xs transition-all cursor-pointer shrink-0"
+              className="hidden 2xl:flex items-center gap-1 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-full p-0.5 pl-1.5 text-xs transition-all cursor-pointer shrink-0"
             >
               <span className="w-4 h-4 rounded-full bg-orange-200 text-[#FF5D00] text-[10px] font-bold flex items-center justify-center">
                 16
@@ -454,7 +448,8 @@ export default function DashboardNavbar() {
           {/* Search Trigger Button */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
+            aria-label="Search"
           >
             <Search size={16} />
           </button>
@@ -463,16 +458,16 @@ export default function DashboardNavbar() {
           <div className="relative z-50 shrink-0">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 sm:gap-2 border border-gray-200 rounded-2xl px-1.5 sm:px-2 py-1 hover:bg-gray-50 transition-all text-left"
+              className="flex items-center gap-1.5 border border-gray-200 rounded-2xl px-1.5 py-1 hover:bg-gray-50 transition-all text-left"
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
                 {getInitials(user?.fullName)}
               </div>
-              <div className="hidden md:flex flex-col leading-tight">
-                <span className="text-xs font-bold text-gray-800 truncate max-w-[110px]">
+              <div className="hidden lg:flex flex-col leading-tight">
+                <span className="text-xs font-bold text-gray-800 truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
                   {user?.fullName || "User Account"}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium truncate max-w-[110px]">
+                <span className="text-[10px] text-gray-400 font-medium truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
                   {user?.phoneNumber || user?.email || "User"}
                 </span>
               </div>
@@ -518,10 +513,10 @@ export default function DashboardNavbar() {
             )}
           </div>
 
-          {/* Mobile Menu / Sidebar Trigger Button */}
+          {/* Mobile/Tablet Drawer Trigger Button */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer bg-white shrink-0"
+            className="xl:hidden p-1.5 sm:p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer bg-white shrink-0"
             aria-label="Open Menu"
           >
             <Menu size={18} />
@@ -529,7 +524,7 @@ export default function DashboardNavbar() {
         </div>
       </header>
 
-      {/* Search Modal Popup Centered */}
+      {/* Search Modal */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-xs px-4 animate-in fade-in duration-200">
           <div
@@ -537,7 +532,6 @@ export default function DashboardNavbar() {
             onClick={() => setIsSearchOpen(false)}
           ></div>
           <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden z-10">
-            {/* Search Input Header */}
             <div className="flex items-center px-4 py-3 border-b border-gray-100 gap-3">
               <Search size={18} className="text-gray-400 shrink-0" />
               <input
@@ -556,7 +550,6 @@ export default function DashboardNavbar() {
               </button>
             </div>
 
-            {/* Search Tips Body */}
             <div className="p-4 max-h-80 overflow-y-auto">
               <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">
                 Search Tips
@@ -579,7 +572,6 @@ export default function DashboardNavbar() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
               <span>টুলস এবং ফিচার সার্চ করতে টাইপ করুন</span>
               <span className="flex items-center gap-1 font-mono">

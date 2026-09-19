@@ -220,7 +220,7 @@ const toolsData: ToolItem[] = [
   },
   {
     id: "20",
-    name: "NID to PDF",
+    name: "Nid Joiner",
     category: "General",
     bgColor: "bg-[#22c55e]",
     icon: CreditCard,
