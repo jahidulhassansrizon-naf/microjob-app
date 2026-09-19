@@ -829,6 +829,41 @@ export default function PhotoEditorPage() {
     process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000"
   ).replace(/\/$/, "");
 
+  const GEMINI_UNAVAILABLE_MESSAGE =
+    "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.";
+
+  const isCloudinaryUrl = (value: unknown): value is string => {
+    if (typeof value !== "string") return false;
+    try {
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" &&
+        url.hostname === "res.cloudinary.com" &&
+        url.pathname.includes("/image/upload/")
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const checkGeminiAvailability = async (): Promise<boolean> => {
+    if (!PYTHON_API_BASE_URL) return false;
+
+    try {
+      const response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-status`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!response.ok) return false;
+
+      const data = await response.json().catch(() => null);
+      return data?.enabled === true;
+    } catch {
+      return false;
+    }
+  };
+
   const CLOTHING_RECOLOR_PALETTE: Record<number, string[]> = {
     0: [
       "#A0B7D8",
@@ -1311,8 +1346,22 @@ export default function PhotoEditorPage() {
         // Plain-text backend error; keep it as-is.
       }
 
+      const normalizedMessage = String(message || "").toLowerCase();
+      const temporaryGeminiFailure =
+        response.status === 401 ||
+        response.status === 403 ||
+        response.status === 429 ||
+        response.status === 503 ||
+        normalizedMessage.includes("api_key") ||
+        normalizedMessage.includes("api key") ||
+        normalizedMessage.includes("rate limit") ||
+        normalizedMessage.includes("too many requests") ||
+        normalizedMessage.includes("quota");
+
       throw new Error(
-        message || `Gemini virtual try-on failed (${response.status}).`,
+        temporaryGeminiFailure
+          ? GEMINI_UNAVAILABLE_MESSAGE
+          : message || `Gemini virtual try-on failed (${response.status}).`,
       );
     }
 
@@ -1340,23 +1389,8 @@ export default function PhotoEditorPage() {
   const handleGeneratePhoto = async () => {
     setErrorMessage(null);
 
-    // Clothing Try-On is temporarily unavailable while the paid AI API
-    // credits/quota are exhausted. Keep the normal no-clothing workflow
-    // working so users can still remove the background and change it.
-    if (isDualMode) {
-      if (leftClothing >= 0 || rightClothing >= 0) {
-        setErrorMessage(
-          "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.",
-        );
-        return;
-      }
-    } else if (selectedClothing >= 0) {
-      setErrorMessage(
-        "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.",
-      );
-      return;
-    }
-
+    // Validate the source photos first so the user gets the correct message
+    // before we check Gemini availability.
     if (isDualMode) {
       if (!leftImage || !rightImage) {
         setErrorMessage("Dual mode needs both left and right photos.");
@@ -1365,6 +1399,20 @@ export default function PhotoEditorPage() {
     } else if (!uploadedImage) {
       setErrorMessage("Upload a photo before generating.");
       return;
+    }
+
+    // No clothing selection always uses the normal local background-removal
+    // pipeline. Gemini is never contacted in this case.
+    const clothingSelected = isDualMode
+      ? leftClothing >= 0 || rightClothing >= 0
+      : selectedClothing >= 0;
+
+    if (clothingSelected) {
+      const geminiEnabled = await checkGeminiAvailability();
+      if (!geminiEnabled) {
+        setErrorMessage(GEMINI_UNAVAILABLE_MESSAGE);
+        return;
+      }
     }
 
     setIsGenerating(true);
@@ -1565,15 +1613,20 @@ export default function PhotoEditorPage() {
     setErrorMessage(null);
 
     try {
-      if (imageToDelete.url) {
+      // Only send actual Cloudinary assets to the Cloudinary delete route.
+      // Data/blob/local preview URLs cannot be deleted from Cloudinary.
+      if (isCloudinaryUrl(imageToDelete.url)) {
         const deleteRes = await fetch("/api/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageUrl: imageToDelete.url }),
         });
+
         if (!deleteRes.ok) {
           const data = await deleteRes.json().catch(() => null);
-          throw new Error(data?.message || "Cloud image deletion failed.");
+          throw new Error(
+            data?.message || data?.error || "Cloud image deletion failed.",
+          );
         }
       }
 

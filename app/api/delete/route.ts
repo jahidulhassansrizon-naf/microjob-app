@@ -1,61 +1,126 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
+export const runtime = "nodejs";
+
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: cloudName,
+  api_key: apiKey,
+  api_secret: apiSecret,
 });
+
+function extractPublicIdFromCloudinaryUrl(imageUrl: string): string | null {
+  try {
+    const url = new URL(imageUrl);
+
+    if (url.hostname !== "res.cloudinary.com") return null;
+
+    const parts = url.pathname
+      .split("/")
+      .filter(Boolean)
+      .map((part) => decodeURIComponent(part));
+
+    const uploadIndex = parts.indexOf("upload");
+    if (uploadIndex === -1) return null;
+
+    const afterUpload = parts.slice(uploadIndex + 1);
+
+    // Cloudinary may include transformation segments and/or a version before
+    // the public id. When a version exists, everything after it is the asset.
+    const versionIndex = afterUpload.findIndex((part) => /^v\d+$/.test(part));
+    const publicPathParts =
+      versionIndex >= 0 ? afterUpload.slice(versionIndex + 1) : afterUpload;
+
+    if (!publicPathParts.length) return null;
+
+    const fullPath = publicPathParts.join("/");
+
+    // The stored upload is an image. Remove the delivery format from the end.
+    const publicId = fullPath.replace(/\.[a-z0-9]+$/i, "");
+
+    return publicId || null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    const { imageUrl } = await req.json();
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Cloudinary delete is not configured on this deployment.",
+          message: "Cloudinary delete is not configured on this deployment.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const imageUrl =
+      typeof body?.imageUrl === "string" ? body.imageUrl.trim() : "";
 
     if (!imageUrl) {
       return NextResponse.json(
-        { success: false, error: "Image URL is required" },
+        { success: false, error: "Image URL is required." },
         { status: 400 },
       );
     }
 
-    // Cloudinary URL থেকে public_id বের করার লজিক
-    const splitUrl = imageUrl.split("/");
-    const uploadIndex = splitUrl.indexOf("upload");
+    const publicId = extractPublicIdFromCloudinaryUrl(imageUrl);
 
-    if (uploadIndex === -1) {
-      return NextResponse.json(
-        { success: false, error: "Invalid Cloudinary URL" },
-        { status: 400 },
-      );
-    }
-
-    // upload/ এর পরের অংশ নেওয়া (ভার্সন নাম্বার থাকলে বাদ দেওয়া)
-    const pathAfterUpload = splitUrl.slice(uploadIndex + 1);
-    if (pathAfterUpload[0] && pathAfterUpload[0].startsWith("v")) {
-      pathAfterUpload.shift(); // e.g. 'v17123456' বাদ দেবে
-    }
-
-    const fullPathWithExt = pathAfterUpload.join("/");
-    const publicId = fullPathWithExt.substring(
-      0,
-      fullPathWithExt.lastIndexOf("."),
-    );
-
+    // Local/data/blob URLs have nothing to delete in Cloudinary. Treat this
+    // as an idempotent success so Firestore cleanup can still continue.
     if (!publicId) {
-      return NextResponse.json(
-        { success: false, error: "Could not parse public_id" },
-        { status: 400 },
-      );
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        result: "not-cloudinary",
+      });
     }
 
-    // Cloudinary থেকে ডিলিট করা
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      type: "upload",
+      invalidate: true,
+    });
 
-    return NextResponse.json({ success: true, result });
-  } catch (error: any) {
-    console.error("Cloudinary Delete Error:", error);
+    // Cloudinary returns "not found" when the asset is already gone. That is
+    // safe for a delete operation and makes the endpoint idempotent.
+    if (result?.result === "ok" || result?.result === "not found") {
+      return NextResponse.json({
+        success: true,
+        result: result.result,
+        publicId,
+      });
+    }
+
     return NextResponse.json(
-      { success: false, error: error.message },
+      {
+        success: false,
+        error: `Cloudinary delete returned: ${String(result?.result || "unknown")}.`,
+        message: `Cloudinary delete returned: ${String(result?.result || "unknown")}.`,
+        publicId,
+      },
+      { status: 502 },
+    );
+  } catch (error: unknown) {
+    console.error("Cloudinary Delete Error:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Cloudinary deletion failed.";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+        message,
+      },
       { status: 500 },
     );
   }

@@ -32,6 +32,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   "pdf-repair": dynamic(() => import("./_tools/PdfRepair")),
   "edit-pdf": dynamic(() => import("./_tools/EditPdf")),
   "image-size-reducer": dynamic(() => import("./_tools/ImageSizeReducer")),
+  "nid-joiner": dynamic(() => import("./_tools/NidToPdf")),
   "nid-to-pdf": dynamic(() => import("./_tools/NidToPdf")),
   "remove-background": dynamic(() => import("./_tools/RemoveBackground")),
   "passport-to-pdf": dynamic(() => import("./_tools/PassportToPdf")),
@@ -114,4 +115,3 @@ export default async function DynamicToolPage({
     </div>
   );
 }
-//  beat me hate me you can never break me srizon

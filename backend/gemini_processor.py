@@ -23,29 +23,25 @@ if ENV_LOCAL.exists():
 load_dotenv()
 
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    raise RuntimeError(
-        "GEMINI_API_KEY is missing. "
-        "Add GEMINI_API_KEY=... to the project root .env.local file."
-    )
-
-
-# =========================================================
-# Gemini Client
-# =========================================================
-
-client = genai.Client(
-    api_key=GEMINI_API_KEY,
-)
+def _get_gemini_api_key() -> str:
+    """Read the API key at request time so the backend can start without it."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise RuntimeError(
+            "GEMINI_API_KEY is not configured. "
+            "Add it to the backend environment before enabling clothing try-on."
+        )
+    return key
 
 
-# =========================================================
-# Model
-# =========================================================
+def _get_client():
+    """Create a Gemini client only when a request actually needs it."""
+    return genai.Client(api_key=_get_gemini_api_key())
 
-MODEL_NAME = "gemini-3.1-flash-image"
+
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-image").strip()
+if not MODEL_NAME:
+    MODEL_NAME = "gemini-3.1-flash-image"
 
 
 # =========================================================
@@ -146,6 +142,8 @@ def generate_virtual_try_on(
     # -----------------------------------------------------
     # Gemini request
     # -----------------------------------------------------
+
+    client = _get_client()
 
     interaction = client.interactions.create(
         model=MODEL_NAME,

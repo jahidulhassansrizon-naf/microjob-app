@@ -4,6 +4,7 @@ from fastapi.responses import Response
 
 import cv2
 import numpy as np
+import os
 
 from document_processor import process_document_image
 import color_document_processor
@@ -129,15 +130,51 @@ def four_point_transform(image, pts):
 # HEALTH
 # =========================================================
 
+def gemini_is_configured() -> bool:
+    """Return whether the Gemini API key is present on the backend."""
+    return bool(os.getenv("GEMINI_API_KEY", "").strip())
+
+
+GEMINI_UNAVAILABLE_MESSAGE = (
+    "Clothing Try-On is temporarily unavailable because our paid AI API "
+    "quota has ended. Please wait—we will bring it back soon."
+)
+
+
+def is_temporary_gemini_error(message: str) -> bool:
+    text = (message or "").lower()
+    return any(
+        marker in text
+        for marker in (
+            "api_key",
+            "api key",
+            "rate limit",
+            "too many requests",
+            "quota",
+            "429",
+            "resource exhausted",
+        )
+    )
+
+
+@app.get("/api/gemini-status")
+async def gemini_status():
+    configured = gemini_is_configured()
+    return {
+        "success": True,
+        "enabled": configured,
+        "model": os.getenv("GEMINI_MODEL", "gemini-3.1-flash-image"),
+    }
+
+
 @app.get("/api/health")
 async def health_check():
     return {
         "success": True,
         "service": "sohozkoj-ai-backend",
         "status": "running",
-        "gemini": True,
+        "gemini": gemini_is_configured(),
     }
-
 
 # =========================================================
 # CLEAN DOCUMENT
@@ -637,6 +674,15 @@ async def gemini_tryon_endpoint(
 
     try:
 
+        # Keep the public API stable while Gemini is not configured.
+        if not gemini_is_configured():
+            return Response(
+                content=GEMINI_UNAVAILABLE_MESSAGE,
+                status_code=503,
+                media_type="text/plain",
+                headers={"Cache-Control": "no-store"},
+            )
+
         # -------------------------------------------------
         # Read person image
         # -------------------------------------------------
@@ -762,10 +808,20 @@ async def gemini_tryon_endpoint(
             f"[Gemini API Error] {error}"
         )
 
+        error_message = str(error)
+
+        if is_temporary_gemini_error(error_message):
+            return Response(
+                content=GEMINI_UNAVAILABLE_MESSAGE,
+                status_code=503,
+                media_type="text/plain",
+                headers={"Cache-Control": "no-store"},
+            )
+
         return Response(
             content=(
                 "Gemini virtual try-on failed: "
-                f"{str(error)}"
+                f"{error_message}"
             ),
             status_code=500,
             media_type="text/plain",
