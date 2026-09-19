@@ -313,21 +313,19 @@ export default function PhotoEditorPage() {
       throw new Error("Source image has invalid dimensions.");
     }
 
-    const sourceAspect = sourceWidth / sourceHeight;
-    const targetAspect = target.widthPx / target.heightPx;
+    // IMPORTANT: Selecting a physical size must never crop the person's photo.
+    // The whole source image is fitted inside the exact-size output canvas.
+    // Extra space is left as background, and the photo is anchored to the
+    // bottom of the target canvas to match the print-ready reference layout.
+    const scale = Math.min(
+      target.widthPx / sourceWidth,
+      target.heightPx / sourceHeight,
+    );
 
-    let sourceX = 0;
-    let sourceY = 0;
-    let cropWidth = sourceWidth;
-    let cropHeight = sourceHeight;
-
-    if (sourceAspect > targetAspect) {
-      cropWidth = sourceHeight * targetAspect;
-      sourceX = (sourceWidth - cropWidth) / 2;
-    } else if (sourceAspect < targetAspect) {
-      cropHeight = sourceWidth / targetAspect;
-      sourceY = (sourceHeight - cropHeight) / 2;
-    }
+    const drawWidth = Math.max(1, Math.round(sourceWidth * scale));
+    const drawHeight = Math.max(1, Math.round(sourceHeight * scale));
+    const drawX = Math.round((target.widthPx - drawWidth) / 2);
+    const drawY = Math.max(0, target.heightPx - drawHeight);
 
     const canvas = document.createElement("canvas");
     canvas.width = target.widthPx;
@@ -342,16 +340,19 @@ export default function PhotoEditorPage() {
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
 
+    context.fillStyle = getSelectedBgColorValue();
+    context.fillRect(0, 0, target.widthPx, target.heightPx);
+
     context.drawImage(
       image,
-      sourceX,
-      sourceY,
-      cropWidth,
-      cropHeight,
       0,
       0,
-      target.widthPx,
-      target.heightPx,
+      sourceWidth,
+      sourceHeight,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight,
     );
 
     return {
@@ -1435,22 +1436,16 @@ export default function PhotoEditorPage() {
       };
 
       if (isDualMode) {
-        const leftProcessed = await cropImageToExactRatio(leftImage!, 45 / 55);
-        const rightProcessed = await cropImageToExactRatio(
-          rightImage!,
-          45 / 55,
-        );
-
         const [leftGenerated, rightGenerated] = await Promise.all([
           callGenerateApi({
             ...basePayload,
-            image: leftProcessed,
+            image: leftImage!,
             side: "left",
             clothing: leftClothing,
           }),
           callGenerateApi({
             ...basePayload,
-            image: rightProcessed,
+            image: rightImage!,
             side: "right",
             clothing: rightClothing,
           }),
@@ -1517,14 +1512,14 @@ export default function PhotoEditorPage() {
       }
 
       const rawImage = uploadedImage!;
-      const targetAspect = getSelectedTargetAspect();
-      const processedImage = await cropImageToExactRatio(
-        rawImage,
-        targetAspect,
-      );
+
+      // Do NOT auto-crop the source just because the user selected a physical
+      // photo size. Physical sizing is handled later by
+      // normalizeImageToExactPhysicalSize(), which preserves the complete
+      // source and anchors it to the bottom of the exact-size canvas.
       const generatedUrl = await callGenerateApi({
         ...basePayload,
-        image: processedImage,
+        image: rawImage,
       });
 
       const finalOriginal = originalImageForDual || rawImage;

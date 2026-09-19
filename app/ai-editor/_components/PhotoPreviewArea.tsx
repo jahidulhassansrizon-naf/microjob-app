@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 
@@ -95,7 +93,7 @@ function PhotoCard({
             <img
               src={image}
               alt={label}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
             <button
               type="button"
@@ -218,7 +216,7 @@ export default function PhotoPreviewArea({
                   <img
                     src={uploadedImage}
                     alt="Uploaded or generated preview"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
                   <button
                     type="button"
@@ -272,7 +270,7 @@ export default function PhotoPreviewArea({
                     <img
                       src={leftImage}
                       alt="Left person"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                     <button
                       type="button"
@@ -308,7 +306,7 @@ export default function PhotoPreviewArea({
                     <img
                       src={rightImage}
                       alt="Right person"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                     <button
                       type="button"

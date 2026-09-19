@@ -3,86 +3,92 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const runtime = "nodejs";
 
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const apiKey = process.env.CLOUDINARY_API_KEY;
-const apiSecret = process.env.CLOUDINARY_API_SECRET;
+function configureCloudinary() {
+  const cloudName =
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    "";
+  const apiKey = process.env.CLOUDINARY_API_KEY || "";
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
 
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret,
-});
-
-function extractPublicIdFromCloudinaryUrl(imageUrl: string): string | null {
-  try {
-    const url = new URL(imageUrl);
-
-    if (url.hostname !== "res.cloudinary.com") return null;
-
-    const parts = url.pathname
-      .split("/")
-      .filter(Boolean)
-      .map((part) => decodeURIComponent(part));
-
-    const uploadIndex = parts.indexOf("upload");
-    if (uploadIndex === -1) return null;
-
-    const afterUpload = parts.slice(uploadIndex + 1);
-
-    // Cloudinary may include transformation segments and/or a version before
-    // the public id. When a version exists, everything after it is the asset.
-    const versionIndex = afterUpload.findIndex((part) => /^v\d+$/.test(part));
-    const publicPathParts =
-      versionIndex >= 0 ? afterUpload.slice(versionIndex + 1) : afterUpload;
-
-    if (!publicPathParts.length) return null;
-
-    const fullPath = publicPathParts.join("/");
-
-    // The stored upload is an image. Remove the delivery format from the end.
-    const publicId = fullPath.replace(/\.[a-z0-9]+$/i, "");
-
-    return publicId || null;
-  } catch {
-    return null;
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error(
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on the server.",
+    );
   }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+}
+
+function publicIdFromCloudinaryUrl(imageUrl: string): string {
+  const url = new URL(imageUrl);
+
+  if (url.hostname !== "res.cloudinary.com") {
+    throw new Error("Invalid Cloudinary URL.");
+  }
+
+  const parts = url.pathname.split("/").filter(Boolean);
+  const uploadIndex = parts.indexOf("upload");
+  if (uploadIndex === -1) throw new Error("Invalid Cloudinary upload URL.");
+
+  let assetParts = parts.slice(uploadIndex + 1);
+
+  // Remove transformation segments between upload/ and the version/public id.
+  // A Cloudinary transformation segment commonly contains commas, colons,
+  // underscores, dimensions, effects, etc. Versioned URLs give us a reliable
+  // boundary, so prefer the v123... marker when present.
+  const versionIndex = assetParts.findIndex((part) => /^v\d+$/.test(part));
+  if (versionIndex >= 0) {
+    assetParts = assetParts.slice(versionIndex + 1);
+  } else {
+    while (assetParts.length > 0) {
+      const first = assetParts[0];
+      const looksLikeTransformation =
+        first.includes(",") ||
+        first.includes(":") ||
+        /(^|_)(w|h|c|g|q|f|e|ar|dpr|r|bo|b|fl)_/.test(first);
+      if (!looksLikeTransformation) break;
+      assetParts.shift();
+    }
+  }
+
+  if (assetParts.length === 0)
+    throw new Error("Could not parse Cloudinary public_id.");
+
+  const last = assetParts[assetParts.length - 1];
+  const dotIndex = last.lastIndexOf(".");
+  if (dotIndex > 0) {
+    assetParts[assetParts.length - 1] = last.slice(0, dotIndex);
+  }
+
+  const publicId = decodeURIComponent(assetParts.join("/"));
+  if (!publicId) throw new Error("Could not parse Cloudinary public_id.");
+  return publicId;
 }
 
 export async function POST(req: Request) {
   try {
-    if (!cloudName || !apiKey || !apiSecret) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Cloudinary delete is not configured on this deployment.",
-          message: "Cloudinary delete is not configured on this deployment.",
-        },
-        { status: 500 },
-      );
-    }
+    configureCloudinary();
 
-    const body = await req.json().catch(() => ({}));
+    const body = await req.json();
     const imageUrl =
       typeof body?.imageUrl === "string" ? body.imageUrl.trim() : "";
+    const providedPublicId =
+      typeof body?.publicId === "string" ? body.publicId.trim() : "";
 
-    if (!imageUrl) {
+    if (!imageUrl && !providedPublicId) {
       return NextResponse.json(
-        { success: false, error: "Image URL is required." },
+        { success: false, error: "Image URL or public_id is required." },
         { status: 400 },
       );
     }
 
-    const publicId = extractPublicIdFromCloudinaryUrl(imageUrl);
-
-    // Local/data/blob URLs have nothing to delete in Cloudinary. Treat this
-    // as an idempotent success so Firestore cleanup can still continue.
-    if (!publicId) {
-      return NextResponse.json({
-        success: true,
-        skipped: true,
-        result: "not-cloudinary",
-      });
-    }
+    const publicId = providedPublicId || publicIdFromCloudinaryUrl(imageUrl);
 
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: "image",
@@ -90,8 +96,8 @@ export async function POST(req: Request) {
       invalidate: true,
     });
 
-    // Cloudinary returns "not found" when the asset is already gone. That is
-    // safe for a delete operation and makes the endpoint idempotent.
+    // Cloudinary returns result:"not found" when the asset is already gone.
+    // Treat delete as idempotent so Firestore cleanup can still complete.
     if (result?.result === "ok" || result?.result === "not found") {
       return NextResponse.json({
         success: true,
@@ -103,23 +109,20 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: `Cloudinary delete returned: ${String(result?.result || "unknown")}.`,
-        message: `Cloudinary delete returned: ${String(result?.result || "unknown")}.`,
-        publicId,
+        error: `Cloudinary delete returned: ${result?.result || "unknown"}`,
+        result,
       },
       { status: 502 },
     );
   } catch (error: unknown) {
-    console.error("Cloudinary Delete Error:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Cloudinary deletion failed.";
-
+    console.error("Cloudinary delete error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: message,
-        message,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Cloud image deletion failed.",
       },
       { status: 500 },
     );

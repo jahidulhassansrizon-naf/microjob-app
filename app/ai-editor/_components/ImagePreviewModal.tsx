@@ -563,21 +563,18 @@ export default function ImagePreviewModal({
     const sourceCanvas = await generateEditedCanvas();
     const target = getCurrentExportSize();
 
-    const sourceAspect = sourceCanvas.width / sourceCanvas.height;
-    const targetAspect = target.widthPx / target.heightPx;
+    // IMPORTANT: Physical size must change the export canvas, not crop the
+    // person's photo. Keep the complete source and fit it inside the target.
+    const scale = Math.min(
+      target.widthPx / sourceCanvas.width,
+      target.heightPx / sourceCanvas.height,
+    );
 
-    let sourceX = 0;
-    let sourceY = 0;
-    let sourceWidth = sourceCanvas.width;
-    let sourceHeight = sourceCanvas.height;
-
-    if (sourceAspect > targetAspect) {
-      sourceWidth = sourceCanvas.height * targetAspect;
-      sourceX = (sourceCanvas.width - sourceWidth) / 2;
-    } else if (sourceAspect < targetAspect) {
-      sourceHeight = sourceCanvas.width / targetAspect;
-      sourceY = (sourceCanvas.height - sourceHeight) / 2;
-    }
+    const drawWidth = Math.max(1, Math.round(sourceCanvas.width * scale));
+    const drawHeight = Math.max(1, Math.round(sourceCanvas.height * scale));
+    const drawX = Math.round((target.widthPx - drawWidth) / 2);
+    // Keep the final photo anchored to the bottom of the exact-size canvas.
+    const drawY = Math.max(0, target.heightPx - drawHeight);
 
     const outputCanvas = document.createElement("canvas");
 
@@ -590,19 +587,23 @@ export default function ImagePreviewModal({
       throw new Error("Could not create exact-size export canvas.");
     }
 
+    const fill = image.bgColor || "#FFFFFF";
+    context.fillStyle = /^#[0-9A-F]{6}$/i.test(fill) ? fill : "#FFFFFF";
+    context.fillRect(0, 0, target.widthPx, target.heightPx);
+
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
 
     context.drawImage(
       sourceCanvas,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
       0,
       0,
-      target.widthPx,
-      target.heightPx,
+      sourceCanvas.width,
+      sourceCanvas.height,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight,
     );
 
     return {
