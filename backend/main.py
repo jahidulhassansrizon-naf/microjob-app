@@ -1,14 +1,30 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+
 import cv2
 import numpy as np
 
-# প্রসেসর মডিউলগুলো ইমপোর্ট
 from document_processor import process_document_image
 import color_document_processor
+from photo_processor import remove_background
+from clothing_processor import apply_clothing
+from gemini_processor import generate_virtual_try_on
 
-app = FastAPI()
+
+# =========================================================
+# APP
+# =========================================================
+
+app = FastAPI(
+    title="SohozKoj AI Backend",
+    version="1.0.0",
+)
+
+
+# =========================================================
+# CORS
+# =========================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,107 +34,739 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def order_points(pts):
-    rect = np.zeros((4, 2), dtype="float32")
-    s = pts.sum(axis=1)
-    rect[0] = pts[np.argmin(s)]       # Top-Left
-    rect[2] = pts[np.argmax(s)]       # Bottom-Right
 
-    diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmin(diff)]    # Top-Right
-    rect[3] = pts[np.argmin(-diff)]   # Bottom-Left
+# =========================================================
+# DOCUMENT HELPERS
+# =========================================================
+
+def order_points(pts):
+    rect = np.zeros(
+        (4, 2),
+        dtype="float32",
+    )
+
+    s = pts.sum(axis=1)
+
+    rect[0] = pts[np.argmin(s)]       # Top-left
+    rect[2] = pts[np.argmax(s)]       # Bottom-right
+
+    diff = np.diff(
+        pts,
+        axis=1,
+    )
+
+    rect[1] = pts[np.argmin(diff)]    # Top-right
+    rect[3] = pts[np.argmax(diff)]    # Bottom-left
+
     return rect
+
 
 def four_point_transform(image, pts):
     rect = order_points(pts)
-    (tl, tr, br, bl) = rect
 
-    widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
-    widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
-    maxWidth = max(int(widthA), int(widthB))
+    tl, tr, br, bl = rect
 
-    heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
-    heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-    maxHeight = max(int(heightA), int(heightB))
+    width_a = np.sqrt(
+        ((br[0] - bl[0]) ** 2)
+        +
+        ((br[1] - bl[1]) ** 2)
+    )
 
-    dst = np.array([
-        [0, 0],
-        [maxWidth - 1, 0],
-        [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype="float32")
+    width_b = np.sqrt(
+        ((tr[0] - tl[0]) ** 2)
+        +
+        ((tr[1] - tl[1]) ** 2)
+    )
 
-    M = cv2.getPerspectiveTransform(rect, dst)
-    return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+    max_width = max(
+        int(width_a),
+        int(width_b),
+    )
 
+    height_a = np.sqrt(
+        ((tr[0] - br[0]) ** 2)
+        +
+        ((tr[1] - br[1]) ** 2)
+    )
+
+    height_b = np.sqrt(
+        ((tl[0] - bl[0]) ** 2)
+        +
+        ((tl[1] - bl[1]) ** 2)
+    )
+
+    max_height = max(
+        int(height_a),
+        int(height_b),
+    )
+
+    destination = np.array(
+        [
+            [0, 0],
+            [max_width - 1, 0],
+            [max_width - 1, max_height - 1],
+            [0, max_height - 1],
+        ],
+        dtype="float32",
+    )
+
+    matrix = cv2.getPerspectiveTransform(
+        rect,
+        destination,
+    )
+
+    return cv2.warpPerspective(
+        image,
+        matrix,
+        (
+            max_width,
+            max_height,
+        ),
+    )
+
+
+# =========================================================
+# HEALTH
+# =========================================================
+
+@app.get("/api/health")
+async def health_check():
+    return {
+        "success": True,
+        "service": "sohozkoj-ai-backend",
+        "status": "running",
+        "gemini": True,
+    }
+
+
+# =========================================================
+# CLEAN DOCUMENT
+# =========================================================
 
 @app.post("/api/clean-document")
-async def clean_document_endpoint(file: UploadFile = File(...)):
-    contents = await file.read()
-    output_bytes = process_document_image(contents)
-    return Response(content=output_bytes, media_type="image/png")
-
-
-@app.post("/api/color-document")
-async def color_document_endpoint(file: UploadFile = File(...)):
+async def clean_document_endpoint(
+    file: UploadFile = File(...),
+):
     try:
         contents = await file.read()
-        # color_document_processor-এর সঠিক ফাংশনটি কল করা হয়েছে
-        output_bytes = color_document_processor.enhance_color_document(contents)
-        return Response(content=output_bytes, media_type="image/png")
-    except Exception as e:
-        print(f"Color processing error: {str(e)}")
-        return Response(content=contents, media_type="image/png")
 
+        if not contents:
+            return Response(
+                content="Empty image file.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        output_bytes = process_document_image(
+            contents
+        )
+
+        return Response(
+            content=output_bytes,
+            media_type="image/png",
+        )
+
+    except Exception as error:
+        print(
+            f"[Clean Document] {error}"
+        )
+
+        return Response(
+            content="Document processing failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# COLOR DOCUMENT
+# =========================================================
+
+@app.post("/api/color-document")
+async def color_document_endpoint(
+    file: UploadFile = File(...),
+):
+    try:
+        contents = await file.read()
+
+        if not contents:
+            return Response(
+                content="Empty image file.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        output_bytes = (
+            color_document_processor
+            .enhance_color_document(
+                contents
+            )
+        )
+
+        return Response(
+            content=output_bytes,
+            media_type="image/png",
+        )
+
+    except Exception as error:
+        print(
+            f"[Color Document] {error}"
+        )
+
+        return Response(
+            content="Color document processing failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# AUTO CROP
+# =========================================================
 
 @app.post("/api/auto-crop")
-async def auto_crop_endpoint(file: UploadFile = File(...)):
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+async def auto_crop_endpoint(
+    file: UploadFile = File(...),
+):
+    try:
+        contents = await file.read()
 
-    h, w, _ = img.shape
-    total_area = h * w
+        if not contents:
+            return Response(
+                content="Empty image file.",
+                status_code=400,
+                media_type="text/plain",
+            )
 
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        image_array = np.frombuffer(
+            contents,
+            np.uint8,
+        )
 
-    edged = cv2.Canny(blurred, 30, 150)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    edged = cv2.dilate(edged, kernel, iterations=1)
+        image = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR,
+        )
 
-    contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    if not contours:
-        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if image is None:
+            return Response(
+                content="Invalid image.",
+                status_code=400,
+                media_type="text/plain",
+            )
 
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)
-    doc_pts = None
+        height, width = image.shape[:2]
 
-    for c in contours:
-        area = cv2.contourArea(c)
-        if area < (0.05 * total_area):
-            continue
+        total_area = height * width
 
-        hull = cv2.convexHull(c)
-        peri = cv2.arcLength(hull, True)
+        gray = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2GRAY,
+        )
 
-        for eps_factor in [0.02, 0.03, 0.04, 0.05, 0.01]:
-            approx = cv2.approxPolyDP(hull, eps_factor * peri, True)
-            if len(approx) == 4:
-                doc_pts = approx.reshape(4, 2)
+        blurred = cv2.GaussianBlur(
+            gray,
+            (5, 5),
+            0,
+        )
+
+        edges = cv2.Canny(
+            blurred,
+            30,
+            150,
+        )
+
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (5, 5),
+        )
+
+        edges = cv2.dilate(
+            edges,
+            kernel,
+            iterations=1,
+        )
+
+        contours, _ = cv2.findContours(
+            edges,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
+        )
+
+        if not contours:
+
+            _, threshold = cv2.threshold(
+                gray,
+                0,
+                255,
+                cv2.THRESH_BINARY
+                +
+                cv2.THRESH_OTSU,
+            )
+
+            contours, _ = cv2.findContours(
+                threshold,
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE,
+            )
+
+        contours = sorted(
+            contours,
+            key=cv2.contourArea,
+            reverse=True,
+        )
+
+        document_points = None
+
+        for contour in contours:
+
+            area = cv2.contourArea(
+                contour
+            )
+
+            if area < (
+                0.05 * total_area
+            ):
+                continue
+
+            hull = cv2.convexHull(
+                contour
+            )
+
+            perimeter = cv2.arcLength(
+                hull,
+                True,
+            )
+
+            for epsilon_factor in [
+                0.01,
+                0.02,
+                0.03,
+                0.04,
+                0.05,
+            ]:
+
+                approx = cv2.approxPolyDP(
+                    hull,
+                    epsilon_factor
+                    * perimeter,
+                    True,
+                )
+
+                if len(approx) == 4:
+
+                    document_points = (
+                        approx.reshape(
+                            4,
+                            2,
+                        )
+                    )
+
+                    break
+
+            if document_points is not None:
                 break
 
-        if doc_pts is not None:
+            rect = cv2.minAreaRect(
+                hull
+            )
+
+            box = cv2.boxPoints(
+                rect
+            )
+
+            document_points = np.int32(
+                box
+            )
+
             break
 
-        rect = cv2.minAreaRect(hull)
-        box = cv2.boxPoints(rect)
-        doc_pts = np.int32(box)
-        break
+        if document_points is not None:
 
-    if doc_pts is not None:
-        img = four_point_transform(img, doc_pts)
+            image = four_point_transform(
+                image,
+                document_points,
+            )
 
-    _, encoded_img = cv2.imencode(".png", img)
-    return Response(content=encoded_img.tobytes(), media_type="image/png")
+        success, encoded = cv2.imencode(
+            ".png",
+            image,
+        )
+
+        if not success:
+            return Response(
+                content="Could not encode image.",
+                status_code=500,
+                media_type="text/plain",
+            )
+
+        return Response(
+            content=encoded.tobytes(),
+            media_type="image/png",
+        )
+
+    except Exception as error:
+
+        print(
+            f"[Auto Crop] {error}"
+        )
+
+        return Response(
+            content="Auto crop failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# REMOVE BACKGROUND
+# =========================================================
+
+@app.post("/api/remove-background")
+async def remove_background_endpoint(
+    file: UploadFile = File(...),
+):
+    try:
+        contents = await file.read()
+
+        if not contents:
+            return Response(
+                content="Empty image file.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        output_bytes = remove_background(
+            contents
+        )
+
+        return Response(
+            content=output_bytes,
+            media_type="image/png",
+        )
+
+    except ValueError as error:
+
+        print(
+            f"[Background Removal Validation] {error}"
+        )
+
+        return Response(
+            content=str(error),
+            status_code=400,
+            media_type="text/plain",
+        )
+
+    except Exception as error:
+
+        print(
+            f"[Background Removal] {error}"
+        )
+
+        return Response(
+            content="Background removal failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# LOCAL CLOTHING
+# =========================================================
+# Kept for fallback/testing.
+# Our main production flow will use Gemini.
+# =========================================================
+
+@app.post("/api/apply-clothing")
+async def apply_clothing_endpoint(
+    person: UploadFile = File(...),
+    clothing: UploadFile = File(...),
+    clothing_index: int = Form(0),
+):
+    try:
+
+        clothing_index = int(
+            clothing_index
+        )
+
+        if not 0 <= clothing_index <= 13:
+            return Response(
+                content=(
+                    "Invalid clothing index. "
+                    "Expected a value between 0 and 13."
+                ),
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        person_bytes = await person.read()
+
+        clothing_bytes = (
+            await clothing.read()
+        )
+
+        if not person_bytes:
+            return Response(
+                content="Person image is empty.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        if not clothing_bytes:
+            return Response(
+                content="Clothing image is empty.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        # -------------------------------------------------
+        # Remove person's background first
+        # -------------------------------------------------
+
+        processed_person = (
+            remove_background(
+                person_bytes
+            )
+        )
+
+        processed_array = np.frombuffer(
+            processed_person,
+            np.uint8,
+        )
+
+        person_bgra = cv2.imdecode(
+            processed_array,
+            cv2.IMREAD_UNCHANGED,
+        )
+
+        if person_bgra is None:
+            raise ValueError(
+                "Could not decode processed person image."
+            )
+
+        if (
+            person_bgra.ndim != 3
+            or person_bgra.shape[2] != 4
+        ):
+            raise ValueError(
+                "Processed person image has no alpha channel."
+            )
+
+        person_alpha = (
+            person_bgra[:, :, 3].copy()
+        )
+
+        # -------------------------------------------------
+        # Apply local clothing
+        # -------------------------------------------------
+
+        final_bgra = apply_clothing(
+            person_bgra=person_bgra,
+            clothing_bytes=clothing_bytes,
+            person_alpha=person_alpha,
+            clothing_index=clothing_index,
+        )
+
+        # -------------------------------------------------
+        # Encode
+        # -------------------------------------------------
+
+        success, encoded = cv2.imencode(
+            ".png",
+            final_bgra,
+            [
+                cv2.IMWRITE_PNG_COMPRESSION,
+                4,
+            ],
+        )
+
+        if not success:
+            raise ValueError(
+                "Failed to encode final clothing image."
+            )
+
+        return Response(
+            content=encoded.tobytes(),
+            media_type="image/png",
+        )
+
+    except ValueError as error:
+
+        print(
+            f"[Local Clothing Validation] {error}"
+        )
+
+        return Response(
+            content=str(error),
+            status_code=400,
+            media_type="text/plain",
+        )
+
+    except Exception as error:
+
+        print(
+            f"[Local Clothing] {error}"
+        )
+
+        return Response(
+            content="Clothing application failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
+
+
+# =========================================================
+# GEMINI VIRTUAL TRY-ON
+# =========================================================
+
+@app.post("/api/gemini-tryon")
+async def gemini_tryon_endpoint(
+    person: UploadFile = File(...),
+    clothing: UploadFile = File(...),
+):
+    """
+    Realistic AI clothing replacement.
+
+    Input:
+        person   -> actual user/person photo
+        clothing -> selected clothing reference
+
+    Output:
+        Gemini-generated JPEG image
+    """
+
+    try:
+
+        # -------------------------------------------------
+        # Read person image
+        # -------------------------------------------------
+
+        person_bytes = await person.read()
+
+        if not person_bytes:
+            return Response(
+                content="Person image is empty.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        # -------------------------------------------------
+        # Read clothing image
+        # -------------------------------------------------
+
+        clothing_bytes = (
+            await clothing.read()
+        )
+
+        if not clothing_bytes:
+            return Response(
+                content="Clothing image is empty.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        # -------------------------------------------------
+        # MIME types
+        # -------------------------------------------------
+
+        person_mime_type = (
+            person.content_type
+            or "image/jpeg"
+        )
+
+        clothing_mime_type = (
+            clothing.content_type
+            or "image/png"
+        )
+
+        if not person_mime_type.startswith(
+            "image/"
+        ):
+            return Response(
+                content=(
+                    "Person file must be an image."
+                ),
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        if not clothing_mime_type.startswith(
+            "image/"
+        ):
+            return Response(
+                content=(
+                    "Clothing file must be an image."
+                ),
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        # -------------------------------------------------
+        # Gemini
+        # -------------------------------------------------
+
+        print(
+            "[Gemini API] Starting virtual try-on..."
+        )
+
+        generated_bytes = (
+            generate_virtual_try_on(
+                person_bytes=person_bytes,
+                person_mime_type=person_mime_type,
+                clothing_bytes=clothing_bytes,
+                clothing_mime_type=clothing_mime_type,
+            )
+        )
+
+        if not generated_bytes:
+            return Response(
+                content=(
+                    "Gemini returned an empty image."
+                ),
+                status_code=502,
+                media_type="text/plain",
+            )
+
+        print(
+            "[Gemini API] Virtual try-on completed."
+        )
+
+        # -------------------------------------------------
+        # IMPORTANT:
+        # Current Gemini image response is JPEG.
+        # -------------------------------------------------
+
+        return Response(
+            content=generated_bytes,
+            media_type="image/jpeg",
+            headers={
+                "Cache-Control": "no-store",
+            },
+        )
+
+    except ValueError as error:
+
+        print(
+            f"[Gemini Validation Error] {error}"
+        )
+
+        return Response(
+            content=str(error),
+            status_code=400,
+            media_type="text/plain",
+        )
+
+    except Exception as error:
+
+        print(
+            f"[Gemini API Error] {error}"
+        )
+
+        return Response(
+            content=(
+                "Gemini virtual try-on failed: "
+                f"{str(error)}"
+            ),
+            status_code=500,
+            media_type="text/plain",
+        )

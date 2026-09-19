@@ -25,6 +25,7 @@ export interface VisaSizeOption {
 export interface BgColorOption {
   type?: string;
   className?: string;
+  value?: string;
 }
 
 export interface GenerationSettingsProps {
@@ -38,7 +39,7 @@ export interface GenerationSettingsProps {
   setSelectedVisaSize?: (size: string) => void;
   setSelectedSize?: (size: string) => void;
   isDualMode?: boolean;
-  exitDualMode?: () => void;
+  exitDualMode?: (nextSize?: string) => void;
   backgroundColors?: BgColorOption[];
   selectedBg?: number;
   setSelectedBg?: (bg: number) => void;
@@ -58,6 +59,8 @@ export interface GenerationSettingsProps {
   visaPopupRef?: React.RefObject<HTMLDivElement | null>;
   onGenerate?: () => void;
   isGenerating?: boolean;
+  onEditingGuidesChange?: (guides: string[]) => void;
+  onResetSettings?: () => void;
 }
 
 const CLOTHING_COLORS = [
@@ -457,9 +460,12 @@ export default function GenerationSettings({
   visaPopupRef,
   onGenerate = () => {},
   isGenerating = false,
+  onEditingGuidesChange,
+  onResetSettings,
 }: GenerationSettingsProps) {
   const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
   const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
+  const [activeGuides, setActiveGuides] = useState<string[]>([]);
   const clothingColorPopupRef = useRef<HTMLDivElement>(null);
 
   const currentColor = setSelectedClothingColor
@@ -467,12 +473,25 @@ export default function GenerationSettings({
     : internalClothingColor;
 
   const handleColorChange = (hex: string) => {
+    const normalized = hex.toUpperCase();
     if (setSelectedClothingColor) {
-      setSelectedClothingColor(hex);
+      setSelectedClothingColor(normalized);
     } else {
-      setInternalClothingColor(hex);
+      setInternalClothingColor(normalized);
     }
   };
+
+  const toggleGuide = (guide: string) => {
+    setActiveGuides((prev) =>
+      prev.includes(guide)
+        ? prev.filter((item) => item !== guide)
+        : [...prev, guide],
+    );
+  };
+
+  useEffect(() => {
+    onEditingGuidesChange?.(activeGuides);
+  }, [activeGuides, onEditingGuidesChange]);
 
   const handleClothingClick = (idx: number) => {
     setSelectedClothing(idx);
@@ -509,10 +528,19 @@ export default function GenerationSettings({
         <div className="mb-6 relative" ref={visaPopupRef}>
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
             <span>PHOTO SIZE</span>
-            <RefreshCw
-              size={14}
-              className="cursor-pointer text-orange-500 hover:rotate-180 transition-transform duration-300"
-            />
+            <button
+              type="button"
+              onClick={() => {
+                setShowClothingColorPicker(false);
+                setActiveGuides([]);
+                onEditingGuidesChange?.([]);
+                onResetSettings?.();
+              }}
+              title="Reset generation settings"
+              className="text-orange-500 hover:rotate-180 transition-transform duration-300 cursor-pointer"
+            >
+              <RefreshCw size={14} />
+            </button>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
@@ -564,7 +592,7 @@ export default function GenerationSettings({
                       setShowVisaPopup(false);
 
                       if (isDualMode) {
-                        exitDualMode();
+                        exitDualMode("Visa");
                       }
                     }}
                     className={`py-2 px-1 text-[11px] rounded-lg border text-center transition-all cursor-pointer ${
@@ -660,15 +688,30 @@ export default function GenerationSettings({
                   <input
                     type="color"
                     value={customBgColor}
-                    onChange={(e) => setCustomBgColor(e.target.value)}
+                    onChange={(e) =>
+                      setCustomBgColor(e.target.value.toUpperCase())
+                    }
                     className="w-12 h-10 rounded-lg cursor-pointer border border-gray-200 p-0 bg-transparent"
                   />
 
                   <input
                     type="text"
                     value={customBgColor}
-                    onChange={(e) => setCustomBgColor(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      if (/^#?[0-9A-F]{0,6}$/.test(value)) {
+                        setCustomBgColor(
+                          value.startsWith("#") ? value : `#${value}`,
+                        );
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!/^#[0-9A-F]{6}$/i.test(customBgColor)) {
+                        setCustomBgColor("#8B1E1E");
+                      }
+                    }}
                     className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-mono text-gray-700 uppercase focus:outline-none focus:border-orange-500"
+                    aria-label="Custom background hex color"
                   />
                 </div>
               </div>
@@ -865,7 +908,7 @@ export default function GenerationSettings({
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
             <span>EXTRA EDITING GUIDE</span>
             <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-              7/22
+              {activeGuides.length}/22
             </span>
           </div>
 
@@ -879,16 +922,63 @@ export default function GenerationSettings({
               "Keep Marks",
               "Lipstick",
               "Custom Instruction",
-            ].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className="flex flex-col items-center justify-center p-2 rounded-xl border border-gray-200 text-[9px] text-center text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <Sparkles size={14} className="mb-1 text-gray-400" />
-                <span className="leading-tight">{item}</span>
-              </button>
-            ))}
+            ].map((item) => {
+              const active =
+                item === "Custom Instruction"
+                  ? activeGuides.some((entry) =>
+                      entry.startsWith("Custom Instruction:"),
+                    )
+                  : activeGuides.includes(item);
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    if (item === "Custom Instruction") {
+                      if (active) {
+                        setActiveGuides((prev) =>
+                          prev.filter(
+                            (entry) => !entry.startsWith("Custom Instruction:"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      const instruction = window.prompt(
+                        "Enter a custom editing instruction for the AI:",
+                      );
+                      if (!instruction?.trim()) return;
+
+                      const guide = `Custom Instruction: ${instruction.trim()}`;
+                      setActiveGuides((prev) => [
+                        ...prev.filter(
+                          (entry) => !entry.startsWith("Custom Instruction:"),
+                        ),
+                        guide,
+                      ]);
+                      return;
+                    }
+
+                    toggleGuide(item);
+                  }}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
+                    active
+                      ? "border-orange-400 bg-orange-50 text-orange-700"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <Sparkles
+                    size={14}
+                    className={`mb-1 ${active ? "text-orange-500" : "text-gray-400"}`}
+                  />
+                  <span className="leading-tight">
+                    {item === "Custom Instruction" && active
+                      ? "Custom added"
+                      : item}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

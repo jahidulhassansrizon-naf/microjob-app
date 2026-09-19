@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { X, RotateCcw, Sliders, Sparkles, Crop } from "lucide-react";
 
 export interface FilterState {
@@ -28,18 +28,17 @@ interface ImageEditSidebarProps {
   onReset: () => void;
 }
 
+export const DEFAULT_FILTERS: FilterState = {
+  brightness: 100,
+  contrast: 100,
+  saturate: 100,
+  blur: 0,
+  grayscale: 0,
+  sepia: 0,
+};
+
 export const PRESETS: { name: string; filters: FilterState }[] = [
-  {
-    name: "Normal",
-    filters: {
-      brightness: 100,
-      contrast: 100,
-      saturate: 100,
-      blur: 0,
-      grayscale: 0,
-      sepia: 0,
-    },
-  },
+  { name: "Normal", filters: DEFAULT_FILTERS },
   {
     name: "Vivid",
     filters: {
@@ -99,12 +98,21 @@ export const PRESETS: { name: string; filters: FilterState }[] = [
 
 export const ASPECT_RATIOS: AspectRatioOption[] = [
   { label: "Original", value: "original" },
-  { label: "1:1 Square", value: "1/1", ratio: 1 / 1 },
+  { label: "1:1 Square", value: "1/1", ratio: 1 },
   { label: "4:3 Standard", value: "4/3", ratio: 4 / 3 },
   { label: "3:4 Portrait", value: "3/4", ratio: 3 / 4 },
   { label: "16:9 Wide", value: "16/9", ratio: 16 / 9 },
   { label: "Passport (45:55)", value: "45/55", ratio: 45 / 55 },
 ];
+
+const CONTROLS = [
+  { label: "Brightness", key: "brightness", min: 0, max: 200, unit: "%" },
+  { label: "Contrast", key: "contrast", min: 0, max: 200, unit: "%" },
+  { label: "Saturation", key: "saturate", min: 0, max: 200, unit: "%" },
+  { label: "Blur", key: "blur", min: 0, max: 10, unit: "px" },
+  { label: "Grayscale", key: "grayscale", min: 0, max: 100, unit: "%" },
+  { label: "Sepia", key: "sepia", min: 0, max: 100, unit: "%" },
+] as const;
 
 export default function ImageEditSidebar({
   isOpen,
@@ -117,34 +125,37 @@ export default function ImageEditSidebar({
 }: ImageEditSidebarProps) {
   const [activeTab, setActiveTab] = useState<"adjust" | "crop">("adjust");
 
+  const activePreset = useMemo(
+    () =>
+      PRESETS.find((preset) =>
+        (Object.keys(preset.filters) as (keyof FilterState)[]).every(
+          (key) => filters[key] === preset.filters[key],
+        ),
+      )?.name,
+    [filters],
+  );
+
   if (!isOpen) return null;
 
   const handleChange = (key: keyof FilterState, value: number) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
-  const isPresetActive = (presetFilters: FilterState) => {
-    return (Object.keys(presetFilters) as (keyof FilterState)[]).every(
-      (key) => filters[key] === presetFilters[key],
-    );
+  const handleReset = () => {
+    setFilters(DEFAULT_FILTERS);
+    onReset();
   };
-
-  const controls = [
-    { label: "Brightness", key: "brightness", min: 0, max: 200, unit: "%" },
-    { label: "Contrast", key: "contrast", min: 0, max: 200, unit: "%" },
-    { label: "Saturation", key: "saturate", min: 0, max: 200, unit: "%" },
-    { label: "Blur", key: "blur", min: 0, max: 10, unit: "px" },
-    { label: "Grayscale", key: "grayscale", min: 0, max: 100, unit: "%" },
-    { label: "Sepia", key: "sepia", min: 0, max: 100, unit: "%" },
-  ] as const;
 
   return (
-    <div className="absolute right-0 top-16 bottom-14 w-80 bg-[#1f2937]/95 backdrop-blur-md border-l border-gray-700 text-white p-5 flex flex-col justify-between z-20 shadow-2xl transition-all duration-300">
+    <aside
+      className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#1f2937]/95 backdrop-blur-md border-l border-gray-700 text-white p-5 flex flex-col z-20 shadow-2xl"
+      aria-label="Image editing tools"
+    >
       <div className="overflow-y-auto pr-1">
-        {/* Header & Tabs */}
         <div className="flex items-center justify-between border-b border-gray-700 pb-3 mb-4">
           <div className="flex gap-2 bg-gray-800/80 p-1 rounded-lg">
             <button
+              type="button"
               onClick={() => setActiveTab("adjust")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                 activeTab === "adjust"
@@ -155,6 +166,7 @@ export default function ImageEditSidebar({
               <Sliders size={14} /> Adjustments
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("crop")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                 activeTab === "crop"
@@ -166,17 +178,17 @@ export default function ImageEditSidebar({
             </button>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition"
+            aria-label="Close image editor"
+            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* TAB 1: Adjustments & Presets */}
-        {activeTab === "adjust" && (
+        {activeTab === "adjust" ? (
           <>
-            {/* Quick Presets */}
             <div className="mb-5">
               <div className="flex items-center gap-1.5 text-xs font-medium text-gray-300 mb-2.5">
                 <Sparkles size={14} className="text-orange-400" />
@@ -184,10 +196,11 @@ export default function ImageEditSidebar({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {PRESETS.map((preset) => {
-                  const active = isPresetActive(preset.filters);
+                  const active = activePreset === preset.name;
                   return (
                     <button
                       key={preset.name}
+                      type="button"
                       onClick={() => setFilters(preset.filters)}
                       className={`text-xs py-2 px-1 rounded-lg border transition cursor-pointer font-medium text-center truncate ${
                         active
@@ -202,14 +215,13 @@ export default function ImageEditSidebar({
               </div>
             </div>
 
-            {/* Manual Controls */}
             <div className="border-t border-gray-700/80 pt-4 mb-2">
               <span className="text-xs font-medium text-gray-300 block mb-3">
                 Manual Controls
               </span>
               <div className="space-y-4">
-                {controls.map((control) => (
-                  <div key={control.key} className="space-y-1.5">
+                {CONTROLS.map((control) => (
+                  <label key={control.key} className="block space-y-1.5">
                     <div className="flex justify-between text-xs text-gray-300">
                       <span>{control.label}</span>
                       <span className="font-mono text-gray-400">
@@ -221,45 +233,40 @@ export default function ImageEditSidebar({
                       type="range"
                       min={control.min}
                       max={control.max}
+                      step={control.key === "blur" ? 0.5 : 1}
                       value={filters[control.key]}
-                      onChange={(e) =>
-                        handleChange(control.key, Number(e.target.value))
+                      onChange={(event) =>
+                        handleChange(control.key, Number(event.target.value))
                       }
                       className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
                     />
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
           </>
-        )}
-
-        {/* TAB 2: Aspect Ratio Options */}
-        {activeTab === "crop" && (
+        ) : (
           <div className="space-y-3 pt-2">
             <span className="text-xs font-medium text-gray-300 block mb-2">
               Select Aspect Ratio Crop
             </span>
             <div className="grid grid-cols-2 gap-2.5">
               {ASPECT_RATIOS.map((item) => {
-                const isSelected = selectedAspect === item.value;
+                const selected = selectedAspect === item.value;
                 return (
                   <button
                     key={item.value}
-                    onClick={() =>
-                      setSelectedAspect && setSelectedAspect(item.value)
-                    }
+                    type="button"
+                    onClick={() => setSelectedAspect?.(item.value)}
                     className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${
-                      isSelected
+                      selected
                         ? "bg-orange-500/20 border-orange-500 text-orange-400"
                         : "bg-white/5 border-gray-700 text-gray-300 hover:bg-white/10 hover:border-gray-600"
                     }`}
                   >
                     <Crop
                       size={16}
-                      className={
-                        isSelected ? "text-orange-400" : "text-gray-400"
-                      }
+                      className={selected ? "text-orange-400" : "text-gray-400"}
                     />
                     <span>{item.label}</span>
                   </button>
@@ -270,15 +277,15 @@ export default function ImageEditSidebar({
         )}
       </div>
 
-      {/* Action Buttons */}
       <div className="pt-4 border-t border-gray-700 flex gap-2">
         <button
-          onClick={onReset}
+          type="button"
+          onClick={handleReset}
           className="flex-1 bg-white/10 hover:bg-white/20 text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <RotateCcw size={14} /> Reset All
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

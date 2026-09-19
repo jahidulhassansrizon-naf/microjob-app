@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import GenerationSettings from "./_components/GenerationSettings";
@@ -19,8 +19,6 @@ import {
   addDoc,
   setDoc,
   getDocs,
-  query,
-  orderBy,
   serverTimestamp,
   deleteDoc,
   doc,
@@ -48,9 +46,12 @@ export default function PhotoEditorPage() {
   const [customBgColor, setCustomBgColor] = useState("#8B1E1E");
   const [showColorPicker, setShowColorPicker] = useState(false);
 
-  const [selectedClothing, setSelectedClothing] = useState(2);
+  const [selectedClothing, setSelectedClothing] = useState(-1);
   const [leftClothing, setLeftClothing] = useState(2);
   const [rightClothing, setRightClothing] = useState(2);
+  const [selectedClothingColor, setSelectedClothingColor] = useState("#EF4444");
+  const [editingGuides, setEditingGuides] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isDualMode, setIsDualMode] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -133,13 +134,23 @@ export default function PhotoEditorPage() {
     setIsFetching(true);
     try {
       const generationsRef = collection(db, "users", userId, "generations");
-      const q = query(generationsRef, orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(generationsRef);
 
-      const loadedList = querySnapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...docItem.data(),
-      }));
+      const loadedList = querySnapshot.docs
+        .map((docItem) => ({
+          id: docItem.id,
+          ...docItem.data(),
+        }))
+        .sort((a: any, b: any) => {
+          const toMs = (value: any) => {
+            if (!value) return 0;
+            if (typeof value?.toMillis === "function") return value.toMillis();
+            if (value?.seconds) return value.seconds * 1000;
+            const parsed = Date.parse(String(value));
+            return Number.isNaN(parsed) ? 0 : parsed;
+          };
+          return toMs(b.createdAt) - toMs(a.createdAt);
+        });
 
       setRecentList(loadedList);
     } catch (error) {
@@ -202,6 +213,155 @@ export default function PhotoEditorPage() {
     { label: "50×60 mm", aspect: "50/60" },
   ];
 
+  // =========================================================
+  // Production print sizing
+  // =========================================================
+  // All generated/downloaded photos are standardized at 300 DPI.
+  // The selected physical dimensions are converted to deterministic
+  // pixel dimensions so the output file is ready for real printing.
+  const EXPORT_DPI = 300;
+
+  type PhysicalSize = {
+    width: number;
+    height: number;
+    unit: "mm" | "in";
+  };
+
+  const parsePhysicalSize = (label: string): PhysicalSize => {
+    const normalized = String(label || "").trim();
+
+    const inchMatch = normalized.match(
+      /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*inch/i,
+    );
+
+    if (inchMatch) {
+      return {
+        width: Number(inchMatch[1]),
+        height: Number(inchMatch[2]),
+        unit: "in",
+      };
+    }
+
+    const mmMatch = normalized.match(
+      /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*mm/i,
+    );
+
+    if (mmMatch) {
+      return {
+        width: Number(mmMatch[1]),
+        height: Number(mmMatch[2]),
+        unit: "mm",
+      };
+    }
+
+    // Dual Mode does not have one physical dimension in the UI.
+    // Use the editor's primary portrait standard for the actual export.
+    return {
+      width: 45,
+      height: 55,
+      unit: "mm",
+    };
+  };
+
+  const getExactExportDimensions = (sizeLabel: string) => {
+    const physical = parsePhysicalSize(sizeLabel);
+
+    const widthPx =
+      physical.unit === "in"
+        ? Math.max(1, Math.round(physical.width * EXPORT_DPI))
+        : Math.max(1, Math.round((physical.width / 25.4) * EXPORT_DPI));
+
+    const heightPx =
+      physical.unit === "in"
+        ? Math.max(1, Math.round(physical.height * EXPORT_DPI))
+        : Math.max(1, Math.round((physical.height / 25.4) * EXPORT_DPI));
+
+    return {
+      ...physical,
+      widthPx,
+      heightPx,
+      dpi: EXPORT_DPI,
+    };
+  };
+
+  const normalizeImageToExactPhysicalSize = async (
+    imageSrc: string,
+    sizeLabel: string,
+  ): Promise<{
+    dataUrl: string;
+    widthPx: number;
+    heightPx: number;
+    dpi: number;
+  }> => {
+    const target = getExactExportDimensions(sizeLabel);
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.decoding = "async";
+    image.src = imageSrc;
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () =>
+        reject(new Error("Could not load image for final size export."));
+    });
+
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+
+    if (!sourceWidth || !sourceHeight) {
+      throw new Error("Source image has invalid dimensions.");
+    }
+
+    const sourceAspect = sourceWidth / sourceHeight;
+    const targetAspect = target.widthPx / target.heightPx;
+
+    let sourceX = 0;
+    let sourceY = 0;
+    let cropWidth = sourceWidth;
+    let cropHeight = sourceHeight;
+
+    if (sourceAspect > targetAspect) {
+      cropWidth = sourceHeight * targetAspect;
+      sourceX = (sourceWidth - cropWidth) / 2;
+    } else if (sourceAspect < targetAspect) {
+      cropHeight = sourceWidth / targetAspect;
+      sourceY = (sourceHeight - cropHeight) / 2;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = target.widthPx;
+    canvas.height = target.heightPx;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Could not create final export canvas.");
+    }
+
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      target.widthPx,
+      target.heightPx,
+    );
+
+    return {
+      dataUrl: canvas.toDataURL("image/jpeg", 0.95),
+      widthPx: target.widthPx,
+      heightPx: target.heightPx,
+      dpi: target.dpi,
+    };
+  };
+
   const backgroundColors = [
     {
       type: "preset",
@@ -218,7 +378,9 @@ export default function PhotoEditorPage() {
   ];
 
   const getSelectedBgColorValue = () => {
-    if (selectedBg === 7) return customBgColor;
+    if (selectedBg === 7 && /^#[0-9A-F]{6}$/i.test(customBgColor)) {
+      return customBgColor.toUpperCase();
+    }
     return backgroundColors[selectedBg]?.value || "#FFFFFF";
   };
 
@@ -290,35 +452,28 @@ export default function PhotoEditorPage() {
   };
 
   const getStyleFromAspect = (aspectStr: string) => {
-    switch (aspectStr) {
-      case "45/55":
-        return { width: "290px", height: "354px" };
-      case "25/30":
-        return { width: "270px", height: "324px" };
-      case "1/1":
-        return { width: "320px", height: "320px" };
-      case "40/60":
-        return { width: "270px", height: "405px" };
-      case "50/70":
-        return { width: "280px", height: "392px" };
-      case "33/48":
-        return { width: "280px", height: "407px" };
-      case "36/47":
-        return { width: "290px", height: "378px" };
-      case "38/48":
-        return { width: "290px", height: "366px" };
-      case "50/60":
-        return { width: "300px", height: "360px" };
-      case "40/50":
-        return { width: "290px", height: "362px" };
-      case "50/50":
-        return { width: "310px", height: "310px" };
-      case "35/50":
-        return { width: "280px", height: "400px" };
-      case "35/45":
-      default:
-        return { width: "290px", height: "372px" };
+    const [rawWidth, rawHeight] = aspectStr.split("/").map(Number);
+
+    const ratio =
+      Number.isFinite(rawWidth) && Number.isFinite(rawHeight) && rawHeight > 0
+        ? rawWidth / rawHeight
+        : 35 / 45;
+
+    const maxWidth = 290;
+    const maxHeight = 405;
+
+    let width = maxWidth;
+    let height = width / ratio;
+
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * ratio;
     }
+
+    return {
+      width: `${Math.max(1, Math.round(width))}px`,
+      height: `${Math.max(1, Math.round(height))}px`,
+    };
   };
 
   const getCurrentBoxDimensions = () => {
@@ -353,36 +508,102 @@ export default function PhotoEditorPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = window.setTimeout(() => setErrorMessage(null), 7000);
+    return () => window.clearTimeout(timer);
+  }, [errorMessage]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setTempImageForCrop(imageUrl);
-      setCrop({ unit: "%", width: 80, height: 80, x: 10, y: 10 });
-      setZoom(100);
-      setRotate(0);
-      setShowCropModal(true);
-      setRegeneratingId(null);
-    }
     e.target.value = "";
+
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setErrorMessage(
+        "Image is too large. Please choose an image under 12 MB.",
+      );
+      return;
+    }
+
+    if (tempImageForCrop?.startsWith("blob:")) {
+      URL.revokeObjectURL(tempImageForCrop);
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    setTempImageForCrop(imageUrl);
+    setCrop({ unit: "%", width: 80, height: 80, x: 10, y: 10 });
+    setCompletedCrop(null);
+    setZoom(100);
+    setRotate(0);
+    setShowCropModal(true);
+    setRegeneratingId(null);
   };
 
   const uploadToCloudinary = async (imageData: string) => {
-    if (!imageData || imageData.startsWith("http")) return imageData;
+    if (!imageData) return null;
+    if (/^https?:\/\//i.test(imageData)) return imageData;
+
     try {
+      let uploadBody: BodyInit;
+      let headers: HeadersInit | undefined;
+
+      // Convert blob: URLs to real image data before sending them to the
+      // server. Sending a blob URL string directly cannot be decoded by the
+      // Next.js upload route.
+      if (imageData.startsWith("blob:")) {
+        const blobResponse = await fetch(imageData);
+        if (!blobResponse.ok) {
+          throw new Error("Could not read the temporary image.");
+        }
+
+        const blob = await blobResponse.blob();
+        const file = new File(
+          [blob],
+          `sohozkaj-upload-${Date.now()}.${blob.type.includes("png") ? "png" : "jpg"}`,
+          { type: blob.type || "image/jpeg" },
+        );
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        uploadBody = formData;
+      } else {
+        // data:image/... URLs are handled by the JSON branch of /api/upload.
+        headers = { "Content-Type": "application/json" };
+        uploadBody = JSON.stringify({ image: imageData });
+      }
+
       const res = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageData }),
+        headers,
+        body: uploadBody,
       });
-      const data = await res.json();
-      if (data.success && data.url) {
-        return data.url;
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success || !data?.url) {
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            `Image upload failed (${res.status}).`,
+        );
       }
+
+      return data.url as string;
     } catch (err) {
       console.error("Cloudinary Upload Error:", err);
+
+      setErrorMessage(
+        err instanceof Error ? err.message : "Image upload failed.",
+      );
+
+      return null;
     }
-    return null;
   };
 
   const handleConfirmCrop = async (imageEl: HTMLImageElement | null) => {
@@ -392,34 +613,63 @@ export default function PhotoEditorPage() {
     }
 
     setIsCropping(true);
+    setErrorMessage(null);
 
     try {
       let croppedImageUrl = tempImageForCrop;
 
-      if (completedCrop && imageEl) {
-        const canvas = document.createElement("canvas");
+      if (completedCrop && imageEl?.naturalWidth && imageEl?.naturalHeight) {
         const scaleX = imageEl.naturalWidth / imageEl.width;
         const scaleY = imageEl.naturalHeight / imageEl.height;
+        const cropWidth = Math.max(1, completedCrop.width * scaleX);
+        const cropHeight = Math.max(1, completedCrop.height * scaleY);
+        const sourceX = Math.max(0, completedCrop.x * scaleX);
+        const sourceY = Math.max(0, completedCrop.y * scaleY);
 
-        canvas.width = completedCrop.width * scaleX;
-        canvas.height = completedCrop.height * scaleY;
-        const ctx = canvas.getContext("2d");
+        const sourceCanvas = document.createElement("canvas");
+        sourceCanvas.width = Math.round(cropWidth);
+        sourceCanvas.height = Math.round(cropHeight);
+        const sourceCtx = sourceCanvas.getContext("2d");
+        if (!sourceCtx) throw new Error("Could not create crop canvas.");
 
-        if (ctx) {
-          ctx.drawImage(
-            imageEl,
-            completedCrop.x * scaleX,
-            completedCrop.y * scaleY,
-            completedCrop.width * scaleX,
-            completedCrop.height * scaleY,
-            0,
-            0,
-            canvas.width,
-            canvas.height,
+        sourceCtx.drawImage(
+          imageEl,
+          sourceX,
+          sourceY,
+          cropWidth,
+          cropHeight,
+          0,
+          0,
+          sourceCanvas.width,
+          sourceCanvas.height,
+        );
+
+        // Apply the user's rotation to the final cropped result so Rotate is not cosmetic-only.
+        if (rotate % 360 !== 0) {
+          const rotatedCanvas = document.createElement("canvas");
+          const quarterTurns = ((rotate % 360) + 360) % 360;
+          const swap = quarterTurns === 90 || quarterTurns === 270;
+          rotatedCanvas.width = swap ? sourceCanvas.height : sourceCanvas.width;
+          rotatedCanvas.height = swap
+            ? sourceCanvas.width
+            : sourceCanvas.height;
+          const rotatedCtx = rotatedCanvas.getContext("2d");
+          if (!rotatedCtx) throw new Error("Could not create rotation canvas.");
+
+          rotatedCtx.translate(
+            rotatedCanvas.width / 2,
+            rotatedCanvas.height / 2,
           );
+          rotatedCtx.rotate((rotate * Math.PI) / 180);
+          rotatedCtx.drawImage(
+            sourceCanvas,
+            -sourceCanvas.width / 2,
+            -sourceCanvas.height / 2,
+          );
+          croppedImageUrl = rotatedCanvas.toDataURL("image/jpeg", 0.95);
+        } else {
+          croppedImageUrl = sourceCanvas.toDataURL("image/jpeg", 0.95);
         }
-
-        croppedImageUrl = canvas.toDataURL("image/jpeg");
       }
 
       const uploadedOriginalUrl = await uploadToCloudinary(croppedImageUrl);
@@ -432,10 +682,15 @@ export default function PhotoEditorPage() {
       else if (activeTarget === "right") setRightImage(croppedImageUrl);
       else setUploadedImage(croppedImageUrl);
 
+      if (tempImageForCrop.startsWith("blob:"))
+        URL.revokeObjectURL(tempImageForCrop);
       setShowCropModal(false);
       setTempImageForCrop(null);
     } catch (error) {
       console.error("Crop & Upload error:", error);
+      setErrorMessage(
+        "Could not process this image. Please try another image.",
+      );
     } finally {
       setIsCropping(false);
     }
@@ -451,24 +706,41 @@ export default function PhotoEditorPage() {
     setSelectedSize("Dual");
     setShowVisaPopup(false);
     setShowColorPicker(false);
-    if (uploadedImage && !leftImage) setLeftImage(uploadedImage);
+    setIsDualPreviewActive(false);
+
+    const sourceForLeft = originalImageForDual || uploadedImage;
+    if (sourceForLeft && !leftImage) {
+      setLeftImage(sourceForLeft);
+    }
   };
 
-  const exitDualMode = () => {
+  const exitDualMode = (nextSize = "Passport") => {
     setIsDualMode(false);
-    setSelectedSize("Passport");
+    setSelectedSize(nextSize);
     setLeftImage(null);
     setRightImage(null);
+    setActiveTarget(null);
+    setIsDualPreviewActive(false);
   };
 
   const handleSizeClick = (sizeId: string) => {
-    if (sizeId === "Visa") setShowVisaPopup((prev) => !prev);
-    else {
-      setShowVisaPopup(false);
-      setSelectedSize(sizeId);
-      if (sizeId === "Dual") enableDualMode();
-      else if (isDualMode) exitDualMode();
+    if (sizeId === "Visa") {
+      setShowVisaPopup((prev) => !prev);
+      return;
     }
+
+    setShowVisaPopup(false);
+    if (sizeId === "Dual") {
+      enableDualMode();
+      return;
+    }
+
+    if (isDualMode) {
+      exitDualMode(sizeId);
+      return;
+    }
+
+    setSelectedSize(sizeId);
   };
 
   const handleRegenerateFromModal = (imageItem: any) => {
@@ -490,7 +762,9 @@ export default function PhotoEditorPage() {
       let finalUrl = newImageUrl;
       if (newImageUrl.startsWith("data:")) {
         const uploaded = await uploadToCloudinary(newImageUrl);
-        if (uploaded) finalUrl = uploaded;
+        if (!uploaded)
+          throw new Error("Edited image upload failed. Please try again.");
+        finalUrl = uploaded;
       }
 
       const docRef = doc(db, "users", currentUser.id, "generations", updatedId);
@@ -507,61 +781,687 @@ export default function PhotoEditorPage() {
       );
     } catch (error) {
       console.error("Error updating edited image in Firestore:", error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to save the edited image.",
+      );
+      throw error;
     }
   };
 
+  const PYTHON_API_BASE_URL = (
+    process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000"
+  ).replace(/\/$/, "");
+
+  const CLOTHING_RECOLOR_PALETTE: Record<number, string[]> = {
+    0: [
+      "#A0B7D8",
+      "#6F86AE",
+      "#EEEEEE",
+      "#ADC2E6",
+      "#F4F4F4",
+      "#C5D4F3",
+      "#F6F6F6",
+      "#FBFBFB",
+      "#A5BEEA",
+      "#DDE8FB",
+    ],
+    1: ["#E53935"],
+    2: [
+      "#A0B7D8",
+      "#6F86AE",
+      "#171D2D",
+      "#243056",
+      "#ADC2E6",
+      "#262D3F",
+      "#161D33",
+    ],
+    3: [
+      "#A0B7D8",
+      "#6F86AE",
+      "#171D2D",
+      "#243056",
+      "#ADC2E6",
+      "#0D1426",
+      "#161D33",
+      "#272F49",
+      "#B7CDED",
+      "#9AB6D8",
+      "#C7D8FF",
+      "#97AED3",
+      "#AABDE2",
+      "#DEE9FF",
+      "#C4D5F7",
+    ],
+    4: ["#6F0D0C", "#951C1E", "#1B0B0C"],
+    5: [
+      "#121212",
+      "#8D0307",
+      "#0F0F0E",
+      "#8C0005",
+      "#0A0B0A",
+      "#A23034",
+      "#A63B3E",
+      "#8E050A",
+      "#0A0A0A",
+      "#A83D41",
+      "#131311",
+      "#080806",
+      "#930F14",
+      "#050505",
+      "#050605",
+      "#A12E32",
+      "#040403",
+      "#A43639",
+      "#131211",
+      "#070706",
+    ],
+    6: ["#EAEAEA", "#D6D6D6"],
+    7: ["#6F0D0C", "#951C1E"],
+    8: ["#243056", "#3B5BDB"],
+    9: ["#AED3FF", "#91C2F2", "#1A5B87", "#3776AA", "#D4ECFF", "#2E81AF"],
+    10: ["#444A51", "#383D44", "#1C222B", "#080C14", "#20252B", "#DAE1E5"],
+    11: ["#B969FF", "#5C5CFF", "#CB83FF"],
+    12: ["#3131DB", "#3B3BEA", "#5C5CFF", "#4E4EF9"],
+    13: [
+      "#A7A9AB",
+      "#3776AA",
+      "#2F3033",
+      "#AED3FF",
+      "#134B70",
+      "#D8D8D8",
+      "#6FA6DD",
+    ],
+  };
+
+  const clampValue = (value: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, value));
+
+  const hexToRgb = (hex: string) => {
+    const clean = hex.replace("#", "").trim();
+    const normalized =
+      clean.length === 3
+        ? clean
+            .split("")
+            .map((c) => c + c)
+            .join("")
+        : clean;
+
+    return {
+      r: parseInt(normalized.slice(0, 2), 16),
+      g: parseInt(normalized.slice(2, 4), 16),
+      b: parseInt(normalized.slice(4, 6), 16),
+    };
+  };
+
+  const rgbToHex = (r: number, g: number, b: number) => {
+    const toHex = (value: number) =>
+      Math.round(clampValue(value, 0, 255))
+        .toString(16)
+        .padStart(2, "0");
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+  };
+
+  const rgbToHsl = (r: number, g: number, b: number) => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+
+    let h = 0;
+    const l = (max + min) / 2;
+    const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+    if (delta !== 0) {
+      if (max === r) {
+        h = 60 * (((g - b) / delta) % 6);
+      } else if (max === g) {
+        h = 60 * ((b - r) / delta + 2);
+      } else {
+        h = 60 * ((r - g) / delta + 4);
+      }
+    }
+
+    if (h < 0) h += 360;
+
+    return { h, s, l };
+  };
+
+  const hslToRgb = (h: number, s: number, l: number) => {
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+
+    if (h < 60) {
+      r = c;
+      g = x;
+    } else if (h < 120) {
+      r = x;
+      g = c;
+    } else if (h < 180) {
+      g = c;
+      b = x;
+    } else if (h < 240) {
+      g = x;
+      b = c;
+    } else if (h < 300) {
+      r = x;
+      b = c;
+    } else {
+      r = c;
+      b = x;
+    }
+
+    return {
+      r: (r + m) * 255,
+      g: (g + m) * 255,
+      b: (b + m) * 255,
+    };
+  };
+
+  const recolorSvg = (
+    svg: string,
+    clothingIndex: number,
+    targetColor: string,
+  ) => {
+    const palette = CLOTHING_RECOLOR_PALETTE[clothingIndex] || [];
+
+    if (!palette.length) return svg;
+
+    const target = hexToRgb(targetColor);
+    const targetHsl = rgbToHsl(target.r, target.g, target.b);
+
+    let result = svg;
+
+    for (const sourceColor of palette) {
+      const source = hexToRgb(sourceColor);
+      const sourceHsl = rgbToHsl(source.r, source.g, source.b);
+      const saturation =
+        targetHsl.s === 0 ? 0 : clampValue(targetHsl.s * 0.96, 0, 1);
+
+      const replacement = rgbToHex(
+        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+          .r,
+        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+          .g,
+        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+          .b,
+      );
+
+      const safeSource = sourceColor.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+
+      result = result.replace(new RegExp(safeSource, "gi"), replacement);
+    }
+
+    return result;
+  };
+
+  const dataUrlToFile = async (
+    dataUrl: string,
+    filename: string,
+  ): Promise<File> => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    return new File([blob], filename, {
+      type: blob.type || "image/jpeg",
+    });
+  };
+
+  const renderClothingToPng = async (
+    clothingIndex: number,
+    clothingColor: string,
+  ): Promise<File> => {
+    const assetUrl = `/icons/clothing-${clothingIndex + 1}.svg`;
+
+    const response = await fetch(assetUrl, {
+      cache: "force-cache",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Could not load clothing-${clothingIndex + 1}.svg`);
+    }
+
+    const originalSvg = await response.text();
+    const coloredSvg = recolorSvg(originalSvg, clothingIndex, clothingColor);
+
+    const svgBlob = new Blob([coloredSvg], {
+      type: "image/svg+xml;charset=utf-8",
+    });
+
+    const objectUrl = URL.createObjectURL(svgBlob);
+
+    try {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = objectUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(
+            new Error(`Could not render clothing-${clothingIndex + 1}.svg`),
+          );
+      });
+
+      const viewBoxMatch = coloredSvg.match(
+        /viewBox=["']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*["']/i,
+      );
+
+      const sourceWidth =
+        viewBoxMatch && Number(viewBoxMatch[1]) > 0
+          ? Number(viewBoxMatch[1])
+          : image.naturalWidth || image.width || 800;
+
+      const sourceHeight =
+        viewBoxMatch && Number(viewBoxMatch[2]) > 0
+          ? Number(viewBoxMatch[2])
+          : image.naturalHeight || image.height || 800;
+
+      const width = 800;
+      const height = Math.max(
+        1,
+        Math.round(width * (sourceHeight / sourceWidth)),
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        throw new Error("Could not create clothing render canvas.");
+      }
+
+      context.clearRect(0, 0, width, height);
+
+      context.drawImage(image, 0, 0, width, height);
+
+      const pngBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/png", 1);
+      });
+
+      if (!pngBlob) {
+        throw new Error("Could not convert clothing to PNG.");
+      }
+
+      return new File([pngBlob], `clothing-${clothingIndex + 1}.png`, {
+        type: "image/png",
+      });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const applyBackgroundColorToImage = async (
+    imageBlob: Blob,
+    backgroundColor: string,
+  ): Promise<string> => {
+    const objectUrl = URL.createObjectURL(imageBlob);
+
+    try {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = objectUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(new Error("Could not load processed photo."));
+      });
+
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+
+      if (!width || !height) {
+        throw new Error("Processed photo has invalid dimensions.");
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        throw new Error("Could not create final image canvas.");
+      }
+
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, width, height);
+
+      context.drawImage(image, 0, 0, width, height);
+
+      return canvas.toDataURL("image/jpeg", 0.95);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result !== "string") {
+          reject(new Error("Could not read generated image."));
+          return;
+        }
+        resolve(reader.result);
+      };
+      reader.onerror = () => {
+        reject(new Error("Could not read generated image."));
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const callGenerateApi = async (payload: Record<string, unknown>) => {
+    const image = typeof payload.image === "string" ? payload.image : "";
+
+    const bgColor =
+      typeof payload.bgColor === "string"
+        ? payload.bgColor
+        : getSelectedBgColorValue();
+
+    const clothingIndex = Number(payload.clothing ?? selectedClothing);
+
+    if (!image) {
+      throw new Error("No source image was provided.");
+    }
+
+    // No clothing selected: keep the existing local background-removal flow.
+    if (
+      !Number.isInteger(clothingIndex) ||
+      clothingIndex < 0 ||
+      clothingIndex > 13
+    ) {
+      const formData = new FormData();
+      formData.append("file", await dataUrlToFile(image, "person.jpg"));
+
+      const response = await fetch(
+        `${PYTHON_API_BASE_URL}/api/remove-background`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => "");
+        throw new Error(
+          message || `Background removal failed (${response.status}).`,
+        );
+      }
+
+      const processedBlob = await response.blob();
+      const backgroundAppliedDataUrl = await applyBackgroundColorToImage(
+        processedBlob,
+        bgColor,
+      );
+
+      const normalized = await normalizeImageToExactPhysicalSize(
+        backgroundAppliedDataUrl,
+        typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
+      );
+
+      const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
+      return cloudUrl || normalized.dataUrl;
+    }
+
+    // -----------------------------------------------------
+    // REALISTIC GEMINI VIRTUAL TRY-ON
+    // -----------------------------------------------------
+
+    const personFile = await dataUrlToFile(image, "person.jpg");
+
+    const clothingColor =
+      typeof payload.clothingColor === "string"
+        ? payload.clothingColor
+        : selectedClothingColor;
+
+    // The SVG is recolored first, then rendered as a PNG reference for Gemini.
+    const clothingFile = await renderClothingToPng(
+      clothingIndex,
+      clothingColor,
+    );
+
+    const formData = new FormData();
+    formData.append("person", personFile);
+    formData.append("clothing", clothingFile);
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => controller.abort(),
+      5 * 60 * 1000,
+    );
+
+    let response: Response;
+
+    try {
+      response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-tryon`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error(
+          "Gemini processing timed out after 5 minutes. Please try again.",
+        );
+      }
+
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      const rawMessage = await response.text().catch(() => "");
+      let message = rawMessage;
+
+      try {
+        const parsed = JSON.parse(rawMessage);
+        message = parsed?.error || parsed?.message || rawMessage;
+      } catch {
+        // Plain-text backend error; keep it as-is.
+      }
+
+      throw new Error(
+        message || `Gemini virtual try-on failed (${response.status}).`,
+      );
+    }
+
+    const generatedBlob = await response.blob();
+
+    if (
+      generatedBlob.size === 0 ||
+      (generatedBlob.type && !generatedBlob.type.startsWith("image/"))
+    ) {
+      throw new Error("Gemini returned an invalid or empty image response.");
+    }
+
+    const generatedDataUrl = await blobToDataUrl(generatedBlob);
+
+    const normalized = await normalizeImageToExactPhysicalSize(
+      generatedDataUrl,
+      typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
+    );
+
+    const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
+
+    return cloudUrl || normalized.dataUrl;
+  };
+
   const handleGeneratePhoto = async () => {
-    const rawImage = uploadedImage || leftImage || originalImageForDual;
-    if (!rawImage) return;
+    setErrorMessage(null);
+
+    // Clothing Try-On is temporarily unavailable while the paid AI API
+    // credits/quota are exhausted. Keep the normal no-clothing workflow
+    // working so users can still remove the background and change it.
+    if (isDualMode) {
+      if (leftClothing >= 0 || rightClothing >= 0) {
+        setErrorMessage(
+          "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.",
+        );
+        return;
+      }
+    } else if (selectedClothing >= 0) {
+      setErrorMessage(
+        "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.",
+      );
+      return;
+    }
+
+    if (isDualMode) {
+      if (!leftImage || !rightImage) {
+        setErrorMessage("Dual mode needs both left and right photos.");
+        return;
+      }
+    } else if (!uploadedImage) {
+      setErrorMessage("Upload a photo before generating.");
+      return;
+    }
 
     setIsGenerating(true);
 
     try {
+      const currentSizeLabel = getCurrentSizeLabel();
+      const currentBgHex = getSelectedBgColorValue();
+      const exactExport = getExactExportDimensions(currentSizeLabel);
+
+      const basePayload = {
+        size: currentSizeLabel,
+        sizeType: selectedSize,
+        bgColor: currentBgHex,
+        clothing: selectedClothing,
+        clothingColor: selectedClothingColor,
+        editingGuides,
+        widthPx: exactExport.widthPx,
+        heightPx: exactExport.heightPx,
+        dpi: exactExport.dpi,
+      };
+
+      if (isDualMode) {
+        const leftProcessed = await cropImageToExactRatio(leftImage!, 45 / 55);
+        const rightProcessed = await cropImageToExactRatio(
+          rightImage!,
+          45 / 55,
+        );
+
+        const [leftGenerated, rightGenerated] = await Promise.all([
+          callGenerateApi({
+            ...basePayload,
+            image: leftProcessed,
+            side: "left",
+            clothing: leftClothing,
+          }),
+          callGenerateApi({
+            ...basePayload,
+            image: rightProcessed,
+            side: "right",
+            clothing: rightClothing,
+          }),
+        ]);
+
+        setLeftImage(leftGenerated);
+        setRightImage(rightGenerated);
+        setOriginalImageForDual(leftImage);
+
+        if (currentUser?.id) {
+          const generationsRef = collection(
+            db,
+            "users",
+            currentUser.id,
+            "generations",
+          );
+          const docs = [
+            {
+              url: leftGenerated,
+              originalUrl: leftImage,
+              size: currentSizeLabel,
+              sizeType: selectedSize,
+              widthPx: exactExport.widthPx,
+              heightPx: exactExport.heightPx,
+              dpi: exactExport.dpi,
+              bgColor: currentBgHex,
+              clothingStyle: `Style ${leftClothing}`,
+              clothingColor: selectedClothingColor,
+              editingGuides,
+              side: "left",
+              createdAt: serverTimestamp(),
+            },
+            {
+              url: rightGenerated,
+              originalUrl: rightImage,
+              size: currentSizeLabel,
+              sizeType: selectedSize,
+              widthPx: exactExport.widthPx,
+              heightPx: exactExport.heightPx,
+              dpi: exactExport.dpi,
+              bgColor: currentBgHex,
+              clothingStyle: `Style ${rightClothing}`,
+              clothingColor: selectedClothingColor,
+              editingGuides,
+              side: "right",
+              createdAt: serverTimestamp(),
+            },
+          ];
+
+          const created = await Promise.all(
+            docs.map((item) => addDoc(generationsRef, item)),
+          );
+          const now = new Date().toISOString();
+          setRecentList((prev) => [
+            ...created.map((docItem, index) => ({
+              id: docItem.id,
+              ...docs[index],
+              createdAt: now,
+            })),
+            ...prev,
+          ]);
+        }
+        return;
+      }
+
+      const rawImage = uploadedImage!;
       const targetAspect = getSelectedTargetAspect();
       const processedImage = await cropImageToExactRatio(
         rawImage,
         targetAspect,
       );
-
-      let newGeneratedImageUrl = processedImage;
-
-      if (!originalImageForDual) {
-        setOriginalImageForDual(rawImage);
-      }
-
-      const currentSizeLabel = getCurrentSizeLabel();
-      const currentBgHex = getSelectedBgColorValue();
-
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: processedImage,
-          size: currentSizeLabel,
-          bgColor: currentBgHex,
-          clothing: selectedClothing,
-        }),
-      }).catch(() => null);
-
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data?.url) {
-          newGeneratedImageUrl = data.url;
-        }
-      }
+      const generatedUrl = await callGenerateApi({
+        ...basePayload,
+        image: processedImage,
+      });
 
       const finalOriginal = originalImageForDual || rawImage;
-
-      setUploadedImage(newGeneratedImageUrl);
+      setOriginalImageForDual(finalOriginal);
+      setUploadedImage(generatedUrl);
       setIsDualPreviewActive(false);
 
       if (currentUser?.id) {
         const newDocData = {
-          url: newGeneratedImageUrl,
+          url: generatedUrl,
           originalUrl: finalOriginal,
           size: currentSizeLabel,
+          sizeType: selectedSize,
+          widthPx: exactExport.widthPx,
+          heightPx: exactExport.heightPx,
+          dpi: exactExport.dpi,
           bgColor: currentBgHex,
           clothingStyle: `Style ${selectedClothing}`,
+          clothingColor: selectedClothingColor,
+          editingGuides,
           createdAt: serverTimestamp(),
         };
 
@@ -607,6 +1507,11 @@ export default function PhotoEditorPage() {
       }
     } catch (error) {
       console.error("Generation error:", error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not generate the photo. Please try again.",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -622,14 +1527,19 @@ export default function PhotoEditorPage() {
 
     setPreviewModalImage(null);
     setIsDeleting(true);
+    setErrorMessage(null);
 
     try {
       if (imageToDelete.url) {
-        await fetch("/api/delete", {
+        const deleteRes = await fetch("/api/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageUrl: imageToDelete.url }),
         });
+        if (!deleteRes.ok) {
+          const data = await deleteRes.json().catch(() => null);
+          throw new Error(data?.message || "Cloud image deletion failed.");
+        }
       }
 
       if (currentUser?.id && imageToDelete.id) {
@@ -651,11 +1561,45 @@ export default function PhotoEditorPage() {
       );
     } catch (error) {
       console.error("Error deleting image:", error);
-      alert("Failed to delete the image. Please try again.");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete the image. Please try again.",
+      );
     } finally {
       setIsDeleting(false);
     }
   };
+
+  const handleResetSettings = () => {
+    setSelectedSize("Passport");
+    setSelectedVisaSize("35×45 mm");
+    setSelectedBg(1);
+    setCustomBgColor("#8B1E1E");
+    setSelectedClothing(-1);
+    setSelectedClothingColor("#EF4444");
+    setLeftClothing(2);
+    setRightClothing(2);
+    setEditingGuides([]);
+    setLeftImage(null);
+    setRightImage(null);
+    setOriginalImageForDual(null);
+    setIsDualPreviewActive(false);
+    setShowVisaPopup(false);
+    setShowColorPicker(false);
+    setIsDualMode(false);
+  };
+
+  const handleEditingGuidesChange = (guides: string[]) => {
+    setEditingGuides(guides);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (tempImageForCrop?.startsWith("blob:"))
+        URL.revokeObjectURL(tempImageForCrop);
+    };
+  }, [tempImageForCrop]);
 
   if (authChecking) {
     return (
@@ -677,6 +1621,12 @@ export default function PhotoEditorPage() {
         className="hidden"
       />
 
+      {errorMessage && (
+        <div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 shadow-xl">
+          {errorMessage}
+        </div>
+      )}
+
       {showCropModal && (
         <div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
           {isCropping && (
@@ -696,7 +1646,13 @@ export default function PhotoEditorPage() {
               </h2>
             </div>
             <button
-              onClick={() => !isCropping && setShowCropModal(false)}
+              onClick={() => {
+                if (isCropping) return;
+                if (tempImageForCrop?.startsWith("blob:"))
+                  URL.revokeObjectURL(tempImageForCrop);
+                setTempImageForCrop(null);
+                setShowCropModal(false);
+              }}
               className="h-14 w-16 bg-[#E81123] text-white flex items-center justify-center cursor-pointer hover:bg-red-700 transition"
             >
               <X size={18} />
@@ -712,6 +1668,7 @@ export default function PhotoEditorPage() {
             <div className="w-full h-full flex items-center justify-center">
               <ReactCrop
                 crop={crop}
+                aspect={isDualMode ? 45 / 55 : getSelectedTargetAspect()}
                 onChange={(_, percentCrop) => setCrop(percentCrop)}
                 onComplete={(c) => setCompletedCrop(c)}
                 className="max-h-[70vh]"
@@ -762,7 +1719,13 @@ export default function PhotoEditorPage() {
 
             <div className="flex items-center gap-3 h-full">
               <button
-                onClick={() => !isCropping && setShowCropModal(false)}
+                onClick={() => {
+                  if (isCropping) return;
+                  if (tempImageForCrop?.startsWith("blob:"))
+                    URL.revokeObjectURL(tempImageForCrop);
+                  setTempImageForCrop(null);
+                  setShowCropModal(false);
+                }}
                 disabled={isCropping}
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-gray-200 transition disabled:opacity-50"
               >
@@ -820,6 +1783,10 @@ export default function PhotoEditorPage() {
               setCustomBgColor={setCustomBgColor}
               selectedClothing={selectedClothing}
               setSelectedClothing={setSelectedClothing}
+              selectedClothingColor={selectedClothingColor}
+              setSelectedClothingColor={setSelectedClothingColor}
+              onEditingGuidesChange={handleEditingGuidesChange}
+              onResetSettings={handleResetSettings}
               leftClothing={leftClothing}
               setLeftClothing={setLeftClothing}
               rightClothing={rightClothing}
@@ -855,7 +1822,13 @@ export default function PhotoEditorPage() {
           </div>
 
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1">
-            <QrCodeSidebar />
+            <QrCodeSidebar
+              uploadUrl={
+                typeof window !== "undefined"
+                  ? `${window.location.origin}${window.location.pathname}`
+                  : ""
+              }
+            />
           </div>
         </div>
 
