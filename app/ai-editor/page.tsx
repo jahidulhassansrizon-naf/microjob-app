@@ -672,18 +672,53 @@ export default function PhotoEditorPage() {
         }
       }
 
+      // Always use a stable image URL in the preview state.
+      // The old code stored the temporary blob URL in uploadedImage/leftImage/rightImage
+      // and then immediately revoked that blob URL, which caused the browser to show a
+      // broken-image icon after clicking Crop.
       const uploadedOriginalUrl = await uploadToCloudinary(croppedImageUrl);
-      const finalOrig = uploadedOriginalUrl || croppedImageUrl;
 
-      setOriginalImageForDual(finalOrig);
+      let finalImageUrl = uploadedOriginalUrl || croppedImageUrl;
+
+      // If Cloudinary upload fails and croppedImageUrl is still a blob URL, convert it
+      // to a data URL before revoking the temporary object URL. This guarantees that
+      // the preview never points to a revoked blob URL.
+      if (!uploadedOriginalUrl && finalImageUrl.startsWith("blob:")) {
+        const blobResponse = await fetch(finalImageUrl);
+        if (!blobResponse.ok) {
+          throw new Error("Could not preserve the cropped image preview.");
+        }
+
+        const blob = await blobResponse.blob();
+        finalImageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () =>
+            resolve(typeof reader.result === "string" ? reader.result : "");
+          reader.onerror = () =>
+            reject(
+              new Error("Could not convert the cropped image for preview."),
+            );
+          reader.readAsDataURL(blob);
+        });
+
+        if (!finalImageUrl) {
+          throw new Error("Could not preserve the cropped image preview.");
+        }
+      }
+
+      setOriginalImageForDual(finalImageUrl);
       setIsDualPreviewActive(false);
 
-      if (activeTarget === "left") setLeftImage(croppedImageUrl);
-      else if (activeTarget === "right") setRightImage(croppedImageUrl);
-      else setUploadedImage(croppedImageUrl);
+      // Use the same stable URL for every preview target.
+      if (activeTarget === "left") setLeftImage(finalImageUrl);
+      else if (activeTarget === "right") setRightImage(finalImageUrl);
+      else setUploadedImage(finalImageUrl);
 
-      if (tempImageForCrop.startsWith("blob:"))
+      // Safe now: no preview state depends on the temporary blob URL.
+      if (tempImageForCrop.startsWith("blob:")) {
         URL.revokeObjectURL(tempImageForCrop);
+      }
+
       setShowCropModal(false);
       setTempImageForCrop(null);
     } catch (error) {
