@@ -1,19 +1,24 @@
 import os
-from pathlib import Path
 
-# Render সার্ভারে পারমিশন ইস্যু সমাধান করতে Temp Directory ব্যবহার করা
+# ১. Render-এর ফোল্ডার পারমিশন ফিক্স
 os.environ["U2NET_HOME"] = "/tmp"
+
+# ২. Render Free Tier-এর CPU/RAM ক্র্যাশ ঠেকাতে থ্রেড লিমিট করে দেওয়া
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["ONNXRUNTIME_NUM_THREADS"] = "1"
 
 from rembg import remove, new_session
 
-# Load ultra-lightweight u2netp model (~4.7MB model size)
+# লাইটওয়েট মডেল সেশন তৈরি
 session = new_session("u2netp")
-
 
 def remove_background(image_bytes: bytes) -> bytes:
     """
-    Remove background using u2netp ONNX engine.
-    Fully optimized for low-RAM cloud servers (Render Free Tier).
+    Remove background optimized for Render Free Tier.
     """
     if not image_bytes:
         raise ValueError("Image bytes are empty.")
