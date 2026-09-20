@@ -9,7 +9,6 @@ import os
 from document_processor import process_document_image
 import color_document_processor
 from photo_processor import remove_background
-# from clothing_processor import apply_clothing
 from gemini_processor import generate_virtual_try_on
 from nid_autocrop_processor import auto_crop_and_deskew
 
@@ -128,8 +127,18 @@ def four_point_transform(image, pts):
 
 
 # =========================================================
-# HEALTH
+# ROOT & HEALTH
 # =========================================================
+
+@app.get("/")
+async def root():
+    return {
+        "success": True,
+        "service": "sohozkoj-ai-backend",
+        "message": "Backend is running live!",
+        "docs": "/docs"
+    }
+
 
 def gemini_is_configured() -> bool:
     """Return whether the Gemini API key is present on the backend."""
@@ -465,11 +474,6 @@ async def auto_crop_endpoint(
 async def nid_auto_crop_endpoint(
     file: UploadFile = File(...),
 ):
-    """NID-only auto crop endpoint.
-
-    This endpoint intentionally uses nid_autocrop_processor so the existing
-    /api/auto-crop flow used by other pages remains untouched.
-    """
     try:
         contents = await file.read()
 
@@ -582,7 +586,6 @@ async def apply_clothing_endpoint(
                 media_type="text/plain",
             )
 
-        # Background removal fallback to prevent frontend 502/Failed to fetch
         output_bytes = remove_background(person_bytes)
 
         return Response(
@@ -608,20 +611,7 @@ async def gemini_tryon_endpoint(
     person: UploadFile = File(...),
     clothing: UploadFile = File(...),
 ):
-    """
-    Realistic AI clothing replacement.
-
-    Input:
-        person   -> actual user/person photo
-        clothing -> selected clothing reference
-
-    Output:
-        Gemini-generated JPEG image
-    """
-
     try:
-
-        # Keep the public API stable while Gemini is not configured.
         if not gemini_is_configured():
             return Response(
                 content=GEMINI_UNAVAILABLE_MESSAGE,
@@ -629,10 +619,6 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
                 headers={"Cache-Control": "no-store"},
             )
-
-        # -------------------------------------------------
-        # Read person image
-        # -------------------------------------------------
 
         person_bytes = await person.read()
 
@@ -642,10 +628,6 @@ async def gemini_tryon_endpoint(
                 status_code=400,
                 media_type="text/plain",
             )
-
-        # -------------------------------------------------
-        # Read clothing image
-        # -------------------------------------------------
 
         clothing_bytes = (
             await clothing.read()
@@ -657,10 +639,6 @@ async def gemini_tryon_endpoint(
                 status_code=400,
                 media_type="text/plain",
             )
-
-        # -------------------------------------------------
-        # MIME types
-        # -------------------------------------------------
 
         person_mime_type = (
             person.content_type
@@ -694,14 +672,6 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
             )
 
-        # -------------------------------------------------
-        # Gemini
-        # -------------------------------------------------
-
-        print(
-            "[Gemini API] Starting virtual try-on..."
-        )
-
         generated_bytes = (
             generate_virtual_try_on(
                 person_bytes=person_bytes,
@@ -720,15 +690,6 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
             )
 
-        print(
-            "[Gemini API] Virtual try-on completed."
-        )
-
-        # -------------------------------------------------
-        # IMPORTANT:
-        # Current Gemini image response is JPEG.
-        # -------------------------------------------------
-
         return Response(
             content=generated_bytes,
             media_type="image/jpeg",
@@ -738,11 +699,6 @@ async def gemini_tryon_endpoint(
         )
 
     except ValueError as error:
-
-        print(
-            f"[Gemini Validation Error] {error}"
-        )
-
         return Response(
             content=str(error),
             status_code=400,
@@ -750,11 +706,6 @@ async def gemini_tryon_endpoint(
         )
 
     except Exception as error:
-
-        print(
-            f"[Gemini API Error] {error}"
-        )
-
         error_message = str(error)
 
         if is_temporary_gemini_error(error_message):

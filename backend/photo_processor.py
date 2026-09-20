@@ -9,6 +9,7 @@ _session = None
 def get_session():
     global _session
     if _session is None:
+        # u2netp মডেলটি নিরাপদে সেশনের জন্য লোড করা হচ্ছে
         _session = new_session("u2netp")
     return _session
 
