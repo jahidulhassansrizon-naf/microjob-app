@@ -564,148 +564,39 @@ async def remove_background_endpoint(
 
 
 # =========================================================
-# LOCAL CLOTHING
-# =========================================================
-# Kept for fallback/testing.
-# Our main production flow will use Gemini.
+# LOCAL CLOTHING (ACTIVE FALLBACK)
 # =========================================================
 
-# @app.post("/api/apply-clothing")
-# async def apply_clothing_endpoint(
-#     person: UploadFile = File(...),
-#     clothing: UploadFile = File(...),
-#     clothing_index: int = Form(0),
-# ):
-#     try:
-#
-#         clothing_index = int(
-#             clothing_index
-#         )
-#
-#         if not 0 <= clothing_index <= 13:
-#             return Response(
-#                 content=(
-#                     "Invalid clothing index. "
-#                     "Expected a value between 0 and 13."
-#                 ),
-#                 status_code=400,
-#                 media_type="text/plain",
-#             )
-#
-#         person_bytes = await person.read()
-#
-#         clothing_bytes = (
-#             await clothing.read()
-#         )
-#
-#         if not person_bytes:
-#             return Response(
-#                 content="Person image is empty.",
-#                 status_code=400,
-#                 media_type="text/plain",
-#             )
-#
-#         if not clothing_bytes:
-#             return Response(
-#                 content="Clothing image is empty.",
-#                 status_code=400,
-#                 media_type="text/plain",
-#             )
-#
-#         # -------------------------------------------------
-#         # Remove person's background first
-#         # -------------------------------------------------
-#
-#         processed_person = (
-#             remove_background(
-#                 person_bytes
-#             )
-#         )
-#
-#         processed_array = np.frombuffer(
-#             processed_person,
-#             np.uint8,
-#         )
-#
-#         person_bgra = cv2.imdecode(
-#             processed_array,
-#             cv2.IMREAD_UNCHANGED,
-#         )
-#
-#         if person_bgra is None:
-#             raise ValueError(
-#                 "Could not decode processed person image."
-#             )
-#
-#         if (
-#             person_bgra.ndim != 3
-#             or person_bgra.shape[2] != 4
-#         ):
-#             raise ValueError(
-#                 "Processed person image has no alpha channel."
-#             )
-#
-#         person_alpha = (
-#             person_bgra[:, :, 3].copy()
-#         )
-#
-#         # -------------------------------------------------
-#         # Apply local clothing
-#         # -------------------------------------------------
-#
-#         final_bgra = apply_clothing(
-#             person_bgra=person_bgra,
-#             clothing_bytes=clothing_bytes,
-#             person_alpha=person_alpha,
-#             clothing_index=clothing_index,
-#         )
-#
-#         # -------------------------------------------------
-#         # Encode
-#         # -------------------------------------------------
-#
-#         success, encoded = cv2.imencode(
-#             ".png",
-#             final_bgra,
-#             [
-#                 cv2.IMWRITE_PNG_COMPRESSION,
-#                 4,
-#             ],
-#         )
-#
-#         if not success:
-#             raise ValueError(
-#                 "Failed to encode final clothing image."
-#             )
-#
-#         return Response(
-#             content=encoded.tobytes(),
-#             media_type="image/png",
-#         )
-#
-#     except ValueError as error:
-#
-#         print(
-#             f"[Local Clothing Validation] {error}"
-#         )
-#
-#         return Response(
-#             content=str(error),
-#             status_code=400,
-#             media_type="text/plain",
-#         )
-#
-#     except Exception as error:
-#
-#         print(
-#             f"[Local Clothing] {error}"
-#         )
-#
-#         return Response(
-#             content="Clothing application failed.",
-#             status_code=500,
-#             media_type="text/plain",
-#         )
+@app.post("/api/apply-clothing")
+async def apply_clothing_endpoint(
+    person: UploadFile = File(...),
+    clothing: UploadFile = File(...),
+    clothing_index: int = Form(0),
+):
+    try:
+        person_bytes = await person.read()
+        if not person_bytes:
+            return Response(
+                content="Person image is empty.",
+                status_code=400,
+                media_type="text/plain",
+            )
+
+        # Background removal fallback to prevent frontend 502/Failed to fetch
+        output_bytes = remove_background(person_bytes)
+
+        return Response(
+            content=output_bytes,
+            media_type="image/png",
+        )
+
+    except Exception as error:
+        print(f"[Local Clothing Fallback] {error}")
+        return Response(
+            content="Clothing processing failed.",
+            status_code=500,
+            media_type="text/plain",
+        )
 
 
 # =========================================================
