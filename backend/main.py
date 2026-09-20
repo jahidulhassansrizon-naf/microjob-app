@@ -177,6 +177,7 @@ async def health_check():
         "gemini": gemini_is_configured(),
     }
 
+
 # =========================================================
 # CLEAN DOCUMENT
 # =========================================================
@@ -881,3 +882,13 @@ async def gemini_tryon_endpoint(
             status_code=500,
             media_type="text/plain",
         )
+
+
+# =========================================================
+# SERVER RUNNER FOR RENDER / LOCAL
+# =========================================================
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
