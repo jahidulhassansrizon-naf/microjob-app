@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -597,8 +597,9 @@ function SohojToolsContent() {
   const [activeTab, setActiveTab] = useState("Free");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const isInitialLoadDone = useRef(false);
 
-  // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (Typewriter Effect)
+  // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
     const searchFromUrl = searchParams.get("search");
     const token =
@@ -614,10 +615,11 @@ function SohojToolsContent() {
 
     setIsAuthenticated(true);
 
-    // টাইপিং অ্যানিমেশন লজিক
-    if (searchFromUrl) {
+    // প্রথমবার পেজে আসার পর URL-এ কোনো সার্চ থাকলে অ্যানিমেশন চালাবে
+    if (!isInitialLoadDone.current && searchFromUrl) {
+      isInitialLoadDone.current = true;
       let currentIndex = 0;
-      setSearchQuery(""); // শুরুতে খালি রাখবে
+      setSearchQuery("");
 
       const timer = setInterval(() => {
         if (currentIndex < searchFromUrl.length) {
@@ -626,27 +628,29 @@ function SohojToolsContent() {
         } else {
           clearInterval(timer);
         }
-      }, 70); // প্রতি ৭০ মিলিসেকেন্ডে একটি করে অক্ষর টাইপ হবে
+      }, 70);
 
       return () => clearInterval(timer);
+    } else {
+      isInitialLoadDone.current = true;
     }
-  }, [searchParams]);
+  }, []);
 
-  // ২. টাইপ বা ডিলিট করলে URL সিঙ্ক করার হ্যান্ডলার
+  // ২. টাইপ করলে কোনো ল্যাগ ছাড়াই স্মুথ সার্চ হ্যান্ডলার
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
 
-    const params = new URLSearchParams(searchParams.toString());
+    // URL আপডেট (ব্রাউজার রিলোড বা রিকম্পোনেন্ট রেন্ডার রি-ট্রিগার বন্ধ রাখতে)
+    const params = new URLSearchParams(window.location.search);
     if (value.trim()) {
       params.set("search", value);
     } else {
-      params.delete("search"); // ডিলিট করলে URL থেকে মুছে দেবে
+      params.delete("search");
     }
 
     const newQuery = params.toString();
     const newPath = newQuery ? `/sohoj-tools?${newQuery}` : "/sohoj-tools";
-
-    router.replace(newPath, { scroll: false });
+    window.history.replaceState(null, "", newPath);
   };
 
   const getSlug = (name: string) => {
@@ -780,43 +784,57 @@ function SohojToolsContent() {
         </div>
 
         {/* Tools Grid Section */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-7 pt-3">
-          {filteredTools.map((tool) => {
-            const IconComponent = tool.icon;
-            const slug = getSlug(tool.name);
+        {filteredTools.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-7 pt-3">
+            {filteredTools.map((tool) => {
+              const IconComponent = tool.icon;
+              const slug = getSlug(tool.name);
 
-            return (
-              <Link
-                key={tool.id}
-                href={`/sohoj-tools/${slug}`}
-                className="flex flex-col items-center group cursor-pointer"
-              >
-                <div
-                  className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
+              return (
+                <Link
+                  key={tool.id}
+                  href={`/sohoj-tools/${slug}`}
+                  className="flex flex-col items-center group cursor-pointer"
                 >
-                  {tool.badge && (
-                    <span
-                      className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${
-                        tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"
-                      }`}
-                    >
-                      {tool.badge}
-                    </span>
-                  )}
+                  <div
+                    className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
+                  >
+                    {tool.badge && (
+                      <span
+                        className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${
+                          tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"
+                        }`}
+                      >
+                        {tool.badge}
+                      </span>
+                    )}
 
-                  <IconComponent
-                    size={42}
-                    className="text-[#ffffff] stroke-[1.75]"
-                  />
-                </div>
+                    <IconComponent
+                      size={42}
+                      className="text-[#ffffff] stroke-[1.75]"
+                    />
+                  </div>
 
-                <span className="mt-2.5 text-xs font-bold text-gray-800 text-center line-clamp-1 group-hover:text-[#FF5D00] transition-colors">
-                  {tool.name}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                  <span className="mt-2.5 text-xs font-bold text-gray-800 text-center line-clamp-1 group-hover:text-[#FF5D00] transition-colors">
+                    {tool.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          /* No tools found - Empty State */
+          <div className="flex flex-col items-center justify-center py-16 text-center bg-white/50 rounded-2xl border border-dashed border-gray-200 my-4">
+            <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center mb-3">
+              <Search size={22} />
+            </div>
+            <h3 className="text-sm font-bold text-gray-800">No tools found</h3>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+              We couldn't find any tool matching "{searchQuery}". Try searching
+              for something else.
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );
