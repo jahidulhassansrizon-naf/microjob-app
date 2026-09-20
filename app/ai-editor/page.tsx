@@ -827,13 +827,17 @@ export default function PhotoEditorPage() {
   };
 
   const PYTHON_API_BASE_URL = (
-    process.env.NEXT_PUBLIC_API_URL ||
     process.env.NEXT_PUBLIC_PYTHON_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
     "http://127.0.0.1:8000"
   ).replace(/\/$/, "");
 
-  const GEMINI_UNAVAILABLE_MESSAGE =
-    "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.";
+  // ===== GEMINI TEMPORARILY DISABLED — unavailable message =====
+  //   const GEMINI_UNAVAILABLE_MESSAGE =
+  //     "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.";
+  //
+  // ===== END TEMPORARILY DISABLED =====
 
   const isCloudinaryUrl = (value: unknown): value is string => {
     if (typeof value !== "string") return false;
@@ -849,234 +853,240 @@ export default function PhotoEditorPage() {
     }
   };
 
-  const checkGeminiAvailability = async (): Promise<boolean> => {
-    if (!PYTHON_API_BASE_URL) return false;
+  // ===== GEMINI TEMPORARILY DISABLED — availability check =====
+  //   const checkGeminiAvailability = async (): Promise<boolean> => {
+  //     if (!PYTHON_API_BASE_URL) return false;
+  //
+  //     try {
+  //       const response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-status`, {
+  //         method: "GET",
+  //         cache: "no-store",
+  //       });
+  //
+  //       if (!response.ok) return false;
+  //
+  //       const data = await response.json().catch(() => null);
+  //       return data?.enabled === true;
+  //     } catch {
+  //       return false;
+  //     }
+  //   };
+  //
+  // ===== END TEMPORARILY DISABLED =====
 
-    try {
-      const response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-status`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (!response.ok) return false;
-
-      const data = await response.json().catch(() => null);
-      return data?.enabled === true;
-    } catch {
-      return false;
-    }
-  };
-
-  const CLOTHING_RECOLOR_PALETTE: Record<number, string[]> = {
-    0: [
-      "#A0B7D8",
-      "#6F86AE",
-      "#EEEEEE",
-      "#ADC2E6",
-      "#F4F4F4",
-      "#C5D4F3",
-      "#F6F6F6",
-      "#FBFBFB",
-      "#A5BEEA",
-      "#DDE8FB",
-    ],
-    1: ["#E53935"],
-    2: [
-      "#A0B7D8",
-      "#6F86AE",
-      "#171D2D",
-      "#243056",
-      "#ADC2E6",
-      "#262D3F",
-      "#161D33",
-    ],
-    3: [
-      "#A0B7D8",
-      "#6F86AE",
-      "#171D2D",
-      "#243056",
-      "#ADC2E6",
-      "#0D1426",
-      "#161D33",
-      "#272F49",
-      "#B7CDED",
-      "#9AB6D8",
-      "#C7D8FF",
-      "#97AED3",
-      "#AABDE2",
-      "#DEE9FF",
-      "#C4D5F7",
-    ],
-    4: ["#6F0D0C", "#951C1E", "#1B0B0C"],
-    5: [
-      "#121212",
-      "#8D0307",
-      "#0F0F0E",
-      "#8C0005",
-      "#0A0B0A",
-      "#A23034",
-      "#A63B3E",
-      "#8E050A",
-      "#0A0A0A",
-      "#A83D41",
-      "#131311",
-      "#080806",
-      "#930F14",
-      "#050505",
-      "#050605",
-      "#A12E32",
-      "#040403",
-      "#A43639",
-      "#131211",
-      "#070706",
-    ],
-    6: ["#EAEAEA", "#D6D6D6"],
-    7: ["#6F0D0C", "#951C1E"],
-    8: ["#243056", "#3B5BDB"],
-    9: ["#AED3FF", "#91C2F2", "#1A5B87", "#3776AA", "#D4ECFF", "#2E81AF"],
-    10: ["#444A51", "#383D44", "#1C222B", "#080C14", "#20252B", "#DAE1E5"],
-    11: ["#B969FF", "#5C5CFF", "#CB83FF"],
-    12: ["#3131DB", "#3B3BEA", "#5C5CFF", "#4E4EF9"],
-    13: [
-      "#A7A9AB",
-      "#3776AA",
-      "#2F3033",
-      "#AED3FF",
-      "#134B70",
-      "#D8D8D8",
-      "#6FA6DD",
-    ],
-  };
-
-  const clampValue = (value: number, min: number, max: number) =>
-    Math.min(max, Math.max(min, value));
-
-  const hexToRgb = (hex: string) => {
-    const clean = hex.replace("#", "").trim();
-    const normalized =
-      clean.length === 3
-        ? clean
-            .split("")
-            .map((c) => c + c)
-            .join("")
-        : clean;
-
-    return {
-      r: parseInt(normalized.slice(0, 2), 16),
-      g: parseInt(normalized.slice(2, 4), 16),
-      b: parseInt(normalized.slice(4, 6), 16),
-    };
-  };
-
-  const rgbToHex = (r: number, g: number, b: number) => {
-    const toHex = (value: number) =>
-      Math.round(clampValue(value, 0, 255))
-        .toString(16)
-        .padStart(2, "0");
-
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-  };
-
-  const rgbToHsl = (r: number, g: number, b: number) => {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const delta = max - min;
-
-    let h = 0;
-    const l = (max + min) / 2;
-    const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-
-    if (delta !== 0) {
-      if (max === r) {
-        h = 60 * (((g - b) / delta) % 6);
-      } else if (max === g) {
-        h = 60 * ((b - r) / delta + 2);
-      } else {
-        h = 60 * ((r - g) / delta + 4);
-      }
-    }
-
-    if (h < 0) h += 360;
-
-    return { h, s, l };
-  };
-
-  const hslToRgb = (h: number, s: number, l: number) => {
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-
-    let r = 0;
-    let g = 0;
-    let b = 0;
-
-    if (h < 60) {
-      r = c;
-      g = x;
-    } else if (h < 120) {
-      r = x;
-      g = c;
-    } else if (h < 180) {
-      g = c;
-      b = x;
-    } else if (h < 240) {
-      g = x;
-      b = c;
-    } else if (h < 300) {
-      r = x;
-      b = c;
-    } else {
-      r = c;
-      b = x;
-    }
-
-    return {
-      r: (r + m) * 255,
-      g: (g + m) * 255,
-      b: (b + m) * 255,
-    };
-  };
-
-  const recolorSvg = (
-    svg: string,
-    clothingIndex: number,
-    targetColor: string,
-  ) => {
-    const palette = CLOTHING_RECOLOR_PALETTE[clothingIndex] || [];
-
-    if (!palette.length) return svg;
-
-    const target = hexToRgb(targetColor);
-    const targetHsl = rgbToHsl(target.r, target.g, target.b);
-
-    let result = svg;
-
-    for (const sourceColor of palette) {
-      const source = hexToRgb(sourceColor);
-      const sourceHsl = rgbToHsl(source.r, source.g, source.b);
-      const saturation =
-        targetHsl.s === 0 ? 0 : clampValue(targetHsl.s * 0.96, 0, 1);
-
-      const replacement = rgbToHex(
-        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-          .r,
-        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-          .g,
-        hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-          .b,
-      );
-
-      const safeSource = sourceColor.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
-
-      result = result.replace(new RegExp(safeSource, "gi"), replacement);
-    }
-
-    return result;
-  };
+  // ===== GEMINI TEMPORARILY DISABLED — clothing recolor helpers =====
+  //   const CLOTHING_RECOLOR_PALETTE: Record<number, string[]> = {
+  //     0: [
+  //       "#A0B7D8",
+  //       "#6F86AE",
+  //       "#EEEEEE",
+  //       "#ADC2E6",
+  //       "#F4F4F4",
+  //       "#C5D4F3",
+  //       "#F6F6F6",
+  //       "#FBFBFB",
+  //       "#A5BEEA",
+  //       "#DDE8FB",
+  //     ],
+  //     1: ["#E53935"],
+  //     2: [
+  //       "#A0B7D8",
+  //       "#6F86AE",
+  //       "#171D2D",
+  //       "#243056",
+  //       "#ADC2E6",
+  //       "#262D3F",
+  //       "#161D33",
+  //     ],
+  //     3: [
+  //       "#A0B7D8",
+  //       "#6F86AE",
+  //       "#171D2D",
+  //       "#243056",
+  //       "#ADC2E6",
+  //       "#0D1426",
+  //       "#161D33",
+  //       "#272F49",
+  //       "#B7CDED",
+  //       "#9AB6D8",
+  //       "#C7D8FF",
+  //       "#97AED3",
+  //       "#AABDE2",
+  //       "#DEE9FF",
+  //       "#C4D5F7",
+  //     ],
+  //     4: ["#6F0D0C", "#951C1E", "#1B0B0C"],
+  //     5: [
+  //       "#121212",
+  //       "#8D0307",
+  //       "#0F0F0E",
+  //       "#8C0005",
+  //       "#0A0B0A",
+  //       "#A23034",
+  //       "#A63B3E",
+  //       "#8E050A",
+  //       "#0A0A0A",
+  //       "#A83D41",
+  //       "#131311",
+  //       "#080806",
+  //       "#930F14",
+  //       "#050505",
+  //       "#050605",
+  //       "#A12E32",
+  //       "#040403",
+  //       "#A43639",
+  //       "#131211",
+  //       "#070706",
+  //     ],
+  //     6: ["#EAEAEA", "#D6D6D6"],
+  //     7: ["#6F0D0C", "#951C1E"],
+  //     8: ["#243056", "#3B5BDB"],
+  //     9: ["#AED3FF", "#91C2F2", "#1A5B87", "#3776AA", "#D4ECFF", "#2E81AF"],
+  //     10: ["#444A51", "#383D44", "#1C222B", "#080C14", "#20252B", "#DAE1E5"],
+  //     11: ["#B969FF", "#5C5CFF", "#CB83FF"],
+  //     12: ["#3131DB", "#3B3BEA", "#5C5CFF", "#4E4EF9"],
+  //     13: [
+  //       "#A7A9AB",
+  //       "#3776AA",
+  //       "#2F3033",
+  //       "#AED3FF",
+  //       "#134B70",
+  //       "#D8D8D8",
+  //       "#6FA6DD",
+  //     ],
+  //   };
+  //
+  //   const clampValue = (value: number, min: number, max: number) =>
+  //     Math.min(max, Math.max(min, value));
+  //
+  //   const hexToRgb = (hex: string) => {
+  //     const clean = hex.replace("#", "").trim();
+  //     const normalized =
+  //       clean.length === 3
+  //         ? clean
+  //             .split("")
+  //             .map((c) => c + c)
+  //             .join("")
+  //         : clean;
+  //
+  //     return {
+  //       r: parseInt(normalized.slice(0, 2), 16),
+  //       g: parseInt(normalized.slice(2, 4), 16),
+  //       b: parseInt(normalized.slice(4, 6), 16),
+  //     };
+  //   };
+  //
+  //   const rgbToHex = (r: number, g: number, b: number) => {
+  //     const toHex = (value: number) =>
+  //       Math.round(clampValue(value, 0, 255))
+  //         .toString(16)
+  //         .padStart(2, "0");
+  //
+  //     return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+  //   };
+  //
+  //   const rgbToHsl = (r: number, g: number, b: number) => {
+  //     r /= 255;
+  //     g /= 255;
+  //     b /= 255;
+  //
+  //     const max = Math.max(r, g, b);
+  //     const min = Math.min(r, g, b);
+  //     const delta = max - min;
+  //
+  //     let h = 0;
+  //     const l = (max + min) / 2;
+  //     const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+  //
+  //     if (delta !== 0) {
+  //       if (max === r) {
+  //         h = 60 * (((g - b) / delta) % 6);
+  //       } else if (max === g) {
+  //         h = 60 * ((b - r) / delta + 2);
+  //       } else {
+  //         h = 60 * ((r - g) / delta + 4);
+  //       }
+  //     }
+  //
+  //     if (h < 0) h += 360;
+  //
+  //     return { h, s, l };
+  //   };
+  //
+  //   const hslToRgb = (h: number, s: number, l: number) => {
+  //     const c = (1 - Math.abs(2 * l - 1)) * s;
+  //     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  //     const m = l - c / 2;
+  //
+  //     let r = 0;
+  //     let g = 0;
+  //     let b = 0;
+  //
+  //     if (h < 60) {
+  //       r = c;
+  //       g = x;
+  //     } else if (h < 120) {
+  //       r = x;
+  //       g = c;
+  //     } else if (h < 180) {
+  //       g = c;
+  //       b = x;
+  //     } else if (h < 240) {
+  //       g = x;
+  //       b = c;
+  //     } else if (h < 300) {
+  //       r = x;
+  //       b = c;
+  //     } else {
+  //       r = c;
+  //       b = x;
+  //     }
+  //
+  //     return {
+  //       r: (r + m) * 255,
+  //       g: (g + m) * 255,
+  //       b: (b + m) * 255,
+  //     };
+  //   };
+  //
+  //   const recolorSvg = (
+  //     svg: string,
+  //     clothingIndex: number,
+  //     targetColor: string,
+  //   ) => {
+  //     const palette = CLOTHING_RECOLOR_PALETTE[clothingIndex] || [];
+  //
+  //     if (!palette.length) return svg;
+  //
+  //     const target = hexToRgb(targetColor);
+  //     const targetHsl = rgbToHsl(target.r, target.g, target.b);
+  //
+  //     let result = svg;
+  //
+  //     for (const sourceColor of palette) {
+  //       const source = hexToRgb(sourceColor);
+  //       const sourceHsl = rgbToHsl(source.r, source.g, source.b);
+  //       const saturation =
+  //         targetHsl.s === 0 ? 0 : clampValue(targetHsl.s * 0.96, 0, 1);
+  //
+  //       const replacement = rgbToHex(
+  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+  //           .r,
+  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+  //           .g,
+  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
+  //           .b,
+  //       );
+  //
+  //       const safeSource = sourceColor.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+  //
+  //       result = result.replace(new RegExp(safeSource, "gi"), replacement);
+  //     }
+  //
+  //     return result;
+  //   };
+  //
+  // ===== END TEMPORARILY DISABLED =====
 
   const dataUrlToFile = async (
     dataUrl: string,
@@ -1090,91 +1100,94 @@ export default function PhotoEditorPage() {
     });
   };
 
-  const renderClothingToPng = async (
-    clothingIndex: number,
-    clothingColor: string,
-  ): Promise<File> => {
-    const assetUrl = `/icons/clothing-${clothingIndex + 1}.svg`;
-
-    const response = await fetch(assetUrl, {
-      cache: "force-cache",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Could not load clothing-${clothingIndex + 1}.svg`);
-    }
-
-    const originalSvg = await response.text();
-    const coloredSvg = recolorSvg(originalSvg, clothingIndex, clothingColor);
-
-    const svgBlob = new Blob([coloredSvg], {
-      type: "image/svg+xml;charset=utf-8",
-    });
-
-    const objectUrl = URL.createObjectURL(svgBlob);
-
-    try {
-      const image = new Image();
-      image.decoding = "async";
-      image.src = objectUrl;
-
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () =>
-          reject(
-            new Error(`Could not render clothing-${clothingIndex + 1}.svg`),
-          );
-      });
-
-      const viewBoxMatch = coloredSvg.match(
-        /viewBox=["']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*["']/i,
-      );
-
-      const sourceWidth =
-        viewBoxMatch && Number(viewBoxMatch[1]) > 0
-          ? Number(viewBoxMatch[1])
-          : image.naturalWidth || image.width || 800;
-
-      const sourceHeight =
-        viewBoxMatch && Number(viewBoxMatch[2]) > 0
-          ? Number(viewBoxMatch[2])
-          : image.naturalHeight || image.height || 800;
-
-      const width = 800;
-      const height = Math.max(
-        1,
-        Math.round(width * (sourceHeight / sourceWidth)),
-      );
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        throw new Error("Could not create clothing render canvas.");
-      }
-
-      context.clearRect(0, 0, width, height);
-
-      context.drawImage(image, 0, 0, width, height);
-
-      const pngBlob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/png", 1);
-      });
-
-      if (!pngBlob) {
-        throw new Error("Could not convert clothing to PNG.");
-      }
-
-      return new File([pngBlob], `clothing-${clothingIndex + 1}.png`, {
-        type: "image/png",
-      });
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  };
+  // ===== GEMINI TEMPORARILY DISABLED — clothing rendering =====
+  //   const renderClothingToPng = async (
+  //     clothingIndex: number,
+  //     clothingColor: string,
+  //   ): Promise<File> => {
+  //     const assetUrl = `/icons/clothing-${clothingIndex + 1}.svg`;
+  //
+  //     const response = await fetch(assetUrl, {
+  //       cache: "force-cache",
+  //     });
+  //
+  //     if (!response.ok) {
+  //       throw new Error(`Could not load clothing-${clothingIndex + 1}.svg`);
+  //     }
+  //
+  //     const originalSvg = await response.text();
+  //     const coloredSvg = recolorSvg(originalSvg, clothingIndex, clothingColor);
+  //
+  //     const svgBlob = new Blob([coloredSvg], {
+  //       type: "image/svg+xml;charset=utf-8",
+  //     });
+  //
+  //     const objectUrl = URL.createObjectURL(svgBlob);
+  //
+  //     try {
+  //       const image = new Image();
+  //       image.decoding = "async";
+  //       image.src = objectUrl;
+  //
+  //       await new Promise<void>((resolve, reject) => {
+  //         image.onload = () => resolve();
+  //         image.onerror = () =>
+  //           reject(
+  //             new Error(`Could not render clothing-${clothingIndex + 1}.svg`),
+  //           );
+  //       });
+  //
+  //       const viewBoxMatch = coloredSvg.match(
+  //         /viewBox=["']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*["']/i,
+  //       );
+  //
+  //       const sourceWidth =
+  //         viewBoxMatch && Number(viewBoxMatch[1]) > 0
+  //           ? Number(viewBoxMatch[1])
+  //           : image.naturalWidth || image.width || 800;
+  //
+  //       const sourceHeight =
+  //         viewBoxMatch && Number(viewBoxMatch[2]) > 0
+  //           ? Number(viewBoxMatch[2])
+  //           : image.naturalHeight || image.height || 800;
+  //
+  //       const width = 800;
+  //       const height = Math.max(
+  //         1,
+  //         Math.round(width * (sourceHeight / sourceWidth)),
+  //       );
+  //
+  //       const canvas = document.createElement("canvas");
+  //       canvas.width = width;
+  //       canvas.height = height;
+  //
+  //       const context = canvas.getContext("2d");
+  //
+  //       if (!context) {
+  //         throw new Error("Could not create clothing render canvas.");
+  //       }
+  //
+  //       context.clearRect(0, 0, width, height);
+  //
+  //       context.drawImage(image, 0, 0, width, height);
+  //
+  //       const pngBlob = await new Promise<Blob | null>((resolve) => {
+  //         canvas.toBlob(resolve, "image/png", 1);
+  //       });
+  //
+  //       if (!pngBlob) {
+  //         throw new Error("Could not convert clothing to PNG.");
+  //       }
+  //
+  //       return new File([pngBlob], `clothing-${clothingIndex + 1}.png`, {
+  //         type: "image/png",
+  //       });
+  //     } finally {
+  //       URL.revokeObjectURL(objectUrl);
+  //     }
+  //   };
+  //
+  // ===== END TEMPORARILY DISABLED =====
 
   const applyBackgroundColorToImage = async (
     imageBlob: Blob,
@@ -1221,23 +1234,32 @@ export default function PhotoEditorPage() {
     }
   };
 
-  const blobToDataUrl = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result !== "string") {
-          reject(new Error("Could not read generated image."));
-          return;
-        }
-        resolve(reader.result);
-      };
-      reader.onerror = () => {
-        reject(new Error("Could not read generated image."));
-      };
-      reader.readAsDataURL(blob);
-    });
-  };
+  // ===== GEMINI TEMPORARILY DISABLED — Gemini output helper =====
+  //   const blobToDataUrl = (blob: Blob): Promise<string> => {
+  //     return new Promise((resolve, reject) => {
+  //       const reader = new FileReader();
+  //       reader.onload = () => {
+  //         if (typeof reader.result !== "string") {
+  //           reject(new Error("Could not read generated image."));
+  //           return;
+  //         }
+  //         resolve(reader.result);
+  //       };
+  //       reader.onerror = () => {
+  //         reject(new Error("Could not read generated image."));
+  //       };
+  //       reader.readAsDataURL(blob);
+  //     });
+  //   };
+  //
+  // ===== END TEMPORARILY DISABLED =====
 
+  // -----------------------------------------------------
+  // NON-GEMINI GENERATION FLOW
+  // -----------------------------------------------------
+  // Gemini is intentionally bypassed for now. Every generation request
+  // uses the existing Render-backed background-removal endpoint.
+  // -----------------------------------------------------
   const callGenerateApi = async (payload: Record<string, unknown>) => {
     const image = typeof payload.image === "string" ? payload.image : "";
 
@@ -1246,146 +1268,61 @@ export default function PhotoEditorPage() {
         ? payload.bgColor
         : getSelectedBgColorValue();
 
-    const clothingIndex = Number(payload.clothing ?? selectedClothing);
-
     if (!image) {
       throw new Error("No source image was provided.");
     }
 
-    // No clothing selected: keep the existing local background-removal flow.
-    if (
-      !Number.isInteger(clothingIndex) ||
-      clothingIndex < 0 ||
-      clothingIndex > 13
-    ) {
-      const formData = new FormData();
-      formData.append("file", await dataUrlToFile(image, "person.jpg"));
-
-      const response = await fetch(
-        `${PYTHON_API_BASE_URL}/api/remove-background`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (!response.ok) {
-        const message = await response.text().catch(() => "");
-        throw new Error(
-          message || `Background removal failed (${response.status}).`,
-        );
-      }
-
-      const processedBlob = await response.blob();
-      const backgroundAppliedDataUrl = await applyBackgroundColorToImage(
-        processedBlob,
-        bgColor,
-      );
-
-      const normalized = await normalizeImageToExactPhysicalSize(
-        backgroundAppliedDataUrl,
-        typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
-      );
-
-      const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
-      return cloudUrl || normalized.dataUrl;
-    }
-
-    // -----------------------------------------------------
-    // REALISTIC GEMINI VIRTUAL TRY-ON
-    // -----------------------------------------------------
-
-    const personFile = await dataUrlToFile(image, "person.jpg");
-
-    const clothingColor =
-      typeof payload.clothingColor === "string"
-        ? payload.clothingColor
-        : selectedClothingColor;
-
-    // The SVG is recolored first, then rendered as a PNG reference for Gemini.
-    const clothingFile = await renderClothingToPng(
-      clothingIndex,
-      clothingColor,
-    );
-
     const formData = new FormData();
-    formData.append("person", personFile);
-    formData.append("clothing", clothingFile);
+    formData.append("file", await dataUrlToFile(image, "person.jpg"));
 
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(
-      () => controller.abort(),
-      5 * 60 * 1000,
-    );
+    const timeoutId = window.setTimeout(() => controller.abort(), 120000);
 
     let response: Response;
 
     try {
-      response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-tryon`, {
+      response = await fetch(`${PYTHON_API_BASE_URL}/api/remove-background`, {
         method: "POST",
         body: formData,
         signal: controller.signal,
+        cache: "no-store",
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        throw new Error(
-          "Gemini processing timed out after 5 minutes. Please try again.",
-        );
+        throw new Error("Background removal timed out. Please try again.");
       }
-
       throw error;
     } finally {
       window.clearTimeout(timeoutId);
     }
 
     if (!response.ok) {
-      const rawMessage = await response.text().catch(() => "");
-      let message = rawMessage;
-
-      try {
-        const parsed = JSON.parse(rawMessage);
-        message = parsed?.error || parsed?.message || rawMessage;
-      } catch {
-        // Plain-text backend error; keep it as-is.
-      }
-
-      const normalizedMessage = String(message || "").toLowerCase();
-      const temporaryGeminiFailure =
-        response.status === 401 ||
-        response.status === 403 ||
-        response.status === 429 ||
-        response.status === 503 ||
-        normalizedMessage.includes("api_key") ||
-        normalizedMessage.includes("api key") ||
-        normalizedMessage.includes("rate limit") ||
-        normalizedMessage.includes("too many requests") ||
-        normalizedMessage.includes("quota");
-
+      const message = await response.text().catch(() => "");
       throw new Error(
-        temporaryGeminiFailure
-          ? GEMINI_UNAVAILABLE_MESSAGE
-          : message || `Gemini virtual try-on failed (${response.status}).`,
+        message || `Background removal failed (${response.status}).`,
       );
     }
 
-    const generatedBlob = await response.blob();
+    const processedBlob = await response.blob();
 
     if (
-      generatedBlob.size === 0 ||
-      (generatedBlob.type && !generatedBlob.type.startsWith("image/"))
+      processedBlob.size === 0 ||
+      (processedBlob.type && !processedBlob.type.startsWith("image/"))
     ) {
-      throw new Error("Gemini returned an invalid or empty image response.");
+      throw new Error("Background removal returned an invalid image response.");
     }
 
-    const generatedDataUrl = await blobToDataUrl(generatedBlob);
+    const backgroundAppliedDataUrl = await applyBackgroundColorToImage(
+      processedBlob,
+      bgColor,
+    );
 
     const normalized = await normalizeImageToExactPhysicalSize(
-      generatedDataUrl,
+      backgroundAppliedDataUrl,
       typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
     );
 
     const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
-
     return cloudUrl || normalized.dataUrl;
   };
 
@@ -1404,19 +1341,8 @@ export default function PhotoEditorPage() {
       return;
     }
 
-    // No clothing selection always uses the normal local background-removal
-    // pipeline. Gemini is never contacted in this case.
-    const clothingSelected = isDualMode
-      ? leftClothing >= 0 || rightClothing >= 0
-      : selectedClothing >= 0;
-
-    if (clothingSelected) {
-      const geminiEnabled = await checkGeminiAvailability();
-      if (!geminiEnabled) {
-        setErrorMessage(GEMINI_UNAVAILABLE_MESSAGE);
-        return;
-      }
-    }
+    // Gemini is temporarily disabled.
+    // Generation goes directly through the existing non-Gemini backend flow.
 
     setIsGenerating(true);
 
