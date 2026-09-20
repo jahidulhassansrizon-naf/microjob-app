@@ -827,7 +827,9 @@ export default function PhotoEditorPage() {
   };
 
   const PYTHON_API_BASE_URL = (
-    process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000"
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_PYTHON_API_URL ||
+    "http://127.0.0.1:8000"
   ).replace(/\/$/, "");
 
   const GEMINI_UNAVAILABLE_MESSAGE =
