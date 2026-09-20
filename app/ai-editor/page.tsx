@@ -103,7 +103,6 @@ export default function PhotoEditorPage() {
     const savedUserStr =
       localStorage.getItem("user") || localStorage.getItem("userData");
 
-    // যদি কুকিতে টোকেন এবং লোকালস্টোরেজে ইউজার কোনোটিই না থাকে, তবে /login এ রিডাইরেক্ট করবে
     if (!hasTokenCookie && !savedUserStr) {
       router.replace("/login");
       return;
@@ -213,12 +212,6 @@ export default function PhotoEditorPage() {
     { label: "50×60 mm", aspect: "50/60" },
   ];
 
-  // =========================================================
-  // Production print sizing
-  // =========================================================
-  // All generated/downloaded photos are standardized at 300 DPI.
-  // The selected physical dimensions are converted to deterministic
-  // pixel dimensions so the output file is ready for real printing.
   const EXPORT_DPI = 300;
 
   type PhysicalSize = {
@@ -254,8 +247,6 @@ export default function PhotoEditorPage() {
       };
     }
 
-    // Dual Mode does not have one physical dimension in the UI.
-    // Use the editor's primary portrait standard for the actual export.
     return {
       width: 45,
       height: 55,
@@ -313,10 +304,6 @@ export default function PhotoEditorPage() {
       throw new Error("Source image has invalid dimensions.");
     }
 
-    // IMPORTANT: Selecting a physical size must never crop the person's photo.
-    // The whole source image is fitted inside the exact-size output canvas.
-    // Extra space is left as background, and the photo is anchored to the
-    // bottom of the target canvas to match the print-ready reference layout.
     const scale = Math.min(
       target.widthPx / sourceWidth,
       target.heightPx / sourceHeight,
@@ -403,53 +390,6 @@ export default function PhotoEditorPage() {
       return w / h;
     }
     return 35 / 45;
-  };
-
-  const cropImageToExactRatio = (
-    imageSrc: string,
-    targetAspect: number,
-  ): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = imageSrc;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        let cropWidth = img.width;
-        let cropHeight = img.height;
-        const currentAspect = img.width / img.height;
-
-        if (currentAspect > targetAspect) {
-          cropWidth = img.height * targetAspect;
-        } else {
-          cropHeight = img.width / targetAspect;
-        }
-
-        const startX = (img.width - cropWidth) / 2;
-        const startY = (img.height - cropHeight) / 2;
-
-        canvas.width = Math.round(cropWidth);
-        canvas.height = Math.round(cropHeight);
-
-        if (ctx) {
-          ctx.drawImage(
-            img,
-            startX,
-            startY,
-            cropWidth,
-            cropHeight,
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-          );
-        }
-        resolve(canvas.toDataURL("image/jpeg", 0.95));
-      };
-      img.onerror = () => resolve(imageSrc);
-    });
   };
 
   const getStyleFromAspect = (aspectStr: string) => {
@@ -553,9 +493,6 @@ export default function PhotoEditorPage() {
       let uploadBody: BodyInit;
       let headers: HeadersInit | undefined;
 
-      // Convert blob: URLs to real image data before sending them to the
-      // server. Sending a blob URL string directly cannot be decoded by the
-      // Next.js upload route.
       if (imageData.startsWith("blob:")) {
         const blobResponse = await fetch(imageData);
         if (!blobResponse.ok) {
@@ -574,7 +511,6 @@ export default function PhotoEditorPage() {
 
         uploadBody = formData;
       } else {
-        // data:image/... URLs are handled by the JSON branch of /api/upload.
         headers = { "Content-Type": "application/json" };
         uploadBody = JSON.stringify({ image: imageData });
       }
@@ -598,11 +534,9 @@ export default function PhotoEditorPage() {
       return data.url as string;
     } catch (err) {
       console.error("Cloudinary Upload Error:", err);
-
       setErrorMessage(
         err instanceof Error ? err.message : "Image upload failed.",
       );
-
       return null;
     }
   };
@@ -645,7 +579,6 @@ export default function PhotoEditorPage() {
           sourceCanvas.height,
         );
 
-        // Apply the user's rotation to the final cropped result so Rotate is not cosmetic-only.
         if (rotate % 360 !== 0) {
           const rotatedCanvas = document.createElement("canvas");
           const quarterTurns = ((rotate % 360) + 360) % 360;
@@ -673,17 +606,9 @@ export default function PhotoEditorPage() {
         }
       }
 
-      // Always use a stable image URL in the preview state.
-      // The old code stored the temporary blob URL in uploadedImage/leftImage/rightImage
-      // and then immediately revoked that blob URL, which caused the browser to show a
-      // broken-image icon after clicking Crop.
       const uploadedOriginalUrl = await uploadToCloudinary(croppedImageUrl);
-
       let finalImageUrl = uploadedOriginalUrl || croppedImageUrl;
 
-      // If Cloudinary upload fails and croppedImageUrl is still a blob URL, convert it
-      // to a data URL before revoking the temporary object URL. This guarantees that
-      // the preview never points to a revoked blob URL.
       if (!uploadedOriginalUrl && finalImageUrl.startsWith("blob:")) {
         const blobResponse = await fetch(finalImageUrl);
         if (!blobResponse.ok) {
@@ -710,12 +635,10 @@ export default function PhotoEditorPage() {
       setOriginalImageForDual(finalImageUrl);
       setIsDualPreviewActive(false);
 
-      // Use the same stable URL for every preview target.
       if (activeTarget === "left") setLeftImage(finalImageUrl);
       else if (activeTarget === "right") setRightImage(finalImageUrl);
       else setUploadedImage(finalImageUrl);
 
-      // Safe now: no preview state depends on the temporary blob URL.
       if (tempImageForCrop.startsWith("blob:")) {
         URL.revokeObjectURL(tempImageForCrop);
       }
@@ -826,18 +749,12 @@ export default function PhotoEditorPage() {
     }
   };
 
-  const PYTHON_API_BASE_URL = (
-    process.env.NEXT_PUBLIC_PYTHON_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "http://127.0.0.1:8000"
-  ).replace(/\/$/, "");
-
-  // ===== GEMINI TEMPORARILY DISABLED — unavailable message =====
-  //   const GEMINI_UNAVAILABLE_MESSAGE =
-  //     "Clothing Try-On is temporarily unavailable because our paid AI API quota has ended. Please wait—we will bring it back soon.";
-  //
-  // ===== END TEMPORARILY DISABLED =====
+  // =========================================================
+  // LOCAL BACKEND URL CONFIGURATION
+  // =========================================================
+  // এটি সরাসরি লোকাল ব্যাকএন্ড পোর্টে পয়েন্ট করছে।
+  // আপনার main.py যে পোর্টে চলবে (যেমন 8000), এখানে সেটি দেওয়া রয়েছে।
+  const LOCAL_PYTHON_API_URL = "http://127.0.0.1:8000";
 
   const isCloudinaryUrl = (value: unknown): value is string => {
     if (typeof value !== "string") return false;
@@ -853,241 +770,6 @@ export default function PhotoEditorPage() {
     }
   };
 
-  // ===== GEMINI TEMPORARILY DISABLED — availability check =====
-  //   const checkGeminiAvailability = async (): Promise<boolean> => {
-  //     if (!PYTHON_API_BASE_URL) return false;
-  //
-  //     try {
-  //       const response = await fetch(`${PYTHON_API_BASE_URL}/api/gemini-status`, {
-  //         method: "GET",
-  //         cache: "no-store",
-  //       });
-  //
-  //       if (!response.ok) return false;
-  //
-  //       const data = await response.json().catch(() => null);
-  //       return data?.enabled === true;
-  //     } catch {
-  //       return false;
-  //     }
-  //   };
-  //
-  // ===== END TEMPORARILY DISABLED =====
-
-  // ===== GEMINI TEMPORARILY DISABLED — clothing recolor helpers =====
-  //   const CLOTHING_RECOLOR_PALETTE: Record<number, string[]> = {
-  //     0: [
-  //       "#A0B7D8",
-  //       "#6F86AE",
-  //       "#EEEEEE",
-  //       "#ADC2E6",
-  //       "#F4F4F4",
-  //       "#C5D4F3",
-  //       "#F6F6F6",
-  //       "#FBFBFB",
-  //       "#A5BEEA",
-  //       "#DDE8FB",
-  //     ],
-  //     1: ["#E53935"],
-  //     2: [
-  //       "#A0B7D8",
-  //       "#6F86AE",
-  //       "#171D2D",
-  //       "#243056",
-  //       "#ADC2E6",
-  //       "#262D3F",
-  //       "#161D33",
-  //     ],
-  //     3: [
-  //       "#A0B7D8",
-  //       "#6F86AE",
-  //       "#171D2D",
-  //       "#243056",
-  //       "#ADC2E6",
-  //       "#0D1426",
-  //       "#161D33",
-  //       "#272F49",
-  //       "#B7CDED",
-  //       "#9AB6D8",
-  //       "#C7D8FF",
-  //       "#97AED3",
-  //       "#AABDE2",
-  //       "#DEE9FF",
-  //       "#C4D5F7",
-  //     ],
-  //     4: ["#6F0D0C", "#951C1E", "#1B0B0C"],
-  //     5: [
-  //       "#121212",
-  //       "#8D0307",
-  //       "#0F0F0E",
-  //       "#8C0005",
-  //       "#0A0B0A",
-  //       "#A23034",
-  //       "#A63B3E",
-  //       "#8E050A",
-  //       "#0A0A0A",
-  //       "#A83D41",
-  //       "#131311",
-  //       "#080806",
-  //       "#930F14",
-  //       "#050505",
-  //       "#050605",
-  //       "#A12E32",
-  //       "#040403",
-  //       "#A43639",
-  //       "#131211",
-  //       "#070706",
-  //     ],
-  //     6: ["#EAEAEA", "#D6D6D6"],
-  //     7: ["#6F0D0C", "#951C1E"],
-  //     8: ["#243056", "#3B5BDB"],
-  //     9: ["#AED3FF", "#91C2F2", "#1A5B87", "#3776AA", "#D4ECFF", "#2E81AF"],
-  //     10: ["#444A51", "#383D44", "#1C222B", "#080C14", "#20252B", "#DAE1E5"],
-  //     11: ["#B969FF", "#5C5CFF", "#CB83FF"],
-  //     12: ["#3131DB", "#3B3BEA", "#5C5CFF", "#4E4EF9"],
-  //     13: [
-  //       "#A7A9AB",
-  //       "#3776AA",
-  //       "#2F3033",
-  //       "#AED3FF",
-  //       "#134B70",
-  //       "#D8D8D8",
-  //       "#6FA6DD",
-  //     ],
-  //   };
-  //
-  //   const clampValue = (value: number, min: number, max: number) =>
-  //     Math.min(max, Math.max(min, value));
-  //
-  //   const hexToRgb = (hex: string) => {
-  //     const clean = hex.replace("#", "").trim();
-  //     const normalized =
-  //       clean.length === 3
-  //         ? clean
-  //             .split("")
-  //             .map((c) => c + c)
-  //             .join("")
-  //         : clean;
-  //
-  //     return {
-  //       r: parseInt(normalized.slice(0, 2), 16),
-  //       g: parseInt(normalized.slice(2, 4), 16),
-  //       b: parseInt(normalized.slice(4, 6), 16),
-  //     };
-  //   };
-  //
-  //   const rgbToHex = (r: number, g: number, b: number) => {
-  //     const toHex = (value: number) =>
-  //       Math.round(clampValue(value, 0, 255))
-  //         .toString(16)
-  //         .padStart(2, "0");
-  //
-  //     return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-  //   };
-  //
-  //   const rgbToHsl = (r: number, g: number, b: number) => {
-  //     r /= 255;
-  //     g /= 255;
-  //     b /= 255;
-  //
-  //     const max = Math.max(r, g, b);
-  //     const min = Math.min(r, g, b);
-  //     const delta = max - min;
-  //
-  //     let h = 0;
-  //     const l = (max + min) / 2;
-  //     const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-  //
-  //     if (delta !== 0) {
-  //       if (max === r) {
-  //         h = 60 * (((g - b) / delta) % 6);
-  //       } else if (max === g) {
-  //         h = 60 * ((b - r) / delta + 2);
-  //       } else {
-  //         h = 60 * ((r - g) / delta + 4);
-  //       }
-  //     }
-  //
-  //     if (h < 0) h += 360;
-  //
-  //     return { h, s, l };
-  //   };
-  //
-  //   const hslToRgb = (h: number, s: number, l: number) => {
-  //     const c = (1 - Math.abs(2 * l - 1)) * s;
-  //     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  //     const m = l - c / 2;
-  //
-  //     let r = 0;
-  //     let g = 0;
-  //     let b = 0;
-  //
-  //     if (h < 60) {
-  //       r = c;
-  //       g = x;
-  //     } else if (h < 120) {
-  //       r = x;
-  //       g = c;
-  //     } else if (h < 180) {
-  //       g = c;
-  //       b = x;
-  //     } else if (h < 240) {
-  //       g = x;
-  //       b = c;
-  //     } else if (h < 300) {
-  //       r = x;
-  //       b = c;
-  //     } else {
-  //       r = c;
-  //       b = x;
-  //     }
-  //
-  //     return {
-  //       r: (r + m) * 255,
-  //       g: (g + m) * 255,
-  //       b: (b + m) * 255,
-  //     };
-  //   };
-  //
-  //   const recolorSvg = (
-  //     svg: string,
-  //     clothingIndex: number,
-  //     targetColor: string,
-  //   ) => {
-  //     const palette = CLOTHING_RECOLOR_PALETTE[clothingIndex] || [];
-  //
-  //     if (!palette.length) return svg;
-  //
-  //     const target = hexToRgb(targetColor);
-  //     const targetHsl = rgbToHsl(target.r, target.g, target.b);
-  //
-  //     let result = svg;
-  //
-  //     for (const sourceColor of palette) {
-  //       const source = hexToRgb(sourceColor);
-  //       const sourceHsl = rgbToHsl(source.r, source.g, source.b);
-  //       const saturation =
-  //         targetHsl.s === 0 ? 0 : clampValue(targetHsl.s * 0.96, 0, 1);
-  //
-  //       const replacement = rgbToHex(
-  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-  //           .r,
-  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-  //           .g,
-  //         hslToRgb(targetHsl.h, saturation, clampValue(sourceHsl.l, 0.08, 0.97))
-  //           .b,
-  //       );
-  //
-  //       const safeSource = sourceColor.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
-  //
-  //       result = result.replace(new RegExp(safeSource, "gi"), replacement);
-  //     }
-  //
-  //     return result;
-  //   };
-  //
-  // ===== END TEMPORARILY DISABLED =====
-
   const dataUrlToFile = async (
     dataUrl: string,
     filename: string,
@@ -1099,95 +781,6 @@ export default function PhotoEditorPage() {
       type: blob.type || "image/jpeg",
     });
   };
-
-  // ===== GEMINI TEMPORARILY DISABLED — clothing rendering =====
-  //   const renderClothingToPng = async (
-  //     clothingIndex: number,
-  //     clothingColor: string,
-  //   ): Promise<File> => {
-  //     const assetUrl = `/icons/clothing-${clothingIndex + 1}.svg`;
-  //
-  //     const response = await fetch(assetUrl, {
-  //       cache: "force-cache",
-  //     });
-  //
-  //     if (!response.ok) {
-  //       throw new Error(`Could not load clothing-${clothingIndex + 1}.svg`);
-  //     }
-  //
-  //     const originalSvg = await response.text();
-  //     const coloredSvg = recolorSvg(originalSvg, clothingIndex, clothingColor);
-  //
-  //     const svgBlob = new Blob([coloredSvg], {
-  //       type: "image/svg+xml;charset=utf-8",
-  //     });
-  //
-  //     const objectUrl = URL.createObjectURL(svgBlob);
-  //
-  //     try {
-  //       const image = new Image();
-  //       image.decoding = "async";
-  //       image.src = objectUrl;
-  //
-  //       await new Promise<void>((resolve, reject) => {
-  //         image.onload = () => resolve();
-  //         image.onerror = () =>
-  //           reject(
-  //             new Error(`Could not render clothing-${clothingIndex + 1}.svg`),
-  //           );
-  //       });
-  //
-  //       const viewBoxMatch = coloredSvg.match(
-  //         /viewBox=["']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)\s*["']/i,
-  //       );
-  //
-  //       const sourceWidth =
-  //         viewBoxMatch && Number(viewBoxMatch[1]) > 0
-  //           ? Number(viewBoxMatch[1])
-  //           : image.naturalWidth || image.width || 800;
-  //
-  //       const sourceHeight =
-  //         viewBoxMatch && Number(viewBoxMatch[2]) > 0
-  //           ? Number(viewBoxMatch[2])
-  //           : image.naturalHeight || image.height || 800;
-  //
-  //       const width = 800;
-  //       const height = Math.max(
-  //         1,
-  //         Math.round(width * (sourceHeight / sourceWidth)),
-  //       );
-  //
-  //       const canvas = document.createElement("canvas");
-  //       canvas.width = width;
-  //       canvas.height = height;
-  //
-  //       const context = canvas.getContext("2d");
-  //
-  //       if (!context) {
-  //         throw new Error("Could not create clothing render canvas.");
-  //       }
-  //
-  //       context.clearRect(0, 0, width, height);
-  //
-  //       context.drawImage(image, 0, 0, width, height);
-  //
-  //       const pngBlob = await new Promise<Blob | null>((resolve) => {
-  //         canvas.toBlob(resolve, "image/png", 1);
-  //       });
-  //
-  //       if (!pngBlob) {
-  //         throw new Error("Could not convert clothing to PNG.");
-  //       }
-  //
-  //       return new File([pngBlob], `clothing-${clothingIndex + 1}.png`, {
-  //         type: "image/png",
-  //       });
-  //     } finally {
-  //       URL.revokeObjectURL(objectUrl);
-  //     }
-  //   };
-  //
-  // ===== END TEMPORARILY DISABLED =====
 
   const applyBackgroundColorToImage = async (
     imageBlob: Blob,
@@ -1234,31 +827,8 @@ export default function PhotoEditorPage() {
     }
   };
 
-  // ===== GEMINI TEMPORARILY DISABLED — Gemini output helper =====
-  //   const blobToDataUrl = (blob: Blob): Promise<string> => {
-  //     return new Promise((resolve, reject) => {
-  //       const reader = new FileReader();
-  //       reader.onload = () => {
-  //         if (typeof reader.result !== "string") {
-  //           reject(new Error("Could not read generated image."));
-  //           return;
-  //         }
-  //         resolve(reader.result);
-  //       };
-  //       reader.onerror = () => {
-  //         reject(new Error("Could not read generated image."));
-  //       };
-  //       reader.readAsDataURL(blob);
-  //     });
-  //   };
-  //
-  // ===== END TEMPORARILY DISABLED =====
-
   // -----------------------------------------------------
-  // NON-GEMINI GENERATION FLOW
-  // -----------------------------------------------------
-  // Gemini is intentionally bypassed for now. Every generation request
-  // uses the existing Render-backed background-removal endpoint.
+  // LOCAL BACKEND ONLY GENERATION FLOW
   // -----------------------------------------------------
   const callGenerateApi = async (payload: Record<string, unknown>) => {
     const image = typeof payload.image === "string" ? payload.image : "";
@@ -1281,7 +851,8 @@ export default function PhotoEditorPage() {
     let response: Response;
 
     try {
-      response = await fetch(`${PYTHON_API_BASE_URL}/api/remove-background`, {
+      // শুধুমাত্র লোকাল ব্যাকএন্ডে রিকোয়েস্ট পাঠানো হচ্ছে
+      response = await fetch(`${LOCAL_PYTHON_API_URL}/api/remove-background`, {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -1291,7 +862,10 @@ export default function PhotoEditorPage() {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new Error("Background removal timed out. Please try again.");
       }
-      throw error;
+      // লোকাল সার্ভার বন্ধ থাকলে সরাসরি এই এরর দেখাবে, রেন্ডারে কোনোভাবেই যাবে না
+      throw new Error(
+        "Local backend server is not running or unreachable. Please start python backend at http://127.0.0.1:8000",
+      );
     } finally {
       window.clearTimeout(timeoutId);
     }
@@ -1299,7 +873,8 @@ export default function PhotoEditorPage() {
     if (!response.ok) {
       const message = await response.text().catch(() => "");
       throw new Error(
-        message || `Background removal failed (${response.status}).`,
+        message ||
+          `Background removal failed on local server (${response.status}).`,
       );
     }
 
@@ -1329,8 +904,6 @@ export default function PhotoEditorPage() {
   const handleGeneratePhoto = async () => {
     setErrorMessage(null);
 
-    // Validate the source photos first so the user gets the correct message
-    // before we check Gemini availability.
     if (isDualMode) {
       if (!leftImage || !rightImage) {
         setErrorMessage("Dual mode needs both left and right photos.");
@@ -1340,9 +913,6 @@ export default function PhotoEditorPage() {
       setErrorMessage("Upload a photo before generating.");
       return;
     }
-
-    // Gemini is temporarily disabled.
-    // Generation goes directly through the existing non-Gemini backend flow.
 
     setIsGenerating(true);
 
@@ -1441,10 +1011,6 @@ export default function PhotoEditorPage() {
 
       const rawImage = uploadedImage!;
 
-      // Do NOT auto-crop the source just because the user selected a physical
-      // photo size. Physical sizing is handled later by
-      // normalizeImageToExactPhysicalSize(), which preserves the complete
-      // source and anchors it to the bottom of the exact-size canvas.
       const generatedUrl = await callGenerateApi({
         ...basePayload,
         image: rawImage,
@@ -1536,8 +1102,6 @@ export default function PhotoEditorPage() {
     setErrorMessage(null);
 
     try {
-      // Only send actual Cloudinary assets to the Cloudinary delete route.
-      // Data/blob/local preview URLs cannot be deleted from Cloudinary.
       if (isCloudinaryUrl(imageToDelete.url)) {
         const deleteRes = await fetch("/api/delete", {
           method: "POST",
