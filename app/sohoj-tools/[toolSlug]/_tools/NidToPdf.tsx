@@ -624,6 +624,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
         y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
       };
     },
+    [],
   );
 
   const updatePoint = useCallback(
