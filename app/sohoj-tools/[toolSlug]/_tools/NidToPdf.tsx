@@ -28,9 +28,12 @@ import {
   X,
   Minimize2,
   ChevronRight,
+  Eye,
+  CheckCircle2,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { createPortal } from "react-dom";
 import NidSettingsPanel from "@/components/nidToPdfComponent/NidSettingsPanel";
 
 const PYTHON_API_BASE_URL = (
@@ -43,18 +46,187 @@ const PYTHON_API_BASE_URL = (
 const AUTO_CROP_ERROR =
   "Auto crop is temporarily unavailable. You can turn Auto crop off and use manual Crop instead.";
 
-async function autoCropFile(file: File, signal?: AbortSignal): Promise<File> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Please select a valid image file.");
+const NID_CROP_WIDTH = 856;
+const NID_CROP_HEIGHT = 540;
+const NID_CROP_ASPECT_RATIO = NID_CROP_WIDTH / NID_CROP_HEIGHT;
+
+async function canvasToPngFile(
+  canvas: HTMLCanvasElement,
+  filename: string,
+): Promise<File> {
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((value) => resolve(value), "image/png"),
+  );
+
+  if (!blob) {
+    throw new Error("Could not prepare the image for manual crop.");
+  }
+
+  return new File([blob], filename, {
+    type: "image/png",
+    lastModified: Date.now(),
+  });
+}
+
+function normalizeCropResultToCardRatio(
+  blob: Blob,
+  filename: string,
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+
+    image.onload = () => {
+      try {
+        if (!image.naturalWidth || !image.naturalHeight) {
+          throw new Error("Auto crop returned an invalid image.");
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = NID_CROP_WIDTH;
+        canvas.height = NID_CROP_HEIGHT;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Could not prepare the auto-cropped image.");
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        // The NID card frame is fixed to CR80 (85.6 × 54 mm).
+        // Normalizing the backend result here keeps Auto Crop visually
+        // identical to Manual Crop and makes the whole card fill the frame.
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((normalizedBlob) => {
+          if (!normalizedBlob) {
+            reject(new Error("Could not finalize the auto-cropped image."));
+            return;
+          }
+
+          resolve(
+            new File([normalizedBlob], filename, {
+              type: "image/png",
+              lastModified: Date.now(),
+            }),
+          );
+        }, "image/png");
+      } catch (error) {
+        reject(
+          error instanceof Error
+            ? error
+            : new Error("Could not normalize the auto-cropped image."),
+        );
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Auto crop returned an unreadable image."));
+    };
+
+    image.src = url;
+  });
+}
+
+function useObjectUrl(file: File | null): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setUrl(null);
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(file);
+    setUrl(nextUrl);
+
+    return () => {
+      URL.revokeObjectURL(nextUrl);
+    };
+  }, [file]);
+
+  return url;
+}
+
+async function loadImageElement(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = () => resolve(img);
+    img.onerror = () =>
+      reject(new Error("Unable to load image for auto crop."));
+
+    img.src = src;
+  });
+}
+
+function normalizeRotation(angle: number): number {
+  return ((angle % 360) + 360) % 360;
+}
+
+function createRotatedCanvas(
+  img: HTMLImageElement,
+  angle: number,
+): HTMLCanvasElement {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+
+  if (!width || !height) {
+    throw new Error("Invalid image dimensions.");
+  }
+
+  const normalizedAngle = normalizeRotation(angle);
+  const swap = normalizedAngle === 90 || normalizedAngle === 270;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = swap ? height : width;
+  canvas.height = swap ? width : height;
+
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("Canvas context unavailable.");
+  }
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((normalizedAngle * Math.PI) / 180);
+  ctx.drawImage(img, -width / 2, -height / 2, width, height);
+  ctx.restore();
+
+  return canvas;
+}
+
+async function autoCropCanvas(
+  canvas: HTMLCanvasElement,
+  filename = "crop.png",
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((value) => resolve(value), "image/png"),
+  );
+
+  if (!blob) {
+    throw new Error("Canvas blob conversion failed.");
   }
 
   const formData = new FormData();
-  formData.append("file", file, file.name);
+  formData.append("file", blob, filename);
 
   let response: Response;
 
   try {
-    response = await fetch(`${PYTHON_API_BASE_URL}/api/nid-auto-crop`, {
+    response = await fetch(`${PYTHON_API_BASE_URL}/api/auto-crop`, {
       method: "POST",
       body: formData,
       signal,
@@ -79,146 +251,269 @@ async function autoCropFile(file: File, signal?: AbortSignal): Promise<File> {
     );
   }
 
-  const blob = await response.blob();
+  const responseBlob = await response.blob();
 
-  if (!blob.size) {
+  if (!responseBlob.size) {
     throw new Error("Auto crop returned an empty image.");
   }
 
-  return new File([blob], file.name.replace(/\.[^.]+$/, ".png"), {
-    type: "image/png",
-    lastModified: Date.now(),
-  });
+  return responseBlob;
 }
 
 // --- PERSPECTIVE WARP HELPER FUNCTIONS ---
+type CropPoint = { x: number; y: number };
+
 function solveLinearSystem(A: number[][], B: number[]): number[] {
   const n = A.length;
-  for (let i = 0; i < n; i++) A[i].push(B[i]);
-  for (let i = 0; i < n; i++) {
-    let maxEl = Math.abs(A[i][i]);
-    let maxRow = i;
-    for (let k = i + 1; k < n; k++) {
-      if (Math.abs(A[k][i]) > maxEl) {
-        maxEl = Math.abs(A[k][i]);
-        maxRow = k;
+  if (n === 0 || B.length !== n || A.some((row) => row.length !== n)) {
+    throw new Error("Invalid homography system.");
+  }
+
+  const augmented = A.map((row, rowIndex) => [...row, B[rowIndex]]);
+  const EPSILON = 1e-10;
+
+  for (let column = 0; column < n; column++) {
+    let pivotRow = column;
+    let pivotValue = Math.abs(augmented[column][column]);
+
+    for (let row = column + 1; row < n; row++) {
+      const value = Math.abs(augmented[row][column]);
+      if (value > pivotValue) {
+        pivotValue = value;
+        pivotRow = row;
       }
     }
-    for (let k = i; k < n + 1; k++) {
-      const tmp = A[maxRow][k];
-      A[maxRow][k] = A[i][k];
-      A[i][k] = tmp;
+
+    if (pivotValue < EPSILON) {
+      throw new Error("Crop points do not form a valid perspective shape.");
     }
-    for (let k = i + 1; k < n; k++) {
-      const c = -A[k][i] / A[i][i];
-      for (let j = i; j < n + 1; j++) {
-        if (i === j) A[k][j] = 0;
-        else A[k][j] += c * A[i][j];
+
+    if (pivotRow !== column) {
+      [augmented[column], augmented[pivotRow]] = [
+        augmented[pivotRow],
+        augmented[column],
+      ];
+    }
+
+    const pivot = augmented[column][column];
+    for (let j = column; j <= n; j++) {
+      augmented[column][j] /= pivot;
+    }
+
+    for (let row = 0; row < n; row++) {
+      if (row === column) continue;
+
+      const factor = augmented[row][column];
+      if (Math.abs(factor) < EPSILON) continue;
+
+      for (let j = column; j <= n; j++) {
+        augmented[row][j] -= factor * augmented[column][j];
       }
     }
   }
-  const x = new Array(n).fill(0);
-  for (let i = n - 1; i >= 0; i--) {
-    x[i] = A[i][n] / A[i][i];
-    for (let k = i - 1; k >= 0; k--) {
-      A[k][n] -= A[k][i] * x[i];
-    }
-  }
-  return x;
+
+  return augmented.map((row) => row[n]);
 }
 
-function getHomographyMatrix(
-  src: { x: number; y: number }[],
-  dst: { x: number; y: number }[],
-): number[] {
+function getHomographyMatrix(src: CropPoint[], dst: CropPoint[]): number[] {
+  if (src.length !== 4 || dst.length !== 4) {
+    throw new Error("Exactly four crop points are required.");
+  }
+
   const A: number[][] = [];
   const B: number[] = [];
+
   for (let i = 0; i < 4; i++) {
     const { x, y } = src[i];
     const { x: u, y: v } = dst[i];
+
     A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]);
-    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]);
     B.push(u);
+
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]);
     B.push(v);
   }
-  const h = solveLinearSystem(A, B);
-  h.push(1);
-  return h;
+
+  return [...solveLinearSystem(A, B), 1];
+}
+
+function polygonArea(points: CropPoint[]): number {
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    area += current.x * next.y - next.x * current.y;
+  }
+  return Math.abs(area) / 2;
+}
+
+function crossProduct(a: CropPoint, b: CropPoint, c: CropPoint): number {
+  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+function validateCropPoints(
+  points: CropPoint[],
+  width: number,
+  height: number,
+): void {
+  if (
+    points.length !== 4 ||
+    !width ||
+    !height ||
+    !Number.isFinite(width) ||
+    !Number.isFinite(height)
+  ) {
+    throw new Error("Invalid crop image dimensions or points.");
+  }
+
+  const ordered = points.map((point) => ({
+    x: Math.max(0, Math.min(width, point.x)),
+    y: Math.max(0, Math.min(height, point.y)),
+  }));
+
+  const area = polygonArea(ordered);
+  const minimumArea = width * height * 0.003;
+
+  if (area < minimumArea) {
+    throw new Error(
+      "Crop area is too small. Move the corner handles farther apart.",
+    );
+  }
+
+  const crossValues = [
+    crossProduct(ordered[0], ordered[1], ordered[2]),
+    crossProduct(ordered[1], ordered[2], ordered[3]),
+    crossProduct(ordered[2], ordered[3], ordered[0]),
+    crossProduct(ordered[3], ordered[0], ordered[1]),
+  ];
+
+  const positive = crossValues.filter((value) => value > 1e-7);
+  const negative = crossValues.filter((value) => value < -1e-7);
+
+  if (positive.length > 0 && negative.length > 0) {
+    throw new Error(
+      "Crop corners crossed. Keep the four corners in clockwise or counter-clockwise order.",
+    );
+  }
+
+  const edgeLengths = ordered.map((point, index) => {
+    const next = ordered[(index + 1) % ordered.length];
+    return Math.hypot(next.x - point.x, next.y - point.y);
+  });
+
+  const minimumEdge = Math.max(8, Math.min(width, height) * 0.02);
+  if (edgeLengths.some((length) => length < minimumEdge)) {
+    throw new Error(
+      "Crop corners are too close together. Move each handle to a different card corner.",
+    );
+  }
 }
 
 function warpPerspective(
   img: HTMLImageElement,
-  corners: { x: number; y: number }[],
+  corners: CropPoint[],
   outWidth = 856,
   outHeight = 540,
 ): Promise<Blob> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = outWidth;
-    canvas.height = outHeight;
-    const ctx = canvas.getContext("2d")!;
+  return new Promise((resolve, reject) => {
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
 
-    const srcCanvas = document.createElement("canvas");
-    srcCanvas.width = img.naturalWidth;
-    srcCanvas.height = img.naturalHeight;
-    const srcCtx = srcCanvas.getContext("2d")!;
-    srcCtx.drawImage(img, 0, 0);
-    const srcData = srcCtx.getImageData(
-      0,
-      0,
-      img.naturalWidth,
-      img.naturalHeight,
-    );
+    try {
+      validateCropPoints(corners, naturalWidth, naturalHeight);
 
-    const dstCorners = [
-      { x: 0, y: 0 },
-      { x: outWidth, y: 0 },
-      { x: outWidth, y: outHeight },
-      { x: 0, y: outHeight },
-    ];
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = naturalWidth;
+      sourceCanvas.height = naturalHeight;
 
-    const H = getHomographyMatrix(dstCorners, corners);
+      const sourceCtx = sourceCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      if (!sourceCtx) {
+        throw new Error("Could not create source crop canvas.");
+      }
 
-    const outData = ctx.createImageData(outWidth, outHeight);
-    const outPixels = outData.data;
-    const srcPixels = srcData.data;
-    const sw = img.naturalWidth;
-    const sh = img.naturalHeight;
+      sourceCtx.imageSmoothingEnabled = true;
+      sourceCtx.imageSmoothingQuality = "high";
+      sourceCtx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
 
-    for (let v = 0; v < outHeight; v++) {
-      for (let u = 0; u < outWidth; u++) {
-        const Z = H[6] * u + H[7] * v + H[8];
-        const X = (H[0] * u + H[1] * v + H[2]) / Z;
-        const Y = (H[3] * u + H[4] * v + H[5]) / Z;
+      const srcData = sourceCtx.getImageData(0, 0, naturalWidth, naturalHeight);
 
-        const px = Math.floor(X);
-        const py = Math.floor(Y);
+      const destinationCanvas = document.createElement("canvas");
+      destinationCanvas.width = outWidth;
+      destinationCanvas.height = outHeight;
 
-        if (px >= 0 && px < sw - 1 && py >= 0 && py < sh - 1) {
-          const dx = X - px;
-          const dy = Y - py;
+      const destinationCtx = destinationCanvas.getContext("2d");
+      if (!destinationCtx) {
+        throw new Error("Could not create destination crop canvas.");
+      }
 
-          const idx00 = (py * sw + px) * 4;
-          const idx10 = (py * sw + (px + 1)) * 4;
-          const idx01 = ((py + 1) * sw + px) * 4;
-          const idx11 = ((py + 1) * sw + (px + 1)) * 4;
+      const dstCorners: CropPoint[] = [
+        { x: 0, y: 0 },
+        { x: outWidth - 1, y: 0 },
+        { x: outWidth - 1, y: outHeight - 1 },
+        { x: 0, y: outHeight - 1 },
+      ];
 
-          for (let c = 0; c < 4; c++) {
-            const val =
-              (1 - dx) * (1 - dy) * srcPixels[idx00 + c] +
-              dx * (1 - dy) * srcPixels[idx10 + c] +
-              (1 - dx) * dy * srcPixels[idx01 + c] +
-              dx * dy * srcPixels[idx11 + c];
-            outPixels[(v * outWidth + u) * 4 + c] = Math.round(val);
-          }
+      // Inverse mapping: output rectangle -> selected quadrilateral.
+      const H = getHomographyMatrix(dstCorners, corners);
+
+      const outData = destinationCtx.createImageData(outWidth, outHeight);
+      const outPixels = outData.data;
+      const srcPixels = srcData.data;
+
+      const sample = (x: number, y: number, channel: number): number => {
+        const clampedX = Math.max(0, Math.min(naturalWidth - 1, x));
+        const clampedY = Math.max(0, Math.min(naturalHeight - 1, y));
+
+        const x0 = Math.floor(clampedX);
+        const y0 = Math.floor(clampedY);
+        const x1 = Math.min(x0 + 1, naturalWidth - 1);
+        const y1 = Math.min(y0 + 1, naturalHeight - 1);
+        const dx = clampedX - x0;
+        const dy = clampedY - y0;
+
+        const i00 = (y0 * naturalWidth + x0) * 4 + channel;
+        const i10 = (y0 * naturalWidth + x1) * 4 + channel;
+        const i01 = (y1 * naturalWidth + x0) * 4 + channel;
+        const i11 = (y1 * naturalWidth + x1) * 4 + channel;
+
+        return (
+          srcPixels[i00] * (1 - dx) * (1 - dy) +
+          srcPixels[i10] * dx * (1 - dy) +
+          srcPixels[i01] * (1 - dx) * dy +
+          srcPixels[i11] * dx * dy
+        );
+      };
+
+      for (let y = 0; y < outHeight; y++) {
+        for (let x = 0; x < outWidth; x++) {
+          const denominator = H[6] * x + H[7] * y + H[8];
+          if (Math.abs(denominator) < 1e-10) continue;
+
+          const sourceX = (H[0] * x + H[1] * y + H[2]) / denominator;
+          const sourceY = (H[3] * x + H[4] * y + H[5]) / denominator;
+
+          const outputIndex = (y * outWidth + x) * 4;
+          outPixels[outputIndex] = Math.round(sample(sourceX, sourceY, 0));
+          outPixels[outputIndex + 1] = Math.round(sample(sourceX, sourceY, 1));
+          outPixels[outputIndex + 2] = Math.round(sample(sourceX, sourceY, 2));
+          outPixels[outputIndex + 3] = Math.round(sample(sourceX, sourceY, 3));
         }
       }
-    }
 
-    ctx.putImageData(outData, 0, 0);
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-    }, "image/png");
+      destinationCtx.putImageData(outData, 0, 0);
+
+      destinationCanvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Could not create cropped image."));
+        }
+      }, "image/png");
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error("Manual crop failed."));
+    }
   });
 }
 
@@ -231,183 +526,616 @@ interface CropModalProps {
 }
 
 function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
-  const imageUrl = useMemo(() => URL.createObjectURL(file), [file]);
   const imgRef = useRef<HTMLImageElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const activePointerIdRef = useRef<number | null>(null);
 
-  const [points, setPoints] = useState<Array<{ x: number; y: number }>>([
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [points, setPoints] = useState<CropPoint[]>([
     { x: 0.05, y: 0.05 },
     { x: 0.95, y: 0.05 },
     { x: 0.95, y: 0.95 },
     { x: 0.05, y: 0.95 },
   ]);
-
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dispSize, setDispSize] = useState({ width: 0, height: 0 });
+  const [cropError, setCropError] = useState<string | null>(null);
+  const imageUrl = useObjectUrl(file);
 
-  const updateDisplaySize = () => {
-    if (imgRef.current) {
-      setDispSize({
-        width: imgRef.current.clientWidth,
-        height: imgRef.current.clientHeight,
+  useEffect(() => {
+    setIsImageLoading(true);
+    setImageError(null);
+    setCropError(null);
+    setActiveIdx(null);
+    activePointerIdRef.current = null;
+    setPoints([
+      { x: 0.05, y: 0.05 },
+      { x: 0.95, y: 0.05 },
+      { x: 0.95, y: 0.95 },
+      { x: 0.05, y: 0.95 },
+    ]);
+  }, [file]);
+
+  const updateDisplaySize = useCallback(() => {
+    const image = imgRef.current;
+    if (!image) return;
+
+    const rect = image.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setDispSize({ width: rect.width, height: rect.height });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+
+    const image = imgRef.current;
+    if (!image) return;
+
+    let observer: ResizeObserver | null = null;
+
+    const handleLoaded = () => {
+      setIsImageLoading(false);
+      setImageError(null);
+      updateDisplaySize();
+
+      observer = new ResizeObserver(updateDisplaySize);
+      observer.observe(image);
+    };
+
+    const handleError = () => {
+      setIsImageLoading(false);
+      setImageError("The image could not be loaded for manual crop.");
+    };
+
+    image.addEventListener("load", handleLoaded);
+    image.addEventListener("error", handleError);
+
+    if (image.complete) {
+      if (image.naturalWidth > 0) {
+        handleLoaded();
+      } else {
+        handleError();
+      }
+    }
+
+    window.addEventListener("resize", updateDisplaySize);
+
+    return () => {
+      image.removeEventListener("load", handleLoaded);
+      image.removeEventListener("error", handleError);
+      observer?.disconnect();
+      window.removeEventListener("resize", updateDisplaySize);
+    };
+  }, [imageUrl, updateDisplaySize]);
+
+  const getPointFromClientPosition = useCallback(
+    (clientX: number, clientY: number): CropPoint => {
+      const image = imgRef.current;
+      if (!image) return { x: 0, y: 0 };
+
+      const rect = image.getBoundingClientRect();
+      if (!rect.width || !rect.height) return { x: 0, y: 0 };
+
+      return {
+        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
+      };
+    },
+  );
+
+  const updatePoint = useCallback(
+    (idx: number, clientX: number, clientY: number) => {
+      const nextPoint = getPointFromClientPosition(clientX, clientY);
+
+      setPoints((prev) => {
+        const next = [...prev];
+        next[idx] = nextPoint;
+        return next;
       });
+    },
+    [getPointFromClientPosition],
+  );
+
+  const handlePointerDown = (
+    idx: number,
+    e: React.PointerEvent<SVGCircleElement>,
+  ) => {
+    if (isProcessing || isImageLoading || imageError) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    activePointerIdRef.current = e.pointerId;
+    setActiveIdx(idx);
+    setCropError(null);
+
+    const stage = stageRef.current;
+    if (stage) {
+      try {
+        stage.setPointerCapture(e.pointerId);
+      } catch {
+        // Pointer capture is not available in every embedded browser.
+      }
     }
   };
 
-  useEffect(() => {
-    window.addEventListener("resize", updateDisplaySize);
-    return () => window.removeEventListener("resize", updateDisplaySize);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      activeIdx === null ||
+      activePointerIdRef.current !== e.pointerId ||
+      isProcessing
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    updatePoint(activeIdx, e.clientX, e.clientY);
+  };
+
+  const releasePointer = useCallback(() => {
+    const stage = stageRef.current;
+    const pointerId = activePointerIdRef.current;
+
+    if (stage && pointerId !== null) {
+      try {
+        if (stage.hasPointerCapture(pointerId)) {
+          stage.releasePointerCapture(pointerId);
+        }
+      } catch {
+        // Ignore browsers that do not expose pointer-capture state.
+      }
+    }
+
+    activePointerIdRef.current = null;
+    setActiveIdx(null);
   }, []);
 
-  const handlePointerDown = (idx: number, e: React.PointerEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setActiveIdx(idx);
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      activePointerIdRef.current !== null &&
+      e.pointerId !== activePointerIdRef.current
+    ) {
+      return;
+    }
+    releasePointer();
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (activeIdx === null || !imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    let x = (e.clientX - rect.left) / rect.width;
-    let y = (e.clientY - rect.top) / rect.height;
-
-    x = Math.max(0, Math.min(1, x));
-    y = Math.max(0, Math.min(1, y));
-
-    setPoints((prev) => {
-      const next = [...prev];
-      next[activeIdx] = { x, y };
-      return next;
-    });
+  const handlePointerCancel = () => {
+    releasePointer();
   };
 
-  const handlePointerUp = () => {
-    setActiveIdx(null);
+  const handleResetPoints = () => {
+    if (isProcessing) return;
+    setPoints([
+      { x: 0.05, y: 0.05 },
+      { x: 0.95, y: 0.05 },
+      { x: 0.95, y: 0.95 },
+      { x: 0.05, y: 0.95 },
+    ]);
+    setCropError(null);
   };
 
   const handleApplyCrop = async () => {
-    if (!imgRef.current) return;
+    const image = imgRef.current;
+    if (!image || !image.naturalWidth || !image.naturalHeight || isProcessing) {
+      return;
+    }
+
     setIsProcessing(true);
+    setCropError(null);
 
-    const naturalWidth = imgRef.current.naturalWidth;
-    const naturalHeight = imgRef.current.naturalHeight;
-
-    const actualCorners = points.map((p) => ({
-      x: p.x * naturalWidth,
-      y: p.y * naturalHeight,
+    const actualCorners = points.map((point) => ({
+      x: point.x * image.naturalWidth,
+      y: point.y * image.naturalHeight,
     }));
 
     try {
       const blob = await warpPerspective(
-        imgRef.current,
+        image,
         actualCorners,
-        856,
-        540,
+        NID_CROP_WIDTH,
+        NID_CROP_HEIGHT,
       );
-      const croppedFile = new File([blob], file.name, {
-        type: "image/png",
-        lastModified: Date.now(),
-      });
+      const croppedFile = new File(
+        [blob],
+        file.name.replace(/\.[^.]+$/, ".png"),
+        {
+          type: "image/png",
+          lastModified: Date.now(),
+        },
+      );
+
       onApply(croppedFile);
-    } catch (err) {
-      console.error("Cropping error:", err);
+    } catch (error) {
+      console.error("Manual crop failed:", error);
+      setCropError(
+        error instanceof Error
+          ? error.message
+          : "Manual crop could not be completed. Please adjust the corners and try again.",
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const pPx = points.map((p) => ({
-    x: p.x * dispSize.width,
-    y: p.y * dispSize.height,
+  const pPx = points.map((point) => ({
+    x: point.x * dispSize.width,
+    y: point.y * dispSize.height,
   }));
 
-  return (
-    <div className="fixed inset-0 z-50 bg-[#f8f9fa] flex flex-col justify-between font-sans select-none overflow-hidden h-screen w-screen">
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
-        <div>
+  const modal = (
+    <div className="fixed inset-0 z-[9998] w-screen h-[100dvh] min-h-[100svh] bg-[#f8f9fa] flex flex-col font-sans select-none overflow-hidden">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
+        <div className="min-w-0 pr-3">
           <div className="flex items-center gap-2">
-            <Crop size={16} className="text-amber-500" />
-            <h2 className="text-sm font-bold text-gray-950">
+            <Crop size={16} className="text-amber-500 shrink-0" />
+            <h2 className="text-sm font-bold text-gray-950 truncate">
               Crop — {sideTitle}
             </h2>
           </div>
-          <p className="text-[11px] text-gray-400 font-medium ml-6">
+          <p className="text-[11px] text-gray-400 font-medium ml-6 truncate">
             {file.name}
           </p>
         </div>
+
         <button
+          type="button"
           onClick={onClose}
-          className="p-1.5 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors cursor-pointer"
+          disabled={isProcessing}
+          className="p-1.5 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          aria-label="Close manual crop"
         >
           <X size={16} />
         </button>
       </div>
 
-      <div className="px-6 py-2 bg-gray-50/50 text-[11px] text-gray-500 font-medium border-b border-gray-100 shrink-0">
-        Drag the orange corner handles to match the card edges. The result is a
-        flat rectangle at CR80 print size.
+      <div className="px-4 sm:px-6 py-2 bg-gray-50/50 text-[11px] text-gray-500 font-medium border-b border-gray-100 shrink-0">
+        Drag all four orange corner handles onto the card edges. The selected
+        area will be straightened to a CR80-sized rectangle.
       </div>
 
       <div
+        ref={stageRef}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className="flex-1 w-full h-full flex items-center justify-center p-4 relative overflow-hidden"
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={() => {
+          // Pointer capture keeps an active drag alive even after leaving the stage.
+        }}
+        className="flex-1 min-h-0 w-full flex items-center justify-center p-3 sm:p-4 relative overflow-auto touch-none"
       >
-        <div className="relative inline-block max-w-full max-h-[calc(100vh-140px)] shadow-lg rounded-sm">
-          <img
-            ref={imgRef}
-            src={imageUrl}
-            alt="Crop target"
-            onLoad={updateDisplaySize}
-            className="max-w-full max-h-[calc(100vh-140px)] object-contain block pointer-events-none"
-          />
+        <div className="relative inline-block max-w-full max-h-full shadow-lg rounded-sm bg-white touch-none">
+          {imageUrl && (
+            <img
+              ref={imgRef}
+              src={imageUrl}
+              alt="Crop target"
+              draggable={false}
+              onLoad={updateDisplaySize}
+              className="max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-48px)] max-h-[calc(100vh-170px)] object-contain block pointer-events-none select-none"
+            />
+          )}
 
-          {dispSize.width > 0 && (
+          {!isImageLoading && !imageError && dispSize.width > 0 && (
             <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ width: dispSize.width, height: dispSize.height }}
+              className="absolute inset-0 w-full h-full touch-none"
+              width={dispSize.width}
+              height={dispSize.height}
+              viewBox={`0 0 ${dispSize.width} ${dispSize.height}`}
+              preserveAspectRatio="none"
             >
               <polygon
-                points={`${pPx[0].x},${pPx[0].y} ${pPx[1].x},${pPx[1].y} ${pPx[2].x},${pPx[2].y} ${pPx[3].x},${pPx[3].y}`}
+                points={pPx.map((point) => `${point.x},${point.y}`).join(" ")}
                 fill="rgba(59, 130, 246, 0.12)"
                 stroke="#0088ff"
                 strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
               />
-              {pPx.map((pt, idx) => (
-                <circle
-                  key={idx}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r="7"
-                  fill="#ff9800"
-                  stroke="#ffffff"
-                  strokeWidth="2.5"
-                  className="cursor-grab active:cursor-grabbing pointer-events-auto shadow-md"
-                  onPointerDown={(e) => handlePointerDown(idx, e)}
-                />
+
+              {pPx.map((point, idx) => (
+                <g key={idx}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="15"
+                    fill="transparent"
+                    stroke="transparent"
+                    className="cursor-grab active:cursor-grabbing pointer-events-auto"
+                    onPointerDown={(e) => handlePointerDown(idx, e)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${sideTitle} crop corner ${idx + 1}`}
+                  />
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="8"
+                    fill="#ff9800"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    vectorEffect="non-scaling-stroke"
+                    className="cursor-grab active:cursor-grabbing pointer-events-none"
+                  />
+                </g>
               ))}
             </svg>
+          )}
+
+          {isImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white text-[11px] font-semibold text-gray-500 min-w-[280px] min-h-[180px]">
+              Loading image…
+            </div>
+          )}
+
+          {imageError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white p-6 text-center text-[11px] font-semibold text-red-600 min-w-[280px] min-h-[180px]">
+              {imageError}
+            </div>
+          )}
+
+          {isProcessing && !imageError && (
+            <div className="absolute inset-0 bg-white/45 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+              <div className="rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+                Cropping…
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-end gap-3 shadow-xs shrink-0">
-        <button
-          onClick={onClose}
-          className="px-5 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleApplyCrop}
-          disabled={isProcessing}
-          className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
-        >
-          {isProcessing ? "Cropping..." : "Apply crop"}
-        </button>
+      <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-3 shrink-0">
+        {cropError && (
+          <div className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700">
+            {cropError}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <button
+            type="button"
+            onClick={handleResetPoints}
+            disabled={isProcessing || isImageLoading || !!imageError}
+            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Reset corners
+          </button>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isProcessing}
+              className="px-5 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyCrop}
+              disabled={
+                isProcessing ||
+                isImageLoading ||
+                !!imageError ||
+                dispSize.width === 0
+              }
+              className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? "Cropping…" : "Apply crop"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
+}
+
+// --- CROPPED RESULT REVIEW MODAL ---
+interface CropReviewModalProps {
+  file: File;
+  sideTitle: string;
+  onClose: () => void;
+  onManualCrop: () => void;
+}
+
+function CropReviewModal({
+  file,
+  sideTitle,
+  onClose,
+  onManualCrop,
+}: CropReviewModalProps) {
+  const imageUrl = useObjectUrl(file);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    setImageLoading(true);
+    setImageError(null);
+    setDimensions({ width: 0, height: 0 });
+  }, [file]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const image = event.currentTarget;
+    setDimensions({ width: image.naturalWidth, height: image.naturalHeight });
+    setImageLoading(false);
+    setImageError(null);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError("The cropped image could not be loaded for preview.");
+  };
+
+  const modal = (
+    <div
+      className="fixed inset-0 z-[9999] w-screen h-[100dvh] min-h-[100svh] bg-slate-950/95 backdrop-blur-md flex flex-col font-sans overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="nid-crop-review-title"
+    >
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg shrink-0">
+        <div className="min-w-0 pr-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
+              <Eye size={16} />
+            </div>
+            <div className="min-w-0">
+              <h2
+                id="nid-crop-review-title"
+                className="text-sm sm:text-base font-extrabold text-gray-950 truncate"
+              >
+                Crop Preview — {sideTitle}
+              </h2>
+              <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium truncate mt-0.5">
+                This is the exact cropped image that will be used in your PDF.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-2 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors cursor-pointer shrink-0"
+          aria-label="Close crop preview"
+        >
+          <X size={17} />
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-auto px-4 py-5 sm:px-6 sm:py-7">
+        <div className="w-full min-h-full flex flex-col items-center justify-center">
+          <div className="w-full max-w-7xl rounded-3xl border border-white/15 bg-white/10 p-2 sm:p-4 shadow-2xl">
+            <div className="w-full rounded-2xl bg-[#f3f4f6] border border-white/20 flex items-center justify-center overflow-hidden relative [background-image:radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]">
+              <div
+                className="relative w-[min(96vw,1240px)] max-h-[74vh] aspect-[856/540] rounded-xl bg-white overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]"
+                style={{
+                  aspectRatio: `${NID_CROP_WIDTH} / ${NID_CROP_HEIGHT}`,
+                }}
+              >
+                {imageUrl && (
+                  <img
+                    src={imageUrl}
+                    alt={`Final cropped ${sideTitle}`}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    draggable={false}
+                    className="absolute inset-0 block w-full h-full max-w-none max-h-none object-fill select-none bg-white"
+                  />
+                )}
+
+                {imageLoading && !imageError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/90">
+                    <div className="rounded-full bg-slate-900/90 text-white px-4 py-2 text-[11px] font-bold shadow-xl">
+                      Loading final crop…
+                    </div>
+                  </div>
+                )}
+
+                {imageError && (
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-xs sm:text-sm font-semibold text-red-600 bg-white">
+                    {imageError}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full max-w-7xl mt-4 rounded-2xl border border-white/10 bg-white/95 shadow-xl px-4 py-3.5 sm:px-5 sm:py-4 shrink-0">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2
+                    size={16}
+                    className="text-emerald-600 shrink-0"
+                  />
+                  <p className="text-xs sm:text-sm font-extrabold text-gray-900">
+                    Review the final crop
+                  </p>
+                </div>
+                <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mt-1.5 leading-relaxed">
+                  Check that the full NID card is visible, all four corners are
+                  included, and no important text or edge is cut off.
+                </p>
+                {dimensions.width > 0 && dimensions.height > 0 && (
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1">
+                    Output size: {dimensions.width} × {dimensions.height} px
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:min-w-[430px] shrink-0">
+                <button
+                  type="button"
+                  onClick={onManualCrop}
+                  disabled={imageLoading || !!imageError}
+                  className="group rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left hover:bg-amber-100 hover:border-amber-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-white text-amber-600 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
+                      <Crop size={15} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-extrabold text-amber-900">
+                        Not correct? Crop manually
+                      </span>
+                      <span className="block text-[9px] font-semibold text-amber-700/80 mt-0.5">
+                        Adjust all 4 card corners yourself
+                      </span>
+                    </span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={imageLoading || !!imageError}
+                  className="group rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-left transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-white/15 text-white border border-white/20 flex items-center justify-center shrink-0">
+                      <CheckCircle2 size={15} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-extrabold text-white">
+                        Looks correct — use this crop
+                      </span>
+                      <span className="block text-[9px] font-semibold text-emerald-50/90 mt-0.5">
+                        Keep this image and continue to PDF
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modal, document.body);
 }
 
 // --- MAIN NID TO PDF PAGE ---
@@ -425,7 +1153,6 @@ export default function NidToPdf() {
 
   const [frontRotation, setFrontRotation] = useState<number>(0);
   const [backRotation, setBackRotation] = useState<number>(0);
-
   const [zoom, setZoom] = useState<number>(100);
 
   const [filterPreset, setFilterPreset] = useState<
@@ -439,13 +1166,17 @@ export default function NidToPdf() {
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
 
+  const [frontCropSource, setFrontCropSource] = useState<File | null>(null);
+  const [backCropSource, setBackCropSource] = useState<File | null>(null);
+
   const [croppingSide, setCroppingSide] = useState<"front" | "back" | null>(
     null,
   );
-
+  const [cropReviewSide, setCropReviewSide] = useState<"front" | "back" | null>(
+    null,
+  );
   const [autoCropChoiceOpen, setAutoCropChoiceOpen] = useState(false);
 
-  // State for loading state while downloading PDF on Mobile/Desktop
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [processingSide, setProcessingSide] = useState<"front" | "back" | null>(
     null,
@@ -454,36 +1185,16 @@ export default function NidToPdf() {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [frontAutoCropped, setFrontAutoCropped] = useState(false);
   const [backAutoCropped, setBackAutoCropped] = useState(false);
+  const [frontCropReviewReady, setFrontCropReviewReady] = useState(false);
+  const [backCropReviewReady, setBackCropReviewReady] = useState(false);
 
   const autoCropAbortRef = useRef<AbortController | null>(null);
   const autoCropRequestIdRef = useRef(0);
 
   const imageCount = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
 
-  const frontImageUrl = useMemo(
-    () => (frontImage ? URL.createObjectURL(frontImage) : null),
-    [frontImage],
-  );
-  const backImageUrl = useMemo(
-    () => (backImage ? URL.createObjectURL(backImage) : null),
-    [backImage],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (frontImageUrl) {
-        URL.revokeObjectURL(frontImageUrl);
-      }
-    };
-  }, [frontImageUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (backImageUrl) {
-        URL.revokeObjectURL(backImageUrl);
-      }
-    };
-  }, [backImageUrl]);
+  const frontImageUrl = useObjectUrl(frontImage);
+  const backImageUrl = useObjectUrl(backImage);
 
   const cancelAutoCropProcessing = useCallback(() => {
     autoCropRequestIdRef.current += 1;
@@ -511,9 +1222,7 @@ export default function NidToPdf() {
       sides: Array<"front" | "back">,
       sourceOverrides?: Partial<Record<"front" | "back", File | null>>,
     ) => {
-      if (sides.length === 0) {
-        return;
-      }
+      if (sides.length === 0) return;
 
       const requestId = ++autoCropRequestIdRef.current;
 
@@ -523,6 +1232,7 @@ export default function NidToPdf() {
 
       const controller = new AbortController();
       autoCropAbortRef.current = controller;
+      const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
       setProcessingError(null);
       setProcessingBoth(sides.length === 2);
@@ -537,52 +1247,95 @@ export default function NidToPdf() {
             return;
           }
 
+          setProcessingSide(side);
+
           const sourceFile =
             sourceOverrides?.[side] ??
             (side === "front" ? frontImage : backImage);
 
-          if (!sourceFile) {
-            continue;
-          }
+          if (!sourceFile) continue;
 
-          const croppedFile = await autoCropFile(sourceFile, controller.signal);
+          const sourceUrl = URL.createObjectURL(sourceFile);
 
-          if (
-            requestId !== autoCropRequestIdRef.current ||
-            controller.signal.aborted
-          ) {
-            return;
-          }
+          try {
+            const img = await loadImageElement(sourceUrl);
 
-          if (side === "front") {
-            setFrontImage(croppedFile);
-            setFrontAutoCropped(true);
-          } else {
-            setBackImage(croppedFile);
-            setBackAutoCropped(true);
+            if (
+              requestId !== autoCropRequestIdRef.current ||
+              controller.signal.aborted
+            ) {
+              return;
+            }
+
+            const sideRotation =
+              side === "front" ? frontRotation : backRotation;
+
+            // Match the Document Editor pipeline exactly:
+            // File -> Image -> baked rotation canvas -> PNG -> /api/auto-crop.
+            const workingCanvas = createRotatedCanvas(img, sideRotation);
+            const rotatedSourceFile = await canvasToPngFile(
+              workingCanvas,
+              `${side}-manual-source.png`,
+            );
+            const responseBlob = await autoCropCanvas(
+              workingCanvas,
+              `${side}-crop.png`,
+              controller.signal,
+            );
+            const croppedFile = await normalizeCropResultToCardRatio(
+              responseBlob,
+              sourceFile.name.replace(/\.[^.]+$/, ".png"),
+            );
+
+            if (
+              requestId !== autoCropRequestIdRef.current ||
+              controller.signal.aborted
+            ) {
+              return;
+            }
+
+            if (side === "front") {
+              setFrontImage(croppedFile);
+              setFrontCropSource(rotatedSourceFile);
+              setFrontAutoCropped(true);
+              setFrontCropReviewReady(true);
+              // Rotation was baked into the image before the request.
+              setFrontRotation(0);
+            } else {
+              setBackImage(croppedFile);
+              setBackCropSource(rotatedSourceFile);
+              setBackAutoCropped(true);
+              setBackCropReviewReady(true);
+              // Rotation was baked into the image before the request.
+              setBackRotation(0);
+            }
+          } finally {
+            URL.revokeObjectURL(sourceUrl);
           }
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
+          if (requestId === autoCropRequestIdRef.current) {
+            setProcessingError(
+              "Auto crop was cancelled or timed out. Please try again.",
+            );
+          }
           return;
         }
 
         if (requestId === autoCropRequestIdRef.current) {
-          console.error("NID auto-crop failed:", error);
+          console.error("Auto crop failed:", error);
 
           setProcessingError(
             error instanceof Error ? error.message : AUTO_CROP_ERROR,
           );
 
-          if (sides.includes("front")) {
-            setFrontAutoCropped(false);
-          }
-
-          if (sides.includes("back")) {
-            setBackAutoCropped(false);
-          }
+          if (sides.includes("front")) setFrontAutoCropped(false);
+          if (sides.includes("back")) setBackAutoCropped(false);
         }
       } finally {
+        window.clearTimeout(timeoutId);
+
         if (autoCropAbortRef.current === controller) {
           autoCropAbortRef.current = null;
         }
@@ -593,13 +1346,11 @@ export default function NidToPdf() {
         }
       }
     },
-    [frontImage, backImage],
+    [frontImage, backImage, frontRotation, backRotation],
   );
 
   const openAutoCropChoice = useCallback(() => {
-    if (imageCount < 2) {
-      return;
-    }
+    if (imageCount < 2) return;
 
     setProcessingError(null);
     setAutoCropChoiceOpen(true);
@@ -618,9 +1369,7 @@ export default function NidToPdf() {
 
       setAutoCrop(true);
 
-      if (!frontImage && !backImage) {
-        return;
-      }
+      if (!frontImage && !backImage) return;
 
       if (frontImage && backImage) {
         openAutoCropChoice();
@@ -665,58 +1414,47 @@ export default function NidToPdf() {
 
       const sides: Array<"front" | "back"> = [];
 
-      if (frontImage) {
-        sides.push("front");
-      }
-
-      if (backImage) {
-        sides.push("back");
-      }
+      if (frontImage) sides.push("front");
+      if (backImage) sides.push("back");
 
       void processAutoCropSides(sides);
     },
     [frontImage, backImage, processAutoCropSides],
   );
 
-  const handleFrontImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFrontImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
 
     if (!file) return;
 
     setProcessingError(null);
-
-    // A newly selected image replaces the current front image.
+    setCropReviewSide(null);
     setFrontAutoCropped(false);
+    setFrontCropReviewReady(false);
+    setFrontCropSource(file);
     setFrontImage(file);
 
-    // Preserve the existing toggle behavior for uploads:
-    // when Auto Crop is already enabled, process the new image.
     if (autoCrop) {
-      void processAutoCropSides(["front"], {
-        front: file,
-      });
+      void processAutoCropSides(["front"], { front: file });
     }
   };
 
-  const handleBackImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBackImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
 
     if (!file) return;
 
     setProcessingError(null);
-
-    // A newly selected image replaces the current back image.
+    setCropReviewSide(null);
     setBackAutoCropped(false);
+    setBackCropReviewReady(false);
+    setBackCropSource(file);
     setBackImage(file);
 
-    // Preserve the existing toggle behavior for uploads:
-    // when Auto Crop is already enabled, process the new image.
     if (autoCrop) {
-      void processAutoCropSides(["back"], {
-        back: file,
-      });
+      void processAutoCropSides(["back"], { back: file });
     }
   };
 
@@ -726,8 +1464,11 @@ export default function NidToPdf() {
     setProcessingError(null);
 
     const temp = frontImage;
+    const tempCropSource = frontCropSource;
     setFrontImage(backImage);
     setBackImage(temp);
+    setFrontCropSource(backCropSource);
+    setBackCropSource(tempCropSource);
 
     const tempRot = frontRotation;
     setFrontRotation(backRotation);
@@ -736,17 +1477,32 @@ export default function NidToPdf() {
     const tempAutoCropped = frontAutoCropped;
     setFrontAutoCropped(backAutoCropped);
     setBackAutoCropped(tempAutoCropped);
+
+    const tempCropReviewReady = frontCropReviewReady;
+    setFrontCropReviewReady(backCropReviewReady);
+    setBackCropReviewReady(tempCropReviewReady);
+    setCropReviewSide(null);
   };
+
+  const openManualCropFromReview = useCallback((side: "front" | "back") => {
+    setCropReviewSide(null);
+    setCroppingSide(side);
+  }, []);
 
   const handleReset = () => {
     cancelAutoCropProcessing();
     setAutoCropChoiceOpen(false);
     setProcessingError(null);
     setProcessingSide(null);
+    setCropReviewSide(null);
     setFrontImage(null);
     setBackImage(null);
+    setFrontCropSource(null);
+    setBackCropSource(null);
     setFrontAutoCropped(false);
     setBackAutoCropped(false);
+    setFrontCropReviewReady(false);
+    setBackCropReviewReady(false);
     setFrontRotation(0);
     setBackRotation(0);
     setFilterPreset("plain");
@@ -783,26 +1539,23 @@ export default function NidToPdf() {
     return `brightness(${brightness}%) contrast(${contrast}%) saturate(${sat}%) grayscale(${gray}%)`;
   }, [shadowRemoval, blackBoost, saturation, textDeepen, filterPreset]);
 
-  // Exact dimensions mapping to simulate perfect rotation bounds
   const cardDim = useMemo(() => {
     if (layout === "stacked") {
-      return { width: 260, height: 260 / (85.6 / 53.98) };
+      return { width: 260, height: 260 / NID_CROP_ASPECT_RATIO };
     }
-    // Portrait sheet width logic
+
     if (orientation === "portrait") {
-      return { width: 232, height: 232 / (85.6 / 53.98) };
+      return { width: 232, height: 232 / NID_CROP_ASPECT_RATIO };
     }
-    // Landscape sheet width logic
-    return { width: 342, height: 342 / (85.6 / 53.98) };
+
+    return { width: 342, height: 342 / NID_CROP_ASPECT_RATIO };
   }, [layout, orientation]);
 
   const isFrontPortrait = frontRotation % 180 !== 0;
   const isBackPortrait = backRotation % 180 !== 0;
 
-  // Swap width and height for bounding box depending on rotation
   const frontWrapperWidth = isFrontPortrait ? cardDim.height : cardDim.width;
   const frontWrapperHeight = isFrontPortrait ? cardDim.width : cardDim.height;
-
   const backWrapperWidth = isBackPortrait ? cardDim.height : cardDim.width;
   const backWrapperHeight = isBackPortrait ? cardDim.width : cardDim.height;
 
@@ -815,13 +1568,9 @@ export default function NidToPdf() {
     const originalNextSibling = sheet.nextSibling;
     const printContent = sheet.firstElementChild as HTMLElement | null;
 
-    // Print uses the real card dimensions instead of scaling the entire
-    // document down. The browser is then free to paginate naturally: as many
-    // complete copies as fit on one A4 sheet stay on that page, and the next
-    // copy starts on the following page.
     const pageWidthPx = orientation === "portrait" ? 793.7008 : 1122.5197;
     const pageHeightPx = orientation === "portrait" ? 1122.5197 : 793.7008;
-    const printPaddingPx = (20 / 25.4) * 96; // 20mm print padding
+    const printPaddingPx = (20 / 25.4) * 96;
     const availableHeightPx = Math.max(1, pageHeightPx - printPaddingPx * 2);
 
     const rowGapPx = 24;
@@ -844,17 +1593,12 @@ export default function NidToPdf() {
     const previousSheetJustify = sheet.style.justifyContent;
 
     if (printContent) {
-      // No print scaling. Keep the real layout size so pagination remains
-      // readable and predictable.
       printContent.style.transform = "none";
       printContent.style.transformOrigin = "top center";
       printContent.style.height = "auto";
       printContent.style.width = "100%";
     }
 
-    // Position control is preserved when everything fits on one page. When
-    // the content needs multiple pages, start from the top so every page is
-    // packed naturally without creating a large blank area before page 2.
     if (fitsOnSinglePage) {
       sheet.style.justifyContent =
         position === "top"
@@ -869,7 +1613,12 @@ export default function NidToPdf() {
     document.body.classList.add("nid-print-mode");
     document.body.appendChild(sheet);
 
+    let restored = false;
+
     const restoreSheet = () => {
+      if (restored) return;
+      restored = true;
+
       document.body.classList.remove("nid-print-mode");
 
       if (printContent) {
@@ -894,11 +1643,7 @@ export default function NidToPdf() {
 
     window.addEventListener("afterprint", restoreSheet);
 
-    setTimeout(() => {
-      window.print();
-    }, 150);
-
-    // Fallback for browsers that do not fire afterprint.
+    setTimeout(() => window.print(), 150);
     setTimeout(restoreSheet, 5000);
   };
 
@@ -913,7 +1658,6 @@ export default function NidToPdf() {
         scale: 2,
         useCORS: true,
         logging: false,
-        // মোবাইল স্ক্রিনের লিমিটেশন ইগনোর করার জন্য ফোর্সড রেজুলেশন উইন্ডো
         scrollX: 0,
         scrollY: 0,
         windowWidth: 1200,
@@ -926,11 +1670,9 @@ export default function NidToPdf() {
         },
         onclone: (clonedDoc) => {
           const clonedSheet = clonedDoc.getElementById("printable-sheet");
-          if (clonedSheet) {
-            // ১. ক্লোন করা ডকুমেন্টের জুম (transform) রিমুভ করে দিচ্ছি যাতে ঠিকমতো ক্যাপচার হয়
-            clonedSheet.style.transform = "none";
 
-            // ২. মোবাইলে যেন উইডথ/হাইট স্ক্রিনের মাপে ছোট না হয়ে যায় তাই ফিক্সড সাইজ দেওয়া হচ্ছে
+          if (clonedSheet) {
+            clonedSheet.style.transform = "none";
             clonedSheet.style.maxWidth = "none";
             clonedSheet.style.maxHeight = "none";
 
@@ -946,7 +1688,6 @@ export default function NidToPdf() {
               clonedSheet.style.minHeight = "540px";
             }
 
-            // ৩. প্যারেন্ট এলিমেন্টগুলোর রেস্ট্রিকশন সরাচ্ছি যাতে স্ক্রিনের বাইরে থাকলেও ক্যাপচার হয়
             let parent = clonedSheet.parentElement;
             while (parent && parent.tagName !== "BODY") {
               parent.style.overflow = "visible";
@@ -961,6 +1702,7 @@ export default function NidToPdf() {
           elements.forEach((el) => {
             const htmlEl = el as HTMLElement;
             const computed = window.getComputedStyle(htmlEl);
+
             if (
               computed.color.includes("oklab") ||
               computed.backgroundColor.includes("oklab")
@@ -977,7 +1719,6 @@ export default function NidToPdf() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
       const imgRatio = canvas.width / canvas.height;
       const pageRatio = pdfWidth / pdfHeight;
 
@@ -1041,34 +1782,25 @@ export default function NidToPdf() {
             display: none !important;
           }
 
-          /*
-           * Keep the sheet at the real A4 width but let its height grow.
-           * This is the key to natural browser pagination.
-           */
           body.nid-print-mode #printable-sheet {
             position: static !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: flex-start !important;
-
             width: ${orientation === "portrait" ? "210mm" : "297mm"} !important;
             height: auto !important;
             min-height: 0 !important;
             max-height: none !important;
-
             margin: 0 !important;
             padding: 20mm !important;
             box-sizing: border-box !important;
-
             overflow: visible !important;
             background: white !important;
             box-shadow: none !important;
             border: none !important;
-
             transform: none !important;
             transform-origin: top center !important;
-
             page-break-before: auto !important;
             page-break-after: auto !important;
             page-break-inside: auto !important;
@@ -1089,11 +1821,6 @@ export default function NidToPdf() {
             break-inside: auto !important;
           }
 
-          /*
-           * Each copy is atomic: front + back must stay together. The browser
-           * may place 1, 2, 3, or 4 complete copies on a page depending on
-           * the selected layout/orientation and the available A4 space.
-           */
           body.nid-print-mode #printable-sheet > div:first-child > div {
             page-break-inside: avoid !important;
             break-inside: avoid-page !important;
@@ -1102,7 +1829,7 @@ export default function NidToPdf() {
           body.nid-print-mode #printable-sheet button,
           body.nid-print-mode #printable-sheet input,
           body.nid-print-mode #printable-sheet label,
-          body.nid-print-mode #printable-sheet .group-hover\:opacity-100 {
+          body.nid-print-mode #printable-sheet .group-hover\\:opacity-100 {
             display: none !important;
           }
         }
@@ -1110,15 +1837,18 @@ export default function NidToPdf() {
 
       {croppingSide === "front" && frontImage && (
         <CropModal
-          file={frontImage}
+          file={frontCropSource ?? frontImage}
           sideTitle="Front of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
             cancelAutoCropProcessing();
             setAutoCropChoiceOpen(false);
             setProcessingError(null);
+            setCropReviewSide(null);
             setFrontImage(croppedFile);
+            setFrontCropSource((current) => current ?? frontImage);
             setFrontAutoCropped(false);
+            setFrontCropReviewReady(true);
             setCroppingSide(null);
           }}
         />
@@ -1126,17 +1856,38 @@ export default function NidToPdf() {
 
       {croppingSide === "back" && backImage && (
         <CropModal
-          file={backImage}
+          file={backCropSource ?? backImage}
           sideTitle="Back of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
             cancelAutoCropProcessing();
             setAutoCropChoiceOpen(false);
             setProcessingError(null);
+            setCropReviewSide(null);
             setBackImage(croppedFile);
+            setBackCropSource((current) => current ?? backImage);
             setBackAutoCropped(false);
+            setBackCropReviewReady(true);
             setCroppingSide(null);
           }}
+        />
+      )}
+
+      {cropReviewSide === "front" && frontImage && (
+        <CropReviewModal
+          file={frontImage}
+          sideTitle="Front of NID card"
+          onClose={() => setCropReviewSide(null)}
+          onManualCrop={() => openManualCropFromReview("front")}
+        />
+      )}
+
+      {cropReviewSide === "back" && backImage && (
+        <CropReviewModal
+          file={backImage}
+          sideTitle="Back of NID card"
+          onClose={() => setCropReviewSide(null)}
+          onManualCrop={() => openManualCropFromReview("back")}
         />
       )}
 
@@ -1213,7 +1964,6 @@ export default function NidToPdf() {
                     </p>
                   </div>
                 </div>
-
                 <ChevronRight size={15} className="text-gray-400" />
               </button>
 
@@ -1234,7 +1984,6 @@ export default function NidToPdf() {
                     </p>
                   </div>
                 </div>
-
                 <ChevronRight size={15} className="text-gray-400" />
               </button>
 
@@ -1257,7 +2006,6 @@ export default function NidToPdf() {
                     </p>
                   </div>
                 </div>
-
                 <ChevronRight size={15} className="text-amber-600" />
               </button>
 
@@ -1288,7 +2036,7 @@ export default function NidToPdf() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">NID to PDF</span>
+        <span className="font-semibold text-gray-900">NID Joiner</span>
       </div>
 
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
@@ -1298,7 +2046,7 @@ export default function NidToPdf() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">NID to PDF</h1>
+              <h1 className="text-lg font-bold text-gray-900">NID Joiner</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -1510,7 +2258,38 @@ export default function NidToPdf() {
                         }}
                       >
                         {frontImageUrl ? (
-                          <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                          <div
+                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200 ${
+                              frontCropReviewReady && processingSide !== "front"
+                                ? "cursor-zoom-in hover:ring-2 hover:ring-emerald-400/70"
+                                : ""
+                            }`}
+                            role={frontCropReviewReady ? "button" : undefined}
+                            tabIndex={frontCropReviewReady ? 0 : undefined}
+                            title={
+                              frontCropReviewReady
+                                ? "Click to verify this cropped image"
+                                : undefined
+                            }
+                            onClick={() => {
+                              if (
+                                frontCropReviewReady &&
+                                processingSide !== "front"
+                              ) {
+                                setCropReviewSide("front");
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (
+                                frontCropReviewReady &&
+                                processingSide !== "front" &&
+                                (event.key === "Enter" || event.key === " ")
+                              ) {
+                                event.preventDefault();
+                                setCropReviewSide("front");
+                              }
+                            }}
+                          >
                             {(processingSide === "front" || processingBoth) && (
                               <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
                                 <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
@@ -1522,20 +2301,33 @@ export default function NidToPdf() {
                                 </div>
                               </div>
                             )}
-                            {frontAutoCropped && processingSide !== "front" && (
-                              <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden">
-                                Auto crop applied
-                              </span>
-                            )}
+
+                            {frontCropReviewReady &&
+                              processingSide !== "front" && (
+                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden flex items-center gap-1">
+                                  <Eye size={10} />
+                                  {frontAutoCropped
+                                    ? "Auto crop applied · Click to verify"
+                                    : "Manual crop applied · Click to verify"}
+                                </span>
+                              )}
+
                             <img
                               src={frontImageUrl}
                               alt="Front NID"
-                              className="w-full h-full object-contain bg-white"
-                              style={{
-                                filter: imageFilterStyle,
-                              }}
+                              className={`block w-full h-full max-w-none max-h-none bg-white ${
+                                frontCropReviewReady
+                                  ? "object-cover"
+                                  : "object-contain"
+                              }`}
+                              style={{ filter: imageFilterStyle }}
                             />
-                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
+
+                            <div
+                              className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden"
+                              onClick={(event) => event.stopPropagation()}
+                              onMouseDown={(event) => event.stopPropagation()}
+                            >
                               <button
                                 onClick={() => setCroppingSide("front")}
                                 className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
@@ -1545,6 +2337,7 @@ export default function NidToPdf() {
                               </button>
                               <label
                                 htmlFor="front-change-input"
+                                onClick={(event) => event.stopPropagation()}
                                 className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
                                 title="Change Image"
                               >
@@ -1563,8 +2356,11 @@ export default function NidToPdf() {
                                 onClick={() => {
                                   cancelAutoCropProcessing();
                                   setAutoCropChoiceOpen(false);
+                                  setCropReviewSide(null);
                                   setFrontImage(null);
+                                  setFrontCropSource(null);
                                   setFrontAutoCropped(false);
+                                  setFrontCropReviewReady(false);
                                 }}
                                 className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                                 title="Delete"
@@ -1572,6 +2368,7 @@ export default function NidToPdf() {
                                 <Trash2 size={13} />
                               </button>
                             </div>
+
                             <input
                               id="front-change-input"
                               type="file"
@@ -1624,7 +2421,38 @@ export default function NidToPdf() {
                         }}
                       >
                         {backImageUrl ? (
-                          <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
+                          <div
+                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200 ${
+                              backCropReviewReady && processingSide !== "back"
+                                ? "cursor-zoom-in hover:ring-2 hover:ring-emerald-400/70"
+                                : ""
+                            }`}
+                            role={backCropReviewReady ? "button" : undefined}
+                            tabIndex={backCropReviewReady ? 0 : undefined}
+                            title={
+                              backCropReviewReady
+                                ? "Click to verify this cropped image"
+                                : undefined
+                            }
+                            onClick={() => {
+                              if (
+                                backCropReviewReady &&
+                                processingSide !== "back"
+                              ) {
+                                setCropReviewSide("back");
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (
+                                backCropReviewReady &&
+                                processingSide !== "back" &&
+                                (event.key === "Enter" || event.key === " ")
+                              ) {
+                                event.preventDefault();
+                                setCropReviewSide("back");
+                              }
+                            }}
+                          >
                             {(processingSide === "back" || processingBoth) && (
                               <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
                                 <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
@@ -1636,20 +2464,33 @@ export default function NidToPdf() {
                                 </div>
                               </div>
                             )}
-                            {backAutoCropped && processingSide !== "back" && (
-                              <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden">
-                                Auto crop applied
-                              </span>
-                            )}
+
+                            {backCropReviewReady &&
+                              processingSide !== "back" && (
+                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden flex items-center gap-1">
+                                  <Eye size={10} />
+                                  {backAutoCropped
+                                    ? "Auto crop applied · Click to verify"
+                                    : "Manual crop applied · Click to verify"}
+                                </span>
+                              )}
+
                             <img
                               src={backImageUrl}
                               alt="Back NID"
-                              className="w-full h-full object-contain bg-white"
-                              style={{
-                                filter: imageFilterStyle,
-                              }}
+                              className={`block w-full h-full max-w-none max-h-none bg-white ${
+                                backCropReviewReady
+                                  ? "object-cover"
+                                  : "object-contain"
+                              }`}
+                              style={{ filter: imageFilterStyle }}
                             />
-                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
+
+                            <div
+                              className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-slate-700/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden"
+                              onClick={(event) => event.stopPropagation()}
+                              onMouseDown={(event) => event.stopPropagation()}
+                            >
                               <button
                                 onClick={() => setCroppingSide("back")}
                                 className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
@@ -1659,6 +2500,7 @@ export default function NidToPdf() {
                               </button>
                               <label
                                 htmlFor="back-change-input"
+                                onClick={(event) => event.stopPropagation()}
                                 className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
                                 title="Change Image"
                               >
@@ -1677,8 +2519,11 @@ export default function NidToPdf() {
                                 onClick={() => {
                                   cancelAutoCropProcessing();
                                   setAutoCropChoiceOpen(false);
+                                  setCropReviewSide(null);
                                   setBackImage(null);
+                                  setBackCropSource(null);
                                   setBackAutoCropped(false);
+                                  setBackCropReviewReady(false);
                                 }}
                                 className="p-1 text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                                 title="Delete"
@@ -1686,6 +2531,7 @@ export default function NidToPdf() {
                                 <Trash2 size={13} />
                               </button>
                             </div>
+
                             <input
                               id="back-change-input"
                               type="file"
@@ -1747,6 +2593,7 @@ export default function NidToPdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleCreatePdf}
             disabled={
@@ -1776,6 +2623,7 @@ export default function NidToPdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"

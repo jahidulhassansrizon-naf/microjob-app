@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-
 import cv2
 import numpy as np
 import os
@@ -10,13 +9,12 @@ from document_processor import process_document_image
 import color_document_processor
 from photo_processor import remove_background
 from gemini_processor import generate_virtual_try_on
-from nid_autocrop_processor import auto_crop_and_deskew
+from autocrop_processor import auto_crop_and_deskew as nid_auto_crop_and_deskew
 
 
 # =========================================================
 # APP
 # =========================================================
-
 app = FastAPI(
     title="SohozKoj AI Backend",
     version="1.0.0",
@@ -26,7 +24,6 @@ app = FastAPI(
 # =========================================================
 # CORS
 # =========================================================
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,68 +36,54 @@ app.add_middleware(
 # =========================================================
 # DOCUMENT HELPERS
 # =========================================================
-
 def order_points(pts):
     rect = np.zeros(
         (4, 2),
         dtype="float32",
     )
-
     s = pts.sum(axis=1)
-
     rect[0] = pts[np.argmin(s)]       # Top-left
     rect[2] = pts[np.argmax(s)]       # Bottom-right
-
     diff = np.diff(
         pts,
         axis=1,
     )
-
     rect[1] = pts[np.argmin(diff)]    # Top-right
     rect[3] = pts[np.argmax(diff)]    # Bottom-left
-
     return rect
 
 
 def four_point_transform(image, pts):
     rect = order_points(pts)
-
     tl, tr, br, bl = rect
-
     width_a = np.sqrt(
         ((br[0] - bl[0]) ** 2)
         +
         ((br[1] - bl[1]) ** 2)
     )
-
     width_b = np.sqrt(
         ((tr[0] - tl[0]) ** 2)
         +
         ((tr[1] - tl[1]) ** 2)
     )
-
     max_width = max(
         int(width_a),
         int(width_b),
     )
-
     height_a = np.sqrt(
         ((tr[0] - br[0]) ** 2)
         +
         ((tr[1] - br[1]) ** 2)
     )
-
     height_b = np.sqrt(
         ((tl[0] - bl[0]) ** 2)
         +
         ((tl[1] - bl[1]) ** 2)
     )
-
     max_height = max(
         int(height_a),
         int(height_b),
     )
-
     destination = np.array(
         [
             [0, 0],
@@ -110,12 +93,10 @@ def four_point_transform(image, pts):
         ],
         dtype="float32",
     )
-
     matrix = cv2.getPerspectiveTransform(
         rect,
         destination,
     )
-
     return cv2.warpPerspective(
         image,
         matrix,
@@ -129,7 +110,6 @@ def four_point_transform(image, pts):
 # =========================================================
 # ROOT & HEALTH
 # =========================================================
-
 @app.get("/")
 async def root():
     return {
@@ -190,35 +170,29 @@ async def health_check():
 # =========================================================
 # CLEAN DOCUMENT
 # =========================================================
-
 @app.post("/api/clean-document")
 async def clean_document_endpoint(
     file: UploadFile = File(...),
 ):
     try:
         contents = await file.read()
-
         if not contents:
             return Response(
                 content="Empty image file.",
                 status_code=400,
                 media_type="text/plain",
             )
-
         output_bytes = process_document_image(
             contents
         )
-
         return Response(
             content=output_bytes,
             media_type="image/png",
         )
-
     except Exception as error:
         print(
             f"[Clean Document] {error}"
         )
-
         return Response(
             content="Document processing failed.",
             status_code=500,
@@ -229,38 +203,32 @@ async def clean_document_endpoint(
 # =========================================================
 # COLOR DOCUMENT
 # =========================================================
-
 @app.post("/api/color-document")
 async def color_document_endpoint(
     file: UploadFile = File(...),
 ):
     try:
         contents = await file.read()
-
         if not contents:
             return Response(
                 content="Empty image file.",
                 status_code=400,
                 media_type="text/plain",
             )
-
         output_bytes = (
             color_document_processor
             .enhance_color_document(
                 contents
             )
         )
-
         return Response(
             content=output_bytes,
             media_type="image/png",
         )
-
     except Exception as error:
         print(
             f"[Color Document] {error}"
         )
-
         return Response(
             content="Color document processing failed.",
             status_code=500,
@@ -269,80 +237,65 @@ async def color_document_endpoint(
 
 
 # =========================================================
-# AUTO CROP
+# AUTO CROP (KEEP EXISTING SCANNER BEHAVIOR UNCHANGED)
 # =========================================================
-
 @app.post("/api/auto-crop")
 async def auto_crop_endpoint(
     file: UploadFile = File(...),
 ):
     try:
         contents = await file.read()
-
         if not contents:
             return Response(
                 content="Empty image file.",
                 status_code=400,
                 media_type="text/plain",
             )
-
         image_array = np.frombuffer(
             contents,
             np.uint8,
         )
-
         image = cv2.imdecode(
             image_array,
             cv2.IMREAD_COLOR,
         )
-
         if image is None:
             return Response(
                 content="Invalid image.",
                 status_code=400,
                 media_type="text/plain",
             )
-
         height, width = image.shape[:2]
-
         total_area = height * width
-
         gray = cv2.cvtColor(
             image,
             cv2.COLOR_BGR2GRAY,
         )
-
         blurred = cv2.GaussianBlur(
             gray,
             (5, 5),
             0,
         )
-
         edges = cv2.Canny(
             blurred,
             30,
             150,
         )
-
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
             (5, 5),
         )
-
         edges = cv2.dilate(
             edges,
             kernel,
             iterations=1,
         )
-
         contours, _ = cv2.findContours(
             edges,
             cv2.RETR_EXTERNAL,
             cv2.CHAIN_APPROX_SIMPLE,
         )
-
         if not contours:
-
             _, threshold = cv2.threshold(
                 gray,
                 0,
@@ -351,41 +304,32 @@ async def auto_crop_endpoint(
                 +
                 cv2.THRESH_OTSU,
             )
-
             contours, _ = cv2.findContours(
                 threshold,
                 cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE,
             )
-
         contours = sorted(
             contours,
             key=cv2.contourArea,
             reverse=True,
         )
-
         document_points = None
-
         for contour in contours:
-
             area = cv2.contourArea(
                 contour
             )
-
             if area < (
                 0.05 * total_area
             ):
                 continue
-
             hull = cv2.convexHull(
                 contour
             )
-
             perimeter = cv2.arcLength(
                 hull,
                 True,
             )
-
             for epsilon_factor in [
                 0.01,
                 0.02,
@@ -393,72 +337,55 @@ async def auto_crop_endpoint(
                 0.04,
                 0.05,
             ]:
-
                 approx = cv2.approxPolyDP(
                     hull,
                     epsilon_factor
                     * perimeter,
                     True,
                 )
-
                 if len(approx) == 4:
-
                     document_points = (
                         approx.reshape(
                             4,
                             2,
                         )
                     )
-
                     break
-
             if document_points is not None:
                 break
-
             rect = cv2.minAreaRect(
                 hull
             )
-
             box = cv2.boxPoints(
                 rect
             )
-
             document_points = np.int32(
                 box
             )
-
             break
-
         if document_points is not None:
-
             image = four_point_transform(
                 image,
                 document_points,
             )
-
         success, encoded = cv2.imencode(
             ".png",
             image,
         )
-
         if not success:
             return Response(
                 content="Could not encode image.",
                 status_code=500,
                 media_type="text/plain",
             )
-
         return Response(
             content=encoded.tobytes(),
             media_type="image/png",
         )
-
     except Exception as error:
-
         print(
             f"[Auto Crop] {error}"
         )
-
         return Response(
             content="Auto crop failed.",
             status_code=500,
@@ -467,16 +394,14 @@ async def auto_crop_endpoint(
 
 
 # =========================================================
-# NID AUTO CROP
+# NID AUTO CROP (SEPARATE NID ROUTE — USES autocrop_processor.py)
 # =========================================================
-
 @app.post("/api/nid-auto-crop")
 async def nid_auto_crop_endpoint(
     file: UploadFile = File(...),
 ):
     try:
         contents = await file.read()
-
         if not contents:
             return Response(
                 content="Empty image file.",
@@ -484,30 +409,29 @@ async def nid_auto_crop_endpoint(
                 media_type="text/plain",
             )
 
-        output_bytes = auto_crop_and_deskew(
-            contents
-        )
+        output_bytes = nid_auto_crop_and_deskew(contents)
+
+        if not output_bytes:
+            return Response(
+                content="NID auto crop returned an empty image.",
+                status_code=500,
+                media_type="text/plain",
+            )
 
         return Response(
             content=output_bytes,
             media_type="image/png",
             headers={"Cache-Control": "no-store"},
         )
-
     except ValueError as error:
-        print(
-            f"[NID Auto Crop Validation] {error}"
-        )
+        print(f"[NID Auto Crop Validation] {error}")
         return Response(
             content=str(error),
             status_code=400,
             media_type="text/plain",
         )
-
     except Exception as error:
-        print(
-            f"[NID Auto Crop] {error}"
-        )
+        print(f"[NID Auto Crop] {error}")
         return Response(
             content="NID auto crop failed.",
             status_code=500,
@@ -518,48 +442,38 @@ async def nid_auto_crop_endpoint(
 # =========================================================
 # REMOVE BACKGROUND
 # =========================================================
-
 @app.post("/api/remove-background")
 async def remove_background_endpoint(
     file: UploadFile = File(...),
 ):
     try:
         contents = await file.read()
-
         if not contents:
             return Response(
                 content="Empty image file.",
                 status_code=400,
                 media_type="text/plain",
             )
-
         output_bytes = remove_background(
             contents
         )
-
         return Response(
             content=output_bytes,
             media_type="image/png",
         )
-
     except ValueError as error:
-
         print(
             f"[Background Removal Validation] {error}"
         )
-
         return Response(
             content=str(error),
             status_code=400,
             media_type="text/plain",
         )
-
     except Exception as error:
-
         print(
             f"[Background Removal] {error}"
         )
-
         return Response(
             content="Background removal failed.",
             status_code=500,
@@ -570,7 +484,6 @@ async def remove_background_endpoint(
 # =========================================================
 # LOCAL CLOTHING (ACTIVE FALLBACK)
 # =========================================================
-
 @app.post("/api/apply-clothing")
 async def apply_clothing_endpoint(
     person: UploadFile = File(...),
@@ -585,14 +498,11 @@ async def apply_clothing_endpoint(
                 status_code=400,
                 media_type="text/plain",
             )
-
         output_bytes = remove_background(person_bytes)
-
         return Response(
             content=output_bytes,
             media_type="image/png",
         )
-
     except Exception as error:
         print(f"[Local Clothing Fallback] {error}")
         return Response(
@@ -605,7 +515,6 @@ async def apply_clothing_endpoint(
 # =========================================================
 # GEMINI VIRTUAL TRY-ON
 # =========================================================
-
 @app.post("/api/gemini-tryon")
 async def gemini_tryon_endpoint(
     person: UploadFile = File(...),
@@ -621,7 +530,6 @@ async def gemini_tryon_endpoint(
             )
 
         person_bytes = await person.read()
-
         if not person_bytes:
             return Response(
                 content="Person image is empty.",
@@ -629,10 +537,7 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
             )
 
-        clothing_bytes = (
-            await clothing.read()
-        )
-
+        clothing_bytes = await clothing.read()
         if not clothing_bytes:
             return Response(
                 content="Clothing image is empty.",
@@ -640,52 +545,33 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
             )
 
-        person_mime_type = (
-            person.content_type
-            or "image/jpeg"
-        )
+        person_mime_type = person.content_type or "image/jpeg"
+        clothing_mime_type = clothing.content_type or "image/png"
 
-        clothing_mime_type = (
-            clothing.content_type
-            or "image/png"
-        )
-
-        if not person_mime_type.startswith(
-            "image/"
-        ):
+        if not person_mime_type.startswith("image/"):
             return Response(
-                content=(
-                    "Person file must be an image."
-                ),
+                content="Person file must be an image.",
                 status_code=400,
                 media_type="text/plain",
             )
 
-        if not clothing_mime_type.startswith(
-            "image/"
-        ):
+        if not clothing_mime_type.startswith("image/"):
             return Response(
-                content=(
-                    "Clothing file must be an image."
-                ),
+                content="Clothing file must be an image.",
                 status_code=400,
                 media_type="text/plain",
             )
 
-        generated_bytes = (
-            generate_virtual_try_on(
-                person_bytes=person_bytes,
-                person_mime_type=person_mime_type,
-                clothing_bytes=clothing_bytes,
-                clothing_mime_type=clothing_mime_type,
-            )
+        generated_bytes = generate_virtual_try_on(
+            person_bytes=person_bytes,
+            person_mime_type=person_mime_type,
+            clothing_bytes=clothing_bytes,
+            clothing_mime_type=clothing_mime_type,
         )
 
         if not generated_bytes:
             return Response(
-                content=(
-                    "Gemini returned an empty image."
-                ),
+                content="Gemini returned an empty image.",
                 status_code=502,
                 media_type="text/plain",
             )
@@ -697,17 +583,14 @@ async def gemini_tryon_endpoint(
                 "Cache-Control": "no-store",
             },
         )
-
     except ValueError as error:
         return Response(
             content=str(error),
             status_code=400,
             media_type="text/plain",
         )
-
     except Exception as error:
         error_message = str(error)
-
         if is_temporary_gemini_error(error_message):
             return Response(
                 content=GEMINI_UNAVAILABLE_MESSAGE,
@@ -715,7 +598,6 @@ async def gemini_tryon_endpoint(
                 media_type="text/plain",
                 headers={"Cache-Control": "no-store"},
             )
-
         return Response(
             content=(
                 "Gemini virtual try-on failed: "
@@ -729,8 +611,8 @@ async def gemini_tryon_endpoint(
 # =========================================================
 # SERVER RUNNER FOR RENDER / LOCAL
 # =========================================================
-
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
