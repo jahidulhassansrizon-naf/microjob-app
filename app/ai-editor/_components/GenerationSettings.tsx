@@ -296,11 +296,6 @@ function hslToRgb(h: number, s: number, l: number) {
   };
 }
 
-/*
- * Preserve the original SVG shade/lightness while moving the hue/saturation
- * to the selected garment color. This makes folds, shadows and highlights
- * survive the recolor instead of putting a flat translucent tint on top.
- */
 function recolorHex(sourceHex: string, targetHex: string) {
   const source = hexToRgb(sourceHex);
   const target = hexToRgb(targetHex);
@@ -308,8 +303,6 @@ function recolorHex(sourceHex: string, targetHex: string) {
   const sourceHsl = rgbToHsl(source.r, source.g, source.b);
   const targetHsl = rgbToHsl(target.r, target.g, target.b);
 
-  // Keep original light/dark structure. Slightly tame saturation for
-  // very bright target colors so highlight shades do not become neon.
   const saturation = targetHsl.s === 0 ? 0 : clamp(targetHsl.s * 0.96, 0, 1);
 
   const rgb = hslToRgb(targetHsl.h, saturation, clamp(sourceHsl.l, 0.08, 0.97));
@@ -404,8 +397,6 @@ function RawSvgClothingPreview({
       })
       .catch(() => {
         if (!cancelled) {
-          // Do not apply a fake CSS tint on failure.
-          // Showing the original SVG is safer than recoloring the wrong parts.
           setDisplaySrc(originalSrc);
           setIsReady(true);
         }
@@ -753,7 +744,7 @@ export default function GenerationSettings({
           )}
         </div>
 
-        {/* CLOTHING STYLE SECTION */}
+        {/* CLOTHING STYLE SECTION WITH UPCOMING OVERLAY */}
         <div className="mb-6 relative" ref={clothingColorPopupRef}>
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
             <span>CLOTHING STYLE</span>
@@ -763,124 +754,134 @@ export default function GenerationSettings({
             </span>
           </div>
 
-          {!isDualMode ? (
-            <div className="grid grid-cols-7 gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedClothing(-1);
-                  setShowClothingColorPicker(false);
-                }}
-                className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 ${
-                  selectedClothing === -1
-                    ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                    : "border-gray-200"
-                }`}
-                aria-label="No clothing"
-              >
-                <Ban size={18} className="text-gray-400" />
-              </button>
-
-              {CLOTHING_NAMES.map((name, idx) => {
-                const isSelected = selectedClothing === idx;
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleClothingClick(idx)}
-                    className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
-                      isSelected
-                        ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                        : "border-gray-200"
-                    }`}
-                    aria-label={name}
-                  >
-                    <RawSvgClothingPreview
-                      index={idx}
-                      selected={isSelected}
-                      color={isSelected ? currentColor : undefined}
-                      alt={name}
-                    />
-
-                    {isSelected && (
-                      <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
-                        <Check size={8} strokeWidth={3} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+          <div className="relative rounded-2xl overflow-hidden p-0.5">
+            {/* UPCOMING OVERLAY LAYER */}
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-amber-300">
+              <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={13} />
+                Upcoming
+              </span>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <p className="text-[11px] font-medium text-gray-600 mb-1.5">
-                  Left Person
-                </p>
 
-                <div className="grid grid-cols-7 gap-1.5">
-                  {CLOTHING_NAMES.map((name, idx) => (
+            {!isDualMode ? (
+              <div className="grid grid-cols-7 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedClothing(-1);
+                    setShowClothingColorPicker(false);
+                  }}
+                  className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 ${
+                    selectedClothing === -1
+                      ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
+                      : "border-gray-200"
+                  }`}
+                  aria-label="No clothing"
+                >
+                  <Ban size={18} className="text-gray-400" />
+                </button>
+
+                {CLOTHING_NAMES.map((name, idx) => {
+                  const isSelected = selectedClothing === idx;
+
+                  return (
                     <button
-                      key={`left-${idx}`}
+                      key={idx}
                       type="button"
-                      onClick={() => setLeftClothing(idx)}
+                      onClick={() => handleClothingClick(idx)}
                       className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
-                        leftClothing === idx
+                        isSelected
                           ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
                           : "border-gray-200"
                       }`}
+                      aria-label={name}
                     >
                       <RawSvgClothingPreview
                         index={idx}
-                        selected={false}
-                        alt={`${name} left person`}
+                        selected={isSelected}
+                        color={isSelected ? currentColor : undefined}
+                        alt={name}
                       />
 
-                      {leftClothing === idx && (
+                      {isSelected && (
                         <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
                           <Check size={8} strokeWidth={3} />
                         </span>
                       )}
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[11px] font-medium text-gray-600 mb-1.5">
+                    Left Person
+                  </p>
+
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {CLOTHING_NAMES.map((name, idx) => (
+                      <button
+                        key={`left-${idx}`}
+                        type="button"
+                        onClick={() => setLeftClothing(idx)}
+                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
+                          leftClothing === idx
+                            ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <RawSvgClothingPreview
+                          index={idx}
+                          selected={false}
+                          alt={`${name} left person`}
+                        />
+
+                        {leftClothing === idx && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                            <Check size={8} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-medium text-gray-600 mb-1.5">
+                    Right Person
+                  </p>
+
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {CLOTHING_NAMES.map((name, idx) => (
+                      <button
+                        key={`right-${idx}`}
+                        type="button"
+                        onClick={() => setRightClothing(idx)}
+                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
+                          rightClothing === idx
+                            ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <RawSvgClothingPreview
+                          index={idx}
+                          selected={false}
+                          alt={`${name} right person`}
+                        />
+
+                        {rightClothing === idx && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                            <Check size={8} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div>
-                <p className="text-[11px] font-medium text-gray-600 mb-1.5">
-                  Right Person
-                </p>
-
-                <div className="grid grid-cols-7 gap-1.5">
-                  {CLOTHING_NAMES.map((name, idx) => (
-                    <button
-                      key={`right-${idx}`}
-                      type="button"
-                      onClick={() => setRightClothing(idx)}
-                      className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
-                        rightClothing === idx
-                          ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      <RawSvgClothingPreview
-                        index={idx}
-                        selected={false}
-                        alt={`${name} right person`}
-                      />
-
-                      {rightClothing === idx && (
-                        <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
-                          <Check size={8} strokeWidth={3} />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {showClothingColorPicker && selectedClothing >= 0 && (
             <div className="absolute left-0 top-12 w-full max-w-[280px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150">
@@ -937,8 +938,8 @@ export default function GenerationSettings({
           )}
         </div>
 
-        {/* EXTRA EDITING GUIDE */}
-        <div className="mb-4">
+        {/* EXTRA EDITING GUIDE WITH UPCOMING OVERLAY */}
+        <div className="mb-4 relative">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
             <span>EXTRA EDITING GUIDE</span>
             <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium">
@@ -946,73 +947,84 @@ export default function GenerationSettings({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
-            {[
-              "Glow & Makeup",
-              "Smooth Skin",
-              "Brighten Image",
-              "Studio Lighting",
-              "Straighten Head",
-              "Keep Marks",
-              "Lipstick",
-              "Custom Instruction",
-            ].map((item) => {
-              const active =
-                item === "Custom Instruction"
-                  ? activeGuides.some((entry) =>
-                      entry.startsWith("Custom Instruction:"),
-                    )
-                  : activeGuides.includes(item);
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => {
-                    if (item === "Custom Instruction") {
-                      if (active) {
-                        setActiveGuides((prev) =>
-                          prev.filter(
+          <div className="relative rounded-2xl overflow-hidden p-0.5">
+            {/* UPCOMING OVERLAY LAYER */}
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-amber-300">
+              <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={13} />
+                Upcoming
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
+              {[
+                "Glow & Makeup",
+                "Smooth Skin",
+                "Brighten Image",
+                "Studio Lighting",
+                "Straighten Head",
+                "Keep Marks",
+                "Lipstick",
+                "Custom Instruction",
+              ].map((item) => {
+                const active =
+                  item === "Custom Instruction"
+                    ? activeGuides.some((entry) =>
+                        entry.startsWith("Custom Instruction:"),
+                      )
+                    : activeGuides.includes(item);
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      if (item === "Custom Instruction") {
+                        if (active) {
+                          setActiveGuides((prev) =>
+                            prev.filter(
+                              (entry) =>
+                                !entry.startsWith("Custom Instruction:"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        const instruction = window.prompt(
+                          "Enter a custom editing instruction for the AI:",
+                        );
+                        if (!instruction?.trim()) return;
+
+                        const guide = `Custom Instruction: ${instruction.trim()}`;
+                        setActiveGuides((prev) => [
+                          ...prev.filter(
                             (entry) => !entry.startsWith("Custom Instruction:"),
                           ),
-                        );
+                          guide,
+                        ]);
                         return;
                       }
 
-                      const instruction = window.prompt(
-                        "Enter a custom editing instruction for the AI:",
-                      );
-                      if (!instruction?.trim()) return;
-
-                      const guide = `Custom Instruction: ${instruction.trim()}`;
-                      setActiveGuides((prev) => [
-                        ...prev.filter(
-                          (entry) => !entry.startsWith("Custom Instruction:"),
-                        ),
-                        guide,
-                      ]);
-                      return;
-                    }
-
-                    toggleGuide(item);
-                  }}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
-                    active
-                      ? "border-orange-400 bg-orange-50 text-orange-700"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Sparkles
-                    size={14}
-                    className={`mb-1 ${active ? "text-orange-500" : "text-gray-400"}`}
-                  />
-                  <span className="leading-tight">
-                    {item === "Custom Instruction" && active
-                      ? "Custom added"
-                      : item}
-                  </span>
-                </button>
-              );
-            })}
+                      toggleGuide(item);
+                    }}
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
+                      active
+                        ? "border-orange-400 bg-orange-50 text-orange-700"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Sparkles
+                      size={14}
+                      className={`mb-1 ${active ? "text-orange-500" : "text-gray-400"}`}
+                    />
+                    <span className="leading-tight">
+                      {item === "Custom Instruction" && active
+                        ? "Custom added"
+                        : item}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

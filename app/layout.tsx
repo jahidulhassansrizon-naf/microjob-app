@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+
 import Navbar from "@/components/Navbar";
+import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,76 +29,100 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var path = window.location.pathname;
-                  
-                  // পেজ অনুযায়ী ব্যাকগ্রাউন্ড কালার ম্যাপ
-                  var bgMap = {
-                    "/tools": "#FFFBF7",
-                    "/pricing": "#FEF4ED",      
-                    "/reviews": "#F5ECE5",       
-                    "/dorkar-link": "#FCF9F9",   
-                  };
-
-                  var bg = "#FAF7FD"; // ডিফল্ট (Home Page) কালার
-
-                  for (var key in bgMap) {
-                    if (path.startsWith(key)) {
-                      bg = bgMap[key];
-                      break;
-                    }
-                  }
-
-                  document.documentElement.style.backgroundColor = bg;
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen text-gray-900 antialiased`}
-        suppressHydrationWarning={true}
+        suppressHydrationWarning
       >
-        {/* গুগল ট্রান্সলেট অফিশিয়াল স্ক্রিপ্ট */}
+        {/* Dynamic page background */}
+        <PageBackgroundInitializer />
+
+        {/* Google Translate external script */}
         <Script
-          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
           strategy="afterInteractive"
         />
+
+        {/* Google Translate initializer */}
         <Script id="google-translate-init" strategy="afterInteractive">
           {`
-            function googleTranslateElementInit() {
-              new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,bn',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-              }, 'google_translate_element');
-            }
-
-            // গুগল ট্রান্সলেট ব্যানার DOM-এ আসাবামাত্র রিমুভ করার লজিক
-            if (typeof window !== 'undefined') {
-              const observer = new MutationObserver(function() {
-                const frame = document.querySelector('.goog-te-banner-frame');
-                if (frame) {
-                  frame.remove();
+            window.googleTranslateElementInit = function () {
+              try {
+                if (
+                  window.google &&
+                  window.google.translate &&
+                  document.getElementById("google_translate_element")
+                ) {
+                  new window.google.translate.TranslateElement(
+                    {
+                      pageLanguage: "en",
+                      includedLanguages: "en,bn",
+                      layout:
+                        window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+                      autoDisplay: false
+                    },
+                    "google_translate_element"
+                  );
                 }
-                document.body.style.top = '0px';
-              });
-              observer.observe(document.documentElement, { childList: true, subtree: true });
-            }
+              } catch (error) {
+                console.error(
+                  "Google Translate initialization failed:",
+                  error
+                );
+              }
+            };
           `}
         </Script>
 
-        {/* এই হিডেন ডিভটি ব্যাকগ্রাউন্ডে গুগল ট্রান্সলেটরের কাজ সম্পন্ন করবে */}
-        <div id="google_translate_element" style={{ display: "none" }}></div>
+        {/* Remove Google Translate banner */}
+        <Script id="google-translate-cleanup" strategy="afterInteractive">
+          {`
+            (function () {
+              try {
+                const observer = new MutationObserver(function () {
+                  const frame =
+                    document.querySelector(".goog-te-banner-frame");
 
+                  if (frame) {
+                    frame.remove();
+                  }
+
+                  if (document.body) {
+                    document.body.style.top = "0px";
+                  }
+
+                  const gadget =
+                    document.querySelector(".goog-te-gadget");
+
+                  if (gadget) {
+                    gadget.style.fontSize = "0";
+                  }
+                });
+
+                observer.observe(document.documentElement, {
+                  childList: true,
+                  subtree: true
+                });
+
+                window.addEventListener("beforeunload", function () {
+                  observer.disconnect();
+                });
+              } catch (error) {
+                console.error(
+                  "Google Translate cleanup failed:",
+                  error
+                );
+              }
+            })();
+          `}
+        </Script>
+
+        {/* Hidden Google Translate target */}
+        <div id="google_translate_element" style={{ display: "none" }} />
+
+        {/* Main Navbar */}
         <Navbar />
+
+        {/* Page Content */}
         {children}
       </body>
     </html>

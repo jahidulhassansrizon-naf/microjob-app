@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Loader2,
 } from "lucide-react";
+import { TEMPLATE_IMAGE_URLS } from "./templateImageUrls";
 
 export default function PrintMediaPage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function PrintMediaPage() {
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   const categories = [
-    { name: "All", count: 86 },
+    { name: "All", count: TEMPLATE_IMAGE_URLS.length },
     { name: "নোটিশ", count: 6 },
     { name: "বিবাহ আমন্ত্রণ", count: 12 },
     { name: "ভিজিটিং কার্ড", count: 14 },
@@ -287,7 +288,7 @@ export default function PrintMediaPage() {
               {/* কাউন্ট ও সর্ট বাটন */}
               <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                 <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                  86 templates found
+                  {TEMPLATE_IMAGE_URLS.length} templates found
                 </span>
 
                 <div className="relative">
@@ -379,31 +380,33 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            {/* টেমপ্লেট কার্ড গ্রিড (রেসপন্সিভ কলাম) */}
+            {/* টেমপ্লেট কার্ড গ্রিড (রেসপন্সিভ ইমেজেস) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pt-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="bg-white border border-gray-200/85 rounded-3xl p-3.5 shadow-xs flex flex-col gap-3 hover:shadow-md transition group cursor-pointer"
-                  >
-                    <div className="w-full h-44 bg-gray-100 rounded-2xl flex items-center justify-center relative overflow-hidden border border-gray-100">
-                      <span className="absolute top-2.5 left-2.5 bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs">
-                        Free
-                      </span>
-                      <span className="text-3xl">📄</span>
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-gray-900 truncate">
-                        প্রিন্ট মিডিয়া টেমপ্লেট #{item}
-                      </h3>
-                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">
-                        কাস্টমাইজ করুন ক্যানভাসে
-                      </p>
-                    </div>
+              {TEMPLATE_IMAGE_URLS.map((imageUrl, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-gray-200/85 rounded-3xl p-3.5 shadow-xs flex flex-col gap-3 hover:shadow-md transition group cursor-pointer"
+                >
+                  <div className="w-full h-44 bg-gray-100 rounded-2xl flex items-center justify-center relative overflow-hidden border border-gray-100">
+                    <span className="absolute top-2.5 left-2.5 bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs z-10">
+                      Free
+                    </span>
+                    <img
+                      src={imageUrl}
+                      alt={`প্রিন্ট মিডিয়া টেমপ্লেট #${idx + 1}`}
+                      className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                ),
-              )}
+                  <div>
+                    <h3 className="text-xs font-black text-gray-900 truncate">
+                      প্রিন্ট মিডিয়া টেমপ্লেট #{idx + 1}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                      কাস্টমাইজ করুন ক্যানভাসে
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </main>
         </div>
