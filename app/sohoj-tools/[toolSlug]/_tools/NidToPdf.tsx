@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
   CreditCard,
@@ -21,6 +27,7 @@ import {
   Crop,
   X,
   Minimize2,
+  ChevronRight,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -36,7 +43,11 @@ const PYTHON_API_BASE_URL = (
 const AUTO_CROP_ERROR =
   "Auto crop is temporarily unavailable. You can turn Auto crop off and use manual Crop instead.";
 
-async function autoCropFile(file: File): Promise<File> {
+async function autoCropFile(file: File, signal?: AbortSignal): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select a valid image file.");
+  }
+
   const formData = new FormData();
   formData.append("file", file, file.name);
 
@@ -46,21 +57,30 @@ async function autoCropFile(file: File): Promise<File> {
     response = await fetch(`${PYTHON_API_BASE_URL}/api/nid-auto-crop`, {
       method: "POST",
       body: formData,
+      signal,
+      cache: "no-store",
     });
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+
     const detail =
       error instanceof Error && error.message ? ` (${error.message})` : "";
+
     throw new Error(`${AUTO_CROP_ERROR}${detail}`);
   }
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
+
     throw new Error(
       message.trim() ? `Auto crop failed: ${message.trim()}` : AUTO_CROP_ERROR,
     );
   }
 
   const blob = await response.blob();
+
   if (!blob.size) {
     throw new Error("Auto crop returned an empty image.");
   }
@@ -423,14 +443,20 @@ export default function NidToPdf() {
     null,
   );
 
+  const [autoCropChoiceOpen, setAutoCropChoiceOpen] = useState(false);
+
   // State for loading state while downloading PDF on Mobile/Desktop
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [processingSide, setProcessingSide] = useState<"front" | "back" | null>(
     null,
   );
+  const [processingBoth, setProcessingBoth] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [frontAutoCropped, setFrontAutoCropped] = useState(false);
   const [backAutoCropped, setBackAutoCropped] = useState(false);
+
+  const autoCropAbortRef = useRef<AbortController | null>(null);
+  const autoCropRequestIdRef = useRef(0);
 
   const imageCount = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
 
@@ -443,54 +469,214 @@ export default function NidToPdf() {
     [backImage],
   );
 
-  const handleAutoCropToggle = async (enabled: boolean) => {
-    setAutoCrop(enabled);
-    setProcessingError(null);
-
-    if (!enabled) {
-      setProcessingSide(null);
-      return;
-    }
-
-    // Make the switch meaningful immediately: when the user turns Auto crop ON
-    // after already uploading images, re-process those images right away.
-    const currentFront = frontImage;
-    const currentBack = backImage;
-
-    if (!currentFront && !currentBack) return;
-
-    if (currentFront) {
-      setProcessingSide("front");
-      try {
-        const croppedFile = await autoCropFile(currentFront);
-        setFrontImage(croppedFile);
-        setFrontAutoCropped(true);
-      } catch (error) {
-        console.error("Front NID auto-crop failed:", error);
-        setFrontAutoCropped(false);
-        setProcessingError(
-          error instanceof Error ? error.message : AUTO_CROP_ERROR,
-        );
+  useEffect(() => {
+    return () => {
+      if (frontImageUrl) {
+        URL.revokeObjectURL(frontImageUrl);
       }
-    }
+    };
+  }, [frontImageUrl]);
 
-    if (currentBack) {
-      setProcessingSide("back");
-      try {
-        const croppedFile = await autoCropFile(currentBack);
-        setBackImage(croppedFile);
-        setBackAutoCropped(true);
-      } catch (error) {
-        console.error("Back NID auto-crop failed:", error);
-        setBackAutoCropped(false);
-        setProcessingError(
-          error instanceof Error ? error.message : AUTO_CROP_ERROR,
-        );
+  useEffect(() => {
+    return () => {
+      if (backImageUrl) {
+        URL.revokeObjectURL(backImageUrl);
       }
+    };
+  }, [backImageUrl]);
+
+  const cancelAutoCropProcessing = useCallback(() => {
+    autoCropRequestIdRef.current += 1;
+
+    if (autoCropAbortRef.current) {
+      autoCropAbortRef.current.abort();
+      autoCropAbortRef.current = null;
     }
 
     setProcessingSide(null);
-  };
+    setProcessingBoth(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (autoCropAbortRef.current) {
+        autoCropAbortRef.current.abort();
+        autoCropAbortRef.current = null;
+      }
+    };
+  }, []);
+
+  const processAutoCropSides = useCallback(
+    async (
+      sides: Array<"front" | "back">,
+      sourceOverrides?: Partial<Record<"front" | "back", File | null>>,
+    ) => {
+      if (sides.length === 0) {
+        return;
+      }
+
+      const requestId = ++autoCropRequestIdRef.current;
+
+      if (autoCropAbortRef.current) {
+        autoCropAbortRef.current.abort();
+      }
+
+      const controller = new AbortController();
+      autoCropAbortRef.current = controller;
+
+      setProcessingError(null);
+      setProcessingBoth(sides.length === 2);
+      setProcessingSide(sides[0]);
+
+      try {
+        for (const side of sides) {
+          if (
+            requestId !== autoCropRequestIdRef.current ||
+            controller.signal.aborted
+          ) {
+            return;
+          }
+
+          const sourceFile =
+            sourceOverrides?.[side] ??
+            (side === "front" ? frontImage : backImage);
+
+          if (!sourceFile) {
+            continue;
+          }
+
+          const croppedFile = await autoCropFile(sourceFile, controller.signal);
+
+          if (
+            requestId !== autoCropRequestIdRef.current ||
+            controller.signal.aborted
+          ) {
+            return;
+          }
+
+          if (side === "front") {
+            setFrontImage(croppedFile);
+            setFrontAutoCropped(true);
+          } else {
+            setBackImage(croppedFile);
+            setBackAutoCropped(true);
+          }
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (requestId === autoCropRequestIdRef.current) {
+          console.error("NID auto-crop failed:", error);
+
+          setProcessingError(
+            error instanceof Error ? error.message : AUTO_CROP_ERROR,
+          );
+
+          if (sides.includes("front")) {
+            setFrontAutoCropped(false);
+          }
+
+          if (sides.includes("back")) {
+            setBackAutoCropped(false);
+          }
+        }
+      } finally {
+        if (autoCropAbortRef.current === controller) {
+          autoCropAbortRef.current = null;
+        }
+
+        if (requestId === autoCropRequestIdRef.current) {
+          setProcessingSide(null);
+          setProcessingBoth(false);
+        }
+      }
+    },
+    [frontImage, backImage],
+  );
+
+  const openAutoCropChoice = useCallback(() => {
+    if (imageCount < 2) {
+      return;
+    }
+
+    setProcessingError(null);
+    setAutoCropChoiceOpen(true);
+  }, [imageCount]);
+
+  const handleAutoCropToggle = useCallback(
+    (enabled: boolean) => {
+      setProcessingError(null);
+
+      if (!enabled) {
+        setAutoCrop(false);
+        setAutoCropChoiceOpen(false);
+        cancelAutoCropProcessing();
+        return;
+      }
+
+      setAutoCrop(true);
+
+      if (!frontImage && !backImage) {
+        return;
+      }
+
+      if (frontImage && backImage) {
+        openAutoCropChoice();
+        return;
+      }
+
+      void processAutoCropSides([frontImage ? "front" : "back"]);
+    },
+    [
+      frontImage,
+      backImage,
+      openAutoCropChoice,
+      processAutoCropSides,
+      cancelAutoCropProcessing,
+    ],
+  );
+
+  const handleAutoCropChoice = useCallback(
+    (choice: "front" | "back" | "both") => {
+      setAutoCropChoiceOpen(false);
+      setProcessingError(null);
+
+      if (choice === "front") {
+        if (!frontImage) {
+          setProcessingError("Front NID image is not available.");
+          return;
+        }
+
+        void processAutoCropSides(["front"]);
+        return;
+      }
+
+      if (choice === "back") {
+        if (!backImage) {
+          setProcessingError("Back NID image is not available.");
+          return;
+        }
+
+        void processAutoCropSides(["back"]);
+        return;
+      }
+
+      const sides: Array<"front" | "back"> = [];
+
+      if (frontImage) {
+        sides.push("front");
+      }
+
+      if (backImage) {
+        sides.push("back");
+      }
+
+      void processAutoCropSides(sides);
+    },
+    [frontImage, backImage, processAutoCropSides],
+  );
 
   const handleFrontImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -500,27 +686,16 @@ export default function NidToPdf() {
 
     setProcessingError(null);
 
-    if (!autoCrop) {
-      setFrontAutoCropped(false);
-      setFrontImage(file);
-      return;
-    }
+    // A newly selected image replaces the current front image.
+    setFrontAutoCropped(false);
+    setFrontImage(file);
 
-    setProcessingSide("front");
-
-    try {
-      const croppedFile = await autoCropFile(file);
-      setFrontImage(croppedFile);
-      setFrontAutoCropped(true);
-    } catch (error) {
-      console.error("Front NID auto-crop failed:", error);
-      setFrontAutoCropped(false);
-      setFrontImage(file);
-      setProcessingError(
-        error instanceof Error ? error.message : AUTO_CROP_ERROR,
-      );
-    } finally {
-      setProcessingSide(null);
+    // Preserve the existing toggle behavior for uploads:
+    // when Auto Crop is already enabled, process the new image.
+    if (autoCrop) {
+      void processAutoCropSides(["front"], {
+        front: file,
+      });
     }
   };
 
@@ -532,32 +707,24 @@ export default function NidToPdf() {
 
     setProcessingError(null);
 
-    if (!autoCrop) {
-      setBackAutoCropped(false);
-      setBackImage(file);
-      return;
-    }
+    // A newly selected image replaces the current back image.
+    setBackAutoCropped(false);
+    setBackImage(file);
 
-    setProcessingSide("back");
-
-    try {
-      const croppedFile = await autoCropFile(file);
-      setBackImage(croppedFile);
-      setBackAutoCropped(true);
-    } catch (error) {
-      console.error("Back NID auto-crop failed:", error);
-      setBackAutoCropped(false);
-      setBackImage(file);
-      setProcessingError(
-        error instanceof Error ? error.message : AUTO_CROP_ERROR,
-      );
-    } finally {
-      setProcessingSide(null);
+    // Preserve the existing toggle behavior for uploads:
+    // when Auto Crop is already enabled, process the new image.
+    if (autoCrop) {
+      void processAutoCropSides(["back"], {
+        back: file,
+      });
     }
   };
 
   const handleSwap = () => {
+    cancelAutoCropProcessing();
+    setAutoCropChoiceOpen(false);
     setProcessingError(null);
+
     const temp = frontImage;
     setFrontImage(backImage);
     setBackImage(temp);
@@ -572,6 +739,8 @@ export default function NidToPdf() {
   };
 
   const handleReset = () => {
+    cancelAutoCropProcessing();
+    setAutoCropChoiceOpen(false);
     setProcessingError(null);
     setProcessingSide(null);
     setFrontImage(null);
@@ -945,6 +1114,8 @@ export default function NidToPdf() {
           sideTitle="Front of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
+            cancelAutoCropProcessing();
+            setAutoCropChoiceOpen(false);
             setProcessingError(null);
             setFrontImage(croppedFile);
             setFrontAutoCropped(false);
@@ -959,12 +1130,151 @@ export default function NidToPdf() {
           sideTitle="Back of NID card"
           onClose={() => setCroppingSide(null)}
           onApply={(croppedFile) => {
+            cancelAutoCropProcessing();
+            setAutoCropChoiceOpen(false);
             setProcessingError(null);
             setBackImage(croppedFile);
             setBackAutoCropped(false);
             setCroppingSide(null);
           }}
         />
+      )}
+
+      {autoCropChoiceOpen && imageCount === 2 && (
+        <div
+          className="fixed inset-0 z-[60] bg-slate-950/45 backdrop-blur-[2px] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nid-auto-crop-choice-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setAutoCropChoiceOpen(false);
+              setAutoCrop(false);
+              cancelAutoCropProcessing();
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
+                    <Crop size={16} />
+                  </div>
+                  <div>
+                    <h2
+                      id="nid-auto-crop-choice-title"
+                      className="text-sm font-extrabold text-gray-900"
+                    >
+                      Choose Auto Crop
+                    </h2>
+                    <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                      You uploaded both sides. Which image should be
+                      auto-cropped?
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAutoCropChoiceOpen(false);
+                  setAutoCrop(false);
+                  cancelAutoCropProcessing();
+                }}
+                className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+                aria-label="Close auto crop selection"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => handleAutoCropChoice("front")}
+                disabled={processingSide !== null || !frontImage}
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 text-xs font-extrabold">
+                    F
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">
+                      Front only
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Auto-crop only the front side.
+                    </p>
+                  </div>
+                </div>
+
+                <ChevronRight size={15} className="text-gray-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoCropChoice("back")}
+                disabled={processingSide !== null || !backImage}
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 text-xs font-extrabold">
+                    B
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Back only</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Auto-crop only the back side.
+                    </p>
+                  </div>
+                </div>
+
+                <ChevronRight size={15} className="text-gray-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoCropChoice("both")}
+                disabled={processingSide !== null}
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-extrabold">
+                    FB
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">
+                      Both sides
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Auto-crop front and back sequentially.
+                    </p>
+                  </div>
+                </div>
+
+                <ChevronRight size={15} className="text-amber-600" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAutoCropChoiceOpen(false);
+                  setAutoCrop(false);
+                  cancelAutoCropProcessing();
+                }}
+                className="w-full py-2.5 mt-1 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -1098,7 +1408,12 @@ export default function NidToPdf() {
                   <RefreshCw size={13} className="animate-spin shrink-0" />
                   <span>
                     Auto cropping{" "}
-                    {processingSide === "front" ? "front" : "back"} NID photo…
+                    {processingBoth
+                      ? "front and back"
+                      : processingSide === "front"
+                        ? "front"
+                        : "back"}{" "}
+                    NID photo…
                   </span>
                 </div>
               )}
@@ -1196,7 +1511,7 @@ export default function NidToPdf() {
                       >
                         {frontImageUrl ? (
                           <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
-                            {processingSide === "front" && (
+                            {(processingSide === "front" || processingBoth) && (
                               <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
                                 <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
                                   <RefreshCw
@@ -1246,6 +1561,8 @@ export default function NidToPdf() {
                               </button>
                               <button
                                 onClick={() => {
+                                  cancelAutoCropProcessing();
+                                  setAutoCropChoiceOpen(false);
                                   setFrontImage(null);
                                   setFrontAutoCropped(false);
                                 }}
@@ -1308,7 +1625,7 @@ export default function NidToPdf() {
                       >
                         {backImageUrl ? (
                           <div className="relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200">
-                            {processingSide === "back" && (
+                            {(processingSide === "back" || processingBoth) && (
                               <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
                                 <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
                                   <RefreshCw
@@ -1358,6 +1675,8 @@ export default function NidToPdf() {
                               </button>
                               <button
                                 onClick={() => {
+                                  cancelAutoCropProcessing();
+                                  setAutoCropChoiceOpen(false);
                                   setBackImage(null);
                                   setBackAutoCropped(false);
                                 }}

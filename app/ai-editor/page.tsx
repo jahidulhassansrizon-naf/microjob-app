@@ -12,31 +12,6 @@ import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  setDoc,
-  getDocs,
-  serverTimestamp,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBP4aCuTWTrzmwEfSBrJO3v7Wwl9IKZiW8",
-  authDomain: "sohozkaj-db.firebaseapp.com",
-  projectId: "sohozkaj-db",
-  storageBucket: "sohozkaj-db.firebasestorage.app",
-  messagingSenderId: "664339778822",
-  appId: "1:664339778822:web:e6cdf50a427fce962d2287",
-  measurementId: "G-Y62R472CHB",
-};
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-
 export default function PhotoEditorPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState(true);
@@ -69,7 +44,6 @@ export default function PhotoEditorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
@@ -95,69 +69,61 @@ export default function PhotoEditorPage() {
   const visaPopupRef = useRef<HTMLDivElement | null>(null);
   const colorPickerRef = useRef<HTMLDivElement | null>(null);
 
-  // Authentication Check
-  useEffect(() => {
-    const hasTokenCookie = document.cookie
-      .split("; ")
-      .some((row) => row.startsWith("token="));
-    const savedUserStr =
-      localStorage.getItem("user") || localStorage.getItem("userData");
+  // Authentication + MongoDB recent-generation loading
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token
+      ? ({ Authorization: `Bearer ${token}` } as Record<string, string>)
+      : {};
+  };
 
-    if (!hasTokenCookie && !savedUserStr) {
-      router.replace("/login");
-      return;
-    }
-
-    if (savedUserStr) {
-      try {
-        const parsedUser = JSON.parse(savedUserStr);
-        setCurrentUser(parsedUser);
-        if (parsedUser?.id) {
-          fetchUserGenerationsFromFirebase(parsedUser.id);
-        } else {
-          setIsFetching(false);
-        }
-      } catch (e) {
-        console.error("Failed to parse user from localStorage:", e);
-        setIsFetching(false);
-        router.replace("/login");
-        return;
-      }
-    } else {
-      setIsFetching(false);
-    }
-    setAuthChecking(false);
-  }, [router]);
-
-  const fetchUserGenerationsFromFirebase = async (userId: string) => {
+  const fetchUserGenerationsFromMongo = async () => {
     setIsFetching(true);
     try {
-      const generationsRef = collection(db, "users", userId, "generations");
-      const querySnapshot = await getDocs(generationsRef);
+      const response = await fetch("/api/ai-generations", {
+        method: "GET",
+        headers: {
+          ...getAuthHeaders(),
+        },
+        credentials: "include",
+        cache: "no-store",
+      });
 
-      const loadedList = querySnapshot.docs
-        .map((docItem) => ({
-          id: docItem.id,
-          ...docItem.data(),
-        }))
-        .sort((a: any, b: any) => {
-          const toMs = (value: any) => {
-            if (!value) return 0;
-            if (typeof value?.toMillis === "function") return value.toMillis();
-            if (value?.seconds) return value.seconds * 1000;
-            const parsed = Date.parse(String(value));
-            return Number.isNaN(parsed) ? 0 : parsed;
-          };
-          return toMs(b.createdAt) - toMs(a.createdAt);
-        });
+      const result = await response.json().catch(() => null);
 
-      setRecentList(loadedList);
+      if (!response.ok || !result?.success) {
+        if (response.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        throw new Error(result?.error || "Failed to load recent generations.");
+      }
+
+      setRecentList(Array.isArray(result.data) ? result.data : []);
     } catch (error) {
-      console.error("Error fetching user generations from Firebase:", error);
+      console.error("Error fetching AI generations from MongoDB:", error);
+      setRecentList([]);
     } finally {
       setIsFetching(false);
     }
   };
+
+  useEffect(() => {
+    const hasTokenCookie = document.cookie
+      .split("; ")
+      .some((row) => row.startsWith("token="));
+    const hasLocalToken = Boolean(localStorage.getItem("token"));
+    const savedUserStr =
+      localStorage.getItem("user") || localStorage.getItem("userData");
+
+    if (!hasTokenCookie && !hasLocalToken && !savedUserStr) {
+      router.replace("/login");
+      return;
+    }
+
+    setAuthChecking(false);
+    void fetchUserGenerationsFromMongo();
+  }, [router]);
 
   const photoSizes = [
     {
@@ -715,31 +681,53 @@ export default function PhotoEditorPage() {
     updatedId: string,
     newImageUrl: string,
   ) => {
-    if (!currentUser?.id || !updatedId) return;
+    if (!updatedId) return;
 
     try {
       let finalUrl = newImageUrl;
       if (newImageUrl.startsWith("data:")) {
         const uploaded = await uploadToCloudinary(newImageUrl);
-        if (!uploaded)
+        if (!uploaded) {
           throw new Error("Edited image upload failed. Please try again.");
+        }
         finalUrl = uploaded;
       }
 
-      const docRef = doc(db, "users", currentUser.id, "generations", updatedId);
-      await setDoc(docRef, { url: finalUrl }, { merge: true });
+      const response = await fetch(
+        `/api/ai-generations?id=${encodeURIComponent(updatedId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          credentials: "include",
+          body: JSON.stringify({ url: finalUrl }),
+        },
+      );
+
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Failed to save the edited image.");
+      }
+
+      const savedItem = result.data;
 
       setRecentList((prev) =>
         prev.map((item) =>
-          item.id === updatedId ? { ...item, url: finalUrl } : item,
+          item.id === updatedId
+            ? { ...item, ...(savedItem || {}), url: finalUrl }
+            : item,
         ),
       );
 
       setPreviewModalImage((prev: any) =>
-        prev && prev.id === updatedId ? { ...prev, url: finalUrl } : prev,
+        prev && prev.id === updatedId
+          ? { ...prev, ...(savedItem || {}), url: finalUrl }
+          : prev,
       );
     } catch (error) {
-      console.error("Error updating edited image in Firestore:", error);
+      console.error("Error updating edited image in MongoDB:", error);
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -755,20 +743,6 @@ export default function PhotoEditorPage() {
   // এটি সরাসরি লোকাল ব্যাকএন্ড পোর্টে পয়েন্ট করছে।
   // আপনার main.py যে পোর্টে চলবে (যেমন 8000), এখানে সেটি দেওয়া রয়েছে।
   const LOCAL_PYTHON_API_URL = "http://127.0.0.1:8000";
-
-  const isCloudinaryUrl = (value: unknown): value is string => {
-    if (typeof value !== "string") return false;
-    try {
-      const url = new URL(value);
-      return (
-        url.protocol === "https:" &&
-        url.hostname === "res.cloudinary.com" &&
-        url.pathname.includes("/image/upload/")
-      );
-    } catch {
-      return false;
-    }
-  };
 
   const dataUrlToFile = async (
     dataUrl: string,
@@ -898,7 +872,14 @@ export default function PhotoEditorPage() {
     );
 
     const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
-    return cloudUrl || normalized.dataUrl;
+
+    if (!cloudUrl) {
+      throw new Error(
+        "Generated photo could not be uploaded to Cloudinary, so it was not saved. Please try again.",
+      );
+    }
+
+    return cloudUrl;
   };
 
   const handleGeneratePhoto = async () => {
@@ -953,59 +934,54 @@ export default function PhotoEditorPage() {
         setRightImage(rightGenerated);
         setOriginalImageForDual(leftImage);
 
-        if (currentUser?.id) {
-          const generationsRef = collection(
-            db,
-            "users",
-            currentUser.id,
-            "generations",
-          );
-          const docs = [
-            {
-              url: leftGenerated,
-              originalUrl: leftImage,
-              size: currentSizeLabel,
-              sizeType: selectedSize,
-              widthPx: exactExport.widthPx,
-              heightPx: exactExport.heightPx,
-              dpi: exactExport.dpi,
-              bgColor: currentBgHex,
-              clothingStyle: `Style ${leftClothing}`,
-              clothingColor: selectedClothingColor,
-              editingGuides,
-              side: "left",
-              createdAt: serverTimestamp(),
-            },
-            {
-              url: rightGenerated,
-              originalUrl: rightImage,
-              size: currentSizeLabel,
-              sizeType: selectedSize,
-              widthPx: exactExport.widthPx,
-              heightPx: exactExport.heightPx,
-              dpi: exactExport.dpi,
-              bgColor: currentBgHex,
-              clothingStyle: `Style ${rightClothing}`,
-              clothingColor: selectedClothingColor,
-              editingGuides,
-              side: "right",
-              createdAt: serverTimestamp(),
-            },
-          ];
+        const docs = [
+          {
+            url: leftGenerated,
+            originalUrl: leftImage,
+            size: currentSizeLabel,
+            sizeType: selectedSize,
+            widthPx: exactExport.widthPx,
+            heightPx: exactExport.heightPx,
+            dpi: exactExport.dpi,
+            bgColor: currentBgHex,
+            clothingStyle: `Style ${leftClothing}`,
+            clothingColor: selectedClothingColor,
+            editingGuides,
+            side: "left",
+          },
+          {
+            url: rightGenerated,
+            originalUrl: rightImage,
+            size: currentSizeLabel,
+            sizeType: selectedSize,
+            widthPx: exactExport.widthPx,
+            heightPx: exactExport.heightPx,
+            dpi: exactExport.dpi,
+            bgColor: currentBgHex,
+            clothingStyle: `Style ${rightClothing}`,
+            clothingColor: selectedClothingColor,
+            editingGuides,
+            side: "right",
+          },
+        ];
 
-          const created = await Promise.all(
-            docs.map((item) => addDoc(generationsRef, item)),
-          );
-          const now = new Date().toISOString();
-          setRecentList((prev) => [
-            ...created.map((docItem, index) => ({
-              id: docItem.id,
-              ...docs[index],
-              createdAt: now,
-            })),
-            ...prev,
-          ]);
+        const response = await fetch("/api/ai-generations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          credentials: "include",
+          body: JSON.stringify(docs),
+        });
+
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success) {
+          throw new Error(result?.error || "Failed to save generated photos.");
         }
+
+        const createdItems = Array.isArray(result.data) ? result.data : [];
+        setRecentList((prev) => [...createdItems, ...prev]);
         return;
       }
 
@@ -1021,60 +997,74 @@ export default function PhotoEditorPage() {
       setUploadedImage(generatedUrl);
       setIsDualPreviewActive(false);
 
-      if (currentUser?.id) {
-        const newDocData = {
-          url: generatedUrl,
-          originalUrl: finalOriginal,
-          size: currentSizeLabel,
-          sizeType: selectedSize,
-          widthPx: exactExport.widthPx,
-          heightPx: exactExport.heightPx,
-          dpi: exactExport.dpi,
-          bgColor: currentBgHex,
-          clothingStyle: `Style ${selectedClothing}`,
-          clothingColor: selectedClothingColor,
-          editingGuides,
-          createdAt: serverTimestamp(),
+      const newDocData = {
+        url: generatedUrl,
+        originalUrl: finalOriginal,
+        size: currentSizeLabel,
+        sizeType: selectedSize,
+        widthPx: exactExport.widthPx,
+        heightPx: exactExport.heightPx,
+        dpi: exactExport.dpi,
+        bgColor: currentBgHex,
+        clothingStyle: `Style ${selectedClothing}`,
+        clothingColor: selectedClothingColor,
+        editingGuides,
+        side: "single",
+      };
+
+      if (regeneratingId) {
+        const response = await fetch(
+          `/api/ai-generations?id=${encodeURIComponent(regeneratingId)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+            credentials: "include",
+            body: JSON.stringify(newDocData),
+          },
+        );
+
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success) {
+          throw new Error(
+            result?.error || "Failed to update the generated photo.",
+          );
+        }
+
+        const updatedItem = result.data || {
+          id: regeneratingId,
+          ...newDocData,
         };
 
-        if (regeneratingId) {
-          const docRef = doc(
-            db,
-            "users",
-            currentUser.id,
-            "generations",
-            regeneratingId,
-          );
-          await setDoc(docRef, newDocData, { merge: true });
+        setRecentList((prev) =>
+          prev.map((item) =>
+            item.id === regeneratingId ? { ...item, ...updatedItem } : item,
+          ),
+        );
+      } else {
+        const response = await fetch("/api/ai-generations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          credentials: "include",
+          body: JSON.stringify(newDocData),
+        });
 
-          setRecentList((prev) =>
-            prev.map((item) =>
-              item.id === regeneratingId
-                ? {
-                    ...item,
-                    ...newDocData,
-                    createdAt: new Date().toISOString(),
-                  }
-                : item,
-            ),
-          );
-        } else {
-          const generationsRef = collection(
-            db,
-            "users",
-            currentUser.id,
-            "generations",
-          );
-          const newDoc = await addDoc(generationsRef, newDocData);
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success) {
+          throw new Error(result?.error || "Failed to save generated photo.");
+        }
 
-          setRecentList((prev) => [
-            {
-              id: newDoc.id,
-              ...newDocData,
-              createdAt: new Date().toISOString(),
-            },
-            ...prev,
-          ]);
+        const createdItem = Array.isArray(result.data)
+          ? result.data[0]
+          : result.data;
+
+        if (createdItem) {
+          setRecentList((prev) => [createdItem, ...prev]);
         }
       }
     } catch (error) {
@@ -1102,30 +1092,26 @@ export default function PhotoEditorPage() {
     setErrorMessage(null);
 
     try {
-      if (isCloudinaryUrl(imageToDelete.url)) {
-        const deleteRes = await fetch("/api/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrl: imageToDelete.url }),
-        });
-
-        if (!deleteRes.ok) {
-          const data = await deleteRes.json().catch(() => null);
-          throw new Error(
-            data?.message || data?.error || "Cloud image deletion failed.",
-          );
-        }
+      if (!imageToDelete.id) {
+        throw new Error("This generated photo does not have a valid ID.");
       }
 
-      if (currentUser?.id && imageToDelete.id) {
-        const docRef = doc(
-          db,
-          "users",
-          currentUser.id,
-          "generations",
-          imageToDelete.id,
+      const deleteRes = await fetch(
+        `/api/ai-generations?id=${encodeURIComponent(String(imageToDelete.id))}`,
+        {
+          method: "DELETE",
+          headers: {
+            ...getAuthHeaders(),
+          },
+          credentials: "include",
+        },
+      );
+
+      const deleteResult = await deleteRes.json().catch(() => null);
+      if (!deleteRes.ok || !deleteResult?.success) {
+        throw new Error(
+          deleteResult?.error || "Failed to delete the generated photo.",
         );
-        await deleteDoc(docRef);
       }
 
       setRecentList((prevList) =>
