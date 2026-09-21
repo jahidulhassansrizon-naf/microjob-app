@@ -138,6 +138,8 @@ export type ManualEditorContextValue = {
   setRotation: (value: number) => void;
   setFlipX: (value: boolean) => void;
 
+  filterString: string;
+
   downloadEdited: () => Promise<void>;
   printEdited: () => Promise<void>;
   saveEdited: () => Promise<void>;
@@ -406,8 +408,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   }, [resetTransforms]);
 
   const filterString = useMemo(() => {
-    return `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`;
-  }, [brightness, contrast, saturation]);
+    let str = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`;
+    if (sharp > 0) {
+      str = `url(#sharpness-filter) ` + str;
+    } else if (sharp < 0) {
+      const blurPx = (-sharp / 100) * 3;
+      str = `blur(${blurPx.toFixed(1)}px) ` + str;
+    }
+    return str;
+  }, [brightness, contrast, saturation, sharp]);
 
   const drawAsset = async (
     ctx: CanvasRenderingContext2D,
@@ -611,6 +620,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setZoom,
     setRotation,
     setFlipX,
+    filterString,
     downloadEdited,
     printEdited,
     saveEdited,

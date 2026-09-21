@@ -231,6 +231,11 @@ export default function DashboardNavbar() {
             onMouseEnter={() => setAiTemplateOpen(true)}
             onMouseLeave={() => setAiTemplateOpen(false)}
           >
+            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
+            <span className="absolute -top-2.5 -right-1.5 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
+              Upcoming
+            </span>
+
             <Link
               href="/ai-template"
               className="flex items-center gap-0.5 hover:text-[#FF5D00] cursor-pointer"
@@ -313,7 +318,12 @@ export default function DashboardNavbar() {
           </div>
 
           {/* Jobs Link */}
-          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
+          <div className="relative flex items-center whitespace-nowrap shrink-0">
+            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
+            <span className="absolute -top-2.5 -right-2 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
+              Upcoming
+            </span>
+
             <Link
               href="/jobs"
               className={`flex items-center gap-1 transition-colors ${
@@ -323,9 +333,6 @@ export default function DashboardNavbar() {
               <Briefcase size={14} className="text-amber-500 shrink-0" />
               <span>Jobs</span>
             </Link>
-            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
-              New
-            </span>
           </div>
 
           {/* Print Media Dropdown */}
@@ -334,6 +341,11 @@ export default function DashboardNavbar() {
             onMouseEnter={() => setPrintMediaOpen(true)}
             onMouseLeave={() => setPrintMediaOpen(false)}
           >
+            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
+            <span className="absolute -top-2.5 -right-1 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
+              Upcoming
+            </span>
+
             <Link
               href="/print-media"
               className={`flex items-center gap-0.5 transition-colors ${
