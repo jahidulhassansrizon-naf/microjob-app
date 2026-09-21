@@ -618,6 +618,40 @@ export default function GenerationSettings({
             {backgroundColors.map((bg, idx) => {
               const isSelected = selectedBg === idx;
 
+              if (bg.type === "transparent") {
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBg(idx);
+                      setShowColorPicker(false);
+                    }}
+                    title="Transparent background"
+                    aria-label="Transparent background"
+                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-gray-300 ${
+                      isSelected ? "ring-2 ring-orange-500 ring-offset-2" : ""
+                    }`}
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
+                      backgroundSize: "12px 12px",
+                      backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
+                      backgroundColor: "#ffffff",
+                    }}
+                  >
+                    <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-sm">
+                      PNG
+                    </span>
+                    {isSelected && (
+                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
+                        <Check size={8} />
+                      </span>
+                    )}
+                  </button>
+                );
+              }
+
               if (bg.type === "custom") {
                 return (
                   <button

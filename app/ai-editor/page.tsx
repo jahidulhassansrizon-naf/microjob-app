@@ -244,6 +244,7 @@ export default function PhotoEditorPage() {
   const normalizeImageToExactPhysicalSize = async (
     imageSrc: string,
     sizeLabel: string,
+    transparentBackground = false,
   ): Promise<{
     dataUrl: string;
     widthPx: number;
@@ -293,8 +294,12 @@ export default function PhotoEditorPage() {
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
 
-    context.fillStyle = getSelectedBgColorValue();
-    context.fillRect(0, 0, target.widthPx, target.heightPx);
+    if (transparentBackground) {
+      context.clearRect(0, 0, target.widthPx, target.heightPx);
+    } else {
+      context.fillStyle = getSelectedBgColorValue();
+      context.fillRect(0, 0, target.widthPx, target.heightPx);
+    }
 
     context.drawImage(
       image,
@@ -309,7 +314,9 @@ export default function PhotoEditorPage() {
     );
 
     return {
-      dataUrl: canvas.toDataURL("image/jpeg", 0.95),
+      dataUrl: transparentBackground
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", 0.95),
       widthPx: target.widthPx,
       heightPx: target.heightPx,
       dpi: target.dpi,
@@ -328,15 +335,33 @@ export default function PhotoEditorPage() {
     { type: "preset", className: "bg-blue-600", value: "#2563EB" },
     { type: "preset", className: "bg-teal-700", value: "#0F766E" },
     { type: "preset", className: "bg-amber-100", value: "#FEF3C7" },
+    {
+      type: "transparent",
+      className: "",
+      value: "transparent",
+    },
     { type: "custom", className: "", value: "" },
   ];
 
   const getSelectedBgColorValue = () => {
-    if (selectedBg === 7 && /^#[0-9A-F]{6}$/i.test(customBgColor)) {
+    const selectedOption = backgroundColors[selectedBg];
+
+    if (selectedOption?.type === "transparent") {
+      return "transparent";
+    }
+
+    if (
+      selectedOption?.type === "custom" &&
+      /^#[0-9A-F]{6}$/i.test(customBgColor)
+    ) {
       return customBgColor.toUpperCase();
     }
-    return backgroundColors[selectedBg]?.value || "#FFFFFF";
+
+    return selectedOption?.value || "#FFFFFF";
   };
+
+  const isTransparentBackground = () =>
+    backgroundColors[selectedBg]?.type === "transparent";
 
   const getCurrentSizeLabel = () => {
     if (selectedSize === "Visa") return selectedVisaSize;
@@ -790,12 +815,18 @@ export default function PhotoEditorPage() {
         throw new Error("Could not create final image canvas.");
       }
 
-      context.fillStyle = backgroundColor;
-      context.fillRect(0, 0, width, height);
+      if (backgroundColor === "transparent") {
+        context.clearRect(0, 0, width, height);
+      } else {
+        context.fillStyle = backgroundColor;
+        context.fillRect(0, 0, width, height);
+      }
 
       context.drawImage(image, 0, 0, width, height);
 
-      return canvas.toDataURL("image/jpeg", 0.95);
+      return backgroundColor === "transparent"
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", 0.95);
     } finally {
       URL.revokeObjectURL(objectUrl);
     }
@@ -861,14 +892,18 @@ export default function PhotoEditorPage() {
       throw new Error("Background removal returned an invalid image response.");
     }
 
+    const transparentBackground =
+      payload.transparentBackground === true || bgColor === "transparent";
+
     const backgroundAppliedDataUrl = await applyBackgroundColorToImage(
       processedBlob,
-      bgColor,
+      transparentBackground ? "transparent" : bgColor,
     );
 
     const normalized = await normalizeImageToExactPhysicalSize(
       backgroundAppliedDataUrl,
       typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
+      transparentBackground,
     );
 
     const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
@@ -900,12 +935,14 @@ export default function PhotoEditorPage() {
     try {
       const currentSizeLabel = getCurrentSizeLabel();
       const currentBgHex = getSelectedBgColorValue();
+      const transparentBackground = isTransparentBackground();
       const exactExport = getExactExportDimensions(currentSizeLabel);
 
       const basePayload = {
         size: currentSizeLabel,
         sizeType: selectedSize,
         bgColor: currentBgHex,
+        transparentBackground,
         clothing: selectedClothing,
         clothingColor: selectedClothingColor,
         editingGuides,

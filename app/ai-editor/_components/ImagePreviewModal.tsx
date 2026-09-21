@@ -60,6 +60,14 @@ function filterString(filters: FilterState) {
 
 const EXPORT_DPI = 300;
 
+const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
+  backgroundSize: "16px 16px",
+  backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+  backgroundColor: "#ffffff",
+};
+
 type PhysicalSize = {
   width: number;
   height: number;
@@ -353,11 +361,28 @@ async function canvasToBlob(
   format: "jpg" | "png",
 ): Promise<Blob> {
   const mimeType = format === "jpg" ? "image/jpeg" : "image/png";
-
   const quality = format === "jpg" ? 0.95 : undefined;
 
+  let exportCanvas = canvas;
+
+  if (format === "jpg") {
+    const flattened = document.createElement("canvas");
+    flattened.width = canvas.width;
+    flattened.height = canvas.height;
+
+    const context = flattened.getContext("2d");
+    if (!context) {
+      throw new Error("Could not create JPG export canvas.");
+    }
+
+    context.fillStyle = "#FFFFFF";
+    context.fillRect(0, 0, flattened.width, flattened.height);
+    context.drawImage(canvas, 0, 0);
+    exportCanvas = flattened;
+  }
+
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, mimeType, quality);
+    exportCanvas.toBlob(resolve, mimeType, quality);
   });
 
   if (!blob) {
@@ -459,6 +484,7 @@ export default function ImagePreviewModal({
   const displayOriginalUrl = image.originalUrl || image.url;
   const photoSizeLabel = image.size || "35×45 mm";
   const bgHexColor = image.bgColor || "#FFFFFF";
+  const isTransparentBackground = bgHexColor === "transparent";
   const clothingInfo = image.clothingStyle || "Default Clothing";
   const currentAspectOption = ASPECT_RATIOS.find(
     (option) => option.value === selectedAspect,
@@ -588,8 +614,12 @@ export default function ImagePreviewModal({
     }
 
     const fill = image.bgColor || "#FFFFFF";
-    context.fillStyle = /^#[0-9A-F]{6}$/i.test(fill) ? fill : "#FFFFFF";
-    context.fillRect(0, 0, target.widthPx, target.heightPx);
+    if (fill === "transparent") {
+      context.clearRect(0, 0, target.widthPx, target.heightPx);
+    } else {
+      context.fillStyle = /^#[0-9A-F]{6}$/i.test(fill) ? fill : "#FFFFFF";
+      context.fillRect(0, 0, target.widthPx, target.heightPx);
+    }
 
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
@@ -630,7 +660,9 @@ export default function ImagePreviewModal({
     setIsSaving(true);
     setActionError(null);
     try {
-      const editedUrl = await generateExactEditedImageDataUrl("jpeg");
+      const editedUrl = await generateExactEditedImageDataUrl(
+        image.bgColor === "transparent" ? "png" : "jpeg",
+      );
       await onSaveImage(image.id, editedUrl);
       setIsEditOpen(false);
     } catch (error) {
@@ -650,7 +682,9 @@ export default function ImagePreviewModal({
     setIsRegenerating(true);
     setActionError(null);
     try {
-      const editedUrl = await generateExactEditedImageDataUrl("jpeg");
+      const editedUrl = await generateExactEditedImageDataUrl(
+        image.bgColor === "transparent" ? "png" : "jpeg",
+      );
       await onRegenerate({
         ...image,
         url: editedUrl,
@@ -1155,7 +1189,9 @@ export default function ImagePreviewModal({
                   <div>
                     <div className="font-semibold text-white">HD PNG Image</div>
                     <div className="text-[10px] text-gray-400">
-                      Lossless High Quality
+                      {isTransparentBackground
+                        ? "Lossless PNG • keeps transparency"
+                        : "Lossless High Quality"}
                     </div>
                   </div>
                 </button>
@@ -1256,7 +1292,9 @@ export default function ImagePreviewModal({
                   className="w-3.5 h-3.5 rounded-full border border-white/30"
                   style={{ backgroundColor: bgHexColor }}
                 />
-                <span className="font-medium text-white">{bgHexColor}</span>
+                <span className="font-medium text-white">
+                  {isTransparentBackground ? "Transparent" : bgHexColor}
+                </span>
               </div>
             </div>
             <div className="flex justify-between items-center bg-black/20 px-3 py-2 rounded-lg">
@@ -1272,7 +1310,9 @@ export default function ImagePreviewModal({
           <div
             className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] flex items-center justify-center transition-all duration-200 ease-out overflow-hidden rounded-lg shadow-2xl relative"
             style={{
-              backgroundColor: bgHexColor,
+              ...(isTransparentBackground
+                ? TRANSPARENT_BACKGROUND_STYLE
+                : { backgroundColor: bgHexColor }),
               transform: `scale(${previewZoom / 100}) rotate(${isComparing ? 0 : previewRotate}deg)`,
             }}
           >

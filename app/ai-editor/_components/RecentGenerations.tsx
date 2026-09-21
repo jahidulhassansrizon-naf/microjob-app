@@ -29,6 +29,14 @@ export interface RecentGenerationsProps {
   isLoading?: boolean;
 }
 
+const TRANSPARENT_THUMBNAIL_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
+  backgroundSize: "12px 12px",
+  backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
+  backgroundColor: "#ffffff",
+};
+
 function displayDate(value: unknown) {
   if (!value) return "";
   if (typeof (value as { toDate?: unknown })?.toDate === "function") {
@@ -131,13 +139,17 @@ export default function RecentGenerations({
                 key={item.id ?? index}
                 onClick={() => onImageClick(item)}
                 className="group relative flex h-36 w-28 shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-left transition hover:border-orange-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-300"
+                style={
+                  item.bgColor === "transparent"
+                    ? TRANSPARENT_THUMBNAIL_STYLE
+                    : undefined
+                }
               >
                 <img
                   src={item.url}
                   alt="Generated photo"
                   loading="lazy"
                   className="h-full w-full object-cover"
-                  style={{ backgroundColor: item.bgColor }}
                 />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
                   View
@@ -192,13 +204,17 @@ export default function RecentGenerations({
                     setShowAll(false);
                   }}
                   className="group relative aspect-[4/5] overflow-hidden rounded-xl border border-gray-200 bg-gray-50 cursor-pointer"
+                  style={
+                    item.bgColor === "transparent"
+                      ? TRANSPARENT_THUMBNAIL_STYLE
+                      : undefined
+                  }
                 >
                   <img
                     src={item.url}
                     alt="Generated photo"
                     loading="lazy"
                     className="h-full w-full object-cover"
-                    style={{ backgroundColor: item.bgColor }}
                   />
                   <span className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-left text-[9px] text-white opacity-0 transition group-hover:opacity-100">
                     {item.size || "Photo"}

@@ -27,6 +27,20 @@ interface PhotoPreviewAreaProps {
   setIsDualPreviewActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
+  backgroundSize: "16px 16px",
+  backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+  backgroundColor: "#ffffff",
+};
+
+function getBackgroundStyle(background: string): React.CSSProperties {
+  return background === "transparent"
+    ? TRANSPARENT_BACKGROUND_STYLE
+    : { backgroundColor: background };
+}
+
 function EmptyUploadBox({
   title,
   subtitle,
@@ -85,7 +99,7 @@ function PhotoCard({
         style={{
           width: "min(100%, 290px)",
           aspectRatio: `${parseFloat(boxInfo.style.width) || 290} / ${parseFloat(boxInfo.style.height) || 372}`,
-          backgroundColor: background,
+          ...getBackgroundStyle(background),
         }}
       >
         {image ? (
@@ -211,7 +225,7 @@ export default function PhotoPreviewArea({
               {uploadedImage ? (
                 <div
                   className="group relative h-full w-full"
-                  style={{ backgroundColor: currentBgColorValue }}
+                  style={getBackgroundStyle(currentBgColorValue)}
                 >
                   <img
                     src={uploadedImage}
