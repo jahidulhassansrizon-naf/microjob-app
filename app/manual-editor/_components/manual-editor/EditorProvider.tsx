@@ -1328,7 +1328,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(
         "manual-editor-history",
-        JSON.stringify(photos.map((photo) => photo.url)),
+        JSON.stringify(photos.map((photo: GeneratedPhoto) => photo.url)),
       );
     } catch (error) {
       console.error(
@@ -1776,13 +1776,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         const next = [
           savedPhoto,
           ...current.filter(
-            (item) => item.id !== savedPhoto.id && item.url !== savedPhoto.url,
+            (item: GeneratedPhoto) =>
+              item.id !== savedPhoto.id && item.url !== savedPhoto.url,
           ),
         ].slice(0, 8);
 
         localStorage.setItem(
           "manual-editor-history",
-          JSON.stringify(next.map((photo) => photo.url)),
+          JSON.stringify(next.map((photo: GeneratedPhoto) => photo.url)),
         );
         return next;
       });
@@ -1947,11 +1948,12 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
 
         setGeneratedPhotos((current) => {
           const next = current.filter(
-            (item) => item.id !== photo.id && item.url !== photo.url,
+            (item: GeneratedPhoto) =>
+              item.id !== photo.id && item.url !== photo.url,
           );
           localStorage.setItem(
             "manual-editor-history",
-            JSON.stringify(next.map((item) => item.url)),
+            JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
           );
           return next;
         });

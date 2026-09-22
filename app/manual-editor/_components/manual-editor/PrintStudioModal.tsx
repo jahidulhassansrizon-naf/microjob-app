@@ -587,7 +587,7 @@ export default function PrintStudioModal() {
 
   const beginInteraction = useCallback(
     (
-      event: React.PointerEvent<HTMLDivElement>,
+      event: React.PointerEvent<HTMLElement>,
       id: string,
       mode: "drag" | "resize" | "rotate",
     ) => {
@@ -705,7 +705,7 @@ export default function PrintStudioModal() {
   );
 
   const endInteraction = useCallback(
-    (event?: React.PointerEvent<HTMLDivElement>) => {
+    (event?: React.PointerEvent<HTMLElement>) => {
       const interaction = interactionRef.current;
       if (!interaction) return;
       if (event && event.pointerId !== interaction.pointerId) return;
