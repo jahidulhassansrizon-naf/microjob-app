@@ -1320,7 +1320,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
                 dpi: typeof value.dpi === "number" ? value.dpi : undefined,
               };
             })
-            .filter((item): item is GeneratedPhoto => Boolean(item))
+            .filter((item: unknown): item is GeneratedPhoto => Boolean(item))
             .slice(0, 8)
         : [];
 
