@@ -34,35 +34,8 @@ import type {
   SizePreset,
 } from "./types";
 
-// ১. ব্যাকএন্ড URL সমূহের কনফিগারেশন
-const LOCAL_PYTHON_API_URL =
+const PYTHON_API_URL =
   process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000";
-const RENDER_PYTHON_API_URL = "https://microjob-backend-6mxg.onrender.com";
-
-// ২. স্মার্ট ফলব্যাক ফেচার (প্রথমে লোকালহোস্ট ট্রাই করবে, অফ থাকলে রেন্ডারে পাঠাবে)
-async function fetchWithFallback(endpoint: string, options: RequestInit = {}) {
-  try {
-    const localController = new AbortController();
-    const localTimeout = setTimeout(() => localController.abort(), 2000);
-
-    const localResponse = await fetch(`${LOCAL_PYTHON_API_URL}${endpoint}`, {
-      ...options,
-      signal: localController.signal,
-    });
-
-    clearTimeout(localTimeout);
-
-    if (localResponse.ok) {
-      return localResponse;
-    }
-  } catch {
-    console.warn(
-      "Localhost backend unreachable. Switching to Render backend...",
-    );
-  }
-
-  return await fetch(`${RENDER_PYTHON_API_URL}${endpoint}`, options);
-}
 
 function mmToPx(mm: number) {
   return Math.round((mm / 25.4) * DPI);
@@ -457,6 +430,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [brushSize, setBrushSize] = useState(20);
 
+  /*
+   * true means the soft blue selection overlay is visible.
+   * The adjustment preview itself remains independent.
+   */
   const [objectPreview, setObjectPreview] = useState(false);
 
   const [objectBrushMode, setObjectBrushMode] =
@@ -614,6 +591,11 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const setSelectedBg = useCallback((value: string) => {
     setSelectedBgState(value);
 
+    /*
+     * Choosing any explicit background color
+     * means the removed-background visual state
+     * is no longer considered active.
+     */
     setBackgroundRemoved(false);
   }, []);
 
@@ -667,6 +649,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         setObjectMaskHistoryIndex(0);
 
+        /*
+         * A newly uploaded image gets exactly
+         * one crop opportunity.
+         */
         setCropAvailable(true);
       } catch {
         setUploadError(
@@ -693,6 +679,11 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setObjectMaskHistoryIndex(0);
 
+      /*
+       * Crop has now been consumed.
+       * Changing presets or applying other tools
+       * will never reopen the crop modal.
+       */
       setCropAvailable(false);
 
       return asset.url;
@@ -725,6 +716,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const isDraggingEnter = useCallback(() => setIsDragging(true), []);
 
+  /*
+   * Changing output size must never reset:
+   * - crop
+   * - object adjustments
+   * - global image adjustments
+   * - zoom
+   * - rotation
+   * - mirror
+   */
   const selectMode = useCallback((mode: PhotoMode) => {
     setPhotoMode(mode);
 
@@ -804,7 +804,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setDualPhotos(([a, b]) => [b, a]);
   }, []);
 
-  // Object Mask Request আপডেট (fetchWithFallback ব্যবহার করে)
   const objectMaskRequest = useCallback(
     async (targetArg?: ObjectTab) => {
       const target = targetArg || objectTab;
@@ -829,7 +828,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         const timeout = window.setTimeout(() => controller.abort(), 120000);
 
-        const response = await fetchWithFallback("/api/object-mask", {
+        const response = await fetch(`${PYTHON_API_URL}/api/object-mask`, {
           method: "POST",
           body: formData,
           signal: controller.signal,
@@ -875,7 +874,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         setAiNotice(
           message.includes("Failed to fetch")
-            ? "Backend is not reachable. Please check localhost or Render deployment."
+            ? "Python backend is not reachable. Start the backend on port 8000."
             : message,
         );
 
@@ -959,7 +958,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setAiNotice("");
   }, []);
 
-  // Apply Object Adjust আপডেট (fetchWithFallback ব্যবহার করে)
   const applyObjectAdjust = useCallback(async () => {
     if (!activePhoto) {
       setAiNotice("Upload a photo first.");
@@ -997,7 +995,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       const timeout = window.setTimeout(() => controller.abort(), 120000);
 
-      const response = await fetchWithFallback("/api/object-adjust", {
+      const response = await fetch(`${PYTHON_API_URL}/api/object-adjust`, {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -1044,7 +1042,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setAiNotice(
         message.includes("Failed to fetch")
-          ? "Backend is not reachable. Please check localhost or Render deployment."
+          ? "Python backend is not reachable. Start the backend on port 8000."
           : message,
       );
     } finally {
@@ -1061,7 +1059,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     replaceActivePhoto,
   ]);
 
-  // Remove Background আপডেট (fetchWithFallback ব্যবহার করে)
   const handleRemoveBackground = useCallback(async () => {
     if (!activePhoto) {
       setAiNotice("Upload a photo first.");
@@ -1083,7 +1080,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       const timeout = window.setTimeout(() => controller.abort(), 120000);
 
-      const response = await fetchWithFallback("/api/remove-background", {
+      const response = await fetch(`${PYTHON_API_URL}/api/remove-background`, {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -1124,7 +1121,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setAiNotice(
         message.includes("Failed to fetch")
-          ? "Backend is not reachable. Please check localhost or Render deployment."
+          ? "Python backend is not reachable. Start the backend on port 8000."
           : message,
       );
     } finally {
@@ -1237,6 +1234,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  /*
+   * One automatic segmentation path
+   * handles:
+   * - opening Object Adjust
+   * - switching Face/Skin/Hair/Shadow
+   * - replacing the active image
+   */
   useEffect(() => {
     if (activeAiTool === "object" && activePhoto?.url) {
       setObjectMaskHistory([null]);
@@ -1286,6 +1290,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         ? img.naturalWidth
         : img.naturalHeight;
 
+    /*
+     * Crop is independent from the output preset.
+     *
+     * The selected output size only controls
+     * the destination canvas ratio. It does not
+     * silently perform a second crop.
+     */
     const scale =
       Math.min(targetW / rotatedWidth, targetH / rotatedHeight) * (zoom / 100);
 
@@ -1345,6 +1356,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       await drawAsset(ctx, activePhoto, targetW, targetH, 0);
     }
 
+    /*
+     * Global Image Adjustments are applied
+     * after Object Adjust / Background Remove.
+     */
     applyCanvasSharpness(ctx, sharp);
 
     return canvas;
@@ -1550,6 +1565,13 @@ img {
     [createPhotoAsset, replaceActivePhoto],
   );
 
+  /*
+   * Public context object.
+   *
+   * IMPORTANT:
+   * Both the canonical names and backward-compatible
+   * background aliases are exposed here.
+   */
   const value = {
     isAuthenticated,
 
@@ -1595,10 +1617,23 @@ img {
 
     activeBackground,
 
+    /*
+     * Canonical property.
+     */
     backgroundRemoved,
 
+    /*
+     * Backward-compatible alias.
+     */
     isBackgroundRemoved: backgroundRemoved,
 
+    /*
+     * Public setter.
+     *
+     * This is the exact function that
+     * older BackgroundPanel implementations
+     * were trying to call.
+     */
     setBackgroundRemoved,
 
     isRemovingBackground,
