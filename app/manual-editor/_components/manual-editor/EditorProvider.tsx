@@ -1328,7 +1328,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(
         "manual-editor-history",
-        JSON.stringify(photos.map((photo: GeneratedPhoto) => photo.url)),
+        JSON.stringify(photos.map((item: GeneratedPhoto) => item.url)),
       );
     } catch (error) {
       console.error(
@@ -1783,7 +1783,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         localStorage.setItem(
           "manual-editor-history",
-          JSON.stringify(next.map((photo: GeneratedPhoto) => photo.url)),
+          JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
         );
         return next;
       });
