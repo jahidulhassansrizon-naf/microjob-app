@@ -257,7 +257,7 @@ export default function CropEditor() {
           type="button"
           aria-label="Close crop editor"
           onClick={closeCrop}
-          className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors"
+          className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors cursor-pointer"
         >
           <X size={22} strokeWidth={2.2} />
         </button>
@@ -296,7 +296,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Zoom out"
             onClick={() => setZoom((value) => clamp(value - 10, 100, 300))}
-            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors"
+            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors cursor-pointer"
           >
             <Minus size={17} strokeWidth={2.2} />
           </button>
@@ -307,7 +307,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Zoom in"
             onClick={() => setZoom((value) => clamp(value + 10, 100, 300))}
-            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors"
+            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors cursor-pointer"
           >
             <Plus size={17} strokeWidth={2.2} />
           </button>
@@ -315,7 +315,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Rotate image"
             onClick={handleRotate}
-            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors"
+            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors cursor-pointer"
           >
             <RotateCcw size={15} strokeWidth={2} />
             Rotate
@@ -324,7 +324,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Mirror image"
             onClick={handleMirror}
-            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors"
+            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors cursor-pointer"
           >
             <FlipHorizontal2 size={15} strokeWidth={2} />
             Mirror
@@ -335,7 +335,7 @@ export default function CropEditor() {
           <button
             type="button"
             onClick={closeCrop}
-            className="w-[155px] px-4 bg-white text-gray-700 flex items-center justify-center gap-2 text-[12px] font-black border-l border-gray-200 hover:bg-gray-50 transition-colors"
+            className="w-[155px] px-4 bg-white text-gray-700 flex items-center justify-center gap-2 text-[12px] font-black border-l border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <ScanLine size={15} strokeWidth={2} className="text-gray-500" />
             No Crop Needed
@@ -344,7 +344,7 @@ export default function CropEditor() {
             type="button"
             disabled={busy || !completedCrop}
             onClick={() => void applyCrop()}
-            className="w-[172px] bg-[#ff9f1c] hover:bg-[#ef9210] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors"
+            className="w-[172px] bg-[#ff9f1c] hover:bg-[#ef9210] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <Check size={14} strokeWidth={2.4} />
             {busy ? "Cropping…" : "Crop"}
