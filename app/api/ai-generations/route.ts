@@ -25,6 +25,7 @@ type GenerationBody = {
   editingGuides?: unknown;
   side?: unknown;
   publicId?: unknown;
+  source?: unknown;
 };
 
 function getCloudinaryConfig() {
@@ -104,6 +105,14 @@ function normalizeSide(value: unknown): "left" | "right" | "single" {
   return value === "left" || value === "right" ? value : "single";
 }
 
+function normalizeSource(
+  value: unknown,
+): "ai-editor" | "manual-editor" | undefined {
+  if (value === "ai-editor" || value === "manual-editor") return value;
+  if (value === undefined || value === null || value === "") return undefined;
+  throw new Error("INVALID_SOURCE");
+}
+
 function extractPublicIdFromCloudinaryUrl(imageUrl: string): string | null {
   try {
     const url = new URL(imageUrl);
@@ -171,6 +180,7 @@ function serializeGeneration(item: any) {
     editingGuides: Array.isArray(item.editingGuides) ? item.editingGuides : [],
     side: item.side || "single",
     publicId: item.publicId || "",
+    source: item.source || undefined,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
@@ -233,6 +243,7 @@ function buildPayload(body: GenerationBody, requireUrl = true) {
   if (body.editingGuides !== undefined)
     payload.editingGuides = toGuides(body.editingGuides);
   if (body.side !== undefined) payload.side = normalizeSide(body.side);
+  if (body.source !== undefined) payload.source = normalizeSource(body.source);
 
   return payload;
 }
@@ -253,6 +264,10 @@ function throwHttpError(errorCode: string) {
     INVALID_CLOUDINARY_ASSET: {
       status: 400,
       message: "Invalid Cloudinary generation asset.",
+    },
+    INVALID_SOURCE: {
+      status: 400,
+      message: "Invalid generation source.",
     },
   };
   return map[errorCode];
@@ -281,11 +296,39 @@ async function deleteCloudinaryAsset(publicId: string) {
 export async function GET(request: Request) {
   try {
     const userId = getUserIdFromRequest(request);
+    const { searchParams } = new URL(request.url);
+    const sourceParam = searchParams.get("source")?.trim() || "";
+
+    if (
+      sourceParam &&
+      sourceParam !== "ai-editor" &&
+      sourceParam !== "manual-editor"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Invalid generation source." },
+        { status: 400 },
+      );
+    }
+
     await connectDB();
 
-    const generations = await AIGeneration.find({
-      userId: new mongoose.Types.ObjectId(userId),
-    })
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const query: Record<string, unknown> = { userId: userObjectId };
+
+    if (sourceParam === "manual-editor") {
+      query.source = "manual-editor";
+    } else if (sourceParam === "ai-editor") {
+      // Records created before source separation have no source. Keep those
+      // in AI Editor so existing AI history is not lost, while Manual Editor
+      // remains strictly scoped to manual-editor records.
+      query.$or = [
+        { source: "ai-editor" },
+        { source: { $exists: false } },
+        { source: null },
+      ];
+    }
+
+    const generations = await AIGeneration.find(query)
       .sort({ createdAt: -1 })
       .lean();
 

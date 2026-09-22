@@ -15,6 +15,7 @@ export interface IAIGeneration extends Document {
   editingGuides?: string[];
   side?: "left" | "right" | "single";
   publicId?: string;
+  source?: "ai-editor" | "manual-editor";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,6 +88,10 @@ const AIGenerationSchema = new Schema<IAIGeneration>(
       type: String,
       default: "",
       trim: true,
+    },
+    source: {
+      type: String,
+      enum: ["ai-editor", "manual-editor"],
     },
   },
   {

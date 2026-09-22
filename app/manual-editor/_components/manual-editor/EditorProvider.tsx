@@ -1254,7 +1254,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const loadCloudHistory = useCallback(async () => {
     try {
-      const response = await fetch("/api/ai-generations", {
+      const response = await fetch("/api/ai-generations?source=manual-editor", {
         method: "GET",
         headers: {
           ...getAuthHeaders(),
@@ -1320,7 +1320,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
                 dpi: typeof value.dpi === "number" ? value.dpi : undefined,
               };
             })
-            .filter((item: unknown): item is GeneratedPhoto => Boolean(item))
+            .filter((item): item is GeneratedPhoto => Boolean(item))
             .slice(0, 8)
         : [];
 
@@ -1700,6 +1700,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         ],
         side,
         publicId: cloudinaryPublicId,
+        source: "manual-editor",
       };
 
       setSaveNotice("Saving");

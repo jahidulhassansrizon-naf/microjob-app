@@ -80,7 +80,7 @@ export default function PhotoEditorPage() {
   const fetchUserGenerationsFromMongo = async () => {
     setIsFetching(true);
     try {
-      const response = await fetch("/api/ai-generations", {
+      const response = await fetch("/api/ai-generations?source=ai-editor", {
         method: "GET",
         headers: {
           ...getAuthHeaders(),
@@ -985,6 +985,7 @@ export default function PhotoEditorPage() {
             clothingColor: selectedClothingColor,
             editingGuides,
             side: "left",
+            source: "ai-editor",
           },
           {
             url: rightGenerated,
@@ -999,6 +1000,7 @@ export default function PhotoEditorPage() {
             clothingColor: selectedClothingColor,
             editingGuides,
             side: "right",
+            source: "ai-editor",
           },
         ];
 
@@ -1047,6 +1049,7 @@ export default function PhotoEditorPage() {
         clothingColor: selectedClothingColor,
         editingGuides,
         side: "single",
+        source: "ai-editor",
       };
 
       if (regeneratingId) {
