@@ -1,5 +1,7 @@
 export type PhotoMode = "passport" | "dual" | "visa" | "rsizes" | "freesize";
+
 export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout";
+
 export type ObjectTab = "face" | "skin" | "hair" | "shadow";
 
 export type PhotoAsset = {

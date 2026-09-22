@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
+
 import CreditBanner from "./_components/manual-editor/CreditBanner";
 import PhotoSizePanel from "./_components/manual-editor/PhotoSizePanel";
 import BackgroundPanel from "./_components/manual-editor/BackgroundPanel";
