@@ -9,11 +9,9 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type Dispatch,
   type DragEvent,
   type ReactNode,
   type RefObject,
-  type SetStateAction,
 } from "react";
 
 import {
@@ -29,24 +27,15 @@ import {
 
 import type {
   AiTool,
-  EditorFilters,
+  ObjectBrushMode,
   ObjectTab,
   PhotoAsset,
   PhotoMode,
   SizePreset,
 } from "./types";
 
-/* -------------------------------------------------------------------------- */
-/*                                  Helpers                                   */
-/* -------------------------------------------------------------------------- */
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function clampByte(value: number) {
-  return clamp(Math.round(value), 0, 255);
-}
+const PYTHON_API_URL =
+  process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000";
 
 function mmToPx(mm: number) {
   return Math.round((mm / 25.4) * DPI);
@@ -64,7 +53,7 @@ function loadImage(url: string) {
 
     img.onload = () => resolve(img);
 
-    img.onerror = () => reject(new Error("Unable to load image"));
+    img.onerror = () => reject(new Error("Unable to load image."));
 
     img.src = url;
   });
@@ -77,223 +66,44 @@ function fileName(name: string) {
   }-edited.png`;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                         Canvas Adjustment Helpers                          */
-/* -------------------------------------------------------------------------- */
+async function dataUrlToFile(dataUrl: string, name: string) {
+  const response = await fetch(dataUrl);
 
-/**
- * Standard CSS filters that Canvas 2D can bake directly.
- *
- * These are deliberately separated from Sharpness because the positive
- * sharpness effect uses a convolution matrix which is not consistently
- * supported through CanvasRenderingContext2D.filter via an SVG url().
- */
-function buildStandardFilter(
-  brightness: number,
-  contrast: number,
-  saturation: number,
-) {
-  return [
-    `brightness(${100 + brightness}%)`,
-    `contrast(${100 + contrast}%)`,
-    `saturate(${Math.max(0, 100 + saturation)}%)`,
-  ].join(" ");
-}
+  const blob = await response.blob();
 
-/**
- * Applies the same 3x3 sharpening matrix that the preview SVG filter uses.
- *
- * Original matrix:
- *
- *  0  -k   0
- * -k 1+4k -k
- *  0  -k   0
- *
- * where:
- *   k = (sharpness / 100) * 0.8
- */
-function applyCanvasSharpen(ctx: CanvasRenderingContext2D, sharpness: number) {
-  if (sharpness <= 0) {
-    return;
-  }
-
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-
-  if (!width || !height) {
-    return;
-  }
-
-  const imageData = ctx.getImageData(0, 0, width, height);
-
-  const source = new Uint8ClampedArray(imageData.data);
-
-  const output = imageData.data;
-
-  const k = (clamp(sharpness, 0, 100) / 100) * 0.8;
-
-  const centerWeight = 1 + 4 * k;
-
-  const indexOf = (x: number, y: number) => (y * width + x) * 4;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const centerIndex = indexOf(x, y);
-
-      const alpha = source[centerIndex + 3];
-
-      if (alpha === 0) {
-        continue;
-      }
-
-      const leftX = Math.max(0, x - 1);
-
-      const rightX = Math.min(width - 1, x + 1);
-
-      const topY = Math.max(0, y - 1);
-
-      const bottomY = Math.min(height - 1, y + 1);
-
-      const leftIndex = indexOf(leftX, y);
-
-      const rightIndex = indexOf(rightX, y);
-
-      const topIndex = indexOf(x, topY);
-
-      const bottomIndex = indexOf(x, bottomY);
-
-      for (let channel = 0; channel < 3; channel++) {
-        const center = source[centerIndex + channel];
-
-        const left = source[leftIndex + channel];
-
-        const right = source[rightIndex + channel];
-
-        const top = source[topIndex + channel];
-
-        const bottom = source[bottomIndex + channel];
-
-        const sharpened =
-          center * centerWeight - k * (left + right + top + bottom);
-
-        output[centerIndex + channel] = clampByte(sharpened);
-      }
-
-      output[centerIndex + 3] = alpha;
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-}
-
-/**
- * Creates a fully processed image layer for one photo.
- *
- * Important:
- * - Background is NOT adjusted.
- * - Geometry/rotation/flip/zoom are applied first.
- * - Brightness/contrast/saturation are baked through Canvas filter.
- * - Negative sharpness uses Canvas blur.
- * - Positive sharpness uses pixel convolution.
- */
-async function createAdjustedImageLayer(
-  asset: PhotoAsset,
-  targetW: number,
-  targetH: number,
-  zoom: number,
-  rotation: number,
-  flipX: boolean,
-  brightness: number,
-  contrast: number,
-  saturation: number,
-  sharpness: number,
-) {
-  const canvas = document.createElement("canvas");
-
-  canvas.width = targetW;
-  canvas.height = targetH;
-
-  const ctx = canvas.getContext("2d", {
-    willReadFrequently: sharpness > 0,
-  });
-
-  if (!ctx) {
-    throw new Error("Unable to create canvas context");
-  }
-
-  const img = await loadImage(asset.url);
-
-  ctx.imageSmoothingEnabled = true;
-
-  ctx.imageSmoothingQuality = "high";
-
-  const standardFilter = buildStandardFilter(brightness, contrast, saturation);
-
-  /*
-   * For negative sharpness, use the browser's native Canvas blur.
-   * This follows the same visual pipeline used by CSS preview.
-   */
-  const negativeSharpFilter =
-    sharpness < 0 ? ` blur(${(-sharpness / 100) * 3}px)` : "";
-
-  ctx.save();
-
-  ctx.filter = standardFilter + negativeSharpFilter;
-
-  ctx.translate(targetW / 2, targetH / 2);
-
-  ctx.rotate((rotation * Math.PI) / 180);
-
-  ctx.scale(flipX ? -1 : 1, 1);
-
-  const scale =
-    Math.max(targetW / img.naturalWidth, targetH / img.naturalHeight) *
-    (zoom / 100);
-
-  ctx.drawImage(
-    img,
-    (-img.naturalWidth * scale) / 2,
-    (-img.naturalHeight * scale) / 2,
-    img.naturalWidth * scale,
-    img.naturalHeight * scale,
-  );
-
-  ctx.restore();
-
-  /*
-   * SVG url(#sharpness-filter) is not reliable for exported Canvas data.
-   * So positive sharpness is baked directly into pixel data.
-   *
-   * Because standard filters were already rendered by Canvas before this
-   * convolution, the order matches the preview:
-   *
-   * brightness → contrast → saturation → sharpness
-   */
-  if (sharpness > 0) {
-    applyCanvasSharpen(ctx, sharpness);
-  }
-
-  ctx.filter = "none";
-
-  return canvas;
-}
-
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type = "image/png",
-  quality?: number,
-) {
-  return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), type, quality);
+  return new File([blob], name, {
+    type: blob.type || "image/png",
   });
 }
 
-/* -------------------------------------------------------------------------- */
-/*                              Context Type                                  */
-/* -------------------------------------------------------------------------- */
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result || ""));
+
+    reader.onerror = () => reject(new Error("Could not read image."));
+
+    reader.readAsDataURL(blob);
+  });
+}
+
+function presetBelongsToMode(
+  preset: SizePreset | null,
+  mode: "visa" | "rsizes",
+) {
+  if (!preset) {
+    return false;
+  }
+
+  const collection = mode === "visa" ? VISA_PRESETS : R_SIZE_PRESETS;
+
+  return collection.some((item) => item.id === preset.id);
+}
 
 export type ManualEditorContextValue = {
   isAuthenticated: boolean;
+
   loading: boolean;
 
   showCreditBanner: boolean;
@@ -309,6 +119,7 @@ export type ManualEditorContextValue = {
   setSelectedPreset: (value: SizePreset | null) => void;
 
   freeWidth: number;
+
   freeHeight: number;
 
   setFreeWidth: (value: number) => void;
@@ -317,7 +128,7 @@ export type ManualEditorContextValue = {
 
   sizeMenu: "visa" | "rsizes" | null;
 
-  setSizeMenu: Dispatch<SetStateAction<"visa" | "rsizes" | null>>;
+  setSizeMenu: (value: "visa" | "rsizes" | null) => void;
 
   freeSizeOpen: boolean;
 
@@ -335,6 +146,28 @@ export type ManualEditorContextValue = {
 
   activeBackground: string;
 
+  /*
+   * Canonical background removal state.
+   */
+  backgroundRemoved: boolean;
+
+  /*
+   * Backward-compatible alias.
+   * Older components can safely use this name too.
+   */
+  isBackgroundRemoved: boolean;
+
+  /*
+   * Public setter.
+   * Prevents runtime errors in older components
+   * that still call setBackgroundRemoved(...).
+   */
+  setBackgroundRemoved: (value: boolean) => void;
+
+  isRemovingBackground: boolean;
+
+  handleRemoveBackground: () => Promise<void>;
+
   activeAiTool: AiTool | null;
 
   setActiveAiTool: (value: AiTool | null) => void;
@@ -348,8 +181,11 @@ export type ManualEditorContextValue = {
   setObjectTab: (value: ObjectTab) => void;
 
   objectBrightness: number;
+
   objectContrast: number;
+
   shadowStrength: number;
+
   brushSize: number;
 
   setObjectBrightness: (value: number) => void;
@@ -363,6 +199,32 @@ export type ManualEditorContextValue = {
   objectPreview: boolean;
 
   setObjectPreview: (value: boolean) => void;
+
+  objectBrushMode: ObjectBrushMode;
+
+  setObjectBrushMode: (value: ObjectBrushMode) => void;
+
+  objectMaskDataUrl: string | null;
+
+  objectMaskBusy: boolean;
+
+  objectApplyBusy: boolean;
+
+  objectMaskRequest: (target?: ObjectTab) => Promise<void>;
+
+  commitObjectMask: (dataUrl: string) => void;
+
+  undoObjectMask: () => void;
+
+  redoObjectMask: () => void;
+
+  resetObjectMask: () => Promise<void>;
+
+  applyObjectAdjust: () => Promise<void>;
+
+  cancelObjectAdjust: () => void;
+
+  resetObjectAdjust: () => Promise<void>;
 
   showUnsupportedAiMessage: (tool: AiTool) => void;
 
@@ -404,11 +266,18 @@ export type ManualEditorContextValue = {
 
   applyCroppedDataUrl: (dataUrl: string, fileName?: string) => Promise<string>;
 
+  cropAvailable: boolean;
+
+  consumeCrop: () => void;
+
   openFilePicker: () => void;
 
   brightness: number;
+
   contrast: number;
+
   saturation: number;
+
   sharp: number;
 
   setBrightness: (value: number) => void;
@@ -420,7 +289,9 @@ export type ManualEditorContextValue = {
   setSharp: (value: number) => void;
 
   zoom: number;
+
   rotation: number;
+
   flipX: boolean;
 
   setZoom: (value: number) => void;
@@ -428,8 +299,6 @@ export type ManualEditorContextValue = {
   setRotation: (value: number) => void;
 
   setFlipX: (value: boolean) => void;
-
-  filterString: string;
 
   downloadEdited: () => Promise<void>;
 
@@ -452,9 +321,71 @@ const ManualEditorContext = createContext<ManualEditorContextValue | null>(
   null,
 );
 
-/* -------------------------------------------------------------------------- */
-/*                               Provider                                     */
-/* -------------------------------------------------------------------------- */
+function applyCanvasSharpness(
+  ctx: CanvasRenderingContext2D,
+  strengthValue: number,
+) {
+  const strength = Math.min(
+    0.45,
+    Math.max(0, (Number(strengthValue) / 100) * 0.45),
+  );
+
+  if (strength <= 0) {
+    return;
+  }
+
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+
+  if (width < 3 || height < 3) {
+    return;
+  }
+
+  const image = ctx.getImageData(0, 0, width, height);
+
+  const source = image.data;
+
+  const copy = new Uint8ClampedArray(source);
+
+  const clampChannel = (value: number) => Math.min(255, Math.max(0, value));
+
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const index = (y * width + x) * 4;
+
+      const alpha = source[index + 3];
+
+      if (alpha < 8) {
+        continue;
+      }
+
+      const north = index - width * 4;
+
+      const south = index + width * 4;
+
+      const west = index - 4;
+
+      const east = index + 4;
+
+      for (let channel = 0; channel < 3; channel += 1) {
+        const center = copy[index + channel];
+
+        const neighbours =
+          (copy[north + channel] +
+            copy[south + channel] +
+            copy[west + channel] +
+            copy[east + channel]) /
+          4;
+
+        const sharpened = center + (center - neighbours) * strength * 4;
+
+        source[index + channel] = clampChannel(sharpened);
+      }
+    }
+  }
+
+  ctx.putImageData(image, 0, 0);
+}
 
 export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -465,7 +396,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [photoMode, setPhotoMode] = useState<PhotoMode>("passport");
 
-  const [selectedPreset, setSelectedPreset] = useState<SizePreset | null>(null);
+  const [selectedPreset, setSelectedPresetState] = useState<SizePreset | null>(
+    null,
+  );
 
   const [sizeMenu, setSizeMenu] = useState<"visa" | "rsizes" | null>(null);
 
@@ -475,25 +408,36 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [freeHeight, setFreeHeight] = useState(55);
 
-  const [selectedBg, setSelectedBg] = useState("white");
+  const [selectedBg, setSelectedBgState] = useState("white");
 
-  const [customBg, setCustomBg] = useState("#ffffff");
+  const [customBg, setCustomBgState] = useState("#ffffff");
+
+  const [backgroundRemoved, setBackgroundRemoved] = useState(false);
+
+  const [isRemovingBackground, setIsRemovingBackground] = useState(false);
 
   const [activeAiTool, setActiveAiTool] = useState<AiTool | null>(null);
 
   const [aiNotice, setAiNotice] = useState("");
 
-  const [objectTab, setObjectTab] = useState<ObjectTab>("face");
+  const [objectTab, setObjectTabState] = useState<ObjectTab>("face");
 
-  const [objectBrightness, setObjectBrightness] = useState(200);
+  const [objectBrightness, setObjectBrightness] = useState(100);
 
-  const [objectContrast, setObjectContrast] = useState(200);
+  const [objectContrast, setObjectContrast] = useState(100);
 
   const [shadowStrength, setShadowStrength] = useState(100);
 
-  const [brushSize, setBrushSize] = useState(4);
+  const [brushSize, setBrushSize] = useState(20);
 
+  /*
+   * true means the soft blue selection overlay is visible.
+   * The adjustment preview itself remains independent.
+   */
   const [objectPreview, setObjectPreview] = useState(false);
+
+  const [objectBrushMode, setObjectBrushMode] =
+    useState<ObjectBrushMode>("brush");
 
   const [singlePhoto, setSinglePhoto] = useState<PhotoAsset | null>(null);
 
@@ -529,67 +473,24 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [scanOpen, setScanOpen] = useState(false);
 
-  /* ------------------------------------------------------------------------ */
-  /*                              Auth                                         */
-  /* ------------------------------------------------------------------------ */
+  const [cropAvailable, setCropAvailable] = useState(false);
 
-  useEffect(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="));
+  const [objectMaskHistory, setObjectMaskHistory] = useState<
+    Array<string | null>
+  >([null]);
 
-    const token = tokenCookie ? tokenCookie.slice("token=".length) : null;
+  const [objectMaskHistoryIndex, setObjectMaskHistoryIndex] = useState(0);
 
-    const storedUser = localStorage.getItem("user");
+  const [objectMaskBusy, setObjectMaskBusy] = useState(false);
 
-    if (!token || !storedUser) {
-      localStorage.clear();
-      sessionStorage.clear();
+  const [objectApplyBusy, setObjectApplyBusy] = useState(false);
 
-      document.cookie =
-        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-
-      window.location.href = "/login";
-
-      return;
-    }
-
-    setIsAuthenticated(true);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const history = JSON.parse(
-      localStorage.getItem("manual-editor-history") || "[]",
-    ) as string[];
-
-    setGeneratedPhotos(history.slice(0, 8));
-  }, []);
-
-  /* ------------------------------------------------------------------------ */
-  /*                           Keyboard shortcut                               */
-  /* ------------------------------------------------------------------------ */
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "u") {
-        event.preventDefault();
-
-        fileInputRef.current?.click();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  /* ------------------------------------------------------------------------ */
-  /*                            Derived state                                  */
-  /* ------------------------------------------------------------------------ */
+  const objectRequestId = useRef(0);
 
   const activePhoto =
     photoMode === "dual" ? dualPhotos[activeDualSlot] : singlePhoto;
+
+  const objectMaskDataUrl = objectMaskHistory[objectMaskHistoryIndex] ?? null;
 
   const currentPreset = useMemo<SizePreset>(() => {
     if (photoMode === "passport" || photoMode === "dual") {
@@ -597,25 +498,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     }
 
     if (photoMode === "visa") {
-      if (
-        selectedPreset &&
-        VISA_PRESETS.some((preset) => preset.id === selectedPreset.id)
-      ) {
-        return selectedPreset;
-      }
-
-      return VISA_PRESETS[0];
+      return presetBelongsToMode(selectedPreset, "visa")
+        ? (selectedPreset as SizePreset)
+        : VISA_PRESETS[0];
     }
 
     if (photoMode === "rsizes") {
-      if (
-        selectedPreset &&
-        R_SIZE_PRESETS.some((preset) => preset.id === selectedPreset.id)
-      ) {
-        return selectedPreset;
-      }
-
-      return R_SIZE_PRESETS[0];
+      return presetBelongsToMode(selectedPreset, "rsizes")
+        ? (selectedPreset as SizePreset)
+        : R_SIZE_PRESETS[0];
     }
 
     return {
@@ -630,10 +521,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     selectedBg === "custom"
       ? customBg
       : BACKGROUNDS.find((item) => item.id === selectedBg)?.color || "#ffffff";
-
-  /* ------------------------------------------------------------------------ */
-  /*                              Assets                                       */
-  /* ------------------------------------------------------------------------ */
 
   const createPhotoAsset = useCallback(
     async (file: File): Promise<PhotoAsset> => {
@@ -657,13 +544,26 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   );
 
   const resetTransforms = useCallback(() => {
-    setBrightness(0);
-    setContrast(0);
-    setSaturation(0);
-    setSharp(0);
+    setBrightness(DEFAULT_FILTERS.brightness);
+
+    setContrast(DEFAULT_FILTERS.contrast);
+
+    setSaturation(DEFAULT_FILTERS.saturation);
+
+    setSharp(DEFAULT_FILTERS.sharp);
+
     setZoom(100);
     setRotation(0);
     setFlipX(false);
+  }, []);
+
+  const resetObjectValues = useCallback(() => {
+    setObjectBrightness(100);
+    setObjectContrast(100);
+    setShadowStrength(100);
+    setBrushSize(20);
+    setObjectBrushMode("brush");
+    setObjectPreview(false);
   }, []);
 
   const replaceActivePhoto = useCallback(
@@ -687,6 +587,32 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     },
     [activeDualSlot, photoMode],
   );
+
+  const setSelectedBg = useCallback((value: string) => {
+    setSelectedBgState(value);
+
+    /*
+     * Choosing any explicit background color
+     * means the removed-background visual state
+     * is no longer considered active.
+     */
+    setBackgroundRemoved(false);
+  }, []);
+
+  const setCustomBg = useCallback((value: string) => {
+    setCustomBgState(value);
+    setBackgroundRemoved(false);
+  }, []);
+
+  const resetObjectMaskHistory = useCallback((dataUrl: string | null) => {
+    setObjectMaskHistory([dataUrl]);
+
+    setObjectMaskHistoryIndex(0);
+  }, []);
+
+  const consumeCrop = useCallback(() => {
+    setCropAvailable(false);
+  }, []);
 
   const processFile = useCallback(
     async (file?: File) => {
@@ -713,25 +639,33 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         resetTransforms();
 
+        resetObjectValues();
+
+        setBackgroundRemoved(false);
+
         setUploadError("");
+
+        setObjectMaskHistory([null]);
+
+        setObjectMaskHistoryIndex(0);
+
+        /*
+         * A newly uploaded image gets exactly
+         * one crop opportunity.
+         */
+        setCropAvailable(true);
       } catch {
         setUploadError(
           "This image could not be read. Please choose another image.",
         );
       }
     },
-    [createPhotoAsset, replaceActivePhoto, resetTransforms],
+    [createPhotoAsset, replaceActivePhoto, resetTransforms, resetObjectValues],
   );
 
   const applyCroppedDataUrl = useCallback(
     async (dataUrl: string, name = "cropped-photo.png") => {
-      const response = await fetch(dataUrl);
-
-      const blob = await response.blob();
-
-      const file = new File([blob], name, {
-        type: blob.type || "image/png",
-      });
+      const file = await dataUrlToFile(dataUrl, name);
 
       const asset = await createPhotoAsset(file);
 
@@ -739,9 +673,22 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       resetTransforms();
 
+      resetObjectValues();
+
+      setObjectMaskHistory([null]);
+
+      setObjectMaskHistoryIndex(0);
+
+      /*
+       * Crop has now been consumed.
+       * Changing presets or applying other tools
+       * will never reopen the crop modal.
+       */
+      setCropAvailable(false);
+
       return asset.url;
     },
-    [createPhotoAsset, replaceActivePhoto, resetTransforms],
+    [createPhotoAsset, replaceActivePhoto, resetTransforms, resetObjectValues],
   );
 
   const handleFileInput = useCallback(
@@ -765,62 +712,62 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     [processFile],
   );
 
-  const openFilePicker = useCallback(() => {
-    fileInputRef.current?.click();
+  const openFilePicker = useCallback(() => fileInputRef.current?.click(), []);
+
+  const isDraggingEnter = useCallback(() => setIsDragging(true), []);
+
+  /*
+   * Changing output size must never reset:
+   * - crop
+   * - object adjustments
+   * - global image adjustments
+   * - zoom
+   * - rotation
+   * - mirror
+   */
+  const selectMode = useCallback((mode: PhotoMode) => {
+    setPhotoMode(mode);
+
+    setFreeSizeOpen(mode === "freesize");
+
+    if (mode === "visa") {
+      setSelectedPresetState((current) =>
+        presetBelongsToMode(current, "visa") ? current : VISA_PRESETS[0],
+      );
+
+      setSizeMenu("visa");
+      return;
+    }
+
+    if (mode === "rsizes") {
+      setSelectedPresetState((current) =>
+        presetBelongsToMode(current, "rsizes") ? current : R_SIZE_PRESETS[0],
+      );
+
+      setSizeMenu("rsizes");
+      return;
+    }
+
+    setSelectedPresetState(null);
+    setSizeMenu(null);
+
+    if (mode === "dual") {
+      setActiveDualSlot(0);
+    }
   }, []);
-
-  const isDraggingEnter = useCallback(() => {
-    setIsDragging(true);
-  }, []);
-
-  /* ------------------------------------------------------------------------ */
-  /*                           Size selection                                  */
-  /* ------------------------------------------------------------------------ */
-
-  const selectMode = useCallback(
-    (mode: PhotoMode) => {
-      setPhotoMode(mode);
-
-      setSizeMenu(null);
-
-      setFreeSizeOpen(mode === "freesize");
-
-      if (mode === "visa") {
-        setSelectedPreset((current) =>
-          current && VISA_PRESETS.some((preset) => preset.id === current.id)
-            ? current
-            : VISA_PRESETS[0],
-        );
-      } else if (mode === "rsizes") {
-        setSelectedPreset((current) =>
-          current && R_SIZE_PRESETS.some((preset) => preset.id === current.id)
-            ? current
-            : R_SIZE_PRESETS[0],
-        );
-      } else {
-        setSelectedPreset(null);
-      }
-
-      resetTransforms();
-    },
-    [resetTransforms],
-  );
 
   const selectPreset = useCallback(
     (preset: SizePreset, source: "visa" | "rsizes") => {
       setPhotoMode(source);
 
-      setSelectedPreset(preset);
+      setSelectedPresetState(preset);
 
-      setSizeMenu(null);
       setFreeSizeOpen(false);
+
+      setSizeMenu(source);
     },
     [],
   );
-
-  /* ------------------------------------------------------------------------ */
-  /*                          Photo controls                                   */
-  /* ------------------------------------------------------------------------ */
 
   const removeActivePhoto = useCallback(() => {
     if (photoMode === "dual") {
@@ -840,58 +787,532 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       });
     }
 
+    setBackgroundRemoved(false);
+
+    setObjectMaskHistory([null]);
+
+    setObjectMaskHistoryIndex(0);
+
+    setCropAvailable(false);
+
+    resetObjectValues();
+
     resetTransforms();
-  }, [activeDualSlot, photoMode, resetTransforms]);
+  }, [activeDualSlot, photoMode, resetObjectValues, resetTransforms]);
 
   const swapDualPhotos = useCallback(() => {
     setDualPhotos(([a, b]) => [b, a]);
   }, []);
 
+  const objectMaskRequest = useCallback(
+    async (targetArg?: ObjectTab) => {
+      const target = targetArg || objectTab;
+
+      if (!activePhoto) {
+        setAiNotice("Upload a photo first.");
+        return;
+      }
+
+      const requestId = ++objectRequestId.current;
+
+      setObjectMaskBusy(true);
+
+      try {
+        const formData = new FormData();
+
+        formData.append("file", activePhoto.file, activePhoto.file.name);
+
+        formData.append("target", target);
+
+        const controller = new AbortController();
+
+        const timeout = window.setTimeout(() => controller.abort(), 120000);
+
+        const response = await fetch(`${PYTHON_API_URL}/api/object-mask`, {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+
+        window.clearTimeout(timeout);
+
+        if (!response.ok) {
+          const text = await response.text();
+
+          throw new Error(text || "Automatic selection failed.");
+        }
+
+        const blob = await response.blob();
+
+        if (!blob.type.startsWith("image/")) {
+          throw new Error("Backend did not return a valid mask image.");
+        }
+
+        const dataUrl = await blobToDataUrl(blob);
+
+        if (requestId !== objectRequestId.current) {
+          return;
+        }
+
+        resetObjectMaskHistory(dataUrl);
+
+        setObjectPreview(false);
+
+        setAiNotice(
+          `${target.charAt(0).toUpperCase()}${target.slice(1)} selection ready. ` +
+            "Use Brush or Erase to refine it.",
+        );
+      } catch (error) {
+        if (requestId !== objectRequestId.current) {
+          return;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Automatic selection failed.";
+
+        setAiNotice(
+          message.includes("Failed to fetch")
+            ? "Python backend is not reachable. Start the backend on port 8000."
+            : message,
+        );
+
+        resetObjectMaskHistory(null);
+      } finally {
+        if (requestId === objectRequestId.current) {
+          setObjectMaskBusy(false);
+        }
+      }
+    },
+    [activePhoto, objectTab, resetObjectMaskHistory],
+  );
+
+  const setObjectTab = useCallback(
+    (value: ObjectTab) => {
+      setObjectTabState(value);
+
+      resetObjectValues();
+
+      setAiNotice(
+        `${value.charAt(0).toUpperCase()}${value.slice(1)} selection is being prepared…`,
+      );
+    },
+    [resetObjectValues],
+  );
+
+  const commitObjectMask = useCallback(
+    (dataUrl: string) => {
+      setObjectMaskHistory((current) => {
+        const base = current.slice(0, objectMaskHistoryIndex + 1);
+
+        const latest = base[base.length - 1];
+
+        if (latest === dataUrl) {
+          return current;
+        }
+
+        return [...base, dataUrl].slice(-15);
+      });
+
+      setObjectMaskHistoryIndex((current) => Math.min(current + 1, 14));
+    },
+    [objectMaskHistoryIndex],
+  );
+
+  const undoObjectMask = useCallback(() => {
+    setObjectMaskHistoryIndex((current) => Math.max(0, current - 1));
+  }, []);
+
+  const redoObjectMask = useCallback(() => {
+    setObjectMaskHistoryIndex((current) =>
+      Math.min(objectMaskHistory.length - 1, current + 1),
+    );
+  }, [objectMaskHistory.length]);
+
+  const resetObjectMask = useCallback(async () => {
+    await objectMaskRequest(objectTab);
+  }, [objectMaskRequest, objectTab]);
+
+  const resetObjectAdjust = useCallback(async () => {
+    resetObjectValues();
+
+    await resetObjectMask();
+  }, [resetObjectMask, resetObjectValues]);
+
+  const cancelObjectAdjust = useCallback(() => {
+    objectRequestId.current += 1;
+
+    setObjectMaskHistory([null]);
+
+    setObjectMaskHistoryIndex(0);
+
+    setObjectApplyBusy(false);
+
+    setObjectMaskBusy(false);
+
+    setObjectPreview(false);
+
+    setActiveAiTool(null);
+
+    setAiNotice("");
+  }, []);
+
+  const applyObjectAdjust = useCallback(async () => {
+    if (!activePhoto) {
+      setAiNotice("Upload a photo first.");
+      return;
+    }
+
+    if (!objectMaskDataUrl) {
+      setAiNotice("Please wait for the selected mask to load.");
+      return;
+    }
+
+    setObjectApplyBusy(true);
+
+    try {
+      const maskFile = await dataUrlToFile(
+        objectMaskDataUrl,
+        "object-mask.png",
+      );
+
+      const formData = new FormData();
+
+      formData.append("file", activePhoto.file, activePhoto.file.name);
+
+      formData.append("mask", maskFile, "object-mask.png");
+
+      formData.append("target", objectTab);
+
+      formData.append("brightness", String(objectBrightness));
+
+      formData.append("contrast", String(objectContrast));
+
+      formData.append("shadow_strength", String(shadowStrength));
+
+      const controller = new AbortController();
+
+      const timeout = window.setTimeout(() => controller.abort(), 120000);
+
+      const response = await fetch(`${PYTHON_API_URL}/api/object-adjust`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      window.clearTimeout(timeout);
+
+      if (!response.ok) {
+        const text = await response.text();
+
+        throw new Error(text || "Object adjustment failed.");
+      }
+
+      const blob = await response.blob();
+
+      if (!blob.type.startsWith("image/")) {
+        throw new Error("Backend did not return an image.");
+      }
+
+      const resultFile = new File(
+        [blob],
+        `${activePhoto.file.name.replace(/\.[^/.]+$/, "")}-object-adjusted.png`,
+        {
+          type: blob.type || "image/png",
+        },
+      );
+
+      const resultAsset = await createPhotoAsset(resultFile);
+
+      replaceActivePhoto(resultAsset);
+
+      setObjectMaskHistory([null]);
+
+      setObjectMaskHistoryIndex(0);
+
+      setAiNotice("Object adjustment applied successfully.");
+
+      setActiveAiTool(null);
+
+      setObjectPreview(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Object adjustment failed.";
+
+      setAiNotice(
+        message.includes("Failed to fetch")
+          ? "Python backend is not reachable. Start the backend on port 8000."
+          : message,
+      );
+    } finally {
+      setObjectApplyBusy(false);
+    }
+  }, [
+    activePhoto,
+    objectMaskDataUrl,
+    objectTab,
+    objectBrightness,
+    objectContrast,
+    shadowStrength,
+    createPhotoAsset,
+    replaceActivePhoto,
+  ]);
+
+  const handleRemoveBackground = useCallback(async () => {
+    if (!activePhoto) {
+      setAiNotice("Upload a photo first.");
+      return;
+    }
+
+    setActiveAiTool("transparent");
+
+    setIsRemovingBackground(true);
+
+    setAiNotice("Removing background…");
+
+    try {
+      const formData = new FormData();
+
+      formData.append("file", activePhoto.file, activePhoto.file.name);
+
+      const controller = new AbortController();
+
+      const timeout = window.setTimeout(() => controller.abort(), 120000);
+
+      const response = await fetch(`${PYTHON_API_URL}/api/remove-background`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      window.clearTimeout(timeout);
+
+      if (!response.ok) {
+        const text = await response.text();
+
+        throw new Error(text || "Background removal failed.");
+      }
+
+      const blob = await response.blob();
+
+      if (!blob.type.startsWith("image/")) {
+        throw new Error("Background remover did not return an image.");
+      }
+
+      const resultFile = new File(
+        [blob],
+        `${activePhoto.file.name.replace(/\.[^/.]+$/, "")}-bg-removed.png`,
+        {
+          type: blob.type || "image/png",
+        },
+      );
+
+      const resultAsset = await createPhotoAsset(resultFile);
+
+      replaceActivePhoto(resultAsset);
+
+      setBackgroundRemoved(true);
+
+      setAiNotice("Background removed successfully.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Background removal failed.";
+
+      setAiNotice(
+        message.includes("Failed to fetch")
+          ? "Python backend is not reachable. Start the backend on port 8000."
+          : message,
+      );
+    } finally {
+      setIsRemovingBackground(false);
+    }
+  }, [activePhoto, createPhotoAsset, replaceActivePhoto]);
+
+  const showUnsupportedAiMessage = useCallback(
+    (tool: AiTool) => {
+      setActiveAiTool(tool);
+
+      if (tool === "transparent") {
+        void handleRemoveBackground();
+        return;
+      }
+
+      if (tool === "object") {
+        setObjectTabState("face");
+
+        resetObjectValues();
+
+        setObjectPreview(false);
+
+        setObjectBrushMode("brush");
+
+        setAiNotice("Face selection is being prepared…");
+
+        return;
+      }
+
+      const names: Record<AiTool, string> = {
+        face: "AI Face Enhance",
+        object: "Object Adjust",
+        transparent: "Transparent",
+        upscale: "Upscale",
+        cutout: "Cutout Editor",
+      };
+
+      setAiNotice(`${names[tool]} is not connected yet.`);
+    },
+    [handleRemoveBackground, resetObjectValues],
+  );
+
   const resetEditor = useCallback(() => {
     resetTransforms();
 
-    setSelectedBg("white");
-    setCustomBg("#ffffff");
+    setSelectedBgState("white");
+
+    setCustomBgState("#ffffff");
+
+    setBackgroundRemoved(false);
 
     setActiveAiTool(null);
+
     setAiNotice("");
 
-    setSizeMenu(null);
-    setFreeSizeOpen(false);
-  }, [resetTransforms]);
+    resetObjectValues();
 
-  /* ------------------------------------------------------------------------ */
-  /*                           Preview filter                                  */
-  /* ------------------------------------------------------------------------ */
+    setObjectMaskHistory([null]);
+
+    setObjectMaskHistoryIndex(0);
+  }, [resetTransforms, resetObjectValues]);
+
+  useEffect(() => {
+    const tokenCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="));
+
+    const token = tokenCookie ? tokenCookie.slice("token=".length) : null;
+
+    const storedUser = localStorage.getItem("user");
+
+    if (!token || !storedUser) {
+      localStorage.clear();
+
+      sessionStorage.clear();
+
+      document.cookie =
+        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      window.location.href = "/login";
+
+      return;
+    }
+
+    setIsAuthenticated(true);
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const history = JSON.parse(
+      localStorage.getItem("manual-editor-history") || "[]",
+    ) as string[];
+
+    setGeneratedPhotos(history.slice(0, 8));
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "u") {
+        event.preventDefault();
+
+        fileInputRef.current?.click();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  /*
+   * One automatic segmentation path
+   * handles:
+   * - opening Object Adjust
+   * - switching Face/Skin/Hair/Shadow
+   * - replacing the active image
+   */
+  useEffect(() => {
+    if (activeAiTool === "object" && activePhoto?.url) {
+      setObjectMaskHistory([null]);
+
+      setObjectMaskHistoryIndex(0);
+
+      void objectMaskRequest(objectTab);
+    }
+  }, [activeAiTool, activePhoto?.url, objectTab, objectMaskRequest]);
 
   const filterString = useMemo(() => {
-    const standard = buildStandardFilter(brightness, contrast, saturation);
+    return [
+      `brightness(${100 + brightness}%)`,
+      `contrast(${100 + contrast}%)`,
+      `saturate(${100 + saturation}%)`,
+    ].join(" ");
+  }, [brightness, contrast, saturation]);
+
+  const drawAsset = async (
+    ctx: CanvasRenderingContext2D,
+    asset: PhotoAsset,
+    targetW: number,
+    targetH: number,
+    offsetX: number,
+  ) => {
+    const img = await loadImage(asset.url);
+
+    ctx.save();
+
+    ctx.filter = filterString;
+
+    ctx.translate(offsetX + targetW / 2, targetH / 2);
+
+    ctx.rotate((rotation * Math.PI) / 180);
+
+    ctx.scale(flipX ? -1 : 1, 1);
+
+    const normalizedRotation = ((rotation % 360) + 360) % 360;
+
+    const rotatedWidth =
+      normalizedRotation === 90 || normalizedRotation === 270
+        ? img.naturalHeight
+        : img.naturalWidth;
+
+    const rotatedHeight =
+      normalizedRotation === 90 || normalizedRotation === 270
+        ? img.naturalWidth
+        : img.naturalHeight;
 
     /*
-     * Keep the preview filter order equal to the canvas export order:
+     * Crop is independent from the output preset.
      *
-     * brightness → contrast → saturation → sharpness
+     * The selected output size only controls
+     * the destination canvas ratio. It does not
+     * silently perform a second crop.
      */
-    if (sharp > 0) {
-      return `${standard} url(#sharpness-filter)`;
-    }
+    const scale =
+      Math.min(targetW / rotatedWidth, targetH / rotatedHeight) * (zoom / 100);
 
-    if (sharp < 0) {
-      return `${standard} blur(${(-sharp / 100) * 3}px)`;
-    }
+    ctx.drawImage(
+      img,
+      (-img.naturalWidth * scale) / 2,
+      (-img.naturalHeight * scale) / 2,
+      img.naturalWidth * scale,
+      img.naturalHeight * scale,
+    );
 
-    return standard;
-  }, [brightness, contrast, saturation, sharp]);
-
-  /* ------------------------------------------------------------------------ */
-  /*                    SINGLE SOURCE OF TRUTH RENDERER                       */
-  /* ------------------------------------------------------------------------ */
+    ctx.restore();
+  };
 
   const renderCurrentCanvas = useCallback(async () => {
-    const hasRenderablePhoto =
-      photoMode === "dual" ? dualPhotos.some(Boolean) : Boolean(activePhoto);
-
-    if (!hasRenderablePhoto) {
+    if (!activePhoto) {
       return null;
     }
 
@@ -911,319 +1332,193 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    ctx.imageSmoothingEnabled = true;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.imageSmoothingQuality = "high";
+    if (!backgroundRemoved) {
+      ctx.fillStyle = activeBackground;
 
-    /* ---------------------------- Background ------------------------- */
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-    ctx.fillStyle = activeBackground;
+    if (photoMode === "dual") {
+      const left = dualPhotos[0];
 
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const right = dualPhotos[1];
 
-    /* ----------------------------- Single ----------------------------- */
-
-    if (photoMode !== "dual") {
-      if (!activePhoto) {
-        return null;
+      if (left) {
+        await drawAsset(ctx, left, targetW, targetH, 0);
       }
 
-      const layer = await createAdjustedImageLayer(
-        activePhoto,
-        targetW,
-        targetH,
-        zoom,
-        rotation,
-        flipX,
-        brightness,
-        contrast,
-        saturation,
-        sharp,
-      );
-
-      ctx.drawImage(layer, 0, 0, targetW, targetH);
-
-      return canvas;
+      if (right) {
+        await drawAsset(ctx, right, targetW, targetH, targetW);
+      }
+    } else {
+      await drawAsset(ctx, activePhoto, targetW, targetH, 0);
     }
 
-    /* ------------------------------ Dual ------------------------------ */
-
-    const left = dualPhotos[0];
-
-    const right = dualPhotos[1];
-
-    if (left) {
-      const leftLayer = await createAdjustedImageLayer(
-        left,
-        targetW,
-        targetH,
-        zoom,
-        rotation,
-        flipX,
-        brightness,
-        contrast,
-        saturation,
-        sharp,
-      );
-
-      ctx.drawImage(leftLayer, 0, 0, targetW, targetH);
-    }
-
-    if (right) {
-      const rightLayer = await createAdjustedImageLayer(
-        right,
-        targetW,
-        targetH,
-        zoom,
-        rotation,
-        flipX,
-        brightness,
-        contrast,
-        saturation,
-        sharp,
-      );
-
-      ctx.drawImage(rightLayer, targetW, 0, targetW, targetH);
-    }
+    /*
+     * Global Image Adjustments are applied
+     * after Object Adjust / Background Remove.
+     */
+    applyCanvasSharpness(ctx, sharp);
 
     return canvas;
   }, [
     activePhoto,
-    activeBackground,
-    brightness,
-    contrast,
     currentPreset,
-    dualPhotos,
-    flipX,
     photoMode,
+    dualPhotos,
+    activeBackground,
+    backgroundRemoved,
+    filterString,
     rotation,
-    saturation,
-    sharp,
+    flipX,
     zoom,
+    sharp,
   ]);
-
-  /* ------------------------------------------------------------------------ */
-  /*                              Download                                     */
-  /* ------------------------------------------------------------------------ */
 
   const downloadEdited = useCallback(async () => {
     const canvas = await renderCurrentCanvas();
 
-    if (!canvas) {
+    if (!canvas || !activePhoto) {
       return;
     }
-
-    const primaryAsset = activePhoto || dualPhotos.find(Boolean) || null;
 
     const link = document.createElement("a");
 
-    link.download = primaryAsset
-      ? fileName(primaryAsset.file.name)
-      : "manual-editor-edited.png";
+    link.download = fileName(activePhoto.file.name);
 
     link.href = canvas.toDataURL("image/png");
 
-    document.body.appendChild(link);
-
     link.click();
-
-    link.remove();
-  }, [activePhoto, dualPhotos, renderCurrentCanvas]);
-
-  /* ------------------------------------------------------------------------ */
-  /*                               Print                                       */
-  /* ------------------------------------------------------------------------ */
+  }, [activePhoto, renderCurrentCanvas]);
 
   const printEdited = useCallback(async () => {
-    /*
-     * IMPORTANT:
-     * Never pass activePhoto.url directly to the print window.
-     *
-     * renderCurrentCanvas() is the single source of truth and already
-     * contains:
-     *   - brightness
-     *   - contrast
-     *   - saturation
-     *   - sharpness
-     *   - background
-     *   - crop/fit geometry
-     *   - zoom
-     *   - rotation
-     *   - mirror
-     *   - dual layout
-     */
     const canvas = await renderCurrentCanvas();
 
     if (!canvas) {
+      setSaveNotice("Upload a photo first.");
       return;
     }
 
-    const blob = await canvasToBlob(canvas, "image/png");
+    const imageUrl = canvas.toDataURL("image/png");
 
-    if (!blob) {
-      return;
-    }
-
-    const blobUrl = URL.createObjectURL(blob);
-
-    const printWindow = window.open("", "_blank", "width=900,height=900");
+    const printWindow = window.open("", "_blank", "width=1000,height=1000");
 
     if (!printWindow) {
-      URL.revokeObjectURL(blobUrl);
-
+      setSaveNotice("Please allow pop-ups to print.");
       return;
     }
 
-    const doc = printWindow.document;
+    printWindow.document.open();
 
-    doc.open();
+    printWindow.document.write(
+      `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Print Photo</title>
 
-    doc.write(`
-        <!doctype html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>Print Photo</title>
+<style>
+@page {
+  size: auto;
+  margin: 0;
+}
 
-            <style>
-              html,
-              body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                min-height: 100%;
-                background: #ffffff;
-              }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  width: 100%;
+  min-height: 100%;
+}
 
-              body {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              }
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
 
-              .print-page {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              }
+img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100vw;
+  max-height: 100vh;
+  object-fit: contain;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+</style>
+</head>
 
-              .print-page img {
-                display: block;
-                width: 100%;
-                height: auto;
-                max-width: 100%;
-                object-fit: contain;
-              }
+<body>
+<img
+  id="print-image"
+  src="${imageUrl}"
+  alt="Printable photo"
+/>
 
-              @page {
-                margin: 0;
-              }
+<script>
+  const image =
+    document.getElementById("print-image");
 
-              @media print {
-                html,
-                body {
-                  margin: 0;
-                  padding: 0;
-                  width: 100%;
-                  min-height: 100%;
-                }
+  const triggerPrint = () => {
+    setTimeout(() => {
+      window.focus();
+      window.print();
+    }, 120);
+  };
 
-                .print-page {
-                  width: 100%;
-                  height: auto;
-                }
+  if (image.complete) {
+    triggerPrint();
+  } else {
+    image.addEventListener(
+      "load",
+      triggerPrint,
+      { once: true }
+    );
+  }
+</script>
 
-                .print-page img {
-                  width: 100%;
-                  height: auto;
-                  max-width: 100%;
-                }
-              }
-            </style>
-          </head>
+</body>
+</html>`,
+    );
 
-          <body>
-            <div class="print-page">
-              <img
-                id="manual-editor-print-image"
-                alt="Edited photo"
-              />
-            </div>
-          </body>
-        </html>
-      `);
+    printWindow.document.close();
 
-    doc.close();
+    printWindow.focus();
 
-    const image = doc.getElementById(
-      "manual-editor-print-image",
-    ) as HTMLImageElement | null;
-
-    if (!image) {
-      URL.revokeObjectURL(blobUrl);
-
-      printWindow.close();
-
-      return;
-    }
-
-    let cleaned = false;
-
-    const cleanup = () => {
-      if (cleaned) {
-        return;
-      }
-
-      cleaned = true;
-
-      URL.revokeObjectURL(blobUrl);
-
-      try {
-        printWindow.close();
-      } catch {
-        // Ignore close errors.
-      }
+    const closeAfterPrint = () => {
+      window.setTimeout(() => {
+        try {
+          printWindow.close();
+        } catch {}
+      }, 300);
     };
 
-    printWindow.addEventListener("afterprint", cleanup, {
+    printWindow.addEventListener("afterprint", closeAfterPrint, {
       once: true,
     });
 
-    image.onload = () => {
-      /*
-       * Give the print document one paint cycle so the browser has the
-       * baked Canvas image fully decoded before opening print preview.
-       */
-      window.setTimeout(() => {
-        try {
-          printWindow.focus();
-          printWindow.print();
-        } catch {
-          cleanup();
-        }
-      }, 80);
-    };
-
-    image.onerror = () => {
-      cleanup();
-    };
-
-    image.src = blobUrl;
+    window.setTimeout(closeAfterPrint, 5000);
   }, [renderCurrentCanvas]);
-
-  /* ------------------------------------------------------------------------ */
-  /*                                Save                                       */
-  /* ------------------------------------------------------------------------ */
 
   const saveEdited = useCallback(async () => {
     const canvas = await renderCurrentCanvas();
 
     if (!canvas) {
+      setSaveNotice("Upload a photo first.");
       return;
     }
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    const dataUrl = canvas.toDataURL(
+      backgroundRemoved ? "image/png" : "image/jpeg",
+      backgroundRemoved ? undefined : 0.92,
+    );
 
     setGeneratedPhotos((current) => {
       const next = [
@@ -1236,128 +1531,193 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
-    setSaveNotice("Saved successfully");
+    setSaveNotice("Saved successfully.");
 
     window.setTimeout(() => setSaveNotice(""), 1800);
-  }, [renderCurrentCanvas]);
-
-  /* ------------------------------------------------------------------------ */
-  /*                             History                                       */
-  /* ------------------------------------------------------------------------ */
+  }, [renderCurrentCanvas, backgroundRemoved]);
 
   const loadHistoryImage = useCallback(
     async (dataUrl: string) => {
-      const response = await fetch(dataUrl);
+      try {
+        const response = await fetch(dataUrl);
 
-      const blob = await response.blob();
+        const blob = await response.blob();
 
-      const file = new File([blob], "manual-editor-history.jpg", {
-        type: blob.type || "image/jpeg",
-      });
+        const file = new File([blob], "manual-editor-history.png", {
+          type: blob.type || "image/png",
+        });
 
-      const asset = await createPhotoAsset(file);
+        const asset = await createPhotoAsset(file);
 
-      replaceActivePhoto(asset);
+        replaceActivePhoto(asset);
+
+        setBackgroundRemoved(false);
+
+        setObjectMaskHistory([null]);
+
+        setObjectMaskHistoryIndex(0);
+
+        setCropAvailable(false);
+      } catch {
+        setUploadError("Could not load this saved photo.");
+      }
     },
     [createPhotoAsset, replaceActivePhoto],
   );
 
-  /* ------------------------------------------------------------------------ */
-  /*                             AI helpers                                    */
-  /* ------------------------------------------------------------------------ */
-
-  const showUnsupportedAiMessage = useCallback((tool: AiTool) => {
-    const names: Record<AiTool, string> = {
-      face: "AI Face Enhance",
-      object: "Object Adjust",
-      transparent: "Transparent",
-      upscale: "Upscale",
-      cutout: "Cutout Editor",
-    };
-
-    setActiveAiTool(tool);
-
-    setAiNotice(
-      `${names[tool]} UI is ready. Python/image-processing service will be connected in the final backend step.`,
-    );
-  }, []);
-
-  /* ------------------------------------------------------------------------ */
-  /*                               Context                                     */
-  /* ------------------------------------------------------------------------ */
-
+  /*
+   * Public context object.
+   *
+   * IMPORTANT:
+   * Both the canonical names and backward-compatible
+   * background aliases are exposed here.
+   */
   const value = {
     isAuthenticated,
+
     loading,
 
     showCreditBanner,
+
     setShowCreditBanner,
 
     photoMode,
+
     setPhotoMode,
 
     selectedPreset,
-    setSelectedPreset,
+
+    setSelectedPreset: setSelectedPresetState,
 
     freeWidth,
+
     freeHeight,
 
     setFreeWidth,
+
     setFreeHeight,
 
     sizeMenu,
+
     setSizeMenu,
 
     freeSizeOpen,
+
     setFreeSizeOpen,
 
     currentPreset,
 
     selectedBg,
+
     setSelectedBg,
 
     customBg,
+
     setCustomBg,
 
     activeBackground,
 
+    /*
+     * Canonical property.
+     */
+    backgroundRemoved,
+
+    /*
+     * Backward-compatible alias.
+     */
+    isBackgroundRemoved: backgroundRemoved,
+
+    /*
+     * Public setter.
+     *
+     * This is the exact function that
+     * older BackgroundPanel implementations
+     * were trying to call.
+     */
+    setBackgroundRemoved,
+
+    isRemovingBackground,
+
+    handleRemoveBackground,
+
     activeAiTool,
+
     setActiveAiTool,
 
     aiNotice,
+
     setAiNotice,
 
     objectTab,
+
     setObjectTab,
 
     objectBrightness,
+
     objectContrast,
+
     shadowStrength,
+
     brushSize,
 
     setObjectBrightness,
+
     setObjectContrast,
+
     setShadowStrength,
+
     setBrushSize,
 
     objectPreview,
+
     setObjectPreview,
+
+    objectBrushMode,
+
+    setObjectBrushMode,
+
+    objectMaskDataUrl,
+
+    objectMaskBusy,
+
+    objectApplyBusy,
+
+    objectMaskRequest,
+
+    commitObjectMask,
+
+    undoObjectMask,
+
+    redoObjectMask,
+
+    resetObjectMask,
+
+    applyObjectAdjust,
+
+    cancelObjectAdjust,
+
+    resetObjectAdjust,
 
     showUnsupportedAiMessage,
 
     singlePhoto,
+
     dualPhotos,
 
     activeDualSlot,
+
     activePhoto,
 
     setActiveDualSlot,
 
     selectMode,
+
     selectPreset,
 
     swapDualPhotos,
+
     removeActivePhoto,
+
     resetEditor,
 
     fileInputRef,
@@ -1365,46 +1725,67 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     uploadError,
 
     isDragging,
+
     setIsDragging,
+
     isDraggingEnter,
 
     handleFileInput,
+
     handleDrop,
 
     processFile,
+
     applyCroppedDataUrl,
+
+    cropAvailable,
+
+    consumeCrop,
+
     openFilePicker,
 
     brightness,
+
     contrast,
+
     saturation,
+
     sharp,
 
     setBrightness,
+
     setContrast,
+
     setSaturation,
+
     setSharp,
 
     zoom,
+
     rotation,
+
     flipX,
 
     setZoom,
+
     setRotation,
+
     setFlipX,
 
-    filterString,
-
     downloadEdited,
+
     printEdited,
+
     saveEdited,
 
     saveNotice,
 
     generatedPhotos,
+
     loadHistoryImage,
 
     scanOpen,
+
     setScanOpen,
   } satisfies ManualEditorContextValue;
 
@@ -1415,11 +1796,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               Hook                                         */
-/* -------------------------------------------------------------------------- */
-
-export function useManualEditor(): ManualEditorContextValue {
+export function useManualEditor() {
   const context = useContext(ManualEditorContext);
 
   if (!context) {

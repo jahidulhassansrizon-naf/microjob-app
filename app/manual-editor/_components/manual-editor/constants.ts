@@ -93,7 +93,6 @@ export const VISA_PRESETS: SizePreset[] = [
   },
 ];
 
-// Print-size selector presets.
 export const R_SIZE_PRESETS: SizePreset[] = [
   {
     id: "2r",

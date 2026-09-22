@@ -9,8 +9,11 @@ import {
   RefreshCcw,
   Users,
 } from "lucide-react";
+
 import { R_SIZE_PRESETS, VISA_PRESETS } from "./constants";
+
 import { useManualEditor } from "./EditorProvider";
+
 import type { PhotoMode } from "./types";
 
 const MODE_LABELS: Record<PhotoMode, string> = {
@@ -22,7 +25,10 @@ const MODE_LABELS: Record<PhotoMode, string> = {
 };
 
 function compactPresetLabel(label: string) {
-  if (label.includes(" — ")) return label.split(" — ")[0];
+  if (label.includes(" — ")) {
+    return label.split(" — ")[0];
+  }
+
   return label.replace(" inch", "").replace(" mm", "");
 }
 
@@ -59,6 +65,7 @@ export default function PhotoSizePanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1 h-3.5 bg-amber-500 rounded-full" />
+
           <span className="text-xs font-black tracking-wider uppercase">
             PHOTO SIZE
           </span>
@@ -67,7 +74,7 @@ export default function PhotoSizePanel() {
         <button
           type="button"
           onClick={resetEditor}
-          className="text-gray-400 hover:text-gray-700 transition-colors"
+          className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
           title="Reset editor"
         >
           <RefreshCcw size={13} />
@@ -103,6 +110,7 @@ export default function PhotoSizePanel() {
           },
         ].map((item) => {
           const isActive = photoMode === item.id;
+
           const isPresetMode = item.id === "visa" || item.id === "rsizes";
 
           return (
@@ -118,20 +126,19 @@ export default function PhotoSizePanel() {
                     return;
                   }
 
-                  if (isPresetMode) {
+                  if (item.id === "visa" || item.id === "rsizes") {
                     setFreeSizeOpen(false);
 
-                    setSizeMenu((previous) =>
-                      previous === item.id ? null : item.id,
-                    );
+                    setSizeMenu(item.id);
 
                     return;
                   }
 
                   setSizeMenu(null);
+
                   setFreeSizeOpen(false);
                 }}
-                className={`relative flex w-full min-w-0 flex-col items-center justify-center p-2 rounded-2xl border text-[10px] font-bold transition h-16 ${
+                className={`relative flex w-full min-w-0 flex-col items-center justify-center p-2 rounded-2xl border text-[10px] font-bold transition h-16 cursor-pointer ${
                   isActive
                     ? "border-amber-400 bg-amber-50/30 ring-1 ring-amber-400"
                     : "border-gray-200 bg-white hover:border-gray-300"
@@ -156,7 +163,7 @@ export default function PhotoSizePanel() {
                   onClick={() =>
                     setSizeMenu(sizeMenu === item.id ? null : item.id)
                   }
-                  className="absolute -right-1 -top-1 rounded-full bg-white border shadow-sm text-gray-500 hover:text-gray-800"
+                  className="absolute -right-1 -top-1 rounded-full bg-white border shadow-sm text-gray-500 hover:text-gray-800 cursor-pointer"
                 >
                   <ChevronDown size={12} />
                 </button>
@@ -178,7 +185,7 @@ export default function PhotoSizePanel() {
                 key={preset.id}
                 type="button"
                 onClick={() => selectPreset(preset, "visa")}
-                className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors ${
+                className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${
                   selectedPreset?.id === preset.id
                     ? "border-amber-400 bg-amber-50 text-amber-800"
                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -203,7 +210,7 @@ export default function PhotoSizePanel() {
                 key={preset.id}
                 type="button"
                 onClick={() => selectPreset(preset, "rsizes")}
-                className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors ${
+                className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${
                   selectedPreset?.id === preset.id
                     ? "border-amber-400 bg-amber-500 text-white shadow-sm"
                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -230,9 +237,9 @@ export default function PhotoSizePanel() {
                 min={5}
                 max={500}
                 value={freeWidth}
-                onChange={(e) =>
+                onChange={(event) =>
                   setFreeWidth(
-                    Math.min(500, Math.max(5, Number(e.target.value) || 5)),
+                    Math.min(500, Math.max(5, Number(event.target.value) || 5)),
                   )
                 }
                 className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold outline-none focus:border-amber-400"
@@ -246,9 +253,9 @@ export default function PhotoSizePanel() {
                 min={5}
                 max={500}
                 value={freeHeight}
-                onChange={(e) =>
+                onChange={(event) =>
                   setFreeHeight(
-                    Math.min(500, Math.max(5, Number(e.target.value) || 5)),
+                    Math.min(500, Math.max(5, Number(event.target.value) || 5)),
                   )
                 }
                 className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold outline-none focus:border-amber-400"
@@ -263,7 +270,7 @@ export default function PhotoSizePanel() {
           <button
             type="button"
             onClick={() => setFreeSizeOpen(false)}
-            className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-gray-900 hover:bg-amber-600 transition-colors"
+            className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-gray-900 hover:bg-amber-600 transition-colors cursor-pointer"
           >
             Apply size
           </button>

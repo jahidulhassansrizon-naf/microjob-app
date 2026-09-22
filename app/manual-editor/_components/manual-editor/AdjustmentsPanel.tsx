@@ -52,7 +52,7 @@ export default function AdjustmentsPanel() {
             max={100}
             value={value}
             onChange={(e) => setter(Number(e.target.value))}
-            className="w-full accent-amber-500"
+            className="w-full accent-amber-500 cursor-pointer"
           />
         </div>
       ))}
@@ -61,7 +61,7 @@ export default function AdjustmentsPanel() {
           type="button"
           disabled={!activePhoto}
           onClick={() => void downloadEdited()}
-          className="rounded-xl bg-amber-500 py-2 text-[10px] font-black text-gray-900 disabled:opacity-40 flex items-center justify-center gap-1"
+          className="rounded-xl bg-amber-500 py-2 text-[10px] font-black text-gray-900 disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
         >
           <Download size={13} /> Download
         </button>
@@ -69,7 +69,7 @@ export default function AdjustmentsPanel() {
           type="button"
           disabled={!activePhoto}
           onClick={() => void printEdited()}
-          className="rounded-xl border border-gray-200 py-2 text-[10px] font-black text-gray-700 disabled:opacity-40 flex items-center justify-center gap-1"
+          className="rounded-xl border border-gray-200 py-2 text-[10px] font-black text-gray-700 disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
         >
           <Printer size={13} /> Print
         </button>
@@ -77,7 +77,7 @@ export default function AdjustmentsPanel() {
           type="button"
           disabled={!activePhoto}
           onClick={() => void saveEdited()}
-          className="rounded-xl border border-gray-200 py-2 text-[10px] font-black text-gray-700 disabled:opacity-40 flex items-center justify-center gap-1"
+          className="rounded-xl border border-gray-200 py-2 text-[10px] font-black text-gray-700 disabled:opacity-40 flex items-center justify-center gap-1 cursor-pointer"
         >
           <Save size={13} /> Save
         </button>

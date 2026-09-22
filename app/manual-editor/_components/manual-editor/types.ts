@@ -4,6 +4,8 @@ export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout";
 
 export type ObjectTab = "face" | "skin" | "hair" | "shadow";
 
+export type ObjectBrushMode = "brush" | "erase";
+
 export type PhotoAsset = {
   file: File;
   url: string;

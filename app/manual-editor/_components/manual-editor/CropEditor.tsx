@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import ReactCrop, {
   type Crop,
   type PixelCrop,
   centerCrop,
-  makeAspectCrop,
 } from "react-image-crop";
-
 import "react-image-crop/dist/ReactCrop.css";
-
 import {
   Check,
   Crop as CropIcon,
@@ -21,150 +17,119 @@ import {
   ScanLine,
   X,
 } from "lucide-react";
-
 import { useManualEditor } from "./EditorProvider";
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-function centerAspectCrop(
-  mediaWidth: number,
-  mediaHeight: number,
-  aspect: number,
-) {
+function centerFreeCrop(mediaWidth: number, mediaHeight: number) {
   return centerCrop(
-    makeAspectCrop(
-      {
-        unit: "%",
-        width: 80,
-      },
-      aspect,
-      mediaWidth,
-      mediaHeight,
-    ),
+    {
+      unit: "%",
+      x: 0,
+      y: 0,
+      width: 80,
+      height: 80,
+    },
     mediaWidth,
     mediaHeight,
   );
 }
 
-type EditorActions = {
-  rotate?: () => void;
-
-  rotateImage?: () => void;
-
-  setRotation?: (value: number | ((value: number) => number)) => void;
-
-  toggleFlipX?: () => void;
-
-  flipHorizontal?: () => void;
-
-  setFlipX?: (value: boolean | ((value: boolean) => boolean)) => void;
-};
-
 export default function CropEditor() {
-  const editor = useManualEditor();
-
-  const actions = editor as unknown as EditorActions;
-
-  const { activePhoto, currentPreset, rotation, flipX, applyCroppedDataUrl } =
-    editor;
+  const {
+    activePhoto,
+    rotation,
+    flipX,
+    applyCroppedDataUrl,
+    cropAvailable,
+    consumeCrop,
+  } = useManualEditor();
 
   const [open, setOpen] = useState(false);
-
   const [zoom, setZoom] = useState(100);
-
   const [crop, setCrop] = useState<Crop>();
-
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
-
   const [processedSrc, setProcessedSrc] = useState<string | null>(null);
-
   const [busy, setBusy] = useState(false);
-
   const [editorRotation, setEditorRotation] = useState(rotation);
-
   const [editorFlipX, setEditorFlipX] = useState(flipX);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
-
   const sourceUrlRef = useRef<string | null>(null);
 
-  const skipOpenUrl = useRef<string | null>(null);
-
-  const targetRatio = useMemo(
-    () => currentPreset.widthMm / currentPreset.heightMm,
-    [currentPreset],
-  );
-
+  // Crop is an upload-stage action only. Once consumed, changing the active
+  // image because of Background Remove/Object Adjust/etc. never reopens it.
   useEffect(() => {
     if (!activePhoto) {
       setOpen(false);
+      setProcessedSrc(null);
+      setCrop(undefined);
+      setCompletedCrop(null);
       sourceUrlRef.current = null;
       return;
     }
 
-    if (skipOpenUrl.current === activePhoto.url) {
-      skipOpenUrl.current = null;
-
+    if (!cropAvailable) {
+      setOpen(false);
+      sourceUrlRef.current = activePhoto.url;
       return;
     }
 
     if (sourceUrlRef.current !== activePhoto.url) {
       sourceUrlRef.current = activePhoto.url;
-
       setOpen(true);
       setZoom(100);
-
       setEditorRotation(rotation);
-
       setEditorFlipX(flipX);
-
+      setProcessedSrc(null);
       setCompletedCrop(null);
       setCrop(undefined);
     }
-  }, [activePhoto?.url, flipX, rotation]);
+  }, [activePhoto?.url, cropAvailable, flipX, rotation, activePhoto]);
 
+  // Rebuild the temporary crop source only when the user changes rotate/mirror
+  // inside the editor. This does not affect the one-time crop availability.
   useEffect(() => {
     if (!open || !activePhoto) {
       return;
     }
 
     let cancelled = false;
-
     const img = new Image();
-
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
       if (cancelled) return;
 
       const canvas = document.createElement("canvas");
-
-      const radians = ((editorRotation % 360) * Math.PI) / 180;
-
-      const swap = Math.abs(editorRotation % 180) === 90;
+      const normalizedRotation = ((editorRotation % 360) + 360) % 360;
+      const radians = (editorRotation * Math.PI) / 180;
+      const swap = normalizedRotation === 90 || normalizedRotation === 270;
 
       canvas.width = swap ? img.naturalHeight : img.naturalWidth;
-
       canvas.height = swap ? img.naturalWidth : img.naturalHeight;
 
       const ctx = canvas.getContext("2d");
-
-      if (!ctx) return;
+      if (!ctx) {
+        setProcessedSrc(null);
+        return;
+      }
 
       ctx.save();
-
       ctx.translate(canvas.width / 2, canvas.height / 2);
-
       ctx.rotate(radians);
-
       ctx.scale(editorFlipX ? -1 : 1, 1);
-
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-
       ctx.restore();
 
       setProcessedSrc(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = () => {
+      if (!cancelled) setProcessedSrc(null);
     };
 
     img.src = activePhoto.url;
@@ -175,94 +140,58 @@ export default function CropEditor() {
   }, [open, activePhoto?.url, editorRotation, editorFlipX]);
 
   useEffect(() => {
-    if (!open || !imgRef.current) {
-      return;
-    }
+    if (!open || !imgRef.current) return;
 
     const { width, height } = imgRef.current;
+    if (!width || !height) return;
 
-    if (!width || !height) {
-      return;
-    }
-
-    setCrop(centerAspectCrop(width, height, targetRatio));
-
+    setCrop(centerFreeCrop(width, height));
     setCompletedCrop(null);
-  }, [open, targetRatio, processedSrc]);
+  }, [open, processedSrc]);
 
-  const onImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const onImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = event.currentTarget;
+    setCrop(centerFreeCrop(width, height));
+  };
 
-    setCrop(centerAspectCrop(width, height, targetRatio));
+  const closeCrop = () => {
+    consumeCrop();
+    setOpen(false);
   };
 
   const handleRotate = () => {
-    const nextRotation = (editorRotation + 90) % 360;
-
-    setEditorRotation(nextRotation);
-
-    if (typeof actions.rotate === "function") {
-      actions.rotate();
-    } else if (typeof actions.rotateImage === "function") {
-      actions.rotateImage();
-    } else if (typeof actions.setRotation === "function") {
-      actions.setRotation(nextRotation);
-    }
+    setEditorRotation((current) => (current + 90) % 360);
   };
 
   const handleMirror = () => {
-    const nextFlip = !editorFlipX;
-
-    setEditorFlipX(nextFlip);
-
-    if (typeof actions.toggleFlipX === "function") {
-      actions.toggleFlipX();
-    } else if (typeof actions.flipHorizontal === "function") {
-      actions.flipHorizontal();
-    } else if (typeof actions.setFlipX === "function") {
-      actions.setFlipX(nextFlip);
-    }
+    setEditorFlipX((current) => !current);
   };
 
   const applyCrop = async () => {
     const image = imgRef.current;
-
-    if (!image || !completedCrop) {
-      return;
-    }
+    if (!image || !completedCrop) return;
 
     setBusy(true);
 
     try {
       const canvas = document.createElement("canvas");
-
       const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        return;
-      }
+      if (!ctx) return;
 
       const scaleX = image.naturalWidth / image.width;
-
       const scaleY = image.naturalHeight / image.height;
-
-      const pixelRatio = window.devicePixelRatio || 1;
-
-      canvas.width = Math.floor(completedCrop.width * scaleX * pixelRatio);
-
-      canvas.height = Math.floor(completedCrop.height * scaleY * pixelRatio);
-
-      ctx.scale(pixelRatio, pixelRatio);
-
-      ctx.imageSmoothingQuality = "high";
-
       const cropX = completedCrop.x * scaleX;
-
       const cropY = completedCrop.y * scaleY;
-
       const cropWidth = completedCrop.width * scaleX;
-
       const cropHeight = completedCrop.height * scaleY;
+
+      const outputWidth = Math.max(1, Math.round(cropWidth));
+      const outputHeight = Math.max(1, Math.round(cropHeight));
+
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
 
       ctx.drawImage(
         image,
@@ -272,18 +201,13 @@ export default function CropEditor() {
         cropHeight,
         0,
         0,
-        cropWidth,
-        cropHeight,
+        outputWidth,
+        outputHeight,
       );
 
       const dataUrl = canvas.toDataURL("image/png");
-
-      const newUrl = await applyCroppedDataUrl(dataUrl, "cropped-photo.png");
-
-      skipOpenUrl.current = newUrl;
-
-      sourceUrlRef.current = newUrl;
-
+      await applyCroppedDataUrl(dataUrl, "cropped-photo.png");
+      consumeCrop();
       setOpen(false);
     } catch (error) {
       console.error("Failed to crop image:", error);
@@ -304,27 +228,27 @@ export default function CropEditor() {
             <div className="h-[30px] w-[30px] rounded-full bg-[#ff9900] text-white flex items-center justify-center font-black text-sm leading-none">
               X
             </div>
-
             <div className="leading-none">
               <div className="text-[14px] font-black tracking-tight">
                 সহজকাজ
               </div>
-
               <div className="text-[7px] uppercase tracking-[0.16em] text-gray-400 mt-[2px]">
                 WWW.SHOHOZKAJ.COM
               </div>
             </div>
           </div>
-
           <div className="h-7 w-px bg-gray-200" />
-
           <div className="ml-3 flex items-center gap-3">
             <div className="h-[34px] w-[34px] rounded-xl bg-[#fff5e7] text-[#ff9800] flex items-center justify-center">
               <CropIcon size={16} strokeWidth={2.3} />
             </div>
-
-            <div className="text-[14px] font-black tracking-tight">
-              Crop &amp; Rotate Image
+            <div className="flex flex-col">
+              <div className="text-[14px] font-black tracking-tight">
+                Crop &amp; Rotate Image
+              </div>
+              <div className="text-[8px] text-gray-400 font-bold">
+                Independent photo crop • canvas fit after crop
+              </div>
             </div>
           </div>
         </div>
@@ -332,7 +256,7 @@ export default function CropEditor() {
         <button
           type="button"
           aria-label="Close crop editor"
-          onClick={() => setOpen(false)}
+          onClick={closeCrop}
           className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors"
         >
           <X size={22} strokeWidth={2.2} />
@@ -342,16 +266,13 @@ export default function CropEditor() {
       <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-black">
         <div
           className="flex items-center justify-center origin-center transition-transform duration-75"
-          style={{
-            transform: `scale(${zoom / 100})`,
-          }}
+          style={{ transform: `scale(${zoom / 100})` }}
         >
           {processedSrc ? (
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
-              aspect={targetRatio}
+              onComplete={(value) => setCompletedCrop(value)}
               className="max-w-[82vw] max-h-[72vh]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -379,11 +300,9 @@ export default function CropEditor() {
           >
             <Minus size={17} strokeWidth={2.2} />
           </button>
-
           <div className="w-[48px] bg-white flex items-center justify-center text-[12px] font-black border-r border-gray-200">
             {zoom}%
           </div>
-
           <button
             type="button"
             aria-label="Zoom in"
@@ -392,7 +311,6 @@ export default function CropEditor() {
           >
             <Plus size={17} strokeWidth={2.2} />
           </button>
-
           <button
             type="button"
             aria-label="Rotate image"
@@ -402,7 +320,6 @@ export default function CropEditor() {
             <RotateCcw size={15} strokeWidth={2} />
             Rotate
           </button>
-
           <button
             type="button"
             aria-label="Mirror image"
@@ -417,13 +334,12 @@ export default function CropEditor() {
         <div className="flex items-stretch ml-auto">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={closeCrop}
             className="w-[155px] px-4 bg-white text-gray-700 flex items-center justify-center gap-2 text-[12px] font-black border-l border-gray-200 hover:bg-gray-50 transition-colors"
           >
             <ScanLine size={15} strokeWidth={2} className="text-gray-500" />
             No Crop Needed
           </button>
-
           <button
             type="button"
             disabled={busy || !completedCrop}
@@ -431,7 +347,6 @@ export default function CropEditor() {
             className="w-[172px] bg-[#ff9f1c] hover:bg-[#ef9210] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors"
           >
             <Check size={14} strokeWidth={2.4} />
-
             {busy ? "Cropping…" : "Crop"}
           </button>
         </div>
