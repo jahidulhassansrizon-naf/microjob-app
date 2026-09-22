@@ -304,17 +304,46 @@ export type ManualEditorContextValue = {
 
   printEdited: () => Promise<void>;
 
+  printStudioOpen: boolean;
+
+  printStudioImage: string | null;
+
+  closePrintStudio: () => void;
+
+  openPrintStudioWithImage: (image: string) => void;
+
   saveEdited: () => Promise<void>;
+
+  isSavingEdited: boolean;
 
   saveNotice: string;
 
-  generatedPhotos: string[];
+  generatedPhotos: GeneratedPhoto[];
 
-  loadHistoryImage: (dataUrl: string) => Promise<void>;
+  loadHistoryImage: (photo: GeneratedPhoto) => Promise<void>;
+
+  downloadHistoryImage: (photo: GeneratedPhoto) => Promise<void>;
+
+  printHistoryImage: (photo: GeneratedPhoto) => Promise<void>;
+
+  deleteHistoryImage: (photo: GeneratedPhoto) => Promise<void>;
 
   scanOpen: boolean;
 
   setScanOpen: (value: boolean) => void;
+};
+
+export type GeneratedPhoto = {
+  id: string;
+  url: string;
+  publicId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  size?: string;
+  sizeType?: string;
+  widthPx?: number;
+  heightPx?: number;
+  dpi?: number;
 };
 
 const ManualEditorContext = createContext<ManualEditorContextValue | null>(
@@ -467,9 +496,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [flipX, setFlipX] = useState(false);
 
-  const [generatedPhotos, setGeneratedPhotos] = useState<string[]>([]);
+  const [generatedPhotos, setGeneratedPhotos] = useState<GeneratedPhoto[]>([]);
 
   const [saveNotice, setSaveNotice] = useState("");
+  const [isSavingEdited, setIsSavingEdited] = useState(false);
+
+  const [printStudioOpen, setPrintStudioOpen] = useState(false);
+  const [printStudioImage, setPrintStudioImage] = useState<string | null>(null);
 
   const [scanOpen, setScanOpen] = useState(false);
 
@@ -1212,13 +1245,120 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    const history = JSON.parse(
-      localStorage.getItem("manual-editor-history") || "[]",
-    ) as string[];
+  const getAuthHeaders = useCallback((): Record<string, string> => {
+    if (typeof window === "undefined") return {};
 
-    setGeneratedPhotos(history.slice(0, 8));
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
+
+  const loadCloudHistory = useCallback(async () => {
+    try {
+      const response = await fetch("/api/ai-generations", {
+        method: "GET",
+        headers: {
+          ...getAuthHeaders(),
+        },
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        throw new Error(
+          result?.error || "Failed to load saved generated photos.",
+        );
+      }
+
+      const photos: GeneratedPhoto[] = Array.isArray(result.data)
+        ? result.data
+            .map((item: unknown) => {
+              if (!item || typeof item !== "object") return null;
+
+              const value = item as {
+                id?: unknown;
+                url?: unknown;
+                publicId?: unknown;
+                createdAt?: unknown;
+                updatedAt?: unknown;
+                size?: unknown;
+                sizeType?: unknown;
+                widthPx?: unknown;
+                heightPx?: unknown;
+                dpi?: unknown;
+              };
+
+              if (typeof value.url !== "string" || !value.url) return null;
+
+              return {
+                id: typeof value.id === "string" ? value.id : value.url,
+                url: value.url,
+                publicId:
+                  typeof value.publicId === "string"
+                    ? value.publicId
+                    : undefined,
+                createdAt:
+                  typeof value.createdAt === "string"
+                    ? value.createdAt
+                    : undefined,
+                updatedAt:
+                  typeof value.updatedAt === "string"
+                    ? value.updatedAt
+                    : undefined,
+                size: typeof value.size === "string" ? value.size : undefined,
+                sizeType:
+                  typeof value.sizeType === "string"
+                    ? value.sizeType
+                    : undefined,
+                widthPx:
+                  typeof value.widthPx === "number" ? value.widthPx : undefined,
+                heightPx:
+                  typeof value.heightPx === "number"
+                    ? value.heightPx
+                    : undefined,
+                dpi: typeof value.dpi === "number" ? value.dpi : undefined,
+              };
+            })
+            .filter((item): item is GeneratedPhoto => Boolean(item))
+            .slice(0, 8)
+        : [];
+
+      setGeneratedPhotos(photos);
+
+      localStorage.setItem(
+        "manual-editor-history",
+        JSON.stringify(photos.map((photo) => photo.url)),
+      );
+    } catch (error) {
+      console.error(
+        "Failed to load Manual Editor history from MongoDB:",
+        error,
+      );
+
+      try {
+        const fallback = JSON.parse(
+          localStorage.getItem("manual-editor-history") || "[]",
+        ) as unknown;
+
+        setGeneratedPhotos(
+          Array.isArray(fallback)
+            ? fallback
+                .filter((item): item is string => typeof item === "string")
+                .slice(0, 8)
+                .map((url) => ({ id: url, url }))
+            : [],
+        );
+      } catch {
+        setGeneratedPhotos([]);
+      }
+    }
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void loadCloudHistory();
+  }, [isAuthenticated, loadCloudHistory]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1377,6 +1517,43 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     sharp,
   ]);
 
+  const renderCurrentPrintImage = useCallback(async () => {
+    if (!activePhoto) {
+      return null;
+    }
+
+    const targetW = mmToPx(currentPreset.widthMm);
+    const targetH = mmToPx(currentPreset.heightMm);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return null;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!backgroundRemoved) {
+      ctx.fillStyle = activeBackground;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    await drawAsset(ctx, activePhoto, targetW, targetH, 0);
+    applyCanvasSharpness(ctx, sharp);
+
+    return canvas;
+  }, [
+    activeBackground,
+    activePhoto,
+    backgroundRemoved,
+    currentPreset,
+    drawAsset,
+    sharp,
+  ]);
+
   const downloadEdited = useCallback(async () => {
     const canvas = await renderCurrentCanvas();
 
@@ -1393,153 +1570,263 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     link.click();
   }, [activePhoto, renderCurrentCanvas]);
 
+  const closePrintStudio = useCallback(() => {
+    setPrintStudioOpen(false);
+  }, []);
+
+  /**
+   * Open the shared Print Studio with any image source.
+   * This is intentionally separate from printEdited so saved-history
+   * images and the current editor image can use the exact same studio.
+   */
+  const openPrintStudioWithImage = useCallback((image: string) => {
+    const source = typeof image === "string" ? image.trim() : "";
+
+    if (!source) {
+      setSaveNotice("No image is available for printing.");
+      window.setTimeout(() => setSaveNotice(""), 1800);
+      return;
+    }
+
+    setPrintStudioImage(source);
+    setPrintStudioOpen(true);
+  }, []);
+
   const printEdited = useCallback(async () => {
-    const canvas = await renderCurrentCanvas();
+    const canvas = await renderCurrentPrintImage();
 
     if (!canvas) {
       setSaveNotice("Upload a photo first.");
+      window.setTimeout(() => setSaveNotice(""), 1800);
       return;
     }
 
-    const imageUrl = canvas.toDataURL("image/png");
-
-    const printWindow = window.open("", "_blank", "width=1000,height=1000");
-
-    if (!printWindow) {
-      setSaveNotice("Please allow pop-ups to print.");
-      return;
-    }
-
-    printWindow.document.open();
-
-    printWindow.document.write(
-      `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>Print Photo</title>
-
-<style>
-@page {
-  size: auto;
-  margin: 0;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: #fff;
-  width: 100%;
-  min-height: 100%;
-}
-
-body {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100vw;
-  max-height: 100vh;
-  object-fit: contain;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-</style>
-</head>
-
-<body>
-<img
-  id="print-image"
-  src="${imageUrl}"
-  alt="Printable photo"
-/>
-
-<script>
-  const image =
-    document.getElementById("print-image");
-
-  const triggerPrint = () => {
-    setTimeout(() => {
-      window.focus();
-      window.print();
-    }, 120);
-  };
-
-  if (image.complete) {
-    triggerPrint();
-  } else {
-    image.addEventListener(
-      "load",
-      triggerPrint,
-      { once: true }
-    );
-  }
-</script>
-
-</body>
-</html>`,
-    );
-
-    printWindow.document.close();
-
-    printWindow.focus();
-
-    const closeAfterPrint = () => {
-      window.setTimeout(() => {
-        try {
-          printWindow.close();
-        } catch {}
-      }, 300);
-    };
-
-    printWindow.addEventListener("afterprint", closeAfterPrint, {
-      once: true,
-    });
-
-    window.setTimeout(closeAfterPrint, 5000);
-  }, [renderCurrentCanvas]);
+    openPrintStudioWithImage(canvas.toDataURL("image/png"));
+  }, [openPrintStudioWithImage, renderCurrentPrintImage]);
 
   const saveEdited = useCallback(async () => {
+    if (isSavingEdited) return;
+
     const canvas = await renderCurrentCanvas();
 
     if (!canvas) {
       setSaveNotice("Upload a photo first.");
+      window.setTimeout(() => setSaveNotice(""), 1800);
       return;
     }
 
-    const dataUrl = canvas.toDataURL(
-      backgroundRemoved ? "image/png" : "image/jpeg",
-      backgroundRemoved ? undefined : 0.92,
-    );
+    setIsSavingEdited(true);
+    setSaveNotice("Saving");
 
-    setGeneratedPhotos((current) => {
-      const next = [
-        dataUrl,
-        ...current.filter((item) => item !== dataUrl),
-      ].slice(0, 8);
+    try {
+      const format = backgroundRemoved ? "image/png" : "image/jpeg";
+      const quality = backgroundRemoved ? undefined : 0.92;
 
-      localStorage.setItem("manual-editor-history", JSON.stringify(next));
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((value) => resolve(value), format, quality),
+      );
 
-      return next;
-    });
+      if (!blob || blob.size === 0) {
+        throw new Error("The edited image could not be prepared.");
+      }
 
-    setSaveNotice("Saved successfully.");
+      const baseName =
+        activePhoto?.file.name?.replace(/\.[^/.]+$/, "") || "manual-editor";
+      const filename = `${baseName}-edited.${backgroundRemoved ? "png" : "jpg"}`;
+      const formData = new FormData();
+      formData.append("file", blob, filename);
 
-    window.setTimeout(() => setSaveNotice(""), 1800);
-  }, [renderCurrentCanvas, backgroundRemoved]);
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          ...getAuthHeaders(),
+        },
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const uploadResult = await uploadResponse.json().catch(() => null);
+
+      if (!uploadResponse.ok || !uploadResult?.success) {
+        throw new Error(uploadResult?.error || "Cloudinary upload failed.");
+      }
+
+      const cloudinaryUrl =
+        typeof uploadResult?.imageUrl === "string"
+          ? uploadResult.imageUrl
+          : typeof uploadResult?.url === "string"
+            ? uploadResult.url
+            : "";
+
+      const cloudinaryPublicId =
+        typeof uploadResult?.publicId === "string" ? uploadResult.publicId : "";
+
+      if (!cloudinaryUrl) {
+        throw new Error("Cloudinary did not return an image URL.");
+      }
+
+      if (!cloudinaryPublicId) {
+        throw new Error("Cloudinary did not return a public_id.");
+      }
+
+      const side =
+        photoMode === "dual"
+          ? activeDualSlot === 0
+            ? "left"
+            : "right"
+          : "single";
+
+      const metadata = {
+        url: cloudinaryUrl,
+        size: `${currentPreset.widthMm}×${currentPreset.heightMm} mm`,
+        sizeType: currentPreset.label,
+        widthPx: canvas.width,
+        heightPx: canvas.height,
+        dpi: DPI,
+        bgColor: activeBackground,
+        clothingStyle: "Manual Editor",
+        clothingColor: "",
+        editingGuides: [
+          `brightness:${brightness}`,
+          `contrast:${contrast}`,
+          `saturation:${saturation}`,
+          `sharpness:${sharp}`,
+          `zoom:${zoom}`,
+          `rotation:${rotation}`,
+          `flipX:${flipX}`,
+          `photoMode:${photoMode}`,
+          `backgroundRemoved:${backgroundRemoved}`,
+        ],
+        side,
+        publicId: cloudinaryPublicId,
+      };
+
+      setSaveNotice("Saving");
+
+      const databaseResponse = await fetch("/api/ai-generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        credentials: "include",
+        cache: "no-store",
+        body: JSON.stringify(metadata),
+      });
+
+      const databaseResult = await databaseResponse.json().catch(() => null);
+
+      if (!databaseResponse.ok || !databaseResult?.success) {
+        // The Cloudinary delete route already exists in this project.
+        // Attempt cleanup if MongoDB persistence fails so we do not leave
+        // an orphaned asset behind.
+        try {
+          await fetch("/api/delete", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+            credentials: "include",
+            body: JSON.stringify({ imageUrl: cloudinaryUrl }),
+          });
+        } catch (cleanupError) {
+          console.error("Cloudinary rollback failed:", cleanupError);
+        }
+
+        throw new Error(
+          databaseResult?.error || "Could not save the image details.",
+        );
+      }
+
+      const savedItem = Array.isArray(databaseResult.data)
+        ? databaseResult.data[0]
+        : databaseResult.data;
+
+      const savedPhoto: GeneratedPhoto = {
+        id:
+          savedItem && typeof savedItem.id === "string"
+            ? savedItem.id
+            : cloudinaryUrl,
+        url:
+          savedItem && typeof savedItem.url === "string"
+            ? savedItem.url
+            : cloudinaryUrl,
+        publicId:
+          savedItem && typeof savedItem.publicId === "string"
+            ? savedItem.publicId
+            : cloudinaryPublicId,
+        createdAt:
+          savedItem && typeof savedItem.createdAt === "string"
+            ? savedItem.createdAt
+            : new Date().toISOString(),
+        updatedAt:
+          savedItem && typeof savedItem.updatedAt === "string"
+            ? savedItem.updatedAt
+            : undefined,
+        size: metadata.size,
+        sizeType: metadata.sizeType,
+        widthPx: metadata.widthPx,
+        heightPx: metadata.heightPx,
+        dpi: metadata.dpi,
+      };
+
+      setGeneratedPhotos((current) => {
+        const next = [
+          savedPhoto,
+          ...current.filter(
+            (item) => item.id !== savedPhoto.id && item.url !== savedPhoto.url,
+          ),
+        ].slice(0, 8);
+
+        localStorage.setItem(
+          "manual-editor-history",
+          JSON.stringify(next.map((photo) => photo.url)),
+        );
+        return next;
+      });
+
+      setSaveNotice("Saved");
+      window.setTimeout(() => setSaveNotice(""), 2200);
+    } catch (error) {
+      console.error("Manual Editor save failed:", error);
+      setSaveNotice(
+        error instanceof Error
+          ? error.message
+          : "Could not save this image. Please try again.",
+      );
+      window.setTimeout(() => setSaveNotice(""), 2800);
+    } finally {
+      setIsSavingEdited(false);
+    }
+  }, [
+    activeBackground,
+    activeDualSlot,
+    activePhoto,
+    backgroundRemoved,
+    brightness,
+    contrast,
+    flipX,
+    getAuthHeaders,
+    isSavingEdited,
+    photoMode,
+    currentPreset,
+    renderCurrentCanvas,
+    saturation,
+    sharp,
+    rotation,
+    zoom,
+  ]);
 
   const loadHistoryImage = useCallback(
-    async (dataUrl: string) => {
+    async (photo: GeneratedPhoto) => {
       try {
-        const response = await fetch(dataUrl);
+        const response = await fetch(photo.url, { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error("Could not download the saved photo.");
+        }
 
         const blob = await response.blob();
 
@@ -1550,19 +1837,139 @@ img {
         const asset = await createPhotoAsset(file);
 
         replaceActivePhoto(asset);
-
         setBackgroundRemoved(false);
-
         setObjectMaskHistory([null]);
-
         setObjectMaskHistoryIndex(0);
-
         setCropAvailable(false);
       } catch {
         setUploadError("Could not load this saved photo.");
       }
     },
     [createPhotoAsset, replaceActivePhoto],
+  );
+
+  const downloadHistoryImage = useCallback(async (photo: GeneratedPhoto) => {
+    if (!photo?.url) return;
+
+    try {
+      const response = await fetch(photo.url, { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not prepare the saved photo.");
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName(photo.url);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+      console.error("History image download failed:", error);
+      setSaveNotice("Could not download this photo.");
+      window.setTimeout(() => setSaveNotice(""), 2200);
+    }
+  }, []);
+
+  const printHistoryImage = useCallback(async (photo: GeneratedPhoto) => {
+    if (!photo?.url) return;
+
+    const printWindow = window.open("", "_blank", "width=1000,height=1000");
+
+    if (!printWindow) {
+      setSaveNotice("Please allow pop-ups to print.");
+      window.setTimeout(() => setSaveNotice(""), 2200);
+      return;
+    }
+
+    const safeUrl = photo.url.replace(/"/g, "&quot;");
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Print Photo</title>
+<style>
+@page { size: auto; margin: 0; }
+html, body { margin: 0; padding: 0; background: #fff; width: 100%; min-height: 100%; }
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+img { display: block; width: auto; height: auto; max-width: 100vw; max-height: 100vh; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+</style>
+</head>
+<body>
+<img id="print-image" src="${safeUrl}" alt="Printable photo" />
+<script>
+const image = document.getElementById("print-image");
+const triggerPrint = () => setTimeout(() => { window.focus(); window.print(); }, 120);
+if (image.complete) triggerPrint(); else image.addEventListener("load", triggerPrint, { once: true });
+</script>
+</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
+
+    const closeAfterPrint = () => {
+      window.setTimeout(() => {
+        try {
+          printWindow.close();
+        } catch {
+          // Ignore close errors.
+        }
+      }, 300);
+    };
+
+    printWindow.addEventListener("afterprint", closeAfterPrint, { once: true });
+    window.setTimeout(closeAfterPrint, 5000);
+  }, []);
+
+  const deleteHistoryImage = useCallback(
+    async (photo: GeneratedPhoto) => {
+      if (!photo?.id) return;
+
+      try {
+        const response = await fetch(
+          `/api/ai-generations?id=${encodeURIComponent(photo.id)}`,
+          {
+            method: "DELETE",
+            headers: {
+              ...getAuthHeaders(),
+            },
+            credentials: "include",
+            cache: "no-store",
+          },
+        );
+
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success) {
+          throw new Error(result?.error || "Failed to delete this photo.");
+        }
+
+        setGeneratedPhotos((current) => {
+          const next = current.filter(
+            (item) => item.id !== photo.id && item.url !== photo.url,
+          );
+          localStorage.setItem(
+            "manual-editor-history",
+            JSON.stringify(next.map((item) => item.url)),
+          );
+          return next;
+        });
+
+        setSaveNotice("Deleted");
+        window.setTimeout(() => setSaveNotice(""), 1800);
+      } catch (error) {
+        console.error("History image delete failed:", error);
+        setSaveNotice(
+          error instanceof Error
+            ? error.message
+            : "Could not delete this photo.",
+        );
+        window.setTimeout(() => setSaveNotice(""), 2400);
+        throw error;
+      }
+    },
+    [getAuthHeaders],
   );
 
   /*
@@ -1776,13 +2183,29 @@ img {
 
     printEdited,
 
+    printStudioOpen,
+
+    printStudioImage,
+
+    closePrintStudio,
+
+    openPrintStudioWithImage,
+
     saveEdited,
+
+    isSavingEdited,
 
     saveNotice,
 
     generatedPhotos,
 
     loadHistoryImage,
+
+    downloadHistoryImage,
+
+    printHistoryImage,
+
+    deleteHistoryImage,
 
     scanOpen,
 

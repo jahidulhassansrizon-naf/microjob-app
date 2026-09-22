@@ -11,6 +11,7 @@ import AdjustmentsPanel from "./_components/manual-editor/AdjustmentsPanel";
 import QrUploadPanel from "./_components/manual-editor/QrUploadPanel";
 import GeneratedPhotosPanel from "./_components/manual-editor/GeneratedPhotosPanel";
 import ScanModal from "./_components/manual-editor/ScanModal";
+import PrintStudioModal from "./_components/manual-editor/PrintStudioModal";
 import {
   ManualEditorProvider,
   useManualEditor,
@@ -68,6 +69,7 @@ function ManualEditorScreen() {
       </footer>
 
       <ScanModal />
+      <PrintStudioModal />
     </div>
   );
 }
