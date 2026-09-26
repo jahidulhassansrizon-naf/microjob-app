@@ -16,7 +16,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Languages,
-  FileSpreadsheet,
   ScanText,
 } from "lucide-react";
 
@@ -97,13 +96,6 @@ const relatedTools = [
       "Convert Bangla text between Bijoy ANSI and Unicode directly in your browser.",
     href: "/sohoj-tools/bijoy-unicode",
     icon: Languages,
-  },
-  {
-    title: "Number to Words",
-    description:
-      "Convert any number into English and Bengali words instantly in your browser.",
-    href: "/sohoj-tools/number-to-words",
-    icon: FileSpreadsheet,
   },
   {
     title: "Image to Text",

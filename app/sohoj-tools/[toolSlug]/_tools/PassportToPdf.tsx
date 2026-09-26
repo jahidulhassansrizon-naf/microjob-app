@@ -549,7 +549,7 @@ export default function PassportToPdf() {
           </Link>
 
           <Link
-            href="/sohoj-tools/nid-to-pdf"
+            href="/sohoj-tools/nid-joiner"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
           >
             <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
@@ -557,7 +557,7 @@ export default function PassportToPdf() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
-                NID to PDF
+                NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
                 Turn NID card front and back photos into a clean A4 PDF — all in

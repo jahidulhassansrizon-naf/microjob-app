@@ -20,13 +20,6 @@ import {
 // Related tools in the same category
 const relatedTools = [
   {
-    title: "Fuel Card Form",
-    description:
-      "Fill in your details on the left — see a live application letter on the right and download as PDF.",
-    href: "/sohoj-tools/fuel-card-form",
-    icon: CreditCard,
-  },
-  {
     title: "Voter Migration Form",
     description:
       "Fill in your details on the left — see a live Form-13 on the right and download as PDF.",

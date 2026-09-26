@@ -27,13 +27,6 @@ const relatedTools = [
     icon: CreditCard,
   },
   {
-    title: "Fuel Card Form",
-    description:
-      "Fill in your details on the left — see a live application letter on the right and download as PDF.",
-    href: "/sohoj-tools/fuel-card-form",
-    icon: CreditCard,
-  },
-  {
     title: "Allowance Application Tracking",
     description:
       "Check status of Department of Social Services allowance application status, — by tracking id or NID — and print the result.",

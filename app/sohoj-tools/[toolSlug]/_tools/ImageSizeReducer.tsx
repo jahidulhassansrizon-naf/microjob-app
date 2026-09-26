@@ -861,8 +861,8 @@ export default function ImageSizeReducer() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {[
             {
-              name: "NID to PDF",
-              href: "/sohoj-tools/nid-to-pdf",
+              name: "NID Joiner",
+              href: "/sohoj-tools/nid-joiner",
               icon: CreditCard,
               bg: "bg-emerald-500",
             },
@@ -877,24 +877,6 @@ export default function ImageSizeReducer() {
               href: "/sohoj-tools/passport-to-pdf",
               icon: BookOpen,
               bg: "bg-emerald-500",
-            },
-            {
-              name: "Magic Eraser",
-              href: "/sohoj-tools/magic-eraser",
-              icon: Wand2,
-              bg: "bg-emerald-500",
-            },
-            {
-              name: "QR Generator",
-              href: "/sohoj-tools/qr-generator",
-              icon: QrCode,
-              bg: "bg-teal-500",
-            },
-            {
-              name: "Image Resizer",
-              href: "/sohoj-tools/image-resizer",
-              icon: Crop,
-              bg: "bg-teal-500",
             },
           ].map((tool, idx) => {
             const Icon = tool.icon;

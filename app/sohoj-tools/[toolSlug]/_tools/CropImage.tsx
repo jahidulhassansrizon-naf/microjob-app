@@ -190,7 +190,7 @@ export default function CropImage() {
           </Link>
 
           <Link
-            href="/sohoj-tools/nid-to-pdf"
+            href="/sohoj-tools/nid-joiner"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-sky-200 transition-all flex items-start gap-3 group"
           >
             <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0">
@@ -198,7 +198,7 @@ export default function CropImage() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-sky-500 transition-colors">
-                NID to PDF
+                NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
                 Turn NID card front and back photos into a clean A4 PDF — all in

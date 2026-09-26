@@ -273,23 +273,6 @@ export default function SplitPdf() {
               </p>
             </div>
           </Link>
-
-          <Link
-            href="/sohoj-tools/create-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
-          >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
-              <FilePlus size={16} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
-                Create PDF
-              </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
-                Turn images and PDF pages into one combined PDF file.
-              </p>
-            </div>
-          </Link>
         </div>
       </div>
     </div>

@@ -17,7 +17,6 @@ import {
   Upload,
   Languages,
   Keyboard,
-  Hash,
 } from "lucide-react";
 import { createWorker } from "tesseract.js";
 
@@ -36,13 +35,6 @@ const relatedTools = [
       "Type Bangla with an English keyboard — live Banglish to Bangla and Bangla to Banglish conversion in your browser.",
     href: "/sohoj-tools/banglish-typing",
     icon: Keyboard,
-  },
-  {
-    title: "Number to Words",
-    description:
-      "Convert any number into English and Bengali words instantly in your browser.",
-    href: "/sohoj-tools/number-to-words",
-    icon: Hash,
   },
 ];
 

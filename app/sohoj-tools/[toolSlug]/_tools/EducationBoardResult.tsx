@@ -315,22 +315,6 @@ export default function EducationBoardResult() {
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/sohoj-tools/form-auto-fillup"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-emerald-200 transition-all flex items-start gap-3 group"
-          >
-            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <Briefcase size={16} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                Form auto fillup
-              </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
-                Auto fill job application forms quickly.
-              </p>
-            </div>
-          </Link>
 
           <Link
             href="/sohoj-tools/national-university-result"

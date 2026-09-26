@@ -337,20 +337,6 @@ export default function NationalUniversityResult() {
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card 1 */}
-          <Link
-            href="/sohoj-tools/form-auto-fillup"
-            className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs hover:border-teal-300 transition-all flex items-center gap-3 group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-              <UserCheck size={20} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-800 group-hover:text-teal-600 transition-colors">
-                Form auto fillup
-              </h4>
-            </div>
-          </Link>
 
           {/* Card 2 */}
           <Link
@@ -373,7 +359,7 @@ export default function NationalUniversityResult() {
 
           {/* Card 3 */}
           <Link
-            href="/sohoj-tools/ats-cv-maker"
+            href="/sohoj-tools/ats-friendly-cv-maker"
             className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs hover:border-blue-300 transition-all flex items-start gap-3 group"
           >
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
