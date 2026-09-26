@@ -238,6 +238,14 @@ function drawSignatureToCanvas(
   context.drawImage(image, x, y, drawWidth, drawHeight);
 }
 
+function uint8ArrayToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  // Copy into a non-shared ArrayBuffer so TypeScript/DOM BlobPart typing is
+  // stable across TS versions where Uint8Array.buffer is ArrayBufferLike.
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer as ArrayBuffer;
+}
+
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
 
@@ -339,9 +347,13 @@ async function createZip(
   endView.setUint32(16, totalLocalSize, true);
   endView.setUint16(20, 0, true);
 
-  return new Blob([...localParts, ...centralParts, endRecord], {
-    type: "application/zip",
-  });
+  const blobParts: BlobPart[] = [
+    ...localParts.map(uint8ArrayToArrayBuffer),
+    ...centralParts.map(uint8ArrayToArrayBuffer),
+    uint8ArrayToArrayBuffer(endRecord),
+  ];
+
+  return new Blob(blobParts, { type: "application/zip" });
 }
 
 function extensionFor(format: ExportFormat) {
