@@ -394,8 +394,6 @@ function applySharpening(
 }
 
 function solveHomography(source: [Point, Point, Point, Point]): number[] {
-  // Maps destination normalized coordinates (u,v) -> source normalized (x,y).
-  // h33 is fixed to 1, leaving eight unknowns.
   const destination: [number, number][] = [
     [0, 0],
     [1, 0],
@@ -586,6 +584,63 @@ function perspectiveCropToCanvas(
   return outputCanvas;
 }
 
+function getCropDimensions(
+  crop: CropPolygon,
+  sourceWidth: number,
+  sourceHeight: number,
+) {
+  const topW = Math.hypot(
+    (crop.tr.x - crop.tl.x) * sourceWidth,
+    (crop.tr.y - crop.tl.y) * sourceHeight,
+  );
+  const botW = Math.hypot(
+    (crop.br.x - crop.bl.x) * sourceWidth,
+    (crop.br.y - crop.bl.y) * sourceHeight,
+  );
+  const leftH = Math.hypot(
+    (crop.bl.x - crop.tl.x) * sourceWidth,
+    (crop.bl.y - crop.tl.y) * sourceHeight,
+  );
+  const rightH = Math.hypot(
+    (crop.br.x - crop.tr.x) * sourceWidth,
+    (crop.br.y - crop.tr.y) * sourceHeight,
+  );
+
+  const avgWidth = Math.max(1, (topW + botW) / 2);
+  const avgHeight = Math.max(1, (leftH + rightH) / 2);
+
+  return { width: avgWidth, height: avgHeight };
+}
+
+function calculateFitPlacement(
+  placement: Placement,
+  imgWidth: number,
+  imgHeight: number,
+): Placement {
+  const containerRatio = placement.width / placement.height;
+  const imgRatio = imgWidth / imgHeight;
+
+  let fitWidth = placement.width;
+  let fitHeight = placement.height;
+
+  if (imgRatio > containerRatio) {
+    fitHeight = placement.width / imgRatio;
+  } else {
+    fitWidth = placement.height * imgRatio;
+  }
+
+  const x = placement.x + (placement.width - fitWidth) / 2;
+  const y = placement.y + (placement.height - fitHeight) / 2;
+
+  return { x, y, width: fitWidth, height: fitHeight };
+}
+
+type ProcessedImageResult = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};
+
 async function renderProcessedImage(
   asset: ImageAsset,
   brightness: number,
@@ -594,7 +649,7 @@ async function renderProcessedImage(
   rotation: number,
   roundedCorners: boolean,
   pixelsPerMm = OUTPUT_PX_PER_MM,
-): Promise<string> {
+): Promise<ProcessedImageResult> {
   const image = new Image();
 
   await new Promise<void>((resolve, reject) => {
@@ -603,12 +658,6 @@ async function renderProcessedImage(
       reject(new Error("The uploaded image could not be processed."));
     image.src = asset.url;
   });
-
-  const baseWidth = Math.max(96, Math.round(PASSPORT_WIDTH_MM * pixelsPerMm));
-  const baseHeight = Math.max(
-    136,
-    Math.round(PASSPORT_HEIGHT_MM * pixelsPerMm),
-  );
 
   const maxSourceDimension = 3200;
   const sourceScale = Math.min(
@@ -644,6 +693,16 @@ async function renderProcessedImage(
     sourceWidth,
     sourceHeight,
   );
+
+  const cropDim = getCropDimensions(asset.crop, sourceWidth, sourceHeight);
+  const cropRatio = cropDim.width / cropDim.height;
+
+  const targetHeight = Math.max(
+    136,
+    Math.round(PASSPORT_HEIGHT_MM * pixelsPerMm),
+  );
+  const baseHeight = targetHeight;
+  const baseWidth = Math.max(1, Math.round(baseHeight * cropRatio));
 
   let croppedCanvas = perspectiveCropToCanvas(
     sourceCanvas,
@@ -736,7 +795,11 @@ async function renderProcessedImage(
     outputContext.restore();
   }
 
-  return outputCanvas.toDataURL("image/png");
+  return {
+    dataUrl: outputCanvas.toDataURL("image/png"),
+    width: outputCanvas.width,
+    height: outputCanvas.height,
+  };
 }
 
 function getGeometry(
@@ -877,12 +940,6 @@ type ProcessedThumbnailProps = {
   className?: string;
 };
 
-// Renders the ACTUAL processed output (perspective crop + brightness/contrast +
-// rotation), the same pipeline used for the live preview and the final PDF.
-// This must be used anywhere the user needs to see what their crop produced —
-// falling back to the raw, uncropped asset.url (as the old upload-slot
-// thumbnail did) shows a generic browser auto-crop that has nothing to do
-// with the quadrilateral the user actually selected.
 function ProcessedThumbnail({
   asset,
   brightness,
@@ -906,9 +963,9 @@ function ProcessedThumbnail({
       roundedCorners,
       PREVIEW_PIXELS_PER_MM,
     )
-      .then((dataUrl) => {
+      .then((res) => {
         if (active) {
-          setSrc(dataUrl);
+          setSrc(res.dataUrl);
         }
       })
       .catch(() => {
@@ -1420,7 +1477,7 @@ function UploadSlot({
       {asset ? (
         <>
           <div className="absolute inset-0 bg-gray-50 flex items-center justify-center p-4">
-            <div className="relative max-w-full max-h-full aspect-[88/125] h-[175px] rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-white">
+            <div className="relative max-w-full max-h-full aspect-[88/125] h-[175px] rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-white flex items-center justify-center">
               <ProcessedThumbnail
                 asset={asset}
                 brightness={brightness}
@@ -1428,7 +1485,7 @@ function UploadSlot({
                 rotation={rotation}
                 roundedCorners={roundedCorners}
                 alt={`${label} preview`}
-                className="w-full h-full object-cover select-none"
+                className="w-full h-full object-contain select-none"
               />
             </div>
           </div>
@@ -1542,9 +1599,9 @@ function PreviewImage({
       roundedCorners,
       PREVIEW_PIXELS_PER_MM,
     )
-      .then((dataUrl) => {
+      .then((res) => {
         if (active) {
-          setSrc(dataUrl);
+          setSrc(res.dataUrl);
         }
       })
       .catch(() => {
@@ -1560,7 +1617,7 @@ function PreviewImage({
 
   return (
     <div
-      className="absolute overflow-hidden bg-white shadow-sm border border-gray-200"
+      className="absolute overflow-hidden bg-white shadow-sm border border-gray-200 flex items-center justify-center"
       style={{
         left: `${(placement.x / geometry.sheetWidth) * 100}%`,
         top: `${(placement.y / geometry.sheetHeight) * 100}%`,
@@ -1574,7 +1631,7 @@ function PreviewImage({
           src={src}
           alt={`${label} passport page`}
           draggable={false}
-          className="block w-full h-full object-fill select-none"
+          className="block w-full h-full object-contain select-none"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-50">
@@ -1619,8 +1676,6 @@ export default function PassportToPdf() {
     }
   }, []);
 
-  // Keep refs pointing at the *latest* assets so the unmount cleanup below
-  // always revokes the current URLs — never the ones from a stale closure.
   const frontImageRef = useRef<ImageAsset | null>(null);
   const backImageRef = useRef<ImageAsset | null>(null);
 
@@ -1632,10 +1687,6 @@ export default function PassportToPdf() {
     backImageRef.current = backImage;
   }, [backImage]);
 
-  // Runs ONLY on unmount (empty deps). Per-slot revocation when an image is
-  // replaced/removed/reset is already handled inline in replaceImage,
-  // handleRemove, and resetAll — this effect must not re-run on every image
-  // change, or it revokes the *other* slot's still-in-use blob URL.
   useEffect(() => {
     return () => {
       if (frontImageRef.current) {
@@ -1827,9 +1878,16 @@ export default function PassportToPdf() {
     }
   };
 
-  const getOutputDataUrls = useCallback(async () => {
-    const entries: { slot: ImageSlot; asset: ImageAsset; dataUrl: string }[] =
-      [];
+  type OutputEntry = {
+    slot: ImageSlot;
+    asset: ImageAsset;
+    dataUrl: string;
+    width: number;
+    height: number;
+  };
+
+  const getOutputDataUrls = useCallback(async (): Promise<OutputEntry[]> => {
+    const entries: OutputEntry[] = [];
 
     const assets: [ImageSlot, ImageAsset | null][] = [
       ["front", frontImage],
@@ -1841,7 +1899,7 @@ export default function PassportToPdf() {
         continue;
       }
 
-      const dataUrl = await renderProcessedImage(
+      const res = await renderProcessedImage(
         asset,
         brightness,
         contrast,
@@ -1853,7 +1911,9 @@ export default function PassportToPdf() {
       entries.push({
         slot,
         asset,
-        dataUrl,
+        dataUrl: res.dataUrl,
+        width: res.width,
+        height: res.height,
       });
     }
 
@@ -1898,8 +1958,8 @@ export default function PassportToPdf() {
         creator: "SohojKaj",
       });
 
-      const dataUrls = new Map(
-        outputEntries.map((entry) => [entry.slot, entry.dataUrl]),
+      const dataEntries = new Map(
+        outputEntries.map((entry) => [entry.slot, entry]),
       );
 
       for (let copy = 0; copy < copies; copy += 1) {
@@ -1917,18 +1977,24 @@ export default function PassportToPdf() {
             continue;
           }
 
-          const dataUrl = dataUrls.get(slot);
-          if (!dataUrl) {
+          const entry = dataEntries.get(slot);
+          if (!entry) {
             continue;
           }
 
+          const fit = calculateFitPlacement(
+            placement,
+            entry.width,
+            entry.height,
+          );
+
           doc.addImage(
-            dataUrl,
+            entry.dataUrl,
             "PNG",
-            placement.x,
-            placement.y,
-            placement.width,
-            placement.height,
+            fit.x,
+            fit.y,
+            fit.width,
+            fit.height,
             undefined,
             "FAST",
           );
@@ -1972,8 +2038,8 @@ export default function PassportToPdf() {
 
     try {
       const outputEntries = await getOutputDataUrls();
-      const dataUrls = new Map(
-        outputEntries.map((entry) => [entry.slot, entry.dataUrl]),
+      const dataEntries = new Map(
+        outputEntries.map((entry) => [entry.slot, entry]),
       );
 
       const imageTags: string[] = [];
@@ -1988,13 +2054,13 @@ export default function PassportToPdf() {
           continue;
         }
 
-        const dataUrl = dataUrls.get(slot);
-        if (!dataUrl) {
+        const entry = dataEntries.get(slot);
+        if (!entry) {
           continue;
         }
 
         imageTags.push(
-          `<img class="passport-image" src="${dataUrl}" alt="${slot} passport page" style="left:${placement.x}mm;top:${placement.y}mm;width:${placement.width}mm;height:${placement.height}mm;border-radius:${roundedCorners ? "3.7mm" : "0"};" />`,
+          `<img class="passport-image" src="${entry.dataUrl}" alt="${slot} passport page" style="left:${placement.x}mm;top:${placement.y}mm;width:${placement.width}mm;height:${placement.height}mm;border-radius:${roundedCorners ? "3.7mm" : "0"};" />`,
         );
       }
 
@@ -2042,7 +2108,7 @@ export default function PassportToPdf() {
               .passport-image {
                 position: absolute;
                 display: block;
-                object-fit: fill;
+                object-fit: contain;
               }
               .sheet-label {
                 position: absolute;
