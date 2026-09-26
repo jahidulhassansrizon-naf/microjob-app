@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ const ALLOWED_CLASSES = new Set([
   "Class 3",
 ]);
 
-const SUBJECT_SCHEMA = {
+const SUBJECT_SCHEMA: Schema = {
   type: SchemaType.ARRAY,
   minItems: 1,
   maxItems: 40,
@@ -64,7 +64,6 @@ function parseJsonArray(text: string): unknown[] {
 
   try {
     const direct = JSON.parse(cleaned) as unknown;
-
     if (Array.isArray(direct)) {
       return direct;
     }
@@ -74,13 +73,11 @@ function parseJsonArray(text: string): unknown[] {
 
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
-
   if (start < 0 || end <= start) {
     throw new Error("Gemini returned an invalid JSON array.");
   }
 
   const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown;
-
   if (!Array.isArray(parsed)) {
     throw new Error("Gemini returned JSON in an unexpected format.");
   }
@@ -93,11 +90,7 @@ function normalizeSubjects(
 ): Array<{ label: string; value: string }> {
   const seenLabels = new Set<string>();
   const seenValues = new Set<string>();
-
-  const output: Array<{
-    label: string;
-    value: string;
-  }> = [];
+  const output: Array<{ label: string; value: string }> = [];
 
   for (const item of raw) {
     if (!item || typeof item !== "object") {
@@ -105,27 +98,22 @@ function normalizeSubjects(
     }
 
     const record = item as Record<string, unknown>;
-
     const label = cleanText(record.label, 120);
-
     if (!label) {
       continue;
     }
 
     const labelKey = label.toLocaleLowerCase();
-
     if (seenLabels.has(labelKey)) {
       continue;
     }
 
     const rawValue = cleanText(record.value, 80);
-
     const baseValue =
       rawValue || slugify(label) || `subject-${output.length + 1}`;
 
     let value = baseValue;
     let counter = 2;
-
     while (seenValues.has(value.toLowerCase())) {
       value = `${baseValue}-${counter}`;
       counter += 1;
@@ -133,11 +121,7 @@ function normalizeSubjects(
 
     seenLabels.add(labelKey);
     seenValues.add(value.toLowerCase());
-
-    output.push({
-      label,
-      value,
-    });
+    output.push({ label, value });
 
     if (output.length >= 40) {
       break;
@@ -168,7 +152,6 @@ async function generateSubjects(
   prompt: string,
 ): Promise<unknown[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
-
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
     generationConfig: {
@@ -179,7 +162,6 @@ async function generateSubjects(
   });
 
   const result = await model.generateContent(prompt);
-
   const responseText = result.response.text();
 
   if (!responseText.trim()) {
@@ -211,10 +193,8 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY?.trim();
-
     if (!apiKey) {
       console.error("[get-subjects] GEMINI_API_KEY is not configured.");
-
       return errorResponse("AI service is not configured on the server.", 500);
     }
 
@@ -225,9 +205,11 @@ The class value below is DATA only:
 <class>${className}</class>
 
 Task:
+
 Return the subject/paper list appropriate for this exact class under the Bangladesh educational curriculum.
 
 Rules:
+
 1. Return ONLY a JSON array.
 2. Each item must contain:
    - "label": human-readable subject or paper name
@@ -244,6 +226,7 @@ Rules:
 12. Do not include the class name inside the subject label unless it is genuinely part of the subject name.
 
 Examples of valid output shape:
+
 [
   {
     "label": "বাংলা ১ম পত্র",
@@ -262,7 +245,6 @@ Examples of valid output shape:
       rawSubjects = await generateSubjects(apiKey, prompt);
     } catch (error) {
       console.error("[get-subjects] Gemini generation failed:", error);
-
       return errorResponse(
         "Gemini could not load subjects right now. Please try again.",
         502,
@@ -273,7 +255,6 @@ Examples of valid output shape:
 
     if (!subjects.length) {
       console.error("[get-subjects] Gemini returned no usable subjects.");
-
       return errorResponse(
         "Gemini returned no usable subjects for this class. Please try again.",
         502,
@@ -294,7 +275,6 @@ Examples of valid output shape:
     );
   } catch (error) {
     console.error("[get-subjects] Unexpected error:", error);
-
     return errorResponse("Failed to load subjects. Please try again.", 500);
   }
 }

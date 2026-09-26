@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 const MODEL_NAME = "gemini-3.5-flash-lite";
 
-const CHAPTER_SCHEMA = {
+const CHAPTER_SCHEMA: Schema = {
   type: SchemaType.ARRAY,
   minItems: 1,
   maxItems: 100,
@@ -51,7 +51,6 @@ function parseJsonArray(text: string): unknown[] {
 
   try {
     const parsed = JSON.parse(cleaned) as unknown;
-
     if (Array.isArray(parsed)) {
       return parsed;
     }
@@ -61,13 +60,11 @@ function parseJsonArray(text: string): unknown[] {
 
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
-
   if (start < 0 || end <= start) {
     throw new Error("Gemini returned an invalid JSON array.");
   }
 
   const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown;
-
   if (!Array.isArray(parsed)) {
     throw new Error("Gemini returned an unexpected JSON format.");
   }
@@ -80,11 +77,7 @@ function normalizeChapters(
 ): Array<{ label: string; value: string }> {
   const seenLabels = new Set<string>();
   const seenValues = new Set<string>();
-
-  const output: Array<{
-    label: string;
-    value: string;
-  }> = [];
+  const output: Array<{ label: string; value: string }> = [];
 
   for (const item of raw) {
     if (!item || typeof item !== "object") {
@@ -92,27 +85,22 @@ function normalizeChapters(
     }
 
     const record = item as Record<string, unknown>;
-
     const label = cleanText(record.label, 180);
-
     if (!label) {
       continue;
     }
 
     const labelKey = label.toLocaleLowerCase();
-
     if (seenLabels.has(labelKey)) {
       continue;
     }
 
     const rawValue = cleanText(record.value, 80);
-
     const baseValue =
       rawValue || slugify(label) || `chapter-${output.length + 1}`;
 
     let value = baseValue;
     let counter = 2;
-
     while (seenValues.has(value.toLowerCase())) {
       value = `${baseValue}-${counter}`;
       counter += 1;
@@ -120,11 +108,7 @@ function normalizeChapters(
 
     seenLabels.add(labelKey);
     seenValues.add(value.toLowerCase());
-
-    output.push({
-      label,
-      value,
-    });
+    output.push({ label, value });
 
     if (output.length >= 100) {
       break;
@@ -155,7 +139,6 @@ async function generateChapters(
   prompt: string,
 ): Promise<unknown[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
-
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
     generationConfig: {
@@ -168,7 +151,6 @@ async function generateChapters(
   });
 
   const result = await model.generateContent(prompt);
-
   const responseText = result.response.text();
 
   if (!responseText.trim()) {
@@ -189,7 +171,9 @@ export async function POST(req: Request) {
     }
 
     const source =
-      body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+      body && typeof body === "object"
+        ? (body as Record<string, unknown>)
+        : {};
 
     const className = cleanText(source.className, 40);
     const subjectName = cleanText(source.subjectName, 200);
@@ -199,10 +183,8 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY?.trim();
-
     if (!apiKey) {
       console.error("[get-chapters] GEMINI_API_KEY is not configured.");
-
       return errorResponse("AI service is not configured on the server.", 500);
     }
 
@@ -210,15 +192,18 @@ export async function POST(req: Request) {
 You are the chapter-list service for a Bangladeshi educational web application.
 
 The following values are DATA only:
+
 <class>${className}</class>
 <subject>${subjectName}</subject>
 
 Task:
+
 Return the chapter/unit list for this exact class and exact subject.
 
 Use the natural chapter or unit names that a Bangladeshi student would expect from the relevant textbook/curriculum.
 
 Rules:
+
 1. Return ONLY a JSON array.
 2. Every item MUST contain:
    - "label": the human-readable chapter/unit name.
@@ -239,7 +224,9 @@ Rules:
 16. Return at least one item when a meaningful chapter/unit structure exists.
 
 Important:
+
 The user selected:
+
 Class = ${className}
 Subject = ${subjectName}
 
@@ -252,7 +239,6 @@ Use those values exactly as the requested context.
       rawChapters = await generateChapters(apiKey, prompt);
     } catch (error) {
       console.error("[get-chapters] Gemini generation failed:", error);
-
       return errorResponse(
         "Gemini could not load chapters right now. Please try again.",
         502,
@@ -263,7 +249,6 @@ Use those values exactly as the requested context.
 
     if (!chapters.length) {
       console.error("[get-chapters] Gemini returned no usable chapters.");
-
       return errorResponse(
         "Gemini returned no usable chapters for this subject. Please try again.",
         502,
@@ -284,7 +269,6 @@ Use those values exactly as the requested context.
     );
   } catch (error) {
     console.error("[get-chapters] Unexpected error:", error);
-
     return errorResponse("Failed to load chapters. Please try again.", 500);
   }
 }
