@@ -716,7 +716,10 @@ export default function PaperSheet({
       }}
       onDrop={(event) => {
         if (!isMeasurement && pageIndex != null && pageCount && onDropOnPage) {
-          onDropOnPage(event, pageIndex);
+          onDropOnPage(
+            event as unknown as DragEvent<HTMLDivElement>,
+            pageIndex,
+          );
         }
       }}
       className={`paper-screen-sheet ${paperClass} ${jointFixedClass} relative rounded-sm border bg-white shadow-[0_12px_30px_rgba(17,24,39,0.08)] ${padding} ${
