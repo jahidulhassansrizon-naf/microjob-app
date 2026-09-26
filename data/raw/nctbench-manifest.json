@@ -1,0 +1,19 @@
+{
+  "dataset": "ShihabReza/nctb-qa",
+  "source": "https://huggingface.co/datasets/ShihabReza/nctb-qa",
+  "license": "CC BY 4.0",
+  "downloadedAt": "2026-09-22T18:18:01.416Z",
+  "files": [
+    {
+      "split": "train",
+      "file": "nctbench-train.parquet",
+      "rows": 12203
+    },
+    {
+      "split": "test",
+      "file": "nctbench-test.parquet",
+      "rows": 200
+    }
+  ],
+  "note": "Downloaded directly from the dataset repository because the Hugging Face Dataset Viewer /rows endpoint is currently unavailable for this dataset. Chapter mapping is intentionally not inferred from this dataset."
+}
