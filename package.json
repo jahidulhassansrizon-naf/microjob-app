@@ -16,6 +16,7 @@
     "@huggingface/inference": "^4.13.28",
     "@techstark/opencv-js": "^5.0.0-release.1",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "cloudinary": "^2.11.0",
     "fabric": "^7.4.0",
     "firebase": "^12.18.0",
@@ -36,6 +37,7 @@
     "react-dom": "19.2.8",
     "react-image-crop": "^11.1.2",
     "replicate": "^1.4.0",
+    "set-cookie-parser": "^3.1.2",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
