@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import JSZip from "jszip";
-import piexif from "piexifjs";
+import imageCompression from "browser-image-compression";
 import {
   Image as ImageIcon,
   Star,
@@ -13,7 +13,6 @@ import {
   CreditCard,
   Wand2,
   BookOpen,
-  QrCode,
   Crop,
   FileText,
   X,
@@ -28,6 +27,8 @@ import {
   Pencil,
   LogOut,
   Archive,
+  Globe,
+  Zap,
 } from "lucide-react";
 
 interface CompressedResult {
@@ -65,6 +66,10 @@ export default function ImageSizeReducer() {
   >([]);
   const [isCompressed, setIsCompressed] = useState<boolean>(false);
   const [showToast, setShowToast] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string>("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [compressionProgress, setCompressionProgress] = useState<number>(0);
+  const [isApplyingEdit, setIsApplyingEdit] = useState<boolean>(false);
 
   // Lightbox / Editing State
   const [activeCompareIndex, setActiveCompareIndex] = useState<number | null>(
@@ -81,6 +86,18 @@ export default function ImageSizeReducer() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Production safety refs:
+  // - Track every Object URL we create so nothing is leaked.
+  // - Abort long-running compression on reset/unmount.
+  // - Prevent files from being changed while a batch is processing.
+  // - Keep result state in sync when new files are added.
+  const objectUrlsRef = useRef<Set<string>>(new Set());
+  const compressionAbortControllerRef = useRef<AbortController | null>(null);
+  const isCompressingRef = useRef<boolean>(false);
+  const compressedResultsRef = useRef<CompressedResult[]>([]);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outputMimeSupportCacheRef = useRef<Map<string, boolean>>(new Map());
+
   const dimensionOptions = [
     "Keep original size",
     "3840px (4K)",
@@ -91,20 +108,63 @@ export default function ImageSizeReducer() {
     "800px",
   ];
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 B";
+  const formatFileSize = useCallback((bytes: number): string => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+    const i = Math.min(
+      sizes.length - 1,
+      Math.floor(Math.log(bytes) / Math.log(k)),
+    );
 
-  // Helper: Revoke Object URL safely
-  const safeRevoke = (url: string) => {
-    if (url && url.startsWith("blob:")) {
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  }, []);
+
+  const safeRevoke = useCallback((url: string | undefined | null) => {
+    if (!url || !url.startsWith("blob:")) return;
+
+    try {
       URL.revokeObjectURL(url);
+    } finally {
+      objectUrlsRef.current.delete(url);
     }
-  };
+  }, []);
+
+  const createPreviewUrl = useCallback((blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    objectUrlsRef.current.add(url);
+    return url;
+  }, []);
+
+  const showNotification = useCallback(
+    (message: string, type: "success" | "error" = "success") => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+
+      setToastMessage(message);
+      setToastType(type);
+      setShowToast(true);
+
+      toastTimerRef.current = setTimeout(
+        () => {
+          setShowToast(false);
+          toastTimerRef.current = null;
+        },
+        type === "error" ? 6000 : 4000,
+      );
+    },
+    [],
+  );
+
+  useEffect(() => {
+    compressedResultsRef.current = compressedResults;
+  }, [compressedResults]);
+
+  useEffect(() => {
+    isCompressingRef.current = isCompressing;
+  }, [isCompressing]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -115,36 +175,535 @@ export default function ImageSizeReducer() {
         setIsDimensionOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Clean up Object URLs on component unmount
+  // Keep browser resources clean even if the user leaves the page mid-process.
   useEffect(() => {
     return () => {
-      previews.forEach(safeRevoke);
-      compressedResults.forEach((res) => safeRevoke(res.previewUrl));
+      compressionAbortControllerRef.current?.abort();
+
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+
+      objectUrlsRef.current.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          // Ignore browser cleanup errors.
+        }
+      });
+
+      objectUrlsRef.current.clear();
     };
   }, []);
 
-  const handleFiles = useCallback((files: FileList | File[]) => {
-    const validFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/"),
-    );
-    if (validFiles.length === 0) return;
+  // Lock page scrolling while the before/after viewer is open and support Escape.
+  useEffect(() => {
+    if (activeCompareIndex === null) return;
 
-    setSelectedFiles((prev) => [...prev, ...validFiles]);
-    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-    setPreviews((prev) => [...prev, ...newPreviews]);
-    setIsCompressed(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeCompareModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeCompareIndex]);
+
+  const getMaxDimensionLimit = useCallback((dimStr: string): number => {
+    if (dimStr.includes("3840")) return 3840;
+    if (dimStr.includes("2560")) return 2560;
+    if (dimStr.includes("1920")) return 1920;
+    if (dimStr.includes("1280")) return 1280;
+    if (dimStr.includes("1024")) return 1024;
+    if (dimStr.includes("800")) return 800;
+    return Infinity;
   }, []);
 
+  const getFileMimeType = useCallback((file: File): string => {
+    const normalizedType = file.type.toLowerCase();
+
+    if (normalizedType === "image/jpg") return "image/jpeg";
+    if (normalizedType === "image/jpeg") return "image/jpeg";
+    if (normalizedType === "image/png") return "image/png";
+    if (normalizedType === "image/webp") return "image/webp";
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+    if (extension === "png") return "image/png";
+    if (extension === "webp") return "image/webp";
+
+    return normalizedType;
+  }, []);
+
+  const normalizeInputFile = useCallback(
+    (file: File): File => {
+      const detectedType = getFileMimeType(file);
+
+      if (detectedType && detectedType !== file.type) {
+        return new File([file], file.name, {
+          type: detectedType,
+          lastModified: file.lastModified,
+        });
+      }
+
+      return file;
+    },
+    [getFileMimeType],
+  );
+
+  const sanitizeFilename = useCallback((name: string): string => {
+    const sanitized = name
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[. ]+$/g, "");
+
+    return sanitized || "image";
+  }, []);
+
+  const getExtensionForMimeType = useCallback((mimeType: string): string => {
+    const extMap: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+      "image/avif": ".avif",
+    };
+
+    return extMap[mimeType] || ".jpg";
+  }, []);
+
+  const getOutputFormatMimeType = useCallback(
+    (file: File, format: string): string => {
+      if (format === "JPG") return "image/jpeg";
+      if (format === "PNG") return "image/png";
+      if (format === "WebP") return "image/webp";
+      if (format === "AVIF") return "image/avif";
+
+      const originalMimeType = getFileMimeType(file);
+
+      if (
+        originalMimeType === "image/jpeg" ||
+        originalMimeType === "image/png" ||
+        originalMimeType === "image/webp"
+      ) {
+        return originalMimeType;
+      }
+
+      return "image/jpeg";
+    },
+    [getFileMimeType],
+  );
+
+  const canEncodeMimeType = useCallback(
+    async (mimeType: string): Promise<boolean> => {
+      if (outputMimeSupportCacheRef.current.has(mimeType)) {
+        return outputMimeSupportCacheRef.current.get(mimeType) ?? false;
+      }
+
+      if (mimeType === "image/jpeg" || mimeType === "image/png") {
+        outputMimeSupportCacheRef.current.set(mimeType, true);
+        return true;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+
+      const supported = await new Promise<boolean>((resolve) => {
+        canvas.toBlob(
+          (blob) => {
+            resolve(Boolean(blob && blob.type === mimeType));
+          },
+          mimeType,
+          0.8,
+        );
+      });
+
+      outputMimeSupportCacheRef.current.set(mimeType, supported);
+      return supported;
+    },
+    [],
+  );
+
+  const resolveOutputMimeType = useCallback(
+    async (file: File, format: string): Promise<string> => {
+      const requestedMimeType = getOutputFormatMimeType(file, format);
+
+      if (await canEncodeMimeType(requestedMimeType)) {
+        return requestedMimeType;
+      }
+
+      // AVIF encoding is not available in every browser. WebP is the safest
+      // modern fallback and is widely supported.
+      if (
+        requestedMimeType === "image/avif" &&
+        (await canEncodeMimeType("image/webp"))
+      ) {
+        return "image/webp";
+      }
+
+      return "image/jpeg";
+    },
+    [canEncodeMimeType, getOutputFormatMimeType],
+  );
+
+  const getImageDimensions = useCallback(
+    (fileOrBlob: Blob): Promise<{ width: number; height: number }> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(fileOrBlob);
+
+        img.decoding = "async";
+
+        img.onload = () => {
+          const width = img.naturalWidth || img.width;
+          const height = img.naturalHeight || img.height;
+
+          URL.revokeObjectURL(url);
+
+          if (!width || !height) {
+            reject(new Error("Unable to determine image dimensions."));
+            return;
+          }
+
+          resolve({ width, height });
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("The processed image could not be decoded."));
+        };
+
+        img.src = url;
+      });
+    },
+    [],
+  );
+
+  const applyCanvasFiltersToFile = useCallback(
+    (
+      file: File,
+      filters: { brightness: number; contrast: number; saturation: number },
+      targetMimeType: string,
+      qualityPercent: number,
+      signal?: AbortSignal,
+    ): Promise<File> => {
+      return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new DOMException("Operation aborted.", "AbortError"));
+          return;
+        }
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        const cleanup = () => {
+          URL.revokeObjectURL(url);
+        };
+
+        img.decoding = "async";
+
+        img.onload = () => {
+          if (signal?.aborted) {
+            cleanup();
+            reject(new DOMException("Operation aborted.", "AbortError"));
+            return;
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+
+          const ctx = canvas.getContext("2d");
+
+          if (!ctx) {
+            cleanup();
+            reject(
+              new Error("Canvas rendering is not available in this browser."),
+            );
+            return;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+
+          // JPEG does not support transparency, so use a white background.
+          if (targetMimeType === "image/jpeg") {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)`;
+          ctx.drawImage(img, 0, 0);
+
+          canvas.toBlob(
+            (blob) => {
+              cleanup();
+
+              if (!blob) {
+                reject(
+                  new Error("The browser could not encode the edited image."),
+                );
+                return;
+              }
+
+              if (signal?.aborted) {
+                reject(new DOMException("Operation aborted.", "AbortError"));
+                return;
+              }
+
+              resolve(
+                new File([blob], file.name, {
+                  type: blob.type || targetMimeType,
+                  lastModified: Date.now(),
+                }),
+              );
+            },
+            targetMimeType,
+            targetMimeType === "image/png"
+              ? undefined
+              : Math.min(1, Math.max(0.01, qualityPercent / 100)),
+          );
+        };
+
+        img.onerror = () => {
+          cleanup();
+          reject(
+            new Error("The source image could not be loaded for editing."),
+          );
+        };
+
+        img.src = url;
+      });
+    },
+    [],
+  );
+
+  const compressSingleImage = useCallback(
+    async (
+      file: File,
+      settings: {
+        quality: number;
+        maxDimension: string;
+        preserveExif: boolean;
+        keepOriginalName: boolean;
+        outputFormat: string;
+        signal: AbortSignal;
+      },
+      appliedFilters?: {
+        brightness: number;
+        contrast: number;
+        saturation: number;
+      },
+      onProgress?: (progress: number) => void,
+    ): Promise<CompressedResult> => {
+      if (settings.signal.aborted) {
+        throw new DOMException("Compression cancelled.", "AbortError");
+      }
+
+      const normalizedFile = normalizeInputFile(file);
+      const mimeType = await resolveOutputMimeType(
+        normalizedFile,
+        settings.outputFormat,
+      );
+
+      let fileToCompress = normalizedFile;
+
+      if (appliedFilters) {
+        fileToCompress = await applyCanvasFiltersToFile(
+          normalizedFile,
+          appliedFilters,
+          mimeType,
+          settings.quality,
+          settings.signal,
+        );
+      }
+
+      if (settings.signal.aborted) {
+        throw new DOMException("Compression cancelled.", "AbortError");
+      }
+
+      const maxLimit = getMaxDimensionLimit(settings.maxDimension);
+
+      const options = {
+        // This is a safety ceiling, not the quality control itself.
+        // Quality and optional max dimensions still drive the actual output.
+        maxSizeMB: 20,
+        ...(maxLimit < Infinity ? { maxWidthOrHeight: maxLimit } : {}),
+        initialQuality:
+          mimeType === "image/png"
+            ? 1
+            : Math.min(1, Math.max(0.01, settings.quality / 100)),
+        useWebWorker: true,
+        preserveExif:
+          settings.preserveExif &&
+          mimeType === "image/jpeg" &&
+          getFileMimeType(normalizedFile) === "image/jpeg",
+        fileType: mimeType,
+        alwaysKeepResolution: maxLimit === Infinity,
+        maxIteration: 10,
+        signal: settings.signal,
+        // Keep this explicitly defined for worker compatibility.
+        onProgress: (progress: number) => {
+          onProgress?.(Math.max(0, Math.min(100, progress)));
+        },
+      };
+
+      const compressedFile = await imageCompression(fileToCompress, options);
+
+      if (settings.signal.aborted) {
+        throw new DOMException("Compression cancelled.", "AbortError");
+      }
+
+      const actualMimeType = compressedFile.type || mimeType;
+      const dimensions = await getImageDimensions(compressedFile);
+
+      const lastDotIndex = normalizedFile.name.lastIndexOf(".");
+      const nameWithoutExt =
+        lastDotIndex > 0
+          ? normalizedFile.name.substring(0, lastDotIndex)
+          : normalizedFile.name;
+
+      const safeBaseName = sanitizeFilename(nameWithoutExt);
+      const ext = getExtensionForMimeType(actualMimeType);
+
+      const newName = settings.keepOriginalName
+        ? `${safeBaseName}${ext}`
+        : `${safeBaseName}-compressed${ext}`;
+
+      const finalFile = new File([compressedFile], newName, {
+        type: actualMimeType,
+        lastModified: Date.now(),
+      });
+
+      const previewUrl = createPreviewUrl(finalFile);
+
+      const reductionPercentage =
+        normalizedFile.size > 0
+          ? Math.round(
+              ((normalizedFile.size - finalFile.size) / normalizedFile.size) *
+                100,
+            )
+          : 0;
+
+      return {
+        file: finalFile,
+        blob: finalFile,
+        previewUrl,
+        originalSize: normalizedFile.size,
+        compressedSize: finalFile.size,
+        reductionPercentage: Math.max(0, reductionPercentage),
+        width: dimensions.width,
+        height: dimensions.height,
+        name: newName,
+        mimeType: actualMimeType,
+      };
+    },
+    [
+      applyCanvasFiltersToFile,
+      createPreviewUrl,
+      getExtensionForMimeType,
+      getFileMimeType,
+      getMaxDimensionLimit,
+      normalizeInputFile,
+      resolveOutputMimeType,
+      sanitizeFilename,
+      getImageDimensions,
+    ],
+  );
+
+  const handleFiles = useCallback(
+    (files: FileList | File[]) => {
+      if (isCompressingRef.current || isApplyingEdit) {
+        showNotification(
+          "Please wait until the current processing is finished.",
+          "error",
+        );
+        return;
+      }
+
+      const incomingFiles = Array.from(files);
+      const validFiles: File[] = [];
+      let rejectedCount = 0;
+
+      incomingFiles.forEach((file) => {
+        const detectedType = getFileMimeType(file);
+
+        if (
+          file.size <= 0 ||
+          !["image/jpeg", "image/png", "image/webp"].includes(detectedType)
+        ) {
+          rejectedCount += 1;
+          return;
+        }
+
+        validFiles.push(normalizeInputFile(file));
+      });
+
+      if (validFiles.length === 0) {
+        showNotification(
+          "Please select JPG, PNG, or WebP image files.",
+          "error",
+        );
+        return;
+      }
+
+      // Adding new files invalidates the current compressed result set.
+      compressedResultsRef.current.forEach((res) => safeRevoke(res.previewUrl));
+      compressedResultsRef.current = [];
+
+      setCompressedResults([]);
+      setIsCompressed(false);
+      setCompressionProgress(0);
+
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+      setPreviews((prev) => [
+        ...prev,
+        ...validFiles.map((file) => createPreviewUrl(file)),
+      ]);
+
+      if (rejectedCount > 0) {
+        showNotification(
+          `${validFiles.length} image(s) added. ${rejectedCount} unsupported file(s) were skipped.`,
+          "error",
+        );
+      }
+    },
+    [
+      createPreviewUrl,
+      getFileMimeType,
+      normalizeInputFile,
+      safeRevoke,
+      showNotification,
+    ],
+  );
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) handleFiles(e.target.files);
+    if (e.target.files?.length) {
+      handleFiles(e.target.files);
+    }
+
+    // Allows selecting the same file again after removing it.
+    e.target.value = "";
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
     setIsDragging(true);
   };
 
@@ -156,294 +715,343 @@ export default function ImageSizeReducer() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+
+    if (e.dataTransfer.files?.length) {
+      handleFiles(e.dataTransfer.files);
+    }
   };
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (e.clipboardData && e.clipboardData.files) {
+      if (e.clipboardData?.files?.length) {
         handleFiles(e.clipboardData.files);
       }
     };
+
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, [handleFiles]);
 
   const handleRemoveImage = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (isCompressingRef.current || isApplyingEdit) return;
+
     safeRevoke(previews[index]);
-    if (compressedResults[index]) {
-      safeRevoke(compressedResults[index].previewUrl);
+
+    const resultToRemove = compressedResultsRef.current[index];
+    if (resultToRemove) {
+      safeRevoke(resultToRemove.previewUrl);
     }
 
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
-    setCompressedResults((prev) => prev.filter((_, i) => i !== index));
-    if (selectedFiles.length <= 1) setIsCompressed(false);
+
+    setCompressedResults((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      compressedResultsRef.current = next;
+      return next;
+    });
+
+    if (selectedFiles.length <= 1) {
+      setIsCompressed(false);
+      setCompressionProgress(0);
+    }
   };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    compressionAbortControllerRef.current?.abort();
+    compressionAbortControllerRef.current = null;
+    isCompressingRef.current = false;
+
     previews.forEach(safeRevoke);
-    compressedResults.forEach((res) => safeRevoke(res.previewUrl));
+    compressedResultsRef.current.forEach((res) => safeRevoke(res.previewUrl));
+
+    objectUrlsRef.current.forEach((url) => safeRevoke(url));
+
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
 
     setSelectedFiles([]);
     setPreviews([]);
     setCompressedResults([]);
+    compressedResultsRef.current = [];
     setIsCompressed(false);
+    setIsDragging(false);
+    setIsCompressing(false);
+    setIsApplyingEdit(false);
+    setCompressionProgress(0);
     setQuality(75);
     setMaxDimension("Keep original size");
+    setPreserveExif(false);
+    setKeepOriginalName(false);
+    setOutputFormat("Original");
+    setIsDimensionOpen(false);
     setShowToast(false);
-  };
+    setToastMessage("");
+  }, [previews, safeRevoke]);
 
-  const closeCompareModal = () => {
+  const closeCompareModal = useCallback(() => {
     setActiveCompareIndex(null);
     setIsEditing(false);
     setEditSettings({ brightness: 100, contrast: 100, saturation: 100 });
-  };
+  }, []);
 
-  const getMaxDimensionLimit = (dimStr: string): number => {
-    if (dimStr.includes("3840")) return 3840;
-    if (dimStr.includes("2560")) return 2560;
-    if (dimStr.includes("1920")) return 1920;
-    if (dimStr.includes("1280")) return 1280;
-    if (dimStr.includes("1024")) return 1024;
-    if (dimStr.includes("800")) return 800;
-    return Infinity;
-  };
+  const runCompression = useCallback(
+    async (
+      files: File[],
+      settings: {
+        quality: number;
+        maxDimension: string;
+        preserveExif: boolean;
+        keepOriginalName: boolean;
+        outputFormat: string;
+        signal: AbortSignal;
+      },
+    ) => {
+      const results: CompressedResult[] = [];
 
-  // Convert Data URL to Blob
-  const dataURLtoBlob = (dataurl: string): Blob => {
-    const arr = dataurl.split(",");
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-  };
-
-  const compressSingleImage = (
-    file: File,
-    appliedFilters?: {
-      brightness: number;
-      contrast: number;
-      saturation: number;
-    },
-  ): Promise<CompressedResult> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        const maxLimit = getMaxDimensionLimit(maxDimension);
-
-        if (maxLimit < Infinity && (width > maxLimit || height > maxLimit)) {
-          if (width > height) {
-            height = Math.round((height * maxLimit) / width);
-            width = maxLimit;
-          } else {
-            width = Math.round((width * maxLimit) / height);
-            height = maxLimit;
-          }
+      for (let index = 0; index < files.length; index += 1) {
+        if (settings.signal.aborted) {
+          throw new DOMException("Compression cancelled.", "AbortError");
         }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
+        const currentFile = files[index];
+        setCompressionProgress(
+          Math.round((index / Math.max(1, files.length)) * 100),
+        );
 
-        let mimeType = file.type;
-        if (outputFormat === "JPG") mimeType = "image/jpeg";
-        else if (outputFormat === "PNG") mimeType = "image/png";
-        else if (outputFormat === "WebP") mimeType = "image/webp";
-        else if (outputFormat === "AVIF") mimeType = "image/avif";
+        try {
+          const result = await compressSingleImage(
+            currentFile,
+            settings,
+            undefined,
+            (fileProgress) => {
+              const overallProgress =
+                ((index + fileProgress / 100) / files.length) * 100;
 
-        if (ctx) {
-          // Clear background for PNG/WebP transparency preservation
-          ctx.clearRect(0, 0, width, height);
-
-          // Solid background fill for JPG
-          if (mimeType === "image/jpeg") {
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0, 0, width, height);
-          }
-
-          // Apply CSS-equivalent editing filters directly into canvas
-          if (appliedFilters) {
-            ctx.filter = `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) saturate(${appliedFilters.saturation}%)`;
-          } else {
-            ctx.filter = "none";
-          }
-
-          ctx.drawImage(img, 0, 0, width, height);
-        }
-
-        const compQuality = quality / 100;
-
-        const processBlobResult = (blob: Blob) => {
-          const extMap: Record<string, string> = {
-            "image/jpeg": ".jpg",
-            "image/png": ".png",
-            "image/webp": ".webp",
-            "image/avif": ".avif",
-          };
-          const ext = extMap[blob.type] || extMap[mimeType] || ".jpg";
-
-          const nameWithoutExt =
-            file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
-          const newName = keepOriginalName
-            ? `${nameWithoutExt}${ext}`
-            : `${nameWithoutExt}-compressed${ext}`;
-
-          let finalBlob = blob;
-
-          // Preserve EXIF metadata (only applicable for JPEG to JPEG conversion)
-          if (
-            preserveExif &&
-            file.type === "image/jpeg" &&
-            (mimeType === "image/jpeg" || blob.type === "image/jpeg") &&
-            typeof reader.result === "string"
-          ) {
-            try {
-              const originalDataUrl = reader.result;
-              const compressedDataUrl = canvas.toDataURL(
-                "image/jpeg",
-                compQuality,
+              setCompressionProgress(
+                Math.round(Math.max(0, Math.min(100, overallProgress))),
               );
-              const exifObj = piexif.load(originalDataUrl);
-              const exifBytes = piexif.dump(exifObj);
-              const withExifDataUrl = piexif.insert(
-                exifBytes,
-                compressedDataUrl,
-              );
-              finalBlob = dataURLtoBlob(withExifDataUrl);
-            } catch (exifErr) {
-              console.warn("Could not preserve EXIF data:", exifErr);
-            }
-          }
-
-          const previewUrl = URL.createObjectURL(finalBlob);
-          const reductionPercentage = Math.max(
-            0,
-            Math.round(((file.size - finalBlob.size) / file.size) * 100),
+            },
           );
 
-          resolve({
-            file,
-            blob: finalBlob,
-            previewUrl,
-            originalSize: file.size,
-            compressedSize: finalBlob.size,
-            reductionPercentage,
-            width,
-            height,
-            name: newName,
-            mimeType: finalBlob.type,
-          });
-        };
+          results.push(result);
+        } catch (error) {
+          // Prevent already-generated previews from leaking when the batch fails.
+          results.forEach((result) => safeRevoke(result.previewUrl));
+          throw error;
+        }
+      }
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              // Fallback to webp if browser doesn't natively render AVIF on canvas
-              if (mimeType === "image/avif") {
-                canvas.toBlob(
-                  (fallbackBlob) => {
-                    if (fallbackBlob) processBlobResult(fallbackBlob);
-                    else reject(new Error("Compression failed"));
-                  },
-                  "image/webp",
-                  compQuality,
-                );
-              } else {
-                reject(new Error("Compression failed"));
-              }
-              return;
-            }
-            processBlobResult(blob);
-          },
-          mimeType,
-          compQuality,
-        );
-      };
-
-      img.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
-  };
+      setCompressionProgress(100);
+      return results;
+    },
+    [compressSingleImage, safeRevoke],
+  );
 
   const handleCompress = async () => {
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0 || isCompressingRef.current) return;
+
+    const filesToCompress = [...selectedFiles];
+
+    // Abort an old operation before starting a new one.
+    compressionAbortControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    compressionAbortControllerRef.current = controller;
+
     setIsCompressing(true);
+    isCompressingRef.current = true;
+    setCompressionProgress(0);
+    setShowToast(false);
+
+    compressedResultsRef.current.forEach((res) => safeRevoke(res.previewUrl));
+    compressedResultsRef.current = [];
+    setCompressedResults([]);
+    setIsCompressed(false);
+
+    const settingsSnapshot = {
+      quality,
+      maxDimension,
+      preserveExif,
+      keepOriginalName,
+      outputFormat,
+      signal: controller.signal,
+    };
 
     try {
-      // Clear previous blob URLs
-      compressedResults.forEach((res) => safeRevoke(res.previewUrl));
+      const results = await runCompression(filesToCompress, settingsSnapshot);
 
-      const results = await Promise.all(
-        selectedFiles.map((file) => compressSingleImage(file)),
-      );
+      if (controller.signal.aborted) return;
+
+      compressedResultsRef.current = results;
       setCompressedResults(results);
       setIsCompressed(true);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      setCompressionProgress(100);
+
+      showNotification(
+        `${results.length} image(s) compressed successfully.`,
+        "success",
+      );
     } catch (error) {
-      console.error("Compression Error:", error);
+      if (controller.signal.aborted) return;
+
+      console.error("Compression error:", error);
+      setCompressionProgress(0);
+
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "One or more images could not be processed.";
+
+      showNotification(message, "error");
     } finally {
-      setIsCompressing(false);
+      if (compressionAbortControllerRef.current === controller) {
+        compressionAbortControllerRef.current = null;
+      }
+
+      if (!controller.signal.aborted) {
+        setIsCompressing(false);
+        isCompressingRef.current = false;
+      }
     }
   };
 
-  // Re-bake editing filter into the active compressed image
   const handleApplyEditing = async () => {
-    if (activeCompareIndex === null || !selectedFiles[activeCompareIndex])
+    if (
+      activeCompareIndex === null ||
+      !selectedFiles[activeCompareIndex] ||
+      isApplyingEdit ||
+      isCompressingRef.current
+    ) {
       return;
+    }
+
+    const fileIndex = activeCompareIndex;
+    const sourceFile = selectedFiles[fileIndex];
+
+    compressionAbortControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    compressionAbortControllerRef.current = controller;
+
+    setIsApplyingEdit(true);
+    setIsCompressing(true);
+    isCompressingRef.current = true;
+    setCompressionProgress(0);
 
     try {
       const updatedResult = await compressSingleImage(
-        selectedFiles[activeCompareIndex],
+        sourceFile,
+        {
+          quality,
+          maxDimension,
+          preserveExif,
+          keepOriginalName,
+          outputFormat,
+          signal: controller.signal,
+        },
         editSettings,
+        (progress) => setCompressionProgress(progress),
       );
 
-      // Safe revoke old preview URL
-      if (compressedResults[activeCompareIndex]) {
-        safeRevoke(compressedResults[activeCompareIndex].previewUrl);
+      if (controller.signal.aborted) return;
+
+      const previousResult = compressedResultsRef.current[fileIndex];
+      if (previousResult) {
+        safeRevoke(previousResult.previewUrl);
       }
 
       setCompressedResults((prev) => {
         const next = [...prev];
-        next[activeCompareIndex] = updatedResult;
+        next[fileIndex] = updatedResult;
+        compressedResultsRef.current = next;
         return next;
       });
 
-      // সেভ করার পর সাইডবার বন্ধ করা এবং স্লাইডার রিসেট করা
+      setIsCompressed(true);
       setIsEditing(false);
+      setCompressionProgress(100);
       setEditSettings({ brightness: 100, contrast: 100, saturation: 100 });
-    } catch (err) {
-      console.error("Editing save error:", err);
+
+      showNotification("Edits applied successfully.", "success");
+    } catch (error) {
+      if (controller.signal.aborted) return;
+
+      console.error("Editing error:", error);
+
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "The edited image could not be saved.";
+
+      showNotification(message, "error");
+    } finally {
+      if (compressionAbortControllerRef.current === controller) {
+        compressionAbortControllerRef.current = null;
+      }
+
+      setIsApplyingEdit(false);
+      setIsCompressing(false);
+      isCompressingRef.current = false;
+      setCompressionProgress(0);
     }
   };
 
-  const handleDownloadSingle = (res: CompressedResult) => {
-    const a = document.createElement("a");
-    a.href = res.previewUrl;
-    a.download = res.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
+  const handleDownloadSingle = useCallback(
+    (res: CompressedResult) => {
+      try {
+        const downloadUrl = URL.createObjectURL(res.file);
 
-  // ZIP Batch Download Fix
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = res.name;
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1500);
+      } catch (error) {
+        console.error("Download error:", error);
+        showNotification("The image could not be downloaded.", "error");
+      }
+    },
+    [showNotification],
+  );
+
+  const getUniqueZipName = useCallback(
+    (name: string, usedNames: Set<string>): string => {
+      const safeName = sanitizeFilename(name);
+
+      if (!usedNames.has(safeName)) {
+        usedNames.add(safeName);
+        return safeName;
+      }
+
+      const dotIndex = safeName.lastIndexOf(".");
+      const base = dotIndex > 0 ? safeName.slice(0, dotIndex) : safeName;
+      const extension = dotIndex > 0 ? safeName.slice(dotIndex) : "";
+
+      let counter = 2;
+      let candidate = `${base} (${counter})${extension}`;
+
+      while (usedNames.has(candidate)) {
+        counter += 1;
+        candidate = `${base} (${counter})${extension}`;
+      }
+
+      usedNames.add(candidate);
+      return candidate;
+    },
+    [sanitizeFilename],
+  );
+
   const handleDownloadAll = async () => {
-    if (compressedResults.length === 0) return;
+    if (compressedResults.length === 0 || isZipping) return;
 
     if (compressedResults.length === 1) {
       handleDownloadSingle(compressedResults[0]);
@@ -451,47 +1059,115 @@ export default function ImageSizeReducer() {
     }
 
     setIsZipping(true);
+
     try {
       const zip = new JSZip();
+      const usedNames = new Set<string>();
+
       compressedResults.forEach((res) => {
-        zip.file(res.name, res.blob);
+        const zipName = getUniqueZipName(res.name, usedNames);
+        zip.file(zipName, res.file, {
+          binary: true,
+        });
       });
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "STORE",
+      });
+
       const zipUrl = URL.createObjectURL(zipBlob);
 
       const a = document.createElement("a");
       a.href = zipUrl;
       a.download = "compressed_images.zip";
+      a.rel = "noopener";
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
 
-      safeRevoke(zipUrl);
-    } catch (err) {
-      console.error("Zip generation error:", err);
+      window.setTimeout(() => URL.revokeObjectURL(zipUrl), 1500);
+
+      showNotification("ZIP downloaded successfully.", "success");
+    } catch (error) {
+      console.error("ZIP generation error:", error);
+      showNotification("The ZIP file could not be generated.", "error");
     } finally {
       setIsZipping(false);
     }
   };
 
+  const handleShare = useCallback(async () => {
+    try {
+      const shareData = {
+        title: "Image Size Reducer",
+        text: "Compress images quickly in your browser.",
+        url: window.location.href,
+      };
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(window.location.href);
+        showNotification("Tool link copied to clipboard.", "success");
+        return;
+      }
+
+      showNotification("Sharing is not available in this browser.", "error");
+    } catch (error) {
+      // Browsers throw AbortError when the user closes the native share sheet.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+
+      console.error("Share error:", error);
+      showNotification("The tool link could not be shared.", "error");
+    }
+  }, [showNotification]);
+
   return (
     <div className="w-full space-y-5 text-gray-800 font-sans pb-24 relative">
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed top-5 right-5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 z-50 animate-in fade-in slide-in-from-top-2">
-          <div className="w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shrink-0">
-            <CheckCircle2 size={16} />
+        <div
+          className={`fixed top-5 right-5 max-w-sm px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 z-[70] animate-in fade-in slide-in-from-top-2 ${
+            toastType === "success"
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          <div
+            className={`w-7 h-7 rounded-full text-white flex items-center justify-center shrink-0 ${
+              toastType === "success" ? "bg-emerald-500" : "bg-red-500"
+            }`}
+          >
+            {toastType === "success" ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <X size={16} />
+            )}
           </div>
-          <div>
-            <p className="text-xs font-bold">Success</p>
-            <p className="text-[11px] text-emerald-600 font-medium">
-              Images compressed successfully.
+
+          <div className="min-w-0">
+            <p className="text-xs font-bold">
+              {toastType === "success" ? "Success" : "Unable to complete"}
+            </p>
+            <p
+              className={`text-[11px] font-medium break-words ${
+                toastType === "success" ? "text-emerald-600" : "text-red-600"
+              }`}
+            >
+              {toastMessage}
             </p>
           </div>
+
           <button
             onClick={() => setShowToast(false)}
-            className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer"
+            className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0"
+            aria-label="Close notification"
           >
             <X size={14} />
           </button>
@@ -504,7 +1180,7 @@ export default function ImageSizeReducer() {
         ref={fileInputRef}
         onChange={handleFileChange}
         multiple
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
         className="hidden"
       />
 
@@ -549,7 +1225,12 @@ export default function ImageSizeReducer() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
             <Star size={16} />
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button
+            onClick={handleShare}
+            title="Share this tool"
+            aria-label="Share this tool"
+            className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer"
+          >
             <Share2 size={16} />
           </button>
         </div>
@@ -559,6 +1240,7 @@ export default function ImageSizeReducer() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Side: Controls Box */}
         <div className="lg:col-span-4 space-y-4">
+          {/* Quality Slider */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-700">Quality</label>
@@ -578,10 +1260,13 @@ export default function ImageSizeReducer() {
               className="w-full accent-amber-500 bg-gray-200 rounded-lg h-2 cursor-pointer"
             />
             <p className="text-[10px] text-gray-400 font-medium">
-              Lower quality = smaller file size
+              {outputFormat === "PNG"
+                ? "PNG is lossless; quality has little effect on size."
+                : "Lower quality = smaller file size"}
             </p>
           </div>
 
+          {/* Max Dimension Dropdown */}
           <div
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2 relative"
             ref={dropdownRef}
@@ -629,6 +1314,7 @@ export default function ImageSizeReducer() {
             </p>
           </div>
 
+          {/* Preserve EXIF */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
               <label className="text-xs font-bold text-gray-700 block">
@@ -655,6 +1341,7 @@ export default function ImageSizeReducer() {
             </button>
           </div>
 
+          {/* Keep original name */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
               <label className="text-xs font-bold text-gray-700 block">
@@ -681,6 +1368,7 @@ export default function ImageSizeReducer() {
             </button>
           </div>
 
+          {/* Output Format */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2">
             <label className="text-xs font-bold text-gray-700 block">
               Output format
@@ -690,8 +1378,8 @@ export default function ImageSizeReducer() {
                 { name: "Original", icon: Crop },
                 { name: "JPG", icon: FileText },
                 { name: "PNG", icon: ImageIcon },
-                { name: "WebP", icon: GlobeIconWrapper },
-                { name: "AVIF", icon: ZapIconWrapper },
+                { name: "WebP", icon: Globe },
+                { name: "AVIF", icon: Zap },
               ].map((item) => {
                 const IconComponent = item.icon;
                 return (
@@ -707,7 +1395,7 @@ export default function ImageSizeReducer() {
                         : "text-gray-500 hover:text-gray-800"
                     }`}
                   >
-                    <IconComponent />
+                    <IconComponent size={14} />
                     <span>{item.name}</span>
                   </button>
                 );
@@ -717,7 +1405,14 @@ export default function ImageSizeReducer() {
         </div>
 
         {/* Right Side: Compression Preview Box */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[460px]">
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[460px] transition-colors ${
+            isDragging ? "bg-amber-50/30 border-amber-300" : ""
+          }`}
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-bold text-gray-700">
               Compression preview
@@ -742,9 +1437,6 @@ export default function ImageSizeReducer() {
           {previews.length === 0 ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
               className={`rounded-2xl border border-dashed p-8 flex flex-col items-center justify-center my-auto text-center py-24 cursor-pointer transition-all ${
                 isDragging
                   ? "border-amber-500 bg-amber-50/40"
@@ -769,15 +1461,21 @@ export default function ImageSizeReducer() {
                 const displaySrc =
                   isCompressed && compRes ? compRes.previewUrl : src;
 
+                const isClickableForCompare = isCompressed && compRes;
+
                 return (
                   <div
                     key={index}
                     onClick={() => {
-                      setZoomLevel(100);
-                      setActiveCompareIndex(index);
+                      if (isClickableForCompare) {
+                        setZoomLevel(100);
+                        setActiveCompareIndex(index);
+                      }
                     }}
-                    className={`w-44 bg-white rounded-2xl border overflow-hidden shadow-xs relative group flex flex-col transition-all cursor-pointer hover:shadow-md ${
-                      isCompressed ? "border-emerald-300" : "border-gray-200"
+                    className={`w-44 bg-white rounded-2xl border overflow-hidden shadow-xs relative group flex flex-col transition-all ${
+                      isCompressed && compRes
+                        ? "border-emerald-300 cursor-pointer hover:shadow-md"
+                        : "border-gray-200 cursor-default"
                     }`}
                   >
                     <div className="relative w-full h-40 bg-gray-100 overflow-hidden">
@@ -788,13 +1486,22 @@ export default function ImageSizeReducer() {
                       />
 
                       {isCompressed && compRes && (
-                        <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
-                          -{compRes.reductionPercentage}%
-                        </span>
+                        <>
+                          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+                            -{compRes.reductionPercentage}%
+                          </span>
+
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <span className="bg-black/75 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-xs">
+                              Click to compare
+                            </span>
+                          </div>
+                        </>
                       )}
 
                       <button
                         onClick={(e) => handleRemoveImage(index, e)}
+                        disabled={isCompressing}
                         className="absolute top-2 left-2 bg-black/50 hover:bg-black/80 text-white p-1 rounded-md backdrop-blur-xs transition-all opacity-80 group-hover:opacity-100 z-10 cursor-pointer"
                         title="Remove image"
                       >
@@ -836,9 +1543,6 @@ export default function ImageSizeReducer() {
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
                 className="w-44 h-52 rounded-2xl border-2 border-dashed border-gray-200 hover:border-amber-400 bg-gray-50/40 hover:bg-amber-50/20 flex flex-col items-center justify-center text-gray-400 hover:text-amber-500 cursor-pointer transition-all shrink-0"
               >
                 <Plus className="text-gray-400" size={22} />
@@ -900,23 +1604,37 @@ export default function ImageSizeReducer() {
 
       {/* Bottom Sticky Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-100 p-3 px-6 flex items-center justify-between z-30 shadow-lg">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-gray-500 min-w-0">
           <span
-            className={`w-2 h-2 rounded-full ${
-              isCompressed
-                ? "bg-emerald-500"
-                : selectedFiles.length > 0
-                  ? "bg-amber-400"
-                  : "bg-gray-300"
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isCompressing
+                ? "bg-amber-400 animate-pulse"
+                : isCompressed
+                  ? "bg-emerald-500"
+                  : selectedFiles.length > 0
+                    ? "bg-amber-400"
+                    : "bg-gray-300"
             }`}
           ></span>
-          <span>
-            {isCompressed
-              ? "Images compressed successfully"
-              : selectedFiles.length > 0
-                ? `${selectedFiles.length} image(s) ready for compression`
-                : "Add an input to get started"}
+
+          <span className="truncate">
+            {isCompressing
+              ? `Processing images… ${compressionProgress}%`
+              : isCompressed
+                ? "Images compressed successfully"
+                : selectedFiles.length > 0
+                  ? `${selectedFiles.length} image(s) ready for compression`
+                  : "Add an input to get started"}
           </span>
+
+          {isCompressing && (
+            <span className="hidden sm:block w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
+              <span
+                className="block h-full bg-amber-500 transition-all duration-200"
+                style={{ width: `${compressionProgress}%` }}
+              />
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -978,231 +1696,237 @@ export default function ImageSizeReducer() {
       </div>
 
       {/* BEFORE / AFTER SIDE-BY-SIDE LIGHTBOX MODAL */}
-      {activeCompareIndex !== null && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200 select-none">
-          {/* Top Close Button Bar */}
-          <div className="p-4 flex justify-between items-center z-20">
-            <div className="text-white text-xs font-bold bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
-              {selectedFiles[activeCompareIndex]?.name}
-            </div>
-            <button
-              onClick={closeCompareModal}
-              className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg cursor-pointer"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          {/* Split Screen Image Container */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-1 px-4 overflow-hidden relative">
-            {/* Left Column: Before */}
-            <div className="relative flex flex-col items-center justify-center border-r border-white/10 overflow-hidden bg-black/40 rounded-l-2xl">
-              <span className="absolute top-4 left-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10">
-                Before
-              </span>
-
-              <div
-                className="w-full h-full flex items-center justify-center p-6 overflow-auto"
-                style={{
-                  transform: `scale(${zoomLevel / 100})`,
-                  transition: "transform 0.15s ease-out",
-                }}
+      {activeCompareIndex !== null &&
+        isCompressed &&
+        compressedResults[activeCompareIndex] && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200 select-none"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Before and after image comparison"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeCompareModal();
+            }}
+          >
+            {/* Top Close Button Bar */}
+            <div className="p-4 flex justify-between items-center z-20">
+              <div className="text-white text-xs font-bold bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+                {selectedFiles[activeCompareIndex]?.name}
+              </div>
+              <button
+                onClick={closeCompareModal}
+                className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg cursor-pointer"
               >
-                <img
-                  src={previews[activeCompareIndex]}
-                  alt="Before"
-                  className="max-h-[75vh] max-w-full object-contain shadow-2xl"
-                />
-              </div>
-
-              {/* Zoom Controls */}
-              <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs z-10">
-                <button
-                  onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
-                  className="hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <ZoomOut size={14} />
-                </button>
-                <span className="font-mono text-[11px] font-bold">
-                  {zoomLevel}%
-                </span>
-                <button
-                  onClick={() => setZoomLevel((z) => Math.min(200, z + 25))}
-                  className="hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <ZoomIn size={14} />
-                </button>
-              </div>
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Right Column: After */}
-            <div className="relative flex flex-col items-center justify-center overflow-hidden bg-black/40 rounded-r-2xl">
-              {/* Controls Bar on top right pane */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={closeCompareModal}
-                    className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-indigo-400/30 cursor-pointer"
-                  >
-                    <LogOut size={12} />
-                    <span>Exit</span>
-                  </button>
+            {/* Split Screen Image Container */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-1 px-4 overflow-hidden relative">
+              {/* Left Column: Before */}
+              <div className="relative flex flex-col items-center justify-center border-r border-white/10 overflow-hidden bg-black/40 rounded-l-2xl">
+                <span className="absolute top-4 left-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10">
+                  Before
+                </span>
 
-                  {compressedResults[activeCompareIndex] && (
-                    <button
-                      onClick={() =>
-                        handleDownloadSingle(
-                          compressedResults[activeCompareIndex],
-                        )
-                      }
-                      className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-emerald-400/30 cursor-pointer"
-                    >
-                      <Download size={12} />
-                      <span>Download</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${
-                      isEditing
-                        ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-400"
-                        : "bg-white/10 hover:bg-white/20 text-white border-white/20"
-                    }`}
-                  >
-                    <Pencil size={12} />
-                    <span>Edit</span>
-                  </button>
+                <div
+                  className="w-full h-full flex items-center justify-center p-6 overflow-auto"
+                  style={{
+                    transform: `scale(${zoomLevel / 100})`,
+                    transition: "transform 0.15s ease-out",
+                  }}
+                >
+                  <img
+                    src={previews[activeCompareIndex]}
+                    alt="Before"
+                    className="max-h-[75vh] max-w-full object-contain shadow-2xl"
+                  />
                 </div>
 
-                <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md">
-                  After
-                </span>
+                {/* Zoom Controls */}
+                <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs z-10">
+                  <button
+                    onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
+                    className="hover:text-amber-400 transition-colors cursor-pointer"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+                  <span className="font-mono text-[11px] font-bold">
+                    {zoomLevel}%
+                  </span>
+                  <button
+                    onClick={() => setZoomLevel((z) => Math.min(200, z + 25))}
+                    className="hover:text-amber-400 transition-colors cursor-pointer"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                </div>
               </div>
 
-              <div
-                className="w-full h-full flex items-center justify-center p-6 overflow-auto"
-                style={{
-                  transform: `scale(${zoomLevel / 100})`,
-                  transition: "transform 0.15s ease-out",
-                }}
-              >
-                <img
-                  src={
-                    compressedResults[activeCompareIndex]?.previewUrl ||
-                    previews[activeCompareIndex]
-                  }
-                  alt="After"
-                  className="max-h-[75vh] max-w-full object-contain shadow-2xl transition-all duration-100"
-                  style={{
-                    filter: `brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%)`,
-                  }}
-                />
-              </div>
+              {/* Right Column: After */}
+              <div className="relative flex flex-col items-center justify-center overflow-hidden bg-black/40 rounded-r-2xl">
+                {/* Controls Bar on top right pane */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={closeCompareModal}
+                      className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-indigo-400/30 cursor-pointer"
+                    >
+                      <LogOut size={12} />
+                      <span>Exit</span>
+                    </button>
 
-              {/* EDITING SIDEBAR */}
-              {isEditing && (
-                <div className="absolute top-0 right-0 h-full w-64 bg-white shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
-                  <div className="p-6 flex flex-col mt-14 overflow-y-auto flex-1">
-                    <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                        Image Editing
-                      </h3>
+                    {compressedResults[activeCompareIndex] && (
                       <button
-                        onClick={() => setIsEditing(false)}
-                        className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors cursor-pointer"
+                        onClick={() =>
+                          handleDownloadSingle(
+                            compressedResults[activeCompareIndex],
+                          )
+                        }
+                        className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-emerald-400/30 cursor-pointer"
                       >
-                        <X size={16} />
+                        <Download size={12} />
+                        <span>Download</span>
                       </button>
-                    </div>
-
-                    <div className="space-y-6 flex-1">
-                      {/* Brightness */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
-                          <span>Brightness</span>
-                          <span>{editSettings.brightness}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="200"
-                          value={editSettings.brightness}
-                          onChange={(e) =>
-                            setEditSettings({
-                              ...editSettings,
-                              brightness: Number(e.target.value),
-                            })
-                          }
-                          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                        />
-                      </div>
-
-                      {/* Contrast */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
-                          <span>Contrast</span>
-                          <span>{editSettings.contrast}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="200"
-                          value={editSettings.contrast}
-                          onChange={(e) =>
-                            setEditSettings({
-                              ...editSettings,
-                              contrast: Number(e.target.value),
-                            })
-                          }
-                          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                        />
-                      </div>
-
-                      {/* Saturation */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
-                          <span>Saturation</span>
-                          <span>{editSettings.saturation}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="200"
-                          value={editSettings.saturation}
-                          onChange={(e) =>
-                            setEditSettings({
-                              ...editSettings,
-                              saturation: Number(e.target.value),
-                            })
-                          }
-                          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                        />
-                      </div>
-                    </div>
+                    )}
 
                     <button
-                      onClick={handleApplyEditing}
-                      className="mt-6 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md"
+                      onClick={() => setIsEditing(!isEditing)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${
+                        isEditing
+                          ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-400"
+                          : "bg-white/10 hover:bg-white/20 text-white border-white/20"
+                      }`}
                     >
-                      Save & Apply Edits
+                      <Pencil size={12} />
+                      <span>Edit</span>
                     </button>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
 
-          <div className="p-3" />
-        </div>
-      )}
+                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md">
+                    After
+                  </span>
+                </div>
+
+                <div
+                  className="w-full h-full flex items-center justify-center p-6 overflow-auto"
+                  style={{
+                    transform: `scale(${zoomLevel / 100})`,
+                    transition: "transform 0.15s ease-out",
+                  }}
+                >
+                  <img
+                    src={compressedResults[activeCompareIndex].previewUrl}
+                    alt="After"
+                    className="max-h-[75vh] max-w-full object-contain shadow-2xl transition-all duration-100"
+                    style={{
+                      filter: `brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%)`,
+                    }}
+                  />
+                </div>
+
+                {/* EDITING SIDEBAR */}
+                {isEditing && (
+                  <div className="absolute top-0 right-0 h-full w-64 bg-white shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
+                    <div className="p-6 flex flex-col mt-14 overflow-y-auto flex-1">
+                      <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                          Image Editing
+                        </h3>
+                        <button
+                          onClick={() => setIsEditing(false)}
+                          className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors cursor-pointer"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-6 flex-1">
+                        {/* Brightness */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                            <span>Brightness</span>
+                            <span>{editSettings.brightness}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="200"
+                            value={editSettings.brightness}
+                            onChange={(e) =>
+                              setEditSettings({
+                                ...editSettings,
+                                brightness: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                          />
+                        </div>
+
+                        {/* Contrast */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                            <span>Contrast</span>
+                            <span>{editSettings.contrast}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="200"
+                            value={editSettings.contrast}
+                            onChange={(e) =>
+                              setEditSettings({
+                                ...editSettings,
+                                contrast: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                          />
+                        </div>
+
+                        {/* Saturation */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                            <span>Saturation</span>
+                            <span>{editSettings.saturation}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="200"
+                            value={editSettings.saturation}
+                            onChange={(e) =>
+                              setEditSettings({
+                                ...editSettings,
+                                saturation: Number(e.target.value),
+                              })
+                            }
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleApplyEditing}
+                        disabled={isApplyingEdit}
+                        className="mt-6 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isApplyingEdit && (
+                          <Loader2 className="animate-spin" size={14} />
+                        )}
+                        <span>
+                          {isApplyingEdit ? "Saving..." : "Save & Apply Edits"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3" />
+          </div>
+        )}
     </div>
   );
-}
-
-function GlobeIconWrapper() {
-  return <ImageIcon size={14} />;
-}
-function ZapIconWrapper() {
-  return <ImageIcon size={14} />;
 }

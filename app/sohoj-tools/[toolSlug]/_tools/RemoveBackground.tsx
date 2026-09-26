@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Wand2,
@@ -11,10 +11,12 @@ import {
   Palette,
   CreditCard,
   BookOpen,
-  Upload,
-  Droplet,
+  Download,
   Layers,
+  RefreshCw,
 } from "lucide-react";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function RemoveBackground() {
   const [bgType, setBgType] = useState<"transparent" | "solid" | "photo">(
@@ -23,29 +25,126 @@ export default function RemoveBackground() {
   const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Ctrl+V দিয়ে ইমেজ পেস্ট হ্যান্ডলার
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleNewFile(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, []);
+
+  const handleNewFile = (file: File) => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (processedUrl) URL.revokeObjectURL(processedUrl);
+
+    setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setProcessedUrl(null);
+    setErrorMessage(null);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      handleNewFile(e.target.files[0]);
     }
   };
 
   const handleReset = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (processedUrl) URL.revokeObjectURL(processedUrl);
+
     setImageFile(null);
     setPreviewUrl(null);
+    setProcessedUrl(null);
     setIsProcessing(false);
+    setErrorMessage(null);
   };
 
-  const handleRemoveBg = () => {
+  // ব্যাকএন্ড API কানেকশন
+  const handleRemoveBg = async () => {
     if (!imageFile) return;
+
     setIsProcessing(true);
-    // ব্যাকগ্রাউন্ড রিমুভ করার প্রসেসিং লজিক এখানে যুক্ত হবে
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+
+      const response = await fetch(`${API_BASE_URL}/api/remove-background`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Background removal failed.");
+      }
+
+      const imageBlob = await response.blob();
+      const outputUrl = URL.createObjectURL(imageBlob);
+      setProcessedUrl(outputUrl);
+    } catch (error: any) {
+      console.error("[Remove Background Error]:", error);
+      setErrorMessage(
+        error.message || "Something went wrong while removing background.",
+      );
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
+  };
+
+  // ইমেজ ডাউনলোড হ্যান্ডলার (Transparent বা Solid Background সহ)
+  const handleDownload = () => {
+    if (!processedUrl) return;
+
+    if (bgType === "transparent") {
+      const a = document.createElement("a");
+      a.href = processedUrl;
+      a.download = `remove-bg-${Date.now()}.png`;
+      a.click();
+    } else {
+      // Solid Color বা অন্য ব্যাকগ্রাউন্ড ক্যানভাসে ড্র করে ডাউনলোড
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+
+        if (ctx) {
+          if (bgType === "solid") {
+            ctx.fillStyle = selectedColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          ctx.drawImage(img, 0, 0);
+
+          const a = document.createElement("a");
+          a.href = canvas.toDataURL("image/png");
+          a.download = `remove-bg-${Date.now()}.png`;
+          a.click();
+        }
+      };
+      img.src = processedUrl;
+    }
   };
 
   return (
@@ -145,7 +244,7 @@ export default function RemoveBackground() {
               </button>
             </div>
 
-            {/* Solid Color Options (Only when 'Solid color' is chosen) */}
+            {/* Solid Color Options */}
             {bgType === "solid" && (
               <div className="space-y-2 pt-1 border-t border-gray-100">
                 <span className="text-[11px] font-bold text-gray-600 block">
@@ -184,25 +283,54 @@ export default function RemoveBackground() {
           </div>
 
           {/* Action Buttons Box */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center gap-2">
-            <button
-              onClick={handleReset}
-              className="w-1/3 py-2.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
-            >
-              Reset
-            </button>
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-2">
+            {errorMessage && (
+              <p className="text-[11px] text-red-500 font-medium">
+                {errorMessage}
+              </p>
+            )}
 
-            <button
-              onClick={handleRemoveBg}
-              disabled={!imageFile || isProcessing}
-              className={`w-2/3 py-2.5 text-xs font-bold rounded-xl transition-all ${
-                imageFile && !isProcessing
-                  ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              {isProcessing ? "Processing..." : "Remove background"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleReset}
+                className="w-1/3 py-2.5 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-1"
+              >
+                <RefreshCw size={12} />
+                <span>Reset</span>
+              </button>
+
+              <button
+                onClick={handleRemoveBg}
+                disabled={!imageFile || isProcessing}
+                className={`w-2/3 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                  imageFile && !isProcessing
+                    ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 size={14} />
+                    <span>Remove background</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {processedUrl && (
+              <button
+                onClick={handleDownload}
+                className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Download size={14} />
+                <span>Download Result</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -211,26 +339,33 @@ export default function RemoveBackground() {
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <h2 className="text-xs font-bold text-gray-800">Preview</h2>
             <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-2.5 py-1 rounded-full">
-              {imageFile ? "Ready" : "Empty"}
+              {processedUrl ? "Processed" : imageFile ? "Uploaded" : "Empty"}
             </span>
           </div>
 
           {/* Preview Container */}
           <div className="bg-[#F8F9FA] border border-gray-200 rounded-2xl p-6 my-4 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
-            {previewUrl ? (
-              <div className="relative max-w-full max-h-[380px] flex items-center justify-center">
+            {processedUrl || previewUrl ? (
+              <div
+                className="relative max-w-full max-h-[380px] flex items-center justify-center rounded-lg overflow-hidden p-2"
+                style={{
+                  backgroundColor:
+                    bgType === "solid"
+                      ? selectedColor
+                      : bgType === "transparent"
+                        ? "transparent"
+                        : "#ffffff",
+                  backgroundImage:
+                    bgType === "transparent" && processedUrl
+                      ? "radial-gradient(#e5e7eb 1px, transparent 1px)"
+                      : "none",
+                  backgroundSize: "12px 12px",
+                }}
+              >
                 <img
-                  src={previewUrl}
+                  src={processedUrl || previewUrl!}
                   alt="Cutout Preview"
-                  className="max-h-[360px] object-contain rounded-lg"
-                  style={{
-                    backgroundColor:
-                      bgType === "solid"
-                        ? selectedColor
-                        : bgType === "transparent"
-                          ? "transparent"
-                          : "#ffffff",
-                  }}
+                  className="max-h-[360px] object-contain rounded-lg transition-all"
                 />
               </div>
             ) : (
