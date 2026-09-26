@@ -699,7 +699,6 @@ export default function InteractiveQuestionCanvas({
     handlePageSizeChange,
     pageSize,
     setNoEnabled,
-    setSetNoEnabled,
     setNo,
     setSetNo,
     shuffleSelected,
@@ -1033,13 +1032,13 @@ export default function InteractiveQuestionCanvas({
     [demoQuestions],
   );
 
-  const demoJointQuestionsByPage = useMemo(() => {
+  const demoJointQuestionsByPage = useMemo((): Question[][] => {
     const split = Math.max(1, Math.ceil(demoQuestions.length / 2));
 
-    return {
-      0: demoQuestions.slice(0, split),
-      1: demoQuestions.slice(split),
-    };
+    return [
+      demoQuestions.slice(0, split),
+      demoQuestions.slice(split),
+    ];
   }, [demoQuestions]);
 
   const demoJointSectionGroupsByPage = useMemo(() => {
@@ -1056,10 +1055,9 @@ export default function InteractiveQuestionCanvas({
         .filter((group) => group.questions.length > 0);
     };
 
-    return {
-      0: makeGroups(demoJointQuestionsByPage[0]),
-      1: makeGroups(demoJointQuestionsByPage[1]),
-    };
+    return demoJointQuestionsByPage.map((questionsForPage) =>
+      makeGroups(questionsForPage),
+    );
   }, [demoJointQuestionsByPage]);
 
   const loadDemo = () => {
@@ -1166,17 +1164,13 @@ export default function InteractiveQuestionCanvas({
     });
   }, []);
 
-  const displayManager = useMemo(() => {
+  const displayManager = useMemo<QuestionManager>(() => {
     if (!demoMode) {
       return manager;
     }
 
-    const runtimeManager = {
-      ...manager,
-    } as QuestionManager;
-
     return {
-      ...runtimeManager,
+      ...manager,
       pageSize: manager.pageSize,
       selectedQuestions: demoQuestions,
       totalMarks: demoTotalMarks || 100,
@@ -1241,7 +1235,7 @@ export default function InteractiveQuestionCanvas({
       setActiveJointPage: manager.setActiveJointPage,
       setDraggedId: manager.setDraggedId,
       setDragOverId: manager.setDragOverId,
-    } as QuestionManager;
+    };
   }, [
     demoAddRegionTextAnnotation,
     demoAnnotations,

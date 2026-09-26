@@ -31,6 +31,7 @@ import type {
   PrintPageVariant,
   Question,
   QuestionLayout,
+  SectionGroup,
 } from "../types/question";
 
 import { parseRegionTargetId } from "../components/question-canvas/RegionSelectionOverlay";
@@ -518,6 +519,8 @@ export function useQuestionManager() {
 
   const [setNoEnabled, setSetNoEnabled] = useState(false);
 
+  const toggleSetNoEnabled = () => setSetNoEnabled((current) => !current);
+
   const [setNo, setSetNo] = useState("");
 
   const [selectAnswerEnabled, setSelectAnswerEnabled] = useState(false);
@@ -742,7 +745,7 @@ export function useQuestionManager() {
 
   const jointRenderPageCount = Math.max(1, jointPageCount);
 
-  const jointQuestionsByPage = useMemo(() => {
+  const jointQuestionsByPage = useMemo<Question[][]>(() => {
     const pages = Array.from(
       {
         length: jointRenderPageCount,
@@ -778,7 +781,7 @@ export function useQuestionManager() {
 
   const jointRightQuestions = jointQuestionsByPage[1] || [];
 
-  const jointSectionGroupsByPage = useMemo(
+  const jointSectionGroupsByPage = useMemo<SectionGroup[][]>(
     () => jointQuestionsByPage.map((page) => buildSectionGroups(page)),
     [jointQuestionsByPage],
   );
@@ -3195,6 +3198,7 @@ export function useQuestionManager() {
     setFontScale,
 
     setNoEnabled,
+    toggleSetNoEnabled,
     setNo,
 
     setSetNo,

@@ -575,8 +575,19 @@ export default function PaperSheet({
       onRegionSelectionTargets?.([primaryTargetId]);
       onSetRegionSelectMode?.(false);
     } else {
+      const currentPageIndex = pageIndex;
+
+      if (currentPageIndex == null) {
+        releaseSelectionPointer(event.currentTarget, event.pointerId);
+
+        setSelectionPointerId(null);
+        setSelectionStart(null);
+        setSelectionRect(null);
+        return;
+      }
+
       const annotationId = onCreateRegionAnnotation?.(
-        pageIndex,
+        currentPageIndex,
         finalRect.x,
         finalRect.y,
         finalRect.width,

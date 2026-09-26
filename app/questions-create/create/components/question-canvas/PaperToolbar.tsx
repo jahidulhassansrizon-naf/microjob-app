@@ -51,7 +51,7 @@ export default function PaperToolbar({
     handlePageSizeChange,
     pageSize,
     setNoEnabled,
-    setSetNoEnabled,
+    toggleSetNoEnabled,
     setNo,
     setSetNo,
     shuffleSelected,
@@ -165,7 +165,7 @@ export default function PaperToolbar({
           <div className="flex h-8 items-center gap-2">
             <Toggle
               checked={setNoEnabled}
-              onChange={() => setSetNoEnabled((value) => !value)}
+              onChange={toggleSetNoEnabled}
             />
 
             {setNoEnabled ? (
