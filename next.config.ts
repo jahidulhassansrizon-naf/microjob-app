@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        fs: { browser: "./empty-module.js" },
+        path: { browser: "./empty-module.js" },
+      },
+    },
+  },
 };
 
 export default nextConfig;

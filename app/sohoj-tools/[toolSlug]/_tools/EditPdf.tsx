@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Pencil,
@@ -12,25 +12,538 @@ import {
   ChevronUp,
   Minimize2,
   Combine,
-  FilePlus,
   ArrowLeft,
   X,
   Plus,
   Lock,
+  Type,
+  Highlighter,
+  PenTool,
+  MousePointer2,
+  Undo2,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import type { PDFDocumentProxy } from "pdfjs-dist";
+
+// Scale at which PDF pages are rendered to the on-screen canvas. Annotation
+// coordinates are stored in this same pixel space and converted back to PDF
+// points (using each page's actual size) at export time.
+const RENDER_SCALE = 1.5;
+
+type Tool = "select" | "text" | "draw" | "highlight";
+
+interface TextAnnotation {
+  id: string;
+  type: "text";
+  page: number;
+  x: number;
+  y: number;
+  text: string;
+  fontSize: number;
+  color: string;
+}
+
+interface DrawAnnotation {
+  id: string;
+  type: "draw";
+  page: number;
+  points: { x: number; y: number }[];
+  color: string;
+  lineWidth: number;
+}
+
+interface HighlightAnnotation {
+  id: string;
+  type: "highlight";
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+type Annotation = TextAnnotation | DrawAnnotation | HighlightAnnotation;
+
+const PEN_COLORS = ["#111827", "#dc2626", "#2563eb", "#16a34a"];
+const HIGHLIGHT_COLOR = "#fde047";
+
+function hexToRgbColor(hex: string) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  const r = ((bigint >> 16) & 255) / 255;
+  const g = ((bigint >> 8) & 255) / 255;
+  const b = (bigint & 255) / 255;
+  return rgb(r, g, b);
+}
+
+function generateId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `ann_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
 export default function EditPdf() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showHowToUse, setShowHowToUse] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Editor state
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [numPages, setNumPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [tool, setTool] = useState<Tool>("select");
+  const [penColor, setPenColor] = useState(PEN_COLORS[0]);
+  const [annotations, setAnnotationsReact] = useState<Annotation[]>([]);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null); // rendered PDF page
+  const overlayRef = useRef<HTMLCanvasElement>(null); // committed annotations
+  const previewRef = useRef<HTMLCanvasElement>(null); // live drag preview
+
+  const pdfjsRef = useRef<any>(null);
+  const annotationsRef = useRef<Annotation[]>([]);
+  const pageDimsRef = useRef<Record<number, { width: number; height: number }>>(
+    {},
+  );
+  const isDrawingRef = useRef(false);
+  const currentPathRef = useRef<{ x: number; y: number }[]>([]);
+  const highlightStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastLoadedFileRef = useRef<File | null>(null);
+
+  const [textInputPos, setTextInputPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [textInputValue, setTextInputValue] = useState("");
+  const textInputRef = useRef<HTMLInputElement>(null);
+
+  const setAnnotations = useCallback(
+    (updater: (prev: Annotation[]) => Annotation[]) => {
+      const next = updater(annotationsRef.current);
+      annotationsRef.current = next;
+      setAnnotationsReact(next);
+    },
+    [],
+  );
+
+  const redrawOverlay = useCallback((pageNum: number) => {
+    const overlay = overlayRef.current;
+    const ctx = overlay?.getContext("2d");
+    if (!overlay || !ctx) return;
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    for (const ann of annotationsRef.current) {
+      if (ann.page !== pageNum) continue;
+      if (ann.type === "draw") {
+        if (ann.points.length < 2) continue;
+        ctx.save();
+        ctx.strokeStyle = ann.color;
+        ctx.lineWidth = ann.lineWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(ann.points[0].x, ann.points[0].y);
+        for (let i = 1; i < ann.points.length; i++) {
+          ctx.lineTo(ann.points[i].x, ann.points[i].y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      } else if (ann.type === "highlight") {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = ann.color;
+        ctx.fillRect(ann.x, ann.y, ann.width, ann.height);
+        ctx.restore();
+      } else if (ann.type === "text") {
+        ctx.save();
+        ctx.fillStyle = ann.color;
+        ctx.font = `${ann.fontSize}px sans-serif`;
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(ann.text, ann.x, ann.y);
+        ctx.restore();
+      }
+    }
+  }, []);
+
+  // Load the pdf.js library once, on the client only, and point it at the
+  // worker file via an asset URL so Next.js / Turbopack can bundle it
+  // without trying to run it through SSR.
+  const ensurePdfJs = useCallback(async () => {
+    if (pdfjsRef.current) return pdfjsRef.current;
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.min.mjs",
+      import.meta.url,
+    ).toString();
+    pdfjsRef.current = pdfjsLib;
+    return pdfjsLib;
+  }, []);
+
+  useEffect(() => {
+    ensurePdfJs().catch(() => {
+      // Swallow here; a clearer error surfaces when the user opens the editor.
+    });
+  }, [ensurePdfJs]);
+
+  const loadPdfIntoEditor = useCallback(
+    async (file: File) => {
+      setIsLoadingPdf(true);
+      setError(null);
+      try {
+        const pdfjsLib = await ensurePdfJs();
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const doc: PDFDocumentProxy = await loadingTask.promise;
+        setPdfDoc(doc);
+        setNumPages(doc.numPages);
+        setCurrentPage(1);
+        pageDimsRef.current = {};
+        annotationsRef.current = [];
+        setAnnotationsReact([]);
+        lastLoadedFileRef.current = file;
+      } catch (err) {
+        console.error(err);
+        setError(
+          "Could not open this PDF. It may be corrupted or password protected.",
+        );
+      } finally {
+        setIsLoadingPdf(false);
+      }
+    },
+    [ensurePdfJs],
+  );
+
+  // Render the current page onto the background canvas, size the overlay /
+  // preview canvases to match, and redraw any annotations for that page.
+  useEffect(() => {
+    if (!pdfDoc || !isEditorOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const page = await pdfDoc.getPage(currentPage);
+        const viewport = page.getViewport({ scale: RENDER_SCALE });
+        const canvas = canvasRef.current;
+        const overlay = overlayRef.current;
+        const preview = previewRef.current;
+        if (!canvas || !overlay || !preview) return;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        overlay.width = viewport.width;
+        overlay.height = viewport.height;
+        preview.width = viewport.width;
+        preview.height = viewport.height;
+
+        pageDimsRef.current[currentPage] = {
+          width: viewport.width,
+          height: viewport.height,
+        };
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        if (cancelled) return;
+        redrawOverlay(currentPage);
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setError("Something went wrong while rendering this page.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfDoc, currentPage, isEditorOpen, redrawOverlay]);
+
+  const getPos = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = previewRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const pos = getPos(e);
+      if (tool === "draw") {
+        isDrawingRef.current = true;
+        currentPathRef.current = [pos];
+      } else if (tool === "highlight") {
+        highlightStartRef.current = pos;
+      } else if (tool === "text") {
+        setTextInputValue("");
+        setTextInputPos(pos);
+        setTimeout(() => textInputRef.current?.focus(), 0);
+      }
+    },
+    [tool, getPos],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const pos = getPos(e);
+      if (tool === "draw" && isDrawingRef.current) {
+        const path = currentPathRef.current;
+        const prev = path[path.length - 1];
+        path.push(pos);
+        const ctx = overlayRef.current?.getContext("2d");
+        if (ctx && prev) {
+          ctx.save();
+          ctx.strokeStyle = penColor;
+          ctx.lineWidth = 3;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      } else if (tool === "highlight" && highlightStartRef.current) {
+        const start = highlightStartRef.current;
+        const preview = previewRef.current;
+        const ctx = preview?.getContext("2d");
+        if (ctx && preview) {
+          ctx.clearRect(0, 0, preview.width, preview.height);
+          ctx.save();
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = HIGHLIGHT_COLOR;
+          const x = Math.min(start.x, pos.x);
+          const y = Math.min(start.y, pos.y);
+          const w = Math.abs(pos.x - start.x);
+          const h = Math.abs(pos.y - start.y);
+          ctx.fillRect(x, y, w, h);
+          ctx.restore();
+        }
+      }
+    },
+    [tool, penColor, getPos],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const pos = getPos(e);
+      if (tool === "draw" && isDrawingRef.current) {
+        isDrawingRef.current = false;
+        const points = currentPathRef.current;
+        currentPathRef.current = [];
+        if (points.length > 1) {
+          setAnnotations((prev) => [
+            ...prev,
+            {
+              id: generateId(),
+              type: "draw",
+              page: currentPage,
+              points,
+              color: penColor,
+              lineWidth: 3,
+            },
+          ]);
+        }
+      } else if (tool === "highlight" && highlightStartRef.current) {
+        const start = highlightStartRef.current;
+        highlightStartRef.current = null;
+        const x = Math.min(start.x, pos.x);
+        const y = Math.min(start.y, pos.y);
+        const w = Math.abs(pos.x - start.x);
+        const h = Math.abs(pos.y - start.y);
+
+        const preview = previewRef.current;
+        preview
+          ?.getContext("2d")
+          ?.clearRect(0, 0, preview.width, preview.height);
+
+        if (w > 3 && h > 3) {
+          const ctx = overlayRef.current?.getContext("2d");
+          if (ctx) {
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+            ctx.fillStyle = HIGHLIGHT_COLOR;
+            ctx.fillRect(x, y, w, h);
+            ctx.restore();
+          }
+          setAnnotations((prev) => [
+            ...prev,
+            {
+              id: generateId(),
+              type: "highlight",
+              page: currentPage,
+              x,
+              y,
+              width: w,
+              height: h,
+              color: HIGHLIGHT_COLOR,
+            },
+          ]);
+        }
+      }
+    },
+    [tool, penColor, currentPage, getPos, setAnnotations],
+  );
+
+  const commitTextAnnotation = useCallback(() => {
+    if (textInputPos && textInputValue.trim()) {
+      const fontSize = 18;
+      const ctx = overlayRef.current?.getContext("2d");
+      if (ctx) {
+        ctx.save();
+        ctx.fillStyle = penColor;
+        ctx.font = `${fontSize}px sans-serif`;
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(textInputValue, textInputPos.x, textInputPos.y);
+        ctx.restore();
+      }
+      setAnnotations((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          type: "text",
+          page: currentPage,
+          x: textInputPos.x,
+          y: textInputPos.y,
+          text: textInputValue,
+          fontSize,
+          color: penColor,
+        },
+      ]);
+    }
+    setTextInputPos(null);
+    setTextInputValue("");
+  }, [textInputPos, textInputValue, penColor, currentPage, setAnnotations]);
+
+  const handleUndo = useCallback(() => {
+    setAnnotations((prev) => prev.slice(0, -1));
+    redrawOverlay(currentPage);
+  }, [setAnnotations, redrawOverlay, currentPage]);
+
+  const goToPage = useCallback(
+    (delta: number) => {
+      setCurrentPage((p) => Math.min(Math.max(1, p + delta), numPages || 1));
+    },
+    [numPages],
+  );
+
+  const handleExport = useCallback(async () => {
+    if (!selectedFile) return;
+    setIsExporting(true);
+    setError(null);
+    try {
+      const existingBytes = await selectedFile.arrayBuffer();
+      const pdfLibDoc = await PDFDocument.load(existingBytes);
+      const pages = pdfLibDoc.getPages();
+      const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+
+      for (const ann of annotationsRef.current) {
+        const page = pages[ann.page - 1];
+        const dims = pageDimsRef.current[ann.page];
+        if (!page || !dims) continue;
+        const { width: pdfWidth, height: pdfHeight } = page.getSize();
+        const scaleX = pdfWidth / dims.width;
+        const scaleY = pdfHeight / dims.height;
+
+        if (ann.type === "text") {
+          page.drawText(ann.text, {
+            x: ann.x * scaleX,
+            y: pdfHeight - ann.y * scaleY,
+            size: ann.fontSize * scaleX,
+            font,
+            color: hexToRgbColor(ann.color),
+          });
+        } else if (ann.type === "highlight") {
+          const rectX = ann.x * scaleX;
+          const rectWidth = ann.width * scaleX;
+          const rectHeight = ann.height * scaleY;
+          const rectYTop = pdfHeight - ann.y * scaleY;
+          page.drawRectangle({
+            x: rectX,
+            y: rectYTop - rectHeight,
+            width: rectWidth,
+            height: rectHeight,
+            color: hexToRgbColor(ann.color),
+            opacity: 0.35,
+          });
+        } else if (ann.type === "draw") {
+          for (let i = 1; i < ann.points.length; i++) {
+            const p0 = ann.points[i - 1];
+            const p1 = ann.points[i];
+            page.drawLine({
+              start: { x: p0.x * scaleX, y: pdfHeight - p0.y * scaleY },
+              end: { x: p1.x * scaleX, y: pdfHeight - p1.y * scaleY },
+              thickness: Math.max(1, ann.lineWidth * scaleX),
+              color: hexToRgbColor(ann.color),
+            });
+          }
+        }
+      }
+
+      const pdfBytes = await pdfLibDoc.save();
+      const blob = new Blob([pdfBytes as BlobPart], {
+        type: "application/pdf",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = selectedFile.name.replace(/\.pdf$/i, "") + "-edited.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while saving your PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setPdfDoc(null);
+      setNumPages(0);
+      setCurrentPage(1);
+      annotationsRef.current = [];
+      setAnnotationsReact([]);
+      pageDimsRef.current = {};
+      lastLoadedFileRef.current = null;
+      setError(null);
     }
   };
 
   const handleReset = () => {
     setSelectedFile(null);
+    setPdfDoc(null);
+    setNumPages(0);
+    setCurrentPage(1);
+    annotationsRef.current = [];
+    setAnnotationsReact([]);
+    pageDimsRef.current = {};
+    lastLoadedFileRef.current = null;
+    setIsEditorOpen(false);
+    setError(null);
+  };
+
+  const handleOpenEditor = async () => {
+    if (!selectedFile) return;
+    setIsEditorOpen(true);
+    if (lastLoadedFileRef.current !== selectedFile) {
+      await loadPdfIntoEditor(selectedFile);
+    }
   };
 
   return (
@@ -150,7 +663,7 @@ export default function EditPdf() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Preview</h2>
             <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-              Empty
+              {selectedFile ? "Ready" : "Empty"}
             </span>
           </div>
 
@@ -160,16 +673,28 @@ export default function EditPdf() {
               <FileText size={20} />
             </div>
             <p className="text-xs font-bold text-gray-800">
-              Add files to get started
+              {selectedFile
+                ? "Ready to open in the editor"
+                : "Add files to get started"}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">
-              Your result will appear here after you run the tool.
+              {selectedFile
+                ? 'Click "Open editor" below to add text, drawings and highlights.'
+                : "Your result will appear here after you run the tool."}
             </p>
           </div>
 
           <div />
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-red-700 font-medium">
+          <AlertCircle size={15} className="text-red-500 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Bottom Action Controls Bar */}
       <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -190,6 +715,7 @@ export default function EditPdf() {
             Reset
           </button>
           <button
+            onClick={handleOpenEditor}
             disabled={!selectedFile}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               selectedFile
@@ -276,6 +802,222 @@ export default function EditPdf() {
           </Link>
         </div>
       </div>
+
+      {/* Full-screen Editor */}
+      {isEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6">
+          <div className="bg-white w-full h-full max-w-6xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2 mr-2">
+                <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
+                  <Pencil size={16} />
+                </div>
+                <span className="text-xs font-bold text-gray-900 truncate max-w-[160px]">
+                  {selectedFile?.name}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-xl p-1">
+                <button
+                  onClick={() => setTool("select")}
+                  title="Select / pan"
+                  className={`p-2 rounded-lg transition-all ${
+                    tool === "select"
+                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
+                      : "text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  <MousePointer2 size={16} />
+                </button>
+                <button
+                  onClick={() => setTool("text")}
+                  title="Add text"
+                  className={`p-2 rounded-lg transition-all ${
+                    tool === "text"
+                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
+                      : "text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  <Type size={16} />
+                </button>
+                <button
+                  onClick={() => setTool("draw")}
+                  title="Draw / sign"
+                  className={`p-2 rounded-lg transition-all ${
+                    tool === "draw"
+                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
+                      : "text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  <PenTool size={16} />
+                </button>
+                <button
+                  onClick={() => setTool("highlight")}
+                  title="Highlight"
+                  className={`p-2 rounded-lg transition-all ${
+                    tool === "highlight"
+                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
+                      : "text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  <Highlighter size={16} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {PEN_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setPenColor(c)}
+                    title={c}
+                    className={`w-5 h-5 rounded-full border-2 transition-all ${
+                      penColor === c
+                        ? "border-gray-700 scale-110"
+                        : "border-white"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={handleUndo}
+                disabled={annotations.length === 0}
+                title="Undo last action"
+                className={`p-2 rounded-lg transition-all ${
+                  annotations.length === 0
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                <Undo2 size={16} />
+              </button>
+
+              <div className="flex-1" />
+
+              {numPages > 0 && (
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                  <button
+                    onClick={() => goToPage(-1)}
+                    disabled={currentPage <= 1}
+                    className={`p-1.5 rounded-lg ${
+                      currentPage <= 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span>
+                    Page {currentPage} / {numPages}
+                  </span>
+                  <button
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage >= numPages}
+                    className={`p-1.5 rounded-lg ${
+                      currentPage >= numPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={handleExport}
+                disabled={!pdfDoc || isExporting}
+                className={`ml-2 px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
+                  !pdfDoc || isExporting
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-600 text-white shadow-xs hover:bg-orange-700"
+                }`}
+              >
+                {isExporting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>{isExporting ? "Saving..." : "Save & Download"}</span>
+              </button>
+
+              <button
+                onClick={() => setIsEditorOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {error && (
+              <div className="mx-4 mt-3 bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium shrink-0">
+                <AlertCircle size={14} className="text-red-500 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Canvas area */}
+            <div className="flex-1 overflow-auto bg-gray-100 flex items-start justify-center p-6">
+              {isLoadingPdf ? (
+                <div className="flex flex-col items-center justify-center gap-2 text-gray-400 mt-20">
+                  <Loader2 size={28} className="animate-spin" />
+                  <span className="text-xs font-bold">Loading PDF…</span>
+                </div>
+              ) : (
+                <div
+                  className="relative shadow-lg bg-white"
+                  style={{ lineHeight: 0 }}
+                >
+                  <canvas ref={canvasRef} className="block" />
+                  <canvas ref={overlayRef} className="absolute inset-0 block" />
+                  <canvas
+                    ref={previewRef}
+                    className="absolute inset-0 block"
+                    style={{
+                      cursor:
+                        tool === "text"
+                          ? "text"
+                          : tool === "select"
+                            ? "default"
+                            : "crosshair",
+                    }}
+                    onMouseDown={handlePointerDown}
+                    onMouseMove={handlePointerMove}
+                    onMouseUp={handlePointerUp}
+                    onMouseLeave={handlePointerUp}
+                  />
+
+                  {textInputPos && (
+                    <input
+                      ref={textInputRef}
+                      value={textInputValue}
+                      onChange={(e) => setTextInputValue(e.target.value)}
+                      onBlur={commitTextAnnotation}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitTextAnnotation();
+                        } else if (e.key === "Escape") {
+                          setTextInputPos(null);
+                          setTextInputValue("");
+                        }
+                      }}
+                      className="absolute px-1 text-[18px] leading-none bg-white/90 border border-orange-300 rounded outline-none"
+                      style={{
+                        left: textInputPos.x,
+                        top: textInputPos.y - 18,
+                        color: penColor,
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

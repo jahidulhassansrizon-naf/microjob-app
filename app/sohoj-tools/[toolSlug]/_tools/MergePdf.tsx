@@ -17,25 +17,181 @@ import {
   ArrowLeft,
   X,
   GripVertical,
+  Loader2,
+  Download,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
+import { PDFDocument } from "pdf-lib";
+
+// ---------------------------------------------------------------------------
+// Merge engine (pdf-lib)
+// ---------------------------------------------------------------------------
+// Creates a fresh PDFDocument, then copies every page from each uploaded
+// file into it, in the order the files appear in the list. Everything runs
+// in the browser — no file ever leaves the device.
+
+interface MergeResult {
+  bytes: Uint8Array;
+  fileCount: number;
+  pageCount: number;
+  size: number;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
+}
+
+async function mergePdfFiles(files: File[]): Promise<MergeResult> {
+  const mergedDoc = await PDFDocument.create();
+  let pageCount = 0;
+
+  for (const file of files) {
+    const bytes = await file.arrayBuffer();
+    const srcDoc = await PDFDocument.load(bytes, { updateMetadata: false });
+    const copiedPages = await mergedDoc.copyPages(
+      srcDoc,
+      srcDoc.getPageIndices(),
+    );
+    copiedPages.forEach((page) => mergedDoc.addPage(page));
+    pageCount += copiedPages.length;
+  }
+
+  const mergedBytes = await mergedDoc.save({ useObjectStreams: true });
+
+  return {
+    bytes: mergedBytes,
+    fileCount: files.length,
+    pageCount,
+    size: mergedBytes.byteLength,
+  };
+}
 
 export default function MergePdf() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showHowToUse, setShowHowToUse] = useState(false);
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<MergeResult | null>(null);
+
+  const [isDraggingOverZone, setIsDraggingOverZone] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const addFiles = (files: File[]) => {
+    const pdfFiles = files.filter(
+      (f) =>
+        f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+    );
+    if (pdfFiles.length === 0) return;
+    setSelectedFiles((prev) => [...prev, ...pdfFiles]);
+    setResult(null);
+    setErrorMessage(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setSelectedFiles((prev) => [...prev, ...newFiles]);
+      addFiles(Array.from(e.target.files));
+      e.target.value = "";
     }
   };
 
+  const handleDropOnZone = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDraggingOverZone(false);
+    if (e.dataTransfer.files) {
+      addFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleDragOverZone = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDraggingOverZone(true);
+  };
+
+  const handleDragLeaveZone = () => setIsDraggingOverZone(false);
+
   const handleRemoveFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setResult(null);
+    setErrorMessage(null);
   };
 
   const handleReset = () => {
     setSelectedFiles([]);
+    setResult(null);
+    setErrorMessage(null);
+    setIsProcessing(false);
+  };
+
+  // Drag-to-reorder the file list
+  const handleItemDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleItemDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (index !== dragOverIndex) setDragOverIndex(index);
+  };
+
+  const handleItemDrop = (index: number) => {
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    setSelectedFiles((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(dragIndex, 1);
+      updated.splice(index, 0, moved);
+      return updated;
+    });
+    setDragIndex(null);
+    setDragOverIndex(null);
+    setResult(null);
+  };
+
+  const handleItemDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleMerge = async () => {
+    if (selectedFiles.length < 2) return;
+    setIsProcessing(true);
+    setErrorMessage(null);
+    setResult(null);
+
+    try {
+      const merged = await mergePdfFiles(selectedFiles);
+      setResult(merged);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while merging these PDFs.",
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!result) return;
+    const blob = new Blob([result.bytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "merged.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -93,7 +249,16 @@ export default function MergePdf() {
               Files ({selectedFiles.length})
             </h2>
 
-            <label className="border-2 border-dashed border-red-200 bg-red-50/30 hover:bg-red-50/60 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+            <label
+              onDrop={handleDropOnZone}
+              onDragOver={handleDragOverZone}
+              onDragLeave={handleDragLeaveZone}
+              className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
+                isDraggingOverZone
+                  ? "border-red-400 bg-red-50/70"
+                  : "border-red-200 bg-red-50/30 hover:bg-red-50/60"
+              }`}
+            >
               <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                 <Upload size={20} />
               </div>
@@ -117,8 +282,17 @@ export default function MergePdf() {
               <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-1">
                 {selectedFiles.map((file, idx) => (
                   <div
-                    key={idx}
-                    className="bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center justify-between group"
+                    key={`${file.name}-${file.lastModified}-${idx}`}
+                    draggable
+                    onDragStart={() => handleItemDragStart(idx)}
+                    onDragOver={(e) => handleItemDragOver(e, idx)}
+                    onDrop={() => handleItemDrop(idx)}
+                    onDragEnd={handleItemDragEnd}
+                    className={`bg-gray-50 border rounded-xl p-2.5 flex items-center justify-between group transition-all ${
+                      dragOverIndex === idx && dragIndex !== idx
+                        ? "border-red-400 bg-red-50/50"
+                        : "border-gray-200"
+                    } ${dragIndex === idx ? "opacity-50" : "opacity-100"}`}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <GripVertical
@@ -154,15 +328,93 @@ export default function MergePdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Merge preview</h2>
-            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-              {selectedFiles.length < 2
-                ? "Empty"
-                : `${selectedFiles.length} files`}
+            <span
+              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                errorMessage
+                  ? "bg-red-100 text-red-600"
+                  : result
+                    ? "bg-emerald-100 text-emerald-700"
+                    : isProcessing
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {errorMessage
+                ? "Error"
+                : result
+                  ? "Done"
+                  : isProcessing
+                    ? "Merging"
+                    : selectedFiles.length < 2
+                      ? "Empty"
+                      : `${selectedFiles.length} files`}
             </span>
           </div>
 
-          {/* Empty / Preview State Box */}
-          {selectedFiles.length < 2 ? (
+          {/* Empty / Preview / Processing / Result state */}
+          {isProcessing ? (
+            <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+              <p className="text-xs font-bold text-gray-800">
+                Merging your PDFs…
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1">
+                Everything runs in your browser — larger files take a little
+                longer.
+              </p>
+            </div>
+          ) : errorMessage ? (
+            <div className="bg-red-50/60 rounded-2xl border border-dashed border-red-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
+                <AlertCircle size={20} />
+              </div>
+              <p className="text-xs font-bold text-red-700">Merge failed</p>
+              <p className="text-[11px] text-red-500 mt-1 max-w-xs">
+                {errorMessage}
+              </p>
+            </div>
+          ) : result ? (
+            <div className="my-auto py-10 flex flex-col items-center gap-5">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-100">
+                <CheckCircle2 size={24} />
+              </div>
+
+              <div className="flex items-center gap-4 sm:gap-8">
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                    Files merged
+                  </p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {result.fileCount}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                    Total pages
+                  </p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {result.pageCount}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                    File size
+                  </p>
+                  <p className="text-sm font-bold text-emerald-600">
+                    {formatBytes(result.size)}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-red-600 transition-all"
+              >
+                <Download size={14} />
+                Download merged PDF
+              </button>
+            </div>
+          ) : selectedFiles.length < 2 ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <FileText size={20} />
@@ -178,7 +430,7 @@ export default function MergePdf() {
             <div className="my-auto py-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {selectedFiles.map((file, index) => (
                 <div
-                  key={index}
+                  key={`${file.name}-${index}`}
                   className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex flex-col items-center text-center relative group"
                 >
                   <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
@@ -202,11 +454,29 @@ export default function MergePdf() {
       {/* Bottom Status & Actions */}
       <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-          <span className="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              errorMessage
+                ? "bg-red-500"
+                : result
+                  ? "bg-emerald-500"
+                  : isProcessing
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-gray-400"
+            }`}
+          />
           <span>
-            {selectedFiles.length >= 2
-              ? `${selectedFiles.length} PDFs ready to merge`
-              : "Add at least two PDFs"}
+            {errorMessage
+              ? "Merge failed — try again"
+              : result
+                ? `Done: ${result.fileCount} files merged into ${result.pageCount} pages (${formatBytes(
+                    result.size,
+                  )})`
+                : isProcessing
+                  ? "Merging…"
+                  : selectedFiles.length >= 2
+                    ? `${selectedFiles.length} PDFs ready to merge`
+                    : "Add at least two PDFs"}
           </span>
         </div>
 
@@ -218,15 +488,20 @@ export default function MergePdf() {
             Reset
           </button>
           <button
-            disabled={selectedFiles.length < 2}
+            onClick={handleMerge}
+            disabled={selectedFiles.length < 2 || isProcessing}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
-              selectedFiles.length >= 2
+              selectedFiles.length >= 2 && !isProcessing
                 ? "bg-red-500 text-white shadow-xs hover:bg-red-600"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            <Combine size={14} />
-            <span>Merge PDFs</span>
+            {isProcessing ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Combine size={14} />
+            )}
+            <span>{isProcessing ? "Merging…" : "Merge PDFs"}</span>
           </button>
         </div>
       </div>
