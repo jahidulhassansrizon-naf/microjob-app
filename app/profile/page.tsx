@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import {
   AlertCircle,
-  Coins,
-  Edit,
-  Mail,
-  ChevronRight,
-  User,
-  Sparkles,
+  CheckCircle2,
   Loader2,
+  Mail,
+  RefreshCw,
 } from "lucide-react";
+import BusinessInfoTab, {
+  type BusinessFormData,
+} from "./components/BusinessInfoTab";
+import ChangePasswordTab, {
+  type PasswordFormData,
+} from "./components/ChangePasswordTab";
+import CreditAlert from "./components/CreditAlert";
+import DevicesLoginTab from "./components/DevicesLoginTab";
+import PersonalInfoTab, {
+  type ProfileFormData,
+} from "./components/PersonalInfoTab";
+import ProfileHeader from "./components/ProfileHeader";
+import ProfileProgress from "./components/ProfileProgress";
+import ProfileTabs, { type Tab } from "./components/ProfileTabs";
 
 interface UserProfile {
   fullName?: string;
@@ -27,76 +38,658 @@ interface UserProfile {
   thana?: string;
   postcode?: string;
   about?: string;
+  credits?: number;
+  profileCompletionPercentage?: number;
+  isEmailVerified?: boolean;
+  businessName?: string;
+  businessType?: string;
+  tradeLicense?: string;
+  businessPhone?: string;
+  businessAddress?: string;
+  website?: string;
+}
+
+interface BusinessInfo {
+  businessName?: string;
+  businessType?: string;
+  tradeLicense?: string;
+  businessPhone?: string;
+  businessAddress?: string;
+  website?: string;
+}
+
+interface DeviceSession {
+  id: string;
+  deviceName?: string;
+  browser?: string;
+  ipAddress?: string;
+  location?: string;
+  lastActive?: string;
+  current?: boolean;
+}
+
+type ToastType = "success" | "error" | "info";
+
+type ToastState = {
+  type: ToastType;
+  message: string;
+} | null;
+
+type ApiResponse = {
+  user?: UserProfile;
+  business?: BusinessInfo;
+  devices?: DeviceSession[];
+  message?: string;
+  error?: string;
+};
+
+const API = {
+  me: "/api/auth/me",
+  updateProfile: "/api/user/update",
+  sendVerification: "/api/auth/send-verification",
+  business: "/api/user/business",
+  changePassword: "/api/auth/change-password",
+  devices: "/api/user/devices",
+};
+
+const emptyProfileForm: ProfileFormData = {
+  fullName: "",
+  phoneNumber: "",
+  country: "",
+  profession: "",
+  gender: "",
+  dob: "",
+  address: "",
+  district: "",
+  thana: "",
+  postcode: "",
+  about: "",
+};
+
+const emptyBusinessForm: BusinessFormData = {
+  businessName: "",
+  businessType: "",
+  tradeLicense: "",
+  businessPhone: "",
+  businessAddress: "",
+  website: "",
+};
+
+const emptyPasswordForm: PasswordFormData = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+function getApiError(data: ApiResponse, fallback: string) {
+  return data?.error || data?.message || fallback;
+}
+
+async function safeJson(response: Response): Promise<ApiResponse> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    return {};
+  }
+
+  try {
+    return (await response.json()) as ApiResponse;
+  } catch {
+    return {};
+  }
 }
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  const [activeTab, setActiveTab] = useState("Personal Information");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [business, setBusiness] = useState<BusinessInfo>({});
+  const [devices, setDevices] = useState<DeviceSession[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("Personal Information");
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState<ToastState>(null);
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [profileForm, setProfileForm] =
+    useState<ProfileFormData>(emptyProfileForm);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [businessForm, setBusinessForm] =
+    useState<BusinessFormData>(emptyBusinessForm);
+  const [savingBusiness, setSavingBusiness] = useState(false);
+
+  const [passwordForm, setPasswordForm] =
+    useState<PasswordFormData>(emptyPasswordForm);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [loadingDevices, setLoadingDevices] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+
+  const showToast = useCallback((type: ToastType, message: string) => {
+    setToast({ type, message });
+  }, []);
 
   useEffect(() => {
-    // 1. Auth Protection Check
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!toast) return;
 
-    if (!token) {
-      router.push("/login"); // লগইন না থাকলে /login পেজে পাঠিয়ে দেবে
-      return;
-    } else {
-      setIsAuthenticated(true);
-    }
+    const timer = window.setTimeout(() => {
+      setToast(null);
+    }, 4000);
 
-    // 2. LocalStorage অথবা Backend API থেকে ডাটা নেওয়া
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const getToken = useCallback(() => {
+    return typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  }, []);
+
+  const syncBusinessData = useCallback(
+    (nextUser: UserProfile, explicitBusiness?: BusinessInfo) => {
+      const extractedBusiness: BusinessInfo = explicitBusiness || {
+        businessName: nextUser?.businessName || "",
+        businessType: nextUser?.businessType || "",
+        tradeLicense: nextUser?.tradeLicense || "",
+        businessPhone: nextUser?.businessPhone || "",
+        businessAddress: nextUser?.businessAddress || "",
+        website: nextUser?.website || "",
+      };
+
+      setBusiness(extractedBusiness);
+      setBusinessForm({
+        ...emptyBusinessForm,
+        ...extractedBusiness,
+      });
+    },
+    [],
+  );
+
+  const persistUser = useCallback(
+    (nextUser: UserProfile, explicitBusiness?: BusinessInfo) => {
+      setUser(nextUser);
+      syncBusinessData(nextUser, explicitBusiness);
+
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error("Failed to parse user from localStorage", err);
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      } catch {
+        // Ignore storage errors.
       }
-    }
+    },
+    [syncBusinessData],
+  );
 
-    // 3. API এর মাধ্যমে লেটেস্ট প্রোফাইল ডাটা ফেচ করা (পোর্ট ৫০০০ সরিয়ে দিয়ে সঠিক নেক্সট জেএস রাউট করা হয়েছে)
-    const fetchUserProfile = async () => {
+  const fetchProfile = useCallback(
+    async (showLoader = true) => {
+      const token = getToken();
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      if (showLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      setError("");
+
       try {
-        const res = await fetch("/api/auth/me", {
+        const response = await fetch(API.me, {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
+          cache: "no-store",
         });
-        const data = await res.json();
-        if (res.ok && data.user) {
-          setUser(data.user);
-          localStorage.setItem("user", JSON.stringify(data.user));
+
+        const data = await safeJson(response);
+
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          router.replace("/login");
+          return;
         }
+
+        if (!response.ok || !data.user) {
+          throw new Error(
+            getApiError(data, "Unable to load your profile right now."),
+          );
+        }
+
+        persistUser(data.user, data.business);
       } catch (err) {
-        console.error("Error fetching user profile:", err);
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Something went wrong while loading your profile.";
+
+        setError(message);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    };
+    },
+    [getToken, persistUser, router],
+  );
 
-    fetchUserProfile();
-  }, [router]);
+  useEffect(() => {
+    const token = getToken();
 
-  // ইউজারের নামের দুইটা বর্ণ সংক্ষেপে বের করার ফাংশন (যেমন: Sami Chisty -> SC)
-  const getInitials = (name?: string) => {
-    if (!name) return "U";
-    const parts = name.trim().split(" ");
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    setIsAuthenticated(true);
+
+    try {
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser) as UserProfile;
+        persistUser(parsedUser);
+      }
+    } catch {
+      localStorage.removeItem("user");
+    }
+
+    void fetchProfile();
+  }, [fetchProfile, getToken, persistUser, router]);
+
+  const loadDevices = useCallback(async () => {
+    const token = getToken();
+
+    if (!token) return;
+
+    setLoadingDevices(true);
+
+    try {
+      const response = await fetch(API.devices, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const data = await safeJson(response);
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(getApiError(data, "Unable to load login devices."));
+      }
+
+      setDevices(Array.isArray(data.devices) ? data.devices : []);
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Unable to load login devices.",
+      );
+    } finally {
+      setLoadingDevices(false);
+    }
+  }, [getToken, router, showToast]);
+
+  useEffect(() => {
+    if (activeTab === "Devices login") {
+      void loadDevices();
+    }
+  }, [activeTab, loadDevices]);
+
+  const openEditModal = useCallback(() => {
+    setProfileForm({
+      fullName: user?.fullName || "",
+      phoneNumber: user?.phoneNumber || "",
+      country: user?.country || "",
+      profession: user?.profession || "",
+      gender: user?.gender || "",
+      dob: user?.dob ? user.dob.slice(0, 10) : "",
+      address: user?.address || "",
+      district: user?.district || "",
+      thana: user?.thana || "",
+      postcode: user?.postcode || "",
+      about: user?.about || "",
+    });
+
+    setIsEditOpen(true);
+  }, [user]);
+
+  const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const token = getToken();
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!profileForm.fullName.trim()) {
+      showToast("error", "Full name is required.");
+      return;
+    }
+
+    setSavingProfile(true);
+
+    try {
+      const response = await fetch(API.updateProfile, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: profileForm.fullName.trim(),
+          phoneNumber: profileForm.phoneNumber.trim(),
+          country: profileForm.country.trim(),
+          district: profileForm.district.trim(),
+          profession: profileForm.profession.trim(),
+          gender: profileForm.gender.trim(),
+          dob: profileForm.dob.trim(),
+          address: profileForm.address.trim(),
+          thana: profileForm.thana.trim(),
+          postcode: profileForm.postcode.trim(),
+          about: profileForm.about.trim(),
+        }),
+      });
+
+      const data = await safeJson(response);
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(getApiError(data, "Unable to update your profile."));
+      }
+
+      const nextUser: UserProfile = {
+        ...(user || {}),
+        ...profileForm,
+        ...(data.user || {}),
+      };
+
+      persistUser(nextUser, business);
+
+      setProfileForm({
+        fullName: nextUser.fullName || "",
+        phoneNumber: nextUser.phoneNumber || "",
+        country: nextUser.country || "",
+        profession: nextUser.profession || "",
+        gender: nextUser.gender || "",
+        dob: nextUser.dob ? nextUser.dob.slice(0, 10) : "",
+        address: nextUser.address || "",
+        district: nextUser.district || "",
+        thana: nextUser.thana || "",
+        postcode: nextUser.postcode || "",
+        about: nextUser.about || "",
+      });
+
+      setIsEditOpen(false);
+
+      showToast("success", data.message || "Profile updated successfully.");
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Unable to update your profile.",
+      );
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
-  // অথেনটিকেশন চেক চলাকালীন লোডার স্ক্রিন
-  if (isAuthenticated === null) {
+  const handleSendVerification = async () => {
+    if (!user?.email) {
+      showToast("error", "No email address is available for verification.");
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    setVerifyingEmail(true);
+
+    try {
+      const response = await fetch(API.sendVerification, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+        }),
+      });
+
+      const data = await safeJson(response);
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          getApiError(data, "Unable to send verification email."),
+        );
+      }
+
+      showToast(
+        "success",
+        data.message || "Verification email sent. Please check your inbox.",
+      );
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error
+          ? err.message
+          : "Unable to send verification email.",
+      );
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  const handleBusinessSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const token = getToken();
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    setSavingBusiness(true);
+
+    try {
+      const response = await fetch(API.business, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(businessForm),
+      });
+
+      const data = await safeJson(response);
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          getApiError(data, "Unable to update business information."),
+        );
+      }
+
+      const updatedBusiness = data.business || businessForm;
+      const updatedUser: UserProfile = {
+        ...(user || {}),
+        ...updatedBusiness,
+        ...(data.user || {}),
+      };
+
+      persistUser(updatedUser, updatedBusiness);
+
+      showToast(
+        "success",
+        data.message || "Business information updated successfully.",
+      );
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error
+          ? err.message
+          : "Unable to update business information.",
+      );
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
+
+  const handlePasswordSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showToast("error", "Please complete all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      showToast("error", "New password must be at least 8 characters long.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast("error", "New password and confirmation do not match.");
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    setSavingPassword(true);
+
+    try {
+      const response = await fetch(API.changePassword, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await safeJson(response);
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(getApiError(data, "Unable to change your password."));
+      }
+
+      setPasswordForm(emptyPasswordForm);
+
+      showToast("success", data.message || "Password changed successfully.");
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Unable to change your password.",
+      );
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const credits = Math.max(0, Number(user?.credits ?? 0));
+
+  const profileCompletionFields = useMemo(
+    () => [
+      user?.fullName,
+      user?.phoneNumber,
+      user?.email,
+      user?.country,
+      user?.district,
+      user?.profession,
+      user?.gender,
+      user?.dob,
+      user?.address,
+      user?.thana,
+      user?.postcode,
+      user?.about,
+    ],
+    [user],
+  );
+
+  const profileCompletion = useMemo(() => {
+    const totalFields = profileCompletionFields.length;
+
+    const filledFields = profileCompletionFields.filter(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    ).length;
+
+    if (totalFields === 0) return 0;
+
+    return Math.min(100, Math.round((filledFields / totalFields) * 100));
+  }, [profileCompletionFields]);
+
+  const isEmailVerified = Boolean(user?.isEmailVerified);
+
+  const isLowCredit = credits <= 5;
+
+  const missingPercentage = useMemo(
+    () => Math.max(0, Math.round(100 - profileCompletion)),
+    [profileCompletion],
+  );
+
+  if (isAuthenticated === null || (loading && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
         <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
           <Loader2 size={16} className="animate-spin text-amber-500" />
-          Checking authentication...
+          Loading profile...
         </div>
       </div>
     );
@@ -104,263 +697,142 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans pb-12">
-      {/* Top Navbar */}
       <DashboardNavbar />
 
       <main className="max-w-[1200px] mx-auto px-4 py-6 space-y-4">
-        {/* Page Title Header */}
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-xs text-gray-400 font-medium">
-            Manage your personal and business information
-          </p>
-        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
 
-        {/* User Overview Card */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0">
-              {getInitials(user?.fullName)}
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900">
-                {user?.fullName || "Guest User"}
-              </h2>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
-                <span>📞 {user?.phoneNumber || "Not provided"}</span>
-                <span>✉️ {user?.email || "Not provided"}</span>
-                <span className="inline-flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                  🇧🇩 {user?.country || "Bangladesh"}
-                </span>
-              </div>
-            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              Manage your personal and business information
+            </p>
           </div>
 
-          {/* Credit Balance Card */}
-          <div className="bg-amber-50/60 border border-amber-200/60 rounded-xl p-3 px-4 flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
-              <Coins size={18} />
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-gray-400">
-                Credit Balance
-              </p>
-              <p className="text-sm font-bold text-amber-600">
-                Credits <span className="text-base">2</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Alert Banner: Low Credit */}
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-3 px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-red-600">
-          <div className="flex items-center gap-2.5 text-xs font-semibold">
-            <div className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">
-              <AlertCircle size={14} />
-            </div>
-            <div>
-              <p className="font-bold text-red-700">
-                Your credit is running low!
-              </p>
-              <p className="text-[11px] text-red-500 font-medium">
-                Currently you have only 2 credits left.
-              </p>
-            </div>
-          </div>
-          <button className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors self-end sm:self-auto">
-            <span>Click here to buy credit</span>
-            <ChevronRight size={14} />
+          <button
+            type="button"
+            onClick={() => void fetchProfile(false)}
+            disabled={refreshing}
+            className="bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60 rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5"
+          >
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
+            Refresh
           </button>
         </div>
 
-        {/* Profile Completion Bonus Box */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xs space-y-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="bg-red-50 text-red-500 text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                <Sparkles size={12} />
-                Profile Info Incomplete
-              </span>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                18 Credit Bonus
-              </span>
+        {error && (
+          <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+
+            <div className="text-xs">
+              <p className="font-bold text-red-700">
+                Could not refresh profile
+              </p>
+
+              <p className="text-red-500 mt-0.5">{error}</p>
             </div>
-            <span className="text-sm font-black text-red-500">16%</span>
           </div>
+        )}
 
-          <p className="text-xs text-gray-400 font-medium">
-            Only 16 fields left — fill in all your personal and shop/business
-            info and 18 bonus credits will be added to your account
-          </p>
+        <ProfileHeader user={user} credits={credits} />
 
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-red-500 h-full w-[16%] rounded-full transition-all duration-300"></div>
-          </div>
-        </div>
+        {isLowCredit && (
+          <CreditAlert
+            credits={credits}
+            onBuyCredit={() => router.push("/dashboard/buy-credit")}
+          />
+        )}
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            "Personal Information",
-            "Shop / Business Information",
-            "Change Password",
-            "Devices login",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === tab
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+        <ProfileProgress
+          profileCompletion={profileCompletion}
+          missingPercentage={missingPercentage}
+        />
+
+        <ProfileTabs activeTab={activeTab} onChange={setActiveTab} />
+
+        {activeTab === "Personal Information" && (
+          <PersonalInfoTab
+            user={user}
+            profileForm={profileForm}
+            setProfileForm={setProfileForm}
+            isEditOpen={isEditOpen}
+            setIsEditOpen={setIsEditOpen}
+            onEdit={openEditModal}
+            onSubmit={handleProfileSave}
+            savingProfile={savingProfile}
+            isEmailVerified={isEmailVerified}
+            verifyingEmail={verifyingEmail}
+            onSendVerification={handleSendVerification}
+          />
+        )}
+
+        {activeTab === "Shop / Business Information" && (
+          <BusinessInfoTab
+            business={business}
+            businessForm={businessForm}
+            setBusinessForm={setBusinessForm}
+            savingBusiness={savingBusiness}
+            onSubmit={handleBusinessSave}
+          />
+        )}
+
+        {activeTab === "Change Password" && (
+          <ChangePasswordTab
+            passwordForm={passwordForm}
+            setPasswordForm={setPasswordForm}
+            savingPassword={savingPassword}
+            showCurrentPassword={showCurrentPassword}
+            showNewPassword={showNewPassword}
+            showConfirmPassword={showConfirmPassword}
+            setShowCurrentPassword={setShowCurrentPassword}
+            setShowNewPassword={setShowNewPassword}
+            setShowConfirmPassword={setShowConfirmPassword}
+            onSubmit={handlePasswordSave}
+          />
+        )}
+
+        {activeTab === "Devices login" && (
+          <DevicesLoginTab
+            devices={devices}
+            loadingDevices={loadingDevices}
+            onRefresh={() => void loadDevices()}
+          />
+        )}
+      </main>
+
+      {toast && (
+        <div className="fixed right-4 bottom-4 z-[60] max-w-sm">
+          <div
+            className={`rounded-xl border px-4 py-3 shadow-lg flex items-start gap-2.5 bg-white ${
+              toast.type === "success"
+                ? "border-emerald-100"
+                : toast.type === "error"
+                  ? "border-red-100"
+                  : "border-gray-200"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 size={17} className="text-emerald-500 shrink-0" />
+            ) : toast.type === "error" ? (
+              <AlertCircle size={17} className="text-red-500 shrink-0" />
+            ) : (
+              <Mail size={17} className="text-blue-500 shrink-0" />
+            )}
+
+            <p
+              className={`text-xs font-semibold ${
+                toast.type === "success"
+                  ? "text-emerald-700"
+                  : toast.type === "error"
+                    ? "text-red-700"
+                    : "text-gray-700"
               }`}
             >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Personal Information Form Card */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
-          {/* Section Sub-header */}
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
-              <User size={16} className="text-amber-500" />
-              <span>{user?.fullName || "Guest User"}</span>
-            </div>
-            <button className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-lg flex items-center gap-1 transition-colors">
-              <Edit size={12} />
-              <span>Edit</span>
-            </button>
-          </div>
-
-          {/* Form Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {/* Full Name */}
-            <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400">Full Name</p>
-              <p className="font-semibold text-gray-800 mt-0.5">
-                {user?.fullName || "Not provided"}
-              </p>
-            </div>
-
-            {/* Phone Number */}
-            <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400">
-                Phone Number
-              </p>
-              <p className="font-semibold text-gray-800 mt-0.5">
-                {user?.phoneNumber || "Not provided"}
-              </p>
-            </div>
-
-            {/* Country */}
-            <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400">Country</p>
-              <p className="font-semibold text-gray-800 mt-0.5 flex items-center gap-1.5">
-                🇧🇩 {user?.country || "Bangladesh"}
-              </p>
-            </div>
-
-            {/* Email + Verify Banner */}
-            <div className="bg-red-50/50 border border-red-100 p-2.5 rounded-xl space-y-1.5">
-              <p className="text-[10px] font-bold text-gray-400">Email</p>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-gray-800">
-                  {user?.email || "Not provided"}
-                </span>
-                <span className="bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                  Not verified
-                </span>
-              </div>
-              <div className="flex items-center justify-between pt-1 border-t border-red-100/60">
-                <span className="text-[10px] text-red-500 font-medium">
-                  Verify your email to earn the bonus
-                </span>
-                <button className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                  <Mail size={10} />
-                  <span>Verify</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Profession */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">
-                Profession / Designation
-              </p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.profession || "Not provided"}
-              </p>
-            </div>
-
-            {/* Gender */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">Gender</p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.gender || "Not provided"}
-              </p>
-            </div>
-
-            {/* Date of Birth */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">
-                Date of Birth
-              </p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.dob || "Not provided"}
-              </p>
-            </div>
-
-            {/* Address */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">Address</p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.address || "Not provided"}
-              </p>
-            </div>
-
-            {/* District */}
-            <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400">District</p>
-              <p className="font-semibold text-gray-800 mt-0.5">
-                {user?.district || "Not provided"}
-              </p>
-            </div>
-
-            {/* Thana */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">
-                Thana / Upazila
-              </p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.thana || "Not provided"}
-              </p>
-            </div>
-
-            {/* Postcode */}
-            <div className="bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">
-                Postcode
-              </p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.postcode || "Not provided"}
-              </p>
-            </div>
-
-            {/* About Yourself (Full Width) */}
-            <div className="md:col-span-2 bg-amber-50/40 border border-amber-200/50 p-2.5 rounded-xl">
-              <p className="text-[10px] font-bold text-amber-700/70">
-                About yourself
-              </p>
-              <p className="text-amber-800/60 font-medium italic mt-0.5">
-                {user?.about || "Not provided"}
-              </p>
-            </div>
+              {toast.message}
+            </p>
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
