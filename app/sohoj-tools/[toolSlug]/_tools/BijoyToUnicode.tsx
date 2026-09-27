@@ -3,10 +3,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// The package ships an index.d.ts that is not recognized by TypeScript
+// as a valid module, so suppress only that declaration-file error.
+// Runtime import remains unchanged.
+// @ts-ignore
 import {
   ConvertToUnicode,
   ConvertToASCII,
 } from "bijoy-to-unicode-bengali-conversion";
+
 import {
   ArrowLeft,
   Star,
@@ -48,6 +54,7 @@ export default function BijoyToUnicode() {
   const [direction, setDirection] = useState<
     "bijoyToUnicode" | "unicodeToBijoy"
   >("bijoyToUnicode");
+
   const [inputText, setInputText] = useState("");
   const [convertedText, setConvertedText] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
@@ -64,6 +71,7 @@ export default function BijoyToUnicode() {
         if (dir === "bijoyToUnicode") {
           return ConvertToUnicode("bijoy", text);
         }
+
         return ConvertToASCII("bijoy", text);
       } catch (err) {
         console.error("Bijoy/Unicode conversion failed:", err);
@@ -95,8 +103,8 @@ export default function BijoyToUnicode() {
     setInputText(text);
   };
 
-  // Explicit "Convert" button — re-runs conversion immediately (useful if the
-  // user pastes text without triggering onChange, e.g. via drag-and-drop)
+  // Explicit "Convert" button — re-runs conversion immediately
+  // useful if the user pastes text without triggering onChange
   const handleConvertClick = () => {
     setConvertedText(convert(inputText, direction));
   };
@@ -111,16 +119,20 @@ export default function BijoyToUnicode() {
     newDirection: "bijoyToUnicode" | "unicodeToBijoy",
   ) => {
     if (newDirection === direction) return;
+
     setDirection(newDirection);
-    // Recompute immediately with the new direction rather than waiting on
-    // the effect, so the UI feels instantaneous.
+
+    // Recompute immediately with the new direction rather than waiting
+    // on the effect, so the UI feels instantaneous.
     setConvertedText(convert(inputText, newDirection));
   };
 
   const handleCopy = () => {
     if (!convertedText) return;
+
     navigator.clipboard.writeText(convertedText);
     setCopied(true);
+
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -139,14 +151,19 @@ export default function BijoyToUnicode() {
               >
                 <ArrowLeft size={16} />
               </button>
+
               <Link href="/sohoj-tools" className="hover:text-gray-700">
                 Sohoj Tools
               </Link>
+
               <span>/</span>
+
               <span className="hover:text-gray-700 cursor-pointer">
                 Text Tools
               </span>
+
               <span>/</span>
+
               <span className="text-gray-900 font-semibold">
                 Bijoy ↔ Unicode
               </span>
@@ -157,13 +174,16 @@ export default function BijoyToUnicode() {
               <div className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Languages size={18} />
               </div>
+
               <h1 className="text-xl font-bold text-gray-900 tracking-tight">
                 Bijoy ↔ Unicode
               </h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-1">
               Convert Bangla text between Bijoy ANSI and Unicode directly in
               your browser.
@@ -181,6 +201,7 @@ export default function BijoyToUnicode() {
                 className={isFavorite ? "fill-amber-400 text-amber-400" : ""}
               />
             </button>
+
             <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs">
               <Share size={16} />
             </button>
@@ -258,6 +279,7 @@ export default function BijoyToUnicode() {
                 ) : (
                   <span />
                 )}
+
                 <span className="text-[10px] font-medium text-gray-400">
                   {inputText.length} characters
                 </span>
@@ -273,6 +295,7 @@ export default function BijoyToUnicode() {
                   <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                     Converted text
                   </span>
+
                   {convertedText ? (
                     <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                       Ready · {convertedText.length} characters
@@ -291,9 +314,11 @@ export default function BijoyToUnicode() {
                       <div className="w-12 h-12 bg-sky-50 text-sky-500 rounded-xl flex items-center justify-center mb-3">
                         <Languages size={24} />
                       </div>
+
                       <h3 className="text-xs font-bold text-gray-900 mb-1">
                         Paste text to get started
                       </h3>
+
                       <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed">
                         Choose a direction, paste your text, then convert it in
                         the browser.
@@ -315,6 +340,7 @@ export default function BijoyToUnicode() {
                     className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-2xs"
                   >
                     {copied ? <Check size={14} /> : <Copy size={14} />}
+
                     <span>{copied ? "Copied!" : "Copy Converted Text"}</span>
                   </button>
                 </div>
@@ -334,7 +360,8 @@ export default function BijoyToUnicode() {
                     ? "bg-emerald-400"
                     : "bg-amber-400"
               }`}
-            ></span>
+            />
+
             <span>
               {conversionError
                 ? conversionError
@@ -371,6 +398,7 @@ export default function BijoyToUnicode() {
         {/* PRIVACY NOTICE */}
         <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+
           <span>
             Your files are processed in the browser — they are not uploaded to
             any server.
@@ -384,9 +412,10 @@ export default function BijoyToUnicode() {
             className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
               <span>How to use</span>
             </div>
+
             {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
 
@@ -396,11 +425,14 @@ export default function BijoyToUnicode() {
                 1. Select the conversion direction (Bijoy to Unicode or Unicode
                 to Bijoy).
               </p>
+
               <p>2. Paste your input text into the text area on the left.</p>
+
               <p>
                 3. The converted output will automatically generate on the right
                 box.
               </p>
+
               <p>
                 4. Click 'Copy Converted Text' to copy your result instantly.
               </p>
@@ -413,9 +445,11 @@ export default function BijoyToUnicode() {
           <h2 className="text-sm font-bold text-gray-900 tracking-tight">
             Tools in the same category
           </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
               const ToolIcon = tool.icon;
+
               return (
                 <Link
                   key={idx}
@@ -426,9 +460,11 @@ export default function BijoyToUnicode() {
                     <div className="w-9 h-9 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-sky-100 transition-colors">
                       <ToolIcon size={18} />
                     </div>
+
                     <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-sky-600 transition-colors">
                       {tool.title}
                     </h3>
+
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
                       {tool.description}
                     </p>
