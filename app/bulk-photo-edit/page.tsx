@@ -47,7 +47,6 @@ export default function BulkPhotoEditPage() {
     "Studio Image": [],
   });
 
-  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
   useEffect(() => {
     try {
       const cookies = document.cookie.split("; ");
@@ -73,7 +72,6 @@ export default function BulkPhotoEditPage() {
     }
   }, []);
 
-  // মূল স্টাইল প্রিসেটগুলো
   const stylePresets = [
     {
       id: "face-enhance",
@@ -119,7 +117,6 @@ export default function BulkPhotoEditPage() {
     },
   ];
 
-  // প্রিসেট অনুযায়ী সাব-টুলসের তালিকা
   const subToolsMap: {
     [key: string]: { name: string; icon: React.ReactNode }[];
   } = {

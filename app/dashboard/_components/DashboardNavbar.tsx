@@ -50,7 +50,6 @@ export default function DashboardNavbar() {
 
   // Dropdown States
   const [aiTemplateOpen, setAiTemplateOpen] = useState<boolean>(false);
-  const [questionPaperOpen, setQuestionPaperOpen] = useState<boolean>(false);
   const [printMediaOpen, setPrintMediaOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -212,7 +211,11 @@ export default function DashboardNavbar() {
           </Link>
 
           {/* Bulk Photo Edit */}
-          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
+          <div className="relative flex items-center whitespace-nowrap shrink-0">
+            <span className="absolute -top-2.5 -right-1 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
+              Upcoming
+            </span>
+
             <Link
               href="/bulk-photo-edit"
               className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors"
@@ -220,9 +223,6 @@ export default function DashboardNavbar() {
               <Copy size={14} className="text-emerald-500 shrink-0" />
               <span>Bulk Photo Edit</span>
             </Link>
-            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
-              New
-            </span>
           </div>
 
           {/* AI Template Dropdown */}
@@ -231,7 +231,6 @@ export default function DashboardNavbar() {
             onMouseEnter={() => setAiTemplateOpen(true)}
             onMouseLeave={() => setAiTemplateOpen(false)}
           >
-            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
             <span className="absolute -top-2.5 -right-1.5 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
               Upcoming
             </span>
@@ -265,61 +264,24 @@ export default function DashboardNavbar() {
             )}
           </div>
 
-          {/* Question Papers Dropdown */}
-          <div
-            className="relative py-1 whitespace-nowrap shrink-0"
-            onMouseEnter={() => setQuestionPaperOpen(true)}
-            onMouseLeave={() => setQuestionPaperOpen(false)}
+          {/* Question Papers Link (Direct route without dropdown) */}
+          <Link
+            href="/questions-create/create"
+            className={`flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 ${
+              pathname?.startsWith("/questions-create")
+                ? "text-[#FF5D00]"
+                : "hover:text-[#FF5D00]"
+            }`}
           >
-            <div
-              className={`relative flex items-center gap-0.5 cursor-pointer ${
-                pathname?.startsWith("/questions-create")
-                  ? "text-[#FF5D00]"
-                  : "hover:text-[#FF5D00]"
-              }`}
-            >
-              <FileText size={14} className="text-red-500 shrink-0" />
-              <span>Question Papers</span>
-              <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
-                New
-              </span>
-              <ChevronDown
-                size={13}
-                className={`text-gray-400 transition-transform duration-200 ${
-                  questionPaperOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-
-            {questionPaperOpen && (
-              <div className="absolute top-full left-0 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-[100] text-xs font-medium">
-                <Link
-                  href="/questions-create/create"
-                  className={`block px-4 py-2.5 transition-colors font-semibold ${
-                    pathname === "/questions-create/create"
-                      ? "bg-orange-50 text-[#FF5D00]"
-                      : "text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00]"
-                  }`}
-                >
-                  Create Question
-                </Link>
-                <Link
-                  href="/questions-create/manual"
-                  className={`block px-4 py-2.5 transition-colors font-semibold ${
-                    pathname === "/questions-create/manual"
-                      ? "bg-orange-50 text-[#FF5D00]"
-                      : "text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00]"
-                  }`}
-                >
-                  Manual Question
-                </Link>
-              </div>
-            )}
-          </div>
+            <FileText size={14} className="text-red-500 shrink-0" />
+            <span>Question Papers</span>
+            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
+              New
+            </span>
+          </Link>
 
           {/* Jobs Link */}
           <div className="relative flex items-center whitespace-nowrap shrink-0">
-            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
             <span className="absolute -top-2.5 -right-2 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
               Upcoming
             </span>
@@ -341,7 +303,6 @@ export default function DashboardNavbar() {
             onMouseEnter={() => setPrintMediaOpen(true)}
             onMouseLeave={() => setPrintMediaOpen(false)}
           >
-            {/* UPCOMING OVERLAY BADGE - সরাতে চাইলে এই span টি ডিলিট করুন */}
             <span className="absolute -top-2.5 -right-1 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
               Upcoming
             </span>
