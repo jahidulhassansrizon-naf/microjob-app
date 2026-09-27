@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toBangla } from "@subhesadek/avro-phonetic";
 import {
   ArrowLeft,
   Star,
@@ -18,6 +19,170 @@ import {
   Languages,
   ScanText,
 } from "lucide-react";
+
+/**
+ * ---- Custom Bangla -> Banglish reverse transliteration ----
+ *
+ * Avro Phonetic (and Bangla script generally) is many-to-one: several
+ * different Banglish spellings can produce the same Bangla glyph (e.g. both
+ * "sh" and "S" give শ). That means there is no single "correct" inverse —
+ * this is a best-effort phonetic rendering of the Bangla text, not a
+ * guaranteed round-trip of whatever the user originally typed.
+ */
+
+// Bangla consonants -> base phonetic spelling
+const CONSONANT_MAP: Record<string, string> = {
+  ক: "k",
+  খ: "kh",
+  গ: "g",
+  ঘ: "gh",
+  ঙ: "ng",
+  চ: "ch",
+  ছ: "chh",
+  জ: "j",
+  ঝ: "jh",
+  ঞ: "NG",
+  ট: "T",
+  ঠ: "Th",
+  ড: "D",
+  ঢ: "Dh",
+  ণ: "N",
+  ত: "t",
+  থ: "th",
+  দ: "d",
+  ধ: "dh",
+  ন: "n",
+  প: "p",
+  ফ: "ph",
+  ব: "b",
+  ভ: "bh",
+  ম: "m",
+  য: "z",
+  র: "r",
+  ল: "l",
+  শ: "sh",
+  ষ: "Sh",
+  স: "s",
+  হ: "h",
+  ড়: "rr",
+  ঢ়: "rh",
+  য়: "y",
+};
+
+// Independent (standalone) vowels
+const INDEPENDENT_VOWEL_MAP: Record<string, string> = {
+  অ: "o",
+  আ: "a",
+  ই: "i",
+  ঈ: "ee",
+  উ: "u",
+  ঊ: "oo",
+  ঋ: "rri",
+  এ: "e",
+  ঐ: "oi",
+  ও: "o",
+  ঔ: "ou",
+};
+
+// Dependent vowel signs (kar) that attach to a preceding consonant
+const VOWEL_SIGN_MAP: Record<string, string> = {
+  "া": "a",
+  "ি": "i",
+  "ী": "ee",
+  "ু": "u",
+  "ূ": "oo",
+  "ৃ": "ri",
+  "ে": "e",
+  "ৈ": "oi",
+  "ো": "o",
+  "ৌ": "ou",
+};
+
+// Nasalization / aspiration marks
+const OTHER_MARK_MAP: Record<string, string> = {
+  "ং": "ng",
+  "ঃ": ":",
+  "ঁ": "^",
+};
+
+// Bangla digits -> Arabic digits
+const BANGLA_DIGIT_MAP: Record<string, string> = {
+  "০": "0",
+  "১": "1",
+  "২": "2",
+  "৩": "3",
+  "৪": "4",
+  "৫": "5",
+  "৬": "6",
+  "৭": "7",
+  "৮": "8",
+  "৯": "9",
+};
+
+const HASANTA = "্";
+const BANGLA_CHAR_REGEX = /[\u0980-\u09FF]/;
+
+function banglaToBanglish(text: string): string {
+  if (!text) return "";
+
+  const chars = Array.from(text.normalize("NFC"));
+  let output = "";
+
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const next = chars[i + 1];
+
+    // The hasanta joins two consonants into a conjunct; the consonant
+    // letters already carry the sound, so it needs no output of its own.
+    if (ch === HASANTA) continue;
+
+    if (ch === "৷" || ch === "।") {
+      output += ".";
+      continue;
+    }
+
+    if (ch in CONSONANT_MAP) {
+      output += CONSONANT_MAP[ch];
+
+      const nextIsVowelSign = next !== undefined && next in VOWEL_SIGN_MAP;
+      const nextIsHasanta = next === HASANTA;
+      const nextIsBangla = next !== undefined && BANGLA_CHAR_REGEX.test(next);
+
+      // A bare consonant carries an implicit "o" sound unless a vowel sign
+      // or hasanta follows, or it's the last letter of the word — where the
+      // inherent vowel is conventionally dropped (মন -> "mon", not "mono").
+      if (!nextIsVowelSign && !nextIsHasanta && nextIsBangla) {
+        output += "o";
+      }
+      continue;
+    }
+
+    if (ch in VOWEL_SIGN_MAP) {
+      output += VOWEL_SIGN_MAP[ch];
+      continue;
+    }
+
+    if (ch in INDEPENDENT_VOWEL_MAP) {
+      output += INDEPENDENT_VOWEL_MAP[ch];
+      continue;
+    }
+
+    if (ch in OTHER_MARK_MAP) {
+      output += OTHER_MARK_MAP[ch];
+      continue;
+    }
+
+    if (ch in BANGLA_DIGIT_MAP) {
+      output += BANGLA_DIGIT_MAP[ch];
+      continue;
+    }
+
+    // Anything else (spaces, Latin text, punctuation) passes through as-is.
+    output += ch;
+  }
+
+  return output;
+}
 
 // Quick reference mapping data for Banglish typing helper
 const quickReferences = [
@@ -118,21 +283,67 @@ export default function BanglishTyping() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showHowToUse, setShowHowToUse] = useState(false);
+  const [conversionError, setConversionError] = useState("");
 
-  // Typing conversion placeholder logic
-  const handleConversion = (text: string) => {
-    setInputText(text);
-    if (!text.trim()) {
+  // Core conversion logic for the active mode
+  const convert = useCallback(
+    (text: string, currentMode: "banglishToBangla" | "banglaToBanglish") => {
+      if (!text.trim()) return "";
+
+      try {
+        if (currentMode === "banglishToBangla") {
+          return toBangla(text);
+        }
+        return banglaToBanglish(text);
+      } catch (err) {
+        console.error("Banglish/Bangla conversion failed:", err);
+        return "";
+      }
+    },
+    [],
+  );
+
+  // Live conversion — re-runs whenever the input text or mode changes
+  useEffect(() => {
+    if (!inputText.trim()) {
       setConvertedText("");
+      setConversionError("");
       return;
     }
-    // Live conversion simulation
-    setConvertedText(text);
+
+    try {
+      setConvertedText(convert(inputText, mode));
+      setConversionError("");
+    } catch {
+      setConvertedText("");
+      setConversionError("Couldn't convert this text. Please check the input.");
+    }
+  }, [inputText, mode, convert]);
+
+  // Input change handler (typing / pasting)
+  const handleConversion = (text: string) => {
+    setInputText(text);
+  };
+
+  // Explicit "Convert text" button — re-runs conversion immediately
+  const handleConvertClick = () => {
+    setConvertedText(convert(inputText, mode));
   };
 
   const handleReset = () => {
     setInputText("");
     setConvertedText("");
+    setConversionError("");
+  };
+
+  const handleModeChange = (
+    newMode: "banglishToBangla" | "banglaToBanglish",
+  ) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    // Recompute immediately with the new mode rather than waiting on the
+    // effect, so switching direction feels instantaneous.
+    setConvertedText(convert(inputText, newMode));
   };
 
   const handleCopy = () => {
@@ -219,10 +430,7 @@ export default function BanglishTyping() {
 
                 <div className="space-y-2">
                   <button
-                    onClick={() => {
-                      setMode("banglishToBangla");
-                      handleConversion(inputText);
-                    }}
+                    onClick={() => handleModeChange("banglishToBangla")}
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       mode === "banglishToBangla"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
@@ -234,10 +442,7 @@ export default function BanglishTyping() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setMode("banglaToBanglish");
-                      handleConversion(inputText);
-                    }}
+                    onClick={() => handleModeChange("banglaToBanglish")}
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       mode === "banglaToBanglish"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
@@ -255,19 +460,32 @@ export default function BanglishTyping() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-gray-900 tracking-wide uppercase">
-                  Banglish — type here
+                  {mode === "banglishToBangla"
+                    ? "Banglish — type here"
+                    : "Bangla — paste here"}
                 </span>
               </div>
 
               <textarea
                 rows={9}
-                placeholder="ekhane likhun..."
+                placeholder={
+                  mode === "banglishToBangla"
+                    ? "ekhane likhun..."
+                    : "এখানে বাংলা লিখুন বা পেস্ট করুন..."
+                }
                 value={inputText}
                 onChange={(e) => handleConversion(e.target.value)}
                 className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"
               />
 
-              <div className="text-right">
+              <div className="flex items-center justify-between">
+                {conversionError ? (
+                  <span className="text-[10px] font-semibold text-red-500">
+                    {conversionError}
+                  </span>
+                ) : (
+                  <span />
+                )}
                 <span className="text-[10px] font-medium text-gray-400">
                   {inputText.length} chars •{" "}
                   {inputText.trim() ? inputText.trim().split(/\s+/).length : 0}{" "}
@@ -287,7 +505,7 @@ export default function BanglishTyping() {
                   </span>
                   {convertedText ? (
                     <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                      Ready
+                      Ready · {convertedText.length} characters
                     </span>
                   ) : (
                     <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
@@ -361,11 +579,23 @@ export default function BanglishTyping() {
         {/* BOTTOM ACTION BAR */}
         <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                conversionError
+                  ? "bg-red-400"
+                  : convertedText
+                    ? "bg-emerald-400"
+                    : "bg-amber-400"
+              }`}
+            ></span>
             <span>
-              {inputText
-                ? "Text ready to convert"
-                : "Start typing in the box above"}
+              {conversionError
+                ? conversionError
+                : convertedText
+                  ? "Converted"
+                  : inputText
+                    ? "Text ready to convert"
+                    : "Start typing in the box above"}
             </span>
           </div>
 
@@ -379,8 +609,9 @@ export default function BanglishTyping() {
             </button>
 
             <button
-              onClick={() => handleConversion(inputText)}
-              className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              onClick={handleConvertClick}
+              disabled={!inputText.trim()}
+              className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
             >
               <span>Convert text</span>
             </button>

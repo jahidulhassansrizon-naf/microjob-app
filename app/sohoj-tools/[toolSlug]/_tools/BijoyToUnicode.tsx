@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ConvertToUnicode,
+  ConvertToASCII,
+} from "bijoy-to-unicode-bengali-conversion";
 import {
   ArrowLeft,
   Star,
@@ -49,23 +53,68 @@ export default function BijoyToUnicode() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showHowToUse, setShowHowToUse] = useState(false);
+  const [conversionError, setConversionError] = useState("");
 
-  // Conversion Handler
-  const handleConversion = (text: string) => {
-    setInputText(text);
+  // Core conversion logic — runs the right converter for the active direction
+  const convert = useCallback(
+    (text: string, dir: "bijoyToUnicode" | "unicodeToBijoy") => {
+      if (!text.trim()) return "";
 
-    if (!text.trim()) {
+      try {
+        if (dir === "bijoyToUnicode") {
+          return ConvertToUnicode("bijoy", text);
+        }
+        return ConvertToASCII("bijoy", text);
+      } catch (err) {
+        console.error("Bijoy/Unicode conversion failed:", err);
+        return "";
+      }
+    },
+    [],
+  );
+
+  // Live conversion — re-runs whenever the input text or direction changes
+  useEffect(() => {
+    if (!inputText.trim()) {
       setConvertedText("");
+      setConversionError("");
       return;
     }
 
-    // Processing input text
-    setConvertedText(text);
+    try {
+      setConvertedText(convert(inputText, direction));
+      setConversionError("");
+    } catch {
+      setConvertedText("");
+      setConversionError("Couldn't convert this text. Please check the input.");
+    }
+  }, [inputText, direction, convert]);
+
+  // Input change handler (typing / pasting)
+  const handleConversion = (text: string) => {
+    setInputText(text);
+  };
+
+  // Explicit "Convert" button — re-runs conversion immediately (useful if the
+  // user pastes text without triggering onChange, e.g. via drag-and-drop)
+  const handleConvertClick = () => {
+    setConvertedText(convert(inputText, direction));
   };
 
   const handleReset = () => {
     setInputText("");
     setConvertedText("");
+    setConversionError("");
+  };
+
+  const handleDirectionChange = (
+    newDirection: "bijoyToUnicode" | "unicodeToBijoy",
+  ) => {
+    if (newDirection === direction) return;
+    setDirection(newDirection);
+    // Recompute immediately with the new direction rather than waiting on
+    // the effect, so the UI feels instantaneous.
+    setConvertedText(convert(inputText, newDirection));
   };
 
   const handleCopy = () => {
@@ -155,10 +204,7 @@ export default function BijoyToUnicode() {
 
                 <div className="space-y-2">
                   <button
-                    onClick={() => {
-                      setDirection("bijoyToUnicode");
-                      handleConversion(inputText);
-                    }}
+                    onClick={() => handleDirectionChange("bijoyToUnicode")}
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       direction === "bijoyToUnicode"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
@@ -170,10 +216,7 @@ export default function BijoyToUnicode() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setDirection("unicodeToBijoy");
-                      handleConversion(inputText);
-                    }}
+                    onClick={() => handleDirectionChange("unicodeToBijoy")}
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       direction === "unicodeToBijoy"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
@@ -207,7 +250,14 @@ export default function BijoyToUnicode() {
                 className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"
               />
 
-              <div className="text-right">
+              <div className="flex items-center justify-between">
+                {conversionError ? (
+                  <span className="text-[10px] font-semibold text-red-500">
+                    {conversionError}
+                  </span>
+                ) : (
+                  <span />
+                )}
                 <span className="text-[10px] font-medium text-gray-400">
                   {inputText.length} characters
                 </span>
@@ -225,7 +275,7 @@ export default function BijoyToUnicode() {
                   </span>
                   {convertedText ? (
                     <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                      Ready
+                      Ready · {convertedText.length} characters
                     </span>
                   ) : (
                     <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
@@ -276,11 +326,23 @@ export default function BijoyToUnicode() {
         {/* BOTTOM ACTION BAR */}
         <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                conversionError
+                  ? "bg-red-400"
+                  : convertedText
+                    ? "bg-emerald-400"
+                    : "bg-amber-400"
+              }`}
+            ></span>
             <span>
-              {inputText
-                ? "Text ready to convert"
-                : "Add an input to get started"}
+              {conversionError
+                ? conversionError
+                : convertedText
+                  ? "Converted"
+                  : inputText
+                    ? "Text ready to convert"
+                    : "Add an input to get started"}
             </span>
           </div>
 
@@ -294,8 +356,9 @@ export default function BijoyToUnicode() {
             </button>
 
             <button
-              onClick={() => handleConversion(inputText)}
-              className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              onClick={handleConvertClick}
+              disabled={!inputText.trim()}
+              className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
             >
               <span>
                 Convert to{" "}
