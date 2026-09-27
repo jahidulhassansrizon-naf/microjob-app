@@ -4,15 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// The package ships an index.d.ts that is not recognized by TypeScript
-// as a valid module, so suppress only that declaration-file error.
-// Runtime import remains unchanged.
-// @ts-ignore
-import {
-  ConvertToUnicode,
-  ConvertToASCII,
-} from "bijoy-to-unicode-bengali-conversion";
-
 import {
   ArrowLeft,
   Star,
@@ -28,6 +19,26 @@ import {
   Keyboard,
   ScanText,
 } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Bijoy ↔ Unicode converter
+// ---------------------------------------------------------------------------
+// The package's index.d.ts is not recognized by TypeScript as a valid module.
+// Using require() here avoids the broken declaration-file import while keeping
+// the same package and the same runtime conversion functions.
+// ---------------------------------------------------------------------------
+
+type BijoyConverterModule = {
+  ConvertToUnicode: (type: string, text: string) => string;
+  ConvertToASCII: (type: string, text: string) => string;
+};
+
+declare const require: (moduleName: string) => BijoyConverterModule;
+
+const {
+  ConvertToUnicode,
+  ConvertToASCII,
+}: BijoyConverterModule = require("bijoy-to-unicode-bengali-conversion");
 
 // Tools in same category data
 const relatedTools = [
@@ -122,8 +133,8 @@ export default function BijoyToUnicode() {
 
     setDirection(newDirection);
 
-    // Recompute immediately with the new direction rather than waiting
-    // on the effect, so the UI feels instantaneous.
+    // Recompute immediately with the new direction rather than waiting on
+    // the effect, so the UI feels instantaneous.
     setConvertedText(convert(inputText, newDirection));
   };
 
