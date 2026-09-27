@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+
 import {
   FileImage,
   Star,
@@ -32,6 +33,7 @@ import {
 // DOMMatrix/Image on load), so we lazy-load it on first use instead.
 
 type ImageFormat = "JPG" | "PNG" | "WebP" | "AVIF";
+
 type Resolution = "standard" | "high" | "ultra";
 
 const DPI_BY_RESOLUTION: Record<Resolution, number> = {
@@ -59,16 +61,19 @@ let pdfjsLibPromise: Promise<any> | null = null;
 async function getPdfjs(): Promise<any> {
   if (!pdfjsLibPromise) {
     pdfjsLibPromise = import("pdfjs-dist").then((lib) => {
-      // Worker file name matches pdfjs-dist v4/v5 (ESM, ".mjs"). If your
-      // installed version is v3.x, this file is named "pdf.worker.min.js"
-      // instead — change the extension below to match.
+      // Worker file name matches pdfjs-dist v4/v5 (ESM, ".mjs").
+      // If your installed version is v3.x, this file is named
+      // "pdf.worker.min.js" instead — change the extension below
+      // to match.
       lib.GlobalWorkerOptions.workerSrc = new URL(
         "pdfjs-dist/build/pdf.worker.min.mjs",
         import.meta.url,
       ).toString();
+
       return lib;
     });
   }
+
   return pdfjsLibPromise;
 }
 
@@ -79,6 +84,28 @@ interface RenderedPage {
   thumbnailUrl: string;
 }
 
+// ---------------------------------------------------------------------------
+// Blob compatibility helper
+// ---------------------------------------------------------------------------
+//
+// Newer TypeScript/lib.dom typings can infer Uint8Array as
+// Uint8Array<ArrayBufferLike>. Blob expects a BlobPart whose underlying
+// ArrayBuffer is a concrete ArrayBuffer.
+//
+// This creates a real ArrayBuffer and copies the existing bytes into it.
+// It does not alter the actual image/ZIP data.
+// ---------------------------------------------------------------------------
+
+function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+
+  const view = new Uint8Array(buffer);
+
+  view.set(bytes);
+
+  return buffer;
+}
+
 async function renderPdfToImages(
   file: File,
   format: ImageFormat,
@@ -86,28 +113,47 @@ async function renderPdfToImages(
   onProgress: (done: number, total: number) => void,
 ): Promise<RenderedPage[]> {
   const pdfjsLib = await getPdfjs();
+
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+  }).promise;
 
   // pdf.js viewports are in PDF points, where 1 unit = 1/72 inch — so a
   // "96 DPI" render is scale = 96 / 72, and so on.
   const scale = dpi / 72;
+
   const mimeType = MIME_BY_FORMAT[format];
+
   const quality = format === "PNG" ? undefined : 0.9;
 
   const results: RenderedPage[] = [];
 
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
-    const viewport = page.getViewport({ scale });
+
+    const viewport = page.getViewport({
+      scale,
+    });
 
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.ceil(viewport.width));
-    canvas.height = Math.max(1, Math.ceil(viewport.height));
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Couldn't get a 2D canvas context.");
 
-    await page.render({ canvasContext: ctx, viewport }).promise;
+    canvas.width = Math.max(1, Math.ceil(viewport.width));
+
+    canvas.height = Math.max(1, Math.ceil(viewport.height));
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("Couldn't get a 2D canvas context.");
+    }
+
+    await page.render({
+      canvas,
+      canvasContext: ctx,
+      viewport,
+    }).promise;
 
     let blob: Blob | null = await new Promise((resolve) =>
       canvas.toBlob((b) => resolve(b), mimeType, quality),
@@ -116,12 +162,15 @@ async function renderPdfToImages(
     // Not every browser can encode WebP/AVIF via canvas — fall back to PNG
     // for that page rather than failing the whole conversion.
     let actualFormat: ImageFormat = format;
+
     if (!blob) {
       blob = await new Promise((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/png"),
       );
+
       actualFormat = "PNG";
     }
+
     if (!blob) {
       throw new Error(`Couldn't encode page ${pageNumber} to an image.`);
     }
@@ -147,26 +196,38 @@ async function renderPdfToImages(
 // pulling in a zip library.
 
 let crcTable: Uint32Array | null = null;
+
 function getCrcTable(): Uint32Array {
-  if (crcTable) return crcTable;
+  if (crcTable) {
+    return crcTable;
+  }
+
   const table = new Uint32Array(256);
+
   for (let n = 0; n < 256; n++) {
     let c = n;
+
     for (let k = 0; k < 8; k++) {
       c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
     }
+
     table[n] = c >>> 0;
   }
+
   crcTable = table;
+
   return table;
 }
 
 function crc32(data: Uint8Array): number {
   const table = getCrcTable();
+
   let crc = 0xffffffff;
+
   for (let i = 0; i < data.length; i++) {
     crc = table[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
   }
+
   return (crc ^ 0xffffffff) >>> 0;
 }
 
@@ -177,125 +238,202 @@ interface ZipEntryInput {
 
 function createZip(entries: ZipEntryInput[]): Uint8Array {
   const encoder = new TextEncoder();
+
   const localParts: Uint8Array[] = [];
+
   const centralParts: Uint8Array[] = [];
+
   let offset = 0;
 
   for (const entry of entries) {
     const nameBytes = encoder.encode(entry.name);
+
     const crc = crc32(entry.data);
+
     const size = entry.data.length;
 
     const local = new DataView(new ArrayBuffer(30));
+
     local.setUint32(0, 0x04034b50, true);
+
     local.setUint16(4, 20, true);
+
     local.setUint16(6, 0, true);
-    local.setUint16(8, 0, true); // STORE
+
+    // STORE
+    local.setUint16(8, 0, true);
+
     local.setUint16(10, 0, true);
+
     local.setUint16(12, 0x21, true);
+
     local.setUint32(14, crc, true);
+
     local.setUint32(18, size, true);
+
     local.setUint32(22, size, true);
+
     local.setUint16(26, nameBytes.length, true);
+
     local.setUint16(28, 0, true);
 
     const localEntry = new Uint8Array(30 + nameBytes.length + size);
+
     localEntry.set(new Uint8Array(local.buffer), 0);
+
     localEntry.set(nameBytes, 30);
+
     localEntry.set(entry.data, 30 + nameBytes.length);
+
     localParts.push(localEntry);
 
     const central = new DataView(new ArrayBuffer(46));
+
     central.setUint32(0, 0x02014b50, true);
+
     central.setUint16(4, 20, true);
+
     central.setUint16(6, 20, true);
+
     central.setUint16(8, 0, true);
-    central.setUint16(10, 0, true); // STORE
+
+    // STORE
+    central.setUint16(10, 0, true);
+
     central.setUint16(12, 0, true);
+
     central.setUint16(14, 0x21, true);
+
     central.setUint32(16, crc, true);
+
     central.setUint32(20, size, true);
+
     central.setUint32(24, size, true);
+
     central.setUint16(28, nameBytes.length, true);
+
     central.setUint16(30, 0, true);
+
     central.setUint16(32, 0, true);
+
     central.setUint16(34, 0, true);
+
     central.setUint16(36, 0, true);
+
     central.setUint32(38, 0, true);
+
     central.setUint32(42, offset, true);
 
     const centralEntry = new Uint8Array(46 + nameBytes.length);
+
     centralEntry.set(new Uint8Array(central.buffer), 0);
+
     centralEntry.set(nameBytes, 46);
+
     centralParts.push(centralEntry);
 
     offset += localEntry.length;
   }
 
   const centralStart = offset;
+
   const centralSize = centralParts.reduce((sum, p) => sum + p.length, 0);
 
   const end = new DataView(new ArrayBuffer(22));
+
   end.setUint32(0, 0x06054b50, true);
+
   end.setUint16(4, 0, true);
+
   end.setUint16(6, 0, true);
+
   end.setUint16(8, entries.length, true);
+
   end.setUint16(10, entries.length, true);
+
   end.setUint32(12, centralSize, true);
+
   end.setUint32(16, centralStart, true);
+
   end.setUint16(20, 0, true);
 
   const result = new Uint8Array(offset + centralSize + 22);
+
   let pos = 0;
+
   for (const part of localParts) {
     result.set(part, pos);
+
     pos += part.length;
   }
+
   for (const part of centralParts) {
     result.set(part, pos);
+
     pos += part.length;
   }
+
   result.set(new Uint8Array(end.buffer), pos);
 
   return result;
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
   const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
+
   a.href = url;
   a.download = filename;
+
   document.body.appendChild(a);
+
   a.click();
+
   document.body.removeChild(a);
+
   URL.revokeObjectURL(url);
 }
 
 export default function PdfToImage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [imageFormat, setImageFormat] = useState<ImageFormat>("JPG");
+
   const [resolution, setResolution] = useState<Resolution>("high");
+
   const [showHowToUse, setShowHowToUse] = useState(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
+
   const [progress, setProgress] = useState<{
     done: number;
     total: number;
   } | null>(null);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [pages, setPages] = useState<RenderedPage[] | null>(null);
 
   const thumbnailUrlsRef = useRef<string[]>([]);
 
   const revokeThumbnails = () => {
     thumbnailUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+
     thumbnailUrlsRef.current = [];
   };
 
@@ -309,6 +447,7 @@ export default function PdfToImage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+
       clearResults();
     }
   };
@@ -318,6 +457,7 @@ export default function PdfToImage() {
     setImageFormat("JPG");
     setResolution("high");
     setIsProcessing(false);
+
     clearResults();
   };
 
@@ -332,25 +472,41 @@ export default function PdfToImage() {
   };
 
   const handleConvert = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
+
     revokeThumbnails();
+
     setIsProcessing(true);
     setErrorMessage(null);
     setPages(null);
-    setProgress({ done: 0, total: 0 });
+
+    setProgress({
+      done: 0,
+      total: 0,
+    });
 
     try {
       const dpi = DPI_BY_RESOLUTION[resolution];
+
       const rendered = await renderPdfToImages(
         selectedFile,
         imageFormat,
         dpi,
-        (done, total) => setProgress({ done, total }),
+        (done, total) =>
+          setProgress({
+            done,
+            total,
+          }),
       );
+
       thumbnailUrlsRef.current = rendered.map((p) => p.thumbnailUrl);
+
       setPages(rendered);
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -365,23 +521,39 @@ export default function PdfToImage() {
 
   const downloadPage = (page: RenderedPage) => {
     const ext = EXT_BY_FORMAT[page.format];
+
     triggerDownload(page.blob, `${baseName}-page-${page.pageNumber}.${ext}`);
   };
 
   const downloadAllAsZip = async () => {
-    if (!pages || pages.length === 0) return;
+    if (!pages || pages.length === 0) {
+      return;
+    }
+
     const entries: ZipEntryInput[] = [];
+
     for (const page of pages) {
       const buffer = new Uint8Array(await page.blob.arrayBuffer());
+
       const ext = EXT_BY_FORMAT[page.format];
+
       entries.push({
         name: `${baseName}-page-${page.pageNumber}.${ext}`,
         data: buffer,
       });
     }
+
     const zipBytes = createZip(entries);
+
+    // FIX:
+    // Never pass Uint8Array<ArrayBufferLike> directly to Blob.
+    // Convert to a concrete ArrayBuffer first.
+    const zipBuffer = toRealArrayBuffer(zipBytes);
+
     triggerDownload(
-      new Blob([zipBytes], { type: "application/zip" }),
+      new Blob([zipBuffer], {
+        type: "application/zip",
+      }),
       `${baseName}-images.zip`,
     );
   };
@@ -397,11 +569,16 @@ export default function PdfToImage() {
           className="flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={14} />
+
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
+
         <span>PDF Tools</span>
+
         <span>/</span>
+
         <span className="font-semibold text-gray-900">PDF to Image</span>
       </div>
 
@@ -411,13 +588,16 @@ export default function PdfToImage() {
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
             <FileImage size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">PDF to Image</h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Convert each PDF page to PNG, JPG, WebP, or AVIF.
             </p>
@@ -428,6 +608,7 @@ export default function PdfToImage() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -444,9 +625,12 @@ export default function PdfToImage() {
               <h2 className="text-xs font-bold text-gray-900">
                 Files ({selectedFile ? 1 : 0})
               </h2>
+
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
                 <Plus size={12} />
+
                 <span>Add</span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -461,12 +645,15 @@ export default function PdfToImage() {
                 <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
+
                 <span className="text-xs font-bold text-gray-800">
                   Drop PDF files here or click to upload
                 </span>
+
                 <span className="text-[10px] text-gray-400 font-medium mt-1">
                   PDF files, max 500 MB each
                 </span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -480,15 +667,18 @@ export default function PdfToImage() {
                   <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
+
                   <div className="truncate">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {selectedFile.name}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleReset}
                   className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
@@ -502,6 +692,7 @@ export default function PdfToImage() {
           {/* Image Format Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <h2 className="text-xs font-bold text-gray-900">Image format</h2>
+
             <div className="grid grid-cols-4 gap-2">
               {(["JPG", "PNG", "WebP", "AVIF"] as const).map((fmt) => (
                 <button
@@ -522,6 +713,7 @@ export default function PdfToImage() {
           {/* Resolution Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <h2 className="text-xs font-bold text-gray-900">Resolution</h2>
+
             <div className="space-y-2">
               {/* Standard */}
               <button
@@ -533,6 +725,7 @@ export default function PdfToImage() {
                 }`}
               >
                 <p className="text-xs font-bold text-gray-800">Standard</p>
+
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   96 DPI — good for screen and sharing
                 </p>
@@ -548,6 +741,7 @@ export default function PdfToImage() {
                 }`}
               >
                 <p className="text-xs font-bold text-gray-800">High</p>
+
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   144 DPI — sharper text and details
                 </p>
@@ -563,6 +757,7 @@ export default function PdfToImage() {
                 }`}
               >
                 <p className="text-xs font-bold text-gray-800">Ultra high</p>
+
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   216 DPI — best for print
                 </p>
@@ -575,6 +770,7 @@ export default function PdfToImage() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[520px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
@@ -603,9 +799,11 @@ export default function PdfToImage() {
           {isProcessing ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+
               <p className="text-xs font-bold text-gray-800">
                 Rendering your PDF…
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 {progress && progress.total > 0
                   ? `Page ${progress.done} of ${progress.total}`
@@ -617,9 +815,11 @@ export default function PdfToImage() {
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
+
               <p className="text-xs font-bold text-red-700">
                 Conversion failed
               </p>
+
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
                 {errorMessage}
               </p>
@@ -631,10 +831,13 @@ export default function PdfToImage() {
                   <div className="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-100">
                     <CheckCircle2 size={16} />
                   </div>
+
                   <p className="text-xs font-bold text-gray-800">
-                    {pages.length} page{pages.length === 1 ? "" : "s"} converted
+                    {pages.length} page
+                    {pages.length === 1 ? "" : "s"} converted
                   </p>
                 </div>
+
                 {pages.length > 1 && (
                   <button
                     onClick={downloadAllAsZip}
@@ -659,12 +862,15 @@ export default function PdfToImage() {
                         className="max-w-full max-h-full object-contain"
                       />
                     </div>
+
                     <p className="text-[11px] font-bold text-gray-800 truncate w-full">
                       Page {page.pageNumber}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {formatBytes(page.blob.size)} · {page.format}
                     </p>
+
                     <button
                       onClick={() => downloadPage(page)}
                       className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-gray-700 text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all"
@@ -681,9 +887,11 @@ export default function PdfToImage() {
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <FileText size={20} />
               </div>
+
               <p className="text-xs font-bold text-gray-800">
                 Add files to get started
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Your result will appear here after you run the tool.
               </p>
@@ -708,11 +916,14 @@ export default function PdfToImage() {
                     : "bg-gray-400"
             }`}
           />
+
           <span>
             {errorMessage
               ? "Conversion failed — try again"
               : pages
-                ? `Done: ${pages.length} page${pages.length === 1 ? "" : "s"} ready to download`
+                ? `Done: ${pages.length} page${
+                    pages.length === 1 ? "" : "s"
+                  } ready to download`
                 : isProcessing
                   ? progress && progress.total > 0
                     ? `Rendering page ${progress.done} of ${progress.total}…`
@@ -730,6 +941,7 @@ export default function PdfToImage() {
           >
             Reset
           </button>
+
           <button
             onClick={handleConvert}
             disabled={!canConvert}
@@ -744,6 +956,7 @@ export default function PdfToImage() {
             ) : (
               <FileImage size={14} />
             )}
+
             <span>{isProcessing ? "Converting…" : "Convert to images"}</span>
           </button>
         </div>
@@ -752,6 +965,7 @@ export default function PdfToImage() {
       {/* Security Banner */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -766,8 +980,10 @@ export default function PdfToImage() {
         >
           <div className="flex items-center gap-2">
             <span className="text-orange-500">?</span>
+
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -785,6 +1001,7 @@ export default function PdfToImage() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
@@ -793,10 +1010,12 @@ export default function PdfToImage() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Compress PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
@@ -811,10 +1030,12 @@ export default function PdfToImage() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Merge PDFs
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.

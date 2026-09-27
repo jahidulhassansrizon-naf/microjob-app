@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+
 import {
   Pencil,
   Star,
@@ -27,12 +28,14 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
 import type { PDFDocumentProxy } from "pdfjs-dist";
 
-// Scale at which PDF pages are rendered to the on-screen canvas. Annotation
-// coordinates are stored in this same pixel space and converted back to PDF
-// points (using each page's actual size) at export time.
+// Scale at which PDF pages are rendered to the on-screen canvas.
+// Annotation coordinates are stored in this same pixel space and converted
+// back to PDF points (using each page's actual size) at export time.
 const RENDER_SCALE = 1.5;
 
 type Tool = "select" | "text" | "draw" | "highlight";
@@ -52,7 +55,10 @@ interface DrawAnnotation {
   id: string;
   type: "draw";
   page: number;
-  points: { x: number; y: number }[];
+  points: {
+    x: number;
+    y: number;
+  }[];
   color: string;
   lineWidth: number;
 }
@@ -71,14 +77,19 @@ interface HighlightAnnotation {
 type Annotation = TextAnnotation | DrawAnnotation | HighlightAnnotation;
 
 const PEN_COLORS = ["#111827", "#dc2626", "#2563eb", "#16a34a"];
+
 const HIGHLIGHT_COLOR = "#fde047";
 
 function hexToRgbColor(hex: string) {
   const clean = hex.replace("#", "");
   const bigint = parseInt(clean, 16);
+
   const r = ((bigint >> 16) & 255) / 255;
+
   const g = ((bigint >> 8) & 255) / 255;
+
   const b = (bigint & 255) / 255;
+
   return rgb(r, g, b);
 }
 
@@ -86,50 +97,91 @@ function generateId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
+
   return `ann_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 export default function EditPdf() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [showHowToUse, setShowHowToUse] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   // Editor state
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+
   const [numPages, setNumPages] = useState(0);
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+
   const [isExporting, setIsExporting] = useState(false);
+
   const [tool, setTool] = useState<Tool>("select");
+
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
+
   const [annotations, setAnnotationsReact] = useState<Annotation[]>([]);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null); // rendered PDF page
-  const overlayRef = useRef<HTMLCanvasElement>(null); // committed annotations
-  const previewRef = useRef<HTMLCanvasElement>(null); // live drag preview
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // rendered PDF page
+  const overlayRef = useRef<HTMLCanvasElement>(null);
+
+  // committed annotations
+  const previewRef = useRef<HTMLCanvasElement>(null);
+
+  // live drag preview
 
   const pdfjsRef = useRef<any>(null);
+
   const annotationsRef = useRef<Annotation[]>([]);
-  const pageDimsRef = useRef<Record<number, { width: number; height: number }>>(
-    {},
-  );
+
+  const pageDimsRef = useRef<
+    Record<
+      number,
+      {
+        width: number;
+        height: number;
+      }
+    >
+  >({});
+
   const isDrawingRef = useRef(false);
-  const currentPathRef = useRef<{ x: number; y: number }[]>([]);
-  const highlightStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const currentPathRef = useRef<
+    {
+      x: number;
+      y: number;
+    }[]
+  >([]);
+
+  const highlightStartRef = useRef<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const lastLoadedFileRef = useRef<File | null>(null);
 
   const [textInputPos, setTextInputPos] = useState<{
     x: number;
     y: number;
   } | null>(null);
+
   const [textInputValue, setTextInputValue] = useState("");
+
   const textInputRef = useRef<HTMLInputElement>(null);
 
   const setAnnotations = useCallback(
     (updater: (prev: Annotation[]) => Annotation[]) => {
       const next = updater(annotationsRef.current);
+
       annotationsRef.current = next;
+
       setAnnotationsReact(next);
     },
     [],
@@ -137,37 +189,64 @@ export default function EditPdf() {
 
   const redrawOverlay = useCallback((pageNum: number) => {
     const overlay = overlayRef.current;
+
     const ctx = overlay?.getContext("2d");
-    if (!overlay || !ctx) return;
+
+    if (!overlay || !ctx) {
+      return;
+    }
+
     ctx.clearRect(0, 0, overlay.width, overlay.height);
+
     for (const ann of annotationsRef.current) {
-      if (ann.page !== pageNum) continue;
+      if (ann.page !== pageNum) {
+        continue;
+      }
+
       if (ann.type === "draw") {
-        if (ann.points.length < 2) continue;
+        if (ann.points.length < 2) {
+          continue;
+        }
+
         ctx.save();
+
         ctx.strokeStyle = ann.color;
+
         ctx.lineWidth = ann.lineWidth;
+
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+
         ctx.beginPath();
+
         ctx.moveTo(ann.points[0].x, ann.points[0].y);
+
         for (let i = 1; i < ann.points.length; i++) {
           ctx.lineTo(ann.points[i].x, ann.points[i].y);
         }
+
         ctx.stroke();
         ctx.restore();
       } else if (ann.type === "highlight") {
         ctx.save();
+
         ctx.globalAlpha = 0.35;
         ctx.fillStyle = ann.color;
+
         ctx.fillRect(ann.x, ann.y, ann.width, ann.height);
+
         ctx.restore();
       } else if (ann.type === "text") {
         ctx.save();
+
         ctx.fillStyle = ann.color;
+
         ctx.font = `${ann.fontSize}px sans-serif`;
+
         ctx.textBaseline = "alphabetic";
+
         ctx.fillText(ann.text, ann.x, ann.y);
+
         ctx.restore();
       }
     }
@@ -177,13 +256,19 @@ export default function EditPdf() {
   // worker file via an asset URL so Next.js / Turbopack can bundle it
   // without trying to run it through SSR.
   const ensurePdfJs = useCallback(async () => {
-    if (pdfjsRef.current) return pdfjsRef.current;
+    if (pdfjsRef.current) {
+      return pdfjsRef.current;
+    }
+
     const pdfjsLib = await import("pdfjs-dist");
+
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
       "pdfjs-dist/build/pdf.worker.min.mjs",
       import.meta.url,
     ).toString();
+
     pdfjsRef.current = pdfjsLib;
+
     return pdfjsLib;
   }, []);
 
@@ -197,20 +282,32 @@ export default function EditPdf() {
     async (file: File) => {
       setIsLoadingPdf(true);
       setError(null);
+
       try {
         const pdfjsLib = await ensurePdfJs();
+
         const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+        });
+
         const doc: PDFDocumentProxy = await loadingTask.promise;
+
         setPdfDoc(doc);
         setNumPages(doc.numPages);
         setCurrentPage(1);
+
         pageDimsRef.current = {};
+
         annotationsRef.current = [];
+
         setAnnotationsReact([]);
+
         lastLoadedFileRef.current = file;
       } catch (err) {
         console.error(err);
+
         setError(
           "Could not open this PDF. It may be corrupted or password protected.",
         );
@@ -224,22 +321,40 @@ export default function EditPdf() {
   // Render the current page onto the background canvas, size the overlay /
   // preview canvases to match, and redraw any annotations for that page.
   useEffect(() => {
-    if (!pdfDoc || !isEditorOpen) return;
+    if (!pdfDoc || !isEditorOpen) {
+      return;
+    }
+
     let cancelled = false;
+
     (async () => {
       try {
         const page = await pdfDoc.getPage(currentPage);
-        const viewport = page.getViewport({ scale: RENDER_SCALE });
+
+        const viewport = page.getViewport({
+          scale: RENDER_SCALE,
+        });
+
         const canvas = canvasRef.current;
+
         const overlay = overlayRef.current;
+
         const preview = previewRef.current;
-        if (!canvas || !overlay || !preview) return;
+
+        if (!canvas || !overlay || !preview) {
+          return;
+        }
 
         canvas.width = viewport.width;
+
         canvas.height = viewport.height;
+
         overlay.width = viewport.width;
+
         overlay.height = viewport.height;
+
         preview.width = viewport.width;
+
         preview.height = viewport.height;
 
         pageDimsRef.current[currentPage] = {
@@ -248,17 +363,33 @@ export default function EditPdf() {
         };
 
         const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        if (cancelled) return;
+
+        if (!ctx) {
+          return;
+        }
+
+        // FIX:
+        // Current pdfjs-dist RenderParameters requires `canvas`.
+        await page.render({
+          canvas,
+          canvasContext: ctx,
+          viewport,
+        }).promise;
+
+        if (cancelled) {
+          return;
+        }
+
         redrawOverlay(currentPage);
       } catch (err) {
         if (!cancelled) {
           console.error(err);
+
           setError("Something went wrong while rendering this page.");
         }
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -266,12 +397,23 @@ export default function EditPdf() {
 
   const getPos = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = previewRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+
+    if (!canvas) {
+      return {
+        x: 0,
+        y: 0,
+      };
+    }
+
     const rect = canvas.getBoundingClientRect();
+
     const scaleX = canvas.width / rect.width;
+
     const scaleY = canvas.height / rect.height;
+
     return {
       x: (e.clientX - rect.left) * scaleX,
+
       y: (e.clientY - rect.top) * scaleY,
     };
   }, []);
@@ -279,15 +421,21 @@ export default function EditPdf() {
   const handlePointerDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const pos = getPos(e);
+
       if (tool === "draw") {
         isDrawingRef.current = true;
+
         currentPathRef.current = [pos];
       } else if (tool === "highlight") {
         highlightStartRef.current = pos;
       } else if (tool === "text") {
         setTextInputValue("");
+
         setTextInputPos(pos);
-        setTimeout(() => textInputRef.current?.focus(), 0);
+
+        setTimeout(() => {
+          textInputRef.current?.focus();
+        }, 0);
       }
     },
     [tool, getPos],
@@ -296,37 +444,59 @@ export default function EditPdf() {
   const handlePointerMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const pos = getPos(e);
+
       if (tool === "draw" && isDrawingRef.current) {
         const path = currentPathRef.current;
+
         const prev = path[path.length - 1];
+
         path.push(pos);
+
         const ctx = overlayRef.current?.getContext("2d");
+
         if (ctx && prev) {
           ctx.save();
+
           ctx.strokeStyle = penColor;
+
           ctx.lineWidth = 3;
           ctx.lineCap = "round";
           ctx.lineJoin = "round";
+
           ctx.beginPath();
+
           ctx.moveTo(prev.x, prev.y);
+
           ctx.lineTo(pos.x, pos.y);
+
           ctx.stroke();
           ctx.restore();
         }
       } else if (tool === "highlight" && highlightStartRef.current) {
         const start = highlightStartRef.current;
+
         const preview = previewRef.current;
+
         const ctx = preview?.getContext("2d");
+
         if (ctx && preview) {
           ctx.clearRect(0, 0, preview.width, preview.height);
+
           ctx.save();
+
           ctx.globalAlpha = 0.35;
           ctx.fillStyle = HIGHLIGHT_COLOR;
+
           const x = Math.min(start.x, pos.x);
+
           const y = Math.min(start.y, pos.y);
+
           const w = Math.abs(pos.x - start.x);
+
           const h = Math.abs(pos.y - start.y);
+
           ctx.fillRect(x, y, w, h);
+
           ctx.restore();
         }
       }
@@ -337,51 +507,75 @@ export default function EditPdf() {
   const handlePointerUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const pos = getPos(e);
+
       if (tool === "draw" && isDrawingRef.current) {
         isDrawingRef.current = false;
+
         const points = currentPathRef.current;
+
         currentPathRef.current = [];
+
         if (points.length > 1) {
           setAnnotations((prev) => [
             ...prev,
             {
               id: generateId(),
+
               type: "draw",
+
               page: currentPage,
+
               points,
+
               color: penColor,
+
               lineWidth: 3,
             },
           ]);
         }
       } else if (tool === "highlight" && highlightStartRef.current) {
         const start = highlightStartRef.current;
+
         highlightStartRef.current = null;
+
         const x = Math.min(start.x, pos.x);
+
         const y = Math.min(start.y, pos.y);
+
         const w = Math.abs(pos.x - start.x);
+
         const h = Math.abs(pos.y - start.y);
 
         const preview = previewRef.current;
+
         preview
           ?.getContext("2d")
           ?.clearRect(0, 0, preview.width, preview.height);
 
         if (w > 3 && h > 3) {
           const ctx = overlayRef.current?.getContext("2d");
+
           if (ctx) {
             ctx.save();
+
             ctx.globalAlpha = 0.35;
+
             ctx.fillStyle = HIGHLIGHT_COLOR;
+
             ctx.fillRect(x, y, w, h);
+
             ctx.restore();
           }
+
           setAnnotations((prev) => [
             ...prev,
             {
               id: generateId(),
+
               type: "highlight",
+
               page: currentPage,
+
               x,
               y,
               width: w,
@@ -398,35 +592,53 @@ export default function EditPdf() {
   const commitTextAnnotation = useCallback(() => {
     if (textInputPos && textInputValue.trim()) {
       const fontSize = 18;
+
       const ctx = overlayRef.current?.getContext("2d");
+
       if (ctx) {
         ctx.save();
+
         ctx.fillStyle = penColor;
+
         ctx.font = `${fontSize}px sans-serif`;
+
         ctx.textBaseline = "alphabetic";
+
         ctx.fillText(textInputValue, textInputPos.x, textInputPos.y);
+
         ctx.restore();
       }
+
       setAnnotations((prev) => [
         ...prev,
         {
           id: generateId(),
+
           type: "text",
+
           page: currentPage,
+
           x: textInputPos.x,
+
           y: textInputPos.y,
+
           text: textInputValue,
+
           fontSize,
+
           color: penColor,
         },
       ]);
     }
+
     setTextInputPos(null);
+
     setTextInputValue("");
   }, [textInputPos, textInputValue, penColor, currentPage, setAnnotations]);
 
   const handleUndo = useCallback(() => {
     setAnnotations((prev) => prev.slice(0, -1));
+
     redrawOverlay(currentPage);
   }, [setAnnotations, redrawOverlay, currentPage]);
 
@@ -438,52 +650,92 @@ export default function EditPdf() {
   );
 
   const handleExport = useCallback(async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
+
     setIsExporting(true);
     setError(null);
+
     try {
       const existingBytes = await selectedFile.arrayBuffer();
+
       const pdfLibDoc = await PDFDocument.load(existingBytes);
+
       const pages = pdfLibDoc.getPages();
+
       const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
 
       for (const ann of annotationsRef.current) {
         const page = pages[ann.page - 1];
+
         const dims = pageDimsRef.current[ann.page];
-        if (!page || !dims) continue;
+
+        if (!page || !dims) {
+          continue;
+        }
+
         const { width: pdfWidth, height: pdfHeight } = page.getSize();
+
         const scaleX = pdfWidth / dims.width;
+
         const scaleY = pdfHeight / dims.height;
 
         if (ann.type === "text") {
           page.drawText(ann.text, {
             x: ann.x * scaleX,
+
             y: pdfHeight - ann.y * scaleY,
+
             size: ann.fontSize * scaleX,
+
             font,
+
             color: hexToRgbColor(ann.color),
           });
         } else if (ann.type === "highlight") {
           const rectX = ann.x * scaleX;
+
           const rectWidth = ann.width * scaleX;
+
           const rectHeight = ann.height * scaleY;
+
           const rectYTop = pdfHeight - ann.y * scaleY;
+
           page.drawRectangle({
             x: rectX,
+
             y: rectYTop - rectHeight,
+
             width: rectWidth,
+
             height: rectHeight,
+
             color: hexToRgbColor(ann.color),
+
             opacity: 0.35,
           });
         } else if (ann.type === "draw") {
           for (let i = 1; i < ann.points.length; i++) {
             const p0 = ann.points[i - 1];
+
             const p1 = ann.points[i];
+
             page.drawLine({
-              start: { x: p0.x * scaleX, y: pdfHeight - p0.y * scaleY },
-              end: { x: p1.x * scaleX, y: pdfHeight - p1.y * scaleY },
+              start: {
+                x: p0.x * scaleX,
+
+                y: pdfHeight - p0.y * scaleY,
+              },
+
+              end: {
+                x: p1.x * scaleX,
+
+                y: pdfHeight - p1.y * scaleY,
+              },
+
               thickness: Math.max(1, ann.lineWidth * scaleX),
+
               color: hexToRgbColor(ann.color),
             });
           }
@@ -491,19 +743,35 @@ export default function EditPdf() {
       }
 
       const pdfBytes = await pdfLibDoc.save();
-      const blob = new Blob([pdfBytes as BlobPart], {
+
+      // Keep the original functionality, but convert to a real
+      // ArrayBuffer so newer TypeScript/lib.dom BlobPart typings
+      // accept it safely.
+      const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
+
+      new Uint8Array(pdfBuffer).set(pdfBytes);
+
+      const blob = new Blob([pdfBuffer], {
         type: "application/pdf",
       });
+
       const url = URL.createObjectURL(blob);
+
       const a = document.createElement("a");
+
       a.href = url;
+
       a.download = selectedFile.name.replace(/\.pdf$/i, "") + "-edited.pdf";
+
       document.body.appendChild(a);
+
       a.click();
       a.remove();
+
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
+
       setError("Something went wrong while saving your PDF. Please try again.");
     } finally {
       setIsExporting(false);
@@ -513,14 +781,21 @@ export default function EditPdf() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
       setSelectedFile(file);
+
       setPdfDoc(null);
       setNumPages(0);
       setCurrentPage(1);
+
       annotationsRef.current = [];
+
       setAnnotationsReact([]);
+
       pageDimsRef.current = {};
+
       lastLoadedFileRef.current = null;
+
       setError(null);
     }
   };
@@ -530,17 +805,26 @@ export default function EditPdf() {
     setPdfDoc(null);
     setNumPages(0);
     setCurrentPage(1);
+
     annotationsRef.current = [];
+
     setAnnotationsReact([]);
+
     pageDimsRef.current = {};
+
     lastLoadedFileRef.current = null;
+
     setIsEditorOpen(false);
     setError(null);
   };
 
   const handleOpenEditor = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
+
     setIsEditorOpen(true);
+
     if (lastLoadedFileRef.current !== selectedFile) {
       await loadPdfIntoEditor(selectedFile);
     }
@@ -555,11 +839,16 @@ export default function EditPdf() {
           className="flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={14} />
+
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
+
         <span>PDF Tools</span>
+
         <span>/</span>
+
         <span className="font-semibold text-gray-900">Edit PDF</span>
       </div>
 
@@ -569,13 +858,16 @@ export default function EditPdf() {
           <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0 border border-orange-100">
             <Pencil size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">Edit PDF</h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Open any PDF in a full-screen editor — add or edit text, draw,
               highlight, sign, stamp, insert images and rearrange pages.
@@ -587,6 +879,7 @@ export default function EditPdf() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -602,9 +895,12 @@ export default function EditPdf() {
               <h2 className="text-xs font-bold text-gray-900">
                 Files ({selectedFile ? 1 : 0})
               </h2>
+
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-orange-100">
                 <Plus size={12} />
+
                 <span>Add</span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -619,12 +915,15 @@ export default function EditPdf() {
                 <div className="w-10 h-10 bg-orange-100/80 text-orange-600 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
+
                 <span className="text-xs font-bold text-gray-800">
                   Drop a PDF here or click to upload
                 </span>
+
                 <span className="text-[10px] text-gray-400 font-medium mt-1">
                   1 PDF file, max 300 MB
                 </span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -638,15 +937,18 @@ export default function EditPdf() {
                   <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
+
                   <div className="truncate">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {selectedFile.name}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleReset}
                   className="p-1 text-gray-400 hover:text-orange-600 rounded-lg transition-colors"
@@ -662,6 +964,7 @@ export default function EditPdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+
             <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
               {selectedFile ? "Ready" : "Empty"}
             </span>
@@ -672,11 +975,13 @@ export default function EditPdf() {
             <div className="w-10 h-10 bg-orange-50 text-orange-400 rounded-xl flex items-center justify-center mb-3 border border-orange-100">
               <FileText size={20} />
             </div>
+
             <p className="text-xs font-bold text-gray-800">
               {selectedFile
                 ? "Ready to open in the editor"
                 : "Add files to get started"}
             </p>
+
             <p className="text-[11px] text-gray-400 mt-1">
               {selectedFile
                 ? 'Click "Open editor" below to add text, drawings and highlights.'
@@ -692,6 +997,7 @@ export default function EditPdf() {
       {error && (
         <div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-red-700 font-medium">
           <AlertCircle size={15} className="text-red-500 shrink-0" />
+
           <span>{error}</span>
         </div>
       )}
@@ -700,6 +1006,7 @@ export default function EditPdf() {
       <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
           <span className="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+
           <span>
             {selectedFile
               ? `Ready to edit: ${selectedFile.name}`
@@ -714,6 +1021,7 @@ export default function EditPdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleOpenEditor}
             disabled={!selectedFile}
@@ -724,6 +1032,7 @@ export default function EditPdf() {
             }`}
           >
             <Pencil size={14} />
+
             <span>Open editor</span>
           </button>
         </div>
@@ -732,6 +1041,7 @@ export default function EditPdf() {
       {/* Security Banner */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -746,8 +1056,10 @@ export default function EditPdf() {
         >
           <div className="flex items-center gap-2">
             <span className="text-orange-500 font-bold">?</span>
+
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -764,6 +1076,7 @@ export default function EditPdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
@@ -772,10 +1085,12 @@ export default function EditPdf() {
             <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
                 Compress PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
@@ -790,10 +1105,12 @@ export default function EditPdf() {
             <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
                 Merge PDFs
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.
@@ -813,6 +1130,7 @@ export default function EditPdf() {
                 <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
                   <Pencil size={16} />
                 </div>
+
                 <span className="text-xs font-bold text-gray-900 truncate max-w-[160px]">
                   {selectedFile?.name}
                 </span>
@@ -830,6 +1148,7 @@ export default function EditPdf() {
                 >
                   <MousePointer2 size={16} />
                 </button>
+
                 <button
                   onClick={() => setTool("text")}
                   title="Add text"
@@ -841,6 +1160,7 @@ export default function EditPdf() {
                 >
                   <Type size={16} />
                 </button>
+
                 <button
                   onClick={() => setTool("draw")}
                   title="Draw / sign"
@@ -852,6 +1172,7 @@ export default function EditPdf() {
                 >
                   <PenTool size={16} />
                 </button>
+
                 <button
                   onClick={() => setTool("highlight")}
                   title="Highlight"
@@ -876,7 +1197,9 @@ export default function EditPdf() {
                         ? "border-gray-700 scale-110"
                         : "border-white"
                     }`}
-                    style={{ backgroundColor: c }}
+                    style={{
+                      backgroundColor: c,
+                    }}
                   />
                 ))}
               </div>
@@ -909,9 +1232,11 @@ export default function EditPdf() {
                   >
                     <ChevronLeft size={16} />
                   </button>
+
                   <span>
                     Page {currentPage} / {numPages}
                   </span>
+
                   <button
                     onClick={() => goToPage(1)}
                     disabled={currentPage >= numPages}
@@ -940,6 +1265,7 @@ export default function EditPdf() {
                 ) : (
                   <Download size={14} />
                 )}
+
                 <span>{isExporting ? "Saving..." : "Save & Download"}</span>
               </button>
 
@@ -954,6 +1280,7 @@ export default function EditPdf() {
             {error && (
               <div className="mx-4 mt-3 bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium shrink-0">
                 <AlertCircle size={14} className="text-red-500 shrink-0" />
+
                 <span>{error}</span>
               </div>
             )}
@@ -963,15 +1290,20 @@ export default function EditPdf() {
               {isLoadingPdf ? (
                 <div className="flex flex-col items-center justify-center gap-2 text-gray-400 mt-20">
                   <Loader2 size={28} className="animate-spin" />
+
                   <span className="text-xs font-bold">Loading PDF…</span>
                 </div>
               ) : (
                 <div
                   className="relative shadow-lg bg-white"
-                  style={{ lineHeight: 0 }}
+                  style={{
+                    lineHeight: 0,
+                  }}
                 >
                   <canvas ref={canvasRef} className="block" />
+
                   <canvas ref={overlayRef} className="absolute inset-0 block" />
+
                   <canvas
                     ref={previewRef}
                     className="absolute inset-0 block"
@@ -998,16 +1330,20 @@ export default function EditPdf() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
+
                           commitTextAnnotation();
                         } else if (e.key === "Escape") {
                           setTextInputPos(null);
+
                           setTextInputValue("");
                         }
                       }}
                       className="absolute px-1 text-[18px] leading-none bg-white/90 border border-orange-300 rounded outline-none"
                       style={{
                         left: textInputPos.x,
+
                         top: textInputPos.y - 18,
+
                         color: penColor,
                       }}
                     />

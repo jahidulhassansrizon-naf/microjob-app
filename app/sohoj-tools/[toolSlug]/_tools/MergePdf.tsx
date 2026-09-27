@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+
 import {
   Combine,
   Star,
@@ -22,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+
 import { PDFDocument } from "pdf-lib";
 
 // ---------------------------------------------------------------------------
@@ -39,28 +41,68 @@ interface MergeResult {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
   const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+
   return `${(kb / 1024).toFixed(2)} MB`;
+}
+
+// ---------------------------------------------------------------------------
+// TypeScript / Blob compatibility helper
+// ---------------------------------------------------------------------------
+//
+// Newer TypeScript/lib.dom typings can treat Uint8Array as
+// Uint8Array<ArrayBufferLike>. Blob requires a BlobPart whose backing buffer
+// is a concrete ArrayBuffer.
+//
+// We explicitly create a new ArrayBuffer and copy the bytes into it.
+// This does not change the PDF data or any existing functionality.
+// ---------------------------------------------------------------------------
+
+function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+
+  const view = new Uint8Array(buffer);
+
+  view.set(bytes);
+
+  return buffer;
 }
 
 async function mergePdfFiles(files: File[]): Promise<MergeResult> {
   const mergedDoc = await PDFDocument.create();
+
   let pageCount = 0;
 
   for (const file of files) {
     const bytes = await file.arrayBuffer();
-    const srcDoc = await PDFDocument.load(bytes, { updateMetadata: false });
+
+    const srcDoc = await PDFDocument.load(bytes, {
+      updateMetadata: false,
+    });
+
     const copiedPages = await mergedDoc.copyPages(
       srcDoc,
       srcDoc.getPageIndices(),
     );
-    copiedPages.forEach((page) => mergedDoc.addPage(page));
+
+    copiedPages.forEach((page) => {
+      mergedDoc.addPage(page);
+    });
+
     pageCount += copiedPages.length;
   }
 
-  const mergedBytes = await mergedDoc.save({ useObjectStreams: true });
+  const mergedBytes = await mergedDoc.save({
+    useObjectStreams: true,
+  });
 
   return {
     bytes: mergedBytes,
@@ -72,14 +114,19 @@ async function mergePdfFiles(files: File[]): Promise<MergeResult> {
 
 export default function MergePdf() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
   const [showHowToUse, setShowHowToUse] = useState(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [result, setResult] = useState<MergeResult | null>(null);
 
   const [isDraggingOverZone, setIsDraggingOverZone] = useState(false);
+
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const addFiles = (files: File[]) => {
@@ -87,8 +134,13 @@ export default function MergePdf() {
       (f) =>
         f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
     );
-    if (pdfFiles.length === 0) return;
+
+    if (pdfFiles.length === 0) {
+      return;
+    }
+
     setSelectedFiles((prev) => [...prev, ...pdfFiles]);
+
     setResult(null);
     setErrorMessage(null);
   };
@@ -96,13 +148,16 @@ export default function MergePdf() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       addFiles(Array.from(e.target.files));
+
       e.target.value = "";
     }
   };
 
   const handleDropOnZone = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
+
     setIsDraggingOverZone(false);
+
     if (e.dataTransfer.files) {
       addFiles(Array.from(e.dataTransfer.files));
     }
@@ -110,6 +165,7 @@ export default function MergePdf() {
 
   const handleDragOverZone = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
+
     setIsDraggingOverZone(true);
   };
 
@@ -117,6 +173,7 @@ export default function MergePdf() {
 
   const handleRemoveFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+
     setResult(null);
     setErrorMessage(null);
   };
@@ -135,7 +192,10 @@ export default function MergePdf() {
 
   const handleItemDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (index !== dragOverIndex) setDragOverIndex(index);
+
+    if (index !== dragOverIndex) {
+      setDragOverIndex(index);
+    }
   };
 
   const handleItemDrop = (index: number) => {
@@ -144,12 +204,17 @@ export default function MergePdf() {
       setDragOverIndex(null);
       return;
     }
+
     setSelectedFiles((prev) => {
       const updated = [...prev];
+
       const [moved] = updated.splice(dragIndex, 1);
+
       updated.splice(index, 0, moved);
+
       return updated;
     });
+
     setDragIndex(null);
     setDragOverIndex(null);
     setResult(null);
@@ -161,16 +226,21 @@ export default function MergePdf() {
   };
 
   const handleMerge = async () => {
-    if (selectedFiles.length < 2) return;
+    if (selectedFiles.length < 2) {
+      return;
+    }
+
     setIsProcessing(true);
     setErrorMessage(null);
     setResult(null);
 
     try {
       const merged = await mergePdfFiles(selectedFiles);
+
       setResult(merged);
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -182,15 +252,32 @@ export default function MergePdf() {
   };
 
   const handleDownload = () => {
-    if (!result) return;
-    const blob = new Blob([result.bytes], { type: "application/pdf" });
+    if (!result) {
+      return;
+    }
+
+    // FIX:
+    // Convert Uint8Array<ArrayBufferLike> into a concrete ArrayBuffer
+    // before passing it to Blob. This fixes the Vercel TS2322 error.
+    const pdfBuffer = toRealArrayBuffer(result.bytes);
+
+    const blob = new Blob([pdfBuffer], {
+      type: "application/pdf",
+    });
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
+
     a.href = url;
     a.download = "merged.pdf";
+
     document.body.appendChild(a);
+
     a.click();
+
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   };
 
@@ -203,11 +290,16 @@ export default function MergePdf() {
           className="flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={14} />
+
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
+
         <span>PDF Tools</span>
+
         <span>/</span>
+
         <span className="font-semibold text-gray-900">Merge PDFs</span>
       </div>
 
@@ -217,13 +309,16 @@ export default function MergePdf() {
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
             <Combine size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">Merge PDFs</h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Combine multiple PDF files into one document in your chosen order.
             </p>
@@ -234,6 +329,7 @@ export default function MergePdf() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -262,12 +358,15 @@ export default function MergePdf() {
               <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                 <Upload size={20} />
               </div>
+
               <span className="text-xs font-bold text-gray-800">
                 Drop PDF files here or click to upload
               </span>
+
               <span className="text-[10px] text-gray-400 font-medium mt-1">
                 PDF files, max 500 MB each (at least 2)
               </span>
+
               <input
                 type="file"
                 multiple
@@ -299,18 +398,22 @@ export default function MergePdf() {
                         size={14}
                         className="text-gray-400 cursor-grab"
                       />
+
                       <div className="w-7 h-7 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
                         <FileText size={14} />
                       </div>
+
                       <div className="truncate">
                         <p className="text-xs font-bold text-gray-800 truncate">
                           {file.name}
                         </p>
+
                         <p className="text-[10px] text-gray-400">
                           {(file.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
                       </div>
                     </div>
+
                     <button
                       onClick={() => handleRemoveFile(idx)}
                       className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
@@ -328,6 +431,7 @@ export default function MergePdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Merge preview</h2>
+
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
@@ -355,9 +459,11 @@ export default function MergePdf() {
           {isProcessing ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+
               <p className="text-xs font-bold text-gray-800">
                 Merging your PDFs…
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Everything runs in your browser — larger files take a little
                 longer.
@@ -368,7 +474,9 @@ export default function MergePdf() {
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
+
               <p className="text-xs font-bold text-red-700">Merge failed</p>
+
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
                 {errorMessage}
               </p>
@@ -384,22 +492,27 @@ export default function MergePdf() {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     Files merged
                   </p>
+
                   <p className="text-sm font-bold text-gray-800">
                     {result.fileCount}
                   </p>
                 </div>
+
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     Total pages
                   </p>
+
                   <p className="text-sm font-bold text-gray-800">
                     {result.pageCount}
                   </p>
                 </div>
+
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     File size
                   </p>
+
                   <p className="text-sm font-bold text-emerald-600">
                     {formatBytes(result.size)}
                   </p>
@@ -419,9 +532,11 @@ export default function MergePdf() {
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <FileText size={20} />
               </div>
+
               <p className="text-xs font-bold text-gray-800">
                 Add at least two PDFs
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Arrange them in order, then merge into one file.
               </p>
@@ -436,9 +551,11 @@ export default function MergePdf() {
                   <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                     {index + 1}
                   </span>
+
                   <div className="w-12 h-16 bg-white border border-gray-200 rounded-md shadow-2xs flex items-center justify-center my-2 text-red-500">
                     <FileText size={20} />
                   </div>
+
                   <p className="text-[11px] font-bold text-gray-800 truncate w-full">
                     {file.name}
                   </p>
@@ -465,6 +582,7 @@ export default function MergePdf() {
                     : "bg-gray-400"
             }`}
           />
+
           <span>
             {errorMessage
               ? "Merge failed — try again"
@@ -487,6 +605,7 @@ export default function MergePdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleMerge}
             disabled={selectedFiles.length < 2 || isProcessing}
@@ -501,6 +620,7 @@ export default function MergePdf() {
             ) : (
               <Combine size={14} />
             )}
+
             <span>{isProcessing ? "Merging…" : "Merge PDFs"}</span>
           </button>
         </div>
@@ -509,6 +629,7 @@ export default function MergePdf() {
       {/* Security Info Banner */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -523,8 +644,10 @@ export default function MergePdf() {
         >
           <div className="flex items-center gap-2">
             <span className="text-orange-500">?</span>
+
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -542,6 +665,7 @@ export default function MergePdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
@@ -550,10 +674,12 @@ export default function MergePdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Compress PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
@@ -568,10 +694,12 @@ export default function MergePdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <FileCode size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Split PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Extract specific pages or split every page into separate files.
               </p>

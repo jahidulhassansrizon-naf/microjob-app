@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+
 import Link from "next/link";
+
 import {
   Minimize2,
   Star,
@@ -21,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+
 import {
   PDFDocument,
   PDFName,
@@ -33,6 +36,7 @@ import {
 // ---------------------------------------------------------------------------
 // Compression engine (pdf-lib + Canvas)
 // ---------------------------------------------------------------------------
+
 // pdf-lib has no built-in "compress" API. The actual size reduction comes
 // from walking every page's image XObjects, decoding them, redrawing them
 // onto a canvas at a lower resolution/quality, and re-embedding them as
@@ -46,59 +50,136 @@ interface CompressionSettings {
 }
 
 const PRESET_SETTINGS: Record<CompressionLevel, CompressionSettings> = {
-  light: { quality: 0.82, maxDimension: 2200 },
-  balanced: { quality: 0.62, maxDimension: 1600 },
-  strong: { quality: 0.38, maxDimension: 1100 },
+  light: {
+    quality: 0.82,
+    maxDimension: 2200,
+  },
+  balanced: {
+    quality: 0.62,
+    maxDimension: 1600,
+  },
+  strong: {
+    quality: 0.38,
+    maxDimension: 1100,
+  },
 };
 
 // Settings tried in order when the user asks for a target file size.
 const TARGET_SIZE_LADDER: CompressionSettings[] = [
-  { quality: 0.85, maxDimension: 2200 },
-  { quality: 0.7, maxDimension: 1800 },
-  { quality: 0.55, maxDimension: 1500 },
-  { quality: 0.4, maxDimension: 1200 },
-  { quality: 0.28, maxDimension: 1000 },
-  { quality: 0.18, maxDimension: 800 },
+  {
+    quality: 0.85,
+    maxDimension: 2200,
+  },
+  {
+    quality: 0.7,
+    maxDimension: 1800,
+  },
+  {
+    quality: 0.55,
+    maxDimension: 1500,
+  },
+  {
+    quality: 0.4,
+    maxDimension: 1200,
+  },
+  {
+    quality: 0.28,
+    maxDimension: 1000,
+  },
+  {
+    quality: 0.18,
+    maxDimension: 800,
+  },
 ];
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
   const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
+// ---------------------------------------------------------------------------
+// TypeScript Blob compatibility fix
+// ---------------------------------------------------------------------------
+//
+// Newer TypeScript/lib.dom typings may treat Uint8Array as
+// Uint8Array<ArrayBufferLike>, which is not directly accepted as BlobPart.
+//
+// This helper creates a real ArrayBuffer explicitly.
+// This keeps the rest of the original functionality unchanged.
+//
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+
+  const view = new Uint8Array(buffer);
+
+  view.set(bytes);
+
+  return buffer;
+}
+
 function getFilterName(dict: PDFDict): string {
-  const filter = dict.lookupMaybe(PDFName.of("Filter"), PDFName, PDFArray);
-  if (filter instanceof PDFName) return filter.asString();
+  // Use get() instead of lookupMaybe() here because
+  // newer pdf-lib typings can narrow the generic overload
+  // to never for PDFName/PDFArray combinations.
+  const filter = dict.get(PDFName.of("Filter"));
+
+  if (filter instanceof PDFName) {
+    return filter.asString();
+  }
+
   if (filter instanceof PDFArray) {
     const values = filter.asArray();
+
     const last = values[values.length - 1];
+
     return last instanceof PDFName ? last.asString() : "";
   }
+
   return "";
 }
 
 function getNumber(dict: PDFDict, key: string): number | undefined {
   const value = dict.lookupMaybe(PDFName.of(key), PDFNumber);
+
   return value instanceof PDFNumber ? value.asNumber() : undefined;
 }
 
+// ---------------------------------------------------------------------------
 // Decodes a raw image XObject stream into a bitmap we can redraw. Handles
 // plain JPEGs (the overwhelming majority of scans/photos in PDFs) and
 // simple uncompressed/Flate RGB or grayscale samples. Anything more exotic
 // (JPEG2000, CMYK, indexed color, soft masks) is left untouched rather than
 // risking a broken image.
+// ---------------------------------------------------------------------------
+
 async function decodeXObjectToBitmap(
   stream: PDFRawStream,
 ): Promise<ImageBitmap | null> {
   const { dict } = stream;
+
   const filterName = getFilterName(dict);
+
   const contents = stream.getContents();
 
   if (filterName.includes("DCTDecode")) {
     try {
-      const blob = new Blob([contents], { type: "image/jpeg" });
+      // FIX:
+      // Do not pass Uint8Array<ArrayBufferLike>
+      // directly to Blob.
+      const blob = new Blob([toArrayBuffer(contents)], {
+        type: "image/jpeg",
+      });
+
       return await createImageBitmap(blob);
     } catch {
       return null;
@@ -106,16 +187,24 @@ async function decodeXObjectToBitmap(
   }
 
   const isRawOrFlate = filterName === "" || filterName.includes("FlateDecode");
+
   if (isRawOrFlate) {
     try {
       const width = getNumber(dict, "Width");
+
       const height = getNumber(dict, "Height");
+
       const bitsPerComponent = getNumber(dict, "BitsPerComponent");
+
       const hasSMask = !!dict.get(PDFName.of("SMask"));
+
       const colorSpaceObj = dict.lookupMaybe(PDFName.of("ColorSpace"), PDFName);
+
       const colorSpace =
         colorSpaceObj instanceof PDFName ? colorSpaceObj.asString() : "";
+
       const isRGB = colorSpace.includes("DeviceRGB");
+
       const isGray = colorSpace.includes("DeviceGray");
 
       if (
@@ -129,16 +218,26 @@ async function decodeXObjectToBitmap(
       }
 
       const channels = isRGB ? 3 : 1;
+
       const expectedLength = width * height * channels;
-      if (contents.length < expectedLength) return null;
+
+      if (contents.length < expectedLength) {
+        return null;
+      }
 
       const canvas = document.createElement("canvas");
+
       canvas.width = width;
       canvas.height = height;
+
       const ctx = canvas.getContext("2d");
-      if (!ctx) return null;
+
+      if (!ctx) {
+        return null;
+      }
 
       const imageData = ctx.createImageData(width, height);
+
       for (
         let src = 0, dst = 0;
         src < expectedLength;
@@ -146,17 +245,25 @@ async function decodeXObjectToBitmap(
       ) {
         if (isRGB) {
           imageData.data[dst] = contents[src];
+
           imageData.data[dst + 1] = contents[src + 1];
+
           imageData.data[dst + 2] = contents[src + 2];
         } else {
           const v = contents[src];
+
           imageData.data[dst] = v;
+
           imageData.data[dst + 1] = v;
+
           imageData.data[dst + 2] = v;
         }
+
         imageData.data[dst + 3] = 255;
       }
+
       ctx.putImageData(imageData, 0, 0);
+
       return await createImageBitmap(canvas);
     } catch {
       return null;
@@ -174,20 +281,32 @@ async function recompressBitmap(
     1,
     settings.maxDimension / Math.max(bitmap.width, bitmap.height),
   );
+
   const width = Math.max(1, Math.round(bitmap.width * scale));
+
   const height = Math.max(1, Math.round(bitmap.height * scale));
 
   const canvas = document.createElement("canvas");
+
   canvas.width = width;
   canvas.height = height;
+
   const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
+
+  if (!ctx) {
+    return null;
+  }
+
   ctx.drawImage(bitmap, 0, 0, width, height);
 
   const blob: Blob | null = await new Promise((resolve) =>
     canvas.toBlob((b) => resolve(b), "image/jpeg", settings.quality),
   );
-  if (!blob) return null;
+
+  if (!blob) {
+    return null;
+  }
+
   return new Uint8Array(await blob.arrayBuffer());
 }
 
@@ -199,35 +318,61 @@ async function compressImagesInDocument(
 
   for (const page of pages) {
     const resources = page.node.Resources();
-    if (!resources) continue;
+
+    if (!resources) {
+      continue;
+    }
 
     const xObjects = resources.lookupMaybe(PDFName.of("XObject"), PDFDict);
-    if (!xObjects) continue;
+
+    if (!xObjects) {
+      continue;
+    }
 
     for (const [name, ref] of xObjects.entries()) {
       try {
         const obj = pdfDoc.context.lookup(ref);
-        if (!(obj instanceof PDFRawStream)) continue;
+
+        if (!(obj instanceof PDFRawStream)) {
+          continue;
+        }
 
         const subtype = obj.dict.get(PDFName.of("Subtype"));
+
         const isImage =
           subtype instanceof PDFName && subtype.asString().includes("Image");
-        if (!isImage) continue;
+
+        if (!isImage) {
+          continue;
+        }
 
         const originalBytes = obj.getContents();
+
         // Skip tiny images (icons, bullets) — re-encoding rarely helps
         // and JPEG overhead can make them bigger.
-        if (originalBytes.length < 3000) continue;
+        if (originalBytes.length < 3000) {
+          continue;
+        }
 
         const bitmap = await decodeXObjectToBitmap(obj);
-        if (!bitmap) continue;
 
-        const newBytes = await recompressBitmap(bitmap, settings);
-        bitmap.close?.();
-        if (!newBytes || newBytes.length >= originalBytes.length) continue;
+        if (!bitmap) {
+          continue;
+        }
 
-        const embedded = await pdfDoc.embedJpg(newBytes);
-        xObjects.set(name, embedded.ref);
+        try {
+          const newBytes = await recompressBitmap(bitmap, settings);
+
+          if (!newBytes || newBytes.length >= originalBytes.length) {
+            continue;
+          }
+
+          const embedded = await pdfDoc.embedJpg(newBytes);
+
+          xObjects.set(name, embedded.ref);
+        } finally {
+          bitmap.close?.();
+        }
       } catch {
         // Leave this image untouched if anything goes wrong decoding it.
         continue;
@@ -241,9 +386,17 @@ async function compressPdfFile(
   settings: CompressionSettings,
 ): Promise<Uint8Array> {
   const bytes = await file.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(bytes, { updateMetadata: false });
+
+  const pdfDoc = await PDFDocument.load(bytes, {
+    updateMetadata: false,
+  });
+
   await compressImagesInDocument(pdfDoc, settings);
-  return pdfDoc.save({ useObjectStreams: true, addDefaultPage: false });
+
+  return pdfDoc.save({
+    useObjectStreams: true,
+    addDefaultPage: false,
+  });
 }
 
 async function compressPdfToTarget(
@@ -251,11 +404,17 @@ async function compressPdfToTarget(
   targetBytes: number,
 ): Promise<Uint8Array> {
   let best: Uint8Array | null = null;
+
   for (const settings of TARGET_SIZE_LADDER) {
     const output = await compressPdfFile(file, settings);
+
     best = output;
-    if (output.byteLength <= targetBytes) break;
+
+    if (output.byteLength <= targetBytes) {
+      break;
+    }
   }
+
   return best as Uint8Array;
 }
 
@@ -267,19 +426,26 @@ interface CompressionResult {
 
 export default function CompressPdf() {
   const [tabMode, setTabMode] = useState<"preset" | "target">("preset");
+
   const [compressionLevel, setCompressionLevel] =
     useState<CompressionLevel>("balanced");
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [showHowToUse, setShowHowToUse] = useState(false);
+
   const [targetSizeMB, setTargetSizeMB] = useState("");
 
   const [isProcessing, setIsProcessing] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [result, setResult] = useState<CompressionResult | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+
       setResult(null);
       setErrorMessage(null);
     }
@@ -293,7 +459,10 @@ export default function CompressPdf() {
   };
 
   const handleCompress = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
+
     setIsProcessing(true);
     setErrorMessage(null);
     setResult(null);
@@ -303,9 +472,11 @@ export default function CompressPdf() {
 
       if (tabMode === "target") {
         const targetMB = parseFloat(targetSizeMB);
+
         if (!targetMB || targetMB <= 0) {
           throw new Error("Enter a valid target size in MB first.");
         }
+
         bytes = await compressPdfToTarget(selectedFile, targetMB * 1024 * 1024);
       } else {
         bytes = await compressPdfFile(
@@ -321,6 +492,7 @@ export default function CompressPdf() {
       });
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -332,16 +504,33 @@ export default function CompressPdf() {
   };
 
   const handleDownload = () => {
-    if (!result || !selectedFile) return;
-    const blob = new Blob([result.bytes], { type: "application/pdf" });
+    if (!result || !selectedFile) {
+      return;
+    }
+
+    // FIX:
+    // Explicitly create a true ArrayBuffer so the
+    // value is always accepted as BlobPart.
+    const blob = new Blob([toArrayBuffer(result.bytes)], {
+      type: "application/pdf",
+    });
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
+
     a.href = url;
+
     const baseName = selectedFile.name.replace(/\.pdf$/i, "");
+
     a.download = `${baseName}-compressed.pdf`;
+
     document.body.appendChild(a);
+
     a.click();
+
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   };
 
@@ -363,9 +552,13 @@ export default function CompressPdf() {
           <ArrowLeft size={14} />
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
+
         <span>PDF Tools</span>
+
         <span>/</span>
+
         <span className="font-semibold text-gray-900">Compress PDF</span>
       </div>
 
@@ -375,13 +568,16 @@ export default function CompressPdf() {
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
             <Minimize2 size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">Compress PDF</h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Shrink embedded photos and scans inside a PDF — text stays sharp.
             </p>
@@ -392,6 +588,7 @@ export default function CompressPdf() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -413,12 +610,15 @@ export default function CompressPdf() {
                 <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
+
                 <span className="text-xs font-bold text-gray-800">
                   Drop PDF files here or click to upload
                 </span>
+
                 <span className="text-[10px] text-gray-400 font-medium mt-1">
                   PDF files, max 500 MB each
                 </span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -432,15 +632,18 @@ export default function CompressPdf() {
                   <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
+
                   <div className="truncate">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {selectedFile.name}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleReset}
                   className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
@@ -469,6 +672,7 @@ export default function CompressPdf() {
               >
                 Quality preset
               </button>
+
               <button
                 onClick={() => setTabMode("target")}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -499,6 +703,7 @@ export default function CompressPdf() {
                   <div className="text-xs font-bold text-gray-800">
                     Balanced
                   </div>
+
                   <div className="text-[10px] text-gray-400 mt-0.5">
                     Good balance for mixed text and images
                   </div>
@@ -516,6 +721,7 @@ export default function CompressPdf() {
                   <div className="text-xs font-bold text-gray-800">
                     Light compression
                   </div>
+
                   <div className="text-[10px] text-gray-400 mt-0.5">
                     Gentle image reduction, best for text-heavy PDFs
                   </div>
@@ -533,6 +739,7 @@ export default function CompressPdf() {
                   <div className="text-xs font-bold text-gray-800">
                     Strong compression
                   </div>
+
                   <div className="text-[10px] text-gray-400 mt-0.5">
                     Smaller images, ideal for scans and photos
                   </div>
@@ -543,6 +750,7 @@ export default function CompressPdf() {
                 <label className="text-[11px] font-bold text-gray-600 block">
                   Target size (MB)
                 </label>
+
                 <input
                   type="number"
                   min="0.1"
@@ -552,6 +760,7 @@ export default function CompressPdf() {
                   placeholder="e.g. 2"
                   className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
                 />
+
                 <p className="text-[10px] text-gray-400">
                   We'll try a few quality levels and use the closest match at or
                   under your target.
@@ -567,6 +776,7 @@ export default function CompressPdf() {
             <h2 className="text-xs font-bold text-gray-700">
               Compression preview
             </h2>
+
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
@@ -595,9 +805,11 @@ export default function CompressPdf() {
           {isProcessing ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+
               <p className="text-xs font-bold text-gray-800">
                 Compressing your PDF…
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Everything runs in your browser — larger files take a little
                 longer.
@@ -608,9 +820,11 @@ export default function CompressPdf() {
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
+
               <p className="text-xs font-bold text-red-700">
                 Compression failed
               </p>
+
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
                 {errorMessage}
               </p>
@@ -626,15 +840,19 @@ export default function CompressPdf() {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     Original
                   </p>
+
                   <p className="text-sm font-bold text-gray-800">
                     {formatBytes(result.originalSize)}
                   </p>
                 </div>
+
                 <span className="text-gray-300 text-lg">→</span>
+
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                     Compressed
                   </p>
+
                   <p className="text-sm font-bold text-emerald-600">
                     {formatBytes(result.compressedSize)}
                   </p>
@@ -660,9 +878,11 @@ export default function CompressPdf() {
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <FileText size={20} />
               </div>
+
               <p className="text-xs font-bold text-gray-800">
                 Add a PDF to get started
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 The compressed file will appear here after processing.
               </p>
@@ -687,11 +907,14 @@ export default function CompressPdf() {
                     : "bg-gray-400"
             }`}
           />
+
           <span>
             {errorMessage
               ? "Compression failed — try again"
               : result
-                ? `Done: ${formatBytes(result.compressedSize)} (${reductionPercent}% smaller)`
+                ? `Done: ${formatBytes(
+                    result.compressedSize,
+                  )} (${reductionPercent}% smaller)`
                 : isProcessing
                   ? "Compressing…"
                   : selectedFile
@@ -707,6 +930,7 @@ export default function CompressPdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleCompress}
             disabled={!selectedFile || isProcessing}
@@ -717,6 +941,7 @@ export default function CompressPdf() {
             }`}
           >
             {isProcessing && <Loader2 size={14} className="animate-spin" />}
+
             {isProcessing ? "Compressing…" : "Compress PDF"}
           </button>
         </div>
@@ -725,6 +950,7 @@ export default function CompressPdf() {
       {/* Security Info Banner */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -739,8 +965,10 @@ export default function CompressPdf() {
         >
           <div className="flex items-center gap-2">
             <span className="text-orange-500">?</span>
+
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -758,6 +986,7 @@ export default function CompressPdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/merge-pdfs"
@@ -766,10 +995,12 @@ export default function CompressPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Merge PDFs
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.
@@ -784,10 +1015,12 @@ export default function CompressPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <FileCode size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Split PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Extract specific pages or split every page into separate files.
               </p>

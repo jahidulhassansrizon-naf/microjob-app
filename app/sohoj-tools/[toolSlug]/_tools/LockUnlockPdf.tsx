@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+
 import {
   Lock,
   Star,
@@ -43,7 +44,7 @@ import {
 // see and try to resolve it at build time — which is exactly the
 // "Module not found: Can't resolve 'fs'" error. Loading the script as a
 // plain <script> tag at runtime keeps it completely outside the bundler's
-// module graph, so it's never parsed or resolved at build time at all.
+// module graph, so it's never parsed or resolved at build time.
 //
 // SETUP REQUIRED: copy `qpdf.js` and `qpdf.wasm` from
 // `node_modules/@jspawn/qpdf-wasm` into `public/qpdf-wasm/` in your
@@ -60,9 +61,12 @@ import {
 type QpdfModule = {
   FS: {
     writeFile: (path: string, data: Uint8Array) => void;
+
     readFile: (path: string) => Uint8Array;
+
     unlink: (path: string) => void;
   };
+
   callMain: (args: string[]) => number | void;
 };
 
@@ -71,6 +75,7 @@ type QpdfFactory = (opts: {
 }) => Promise<QpdfModule>;
 
 const QPDF_SCRIPT_ID = "qpdf-wasm-script";
+
 const QPDF_SCRIPT_SRC = "/qpdf-wasm/qpdf.js";
 
 function loadQpdfScript(): Promise<void> {
@@ -79,29 +84,39 @@ function loadQpdfScript(): Promise<void> {
       resolve();
       return;
     }
+
     const script = document.createElement("script");
+
     script.id = QPDF_SCRIPT_ID;
+
     script.src = QPDF_SCRIPT_SRC;
+
     script.async = true;
+
     script.onload = () => resolve();
+
     script.onerror = () =>
       reject(
         new Error(
           `Couldn't load ${QPDF_SCRIPT_SRC}. Make sure qpdf.js and qpdf.wasm from @jspawn/qpdf-wasm are copied into your public/qpdf-wasm/ folder.`,
         ),
       );
+
     document.body.appendChild(script);
   });
 }
 
 function resolveQpdfFactory(): QpdfFactory {
   const w = window as any;
+
   const factory = w.Module ?? w.QPDF ?? w.createQPDFModule ?? w.qpdf;
+
   if (typeof factory !== "function") {
     throw new Error(
       "qpdf.js loaded, but no factory function was found on window (checked Module, QPDF, createQPDFModule, qpdf). Check node_modules/@jspawn/qpdf-wasm/tests for the real export name and update resolveQpdfFactory().",
     );
   }
+
   return factory;
 }
 
@@ -109,8 +124,11 @@ async function createQpdfInstance(): Promise<QpdfModule> {
   if (typeof window === "undefined") {
     throw new Error("qpdf can only run in the browser.");
   }
+
   await loadQpdfScript();
+
   const factory = resolveQpdfFactory();
+
   return factory({
     locateFile: (path: string) => `/qpdf-wasm/${path}`,
   });
@@ -121,7 +139,9 @@ async function runQpdf(
   buildArgs: (input: string, output: string) => string[],
 ): Promise<Uint8Array> {
   const qpdf = await createQpdfInstance();
+
   const inputPath = "/input.pdf";
+
   const outputPath = "/output.pdf";
 
   qpdf.FS.writeFile(inputPath, bytes);
@@ -172,9 +192,16 @@ async function unlockPdfBytes(
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
   const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
@@ -185,23 +212,53 @@ interface ActionResult {
 
 type Mode = "lock" | "unlock";
 
+// ---------------------------------------------------------------------------
+// Vercel / TypeScript Blob compatibility helper
+// ---------------------------------------------------------------------------
+//
+// Newer TypeScript lib.dom typings can infer Uint8Array as
+// Uint8Array<ArrayBufferLike>. Blob expects a BlobPart whose underlying
+// ArrayBuffer is a concrete ArrayBuffer.
+//
+// We explicitly allocate a real ArrayBuffer and copy the bytes into it.
+// This does not change the PDF bytes or any application functionality.
+// ---------------------------------------------------------------------------
+
+function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+
+  const view = new Uint8Array(buffer);
+
+  view.set(bytes);
+
+  return buffer;
+}
+
 export default function LockUnlockPdf() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [showHowToUse, setShowHowToUse] = useState(false);
 
   const [mode, setMode] = useState<Mode>("lock");
+
   const [password, setPassword] = useState("");
+
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [unlockPassword, setUnlockPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [result, setResult] = useState<ActionResult | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+
       setResult(null);
       setErrorMessage(null);
     }
@@ -236,25 +293,35 @@ export default function LockUnlockPdf() {
       : unlockPassword.length > 0);
 
   const handleSubmit = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
+
     setIsProcessing(true);
     setErrorMessage(null);
     setResult(null);
 
     try {
       const bytes = new Uint8Array(await selectedFile.arrayBuffer());
+
       const outputBytes =
         mode === "lock"
           ? await lockPdfBytes(bytes, password)
           : await unlockPdfBytes(bytes, unlockPassword);
 
-      setResult({ bytes: outputBytes, size: outputBytes.byteLength });
+      setResult({
+        bytes: outputBytes,
+        size: outputBytes.byteLength,
+      });
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : `Something went wrong while ${mode === "lock" ? "locking" : "unlocking"} this PDF.`,
+          : `Something went wrong while ${
+              mode === "lock" ? "locking" : "unlocking"
+            } this PDF.`,
       );
     } finally {
       setIsProcessing(false);
@@ -262,16 +329,36 @@ export default function LockUnlockPdf() {
   };
 
   const handleDownload = () => {
-    if (!result || !selectedFile) return;
-    const blob = new Blob([result.bytes], { type: "application/pdf" });
+    if (!result || !selectedFile) {
+      return;
+    }
+
+    // IMPORTANT:
+    // Convert the Uint8Array into a concrete ArrayBuffer before
+    // passing it to Blob. This fixes Vercel's TS2322 BlobPart error
+    // without changing the actual PDF contents.
+    const pdfBuffer = toRealArrayBuffer(result.bytes);
+
+    const blob = new Blob([pdfBuffer], {
+      type: "application/pdf",
+    });
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
+
     a.href = url;
+
     const baseName = selectedFile.name.replace(/\.pdf$/i, "");
+
     a.download = `${baseName}-${mode === "lock" ? "locked" : "unlocked"}.pdf`;
+
     document.body.appendChild(a);
+
     a.click();
+
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   };
 
@@ -284,11 +371,16 @@ export default function LockUnlockPdf() {
           className="flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={14} />
+
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
+
         <span>PDF Tools</span>
+
         <span>/</span>
+
         <span className="font-semibold text-gray-900">Lock / Unlock PDF</span>
       </div>
 
@@ -298,15 +390,18 @@ export default function LockUnlockPdf() {
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
             <Lock size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">
                 Lock / Unlock PDF
               </h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Add a password to protect your PDF or remove an existing password.
             </p>
@@ -317,6 +412,7 @@ export default function LockUnlockPdf() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -333,9 +429,12 @@ export default function LockUnlockPdf() {
                 <h2 className="text-xs font-bold text-gray-900">
                   Files ({selectedFile ? 1 : 0})
                 </h2>
+
                 <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
                   <Plus size={12} />
+
                   <span>Add</span>
+
                   <input
                     type="file"
                     accept="application/pdf"
@@ -350,12 +449,15 @@ export default function LockUnlockPdf() {
                   <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                     <Upload size={20} />
                   </div>
+
                   <span className="text-xs font-bold text-gray-800">
                     Drop a PDF here or click to upload
                   </span>
+
                   <span className="text-[10px] text-gray-400 font-medium mt-1">
                     1 PDF file, max 500 MB
                   </span>
+
                   <input
                     type="file"
                     accept="application/pdf"
@@ -369,15 +471,18 @@ export default function LockUnlockPdf() {
                     <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
                       <FileText size={16} />
                     </div>
+
                     <div className="truncate">
                       <p className="text-xs font-bold text-gray-800 truncate">
                         {selectedFile.name}
                       </p>
+
                       <p className="text-[10px] text-gray-400">
                         {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
                     </div>
                   </div>
+
                   <button
                     onClick={handleReset}
                     className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
@@ -409,6 +514,7 @@ export default function LockUnlockPdf() {
                   <Lock size={12} />
                   Lock
                 </button>
+
                 <button
                   onClick={() => handleModeChange("unlock")}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
@@ -428,6 +534,7 @@ export default function LockUnlockPdf() {
                     <label className="text-[11px] font-bold text-gray-600 block">
                       New password
                     </label>
+
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
@@ -436,6 +543,7 @@ export default function LockUnlockPdf() {
                         placeholder="At least 4 characters"
                         className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
                       />
+
                       <button
                         type="button"
                         onClick={() => setShowPassword((v) => !v)}
@@ -454,6 +562,7 @@ export default function LockUnlockPdf() {
                     <label className="text-[11px] font-bold text-gray-600 block">
                       Confirm password
                     </label>
+
                     <input
                       type={showPassword ? "text" : "password"}
                       value={confirmPassword}
@@ -465,6 +574,7 @@ export default function LockUnlockPdf() {
                           : "border-gray-200 focus:ring-red-500/20"
                       }`}
                     />
+
                     {passwordsMismatch && (
                       <p className="text-[10px] text-red-500 font-medium">
                         Passwords don't match.
@@ -482,6 +592,7 @@ export default function LockUnlockPdf() {
                   <label className="text-[11px] font-bold text-gray-600 block">
                     Current password
                   </label>
+
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -490,6 +601,7 @@ export default function LockUnlockPdf() {
                       placeholder="Enter the PDF's password"
                       className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
                     />
+
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
@@ -498,6 +610,7 @@ export default function LockUnlockPdf() {
                       {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
+
                   <p className="text-[10px] text-gray-400 leading-relaxed pt-1">
                     We'll use this to remove the password and produce an
                     open-access copy of your PDF.
@@ -512,6 +625,7 @@ export default function LockUnlockPdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
@@ -542,11 +656,13 @@ export default function LockUnlockPdf() {
           {isProcessing ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+
               <p className="text-xs font-bold text-gray-800">
                 {mode === "lock"
                   ? "Encrypting your PDF…"
                   : "Decrypting your PDF…"}
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Everything runs in your browser — larger files take a little
                 longer.
@@ -557,9 +673,11 @@ export default function LockUnlockPdf() {
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
+
               <p className="text-xs font-bold text-red-700">
                 {mode === "lock" ? "Locking failed" : "Unlocking failed"}
               </p>
+
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
                 {errorMessage}
               </p>
@@ -569,21 +687,25 @@ export default function LockUnlockPdf() {
               <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-100">
                 <CheckCircle2 size={24} />
               </div>
+
               <div className="text-center">
                 <p className="text-xs font-bold text-gray-800">
                   {mode === "lock"
                     ? "Your PDF is password-protected"
                     : "Your PDF is unlocked"}
                 </p>
+
                 <p className="text-[11px] text-gray-400 mt-1">
                   {formatBytes(result.size)}
                 </p>
               </div>
+
               <button
                 onClick={handleDownload}
                 className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-red-600 transition-all"
               >
                 <Download size={14} />
+
                 {mode === "lock"
                   ? "Download locked PDF"
                   : "Download unlocked PDF"}
@@ -594,11 +716,13 @@ export default function LockUnlockPdf() {
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <KeyRound size={20} />
               </div>
+
               <p className="text-xs font-bold text-gray-800">
                 {selectedFile
                   ? "Enter a password to continue"
                   : "Add files to get started"}
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Your result will appear here after you run the tool.
               </p>
@@ -623,9 +747,12 @@ export default function LockUnlockPdf() {
                     : "bg-gray-400"
             }`}
           />
+
           <span>
             {errorMessage
-              ? `${mode === "lock" ? "Locking" : "Unlocking"} failed — try again`
+              ? `${
+                  mode === "lock" ? "Locking" : "Unlocking"
+                } failed — try again`
               : result
                 ? `Done: ${formatBytes(result.size)} ready to download`
                 : isProcessing
@@ -645,6 +772,7 @@ export default function LockUnlockPdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
@@ -661,6 +789,7 @@ export default function LockUnlockPdf() {
             ) : (
               <KeyRound size={14} />
             )}
+
             <span>
               {isProcessing
                 ? mode === "lock"
@@ -677,6 +806,7 @@ export default function LockUnlockPdf() {
       {/* Browser Security Processing Notice */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -691,8 +821,10 @@ export default function LockUnlockPdf() {
         >
           <div className="flex items-center gap-2">
             <span className="text-orange-500 font-bold">?</span>
+
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -709,6 +841,7 @@ export default function LockUnlockPdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
@@ -717,10 +850,12 @@ export default function LockUnlockPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Compress PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
@@ -735,10 +870,12 @@ export default function LockUnlockPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Merge PDFs
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.

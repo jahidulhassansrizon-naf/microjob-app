@@ -57,6 +57,21 @@ function slugify(label: string): string {
   return label.toLowerCase().replace(/\s+/g, "-");
 }
 
+// ---------------------------------------------------------------------------
+// Convert Uint8Array to a concrete ArrayBuffer.
+//
+// Newer TypeScript/lib definitions can type Uint8Array as
+// Uint8Array<ArrayBufferLike>, while Blob expects a BlobPart backed by an
+// ArrayBuffer. Copying into a fresh ArrayBuffer keeps the runtime behavior
+// unchanged and satisfies the stricter Vercel TypeScript check.
+// ---------------------------------------------------------------------------
+function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  const view = new Uint8Array(buffer);
+  view.set(bytes);
+  return buffer;
+}
+
 function parsePageRanges(input: string, pageCount: number): PageGroup[] {
   const segments = input
     .split(",")
@@ -73,6 +88,7 @@ function parsePageRanges(input: string, pageCount: number): PageGroup[] {
     if (rangeMatch) {
       const start = parseInt(rangeMatch[1], 10);
       const end = parseInt(rangeMatch[2], 10);
+
       if (start < 1 || end > pageCount || start > end) {
         throw new Error(
           `Range "${segment}" is out of bounds — this PDF has ${pageCount} page${
@@ -80,8 +96,12 @@ function parsePageRanges(input: string, pageCount: number): PageGroup[] {
           }.`,
         );
       }
+
       const pages: number[] = [];
-      for (let p = start; p <= end; p++) pages.push(p);
+      for (let p = start; p <= end; p++) {
+        pages.push(p);
+      }
+
       return {
         label: start === end ? `Page ${start}` : `Pages ${start}-${end}`,
         pages,
@@ -90,6 +110,7 @@ function parsePageRanges(input: string, pageCount: number): PageGroup[] {
 
     if (/^\d+$/.test(segment)) {
       const p = parseInt(segment, 10);
+
       if (p < 1 || p > pageCount) {
         throw new Error(
           `Page ${p} is out of bounds — this PDF has ${pageCount} page${
@@ -97,7 +118,11 @@ function parsePageRanges(input: string, pageCount: number): PageGroup[] {
           }.`,
         );
       }
-      return { label: `Page ${p}`, pages: [p] };
+
+      return {
+        label: `Page ${p}`,
+        pages: [p],
+      };
     }
 
     throw new Error(`"${segment}" isn't a valid page or range.`);
@@ -109,15 +134,25 @@ async function buildSplitFiles(
   groups: PageGroup[],
 ): Promise<SplitResult[]> {
   const bytes = await file.arrayBuffer();
-  const srcDoc = await PDFDocument.load(bytes, { updateMetadata: false });
+  const srcDoc = await PDFDocument.load(bytes, {
+    updateMetadata: false,
+  });
 
   const outputs: SplitResult[] = [];
+
   for (const group of groups) {
     const newDoc = await PDFDocument.create();
+
     const indices = group.pages.map((p) => p - 1);
+
     const copiedPages = await newDoc.copyPages(srcDoc, indices);
+
     copiedPages.forEach((page) => newDoc.addPage(page));
-    const outBytes = await newDoc.save({ useObjectStreams: true });
+
+    const outBytes = await newDoc.save({
+      useObjectStreams: true,
+    });
+
     outputs.push({
       label: group.label,
       bytes: outBytes,
@@ -125,6 +160,7 @@ async function buildSplitFiles(
       pageCount: group.pages.length,
     });
   }
+
   return outputs;
 }
 
@@ -152,13 +188,19 @@ export default function SplitPdf() {
 
     try {
       const bytes = await file.arrayBuffer();
-      const doc = await PDFDocument.load(bytes, { updateMetadata: false });
+
+      const doc = await PDFDocument.load(bytes, {
+        updateMetadata: false,
+      });
+
       setPageCount(doc.getPageCount());
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         "Couldn't read this PDF — it may be encrypted or corrupted.",
       );
+
       setSelectedFile(null);
     } finally {
       setIsLoadingFile(false);
@@ -167,8 +209,12 @@ export default function SplitPdf() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
+
     e.target.value = "";
-    if (file) loadFile(file);
+
+    if (file) {
+      loadFile(file);
+    }
   };
 
   const handleReset = () => {
@@ -199,9 +245,11 @@ export default function SplitPdf() {
           : parsePageRanges(rangesInput, pageCount);
 
       const outputs = await buildSplitFiles(selectedFile, groups);
+
       setResults(outputs);
     } catch (err) {
       console.error(err);
+
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -213,22 +261,36 @@ export default function SplitPdf() {
   };
 
   const downloadResult = (result: SplitResult) => {
-    const blob = new Blob([result.bytes], { type: "application/pdf" });
+    // Convert Uint8Array<ArrayBufferLike> to a concrete ArrayBuffer
+    // before passing it to Blob to satisfy strict TypeScript typings.
+    const pdfBuffer = toRealArrayBuffer(result.bytes);
+
+    const blob = new Blob([pdfBuffer], {
+      type: "application/pdf",
+    });
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
+
     const baseName = selectedFile?.name.replace(/\.pdf$/i, "") || "split";
+
     a.download = `${baseName}-${slugify(result.label)}.pdf`;
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   };
 
   const handleDownloadAll = async () => {
     if (!results) return;
+
     for (const result of results) {
       downloadResult(result);
+
       // Small gap so browsers don't block back-to-back downloads.
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
@@ -252,9 +314,11 @@ export default function SplitPdf() {
           <ArrowLeft size={14} />
           <span>Back to Tools</span>
         </Link>
+
         <span>/</span>
         <span>PDF Tools</span>
         <span>/</span>
+
         <span className="font-semibold text-gray-900">Split PDF</span>
       </div>
 
@@ -264,13 +328,16 @@ export default function SplitPdf() {
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
             <FileCode size={24} />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-gray-900">Split PDF</h1>
+
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
+
             <p className="text-xs text-gray-500 font-medium mt-0.5">
               Extract specific pages or split every page into separate files.
             </p>
@@ -281,6 +348,7 @@ export default function SplitPdf() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16} />
           </button>
+
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16} />
           </button>
@@ -296,9 +364,11 @@ export default function SplitPdf() {
               <h2 className="text-xs font-bold text-gray-900">
                 Files ({selectedFile ? 1 : 0})
               </h2>
+
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
                 <Plus size={12} />
                 <span>Add</span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -313,12 +383,15 @@ export default function SplitPdf() {
                 <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
+
                 <span className="text-xs font-bold text-gray-800">
                   Drop a PDF here or click to upload
                 </span>
+
                 <span className="text-[10px] text-gray-400 font-medium mt-1">
                   1 PDF file, max 500 MB
                 </span>
+
                 <input
                   type="file"
                   accept="application/pdf"
@@ -332,10 +405,12 @@ export default function SplitPdf() {
                   <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
+
                   <div className="truncate">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {selectedFile.name}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                       {isLoadingFile
@@ -346,6 +421,7 @@ export default function SplitPdf() {
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleReset}
                   className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
@@ -373,6 +449,7 @@ export default function SplitPdf() {
                 >
                   All pages
                 </button>
+
                 <button
                   onClick={() => setSplitMode("ranges")}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -395,6 +472,7 @@ export default function SplitPdf() {
                   <label className="text-[11px] font-bold text-gray-600 block">
                     Pages or ranges
                   </label>
+
                   <input
                     type="text"
                     value={rangesInput}
@@ -402,10 +480,11 @@ export default function SplitPdf() {
                     placeholder="e.g. 1-3, 5"
                     className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
                   />
+
                   <p className="text-[10px] text-gray-400">
-                    This PDF has {pageCount} page{pageCount === 1 ? "" : "s"}.
-                    Separate multiple ranges with commas — each one becomes its
-                    own file.
+                    This PDF has {pageCount} page
+                    {pageCount === 1 ? "" : "s"}. Separate multiple ranges with
+                    commas — each one becomes its own file.
                   </p>
                 </div>
               )}
@@ -417,6 +496,7 @@ export default function SplitPdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
@@ -447,9 +527,11 @@ export default function SplitPdf() {
           {isProcessing || isLoadingFile ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+
               <p className="text-xs font-bold text-gray-800">
                 {isProcessing ? "Splitting your PDF…" : "Reading your PDF…"}
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Everything runs in your browser — larger files take a little
                 longer.
@@ -460,7 +542,9 @@ export default function SplitPdf() {
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
+
               <p className="text-xs font-bold text-red-700">Split failed</p>
+
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
                 {errorMessage}
               </p>
@@ -472,10 +556,13 @@ export default function SplitPdf() {
                   <div className="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-100">
                     <CheckCircle2 size={16} />
                   </div>
+
                   <p className="text-xs font-bold text-gray-800">
-                    {results.length} file{results.length === 1 ? "" : "s"} ready
+                    {results.length} file
+                    {results.length === 1 ? "" : "s"} ready
                   </p>
                 </div>
+
                 {results.length > 1 && (
                   <button
                     onClick={handleDownloadAll}
@@ -496,12 +583,15 @@ export default function SplitPdf() {
                     <div className="w-11 h-14 bg-white border border-gray-200 rounded-md shadow-2xs flex items-center justify-center text-red-500">
                       <FileText size={18} />
                     </div>
+
                     <p className="text-[11px] font-bold text-gray-800 truncate w-full">
                       {result.label}
                     </p>
+
                     <p className="text-[10px] text-gray-400">
                       {formatBytes(result.size)}
                     </p>
+
                     <button
                       onClick={() => downloadResult(result)}
                       className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-gray-700 text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all"
@@ -518,11 +608,13 @@ export default function SplitPdf() {
               <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
                 <FileText size={20} />
               </div>
+
               <p className="text-xs font-bold text-gray-800">
                 {selectedFile
                   ? "Choose your split options"
                   : "Add files to get started"}
               </p>
+
               <p className="text-[11px] text-gray-400 mt-1">
                 Your result will appear here after you run the tool.
               </p>
@@ -547,11 +639,14 @@ export default function SplitPdf() {
                     : "bg-gray-400"
             }`}
           />
+
           <span>
             {errorMessage
               ? "Split failed — try again"
               : results
-                ? `Done: ${results.length} file${results.length === 1 ? "" : "s"} ready to download`
+                ? `Done: ${results.length} file${
+                    results.length === 1 ? "" : "s"
+                  } ready to download`
                 : isProcessing
                   ? "Splitting…"
                   : isLoadingFile
@@ -569,6 +664,7 @@ export default function SplitPdf() {
           >
             Reset
           </button>
+
           <button
             onClick={handleSplit}
             disabled={!canSplit}
@@ -583,6 +679,7 @@ export default function SplitPdf() {
             ) : (
               <FileCode size={14} />
             )}
+
             <span>{isProcessing ? "Splitting…" : "Split PDF"}</span>
           </button>
         </div>
@@ -591,6 +688,7 @@ export default function SplitPdf() {
       {/* Security Banner */}
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0" />
+
         <span>
           Your files are processed in the browser — they are not uploaded to any
           server.
@@ -607,6 +705,7 @@ export default function SplitPdf() {
             <span className="text-orange-500">?</span>
             <span>How to use</span>
           </div>
+
           {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
@@ -623,6 +722,7 @@ export default function SplitPdf() {
         <h3 className="text-xs font-bold text-gray-900">
           Tools in the same category
         </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
@@ -631,10 +731,12 @@ export default function SplitPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Compress PDF
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
@@ -649,10 +751,12 @@ export default function SplitPdf() {
             <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
+
             <div>
               <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
                 Merge PDFs
               </h4>
+
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.
