@@ -1668,7 +1668,7 @@ export default function PassportToPdf() {
   useEffect(() => {
     try {
       setIsFavorite(
-        window.localStorage.getItem("sohoj-passport-to-pdf-favorite") === "1",
+        window.localStorage.getItem("sohoj-passport-joiner-favorite") === "1",
       );
     } catch {
       setIsFavorite(false);
@@ -1832,7 +1832,7 @@ export default function PassportToPdf() {
     setSharpening(50);
     setZoom(100);
     setCropTarget(null);
-    showNotice("info", "Passport PDF settings have been reset.");
+    showNotice("info", "Passport Joiner settings have been reset.");
   };
 
   const toggleFavorite = () => {
@@ -1841,7 +1841,7 @@ export default function PassportToPdf() {
 
     try {
       window.localStorage.setItem(
-        "sohoj-passport-to-pdf-favorite",
+        "sohoj-passport-joiner-favorite",
         next ? "1" : "0",
       );
     } catch {
@@ -1856,7 +1856,7 @@ export default function PassportToPdf() {
 
   const handleShare = async () => {
     const shareData = {
-      title: "Passport to PDF",
+      title: "Passport Joiner",
       text: "Create a clean A4 passport PDF directly in the browser.",
       url: window.location.href,
     };
@@ -1952,7 +1952,7 @@ export default function PassportToPdf() {
       });
 
       doc.setProperties({
-        title: "Passport to PDF",
+        title: "Passport Joiner",
         subject: "Passport page PDF",
         creator: "SohojKaj",
       });
@@ -2000,7 +2000,7 @@ export default function PassportToPdf() {
         }
       }
 
-      doc.save("passport-to-pdf.pdf");
+      doc.save("passport-joiner.pdf");
       showNotice(
         "success",
         `PDF created successfully — ${currentPageCount} sheet${currentPageCount === 1 ? "" : "s"}.`,
@@ -2067,7 +2067,7 @@ export default function PassportToPdf() {
         return `
           <section class="sheet">
             ${imageTags.join("\n")}
-            <div class="sheet-label">Passport to PDF · Sheet ${index + 1}</div>
+            <div class="sheet-label">Passport Joiner · Sheet ${index + 1}</div>
           </section>
         `;
       }).join("\n");
@@ -2081,7 +2081,7 @@ export default function PassportToPdf() {
         <html>
           <head>
             <meta charset="utf-8" />
-            <title>Passport to PDF</title>
+            <title>Passport Joiner</title>
             <style>
               @page {
                 size: ${pageWidth}mm ${pageHeight}mm;
@@ -2243,7 +2243,7 @@ export default function PassportToPdf() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-[#0F172A]">Passport to PDF</span>
+        <span className="font-semibold text-[#0F172A]">Passport Joiner</span>
       </div>
 
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
@@ -2254,7 +2254,7 @@ export default function PassportToPdf() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-[#0F172A]">
-                Passport to PDF
+                Passport Joiner
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free

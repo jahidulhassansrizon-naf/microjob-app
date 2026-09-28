@@ -1576,8 +1576,8 @@ export default function ImageSizeReducer() {
               bg: "bg-emerald-500",
             },
             {
-              name: "Passport to PDF",
-              href: "/sohoj-tools/passport-to-pdf",
+              name: "Passport Joiner",
+              href: "/sohoj-tools/passport-joiner",
               icon: BookOpen,
               bg: "bg-emerald-500",
             },

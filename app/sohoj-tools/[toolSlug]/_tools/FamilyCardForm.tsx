@@ -41,10 +41,10 @@ const relatedTools = [
     icon: FileText,
   },
   {
-    title: "Allowance Application Tracking",
+    title: "Reduce Video File Size",
     description:
       "Check status of Department of Social Services allowance application status — by tracking id or NID — and print the result.",
-    href: "/sohoj-tools/allowance-application-tracking",
+    href: "/sohoj-tools/reduce-video-file-size",
     icon: FileText,
   },
 ];

@@ -2659,7 +2659,7 @@ export default function NidToPdf() {
           </Link>
 
           <Link
-            href="/sohoj-tools/passport-to-pdf"
+            href="/sohoj-tools/passport-joiner"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
           >
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
@@ -2667,7 +2667,7 @@ export default function NidToPdf() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                Passport to PDF
+                Passport Joiner
               </h4>
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
                 Turn passport photos into a clean A4 PDF.

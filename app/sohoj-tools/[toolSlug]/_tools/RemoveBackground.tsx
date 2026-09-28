@@ -435,7 +435,7 @@ export default function RemoveBackground() {
           </Link>
 
           <Link
-            href="/sohoj-tools/passport-to-pdf"
+            href="/sohoj-tools/passport-joiner"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
@@ -443,7 +443,7 @@ export default function RemoveBackground() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                Passport to PDF
+                Passport Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
                 Turn passport front and back page photos into a clean A4 PDF —
