@@ -136,6 +136,13 @@ const toolsData: ToolItem[] = [
     badge: "New",
   },
   {
+    id: "26",
+    name: "Voter Registration Form",
+    category: "General",
+    bgColor: "bg-[#4f46e5]",
+    icon: FileText,
+  },
+  {
     id: "6",
     name: "Passport Joiner",
     category: "General",
@@ -369,7 +376,7 @@ function SohojToolsContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                25 free tools to speed up daily work.
+                26 free tools to speed up daily work.
               </p>
             </div>
           </div>

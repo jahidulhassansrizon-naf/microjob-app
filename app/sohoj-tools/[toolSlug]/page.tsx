@@ -11,6 +11,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   'age-calculator': dynamic(() => import("./_tools/AgeCalculator")),
   'passport-joiner': dynamic(() => import("./_tools/PassportToPdf")),
   'voter-migration-form': dynamic(() => import("./_tools/VoterMigrationForm")),
+  'voter-registration-form': dynamic(() => import("./_tools/VoterRegistrationForm")),
   'family-card-form': dynamic(() => import("./_tools/FamilyCardForm")),
   'reduce-video-file-size': dynamic(() => import("./_tools/AllowanceApplicationTracking")),
   'remove-background': dynamic(() => import("./_tools/RemoveBackground")),
