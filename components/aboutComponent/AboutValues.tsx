@@ -8,7 +8,7 @@ export default function AboutValues() {
     {
       title: "Innovation comes first.",
       desc: "We don't follow trends, we create trends.",
-      bg: "bg-[#edf5ff] text-[#1769ff]",
+      bg: "bg-blue-50 text-[#2563EB]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -28,7 +28,7 @@ export default function AboutValues() {
     {
       title: "People are at the center.",
       desc: "The real function of technology is to serve people.",
-      bg: "bg-[#effcf5] text-[#00a84f]",
+      bg: "bg-emerald-50 text-[#10B981]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -48,7 +48,7 @@ export default function AboutValues() {
     {
       title: "Learning mindset",
       desc: "We are constantly learning, constantly moving forward.",
-      bg: "bg-[#f7efff] text-[#8a21e8]",
+      bg: "bg-indigo-50 text-[#4F46E5]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -68,7 +68,7 @@ export default function AboutValues() {
     {
       title: "Speed and quality",
       desc: "Fast delivery does not mean compromising on quality.",
-      bg: "bg-[#fff6eb] text-[#ff4b00]",
+      bg: "bg-cyan-50 text-[#0891B2]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -88,7 +88,7 @@ export default function AboutValues() {
     {
       title: "Result-based",
       desc: "Measurable business results are what matters most to us.",
-      bg: "bg-[#fffbea] text-[#d99400]",
+      bg: "bg-teal-50 text-[#0D9488]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -108,7 +108,7 @@ export default function AboutValues() {
     {
       title: "Sustainable impact",
       desc: "We build with the long term in mind.",
-      bg: "bg-[#fff0f7] text-[#e51b78]",
+      bg: "bg-slate-100 text-[#0F172A]",
       icon: (
         <svg
           className="w-7 h-7"
@@ -167,17 +167,7 @@ export default function AboutValues() {
   };
 
   return (
-    <section
-      className="
-        w-full
-        m-0
-        px-4
-        pt-[24px]
-        pb-[76px]
-        text-center
-        bg-[#f8f9fa]
-      "
-    >
+    <section className="w-full m-0 px-4 pt-[24px] pb-[76px] text-center bg-[#F8FAFC]">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -189,25 +179,24 @@ export default function AboutValues() {
           variants={itemVariants}
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.2 }}
-          className="inline-flex cursor-default items-center gap-2 h-[39px] px-5 rounded-full border border-orange-400 bg-white text-[13px] font-medium text-orange-600"
+          className="inline-flex cursor-default items-center justify-center h-[39px] px-5 rounded-full border border-blue-200 bg-white text-[13px] font-semibold text-[#0F172A] shadow-sm"
         >
-          <span className="text-pink-500 text-[15px]">✦</span>
           <span>Our values</span>
         </motion.div>
 
         {/* Heading */}
         <motion.h2
           variants={itemVariants}
-          className="mt-6 mb-0 text-[45px] leading-[1.08] tracking-[-1.8px] font-extrabold text-gray-950"
+          className="mt-6 mb-0 text-[45px] leading-[1.08] tracking-[-1.8px] font-extrabold text-[#0F172A]"
         >
           The faith we have{" "}
-          <span className="text-orange-500">Takes the lead</span>
+          <span className="text-[#2563EB]">Takes the lead</span>
         </motion.h2>
 
         {/* Subtitle */}
         <motion.p
           variants={itemVariants}
-          className="mt-7 mb-0 text-[17px] leading-6 text-gray-700"
+          className="mt-7 mb-0 text-[17px] leading-6 text-slate-600"
         >
           Behind every action we take, there are some core values that guide us.
         </motion.p>
@@ -229,10 +218,11 @@ export default function AboutValues() {
                 pt-7
                 pb-6
                 rounded-[27px]
-                border border-white
-                shadow-[0_2px_2px_rgba(0,0,0,0.10)]
-                transition-shadow duration-300
-                hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]
+                border border-[#E2E8F0]
+                shadow-sm
+                transition-all duration-300
+                hover:border-blue-200
+                hover:shadow-md
               "
             >
               <div
@@ -241,11 +231,11 @@ export default function AboutValues() {
                 {val.icon}
               </div>
 
-              <h3 className="m-0 text-[20px] leading-6 font-extrabold text-[#071a31]">
+              <h3 className="m-0 text-[20px] leading-6 font-extrabold text-[#0F172A]">
                 {val.title}
               </h3>
 
-              <p className="mt-4 mb-0 text-[16px] leading-[23px] text-[#142b43] max-w-[310px]">
+              <p className="mt-4 mb-0 text-[16px] leading-[23px] text-slate-600 max-w-[310px]">
                 {val.desc}
               </p>
             </motion.div>

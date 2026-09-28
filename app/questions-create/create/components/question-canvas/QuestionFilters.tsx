@@ -39,22 +39,22 @@ function FilterSelect({
         onClick={onOpen}
         className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-[11px] font-semibold transition ${
           disabled || loading
-            ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300"
+            ? "cursor-not-allowed border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A]/40"
             : open
-              ? "border-[#F3A847] bg-white text-gray-800 ring-1 ring-[#F3A847]/20"
-              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+              ? "border-[#2563EB] bg-white text-[#0F172A] ring-1 ring-[#2563EB]/20"
+              : "border-[#E2E8F0] bg-white text-[#0F172A] hover:border-[#E2E8F0]"
         }`}
       >
         <span className="truncate">{display}</span>
         {open ? (
-          <ChevronUp size={13} className="text-gray-400" />
+          <ChevronUp size={13} className="text-[#0F172A]/55" />
         ) : (
-          <ChevronDown size={13} className="text-gray-400" />
+          <ChevronDown size={13} className="text-[#0F172A]/55" />
         )}
       </button>
 
       {open && !disabled && !loading ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
           {options.map((option) => {
             const active = option.value === value;
             return (
@@ -62,10 +62,10 @@ function FilterSelect({
                 type="button"
                 key={option.value}
                 onClick={() => onChange(option.value)}
-                className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-[11px] transition ${active ? "bg-orange-50/70 font-bold text-gray-900" : "font-medium text-gray-600 hover:bg-gray-50"}`}
+                className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-[11px] transition ${active ? "bg-[#E2E8F0] font-bold text-[#0F172A]" : "font-medium text-[#0F172A] hover:bg-[#E2E8F0]"}`}
               >
                 <span className="w-4 shrink-0">
-                  {active ? <Check size={13} className="text-[#F3A847]" /> : null}
+                  {active ? <Check size={13} className="text-[#2563EB]" /> : null}
                 </span>
                 <span className="truncate">{option.label}</span>
               </button>
@@ -111,22 +111,22 @@ export default function QuestionFilters({
   return (
               <section
                 id="question-filter-panel"
-                className="rounded-xl border border-gray-200 bg-white shadow-sm"
+                className="rounded-xl border border-[#E2E8F0] bg-white shadow-sm"
               >
                 <button
                   type="button"
                   onClick={() => setFiltersOpen((current) => !current)}
-                  className="flex w-full items-center justify-between border-b border-gray-100 px-3 py-3 text-left"
+                  className="flex w-full items-center justify-between border-b border-[#E2E8F0] px-3 py-3 text-left"
                 >
-                  <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.09em] text-gray-700">
-                    <SlidersHorizontal size={13} className="text-[#F3A847]" />
+                  <span className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.09em] text-[#0F172A]">
+                    <SlidersHorizontal size={13} className="text-[#2563EB]" />
                     Filters
                   </span>
 
                   {filtersOpen ? (
-                    <ChevronUp size={14} className="text-gray-400" />
+                    <ChevronUp size={14} className="text-[#0F172A]/55" />
                   ) : (
-                    <ChevronDown size={14} className="text-gray-400" />
+                    <ChevronDown size={14} className="text-[#0F172A]/55" />
                   )}
                 </button>
 
@@ -196,11 +196,11 @@ export default function QuestionFilters({
                     <div
                       className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${
                         selectedChapter
-                          ? "border-gray-200 bg-white"
-                          : "border-gray-200 bg-gray-50 opacity-50"
+                          ? "border-[#E2E8F0] bg-white"
+                          : "border-[#E2E8F0] bg-[#F8FAFC] opacity-50"
                       }`}
                     >
-                      <Search size={13} className="shrink-0 text-gray-400" />
+                      <Search size={13} className="shrink-0 text-[#0F172A]/55" />
 
                       <input
                         value={searchQuery}
@@ -213,7 +213,7 @@ export default function QuestionFilters({
                           }
                         }}
                         placeholder="Search questions..."
-                        className="w-full border-0 bg-transparent text-[11px] font-medium text-gray-700 outline-none placeholder:text-gray-300"
+                        className="w-full border-0 bg-transparent text-[11px] font-medium text-[#0F172A] outline-none placeholder:text-[#0F172A]/40"
                       />
                     </div>
 
@@ -240,8 +240,8 @@ export default function QuestionFilters({
                         !selectedSubject ||
                         !selectedChapter ||
                         loadingQuestions
-                          ? "cursor-not-allowed bg-amber-100 text-amber-400"
-                          : "bg-[#F3A847] text-white hover:bg-[#e29a3e]"
+                          ? "cursor-not-allowed bg-[#E2E8F0] text-[#0F172A]/40"
+                          : "bg-[#2563EB] text-white hover:bg-[#2563EB]"
                       }`}
                     >
                       {loadingQuestions ? (

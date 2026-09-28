@@ -185,7 +185,7 @@ function IconButton({
       title={title}
       className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
         active
-          ? "border-[#ff6b49] bg-[#fff1e9] text-[#eb6841]"
+          ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]"
           : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800"
       }`}
     >
@@ -907,16 +907,16 @@ export default function AITemplatePage() {
 
         .ai-page {
           min-height: 100vh;
-          background: #f7f0ec;
-          color: #24211f;
+          background: #f8fafc;
+          color: #0f172a;
         }
 
         .credit-alert {
           margin: 15px 18px 10px;
           min-height: 50px;
           border-radius: 10px;
-          border: 1px solid #ffcbc9;
-          background: #fff1f0;
+          border: 1px solid #e2e8f0;
+          background: #fff;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -937,7 +937,7 @@ export default function AITemplatePage() {
           display: grid;
           place-items: center;
           color: #fff;
-          background: #ec4d49;
+          background: #ef4444;
           font-weight: 900;
           font-size: 13px;
         }
@@ -945,13 +945,13 @@ export default function AITemplatePage() {
         .credit-title {
           font-size: 10px;
           font-weight: 900;
-          color: #cc4b47;
+          color: #0f172a;
         }
 
         .credit-sub {
           margin-top: 2px;
           font-size: 9px;
-          color: #ce7773;
+          color: #64748b;
         }
 
         .credit-actions {
@@ -964,7 +964,7 @@ export default function AITemplatePage() {
           height: 28px;
           padding: 0 11px;
           border-radius: 7px;
-          background: #0aa873;
+          background: #10b981;
           color: #fff;
           font-size: 9px;
           font-weight: 900;
@@ -975,7 +975,7 @@ export default function AITemplatePage() {
           height: 28px;
           display: grid;
           place-items: center;
-          color: #b6a9a5;
+          color: #94a3b8;
         }
 
         .main-content {
@@ -995,12 +995,13 @@ export default function AITemplatePage() {
           font-size: 23px;
           font-weight: 900;
           letter-spacing: -0.6px;
+          color: #0f172a;
         }
 
         .page-header p {
           margin: 5px 0 0;
           font-size: 11px;
-          color: #817873;
+          color: #64748b;
         }
 
         .page-actions {
@@ -1013,28 +1014,28 @@ export default function AITemplatePage() {
         .sort-pill {
           height: 30px;
           padding: 0 10px;
-          border: 1px solid #e5dfdb;
+          border: 1px solid #e2e8f0;
           border-radius: 8px;
           background: #fff;
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          color: #6d6764;
+          color: #475569;
           font-size: 9px;
           font-weight: 800;
         }
 
         .sort-pill.selected {
           color: #fff;
-          border-color: #df7830;
-          background: #e78435;
+          border-color: #2563eb;
+          background: #2563eb;
         }
 
         .sort-pill.selected-light,
         .sort-pill.favorite-active {
-          border-color: #f3d2b6;
-          background: #fff8f1;
-          color: #d97333;
+          border-color: #2563eb;
+          background: #eff6ff;
+          color: #2563eb;
         }
 
         .workspace {
@@ -1046,7 +1047,7 @@ export default function AITemplatePage() {
 
         .sidebar {
           background: #fff;
-          border: 1px solid #e6dfdb;
+          border: 1px solid #e2e8f0;
           border-radius: 11px;
           padding: 12px 10px;
           position: sticky;
@@ -1061,20 +1062,20 @@ export default function AITemplatePage() {
           justify-content: space-between;
           font-size: 11px;
           font-weight: 900;
-          color: #4e4845;
+          color: #0f172a;
         }
 
         .sidebar-heading button {
           display: inline-flex;
           align-items: center;
           gap: 3px;
-          color: #b4aca8;
+          color: #94a3b8;
           font-size: 9px;
         }
 
         .filter-section-title {
           margin: 14px 0 7px;
-          color: #a29995;
+          color: #64748b;
           font-size: 8px;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -1095,7 +1096,7 @@ export default function AITemplatePage() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          color: #615a57;
+          color: #475569;
           font-size: 9px;
           text-align: left;
         }
@@ -1104,21 +1105,21 @@ export default function AITemplatePage() {
           min-width: 22px;
           padding: 3px 5px;
           border-radius: 10px;
-          background: #f3efed;
-          color: #8a817d;
+          background: #e2e8f0;
+          color: #475569;
           font-size: 8px;
           text-align: center;
         }
 
         .category-row.active {
-          background: #fff0e6;
-          color: #dc6e32;
+          background: #eff6ff;
+          color: #2563eb;
           font-weight: 900;
         }
 
         .category-row.active b {
-          background: #fff;
-          color: #e78946;
+          background: #2563eb;
+          color: #fff;
         }
 
         .filter-group {
@@ -1134,7 +1135,7 @@ export default function AITemplatePage() {
         .gender-card,
         .orientation-card {
           min-height: 50px;
-          border: 1px solid #e7e0dc;
+          border: 1px solid #e2e8f0;
           border-radius: 7px;
           display: flex;
           flex-direction: column;
@@ -1142,16 +1143,16 @@ export default function AITemplatePage() {
           justify-content: center;
           gap: 4px;
           background: #fff;
-          color: #6a625f;
+          color: #475569;
           font-size: 8px;
           font-weight: 700;
         }
 
         .gender-card.active,
         .orientation-card.active {
-          color: #e96f32;
-          border-color: #ff7c43;
-          background: #fff9f5;
+          color: #2563eb;
+          border-color: #2563eb;
+          background: #eff6ff;
         }
 
         .radio-list,
@@ -1170,14 +1171,14 @@ export default function AITemplatePage() {
           align-items: center;
           gap: 8px;
           text-align: left;
-          color: #6a625f;
+          color: #475569;
           font-size: 9px;
         }
 
         .radio-row.active,
         .sort-side-row.active {
-          background: #fff1e7;
-          color: #d97333;
+          background: #eff6ff;
+          color: #2563eb;
         }
 
         .radio-row strong {
@@ -1188,22 +1189,22 @@ export default function AITemplatePage() {
         .radio-row small {
           display: block;
           margin-top: 1px;
-          color: #a79d98;
+          color: #94a3b8;
           font-size: 7px;
         }
 
         .radio-dot {
           width: 12px;
           height: 12px;
-          border: 1px solid #c9c1bd;
+          border: 1px solid #cbd5e1;
           border-radius: 50%;
           flex: none;
         }
 
         .radio-dot.checked {
-          border-color: #df7d34;
+          border-color: #2563eb;
           box-shadow: inset 0 0 0 3px #fff;
-          background: #df7d34;
+          background: #2563eb;
         }
 
         .orientation-grid {
@@ -1255,7 +1256,7 @@ export default function AITemplatePage() {
         }
 
         .color-dot-wrap.active {
-          border-color: #e9773b;
+          border-color: #2563eb;
         }
 
         .color-dot {
@@ -1282,13 +1283,13 @@ export default function AITemplatePage() {
           flex: 1;
           height: 38px;
           padding: 0 10px;
-          border: 1px solid #e4ddda;
+          border: 1px solid #e2e8f0;
           border-radius: 8px;
           background: #fff;
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #a39a96;
+          color: #94a3b8;
         }
 
         .search-box input {
@@ -1297,16 +1298,16 @@ export default function AITemplatePage() {
           border: 0;
           outline: 0;
           background: transparent;
-          color: #5e5854;
+          color: #0f172a;
           font-size: 10px;
         }
 
         .search-box input::placeholder {
-          color: #a9a19d;
+          color: #94a3b8;
         }
 
         .search-box button {
-          color: #a49a96;
+          color: #94a3b8;
         }
 
         .tag-row {
@@ -1321,10 +1322,10 @@ export default function AITemplatePage() {
         .tag-chip {
           flex: none;
           padding: 6px 9px;
-          border: 1px solid #e5dedb;
+          border: 1px solid #e2e8f0;
           border-radius: 14px;
           background: #fff;
-          color: #6b6460;
+          color: #475569;
           font-size: 8px;
           font-weight: 700;
         }
@@ -1336,16 +1337,16 @@ export default function AITemplatePage() {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          border: 1px solid #e5dedb;
+          border: 1px solid #e2e8f0;
           border-radius: 14px;
           background: #fff;
-          color: #6d6561;
+          color: #475569;
           font-size: 8px;
           font-weight: 800;
         }
 
         .small-sort span {
-          color: #8e8885;
+          color: #94a3b8;
         }
 
         .result-row {
@@ -1353,7 +1354,7 @@ export default function AITemplatePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          color: #8d8581;
+          color: #64748b;
           font-size: 9px;
         }
 
@@ -1371,7 +1372,7 @@ export default function AITemplatePage() {
           break-inside: avoid;
           overflow: hidden;
           border-radius: 11px;
-          background: #ddd;
+          background: #e2e8f0;
           cursor: pointer;
           box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
           transform: translateZ(0);
@@ -1381,7 +1382,7 @@ export default function AITemplatePage() {
           position: relative;
           width: 100%;
           overflow: hidden;
-          background: #ebe5e1;
+          background: #e2e8f0;
         }
 
         .lazy-template-image {
@@ -1389,7 +1390,7 @@ export default function AITemplatePage() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          background: #ece5e1;
+          background: #e2e8f0;
           transition:
             transform 0.25s ease,
             filter 0.25s ease;
@@ -1402,9 +1403,9 @@ export default function AITemplatePage() {
           place-items: center;
           background: linear-gradient(
             110deg,
-            #eee7e3 8%,
-            #f8f4f1 18%,
-            #eee7e3 33%
+            #e2e8f0 8%,
+            #f1f5f9 18%,
+            #e2e8f0 33%
           );
           background-size: 200% 100%;
           animation: lazy-template-shimmer 1.35s linear infinite;
@@ -1414,8 +1415,8 @@ export default function AITemplatePage() {
           width: 20px;
           height: 20px;
           border-radius: 999px;
-          border: 2px solid rgba(112, 98, 91, 0.18);
-          border-top-color: #de7b39;
+          border: 2px solid rgba(37, 99, 235, 0.18);
+          border-top-color: #2563eb;
           animation: lazy-template-spin 0.8s linear infinite;
         }
 
@@ -1446,8 +1447,8 @@ export default function AITemplatePage() {
           inset: 0;
           pointer-events: none;
           background:
-            linear-gradient(to bottom, rgba(0, 0, 0, 0.18), transparent 24%),
-            linear-gradient(to top, rgba(0, 0, 0, 0.28), transparent 28%);
+            linear-gradient(to bottom, rgba(15, 23, 42, 0.18), transparent 24%),
+            linear-gradient(to top, rgba(15, 23, 42, 0.28), transparent 28%);
         }
 
         .uses-badge {
@@ -1458,7 +1459,7 @@ export default function AITemplatePage() {
           padding: 4px 7px;
           border-radius: 10px;
           color: #fff;
-          background: rgba(24, 24, 24, 0.72);
+          background: rgba(15, 23, 42, 0.72);
           backdrop-filter: blur(4px);
           font-size: 7px;
           font-weight: 900;
@@ -1473,7 +1474,7 @@ export default function AITemplatePage() {
           height: 29px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.95);
-          color: #7c7470;
+          color: #64748b;
           display: grid;
           place-items: center;
           opacity: 0;
@@ -1486,7 +1487,7 @@ export default function AITemplatePage() {
         }
 
         .card-heart-active {
-          color: #ef4b4b;
+          color: #ef4444;
         }
 
         .template-hover {
@@ -1532,7 +1533,7 @@ export default function AITemplatePage() {
           border-radius: 7px;
           padding: 6px 8px;
           background: #fff;
-          color: #333;
+          color: #0f172a;
           font-size: 8px;
           font-weight: 900;
         }
@@ -1544,7 +1545,7 @@ export default function AITemplatePage() {
           align-items: center;
           justify-content: center;
           text-align: center;
-          color: #837a76;
+          color: #64748b;
         }
 
         .empty-heart {
@@ -1553,8 +1554,8 @@ export default function AITemplatePage() {
           border-radius: 10px;
           display: grid;
           place-items: center;
-          background: #f1ebe8;
-          color: #beb5b0;
+          background: #e2e8f0;
+          color: #94a3b8;
         }
 
         .empty-state p {
@@ -1567,7 +1568,7 @@ export default function AITemplatePage() {
           height: 33px;
           padding: 0 13px;
           border-radius: 8px;
-          background: #e97f31;
+          background: #2563eb;
           color: #fff;
           font-size: 9px;
           font-weight: 900;
@@ -1593,13 +1594,13 @@ export default function AITemplatePage() {
         }
 
         .yellow-float {
-          background: #ff9d00;
+          background: #10b981;
           color: #fff;
           font-size: 18px;
         }
 
         .red-float {
-          background: #eb3d3d;
+          background: #2563eb;
           color: #fff;
           border: 3px solid #fff;
           font-size: 12px;
@@ -1609,7 +1610,7 @@ export default function AITemplatePage() {
           position: fixed;
           inset: 0;
           z-index: 100;
-          background: rgba(23, 19, 17, 0.62);
+          background: rgba(15, 23, 42, 0.62);
           backdrop-filter: blur(7px);
           display: flex;
           align-items: center;
@@ -1626,7 +1627,7 @@ export default function AITemplatePage() {
           grid-template-columns: minmax(0, 1fr) 360px;
           background: #fff;
           border-radius: 18px;
-          box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+          box-shadow: 0 30px 90px rgba(15, 23, 42, 0.28);
         }
 
         .modal-close {
@@ -1640,7 +1641,7 @@ export default function AITemplatePage() {
           display: grid;
           place-items: center;
           background: rgba(255, 255, 255, 0.94);
-          color: #615b57;
+          color: #475569;
           box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
         }
 
@@ -1654,7 +1655,7 @@ export default function AITemplatePage() {
           display: grid;
           place-items: center;
           background: rgba(255, 255, 255, 0.94);
-          color: #55504c;
+          color: #475569;
           transform: translateY(-50%);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         }
@@ -1673,7 +1674,7 @@ export default function AITemplatePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #ece6e2;
+          background: #e2e8f0;
         }
 
         .modal-image img {
@@ -1693,9 +1694,9 @@ export default function AITemplatePage() {
           display: inline-flex;
           width: max-content;
           padding: 5px 9px;
-          border-radius: 9px;
-          background: #fff0e3;
-          color: #dc7430;
+          border-radius: 9999px;
+          background: #10b981;
+          color: #ffffff;
           font-size: 8px;
           font-weight: 900;
         }
@@ -1705,12 +1706,12 @@ export default function AITemplatePage() {
           font-size: 23px;
           line-height: 1.2;
           letter-spacing: -0.5px;
-          color: #24211f;
+          color: #0f172a;
         }
 
         .modal-details p {
           margin: 0;
-          color: #7d7470;
+          color: #64748b;
           font-size: 11px;
           line-height: 1.7;
         }
@@ -1726,11 +1727,11 @@ export default function AITemplatePage() {
         .modal-tags span {
           padding: 6px 8px;
           border-radius: 8px;
-          border: 1px solid #e9e1dd;
-          color: #665f5b;
+          border: 1px solid #e2e8f0;
+          color: #475569;
           font-size: 8px;
           font-weight: 800;
-          background: #fff;
+          background: #f8fafc;
         }
 
         .modal-tags {
@@ -1746,8 +1747,8 @@ export default function AITemplatePage() {
           margin-top: 16px;
           padding: 9px 10px;
           border-radius: 9px;
-          background: #f8f5f3;
-          color: #8c837e;
+          background: #f8fafc;
+          color: #64748b;
           font-size: 8px;
         }
 
@@ -1773,21 +1774,21 @@ export default function AITemplatePage() {
         }
 
         .modal-primary {
-          background: #e98031;
+          background: #2563eb;
           color: #fff;
         }
 
         .modal-secondary,
         .modal-external {
-          border: 1px solid #ded7d3;
-          background: #fff;
-          color: #5c5551;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #475569;
         }
 
         .modal-favorite-active {
-          color: #eb4c4c;
-          border-color: #ffc0c0;
-          background: #fff5f5;
+          color: #ef4444;
+          border-color: #fecaca;
+          background: #fef2f2;
         }
 
         @media (max-width: 1600px) {

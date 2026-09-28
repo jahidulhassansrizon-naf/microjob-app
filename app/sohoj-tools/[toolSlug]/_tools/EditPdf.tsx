@@ -831,12 +831,12 @@ export default function EditPdf() {
   };
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
 
@@ -849,19 +849,19 @@ export default function EditPdf() {
 
         <span>/</span>
 
-        <span className="font-semibold text-gray-900">Edit PDF</span>
+        <span className="font-semibold text-[#0F172A]">Edit PDF</span>
       </div>
 
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0 border border-orange-100">
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <Pencil size={24} />
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">Edit PDF</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">Edit PDF</h1>
 
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
@@ -892,11 +892,11 @@ export default function EditPdf() {
         <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold text-gray-900">
+              <h2 className="text-xs font-bold text-[#0F172A]">
                 Files ({selectedFile ? 1 : 0})
               </h2>
 
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-orange-100">
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-[#E2E8F0]">
                 <Plus size={12} />
 
                 <span>Add</span>
@@ -911,12 +911,12 @@ export default function EditPdf() {
             </div>
 
             {!selectedFile ? (
-              <label className="border border-dashed border-orange-300 bg-orange-50/20 hover:bg-orange-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
-                <div className="w-10 h-10 bg-orange-100/80 text-orange-600 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+              <label className="border border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
+                <div className="w-10 h-10 bg-[#E2E8F0]/80 text-[#2563EB] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
 
-                <span className="text-xs font-bold text-gray-800">
+                <span className="text-xs font-bold text-[#0F172A]">
                   Drop a PDF here or click to upload
                 </span>
 
@@ -934,12 +934,12 @@ export default function EditPdf() {
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
 
                   <div className="truncate">
-                    <p className="text-xs font-bold text-gray-800 truncate">
+                    <p className="text-xs font-bold text-[#0F172A] truncate">
                       {selectedFile.name}
                     </p>
 
@@ -951,7 +951,7 @@ export default function EditPdf() {
 
                 <button
                   onClick={handleReset}
-                  className="p-1 text-gray-400 hover:text-orange-600 rounded-lg transition-colors"
+                  className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -963,7 +963,7 @@ export default function EditPdf() {
         {/* Right Side: Preview Box */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Preview</h2>
 
             <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
               {selectedFile ? "Ready" : "Empty"}
@@ -972,11 +972,11 @@ export default function EditPdf() {
 
           {/* Empty Preview Placeholder */}
           <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
-            <div className="w-10 h-10 bg-orange-50 text-orange-400 rounded-xl flex items-center justify-center mb-3 border border-orange-100">
+            <div className="w-10 h-10 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
               <FileText size={20} />
             </div>
 
-            <p className="text-xs font-bold text-gray-800">
+            <p className="text-xs font-bold text-[#0F172A]">
               {selectedFile
                 ? "Ready to open in the editor"
                 : "Add files to get started"}
@@ -1017,7 +1017,7 @@ export default function EditPdf() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
           >
             Reset
           </button>
@@ -1027,7 +1027,7 @@ export default function EditPdf() {
             disabled={!selectedFile}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               selectedFile
-                ? "bg-orange-600 text-white shadow-xs hover:bg-orange-700"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -1052,10 +1052,10 @@ export default function EditPdf() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-gray-800 hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="text-orange-500 font-bold">?</span>
+            <span className="text-[#2563EB] font-bold">?</span>
 
             <span>How to use</span>
           </div>
@@ -1073,21 +1073,21 @@ export default function EditPdf() {
 
       {/* Same Category Tools */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-orange-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Compress PDF
               </h4>
 
@@ -1100,14 +1100,14 @@ export default function EditPdf() {
 
           <Link
             href="/sohoj-tools/merge-pdfs"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-orange-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Merge PDFs
               </h4>
 
@@ -1127,11 +1127,11 @@ export default function EditPdf() {
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-2 mr-2">
-                <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center">
                   <Pencil size={16} />
                 </div>
 
-                <span className="text-xs font-bold text-gray-900 truncate max-w-[160px]">
+                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[160px]">
                   {selectedFile?.name}
                 </span>
               </div>
@@ -1142,8 +1142,8 @@ export default function EditPdf() {
                   title="Select / pan"
                   className={`p-2 rounded-lg transition-all ${
                     tool === "select"
-                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
-                      : "text-gray-400 hover:text-gray-700"
+                      ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
+                      : "text-gray-400 hover:text-[#0F172A]"
                   }`}
                 >
                   <MousePointer2 size={16} />
@@ -1154,8 +1154,8 @@ export default function EditPdf() {
                   title="Add text"
                   className={`p-2 rounded-lg transition-all ${
                     tool === "text"
-                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
-                      : "text-gray-400 hover:text-gray-700"
+                      ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
+                      : "text-gray-400 hover:text-[#0F172A]"
                   }`}
                 >
                   <Type size={16} />
@@ -1166,8 +1166,8 @@ export default function EditPdf() {
                   title="Draw / sign"
                   className={`p-2 rounded-lg transition-all ${
                     tool === "draw"
-                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
-                      : "text-gray-400 hover:text-gray-700"
+                      ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
+                      : "text-gray-400 hover:text-[#0F172A]"
                   }`}
                 >
                   <PenTool size={16} />
@@ -1178,8 +1178,8 @@ export default function EditPdf() {
                   title="Highlight"
                   className={`p-2 rounded-lg transition-all ${
                     tool === "highlight"
-                      ? "bg-white shadow-xs text-orange-600 border border-orange-100"
-                      : "text-gray-400 hover:text-gray-700"
+                      ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
+                      : "text-gray-400 hover:text-[#0F172A]"
                   }`}
                 >
                   <Highlighter size={16} />
@@ -1257,7 +1257,7 @@ export default function EditPdf() {
                 className={`ml-2 px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
                   !pdfDoc || isExporting
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-orange-600 text-white shadow-xs hover:bg-orange-700"
+                    : "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
                 }`}
               >
                 {isExporting ? (
@@ -1271,7 +1271,7 @@ export default function EditPdf() {
 
               <button
                 onClick={() => setIsEditorOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-[#0F172A] rounded-lg transition-colors"
               >
                 <X size={18} />
               </button>
@@ -1338,7 +1338,7 @@ export default function EditPdf() {
                           setTextInputValue("");
                         }
                       }}
-                      className="absolute px-1 text-[18px] leading-none bg-white/90 border border-orange-300 rounded outline-none"
+                      className="absolute px-1 text-[18px] leading-none bg-white/90 border border-[#2563EB] rounded outline-none"
                       style={{
                         left: textInputPos.x,
 

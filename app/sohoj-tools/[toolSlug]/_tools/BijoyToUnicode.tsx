@@ -148,7 +148,7 @@ export default function BijoyToUnicode() {
   };
 
   return (
-    <div className="w-full text-gray-800 font-sans pb-16">
+    <div className="w-full text-[#0F172A] font-sans pb-16">
       <div className="w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -157,25 +157,25 @@ export default function BijoyToUnicode() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
                 title="Go back"
               >
                 <ArrowLeft size={16} />
               </button>
 
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
 
               <span>/</span>
 
-              <span className="hover:text-gray-700 cursor-pointer">
+              <span className="hover:text-[#0F172A] cursor-pointer">
                 Text Tools
               </span>
 
               <span>/</span>
 
-              <span className="text-gray-900 font-semibold">
+              <span className="text-[#0F172A] font-semibold">
                 Bijoy ↔ Unicode
               </span>
             </div>
@@ -186,7 +186,7 @@ export default function BijoyToUnicode() {
                 <Languages size={18} />
               </div>
 
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Bijoy ↔ Unicode
               </h1>
 
@@ -205,15 +205,15 @@ export default function BijoyToUnicode() {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setIsFavorite(!isFavorite)}
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-amber-500 hover:border-amber-300 transition-all shadow-2xs"
+              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs"
             >
               <Star
                 size={16}
-                className={isFavorite ? "fill-amber-400 text-amber-400" : ""}
+                className={isFavorite ? "fill-amber-400 text-[#2563EB]" : ""}
               />
             </button>
 
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs">
+            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16} />
             </button>
           </div>
@@ -225,7 +225,7 @@ export default function BijoyToUnicode() {
           <div className="lg:col-span-4 space-y-4">
             {/* Conversion Direction Card */}
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-              <span className="text-xs font-bold text-gray-900 tracking-wide uppercase block">
+              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block">
                 Conversion input
               </span>
 
@@ -240,7 +240,7 @@ export default function BijoyToUnicode() {
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       direction === "bijoyToUnicode"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
-                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                        : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"
                     }`}
                   >
                     <ArrowLeftRight size={14} />
@@ -252,7 +252,7 @@ export default function BijoyToUnicode() {
                     className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       direction === "unicodeToBijoy"
                         ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
-                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                        : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"
                     }`}
                   >
                     <ArrowLeftRight size={14} />
@@ -265,7 +265,7 @@ export default function BijoyToUnicode() {
             {/* Input Text Box */}
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-900 tracking-wide uppercase">
+                <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase">
                   {direction === "bijoyToUnicode" ? "Bijoy (ANSI)" : "Unicode"}
                 </span>
               </div>
@@ -279,7 +279,7 @@ export default function BijoyToUnicode() {
                 }
                 value={inputText}
                 onChange={(e) => handleConversion(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"
+                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"
               />
 
               <div className="flex items-center justify-between">
@@ -303,7 +303,7 @@ export default function BijoyToUnicode() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[380px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                     Converted text
                   </span>
 
@@ -326,7 +326,7 @@ export default function BijoyToUnicode() {
                         <Languages size={24} />
                       </div>
 
-                      <h3 className="text-xs font-bold text-gray-900 mb-1">
+                      <h3 className="text-xs font-bold text-[#0F172A] mb-1">
                         Paste text to get started
                       </h3>
 
@@ -336,7 +336,7 @@ export default function BijoyToUnicode() {
                       </p>
                     </div>
                   ) : (
-                    <div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl text-xs text-gray-800 leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
+                    <div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl text-xs text-[#0F172A] leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
                       {convertedText}
                     </div>
                   )}
@@ -369,7 +369,7 @@ export default function BijoyToUnicode() {
                   ? "bg-red-400"
                   : convertedText
                     ? "bg-emerald-400"
-                    : "bg-amber-400"
+                    : "bg-[#2563EB]"
               }`}
             />
 
@@ -387,7 +387,7 @@ export default function BijoyToUnicode() {
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button
               onClick={handleReset}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#0F172A] font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
             >
               <RotateCcw size={13} />
               <span>Reset</span>
@@ -420,7 +420,7 @@ export default function BijoyToUnicode() {
         <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
@@ -453,7 +453,7 @@ export default function BijoyToUnicode() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
 
@@ -472,7 +472,7 @@ export default function BijoyToUnicode() {
                       <ToolIcon size={18} />
                     </div>
 
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-sky-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-sky-600 transition-colors">
                       {tool.title}
                     </h3>
 

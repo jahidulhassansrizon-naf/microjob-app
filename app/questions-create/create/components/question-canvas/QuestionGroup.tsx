@@ -116,7 +116,7 @@ export default function QuestionGroup({
     >
       {!hiddenRegionBlockIds.has(headingBlockId) ? (
         <div
-          className="paper-question-section-heading mb-1.5 flex items-center justify-between border-b border-gray-300 pb-1"
+          className="paper-question-section-heading mb-1.5 flex items-center justify-between border-b border-[#E2E8F0] pb-1"
           data-region-edit-target={headingBlockId}
           contentEditable={isHeadingActive}
           suppressContentEditableWarning
@@ -132,7 +132,7 @@ export default function QuestionGroup({
           }}
         >
           <h3
-            className={`text-[8px] font-extrabold text-gray-600 ${
+            className={`text-[8px] font-extrabold text-[#0F172A] ${
               isHeadingTargetActive ? "outline-none" : ""
             }`}
             data-region-edit-target={headingTargetId}

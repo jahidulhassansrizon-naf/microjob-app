@@ -21,7 +21,6 @@ import {
   Lock,
   Edit3,
   CreditCard,
-  Wand2,
   BookOpen,
   Languages,
   Keyboard,
@@ -117,7 +116,7 @@ const toolsData: ToolItem[] = [
     name: "Remove Background",
     category: "Image",
     bgColor: "bg-[#16a34a]",
-    icon: Wand2,
+    icon: null,
     badge: "Hot",
   },
   {
@@ -207,7 +206,7 @@ const toolsData: ToolItem[] = [
     id: "22",
     name: "Edit PDF",
     category: "PDF",
-    bgColor: "bg-[#ea580c]",
+    bgColor: "bg-[#2563EB]",
     icon: Edit3,
     badge: "New",
   },
@@ -342,9 +341,9 @@ function SohojToolsContent() {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-          <Loader2 size={16} className="animate-spin text-orange-500" />
+          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
           Checking authentication...
         </div>
       </div>
@@ -352,7 +351,7 @@ function SohojToolsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar />
 
       <main className="max-w-[1320px] mx-auto px-4 py-6 space-y-5">
@@ -363,7 +362,7 @@ function SohojToolsContent() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900">Tools</h1>
+                <h1 className="text-xl font-bold text-[#0F172A]">Tools</h1>
                 <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   All of these tools are free
                 </span>
@@ -380,7 +379,7 @@ function SohojToolsContent() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Free"
                   ? "bg-black text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-[#0F172A]"
               }`}
             >
               Free Tools •
@@ -390,7 +389,7 @@ function SohojToolsContent() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Paid"
                   ? "bg-black text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-500 hover:text-[#0F172A]"
               }`}
             >
               Paid Tools •
@@ -409,7 +408,7 @@ function SohojToolsContent() {
             placeholder="Search tools... e.g. PDF, image, video"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 shadow-xs placeholder:text-gray-400 transition-all"
+            className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 shadow-xs placeholder:text-gray-400 transition-all"
           />
         </div>
 
@@ -425,7 +424,7 @@ function SohojToolsContent() {
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
                     ? "bg-black text-white border-black"
-                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    : "bg-white text-[#0F172A] border-gray-200 hover:bg-gray-50"
                 }`}
               >
                 <Icon
@@ -464,13 +463,15 @@ function SohojToolsContent() {
                       </span>
                     )}
 
-                    <IconComponent
-                      size={42}
-                      className="text-[#ffffff] stroke-[1.75]"
-                    />
+                    {IconComponent && (
+                      <IconComponent
+                        size={42}
+                        className="text-[#ffffff] stroke-[1.75]"
+                      />
+                    )}
                   </div>
 
-                  <span className="mt-2.5 text-xs font-bold text-gray-800 text-center line-clamp-1 group-hover:text-[#FF5D00] transition-colors">
+                  <span className="mt-2.5 text-xs font-bold text-[#0F172A] text-center line-clamp-1 group-hover:text-[#2563EB] transition-colors">
                     {tool.name}
                   </span>
                 </Link>
@@ -483,7 +484,7 @@ function SohojToolsContent() {
             <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center mb-3">
               <Search size={22} />
             </div>
-            <h3 className="text-sm font-bold text-gray-800">No tools found</h3>
+            <h3 className="text-sm font-bold text-[#0F172A]">No tools found</h3>
             <p className="text-xs text-gray-400 mt-1 max-w-xs">
               We couldn't find any tool matching "{searchQuery}". Try searching
               for something else.
@@ -499,9 +500,9 @@ export default function SohojToolsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-            <Loader2 size={16} className="animate-spin text-orange-500" />
+            <Loader2 size={16} className="animate-spin text-[#2563EB]" />
             Loading tools...
           </div>
         </div>

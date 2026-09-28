@@ -59,7 +59,7 @@ export default function AboutJourney() {
   };
 
   return (
-    <section className="w-full px-4 py-5 sm:px-6 md:py-8">
+    <section className="w-full px-4 py-5 sm:px-6 md:py-8 text-[#0F172A]">
       <div className="mx-auto grid w-full max-w-[1145px] grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-[58px]">
         {/* Left: journey story */}
         <motion.div
@@ -73,18 +73,17 @@ export default function AboutJourney() {
             variants={itemVariants}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
-            className="mb-5 inline-flex cursor-default items-center gap-2 rounded-full border border-[#ffb23b] bg-white px-4 py-2 text-[14px] font-medium leading-none text-[#ef6a00] shadow-[0_2px_8px_rgba(255,171,52,0.06)]"
+            className="mb-5 inline-flex cursor-default items-center justify-center rounded-full border border-blue-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-[#0F172A] shadow-sm"
           >
-            <span className="text-[14px] leading-none">✨</span>
             <span>Our journey</span>
           </motion.div>
 
           <motion.h2
             variants={itemVariants}
-            className="mb-9 max-w-[590px] text-[34px] font-extrabold leading-[1.18] tracking-[-0.8px] text-[#111827] sm:text-[38px] lg:text-[39px]"
+            className="mb-9 max-w-[590px] text-[34px] font-extrabold leading-[1.18] tracking-[-0.8px] text-[#0F172A] sm:text-[38px] lg:text-[39px]"
           >
             From a small dream to{" "}
-            <span className="bg-gradient-to-r from-[#ff9b00] via-[#ff6d00] to-[#ff4b11] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#2563EB] via-[#1d4ed8] to-[#2563EB] bg-clip-text text-transparent">
               a big journey
             </span>
           </motion.h2>
@@ -94,24 +93,24 @@ export default function AboutJourney() {
               <motion.div
                 key={item.title}
                 variants={itemVariants}
-                className="relative pl-5"
+                className="relative pl-6"
               >
                 {/* Timeline line */}
                 {index < journeyItems.length - 1 && (
-                  <span className="absolute left-[5px] top-[13px] h-[calc(100%+28px)] w-px bg-[#eadcf8]" />
+                  <span className="absolute left-[5px] top-[13px] h-[calc(100%+28px)] w-px bg-slate-200" />
                 )}
 
                 {/* Timeline dot */}
                 <motion.span
                   whileHover={{ scale: 1.3 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 top-[3px] h-3 w-3 rounded-full bg-gradient-to-br from-[#ff9640] via-[#ec4c78] to-[#b93be0] shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+                  className="absolute left-0 top-[6px] h-3 w-3 rounded-full bg-[#2563EB] shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
                 />
 
-                <h3 className="mb-1 text-[16px] font-extrabold leading-6 text-[#111827]">
+                <h3 className="mb-1 text-[16px] font-extrabold leading-6 text-[#0F172A]">
                   {item.title}
                 </h3>
-                <p className="max-w-[550px] text-[15px] font-normal leading-[1.72] text-[#374151]">
+                <p className="max-w-[550px] text-[15px] font-normal leading-[1.72] text-slate-600">
                   {item.text}
                 </p>
               </motion.div>
@@ -125,7 +124,7 @@ export default function AboutJourney() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-[34px] bg-gradient-to-br from-[#14c964] via-[#07b274] to-[#079d92] p-[44px] text-white shadow-[0_26px_60px_rgba(10,177,126,0.23)]"
+          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-[34px] bg-gradient-to-br from-[#10B981] via-[#059669] to-[#047857] p-[44px] text-white shadow-xl shadow-emerald-500/15"
         >
           <div className="relative z-10 flex flex-col gap-[22px]">
             <motion.div
@@ -172,7 +171,7 @@ export default function AboutJourney() {
 
           {/* Soft decorative glow */}
           <div className="pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-[#2dd4a2]/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-emerald-300/20 blur-3xl" />
         </motion.div>
       </div>
     </section>

@@ -21,33 +21,33 @@ export default function DocumentSection() {
       title: "Update information in a flash",
       desc: "Change information in up to 50 pages of paper through a simple form.",
       badge: "AI Powered",
-      badgeStyle: "bg-emerald-100/70 text-emerald-700 border-emerald-200",
-      iconBg: "bg-[#05B066]",
+      badgeStyle: "bg-blue-50 text-blue-600 border-blue-200",
+      iconBg: "bg-blue-600",
       icon: <FileEdit className="text-white" size={22} />,
-      btnColor: "text-[#05B066]",
-      arrowBg: "bg-[#05B066]",
+      btnColor: "text-blue-600",
+      arrowBg: "bg-blue-600",
       videoStart: 132,
     },
     {
       title: "Export files as PDF",
       desc: "Save and download your created file as PDF.",
       badge: "Popular",
-      badgeStyle: "bg-orange-100/70 text-orange-700 border-orange-200",
-      iconBg: "bg-[#F95700]",
+      badgeStyle: "bg-indigo-50 text-indigo-600 border-indigo-200",
+      iconBg: "bg-indigo-600",
       icon: <FileText className="text-white" size={22} />,
-      btnColor: "text-[#F95700]",
-      arrowBg: "bg-[#F95700]",
+      btnColor: "text-indigo-600",
+      arrowBg: "bg-indigo-600",
       videoStart: 230,
     },
     {
       title: "Share or email your document",
       desc: "Download or email your created document instantly, anytime.",
       badge: "Secure",
-      badgeStyle: "bg-purple-100/70 text-purple-700 border-purple-200",
-      iconBg: "bg-[#8B3DFF]",
+      badgeStyle: "bg-violet-50 text-violet-600 border-violet-200",
+      iconBg: "bg-violet-600",
       icon: <Send className="text-white" size={22} />,
-      btnColor: "text-[#8B3DFF]",
-      arrowBg: "bg-[#8B3DFF]",
+      btnColor: "text-violet-600",
+      arrowBg: "bg-violet-600",
       videoStart: null,
     },
   ];
@@ -56,23 +56,23 @@ export default function DocumentSection() {
     {
       title: "Multiple page sizes & formats",
       desc: "Set custom margins and sizes — A4, A5, Deed, and more.",
-      iconBg: "bg-[#FF5314]",
+      iconBg: "bg-blue-600",
       icon: <FileCheck className="text-white" size={20} />,
-      arrowBg: "bg-[#FF5314]",
+      arrowBg: "bg-blue-600",
     },
     {
       title: "Document preview system",
       desc: "Preview your document before downloading as PDF.",
-      iconBg: "bg-[#D926B5]",
+      iconBg: "bg-indigo-600",
       icon: <Eye className="text-white" size={20} />,
-      arrowBg: "bg-[#D926B5]",
+      arrowBg: "bg-indigo-600",
     },
     {
       title: "Keyboard shortcuts to save time",
       desc: "Do everything quickly with just the keyboard, no mouse needed.",
-      iconBg: "bg-[#0088FF]",
+      iconBg: "bg-sky-500",
       icon: <Keyboard className="text-white" size={20} />,
-      arrowBg: "bg-[#0088FF]",
+      arrowBg: "bg-sky-500",
     },
   ];
 
@@ -96,8 +96,9 @@ export default function DocumentSection() {
   };
 
   return (
-    <section className="bg-[#F8F9FA] py-16 px-6 md:px-12 overflow-hidden">
+    <section className="bg-slate-50/50 py-16 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-12">
+        {/* Top Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -105,22 +106,23 @@ export default function DocumentSection() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center max-w-3xl mx-auto space-y-4"
         >
-          <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
+          <div className="inline-flex items-center bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             Document Creation
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.2]">
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.2]">
             In Sohozkaj contracts & documents{" "}
             <br className="hidden sm:inline" />
-            <span className="text-gray-950">instantly</span>
+            <span className="text-blue-600">instantly</span>
           </h2>
 
-          <p className="text-gray-500 font-medium text-sm md:text-base max-w-xl mx-auto pt-1">
+          <p className="text-slate-500 font-medium text-sm md:text-base max-w-xl mx-auto pt-1">
             Change text in contracts and other papers in moments through a
             simple form
           </p>
         </motion.div>
 
+        {/* 3 Main Cards */}
         <motion.div
           variants={cardContainerVariants}
           initial="hidden"
@@ -133,7 +135,7 @@ export default function DocumentSection() {
               key={idx}
               variants={cardVariants}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[290px] relative transition hover:shadow-md"
+              className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xs flex flex-col justify-between min-h-[290px] relative transition hover:shadow-md hover:shadow-slate-200/50"
             >
               <div>
                 <div className="flex items-center justify-between mb-6">
@@ -149,10 +151,10 @@ export default function DocumentSection() {
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-950 mb-3 tracking-tight leading-snug">
+                <h3 className="text-xl font-bold text-slate-900 mb-3 tracking-tight leading-snug">
                   {card.title}
                 </h3>
-                <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                <p className="text-sm text-slate-500 font-medium leading-relaxed">
                   {card.desc}
                 </p>
               </div>
@@ -188,17 +190,18 @@ export default function DocumentSection() {
           ))}
         </motion.div>
 
+        {/* Extra Features Box */}
         <motion.div
           initial={{ opacity: 0, y: 35 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="bg-[#F0F2F5]/80 rounded-[36px] p-8 md:p-10 border border-gray-200/50 flex flex-col items-center"
+          className="bg-slate-100/70 rounded-[36px] p-8 md:p-10 border border-slate-200/60 flex flex-col items-center"
         >
-          <h3 className="text-2xl font-black text-gray-950 mb-1 tracking-tight">
+          <h3 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">
             And more
           </h3>
-          <p className="text-sm text-gray-500 font-medium mb-8">
+          <p className="text-sm text-slate-500 font-medium mb-8">
             Extra features that make your work even easier
           </p>
 
@@ -207,7 +210,7 @@ export default function DocumentSection() {
               <motion.div
                 key={idx}
                 whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-                className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100/80 shadow-2xs flex items-center justify-between gap-3 transition hover:shadow-xs"
+                className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-2xs flex items-center justify-between gap-3 transition hover:shadow-xs"
               >
                 <div className="flex items-center gap-3.5">
                   <div
@@ -216,10 +219,10 @@ export default function DocumentSection() {
                     {item.icon}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900 leading-snug">
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug">
                       {item.title}
                     </h4>
-                    <p className="text-[11px] text-gray-400 font-medium leading-tight mt-0.5">
+                    <p className="text-[11px] text-slate-400 font-medium leading-tight mt-0.5">
                       {item.desc}
                     </p>
                   </div>
@@ -236,6 +239,7 @@ export default function DocumentSection() {
         </motion.div>
       </div>
 
+      {/* Video Popup Modal */}
       <AnimatePresence>
         {activeVideoStart !== null && (
           <motion.div

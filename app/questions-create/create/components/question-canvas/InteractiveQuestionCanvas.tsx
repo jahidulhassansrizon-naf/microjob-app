@@ -227,7 +227,7 @@ function FabricRegionEditor({
 
         canvas.selectionColor = "rgba(243,168,71,0.08)";
 
-        canvas.selectionBorderColor = "#F3A847";
+        canvas.selectionBorderColor = "#2563EB";
 
         canvas.selectionLineWidth = 1;
         canvas.defaultCursor = "default";
@@ -1117,7 +1117,7 @@ export default function InteractiveQuestionCanvas({
         fontWeight: 400,
         fontStyle: "normal",
         textAlign: "left",
-        textColor: "#111827",
+        textColor: "#0F172A",
         backgroundColor: "transparent",
         borderRadius: 4,
         padding: 6,
@@ -1481,7 +1481,7 @@ export default function InteractiveQuestionCanvas({
               />
 
               {!demoMode && regionSelectMode ? (
-                <div className="pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-[10px] font-bold text-white shadow-xl">
+                <div className="pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#0F172A] px-4 py-2 text-[10px] font-bold text-white shadow-xl">
                   Select an area on the question paper
                 </div>
               ) : null}

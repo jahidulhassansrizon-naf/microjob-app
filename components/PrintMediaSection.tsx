@@ -21,42 +21,48 @@ export default function PrintMediaSection() {
       title: "Massive print-ready design library",
       desc: "This huge collection of various categories (AI, PSD & preview) is completely free",
       icon: <LayoutGrid className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-blue-600",
+      btnColor: "text-blue-600",
       videoStart: 0,
     },
     {
       title: "Replace text in a flash",
       desc: "Create, edit and print with different information all at once",
       icon: <FileEdit className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-indigo-600",
+      btnColor: "text-indigo-600",
       videoStart: 62,
     },
     {
       title: "Replace logos, images and other photos",
       desc: "This huge collection of various categories (AI, PSD & preview) is completely free",
       icon: <Image className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-violet-600",
+      btnColor: "text-violet-600",
       videoStart: 73,
     },
     {
       title: "Create your file instantly",
       desc: "Create your file easily in the print media service.",
       icon: <ArrowRight className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-sky-500",
+      btnColor: "text-sky-600",
       videoStart: 118,
     },
     {
       title: "Share or email your created file",
       desc: "Instantly download or email your created file at any time.",
       icon: <Printer className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-blue-600",
+      btnColor: "text-blue-600",
       videoStart: null,
     },
     {
       title: "AI, PSD, PNG, CMYK, RGB — whatever you need",
       desc: "Save the final version in any format with one click.",
       icon: <FolderDown className="text-white" size={20} />,
-      iconBg: "bg-[#7C3AED]",
+      iconBg: "bg-indigo-600",
+      btnColor: "text-indigo-600",
       videoStart: 130,
     },
   ];
@@ -81,8 +87,9 @@ export default function PrintMediaSection() {
   };
 
   return (
-    <section className="bg-[#FBEFFF] py-20 px-6 md:px-12 overflow-hidden">
+    <section className="bg-slate-50/50 py-20 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-16">
+        {/* Top Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -90,22 +97,23 @@ export default function PrintMediaSection() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center max-w-3xl mx-auto space-y-4"
         >
-          <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
+          <div className="inline-flex items-center bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             Our Print Service
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.15]">
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
             SohozKaj-Professional <br />
-            <span className="text-[#FF5D00]">Print Media</span>{" "}
-            <span className="text-gray-950">Solution</span>
+            <span className="text-blue-600">Print Media</span>{" "}
+            <span className="text-slate-900">Solution</span>
           </h2>
 
-          <p className="text-gray-500 font-medium text-sm md:text-base max-w-lg mx-auto pt-1">
+          <p className="text-slate-500 font-medium text-sm md:text-base max-w-lg mx-auto pt-1">
             Banners, flyers, posters, business cards and more — quality print
             services for your brand.
           </p>
         </motion.div>
 
+        {/* 6 Feature Cards */}
         <motion.div
           variants={cardContainerVariants}
           initial="hidden"
@@ -118,7 +126,7 @@ export default function PrintMediaSection() {
               key={idx}
               variants={cardVariants}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className="bg-white rounded-[28px] p-7 border border-purple-50 shadow-xs flex flex-col justify-between min-h-[220px] transition hover:shadow-md"
+              className="bg-white rounded-[28px] p-7 border border-slate-100 shadow-xs flex flex-col justify-between min-h-[220px] transition hover:shadow-md hover:shadow-slate-200/50"
             >
               <div>
                 <div
@@ -127,10 +135,10 @@ export default function PrintMediaSection() {
                   {card.icon}
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-950 mb-2 tracking-tight leading-snug">
+                <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight leading-snug">
                   {card.title}
                 </h3>
-                <p className="text-xs text-gray-400 font-medium leading-relaxed">
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">
                   {card.desc}
                 </p>
               </div>
@@ -140,7 +148,7 @@ export default function PrintMediaSection() {
                   <button
                     type="button"
                     onClick={() => setActiveVideoStart(card.videoStart)}
-                    className="group inline-flex items-center gap-1 text-xs font-bold text-[#8B5CF6] no-underline cursor-pointer"
+                    className={`group inline-flex items-center gap-1 text-xs font-bold ${card.btnColor} no-underline cursor-pointer`}
                   >
                     <span>Learn more</span>
                     <ArrowRight
@@ -149,7 +157,9 @@ export default function PrintMediaSection() {
                     />
                   </button>
                 ) : (
-                  <span className="group inline-flex items-center gap-1 text-xs font-bold text-[#8B5CF6] select-none cursor-default no-underline">
+                  <span
+                    className={`group inline-flex items-center gap-1 text-xs font-bold ${card.btnColor} select-none cursor-default no-underline`}
+                  >
                     <span>Learn more</span>
                     <ArrowRight
                       size={13}
@@ -162,12 +172,13 @@ export default function PrintMediaSection() {
           ))}
         </motion.div>
 
+        {/* CTA Banner */}
         <motion.div
           initial={{ opacity: 0, y: 35 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full bg-gradient-to-r from-[#8B00FF] via-[#5B32F3] to-[#0066FF] rounded-[36px] py-14 px-6 md:px-12 text-center text-white shadow-2xl shadow-purple-900/20 relative overflow-hidden flex flex-col items-center"
+          className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-800 rounded-[36px] py-14 px-6 md:px-12 text-center text-white shadow-xl shadow-blue-900/10 relative overflow-hidden flex flex-col items-center"
         >
           <div className="inline-block bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
             Special Offer
@@ -184,7 +195,7 @@ export default function PrintMediaSection() {
 
           <Link
             href="/dashboard"
-            className="group bg-white text-[#7C3AED] hover:bg-gray-50 font-bold px-8 py-3.5 rounded-full text-sm inline-flex items-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer no-underline"
+            className="group bg-white text-blue-600 hover:bg-slate-50 font-bold px-8 py-3.5 rounded-full text-sm inline-flex items-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer no-underline"
           >
             <span>Get Started Now</span>
             <ArrowRight
@@ -195,6 +206,7 @@ export default function PrintMediaSection() {
         </motion.div>
       </div>
 
+      {/* Video Popup Modal */}
       <AnimatePresence>
         {activeVideoStart !== null && (
           <motion.div

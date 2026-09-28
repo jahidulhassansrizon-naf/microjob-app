@@ -26,13 +26,13 @@ export default function NationalUniversityResult() {
   };
 
   return (
-    <div className="w-full text-gray-800 font-sans pb-16 space-y-6">
+    <div className="w-full text-[#0F172A] font-sans pb-16 space-y-6">
       {/* Top Header / Breadcrumbs & Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-            <Link href="/" className="hover:text-gray-800 transition-colors">
+            <Link href="/" className="hover:text-[#0F172A] transition-colors">
               <GraduationCap size={14} className="inline mr-1" />
             </Link>
 
@@ -40,20 +40,20 @@ export default function NationalUniversityResult() {
 
             <Link
               href="/sohoj-tools"
-              className="hover:text-gray-800 transition-colors"
+              className="hover:text-[#0F172A] transition-colors"
             >
               Sohoz Tools
             </Link>
 
             <span>/</span>
 
-            <span className="hover:text-gray-800 transition-colors cursor-pointer">
+            <span className="hover:text-[#0F172A] transition-colors cursor-pointer">
               Educational Tools
             </span>
 
             <span>/</span>
 
-            <span className="font-semibold text-gray-800">
+            <span className="font-semibold text-[#0F172A]">
               National University Result
             </span>
           </nav>
@@ -64,7 +64,7 @@ export default function NationalUniversityResult() {
               <GraduationCap size={20} />
             </div>
 
-            <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-xl md:text-2xl font-extrabold text-[#0F172A] tracking-tight">
               National University Result
             </h1>
 
@@ -104,7 +104,7 @@ export default function NationalUniversityResult() {
         {/* Left Information Card */}
         <div className="lg:col-span-4 bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
           <div>
-            <h2 className="text-xs font-bold text-gray-900">
+            <h2 className="text-xs font-bold text-[#0F172A]">
               Check your official result
             </h2>
 
@@ -126,7 +126,7 @@ export default function NationalUniversityResult() {
                   Official National University Portal
                 </p>
 
-                <h3 className="text-sm font-extrabold text-gray-900 mt-1">
+                <h3 className="text-sm font-extrabold text-[#0F172A] mt-1">
                   NU Results Archive
                 </h3>
 
@@ -156,7 +156,7 @@ export default function NationalUniversityResult() {
               </div>
 
               <div>
-                <p className="text-[11px] font-bold text-gray-800">
+                <p className="text-[11px] font-bold text-[#0F172A]">
                   Official verification
                 </p>
 
@@ -168,12 +168,12 @@ export default function NationalUniversityResult() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#F8FAFC] text-[#2563EB] flex items-center justify-center shrink-0">
                 <FileText size={16} />
               </div>
 
               <div>
-                <p className="text-[11px] font-bold text-gray-800">
+                <p className="text-[11px] font-bold text-[#0F172A]">
                   No information stored here
                 </p>
 
@@ -194,7 +194,7 @@ export default function NationalUniversityResult() {
         {/* Right Official Result Area */}
         <div className="lg:col-span-8 bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs min-h-[480px] flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-            <h2 className="text-xs font-bold text-gray-900">
+            <h2 className="text-xs font-bold text-[#0F172A]">
               Official result portal
             </h2>
 
@@ -211,7 +211,7 @@ export default function NationalUniversityResult() {
               Official National University Website
             </span>
 
-            <h3 className="text-base md:text-lg font-extrabold text-gray-900 mb-2">
+            <h3 className="text-base md:text-lg font-extrabold text-[#0F172A] mb-2">
               View Your National University Result
             </h3>
 
@@ -269,9 +269,9 @@ export default function NationalUniversityResult() {
           className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-gray-50/50 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="text-amber-500 font-bold text-sm">?</span>
+            <span className="text-[#2563EB] font-bold text-sm">?</span>
 
-            <span className="text-xs font-bold text-gray-800">How to use</span>
+            <span className="text-xs font-bold text-[#0F172A]">How to use</span>
           </div>
 
           <ChevronDown
@@ -305,7 +305,7 @@ export default function NationalUniversityResult() {
 
       {/* Tools in the same category */}
       <div className="space-y-3">
-        <h3 className="text-xs font-bold text-gray-700">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
 
@@ -320,7 +320,7 @@ export default function NationalUniversityResult() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-800 group-hover:text-teal-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-teal-600 transition-colors">
                 Education Board Result
               </h4>
 
@@ -341,7 +341,7 @@ export default function NationalUniversityResult() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-indigo-600 transition-colors">
                 ATS Friendly CV Maker
               </h4>
 

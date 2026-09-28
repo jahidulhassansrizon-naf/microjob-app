@@ -15,9 +15,9 @@ export default function CreateQuestionPage() {
 
   if (manager.isAuthenticated === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8F2EF]">
-        <div className="flex items-center gap-2 rounded-2xl border border-gray-200/80 bg-white px-5 py-3 text-xs font-semibold text-gray-600 shadow-sm">
-          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="flex items-center gap-2 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-3 text-xs font-semibold text-[#0F172A] shadow-sm">
+          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
           Checking authentication...
         </div>
       </div>
@@ -26,29 +26,29 @@ export default function CreateQuestionPage() {
 
   return (
     <div
-      className={`question-paper-page print-page-${manager.pageSize} min-h-screen bg-[#F8F2EF] text-[#1F2937]`}
+      className={`question-paper-page print-page-${manager.pageSize} min-h-screen bg-[#F8FAFC] text-[#0F172A]`}
     >
       <div className="screen-only">
         <DashboardNavbar />
       </div>
 
-      <header className="screen-only flex flex-col gap-3 border-b border-gray-200 bg-white px-6 py-3.5 md:flex-row md:items-center md:justify-between">
+      <header className="screen-only flex flex-col gap-3 border-b border-[#E2E8F0] bg-white px-6 py-3.5 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => manager.router.back()}
-            className="hidden h-8 w-8 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 sm:flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A]/70 hover:bg-[#E2E8F0] sm:flex"
             title="Go back"
           >
             <ArrowLeft size={15} />
           </button>
 
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-gray-900">
+            <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A]">
               New question paper
             </h1>
 
-            <p className="mt-0.5 text-xs font-medium text-gray-400">
+            <p className="mt-0.5 text-xs font-medium text-[#0F172A]/55">
               {manager.selectedQuestions.length} questions · Full marks{" "}
               {manager.totalMarks}
             </p>
@@ -61,7 +61,7 @@ export default function CreateQuestionPage() {
             onChange={(event) =>
               manager.setPaperStyle(event.target.value as "Classic" | "Compact")
             }
-            className="h-8 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 outline-none"
+            className="h-8 rounded-xl border border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#0F172A] outline-none"
           >
             <option value="Classic">Classic</option>
             <option value="Compact">Compact</option>
@@ -70,28 +70,28 @@ export default function CreateQuestionPage() {
           <button
             type="button"
             onClick={manager.handleSave}
-            className="flex h-8 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#0F172A] hover:bg-[#E2E8F0]"
           >
-            <Save size={13} className="text-gray-500" />
+            <Save size={13} className="text-[#0F172A]/70" />
             Save
             {manager.saveStatus ? (
-              <span className="text-[#F3A847]">· {manager.saveStatus}</span>
+              <span className="text-[#10B981]">· {manager.saveStatus}</span>
             ) : null}
           </button>
 
           <button
             type="button"
             onClick={manager.handlePrint}
-            className="flex h-8 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            className="flex h-8 items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#0F172A] hover:bg-[#E2E8F0]"
           >
-            <Printer size={13} className="text-gray-500" />
+            <Printer size={13} className="text-[#0F172A]/70" />
             Print
           </button>
 
           <button
             type="button"
             onClick={manager.handleDownloadPdf}
-            className="flex h-8 items-center gap-1.5 rounded-xl bg-[#F3A847] px-3.5 text-xs font-bold text-white shadow-sm hover:bg-[#e29a3e]"
+            className="flex h-8 items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 text-xs font-bold text-white shadow-sm hover:bg-[#2563EB]"
           >
             <Download size={13} />
             Download PDF

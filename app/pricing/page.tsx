@@ -32,23 +32,23 @@ interface CreditItem {
   text: string;
 }
 
-// Data array with Explicit Typing
+// Data array with Explicit Typing (Updated with professional palette)
 const creditItems: CreditItem[] = [
   {
     icon: Sparkles,
     title: "AI Editor",
     credits: "⚡ 2 credits",
     isFree: false,
-    bg: "bg-orange-50",
-    text: "text-orange-500",
+    bg: "bg-blue-50",
+    text: "text-[#2563EB]",
   },
   {
     icon: Edit3,
     title: "Manual Editor",
     credits: "⚡ 1 credit",
     isFree: false,
-    bg: "bg-blue-50",
-    text: "text-blue-500",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
   },
   {
     icon: FileCode,
@@ -56,15 +56,15 @@ const creditItems: CreditItem[] = [
     credits: "⚡ 4 credits",
     isFree: false,
     bg: "bg-purple-50",
-    text: "text-purple-500",
+    text: "text-purple-600",
   },
   {
     icon: FileText,
     title: "Document Generate",
     credits: "⚡ 1 credit",
     isFree: false,
-    bg: "bg-amber-50",
-    text: "text-amber-500",
+    bg: "bg-blue-50",
+    text: "text-[#2563EB]",
   },
   {
     icon: Printer,
@@ -72,23 +72,23 @@ const creditItems: CreditItem[] = [
     credits: "⚡ 1 credit",
     isFree: false,
     bg: "bg-sky-50",
-    text: "text-sky-500",
+    text: "text-sky-600",
   },
   {
     icon: Layers,
     title: "Bulk Photo Edit",
     credits: "⚡ 2 credits",
     isFree: false,
-    bg: "bg-orange-50",
-    text: "text-orange-500",
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
   },
   {
     icon: HelpCircle,
     title: "Question Create",
     credits: "Free",
     isFree: true,
-    bg: "bg-pink-50",
-    text: "text-pink-500",
+    bg: "bg-emerald-50",
+    text: "text-[#10B981]",
   },
   {
     icon: CheckCircle,
@@ -96,23 +96,23 @@ const creditItems: CreditItem[] = [
     credits: "Free",
     isFree: true,
     bg: "bg-emerald-50",
-    text: "text-emerald-500",
+    text: "text-[#10B981]",
   },
   {
     icon: FileCheck,
     title: "Form Autofill",
     credits: "Free",
     isFree: true,
-    bg: "bg-indigo-50",
-    text: "text-indigo-500",
+    bg: "bg-emerald-50",
+    text: "text-[#10B981]",
   },
   {
     icon: Sparkles,
     title: "60+ SohozTools",
     credits: "Free",
     isFree: true,
-    bg: "bg-rose-50",
-    text: "text-rose-500",
+    bg: "bg-emerald-50",
+    text: "text-[#10B981]",
   },
 ];
 
@@ -141,24 +141,24 @@ const cardVariants: Variants = {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#FFFBF7] text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col">
       {/* Main Pricing Section */}
       <main className="flex-grow w-full flex flex-col items-center">
         {/* Top Hero Section */}
-        <div className="w-full bg-gradient-to-b from-[#FFF5EE] via-[#FAF0E6]/70 to-[#F2E5D5]/50 pt-16 md:pt-20 pb-36 md:pb-44 px-4 sm:px-8 flex flex-col items-center border-b border-orange-100/60">
+        <div className="w-full bg-gradient-to-b from-blue-50/50 via-slate-50 to-[#F8FAFC] pt-16 md:pt-20 pb-36 md:pb-44 px-4 sm:px-8 flex flex-col items-center border-b border-[#E2E8F0]">
           <div className="max-w-[1240px] w-full flex flex-col items-center text-center">
             {/* Top Tag */}
-            <div className="inline-flex items-center px-5 py-1.5 rounded-full bg-[#FFF6EB] border border-[#F5A021] text-[#9A2200] text-xs md:text-sm font-medium mb-8 shadow-xs">
+            <div className="inline-flex items-center px-5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#10B981] text-xs md:text-sm font-semibold mb-8 shadow-xs">
               <span>Simple Credit System</span>
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-6">
-              Pay only for <span className="text-[#FF5500]">what you use</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-6">
+              Pay only for <span className="text-[#2563EB]">what you use</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm md:text-base text-gray-500 max-w-xl font-medium leading-relaxed mb-4">
+            <p className="text-sm md:text-base text-slate-500 max-w-xl font-medium leading-relaxed mb-4">
               No subscriptions, no hidden fees. Use credits to generate
               documents, images and print media. Every new account gets 20 bonus
               credits.
@@ -169,7 +169,7 @@ export default function PricingPage() {
         {/* Overlapping Banner Card Container */}
         <div className="w-full max-w-[1240px] px-4 sm:px-8 flex flex-col items-center -mt-24 md:-mt-32 z-10 mb-20">
           {/* Banner Card */}
-          <div className="w-full max-w-[1140px] bg-gradient-to-r from-[#FF4E00] via-[#FF3300] to-[#C01D00] rounded-[30px] p-8 md:p-12 lg:p-14 text-white shadow-2xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          <div className="w-full max-w-[1140px] bg-gradient-to-r from-[#2563EB] via-indigo-600 to-indigo-800 rounded-[30px] p-8 md:p-12 lg:p-14 text-white shadow-2xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Background Glow Overlay Circles */}
             <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
             <div className="absolute right-16 bottom-0 w-72 h-72 bg-black/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -223,11 +223,11 @@ export default function PricingPage() {
               {/* Action Button */}
               <Link
                 href="/login"
-                className="bg-white text-[#FF4E00] hover:bg-orange-50 transition font-extrabold text-xs md:text-sm px-7 py-3.5 rounded-xl shadow-lg inline-flex items-center gap-2 cursor-pointer group"
+                className="bg-white text-[#2563EB] hover:bg-blue-50 transition font-extrabold text-xs md:text-sm px-7 py-3.5 rounded-xl shadow-lg inline-flex items-center gap-2 cursor-pointer group"
               >
                 <Gift
                   size={16}
-                  className="text-[#FF4E00] group-hover:scale-110 transition-transform"
+                  className="text-[#2563EB] group-hover:scale-110 transition-transform"
                 />
                 <span>Claim 20 Free Credits</span>
               </Link>
@@ -245,10 +245,10 @@ export default function PricingPage() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex flex-col items-center text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-3">
               What are credits, really?
             </h2>
-            <p className="text-sm md:text-base text-gray-500 max-w-xl font-medium">
+            <p className="text-sm md:text-base text-slate-500 max-w-xl font-medium">
               Every action uses a few credits — the more credits you have, the
               more you can do. Some modules are completely free.
             </p>
@@ -269,7 +269,7 @@ export default function PricingPage() {
                   key={index}
                   variants={cardVariants}
                   whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                  className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow cursor-default"
+                  className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow cursor-default"
                 >
                   <div className="flex items-start justify-between">
                     <div
@@ -280,15 +280,15 @@ export default function PricingPage() {
                     <span
                       className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
                         item.isFree
-                          ? "text-emerald-600 bg-emerald-50"
-                          : "text-orange-500 bg-orange-50"
+                          ? "text-[#10B981] bg-emerald-50"
+                          : "text-[#2563EB] bg-blue-50"
                       }`}
                     >
                       {item.credits}
                     </span>
                   </div>
                   <div className="mt-6">
-                    <h4 className="text-sm font-bold text-gray-800">
+                    <h4 className="text-sm font-bold text-[#0F172A]">
                       {item.title}
                     </h4>
                   </div>

@@ -74,7 +74,7 @@ export default function AllowanceApplicationTracking() {
   };
 
   return (
-    <div className="w-full text-gray-800 font-sans pb-16">
+    <div className="w-full text-[#0F172A] font-sans pb-16">
       <div className="w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -82,20 +82,20 @@ export default function AllowanceApplicationTracking() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
                 title="Go back"
               >
                 <ArrowLeft size={16} />
               </button>
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
               <span>/</span>
-              <span className="hover:text-gray-700 cursor-pointer">
+              <span className="hover:text-[#0F172A] cursor-pointer">
                 General Tools
               </span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">
+              <span className="text-[#0F172A] font-semibold">
                 Allowance Application Tracking
               </span>
             </div>
@@ -104,7 +104,7 @@ export default function AllowanceApplicationTracking() {
               <div className="w-8 h-8 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <FileText size={18} />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Allowance Application Tracking
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
@@ -127,7 +127,7 @@ export default function AllowanceApplicationTracking() {
                 className={isFavorite ? "fill-purple-400 text-purple-400" : ""}
               />
             </button>
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs">
+            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16} />
             </button>
           </div>
@@ -139,7 +139,7 @@ export default function AllowanceApplicationTracking() {
           <div className="lg:col-span-5 space-y-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Application details
                 </span>
               </div>
@@ -156,8 +156,8 @@ export default function AllowanceApplicationTracking() {
                   onClick={() => setActiveTab("trackingId")}
                   className={`py-2 text-xs font-bold rounded-lg transition-all ${
                     activeTab === "trackingId"
-                      ? "bg-amber-500 text-white shadow-2xs"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-[#2563EB] text-white shadow-2xs"
+                      : "text-gray-600 hover:text-[#0F172A]"
                   }`}
                 >
                   Tracking id
@@ -166,8 +166,8 @@ export default function AllowanceApplicationTracking() {
                   onClick={() => setActiveTab("nid")}
                   className={`py-2 text-xs font-bold rounded-lg transition-all ${
                     activeTab === "nid"
-                      ? "bg-amber-500 text-white shadow-2xs"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-[#2563EB] text-white shadow-2xs"
+                      : "text-gray-600 hover:text-[#0F172A]"
                   }`}
                 >
                   NID & date of birth
@@ -177,7 +177,7 @@ export default function AllowanceApplicationTracking() {
               {/* Conditional Inputs */}
               {activeTab === "trackingId" ? (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">
+                  <label className="text-xs font-bold text-[#0F172A]">
                     Tracking id <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -185,13 +185,13 @@ export default function AllowanceApplicationTracking() {
                     value={trackingId}
                     onChange={(e) => setTrackingId(e.target.value)}
                     placeholder="e.g. 0123456789"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
                   />
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">
+                    <label className="text-xs font-bold text-[#0F172A]">
                       NID / Birth Registration number{" "}
                       <span className="text-red-500">*</span>
                     </label>
@@ -200,11 +200,11 @@ export default function AllowanceApplicationTracking() {
                       value={nidNumber}
                       onChange={(e) => setNidNumber(e.target.value)}
                       placeholder="e.g. 19951234567890123"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">
+                    <label className="text-xs font-bold text-[#0F172A]">
                       Date of birth <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -212,7 +212,7 @@ export default function AllowanceApplicationTracking() {
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
                       placeholder="DD/MM/YYYY"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
                     />
                   </div>
                 </div>
@@ -220,20 +220,20 @@ export default function AllowanceApplicationTracking() {
 
               {/* Captcha Section */}
               <div className="space-y-2 pt-1">
-                <label className="text-xs font-bold text-gray-700">
+                <label className="text-xs font-bold text-[#0F172A]">
                   Captcha code <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center font-mono text-base font-bold tracking-widest text-gray-700 select-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:8px_8px] flex-1">
+                  <div className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center font-mono text-base font-bold tracking-widest text-[#0F172A] select-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:8px_8px] flex-1">
                     <span className="italic line-through decoration-purple-500">
                       20
                     </span>{" "}
-                    + <span className="underline decoration-amber-500">9</span>{" "}
+                    + <span className="underline decoration-[#2563EB]">9</span>{" "}
                     =
                   </div>
                   <button
                     onClick={() => setCaptchaInput("")}
-                    className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 hover:text-gray-800 transition-colors"
+                    className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 hover:text-[#0F172A] transition-colors"
                     title="Refresh captcha"
                   >
                     <RefreshCcw size={16} />
@@ -244,14 +244,14 @@ export default function AllowanceApplicationTracking() {
                   value={captchaInput}
                   onChange={(e) => setCaptchaInput(e.target.value)}
                   placeholder="Type the code shown"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 focus:outline-none focus:border-amber-500 mt-2"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB] mt-2"
                 />
               </div>
 
               {/* Track Action Button */}
               <button
                 onClick={handleTrack}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
+                className="w-full py-3 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
               >
                 <Search size={16} />
                 <span>Track application</span>
@@ -264,7 +264,7 @@ export default function AllowanceApplicationTracking() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between min-h-[580px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-purple-500"></span>
                     <span>Application status</span>
                   </span>
@@ -298,7 +298,7 @@ export default function AllowanceApplicationTracking() {
                         <span className="text-gray-500 font-medium">
                           Tracking ID:
                         </span>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-[#0F172A]">
                           {trackingId || "TRK-9842510"}
                         </span>
                       </div>
@@ -306,7 +306,7 @@ export default function AllowanceApplicationTracking() {
                         <span className="text-gray-500 font-medium">
                           Applicant Name:
                         </span>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-[#0F172A]">
                           Md. Abdul Hakim
                         </span>
                       </div>
@@ -314,7 +314,7 @@ export default function AllowanceApplicationTracking() {
                         <span className="text-gray-500 font-medium">
                           Allowance Type:
                         </span>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-[#0F172A]">
                           Old Age Allowance (বয়স্ক ভাতা)
                         </span>
                       </div>
@@ -330,7 +330,7 @@ export default function AllowanceApplicationTracking() {
                         <span className="text-gray-500 font-medium">
                           Bank / Mobile Account:
                         </span>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-[#0F172A]">
                           Nagad (01712******)
                         </span>
                       </div>
@@ -341,7 +341,7 @@ export default function AllowanceApplicationTracking() {
                     <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-2xs">
                       <FileText size={22} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900">
+                    <h3 className="text-xs font-bold text-[#0F172A]">
                       Enter application details
                     </h3>
                     <p className="text-[11px] text-gray-400 font-medium max-w-xs leading-relaxed">
@@ -365,13 +365,13 @@ export default function AllowanceApplicationTracking() {
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <button
               onClick={handleReset}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors"
             >
               Reset
             </button>
             <button
               onClick={handleTrack}
-              className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2"
+              className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2"
             >
               <Search size={14} />
               <span>Track application</span>
@@ -383,7 +383,7 @@ export default function AllowanceApplicationTracking() {
         <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
@@ -409,7 +409,7 @@ export default function AllowanceApplicationTracking() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -425,7 +425,7 @@ export default function AllowanceApplicationTracking() {
                     <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
                       <ToolIcon size={18} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-purple-600 transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">

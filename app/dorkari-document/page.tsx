@@ -500,9 +500,9 @@ function DocumentIcon() {
         style={{
           width: "52%",
           aspectRatio: "0.74 / 1",
-          background: "rgb(255, 255, 255)",
+          background: "#FFFFFF",
           boxShadow:
-            "rgba(20, 20, 30, 0.28) 0px 10px 26px -8px, rgba(20, 20, 30, 0.08) 0px 2px 6px",
+            "rgba(15, 23, 42, 0.12) 0px 10px 26px -8px, rgba(15, 23, 42, 0.05) 0px 2px 6px",
           borderRadius: "3px",
           padding: "13% 12%",
           display: "flex",
@@ -514,7 +514,7 @@ function DocumentIcon() {
           style={{
             ...lineBase,
             width: "46%",
-            background: "rgb(196, 196, 203)",
+            background: "#CBD5E1",
             alignSelf: "flex-end",
             marginBottom: "4%",
           }}
@@ -523,49 +523,49 @@ function DocumentIcon() {
           style={{
             ...lineBase,
             width: "72%",
-            background: "rgb(196, 196, 203)",
+            background: "#CBD5E1",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "94%",
-            background: "rgb(228, 228, 234)",
+            background: "#E2E8F0",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "88%",
-            background: "rgb(228, 228, 234)",
+            background: "#E2E8F0",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "96%",
-            background: "rgb(228, 228, 234)",
+            background: "#E2E8F0",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "60%",
-            background: "rgb(228, 228, 234)",
+            background: "#E2E8F0",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "90%",
-            background: "rgb(228, 228, 234)",
+            background: "#E2E8F0",
           }}
         />
         <div
           style={{
             ...lineBase,
             width: "40%",
-            background: "rgb(196, 196, 203)",
+            background: "#CBD5E1",
             marginTop: "auto",
           }}
         />
@@ -587,7 +587,7 @@ function SearchIcon() {
         minHeight: "18px",
         flexShrink: 0,
         display: "block",
-        color: "#7c53ff",
+        color: "#2563EB",
       }}
       className="doc-ui-icon doc-search-icon"
       aria-hidden="true"
@@ -761,15 +761,15 @@ export default function UsefulDocumentTemplatesPage() {
       <main className="documents-page">
         <style>{`
           .documents-page {
-            --page-bg: #f5f5f7;
-            --hero-bg: #f8f8fb;
-            --card-border: #e8e8ec;
-            --muted: #8c8e96;
-            --text: #121316;
-            --orange: #d86c00;
-            --orange-deep: #ed8507;
-            --pink: #d54e90;
-            --chip-bg: #eff0f3;
+            --page-bg: #F8FAFC;
+            --hero-bg: #F1F5F9;
+            --card-border: #E2E8F0;
+            --muted: #64748B;
+            --text: #0F172A;
+            --primary: #2563EB;
+            --secondary: #E2E8F0;
+            --accent: #10B981;
+            --chip-bg: #E2E8F0;
             min-height: 100vh;
             background: var(--page-bg);
             color: var(--text);
@@ -810,17 +810,17 @@ export default function UsefulDocumentTemplatesPage() {
             background:
               radial-gradient(
                 circle at 24% 78%,
-                rgba(151, 153, 255, 0.15),
+                rgba(37, 99, 235, 0.08),
                 transparent 34%
               ),
               radial-gradient(
                 circle at 84% 83%,
-                rgba(244, 189, 101, 0.18),
+                rgba(16, 185, 129, 0.08),
                 transparent 31%
               ),
-              linear-gradient(180deg, #f8f8fb 0%, #f7f7fb 100%);
-            border-top: 1px solid #e9e9ed;
-            border-bottom: 1px solid #e1e1e6;
+              linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+            border-top: 1px solid #E2E8F0;
+            border-bottom: 1px solid #CBD5E1;
           }
 
           .documents-page .hero-inner {
@@ -834,10 +834,10 @@ export default function UsefulDocumentTemplatesPage() {
             justify-content: center;
             min-height: 28px;
             padding: 0 18px;
-            border: 1px solid #e4a322;
-            color: #b96f00;
+            border: 1px solid #2563EB;
+            color: #2563EB;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.48);
+            background: rgba(37, 99, 235, 0.06);
             font-size: 10px;
             font-weight: 700;
             letter-spacing: -0.1px;
@@ -849,10 +849,11 @@ export default function UsefulDocumentTemplatesPage() {
             line-height: 1.05;
             letter-spacing: -2px;
             font-weight: 800;
+            color: #0F172A;
           }
 
           .documents-page .hero h1 span {
-            color: var(--orange-deep);
+            color: #2563EB;
           }
 
           .documents-page .hero-copy {
@@ -860,7 +861,7 @@ export default function UsefulDocumentTemplatesPage() {
             margin: 0 auto;
             font-size: 16px;
             line-height: 1.55;
-            color: #53545b;
+            color: #475569;
             letter-spacing: -0.25px;
           }
 
@@ -876,10 +877,10 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .search-box {
             height: 49px;
             border-radius: 999px;
-            background: #fff;
-            border: 1px solid #dadce1;
+            background: #ffffff;
+            border: 1px solid #CBD5E1;
             box-shadow:
-              0 1px 2px rgba(0, 0, 0, 0.02),
+              0 1px 2px rgba(15, 23, 42, 0.04),
               inset 0 0 0 1px rgba(255, 255, 255, 0.7);
             width: min(100%, 372px);
             display: flex;
@@ -893,12 +894,12 @@ export default function UsefulDocumentTemplatesPage() {
             border: 0;
             outline: none;
             background: transparent;
-            color: #2d2e33;
+            color: #0F172A;
             font-size: 15px;
           }
 
           .documents-page .search-box input::placeholder {
-            color: #a1a2a7;
+            color: #94A3B8;
           }
 
           .documents-page .kbd {
@@ -911,9 +912,9 @@ export default function UsefulDocumentTemplatesPage() {
             padding: 0 8px;
             margin: 0 9px 0 10px;
             border-radius: 6px;
-            background: #f3efff;
-            border: 1px solid #d8d0ff;
-            color: #8a7cf0;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            color: #2563EB;
             font-size: 10px;
             font-weight: 700;
             white-space: nowrap;
@@ -927,10 +928,10 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .select-box {
             height: 49px;
             border-radius: 999px;
-            background: #fff;
-            border: 1px solid #dadce1;
+            background: #ffffff;
+            border: 1px solid #CBD5E1;
             box-shadow:
-              0 1px 2px rgba(0, 0, 0, 0.02),
+              0 1px 2px rgba(15, 23, 42, 0.04),
               inset 0 0 0 1px rgba(255, 255, 255, 0.7);
             min-width: 175px;
             display: flex;
@@ -938,7 +939,7 @@ export default function UsefulDocumentTemplatesPage() {
             justify-content: space-between;
             gap: 15px;
             padding: 0 16px 0 20px;
-            color: #1f2024;
+            color: #0F172A;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
@@ -946,7 +947,7 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .select-box:hover {
-            border-color: #c5c8d0;
+            border-color: #94A3B8;
           }
 
           .documents-page .dropdown-overlay {
@@ -984,7 +985,7 @@ export default function UsefulDocumentTemplatesPage() {
             height: 12px;
             background: #ffffff;
             border-radius: 2px;
-            box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.03);
+            box-shadow: -2px -2px 4px rgba(15, 23, 42, 0.05);
             z-index: 2;
           }
 
@@ -994,8 +995,8 @@ export default function UsefulDocumentTemplatesPage() {
             border-radius: 16px;
             padding: 6px;
             box-shadow:
-              0 12px 32px rgba(0, 0, 0, 0.12),
-              0 2px 6px rgba(0, 0, 0, 0.04);
+              0 12px 32px rgba(15, 23, 42, 0.12),
+              0 2px 6px rgba(15, 23, 42, 0.04);
             display: flex;
             flex-direction: column;
             gap: 2px;
@@ -1011,7 +1012,7 @@ export default function UsefulDocumentTemplatesPage() {
             align-items: center;
             justify-content: space-between;
             background: transparent;
-            color: #2d2e33;
+            color: #0F172A;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
@@ -1020,12 +1021,12 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .dropdown-item:hover:not(.selected) {
-            background: #f4f4f7;
-            color: #111;
+            background: #F1F5F9;
+            color: #0F172A;
           }
 
           .documents-page .dropdown-item.selected {
-            background: #7c53ff;
+            background: #2563EB;
             color: #ffffff;
           }
 
@@ -1040,8 +1041,8 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .filter-bar {
-            background: #fff;
-            border-bottom: 1px solid #dedfe3;
+            background: #ffffff;
+            border-bottom: 1px solid #E2E8F0;
             min-height: 38px;
             display: flex;
             align-items: center;
@@ -1068,7 +1069,7 @@ export default function UsefulDocumentTemplatesPage() {
             padding: 0 14px;
             border-radius: 999px;
             background: var(--chip-bg);
-            color: #4a4b50;
+            color: #334155;
             cursor: pointer;
             font-size: 11px;
             font-weight: 700;
@@ -1077,17 +1078,13 @@ export default function UsefulDocumentTemplatesPage() {
 
           .documents-page .filter-chip:hover {
             transform: translateY(-1px);
+            background: #CBD5E1;
           }
 
           .documents-page .filter-chip.active {
-            color: #fff;
-            background: linear-gradient(
-              90deg,
-              #ff9e09 0%,
-              #ef8b0a 48%,
-              #c95596 100%
-            );
-            box-shadow: 0 3px 7px rgba(225, 129, 26, 0.18);
+            color: #ffffff;
+            background: #2563EB;
+            box-shadow: 0 3px 7px rgba(37, 99, 235, 0.25);
           }
 
           .documents-page .grid-shell {
@@ -1106,12 +1103,12 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .card {
             min-width: 0;
             overflow: hidden;
-            border: 1px solid #dedfe3;
+            border: 1px solid #E2E8F0;
             border-radius: 16px;
             background: #ffffff;
             box-shadow:
-              0 1px 3px rgba(18, 19, 22, 0.03),
-              0 6px 16px rgba(18, 19, 22, 0.035);
+              0 1px 3px rgba(15, 23, 42, 0.03),
+              0 6px 16px rgba(15, 23, 42, 0.035);
             transition:
               transform 0.18s ease,
               box-shadow 0.18s ease;
@@ -1121,8 +1118,8 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .card:hover {
             transform: translateY(-2px);
             box-shadow:
-              0 4px 10px rgba(18, 19, 22, 0.05),
-              0 12px 26px rgba(18, 19, 22, 0.07);
+              0 4px 10px rgba(15, 23, 42, 0.05),
+              0 12px 26px rgba(15, 23, 42, 0.07);
           }
 
           .documents-page .preview {
@@ -1132,7 +1129,7 @@ export default function UsefulDocumentTemplatesPage() {
             isolation: isolate;
             display: grid;
             place-items: center;
-            background: #f1ede7;
+            background: #F1F5F9;
           }
 
           .documents-page .document-preview-paper-wrap {
@@ -1161,11 +1158,11 @@ export default function UsefulDocumentTemplatesPage() {
             justify-content: center;
             gap: 5px;
             border-radius: 999px;
-            background: linear-gradient(180deg, #ffae18, #ef8805);
-            color: #fff;
+            background: #10B981;
+            color: #ffffff;
             font-size: 10px;
             font-weight: 800;
-            box-shadow: 0 3px 7px rgba(191, 111, 0, 0.25);
+            box-shadow: 0 3px 7px rgba(16, 185, 129, 0.3);
           }
 
           .documents-page .stamp-dot {
@@ -1193,7 +1190,7 @@ export default function UsefulDocumentTemplatesPage() {
 
           .documents-page .category {
             margin-bottom: 7px;
-            color: #858891;
+            color: #64748B;
             font-size: 10px;
             font-weight: 800;
             letter-spacing: 0.5px;
@@ -1201,7 +1198,7 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .title {
-            color: #111216;
+            color: #0F172A;
             font-size: 13px;
             line-height: 1.35;
             font-weight: 800;
@@ -1214,7 +1211,7 @@ export default function UsefulDocumentTemplatesPage() {
 
           .documents-page .description {
             margin-top: 7px;
-            color: #686a72;
+            color: #475569;
             font-size: 12px;
             line-height: 1.45;
             display: -webkit-box;
@@ -1226,7 +1223,7 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .card-footer {
             margin-top: auto;
             padding-top: 11px;
-            border-top: 1px solid #ededf0;
+            border-top: 1px solid #E2E8F0;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1237,7 +1234,7 @@ export default function UsefulDocumentTemplatesPage() {
             display: inline-flex;
             align-items: center;
             gap: 3px;
-            color: #d86c00;
+            color: #2563EB;
             text-decoration: none;
             font-size: 12px;
             font-weight: 700;
@@ -1245,11 +1242,11 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .details:hover {
-            color: #b55a00;
+            color: #1D4ED8;
           }
 
           .documents-page .file-types {
-            color: #8c8e96;
+            color: #94A3B8;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.2px;
@@ -1257,12 +1254,12 @@ export default function UsefulDocumentTemplatesPage() {
 
           .documents-page .empty-state {
             grid-column: 1 / -1;
-            border: 1px dashed #d6d6db;
+            border: 1px dashed #CBD5E1;
             border-radius: 14px;
             padding: 46px 18px;
             text-align: center;
-            background: #fafafa;
-            color: #7f8087;
+            background: #ffffff;
+            color: #64748B;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1272,8 +1269,8 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .reset-btn {
             padding: 8px 18px;
             border-radius: 999px;
-            background: #7c53ff;
-            color: #fff;
+            background: #2563EB;
+            color: #ffffff;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
@@ -1281,13 +1278,13 @@ export default function UsefulDocumentTemplatesPage() {
           }
 
           .documents-page .reset-btn:hover {
-            background: #683ee3;
+            background: #1D4ED8;
           }
 
           .documents-page .faq-section {
             padding: 60px 16px 84px;
-            background: linear-gradient(180deg, #f8f8fb 0%, #f1f1f5 100%);
-            border-top: 1px solid #e3e3e8;
+            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+            border-top: 1px solid #E2E8F0;
           }
 
           .documents-page .faq-inner {
@@ -1302,10 +1299,10 @@ export default function UsefulDocumentTemplatesPage() {
             justify-content: center;
             min-height: 26px;
             padding: 0 16px;
-            border: 1px solid #e4a322;
-            color: #b96f00;
+            border: 1px solid #2563EB;
+            color: #2563EB;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(37, 99, 235, 0.06);
             font-size: 11px;
             font-weight: 700;
             letter-spacing: -0.1px;
@@ -1317,16 +1314,16 @@ export default function UsefulDocumentTemplatesPage() {
             line-height: 1.1;
             letter-spacing: -1.8px;
             font-weight: 800;
-            color: #0c0c0e;
+            color: #0F172A;
           }
 
           .documents-page .faq-title span {
-            color: var(--orange-deep);
+            color: #2563EB;
           }
 
           .documents-page .faq-subtitle {
             font-size: 15px;
-            color: #63646b;
+            color: #475569;
             margin: 0 0 36px;
             letter-spacing: -0.2px;
           }
@@ -1340,18 +1337,18 @@ export default function UsefulDocumentTemplatesPage() {
 
           .documents-page .faq-item {
             background: #ffffff;
-            border: 1px solid #e5e6eb;
+            border: 1px solid #E2E8F0;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.015);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.015);
             transition:
               border-color 0.15s ease,
               box-shadow 0.15s ease;
           }
 
           .documents-page .faq-item.open {
-            border-color: #d2d4dc;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
           }
 
           .documents-page .faq-header {
@@ -1375,14 +1372,14 @@ export default function UsefulDocumentTemplatesPage() {
           .documents-page .faq-num {
             font-size: 13px;
             font-weight: 700;
-            color: #b5b6be;
+            color: #94A3B8;
             min-width: 22px;
           }
 
           .documents-page .faq-question {
             font-size: 14px;
             font-weight: 700;
-            color: #1a1b1e;
+            color: #0F172A;
             letter-spacing: -0.1px;
           }
 
@@ -1390,24 +1387,24 @@ export default function UsefulDocumentTemplatesPage() {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #f4f4f7;
+            background: #F1F5F9;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #6c6d75;
+            color: #475569;
             flex-shrink: 0;
             transition: background 0.15s ease;
           }
 
           .documents-page .faq-item:hover .faq-icon-btn {
-            background: #eaeaf0;
+            background: #E2E8F0;
           }
 
           .documents-page .faq-answer {
             padding: 0 20px 18px 58px;
             font-size: 13px;
             line-height: 1.6;
-            color: #55565e;
+            color: #334155;
             animation: faqFadeIn 0.18s ease-out;
           }
 
@@ -1420,9 +1417,9 @@ export default function UsefulDocumentTemplatesPage() {
             display: grid;
             place-items: center;
             border-radius: 50%;
-            background: #27d36a;
-            color: #fff;
-            box-shadow: 0 99px 25px rgba(37, 211, 102, 0.3);
+            background: #10B981;
+            color: #ffffff;
+            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.35);
             z-index: 20;
             text-decoration: none;
             transition: transform 0.15s ease;
@@ -1631,7 +1628,7 @@ export default function UsefulDocumentTemplatesPage() {
                     isolation: "isolate",
                     display: "grid",
                     placeItems: "center",
-                    background: "#f1ede7",
+                    background: "#F1F5F9",
                   }}
                 >
                   <DocumentIcon />

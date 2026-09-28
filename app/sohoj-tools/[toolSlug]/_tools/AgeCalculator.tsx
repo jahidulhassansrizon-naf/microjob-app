@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronUp,
   Cake,
-  Sparkles,
   Users,
   Copy,
   Check,
@@ -185,7 +184,7 @@ function DatePicker({
   }
 
   const selectClass =
-    "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-purple-500 cursor-pointer";
+    "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-purple-500 cursor-pointer";
 
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -418,7 +417,7 @@ export default function AgeCalculator() {
   };
 
   return (
-    <div className="w-full text-gray-800 font-sans pb-16 print:pb-0">
+    <div className="w-full text-[#0F172A] font-sans pb-16 print:pb-0">
       <div className="w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
@@ -426,20 +425,20 @@ export default function AgeCalculator() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1 cursor-pointer"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1 cursor-pointer"
                 title="Go back"
               >
                 <ArrowLeft size={16} />
               </button>
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
               <span>/</span>
-              <span className="hover:text-gray-700 cursor-pointer">
+              <span className="hover:text-[#0F172A] cursor-pointer">
                 General Tools
               </span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">
+              <span className="text-[#0F172A] font-semibold">
                 Age Calculator
               </span>
             </div>
@@ -448,7 +447,7 @@ export default function AgeCalculator() {
               <div className="w-8 h-8 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Calculator size={18} />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Age Calculator
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
@@ -475,7 +474,7 @@ export default function AgeCalculator() {
             </button>
             <button
               aria-label="Share this tool"
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer"
+              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs cursor-pointer"
             >
               <Share size={16} />
             </button>
@@ -488,14 +487,14 @@ export default function AgeCalculator() {
           <div className="lg:col-span-5 space-y-4 print:hidden">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Enter dates
                 </span>
               </div>
 
               {/* Date of Birth */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                <label className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
                   <Cake size={13} className="text-purple-500" />
                   Date of birth <span className="text-red-500">*</span>
                 </label>
@@ -523,7 +522,7 @@ export default function AgeCalculator() {
                       <Clock3 size={14} />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-gray-900">
+                      <h4 className="text-xs font-bold text-[#0F172A]">
                         Calculate age on a different date
                       </h4>
                       <p className="text-[10px] text-gray-500 font-medium">
@@ -562,11 +561,11 @@ export default function AgeCalculator() {
               <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-gray-50/50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center font-bold">
+                    <div className="w-7 h-7 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center font-bold">
                       <Users size={14} />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-gray-900">
+                      <h4 className="text-xs font-bold text-[#0F172A]">
                         Compare with another person
                       </h4>
                       <p className="text-[10px] text-gray-500 font-medium">
@@ -629,7 +628,7 @@ export default function AgeCalculator() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between min-h-[480px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-purple-500" />
                     <span>Your age</span>
                   </span>
@@ -666,7 +665,7 @@ export default function AgeCalculator() {
                         <p className="text-[11px] text-gray-500 font-medium">
                           Total Months
                         </p>
-                        <p className="text-base font-bold text-gray-900">
+                        <p className="text-base font-bold text-[#0F172A]">
                           {age.totalMonths.toLocaleString()}
                         </p>
                       </div>
@@ -674,7 +673,7 @@ export default function AgeCalculator() {
                         <p className="text-[11px] text-gray-500 font-medium">
                           Total Weeks
                         </p>
-                        <p className="text-base font-bold text-gray-900">
+                        <p className="text-base font-bold text-[#0F172A]">
                           {age.totalWeeks.toLocaleString()}
                         </p>
                       </div>
@@ -682,7 +681,7 @@ export default function AgeCalculator() {
                         <p className="text-[11px] text-gray-500 font-medium">
                           Total Days
                         </p>
-                        <p className="text-base font-bold text-gray-900">
+                        <p className="text-base font-bold text-[#0F172A]">
                           {age.totalDays.toLocaleString()}
                         </p>
                       </div>
@@ -690,11 +689,10 @@ export default function AgeCalculator() {
 
                     {/* Next birthday */}
                     {nextBirthday && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-                          <Sparkles size={17} />
+                      <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
                         </div>
-                        <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                        <p className="text-xs font-semibold text-[#0F172A] leading-relaxed">
                           {nextBirthday.isToday ? (
                             <>
                               🎉 Birthday today — turning{" "}
@@ -713,7 +711,7 @@ export default function AgeCalculator() {
 
                     {/* Milestones relevant to daily life / paperwork in BD */}
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-gray-900">
+                      <p className="text-xs font-bold text-[#0F172A]">
                         Milestones
                       </p>
                       <div className="space-y-1.5">
@@ -734,7 +732,7 @@ export default function AgeCalculator() {
                                   className="text-gray-300 shrink-0"
                                 />
                               )}
-                              <span className="text-[11px] font-semibold text-gray-700 truncate">
+                              <span className="text-[11px] font-semibold text-[#0F172A] truncate">
                                 {m.label}
                               </span>
                             </div>
@@ -775,7 +773,7 @@ export default function AgeCalculator() {
                     <div className="flex items-center gap-2 print:hidden">
                       <button
                         onClick={handleCopy}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
                       >
                         {copied ? (
                           <Check size={14} className="text-emerald-600" />
@@ -791,7 +789,7 @@ export default function AgeCalculator() {
                     <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-2xs">
                       <Calculator size={22} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900">
+                    <h3 className="text-xs font-bold text-[#0F172A]">
                       Choose a date of birth on the left to see the age
                       instantly.
                     </h3>
@@ -819,14 +817,14 @@ export default function AgeCalculator() {
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <button
               onClick={handleReset}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               onClick={() => window.print()}
               disabled={!age}
-              className="px-5 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer"
             >
               <Calculator size={14} />
               <span>Print / Save</span>
@@ -838,7 +836,7 @@ export default function AgeCalculator() {
         <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs print:hidden">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors cursor-pointer"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
@@ -871,7 +869,7 @@ export default function AgeCalculator() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3 print:hidden">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -887,7 +885,7 @@ export default function AgeCalculator() {
                     <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
                       <ToolIcon size={18} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-purple-600 transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">

@@ -163,16 +163,16 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2 w-full">
+      <header className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2 w-full">
         {/* Left Section: Logo */}
         <div className="flex items-center gap-2 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-[#FF5D00] rounded-xl flex items-center justify-center font-black text-white text-base">
+            <div className="w-8 h-8 bg-[#2563EB] rounded-xl flex items-center justify-center font-black text-white text-base">
               SK
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-lg font-black text-gray-900 tracking-tight">
-                Sohoz<span className="text-[#FF5D00]">kaj</span>
+              <span className="text-lg font-black text-[#0F172A] tracking-tight">
+                Sohoz<span className="text-[#2563EB]">kaj</span>
               </span>
               <span className="text-[8px] tracking-wider text-gray-400 font-bold uppercase">
                 www.sohozkaj.com
@@ -182,31 +182,31 @@ export default function DashboardNavbar() {
         </div>
 
         {/* Center Section: Navigation Links Centered (Desktop Only) */}
-        <nav className="hidden xl:flex items-center justify-start 2xl:justify-center flex-1 min-w-0 gap-1 xl:gap-1.5 2xl:gap-2.5 text-[11px] xl:text-[11.5px] 2xl:text-[13px] font-semibold text-gray-700 mx-1">
+        <nav className="hidden xl:flex items-center justify-start 2xl:justify-center flex-1 min-w-0 gap-1 xl:gap-1.5 2xl:gap-2.5 text-[11px] xl:text-[11.5px] 2xl:text-[13px] font-semibold text-[#0F172A] mx-1">
           {/* My Files */}
           <Link
             href="/my-files"
-            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
+            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
           >
-            <FileText size={14} className="text-blue-500 shrink-0" />
+            <FileText size={14} className="text-[#2563EB] shrink-0" />
             <span>My Files</span>
           </Link>
 
           {/* AI Editor */}
           <Link
             href="/ai-editor"
-            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
+            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
           >
-            <Sparkles size={14} className="text-orange-500 shrink-0" />
+            <Sparkles size={14} className="text-[#2563EB] shrink-0" />
             <span>AI Editor</span>
           </Link>
 
           {/* Manual Editor */}
           <Link
             href="/manual-editor"
-            className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors whitespace-nowrap shrink-0"
+            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
           >
-            <FileEdit size={14} className="text-blue-600 shrink-0" />
+            <FileEdit size={14} className="text-[#2563EB] shrink-0" />
             <span>Manual Editor</span>
           </Link>
 
@@ -218,9 +218,9 @@ export default function DashboardNavbar() {
 
             <Link
               href="/bulk-photo-edit"
-              className="flex items-center gap-1 hover:text-[#FF5D00] transition-colors"
+              className="flex items-center gap-1 hover:text-[#2563EB] transition-colors"
             >
-              <Copy size={14} className="text-emerald-500 shrink-0" />
+              <Copy size={14} className="text-[#10B981] shrink-0" />
               <span>Bulk Photo Edit</span>
             </Link>
           </div>
@@ -237,7 +237,7 @@ export default function DashboardNavbar() {
 
             <Link
               href="/ai-template"
-              className="flex items-center gap-0.5 hover:text-[#FF5D00] cursor-pointer"
+              className="flex items-center gap-0.5 hover:text-[#2563EB] cursor-pointer"
             >
               <LayoutGrid size={14} className="text-purple-500 shrink-0" />
               <span>AI Template</span>
@@ -250,12 +250,12 @@ export default function DashboardNavbar() {
             </Link>
 
             {aiTemplateOpen && (
-              <div className="absolute top-full left-0 w-52 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-[100] text-xs font-medium">
+              <div className="absolute top-full left-0 w-52 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl shadow-xl py-2 z-[100] text-xs font-medium">
                 {aiTemplateItems.map((item, index) => (
                   <Link
                     key={index}
                     href="/ai-template"
-                    className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00] transition-colors"
+                    className="block px-4 py-2 text-[#0F172A] hover:bg-[#E2E8F0] hover:text-[#2563EB] transition-colors"
                   >
                     {item}
                   </Link>
@@ -269,8 +269,8 @@ export default function DashboardNavbar() {
             href="/questions-create/create"
             className={`flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 ${
               pathname?.startsWith("/questions-create")
-                ? "text-[#FF5D00]"
-                : "hover:text-[#FF5D00]"
+                ? "text-[#2563EB]"
+                : "hover:text-[#2563EB]"
             }`}
           >
             <FileText size={14} className="text-red-500 shrink-0" />
@@ -289,7 +289,7 @@ export default function DashboardNavbar() {
             <Link
               href="/jobs"
               className={`flex items-center gap-1 transition-colors ${
-                pathname === "/jobs" ? "text-[#FF5D00]" : "hover:text-[#FF5D00]"
+                pathname === "/jobs" ? "text-[#2563EB]" : "hover:text-[#2563EB]"
               }`}
             >
               <Briefcase size={14} className="text-amber-500 shrink-0" />
@@ -311,11 +311,11 @@ export default function DashboardNavbar() {
               href="/print-media"
               className={`flex items-center gap-0.5 transition-colors ${
                 pathname === "/print-media"
-                  ? "text-[#FF5D00]"
-                  : "hover:text-[#FF5D00] text-gray-700"
+                  ? "text-[#2563EB]"
+                  : "hover:text-[#2563EB] text-[#0F172A]"
               }`}
             >
-              <Printer size={14} className="text-orange-600 shrink-0" />
+              <Printer size={14} className="text-[#2563EB] shrink-0" />
               <span>Print Media</span>
               <ChevronDown
                 size={13}
@@ -326,12 +326,12 @@ export default function DashboardNavbar() {
             </Link>
 
             {printMediaOpen && (
-              <div className="absolute top-full left-0 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-[100] text-xs font-semibold">
+              <div className="absolute top-full left-0 w-48 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-xl py-2 z-[100] text-xs font-semibold">
                 {printMediaItems.map((item, index) => (
                   <Link
                     key={index}
                     href="/print-media"
-                    className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00] transition-colors"
+                    className="block px-4 py-2 text-[#0F172A] hover:bg-[#E2E8F0] hover:text-[#2563EB] transition-colors"
                   >
                     {item}
                   </Link>
@@ -344,12 +344,12 @@ export default function DashboardNavbar() {
           <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
             <Link
               href="/sohoj-tools"
-              className="flex items-center gap-1 hover:text-[#FF5D00] cursor-pointer"
+              className="flex items-center gap-1 hover:text-[#2563EB] cursor-pointer"
             >
               <ShoppingBag size={14} className="text-rose-500 shrink-0" />
               <span>SohozTools</span>
             </Link>
-            <span className="bg-emerald-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
+            <span className="bg-[#10B981] text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
               Free
             </span>
           </div>
@@ -357,7 +357,7 @@ export default function DashboardNavbar() {
           {/* All Menu Button */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="flex items-center gap-1 text-gray-700 hover:text-[#FF5D00] cursor-pointer pl-1 whitespace-nowrap bg-transparent border-0 shrink-0"
+            className="flex items-center gap-1 text-[#0F172A] hover:text-[#2563EB] cursor-pointer pl-1 whitespace-nowrap bg-transparent border-0 shrink-0"
           >
             <Menu size={14} className="shrink-0" />
             <span>All Menu</span>
@@ -367,14 +367,14 @@ export default function DashboardNavbar() {
         {/* Right Section: Language Switcher + Credit Bonus Badge + Search Button + Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Desktop Language Switcher */}
-          <div className="hidden sm:inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold shrink-0">
+          <div className="hidden sm:inline-flex items-center bg-[#E2E8F0] p-0.5 rounded-md text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
               className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                 lang === "EN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#2563EB] text-white shadow-sm"
+                  : "text-[#0F172A] hover:text-black"
               }`}
             >
               EN
@@ -384,8 +384,8 @@ export default function DashboardNavbar() {
               onClick={() => changeGoogleLanguage("BN")}
               className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                 lang === "BN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#2563EB] text-white shadow-sm"
+                  : "text-[#0F172A] hover:text-black"
               }`}
             >
               বাং
@@ -396,12 +396,12 @@ export default function DashboardNavbar() {
           {showCreditBonus && (
             <Link
               href="/profile"
-              className="hidden 2xl:flex items-center gap-1 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-full p-0.5 pl-1.5 text-xs transition-all cursor-pointer shrink-0"
+              className="hidden 2xl:flex items-center gap-1 bg-[#E2E8F0] border border-slate-300 hover:border-slate-400 rounded-full p-0.5 pl-1.5 text-xs transition-all cursor-pointer shrink-0"
             >
-              <span className="w-4 h-4 rounded-full bg-orange-200 text-[#FF5D00] text-[10px] font-bold flex items-center justify-center">
+              <span className="w-4 h-4 rounded-full bg-white text-[#2563EB] text-[10px] font-bold flex items-center justify-center">
                 16
               </span>
-              <span className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full transition-colors whitespace-nowrap">
+              <span className="bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] px-2 py-0.5 rounded-full transition-colors whitespace-nowrap">
                 18 Credit Bonus
               </span>
               <button
@@ -421,7 +421,7 @@ export default function DashboardNavbar() {
           {/* Search Trigger Button */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="p-1.5 sm:p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl border border-[#E2E8F0] text-gray-500 hover:bg-[#E2E8F0] transition-colors cursor-pointer shrink-0"
             aria-label="Search"
           >
             <Search size={16} />
@@ -431,13 +431,13 @@ export default function DashboardNavbar() {
           <div className="relative z-50 shrink-0">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 border border-gray-200 rounded-2xl px-1.5 py-1 hover:bg-gray-50 transition-all text-left"
+              className="flex items-center gap-1.5 border border-[#E2E8F0] rounded-2xl px-1.5 py-1 hover:bg-[#E2E8F0] transition-all text-left"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
                 {getInitials(user?.fullName)}
               </div>
               <div className="hidden lg:flex flex-col leading-tight">
-                <span className="text-xs font-bold text-gray-800 truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
+                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
                   {user?.fullName || "User Account"}
                 </span>
                 <span className="text-[10px] text-gray-400 font-medium truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
@@ -448,9 +448,9 @@ export default function DashboardNavbar() {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-[100] text-xs">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="font-bold text-gray-900">
+              <div className="absolute right-0 mt-2 w-56 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-xl py-2 z-[100] text-xs">
+                <div className="px-4 py-2 border-b border-[#E2E8F0]">
+                  <p className="font-bold text-[#0F172A]">
                     {user?.fullName || "User Account"}
                   </p>
                   <p className="text-gray-400 truncate">
@@ -459,23 +459,23 @@ export default function DashboardNavbar() {
                 </div>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
                 >
                   <UserIcon size={14} /> My Profile
                 </Link>
                 <Link
                   href="/credit-usage"
-                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
                 >
                   <CreditCard size={14} /> Credit Usage
                 </Link>
                 <Link
                   href="/settings"
-                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
                 >
                   <Settings size={14} /> Settings
                 </Link>
-                <div className="border-t border-gray-100 my-1"></div>
+                <div className="border-t border-[#E2E8F0] my-1"></div>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-semibold transition-colors cursor-pointer"
@@ -489,7 +489,7 @@ export default function DashboardNavbar() {
           {/* Mobile/Tablet Drawer Trigger Button */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="xl:hidden p-1.5 sm:p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer bg-white shrink-0"
+            className="xl:hidden p-1.5 sm:p-2 rounded-xl border border-[#E2E8F0] text-[#0F172A] hover:bg-[#E2E8F0] transition-colors cursor-pointer bg-[#F8FAFC] shrink-0"
             aria-label="Open Menu"
           >
             <Menu size={18} />
@@ -504,8 +504,8 @@ export default function DashboardNavbar() {
             className="absolute inset-0"
             onClick={() => setIsSearchOpen(false)}
           ></div>
-          <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden z-10">
-            <div className="flex items-center px-4 py-3 border-b border-gray-100 gap-3">
+          <div className="relative w-full max-w-lg bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-2xl overflow-hidden z-10">
+            <div className="flex items-center px-4 py-3 border-b border-[#E2E8F0] gap-3">
               <Search size={18} className="text-gray-400 shrink-0" />
               <input
                 type="text"
@@ -513,11 +513,11 @@ export default function DashboardNavbar() {
                 placeholder="পদ এবং ফিচার খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                className="w-full bg-transparent text-sm text-[#0F172A] placeholder-gray-400 focus:outline-none"
               />
               <button
                 onClick={() => setIsSearchOpen(false)}
-                className="text-[10px] font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-md transition-colors"
+                className="text-[10px] font-bold text-[#0F172A] bg-[#E2E8F0] hover:bg-slate-300 px-2 py-1 rounded-md transition-colors"
               >
                 Esc
               </button>
@@ -532,10 +532,10 @@ export default function DashboardNavbar() {
                   <div
                     key={idx}
                     onClick={() => setSearchQuery(tip.key)}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-orange-50 hover:text-[#FF5D00] text-xs text-gray-700 cursor-pointer transition-colors group"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#E2E8F0] hover:text-[#2563EB] text-xs text-[#0F172A] cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold bg-gray-100 group-hover:bg-orange-100 group-hover:text-[#FF5D00] px-2 py-0.5 rounded text-gray-600">
+                      <span className="font-mono font-bold bg-[#E2E8F0] group-hover:bg-[#2563EB] group-hover:text-white px-2 py-0.5 rounded text-[#0F172A]">
                         {tip.key}
                       </span>
                       <span>{tip.desc}</span>
@@ -545,7 +545,7 @@ export default function DashboardNavbar() {
               </div>
             </div>
 
-            <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+            <div className="px-4 py-2.5 bg-[#E2E8F0] border-t border-slate-300 flex items-center justify-between text-[11px] text-gray-500">
               <span>টুলস এবং ফিচার সার্চ করতে টাইপ করুন</span>
               <span className="flex items-center gap-1 font-mono">
                 <Command size={10} /> K

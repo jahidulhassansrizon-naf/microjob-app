@@ -206,7 +206,7 @@ export async function printPaperInIsolatedIframe(
     body {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
-      color: #1f2937 !important;
+      color: #0F172A !important;
       font-family: "Noto Sans Bengali", "Noto Serif Bengali", "SolaimanLipi", Arial, sans-serif !important;
     }
 
@@ -372,7 +372,7 @@ export async function printPaperInIsolatedIframe(
     input,
     textarea,
     select {
-      color: #111827 !important;
+      color: #0F172A !important;
       background: transparent !important;
       appearance: none !important;
     }
@@ -529,15 +529,15 @@ export default function PrintDuplexLayout({
 
   return (
     <>
-      <div className="paper-stage relative rounded-xl border border-gray-200 bg-[#F4F4F4] p-3 shadow-sm">
-        <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-2.5 py-2 shadow-sm">
+      <div className="paper-stage relative rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-3 shadow-sm">
+        <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-2.5 py-2 shadow-sm">
           <div className="flex min-w-0 items-center gap-2">
             <SquareDashedMousePointer
               size={11}
-              className={regionSelectMode ? "text-[#F3A847]" : "text-gray-400"}
+              className={regionSelectMode ? "text-[#2563EB]" : "text-[#0F172A]/55"}
             />
 
-            <span className="truncate text-[9px] font-semibold text-gray-600">
+            <span className="truncate text-[9px] font-semibold text-[#0F172A]">
               {regionSelectMode
                 ? "Drag anywhere on the paper to mark a custom text region"
                 : "Select an area to place custom inline text"}
@@ -549,8 +549,8 @@ export default function PrintDuplexLayout({
             onClick={() => setRegionSelectMode(!regionSelectMode)}
             className={`shrink-0 rounded-lg border px-2.5 py-1 text-[8px] font-bold ${
               regionSelectMode
-                ? "border-[#F3A847] bg-orange-50 text-[#F3A847]"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
+                : "border-[#E2E8F0] text-[#0F172A] hover:bg-[#E2E8F0]"
             }`}
           >
             {regionSelectMode ? "Cancel area" : "Select area"}
@@ -558,11 +558,11 @@ export default function PrintDuplexLayout({
         </div>
 
         {pageSize === "Joint" ? (
-          <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-2.5 py-2 shadow-sm">
+          <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-2.5 py-2 shadow-sm">
             <div className="flex items-center gap-2">
-              <Move size={11} className="text-[#F3A847]" />
+              <Move size={11} className="text-[#2563EB]" />
 
-              <span className="text-[9px] font-semibold text-gray-600">
+              <span className="text-[9px] font-semibold text-[#0F172A]">
                 {jointLayoutMode === "manual"
                   ? "Manual page distribution"
                   : "Auto-balanced distribution"}
@@ -580,7 +580,7 @@ export default function PrintDuplexLayout({
               <button
                 type="button"
                 onClick={handleAutoBalanceJoint}
-                className="rounded-lg border border-gray-200 px-2.5 py-1 text-[8px] font-bold text-gray-600 hover:border-[#F3A847] hover:text-[#F3A847]"
+                className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-[8px] font-bold text-[#0F172A] hover:border-[#2563EB] hover:text-[#2563EB]"
               >
                 Auto balance
               </button>
@@ -588,7 +588,7 @@ export default function PrintDuplexLayout({
               <button
                 type="button"
                 onClick={addJointPage}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-[8px] font-bold text-gray-600 hover:bg-gray-50"
+                className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-[8px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
               >
                 + Page
               </button>
@@ -597,7 +597,7 @@ export default function PrintDuplexLayout({
                 type="button"
                 onClick={removeLastJointPage}
                 disabled={jointPageCount <= 2}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-[8px] font-bold text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-[8px] font-bold text-[#0F172A] hover:bg-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 − Page
               </button>
@@ -606,7 +606,7 @@ export default function PrintDuplexLayout({
         ) : null}
 
         {selectedQuestions.length ? (
-          <div className="screen-only mb-2 flex items-center gap-2 text-[9px] font-medium text-gray-400">
+          <div className="screen-only mb-2 flex items-center gap-2 text-[9px] font-medium text-[#0F172A]/55">
             <GripVertical size={11} />
 
             {regionSelectMode
@@ -619,15 +619,15 @@ export default function PrintDuplexLayout({
           {selectedQuestions.length === 0 ? (
             <div className="flex min-h-[590px] items-center justify-center">
               <div className="text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#F3A847] shadow-sm">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#2563EB] shadow-sm">
                   <FileText size={18} />
                 </div>
 
-                <p className="text-[11px] font-bold text-gray-500">
+                <p className="text-[11px] font-bold text-[#0F172A]/70">
                   No questions selected yet
                 </p>
 
-                <p className="mt-1 max-w-xs text-[9px] leading-relaxed text-gray-400">
+                <p className="mt-1 max-w-xs text-[9px] leading-relaxed text-[#0F172A]/55">
                   Filter and pick questions from the left — they will appear
                   here as a paper.
                 </p>
@@ -635,7 +635,7 @@ export default function PrintDuplexLayout({
             </div>
           ) : pageSize === "Joint" ? (
             <div className="flex w-full min-w-[1050px] flex-col gap-10 pt-2">
-              <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+              <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
                 {jointPageIndices
                   .filter((pageIndex) => pageIndex < jointPageCount)
                   .map((pageIndex) => (
@@ -645,8 +645,8 @@ export default function PrintDuplexLayout({
                       onClick={() => setActiveJointPage(pageIndex)}
                       className={`shrink-0 rounded-lg px-3 py-1.5 text-[9px] font-bold transition ${
                         activeJointPage === pageIndex
-                          ? "bg-[#F3A847] text-white"
-                          : "text-gray-500 hover:bg-gray-50"
+                          ? "bg-[#2563EB] text-white"
+                          : "text-[#0F172A]/70 hover:bg-[#E2E8F0]"
                       }`}
                     >
                       Page {pageIndex + 1} ·{" "}
@@ -676,7 +676,7 @@ export default function PrintDuplexLayout({
                         spreadIndex % 2 === 0 ? "front" : "back"
                       }
                     >
-                      <div className="screen-only pointer-events-none absolute left-1/2 top-[-18px] -translate-x-1/2 rounded-full bg-gray-100 px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] text-gray-500">
+                      <div className="screen-only pointer-events-none absolute left-1/2 top-[-18px] -translate-x-1/2 rounded-full bg-[#E2E8F0] px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/70">
                         Sheet {Math.floor(spreadIndex / 2) + 1} ·{" "}
                         {spreadIndex % 2 === 0 ? "Front" : "Back / Flip"}
                       </div>
@@ -770,7 +770,7 @@ export default function PrintDuplexLayout({
         .field-label {
           display: block;
           margin-bottom: 6px;
-          color: #9ca3af;
+          color: #0F172A;
           font-size: 8px;
           font-weight: 800;
           letter-spacing: 0.08em;

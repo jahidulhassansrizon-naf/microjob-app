@@ -22,7 +22,6 @@ import {
   ArrowLeftRight,
   Copy,
   RefreshCw,
-  Wand2,
   FileText,
   Crop,
   X,
@@ -768,11 +767,11 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
   }));
 
   const modal = (
-    <div className="fixed inset-0 z-[9998] w-screen h-[100dvh] min-h-[100svh] bg-[#f8f9fa] flex flex-col font-sans select-none overflow-hidden">
+    <div className="fixed inset-0 z-[9998] w-screen h-[100dvh] min-h-[100svh] bg-[#F8FAFC] flex flex-col font-sans select-none overflow-hidden">
       <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
         <div className="min-w-0 pr-3">
           <div className="flex items-center gap-2">
-            <Crop size={16} className="text-amber-500 shrink-0" />
+            <Crop size={16} className="text-[#2563EB] shrink-0" />
             <h2 className="text-sm font-bold text-gray-950 truncate">
               Crop — {sideTitle}
             </h2>
@@ -786,7 +785,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="p-1.5 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          className="p-1.5 text-gray-400 hover:text-[#0F172A] bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           aria-label="Close manual crop"
         >
           <X size={16} />
@@ -855,7 +854,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
                     cx={point.x}
                     cy={point.y}
                     r="8"
-                    fill="#ff9800"
+                    fill="#2563EB"
                     stroke="#ffffff"
                     strokeWidth="2.5"
                     vectorEffect="non-scaling-stroke"
@@ -900,7 +899,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
             type="button"
             onClick={handleResetPoints}
             disabled={isProcessing || isImageLoading || !!imageError}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Reset corners
           </button>
@@ -910,7 +909,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
               type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="px-5 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-5 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -923,7 +922,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
                 !!imageError ||
                 dispSize.width === 0
               }
-              className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isProcessing ? "Cropping…" : "Apply crop"}
             </button>
@@ -1018,7 +1017,7 @@ function CropReviewModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-2 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors cursor-pointer shrink-0"
+          className="p-2 text-gray-400 hover:text-[#0F172A] bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors cursor-pointer shrink-0"
           aria-label="Close crop preview"
         >
           <X size={17} />
@@ -1071,7 +1070,7 @@ function CropReviewModal({
                     size={16}
                     className="text-emerald-600 shrink-0"
                   />
-                  <p className="text-xs sm:text-sm font-extrabold text-gray-900">
+                  <p className="text-xs sm:text-sm font-extrabold text-[#0F172A]">
                     Review the final crop
                   </p>
                 </div>
@@ -1091,17 +1090,17 @@ function CropReviewModal({
                   type="button"
                   onClick={onManualCrop}
                   disabled={imageLoading || !!imageError}
-                  className="group rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left hover:bg-amber-100 hover:border-amber-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-left hover:bg-[#E2E8F0] hover:border-[#2563EB] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-white text-amber-600 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
+                    <span className="w-8 h-8 rounded-xl bg-white text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0 shadow-xs">
                       <Crop size={15} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[11px] font-extrabold text-amber-900">
+                      <span className="block text-[11px] font-extrabold text-[#0F172A]">
                         Not correct? Crop manually
                       </span>
-                      <span className="block text-[9px] font-semibold text-amber-700/80 mt-0.5">
+                      <span className="block text-[9px] font-semibold text-[#2563EB]/80 mt-0.5">
                         Adjust all 4 card corners yourself
                       </span>
                     </span>
@@ -1747,7 +1746,7 @@ export default function NidToPdf() {
   };
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       <style>{`
         @media print {
           @page {
@@ -1913,13 +1912,13 @@ export default function NidToPdf() {
             <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0">
                     <Crop size={16} />
                   </div>
                   <div>
                     <h2
                       id="nid-auto-crop-choice-title"
-                      className="text-sm font-extrabold text-gray-900"
+                      className="text-sm font-extrabold text-[#0F172A]"
                     >
                       Choose Auto Crop
                     </h2>
@@ -1938,7 +1937,7 @@ export default function NidToPdf() {
                   setAutoCrop(false);
                   cancelAutoCropProcessing();
                 }}
-                className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-400 hover:text-[#0F172A] hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
                 aria-label="Close auto crop selection"
               >
                 <X size={15} />
@@ -1950,14 +1949,14 @@ export default function NidToPdf() {
                 type="button"
                 onClick={() => handleAutoCropChoice("front")}
                 disabled={processingSide !== null || !frontImage}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#2563EB] hover:bg-[#F8FAFC]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-[#0F172A] text-xs font-extrabold">
                     F
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-900">
+                    <p className="text-xs font-bold text-[#0F172A]">
                       Front only
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
@@ -1972,14 +1971,14 @@ export default function NidToPdf() {
                 type="button"
                 onClick={() => handleAutoCropChoice("back")}
                 disabled={processingSide !== null || !backImage}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#2563EB] hover:bg-[#F8FAFC]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-[#0F172A] text-xs font-extrabold">
                     B
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-900">Back only</p>
+                    <p className="text-xs font-bold text-[#0F172A]">Back only</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       Auto-crop only the back side.
                     </p>
@@ -1992,14 +1991,14 @@ export default function NidToPdf() {
                 type="button"
                 onClick={() => handleAutoCropChoice("both")}
                 disabled={processingSide !== null}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]/60 hover:bg-[#E2E8F0]/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center text-xs font-extrabold">
                     FB
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-900">
+                    <p className="text-xs font-bold text-[#0F172A]">
                       Both sides
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
@@ -2007,7 +2006,7 @@ export default function NidToPdf() {
                     </p>
                   </div>
                 </div>
-                <ChevronRight size={15} className="text-amber-600" />
+                <ChevronRight size={15} className="text-[#2563EB]" />
               </button>
 
               <button
@@ -2017,7 +2016,7 @@ export default function NidToPdf() {
                   setAutoCrop(false);
                   cancelAutoCropProcessing();
                 }}
-                className="w-full py-2.5 mt-1 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 text-xs font-bold transition-colors cursor-pointer"
+                className="w-full py-2.5 mt-1 rounded-xl border border-gray-200 bg-gray-50 text-[#0F172A] hover:bg-gray-100 text-xs font-bold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -2029,7 +2028,7 @@ export default function NidToPdf() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Back to Tools</span>
@@ -2037,7 +2036,7 @@ export default function NidToPdf() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">NID Joiner</span>
+        <span className="font-semibold text-[#0F172A]">NID Joiner</span>
       </div>
 
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
@@ -2047,7 +2046,7 @@ export default function NidToPdf() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">NID Joiner</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">NID Joiner</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -2111,7 +2110,7 @@ export default function NidToPdf() {
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-bold text-gray-800">Live preview</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">Live preview</h2>
               <span className="text-[10px] text-gray-400 font-medium">
                 A4 — 794×1123 px
               </span>
@@ -2121,28 +2120,28 @@ export default function NidToPdf() {
               <span>{zoom}%</span>
               <button
                 onClick={() => setZoom((prev) => Math.min(prev + 10, 150))}
-                className="hover:text-gray-800 p-1 cursor-pointer"
+                className="hover:text-[#0F172A] p-1 cursor-pointer"
                 title="Zoom In"
               >
                 <ZoomIn size={14} />
               </button>
               <button
                 onClick={handleGlobalRotate}
-                className="hover:text-gray-800 p-1 cursor-pointer"
+                className="hover:text-[#0F172A] p-1 cursor-pointer"
                 title="Rotate Canvas"
               >
                 <RefreshCw size={13} />
               </button>
               <button
                 onClick={() => setZoom((prev) => Math.max(prev - 10, 50))}
-                className="hover:text-gray-800 p-1 cursor-pointer"
+                className="hover:text-[#0F172A] p-1 cursor-pointer"
                 title="Zoom Out"
               >
                 <ZoomOut size={14} />
               </button>
               <button
                 onClick={() => setZoom(100)}
-                className="hover:text-gray-800 p-1 cursor-pointer"
+                className="hover:text-[#0F172A] p-1 cursor-pointer"
                 title="Reset Zoom"
               >
                 <Maximize2 size={14} />
@@ -2153,7 +2152,7 @@ export default function NidToPdf() {
           {(processingSide || processingError) && (
             <div className="mt-3 space-y-2">
               {processingSide && (
-                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
+                <div className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold text-[#2563EB]">
                   <RefreshCw size={13} className="animate-spin shrink-0" />
                   <span>
                     Auto cropping{" "}
@@ -2331,7 +2330,7 @@ export default function NidToPdf() {
                             >
                               <button
                                 onClick={() => setCroppingSide("front")}
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Crop"
                               >
                                 <Crop size={13} />
@@ -2339,7 +2338,7 @@ export default function NidToPdf() {
                               <label
                                 htmlFor="front-change-input"
                                 onClick={(event) => event.stopPropagation()}
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Change Image"
                               >
                                 <Upload size={13} />
@@ -2348,7 +2347,7 @@ export default function NidToPdf() {
                                 onClick={() =>
                                   setFrontRotation((prev) => (prev + 90) % 360)
                                 }
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Rotate 90°"
                               >
                                 <RotateCw size={13} />
@@ -2379,17 +2378,17 @@ export default function NidToPdf() {
                             />
                           </div>
                         ) : (
-                          <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
-                            <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
+                          <label className="border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-[#E2E8F0]/80 text-[#2563EB] rounded-full flex items-center justify-center mb-2">
                               <Upload size={16} />
                             </div>
-                            <span className="text-xs font-bold text-gray-900">
+                            <span className="text-xs font-bold text-[#0F172A]">
                               Front of NID card
                             </span>
                             <span className="text-[10px] text-gray-400 mt-0.5">
                               Upload front side photo
                             </span>
-                            <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                            <span className="bg-[#E2E8F0]/60 text-[#2563EB] font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
                               JPG · PNG · HEIC
                             </span>
                             <input
@@ -2494,7 +2493,7 @@ export default function NidToPdf() {
                             >
                               <button
                                 onClick={() => setCroppingSide("back")}
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Crop"
                               >
                                 <Crop size={13} />
@@ -2502,7 +2501,7 @@ export default function NidToPdf() {
                               <label
                                 htmlFor="back-change-input"
                                 onClick={(event) => event.stopPropagation()}
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Change Image"
                               >
                                 <Upload size={13} />
@@ -2511,7 +2510,7 @@ export default function NidToPdf() {
                                 onClick={() =>
                                   setBackRotation((prev) => (prev + 90) % 360)
                                 }
-                                className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
                                 title="Rotate 90°"
                               >
                                 <RotateCw size={13} />
@@ -2542,17 +2541,17 @@ export default function NidToPdf() {
                             />
                           </div>
                         ) : (
-                          <label className="border-2 border-dashed border-amber-300 bg-amber-50/20 hover:bg-amber-50/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
-                            <div className="w-8 h-8 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mb-2">
+                          <label className="border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-[#E2E8F0]/80 text-[#2563EB] rounded-full flex items-center justify-center mb-2">
                               <Upload size={16} />
                             </div>
-                            <span className="text-xs font-bold text-gray-900">
+                            <span className="text-xs font-bold text-[#0F172A]">
                               Back of NID card
                             </span>
                             <span className="text-[10px] text-gray-400 mt-0.5">
                               Upload back side photo
                             </span>
-                            <span className="bg-amber-100/60 text-amber-700 font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                            <span className="bg-[#E2E8F0]/60 text-[#2563EB] font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
                               JPG · PNG · HEIC
                             </span>
                             <input
@@ -2577,7 +2576,7 @@ export default function NidToPdf() {
         <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
-              frontImage && backImage ? "bg-amber-500" : "bg-red-500"
+              frontImage && backImage ? "bg-[#2563EB]" : "bg-red-500"
             }`}
           />
           <span>
@@ -2590,7 +2589,7 @@ export default function NidToPdf() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
           >
             Reset
           </button>
@@ -2604,7 +2603,7 @@ export default function NidToPdf() {
             }
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               frontImage || backImage
-                ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600 cursor-pointer"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB] cursor-pointer"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             } ${isGeneratingPdf ? "opacity-75 !cursor-wait" : ""}`}
           >
@@ -2621,20 +2620,20 @@ export default function NidToPdf() {
       </div>
 
       <div className="pt-3 space-y-3">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex flex-col gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
               <Minimize2 size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Image Size Reducer
               </h4>
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
@@ -2645,13 +2644,12 @@ export default function NidToPdf() {
 
           <Link
             href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex flex-col gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
-              <Wand2 size={16} />
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background
               </h4>
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
@@ -2662,13 +2660,13 @@ export default function NidToPdf() {
 
           <Link
             href="/sohoj-tools/passport-to-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex flex-col gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
               <FileText size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Passport to PDF
               </h4>
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">

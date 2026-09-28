@@ -127,7 +127,7 @@ const importantLinksItems = [
     title: "Govt Websites & Links",
     subtitle: "National essential services",
     count: "14",
-    countBg: "bg-orange-100/80 text-orange-600",
+    countBg: "bg-blue-100/80 text-blue-600",
     href: "/dorkar-link?category=govt",
   },
   {
@@ -141,7 +141,7 @@ const importantLinksItems = [
     title: "Other Links",
     subtitle: "Results & other useful sites",
     count: "12",
-    countBg: "bg-purple-100/80 text-purple-600",
+    countBg: "bg-indigo-100/80 text-indigo-600",
     href: "/dorkar-link?category=other",
   },
   {
@@ -233,7 +233,7 @@ export default function Navbar() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs px-2.5 py-2 rounded-xl shadow-xs"
+              className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs px-2.5 py-2 rounded-xl shadow-xs"
             >
               SK
             </motion.div>
@@ -242,7 +242,7 @@ export default function Navbar() {
                 সহজ কাজ
               </h2>
               <p className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase">
-                www.sohojkaj.com
+                www.sohozkaj.com
               </p>
             </div>
           </Link>
@@ -257,7 +257,7 @@ export default function Navbar() {
             >
               <button
                 onClick={() => setIsServicesOpen(!isServicesOpen)}
-                className="flex items-center gap-1 hover:text-amber-500 transition py-2 cursor-pointer"
+                className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"
               >
                 Our Services{" "}
                 <ChevronDown
@@ -284,7 +284,7 @@ export default function Navbar() {
                           key={index}
                           href={item.href}
                           onClick={() => setIsServicesOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-[#FF5D00] transition"
+                          className="flex items-center gap-3 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
                         >
                           <IconComponent size={16} className="text-gray-400" />
                           <span>{item.label}</span>
@@ -305,7 +305,7 @@ export default function Navbar() {
               <Link
                 href="/tools"
                 onClick={() => setIsToolsOpen(false)}
-                className="flex items-center gap-1 hover:text-amber-500 transition py-2 cursor-pointer"
+                className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"
               >
                 SohozTools{" "}
                 <ChevronDown
@@ -342,7 +342,7 @@ export default function Navbar() {
                               key={tIdx}
                               href={tool.href}
                               onClick={() => setIsToolsOpen(false)}
-                              className="text-[11px] font-semibold text-gray-600 hover:text-[#FF5D00] hover:bg-orange-50/50 px-2.5 py-1.5 rounded-lg transition truncate"
+                              className="text-[11px] font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 px-2.5 py-1.5 rounded-lg transition truncate"
                             >
                               {tool.name}
                             </Link>
@@ -351,7 +351,7 @@ export default function Navbar() {
                             <Link
                               href="/login?redirect=/sohoj-tools"
                               onClick={() => setIsToolsOpen(false)}
-                              className="text-[11px] font-bold text-orange-500 hover:underline px-2.5 py-1"
+                              className="text-[11px] font-bold text-blue-600 hover:underline px-2.5 py-1"
                             >
                               {cat.moreText}
                             </Link>
@@ -364,7 +364,7 @@ export default function Navbar() {
                       <Link
                         href="/login?redirect=/sohoj-tools"
                         onClick={() => setIsToolsOpen(false)}
-                        className="text-xs font-bold text-orange-500 hover:text-orange-600 inline-flex items-center gap-1"
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
                       >
                         View all tools &gt;
                       </Link>
@@ -383,7 +383,7 @@ export default function Navbar() {
               <Link
                 href="/dorkar-link"
                 onClick={() => setIsImportantOpen(false)}
-                className="flex items-center gap-1 hover:text-amber-500 transition py-2 cursor-pointer"
+                className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"
               >
                 Important Links{" "}
                 <ChevronDown
@@ -414,19 +414,19 @@ export default function Navbar() {
                             target={isExternal ? "_blank" : undefined}
                             rel={isExternal ? "noopener noreferrer" : undefined}
                             onClick={() => setIsImportantOpen(false)}
-                            className="flex items-center justify-between p-2.5 my-1 bg-orange-50/70 border border-orange-200/80 rounded-xl transition hover:bg-orange-100/60 group cursor-pointer"
+                            className="flex items-center justify-between p-2.5 my-1 bg-blue-50/70 border border-blue-200/80 rounded-xl transition hover:bg-blue-100/60 group cursor-pointer"
                           >
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-xs">
                                 <Gift size={16} />
                               </div>
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-gray-900 group-hover:text-orange-600">
+                                  <span className="text-xs font-bold text-gray-900 group-hover:text-blue-600">
                                     {item.title}
                                   </span>
                                   {item.isNew && (
-                                    <span className="bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider">
+                                    <span className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider">
                                       NEW
                                     </span>
                                   )}
@@ -438,7 +438,7 @@ export default function Navbar() {
                             </div>
                             <ArrowRight
                               size={14}
-                              className="text-orange-500 group-hover:translate-x-0.5 transition-transform shrink-0"
+                              className="text-blue-600 group-hover:translate-x-0.5 transition-transform shrink-0"
                             />
                           </Link>
                         );
@@ -451,15 +451,15 @@ export default function Navbar() {
                           target={isExternal ? "_blank" : undefined}
                           rel={isExternal ? "noopener noreferrer" : undefined}
                           onClick={() => setIsImportantOpen(false)}
-                          className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-orange-50/50 transition group cursor-pointer"
+                          className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-blue-50/50 transition group cursor-pointer"
                         >
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-gray-800 group-hover:text-[#FF5D00]">
+                              <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600">
                                 {item.title}
                               </span>
                               {item.isNew && (
-                                <span className="bg-orange-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md">
+                                <span className="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md">
                                   NEW
                                 </span>
                               )}
@@ -485,12 +485,12 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            <Link href="/pricing" className="hover:text-amber-500 transition">
+            <Link href="/pricing" className="hover:text-blue-600 transition">
               Package
             </Link>
             <Link
               href="/reviews"
-              className="flex items-center gap-0.5 hover:text-amber-500 transition cursor-pointer"
+              className="flex items-center gap-0.5 hover:text-blue-600 transition cursor-pointer"
             >
               <span>5</span>
               <Star
@@ -509,7 +509,7 @@ export default function Navbar() {
                 onClick={() => changeLanguage("bn")}
                 className={`px-2.5 py-1 rounded-full cursor-pointer transition ${
                   currentLang === "bn"
-                    ? "bg-[#6B52FF] text-white shadow-2xs"
+                    ? "bg-blue-600 text-white shadow-2xs"
                     : "text-[#555555]"
                 }`}
               >
@@ -519,7 +519,7 @@ export default function Navbar() {
                 onClick={() => changeLanguage("en")}
                 className={`px-2.5 py-1 rounded-full cursor-pointer transition ${
                   currentLang === "en"
-                    ? "bg-[#6B52FF] text-white shadow-2xs"
+                    ? "bg-blue-600 text-white shadow-2xs"
                     : "text-[#555555]"
                 }`}
               >
@@ -531,7 +531,7 @@ export default function Navbar() {
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
                 href="/login"
-                className="bg-gradient-to-r from-[#F98800] via-[#E64B5D] to-[#A845B2] text-white text-xs sm:text-[15px] font-medium px-4 sm:px-6 py-2 rounded-full flex items-center gap-1.5 sm:gap-2 shadow-xs hover:opacity-95 transition tracking-wide"
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-800 text-white text-xs sm:text-[15px] font-medium px-4 sm:px-6 py-2 rounded-full flex items-center gap-1.5 sm:gap-2 shadow-xs hover:opacity-95 transition tracking-wide"
               >
                 <LogIn size={16} strokeWidth={2.2} /> Login
               </Link>
@@ -575,7 +575,7 @@ export default function Navbar() {
               {/* Drawer Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs px-2 py-1.5 rounded-lg">
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs px-2 py-1.5 rounded-lg">
                     SK
                   </div>
                   <span className="font-extrabold text-gray-900 text-sm">
@@ -607,7 +607,7 @@ export default function Navbar() {
                     />
                   </button>
                   {mobileServicesOpen && (
-                    <div className="flex flex-col gap-1 pl-3 border-l-2 border-orange-100 mt-1">
+                    <div className="flex flex-col gap-1 pl-3 border-l-2 border-blue-100 mt-1">
                       {serviceItems.map((item, idx) => {
                         const IconComp = item.icon;
                         return (
@@ -615,7 +615,7 @@ export default function Navbar() {
                             key={idx}
                             href={item.href}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-2 py-1.5 text-xs text-gray-600 hover:text-[#FF5D00]"
+                            className="flex items-center gap-2 py-1.5 text-xs text-gray-600 hover:text-blue-600"
                           >
                             <IconComp size={14} className="text-gray-400" />
                             <span>{item.label}</span>
@@ -641,11 +641,11 @@ export default function Navbar() {
                     />
                   </button>
                   {mobileToolsOpen && (
-                    <div className="flex flex-col gap-1.5 pl-3 border-l-2 border-orange-100 mt-1 max-h-48 overflow-y-auto">
+                    <div className="flex flex-col gap-1.5 pl-3 border-l-2 border-blue-100 mt-1 max-h-48 overflow-y-auto">
                       <Link
                         href="/tools"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-xs font-bold text-orange-500 py-1"
+                        className="text-xs font-bold text-blue-600 py-1"
                       >
                         View All Tools &gt;
                       </Link>
@@ -659,7 +659,7 @@ export default function Navbar() {
                               key={tIdx}
                               href={t.href}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className="text-[11px] text-gray-600 hover:text-orange-500 pl-2"
+                              className="text-[11px] text-gray-600 hover:text-blue-600 pl-2"
                             >
                               - {t.name}
                             </Link>
@@ -685,7 +685,7 @@ export default function Navbar() {
                     />
                   </button>
                   {mobileImportantOpen && (
-                    <div className="flex flex-col gap-1 pl-3 border-l-2 border-orange-100 mt-1">
+                    <div className="flex flex-col gap-1 pl-3 border-l-2 border-blue-100 mt-1">
                       {importantLinksItems.map((imp, iIdx) => {
                         const isExternal = imp.href.startsWith("http");
 
@@ -696,7 +696,7 @@ export default function Navbar() {
                             target={isExternal ? "_blank" : undefined}
                             rel={isExternal ? "noopener noreferrer" : undefined}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center justify-between py-1.5 text-xs text-gray-600 hover:text-[#FF5D00]"
+                            className="flex items-center justify-between py-1.5 text-xs text-gray-600 hover:text-blue-600"
                           >
                             <span>{imp.title}</span>
                             {imp.count && (
@@ -719,14 +719,14 @@ export default function Navbar() {
                   <Link
                     href="/pricing"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="hover:text-[#FF5D00] text-xs font-bold text-gray-800"
+                    className="hover:text-blue-600 text-xs font-bold text-gray-800"
                   >
                     Package
                   </Link>
                   <Link
                     href="/reviews"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-1 hover:text-[#FF5D00] text-xs font-bold text-gray-800"
+                    className="flex items-center gap-1 hover:text-blue-600 text-xs font-bold text-gray-800"
                   >
                     <span>Review (5</span>
                     <Star size={12} className="fill-amber-500 text-amber-500" />
@@ -744,7 +744,7 @@ export default function Navbar() {
                       onClick={() => changeLanguage("bn")}
                       className={`px-3 py-1 rounded-full transition ${
                         currentLang === "bn"
-                          ? "bg-[#6B52FF] text-white shadow-2xs"
+                          ? "bg-blue-600 text-white shadow-2xs"
                           : "text-[#555555]"
                       }`}
                     >
@@ -754,7 +754,7 @@ export default function Navbar() {
                       onClick={() => changeLanguage("en")}
                       className={`px-3 py-1 rounded-full transition ${
                         currentLang === "en"
-                          ? "bg-[#6B52FF] text-white shadow-2xs"
+                          ? "bg-blue-600 text-white shadow-2xs"
                           : "text-[#555555]"
                       }`}
                     >

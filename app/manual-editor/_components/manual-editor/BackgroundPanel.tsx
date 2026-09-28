@@ -29,9 +29,9 @@ export default function BackgroundPanel() {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <div className="w-1 h-3.5 bg-amber-500 rounded-full" />
+        <div className="w-1 h-3.5 bg-[#2563EB] rounded-full" />
 
-        <span className="text-xs font-black tracking-wider uppercase">
+        <span className="text-xs font-black tracking-wider uppercase text-[#0F172A]">
           BACKGROUND
         </span>
       </div>
@@ -52,8 +52,8 @@ export default function BackgroundPanel() {
               onClick={() => handlePresetBackground(bg.id)}
               className={`group relative h-11 rounded-2xl border transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
                 selected
-                  ? "ring-2 ring-amber-400 ring-offset-1"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
+                  : "border-[#E2E8F0] hover:border-slate-300"
               }`}
               style={{
                 backgroundColor: bg.color,
@@ -65,7 +65,7 @@ export default function BackgroundPanel() {
                     <Check
                       size={12}
                       strokeWidth={3}
-                      className="text-gray-700"
+                      className="text-[#0F172A]"
                     />
                   </span>
                 </span>
@@ -84,8 +84,8 @@ export default function BackgroundPanel() {
           onClick={handleCustomBackground}
           className={`relative h-11 rounded-2xl border flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
             !backgroundRemoved && selectedBg === "custom"
-              ? "ring-2 ring-amber-400 ring-offset-1"
-              : "border-gray-200 hover:border-gray-300"
+              ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
+              : "border-[#E2E8F0] hover:border-slate-300"
           }`}
           style={{
             backgroundColor: customBg,
@@ -93,12 +93,12 @@ export default function BackgroundPanel() {
           title="Custom color"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 shadow-sm">
-            <Palette size={17} className="text-indigo-500 drop-shadow" />
+            <Palette size={17} className="text-[#2563EB] drop-shadow" />
           </span>
 
           {!backgroundRemoved && selectedBg === "custom" && (
             <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm">
-              <Check size={10} strokeWidth={3} className="text-gray-700" />
+              <Check size={10} strokeWidth={3} className="text-[#0F172A]" />
             </span>
           )}
         </button>
@@ -107,7 +107,7 @@ export default function BackgroundPanel() {
         {/* Native color picker                                             */}
         {/* -------------------------------------------------------------- */}
         <label
-          className={`h-11 rounded-2xl border border-dashed border-gray-300 text-gray-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 hover:text-gray-600 ${
+          className={`h-11 rounded-2xl border border-dashed border-[#E2E8F0] text-slate-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-[#0F172A] ${
             isRemovingBackground ? "pointer-events-none opacity-50" : ""
           }`}
           title="Choose custom color"
@@ -141,8 +141,8 @@ export default function BackgroundPanel() {
           }
           className={`col-span-2 h-11 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[10px] font-black transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${
             backgroundRemoved
-              ? "border-emerald-400 bg-emerald-500 text-white hover:bg-emerald-600"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md"
+              ? "border-[#10B981] bg-[#10B981] text-white hover:bg-emerald-600"
+              : "border-emerald-200 bg-emerald-50 text-[#10B981] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md"
           }`}
         >
           {isRemovingBackground ? (
@@ -164,7 +164,7 @@ export default function BackgroundPanel() {
                   <Eraser
                     size={14}
                     strokeWidth={2.3}
-                    className="text-emerald-600"
+                    className="text-[#10B981]"
                   />
                 )}
               </span>

@@ -334,9 +334,9 @@ export default function JobsPage() {
 
   if (isAuthenticated === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FBF3EE]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-xs font-semibold text-gray-600 shadow-sm">
-          <Loader2 size={16} className="animate-spin text-[#FF8A00]" />
+          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
           Checking authentication...
         </div>
       </div>
@@ -344,7 +344,7 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FBF3EE] text-gray-900">
+    <div className="min-h-screen bg-[#F8FAFC] text-gray-900">
       <DashboardNavbar />
 
       <main className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-8 md:px-6">
@@ -380,7 +380,7 @@ export default function JobsPage() {
               />
 
               <div className="flex items-center gap-2 px-1 text-[11px] font-semibold text-gray-500">
-                <span className="text-[#54728C]">▣</span>
+                <span className="text-[#2563EB]">▣</span>
 
                 <span className="font-black text-gray-800">
                   {bengaliNumber(jobsData.length)}
@@ -403,7 +403,7 @@ export default function JobsPage() {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search by organization or position..."
-                  className="h-[40px] w-full rounded-xl border border-gray-200 bg-white px-11 pr-10 text-[11px] font-medium text-gray-700 shadow-sm outline-none placeholder:text-gray-400 focus:border-[#E7A31C]"
+                  className="h-[40px] w-full rounded-xl border border-gray-200 bg-white px-11 pr-10 text-[11px] font-medium text-gray-700 shadow-sm outline-none placeholder:text-gray-400 focus:border-[#2563EB]"
                 />
 
                 {searchQuery && (
@@ -435,7 +435,7 @@ export default function JobsPage() {
                   onClick={() => setSortMode("deadline")}
                   className={`h-[40px] border-l border-gray-200 px-4 text-[11px] font-bold ${
                     sortMode === "deadline"
-                      ? "bg-[#FFF7E7] text-[#C47B00]"
+                      ? "bg-[#F8FAFC] text-[#2563EB]"
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -447,7 +447,7 @@ export default function JobsPage() {
                   onClick={() => setSortMode("posts")}
                   className={`h-[40px] border-l border-gray-200 px-4 text-[11px] font-bold ${
                     sortMode === "posts"
-                      ? "bg-[#FFF7E7] text-[#C47B00]"
+                      ? "bg-[#F8FAFC] text-[#2563EB]"
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -459,7 +459,7 @@ export default function JobsPage() {
                   onClick={() => setSortMode("newest")}
                   className={`h-[40px] border-l border-gray-200 px-4 text-[11px] font-bold ${
                     sortMode === "newest"
-                      ? "bg-[#FFF7E7] text-[#C47B00]"
+                      ? "bg-[#F8FAFC] text-[#2563EB]"
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -481,8 +481,8 @@ export default function JobsPage() {
                     className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-bold transition ${
                       isActive
                         ? filter.key === "expired"
-                          ? "border-red-200 bg-[#FFF5F5] text-red-500"
-                          : "border-[#E7A31C] bg-white text-[#C27800]"
+                          ? "border-red-200 bg-[#F8FAFC] text-red-500"
+                          : "border-[#2563EB] bg-white text-[#2563EB]"
                         : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                   >
@@ -517,10 +517,10 @@ export default function JobsPage() {
 
                 const borderColor =
                   job.accent === "green"
-                    ? "#4AA47A"
+                    ? "#10B981"
                     : job.accent === "yellow"
-                      ? "#D8AA2B"
-                      : "#D25B51";
+                      ? "#2563EB"
+                      : "#2563EB";
 
                 return (
                   <article
@@ -567,7 +567,7 @@ export default function JobsPage() {
                             key={`${job.id}-${index}`}
                             className={`rounded-md px-2 py-1 text-[9px] font-black ${
                               index === 0
-                                ? "bg-orange-50 text-[#C26C20]"
+                                ? "bg-orange-50 text-[#2563EB]"
                                 : "bg-gray-100 text-gray-500"
                             }`}
                           >
@@ -646,7 +646,7 @@ export default function JobsPage() {
                           onClick={() =>
                             window.alert(`Apply clicked for: ${job.title}`)
                           }
-                          className="rounded-xl bg-[#F19A00] px-3.5 py-2 text-[10px] font-black text-white hover:bg-[#DE8E00]"
+                          className="rounded-xl bg-[#2563EB] px-3.5 py-2 text-[10px] font-black text-white hover:bg-[#2563EB]"
                         >
                           Apply →
                         </button>
@@ -688,7 +688,7 @@ export default function JobsPage() {
                       onClick={() => setCurrentPage(pageNumber)}
                       className={`h-8 min-w-8 rounded-lg px-2.5 text-[10px] font-black ${
                         pageNumber === currentPage
-                          ? "bg-[#E79A00] text-white"
+                          ? "bg-[#2563EB] text-white"
                           : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                       }`}
                     >
@@ -735,7 +735,7 @@ export default function JobsPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#CC8700]">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#0F172A]">
                   Job Details
                 </p>
 
@@ -758,7 +758,7 @@ export default function JobsPage() {
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-[#FFF8E9] p-4">
+              <div className="rounded-2xl bg-[#F8FAFC] p-4">
                 <div className="text-[10px] text-gray-400">Posts</div>
 
                 <div className="mt-1 font-black text-gray-900">
@@ -766,7 +766,7 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-[#F2FAF6] p-4">
+              <div className="rounded-2xl bg-[#E2E8F0] p-4">
                 <div className="text-[10px] text-gray-400">Published</div>
 
                 <div className="mt-1 font-black text-gray-900">
@@ -796,7 +796,7 @@ export default function JobsPage() {
               onClick={() =>
                 window.alert(`Apply clicked for: ${selectedJob.title}`)
               }
-              className="mt-5 w-full rounded-2xl bg-[#F19A00] py-3 text-xs font-black text-white hover:bg-[#DE8E00]"
+              className="mt-5 w-full rounded-2xl bg-[#2563EB] py-3 text-xs font-black text-white hover:bg-[#2563EB]"
             >
               Apply Now →
             </button>
@@ -808,14 +808,14 @@ export default function JobsPage() {
       <div className="fixed bottom-4 left-4 z-40 flex items-center gap-2">
         <button
           type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E5A000] text-white shadow-lg"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563EB] text-white shadow-lg"
         >
           <Accessibility size={18} />
         </button>
 
         <button
           type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E33930] text-white shadow-lg"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563EB] text-white shadow-lg"
         >
           <Play size={16} fill="currentColor" />
         </button>
@@ -825,7 +825,7 @@ export default function JobsPage() {
         href="https://wa.me/8801783666743"
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#22C866] text-white shadow-[0_10px_28px_rgba(34,200,102,.35)]"
+        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#10B981] text-white shadow-[0_10px_28px_rgba(16,185,129,.35)]"
       >
         <span className="text-xs font-black">WA</span>
       </a>

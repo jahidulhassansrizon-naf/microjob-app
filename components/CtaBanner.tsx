@@ -47,7 +47,7 @@ export default function CtaBanner() {
   };
 
   return (
-    <section className="w-full bg-gradient-to-r from-[#FF5100] via-[#E1007E] to-[#8000FF] py-20 px-6 md:px-12 text-center text-white relative overflow-hidden">
+    <section className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-800 py-20 px-6 md:px-12 text-center text-white relative overflow-hidden shadow-xl shadow-blue-900/10">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -57,7 +57,7 @@ export default function CtaBanner() {
       >
         <motion.div
           variants={itemVariants}
-          className="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-xs"
+          className="inline-block bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-xs"
         >
           Our Specialty
         </motion.div>
@@ -82,7 +82,7 @@ export default function CtaBanner() {
         >
           <Link
             href="/dashboard"
-            className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 font-bold px-7 py-3.5 rounded-full text-sm inline-flex items-center justify-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer"
+            className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 font-bold px-7 py-3.5 rounded-full text-sm inline-flex items-center justify-center gap-2 shadow-lg transition hover:scale-105 cursor-pointer no-underline"
           >
             <span>Start for Free</span>
             <ArrowRight size={16} />
@@ -91,7 +91,7 @@ export default function CtaBanner() {
           <button
             type="button"
             onClick={() => setIsVideoOpen(true)}
-            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/40 backdrop-blur-sm text-white font-bold px-7 py-3.5 rounded-full text-sm transition cursor-pointer"
+            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold px-7 py-3.5 rounded-full text-sm transition cursor-pointer"
           >
             Watch Demo Video
           </button>
@@ -115,6 +115,7 @@ export default function CtaBanner() {
         </motion.div>
       </motion.div>
 
+      {/* Video Modal Popup */}
       <AnimatePresence>
         {isVideoOpen && (
           <motion.div

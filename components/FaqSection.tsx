@@ -99,20 +99,20 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="bg-[#F8F9FA] py-20 px-6 md:px-12">
+    <section className="bg-slate-50/50 py-20 px-6 md:px-12">
       <div className="max-w-[1000px] mx-auto flex flex-col gap-12">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
-          <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
+          <div className="inline-flex items-center bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             FAQ
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tight leading-tight">
-            Frequently Asked Questions <br />
-            <span className="text-[#FF5D00]">Questions</span>
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            Frequently Asked <br />
+            <span className="text-blue-600">Questions</span>
           </h2>
 
-          <p className="text-gray-500 font-medium text-xs md:text-sm pt-1">
+          <p className="text-slate-500 font-medium text-xs md:text-sm pt-1">
             Some common questions about SohozKaj.
           </p>
         </div>
@@ -127,8 +127,8 @@ export default function FaqSection() {
                 key={idx}
                 className={`rounded-2xl transition-all duration-200 border ${
                   isOpen
-                    ? "bg-white border-orange-300 shadow-xs"
-                    : "bg-white/80 border-gray-100 hover:border-gray-200"
+                    ? "bg-white border-blue-200 shadow-xs ring-1 ring-blue-100"
+                    : "bg-white/80 border-slate-100 hover:border-slate-200"
                 }`}
               >
                 <button
@@ -136,10 +136,10 @@ export default function FaqSection() {
                   className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-xs font-bold text-orange-500">
+                    <span className="text-xs font-bold text-blue-600">
                       {faq.id}
                     </span>
-                    <h3 className="text-sm font-bold text-gray-900 leading-snug">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug">
                       {faq.question}
                     </h3>
                   </div>
@@ -147,8 +147,8 @@ export default function FaqSection() {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition ${
                       isOpen
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-500"
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-100 text-slate-500"
                     }`}
                   >
                     {isOpen ? (
@@ -160,7 +160,7 @@ export default function FaqSection() {
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-xs md:text-sm text-gray-500 font-medium leading-relaxed border-t border-gray-50">
+                  <div className="px-6 pb-5 pt-1 text-xs md:text-sm text-slate-500 font-medium leading-relaxed border-t border-slate-100">
                     {faq.answer}
                   </div>
                 )}

@@ -48,8 +48,8 @@ export default function AiToolsPanel() {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <div className="h-3.5 w-1 rounded-full bg-amber-500" />
-        <span className="text-xs font-black uppercase tracking-wider">
+        <div className="h-3.5 w-1 rounded-full bg-[#2563EB]" />
+        <span className="text-xs font-black uppercase tracking-wider text-[#0F172A]">
           AI TOOLS
         </span>
       </div>
@@ -83,12 +83,12 @@ export default function AiToolsPanel() {
             onClick={() => showUnsupportedAiMessage(tool.id)}
             className={`flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition cursor-pointer ${
               activeAiTool === tool.id
-                ? "border-amber-400 bg-amber-50/20 ring-1 ring-amber-400"
-                : "border-gray-200 bg-white hover:border-gray-300"
+                ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
+                : "border-[#E2E8F0] bg-white hover:border-gray-300"
             }`}
           >
             <span>{tool.icon}</span>
-            <span className="text-[8px] font-bold leading-tight text-gray-600">
+            <span className="text-[8px] font-bold leading-tight text-[#0F172A]">
               {tool.label}
             </span>
           </button>
@@ -101,12 +101,12 @@ export default function AiToolsPanel() {
           onClick={() => showUnsupportedAiMessage("cutout")}
           className={`flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border bg-white p-2 text-center transition cursor-pointer ${
             activeAiTool === "cutout"
-              ? "border-amber-400 bg-amber-50/20 ring-1 ring-amber-400"
-              : "border-gray-200 hover:border-gray-300"
+              ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
+              : "border-[#E2E8F0] hover:border-gray-300"
           }`}
         >
           <FileEdit className="h-5 w-5 text-gray-400" />
-          <span className="text-[8px] font-bold leading-tight text-gray-600">
+          <span className="text-[8px] font-bold leading-tight text-[#0F172A]">
             Cutout Editor
           </span>
         </button>
@@ -119,7 +119,7 @@ export default function AiToolsPanel() {
       )}
 
       {activeAiTool === "object" && (
-        <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-2.5">
+        <div className="space-y-3 rounded-2xl border border-[#E2E8F0] bg-white p-2.5">
           <div className="grid grid-cols-2 gap-1.5">
             {[
               ["face", "Face"],
@@ -133,8 +133,8 @@ export default function AiToolsPanel() {
                 onClick={() => setObjectTab(id as ObjectTab)}
                 className={`rounded-lg border py-2 text-[10px] font-black transition cursor-pointer ${
                   objectTab === id
-                    ? "border-amber-400 bg-amber-50 text-amber-700"
-                    : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
+                    : "border-[#E2E8F0] text-gray-500 hover:border-gray-300"
                 }`}
               >
                 {label}
@@ -147,7 +147,7 @@ export default function AiToolsPanel() {
               <div>
                 <label className="block text-[9px] font-bold text-gray-500">
                   Brightness
-                  <span className="float-right text-amber-600">
+                  <span className="float-right text-[#2563EB]">
                     {objectBrightness}%
                   </span>
                 </label>
@@ -160,14 +160,14 @@ export default function AiToolsPanel() {
                   onChange={(event) =>
                     setObjectBrightness(Number(event.target.value))
                   }
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[#2563EB] cursor-pointer"
                 />
               </div>
 
               <div>
                 <label className="block text-[9px] font-bold text-gray-500">
                   Contrast
-                  <span className="float-right text-amber-600">
+                  <span className="float-right text-[#2563EB]">
                     {objectContrast}%
                   </span>
                 </label>
@@ -180,7 +180,7 @@ export default function AiToolsPanel() {
                   onChange={(event) =>
                     setObjectContrast(Number(event.target.value))
                   }
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[#2563EB] cursor-pointer"
                 />
               </div>
             </>
@@ -188,7 +188,7 @@ export default function AiToolsPanel() {
             <div>
               <label className="block text-[9px] font-bold text-gray-500">
                 Clear Shadow
-                <span className="float-right text-amber-600">
+                <span className="float-right text-[#2563EB]">
                   {shadowStrength}%
                 </span>
               </label>
@@ -201,7 +201,7 @@ export default function AiToolsPanel() {
                 onChange={(event) =>
                   setShadowStrength(Number(event.target.value))
                 }
-                className="w-full accent-amber-500 cursor-pointer"
+                className="w-full accent-[#2563EB] cursor-pointer"
               />
             </div>
           )}
@@ -209,7 +209,7 @@ export default function AiToolsPanel() {
           <div>
             <label className="block text-[9px] font-bold text-gray-500">
               Brush Size
-              <span className="float-right text-amber-600">{brushSize}</span>
+              <span className="float-right text-[#2563EB]">{brushSize}</span>
             </label>
             <input
               type="range"
@@ -218,7 +218,7 @@ export default function AiToolsPanel() {
               step={1}
               value={brushSize}
               onChange={(event) => setBrushSize(Number(event.target.value))}
-              className="w-full accent-amber-500 cursor-pointer"
+              className="w-full accent-[#2563EB] cursor-pointer"
             />
           </div>
 
@@ -229,8 +229,8 @@ export default function AiToolsPanel() {
               onClick={() => setObjectBrushMode("brush")}
               className={`rounded-lg border p-2 cursor-pointer ${
                 objectBrushMode === "brush"
-                  ? "border-blue-400 bg-blue-50 text-blue-600"
-                  : "border-gray-200 text-gray-600"
+                  ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
+                  : "border-[#E2E8F0] text-gray-600"
               }`}
             >
               <Plus size={14} className="mx-auto" />
@@ -242,8 +242,8 @@ export default function AiToolsPanel() {
               onClick={() => setObjectBrushMode("erase")}
               className={`rounded-lg border p-2 cursor-pointer ${
                 objectBrushMode === "erase"
-                  ? "border-blue-400 bg-blue-50 text-blue-600"
-                  : "border-gray-200 text-gray-600"
+                  ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
+                  : "border-[#E2E8F0] text-gray-600"
               }`}
             >
               <Eraser size={14} className="mx-auto" />
@@ -253,7 +253,7 @@ export default function AiToolsPanel() {
               type="button"
               title="Undo"
               onClick={undoObjectMask}
-              className="rounded-lg border border-gray-200 p-2 text-gray-500 cursor-pointer"
+              className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer"
             >
               <Undo2 size={14} className="mx-auto" />
             </button>
@@ -262,7 +262,7 @@ export default function AiToolsPanel() {
               type="button"
               title="Redo"
               onClick={redoObjectMask}
-              className="rounded-lg border border-gray-200 p-2 text-gray-500 cursor-pointer"
+              className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer"
             >
               <Redo2 size={14} className="mx-auto" />
             </button>
@@ -273,8 +273,8 @@ export default function AiToolsPanel() {
               onClick={() => setObjectPreview(!objectPreview)}
               className={`rounded-lg border p-2 cursor-pointer ${
                 objectPreview
-                  ? "border-amber-400 bg-amber-50 text-amber-600"
-                  : "border-gray-200 text-gray-500"
+                  ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
+                  : "border-[#E2E8F0] text-gray-500"
               }`}
             >
               <Eye size={14} className="mx-auto" />
@@ -285,7 +285,7 @@ export default function AiToolsPanel() {
               title="Reset"
               onClick={() => void resetObjectAdjust()}
               disabled={objectMaskBusy || objectApplyBusy}
-              className="rounded-lg border border-gray-200 p-2 text-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               {objectMaskBusy ? (
                 <Loader2 size={14} className="mx-auto animate-spin" />
@@ -303,7 +303,7 @@ export default function AiToolsPanel() {
           )}
 
           {!objectMaskBusy && (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-center text-[9px] font-bold text-emerald-700">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-center text-[9px] font-bold text-[#10B981]">
               Live adjustment preview is active. The Eye button only shows the
               soft selection overlay.
             </div>
@@ -314,7 +314,7 @@ export default function AiToolsPanel() {
               type="button"
               onClick={cancelObjectAdjust}
               disabled={objectApplyBusy}
-              className="rounded-xl border border-gray-200 py-2 text-[10px] font-black text-gray-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-[#E2E8F0] py-2 text-[10px] font-black text-[#0F172A] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -322,7 +322,7 @@ export default function AiToolsPanel() {
               type="button"
               onClick={() => void applyObjectAdjust()}
               disabled={objectApplyBusy || objectMaskBusy}
-              className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-2 text-[10px] font-black text-gray-900 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-2 text-[10px] font-black text-white cursor-pointer hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {objectApplyBusy && (
                 <Loader2 size={13} className="animate-spin" />

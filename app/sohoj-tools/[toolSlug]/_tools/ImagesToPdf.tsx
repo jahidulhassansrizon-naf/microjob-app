@@ -11,10 +11,8 @@ import {
   RotateCcw,
   Image as ImageIcon,
   CreditCard,
-  Wand2,
   SlidersHorizontal,
   FileText,
-  Sparkles,
   RectangleHorizontal,
   RectangleVertical,
   Compass,
@@ -538,7 +536,7 @@ export default function ImagesToPdf() {
   ];
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -559,7 +557,7 @@ export default function ImagesToPdf() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Sohoj Tools</span>
@@ -567,18 +565,18 @@ export default function ImagesToPdf() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">Images to PDF</span>
+        <span className="font-semibold text-[#0F172A]">Images to PDF</span>
       </div>
 
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center shrink-0 border border-orange-100">
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <FileImage size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">Images to PDF</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">Images to PDF</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -620,11 +618,11 @@ export default function ImagesToPdf() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
             {/* Header Title with Subtitle */}
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-orange-50 text-orange-500 rounded-md flex items-center justify-center">
+              <div className="w-6 h-6 bg-[#F8FAFC] text-[#2563EB] rounded-md flex items-center justify-center">
                 <SlidersHorizontal size={13} />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-gray-900">Settings</h2>
+                <h2 className="text-xs font-bold text-[#0F172A]">Settings</h2>
                 <p className="text-[10px] text-gray-400">
                   Customize PDF output
                 </p>
@@ -638,8 +636,8 @@ export default function ImagesToPdf() {
                 onClick={() => setActiveTab("page")}
                 className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === "page"
-                    ? "bg-white text-orange-500 shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                    : "text-gray-500 hover:text-[#0F172A]"
                 }`}
               >
                 <FileText size={13} /> Page
@@ -649,8 +647,8 @@ export default function ImagesToPdf() {
                 onClick={() => setActiveTab("image")}
                 className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === "image"
-                    ? "bg-white text-orange-500 shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                    : "text-gray-500 hover:text-[#0F172A]"
                 }`}
               >
                 <ImageIcon size={13} /> Image
@@ -660,11 +658,11 @@ export default function ImagesToPdf() {
                 onClick={() => setActiveTab("effects")}
                 className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   activeTab === "effects"
-                    ? "bg-white text-orange-500 shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                    : "text-gray-500 hover:text-[#0F172A]"
                 }`}
               >
-                <Sparkles size={13} /> Effects
+                Effects
               </button>
             </div>
 
@@ -674,7 +672,7 @@ export default function ImagesToPdf() {
                 {/* Orientation Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-gray-700">Orientation</span>
+                    <span className="font-bold text-[#0F172A]">Orientation</span>
                     <span className="text-[9px] font-bold text-gray-400 tracking-wider">
                       ORIENTATION
                     </span>
@@ -689,7 +687,7 @@ export default function ImagesToPdf() {
                           onClick={() => setOrientation(item.id)}
                           className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
                             orientation === item.id
-                              ? "border-orange-500 bg-orange-50/30 text-orange-500 font-bold shadow-2xs"
+                              ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold shadow-2xs"
                               : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                           }`}
                         >
@@ -700,7 +698,7 @@ export default function ImagesToPdf() {
                     })}
                   </div>
                   <div className="p-2.5 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-[10px] text-gray-500">
-                    <span className="font-bold text-gray-700">
+                    <span className="font-bold text-[#0F172A]">
                       {orientation === "auto"
                         ? "Auto Orientation"
                         : orientation === "portrait"
@@ -715,7 +713,7 @@ export default function ImagesToPdf() {
                 {/* Page Size Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-gray-700">Page size</span>
+                    <span className="font-bold text-[#0F172A]">Page size</span>
                     <span className="text-[9px] font-bold text-gray-400 tracking-wider">
                       PAGE SIZE
                     </span>
@@ -728,7 +726,7 @@ export default function ImagesToPdf() {
                         onClick={() => setPageSize(item.id)}
                         className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
                           pageSize === item.id
-                            ? "border-orange-500 bg-orange-50/30 text-orange-500 font-bold shadow-2xs"
+                            ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold shadow-2xs"
                             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                         }`}
                       >
@@ -744,7 +742,7 @@ export default function ImagesToPdf() {
                 {/* Margin Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-gray-700">Margin</span>
+                    <span className="font-bold text-[#0F172A]">Margin</span>
                     <span className="text-[9px] font-bold text-gray-400 tracking-wider">
                       MARGIN
                     </span>
@@ -757,7 +755,7 @@ export default function ImagesToPdf() {
                         onClick={() => setMargin(item.id)}
                         className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
                           margin === item.id
-                            ? "border-orange-500 bg-orange-50/30 text-orange-500 font-bold shadow-2xs"
+                            ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold shadow-2xs"
                             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                         }`}
                       >
@@ -771,7 +769,7 @@ export default function ImagesToPdf() {
                 {/* Page Numbers Switch */}
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="text-[11px] font-bold text-gray-700 block">
+                    <span className="text-[11px] font-bold text-[#0F172A] block">
                       Page numbers
                     </span>
                     <span className="text-[9px] text-gray-400 block">
@@ -783,7 +781,7 @@ export default function ImagesToPdf() {
                     onClick={() => setPageNumbers((prev) => !prev)}
                     aria-pressed={pageNumbers}
                     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      pageNumbers ? "bg-orange-500" : "bg-gray-200"
+                      pageNumbers ? "bg-[#2563EB]" : "bg-gray-200"
                     }`}
                   >
                     <span
@@ -800,7 +798,7 @@ export default function ImagesToPdf() {
             {activeTab === "image" && (
               <div className="space-y-4 pt-1">
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-gray-700 block">
+                  <span className="text-[11px] font-bold text-[#0F172A] block">
                     Image Fit
                   </span>
                   <div className="grid grid-cols-2 gap-2">
@@ -809,7 +807,7 @@ export default function ImagesToPdf() {
                       onClick={() => setImageFit("contain")}
                       className={`p-3 rounded-xl border text-left transition-all ${
                         imageFit === "contain"
-                          ? "border-orange-500 bg-orange-50/30 text-orange-500 font-bold"
+                          ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold"
                           : "border-gray-200 text-gray-600"
                       }`}
                     >
@@ -825,7 +823,7 @@ export default function ImagesToPdf() {
                       onClick={() => setImageFit("cover")}
                       className={`p-3 rounded-xl border text-left transition-all ${
                         imageFit === "cover"
-                          ? "border-orange-500 bg-orange-50/30 text-orange-500 font-bold"
+                          ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold"
                           : "border-gray-200 text-gray-600"
                       }`}
                     >
@@ -844,7 +842,7 @@ export default function ImagesToPdf() {
               <div className="space-y-4 pt-1">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <div>
-                    <span className="text-xs font-bold text-gray-700 block">
+                    <span className="text-xs font-bold text-[#0F172A] block">
                       Grayscale Mode
                     </span>
                     <span className="text-[9px] text-gray-400 block">
@@ -856,7 +854,7 @@ export default function ImagesToPdf() {
                     onClick={() => setGrayscale((prev) => !prev)}
                     aria-pressed={grayscale}
                     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      grayscale ? "bg-orange-500" : "bg-gray-200"
+                      grayscale ? "bg-[#2563EB]" : "bg-gray-200"
                     }`}
                   >
                     <span
@@ -875,7 +873,7 @@ export default function ImagesToPdf() {
             <button
               type="button"
               onClick={handleReset}
-              className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-800 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5"
             >
               <RotateCcw size={13} /> Reset
             </button>
@@ -885,7 +883,7 @@ export default function ImagesToPdf() {
               disabled={images.length === 0 || isGenerating}
               className={`flex-1 py-2.5 text-xs font-bold rounded-xl text-center transition-all flex items-center justify-center gap-2 ${
                 images.length > 0 && !isGenerating
-                  ? "bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20 cursor-pointer active:scale-[0.98]"
+                  ? "bg-[#2563EB] hover:bg-[#2563EB] text-white shadow-md shadow-orange-500/20 cursor-pointer active:scale-[0.98]"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
@@ -908,9 +906,9 @@ export default function ImagesToPdf() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[460px] flex flex-col justify-between">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-gray-900">PDF preview</h2>
+                <h2 className="text-xs font-bold text-[#0F172A]">PDF preview</h2>
                 {images.length > 0 && (
-                  <span className="text-[10px] bg-orange-100 text-orange-600 font-bold px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-[#E2E8F0] text-[#2563EB] font-bold px-2 py-0.5 rounded-full">
                     {images.length} {images.length === 1 ? "page" : "pages"}
                   </span>
                 )}
@@ -919,7 +917,7 @@ export default function ImagesToPdf() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-[11px] text-orange-500 font-bold hover:text-orange-600 flex items-center gap-1"
+                  className="text-[11px] text-[#2563EB] font-bold hover:text-[#2563EB] flex items-center gap-1"
                 >
                   <Plus size={13} /> Add more
                 </button>
@@ -944,16 +942,16 @@ export default function ImagesToPdf() {
                     fileInputRef.current?.click();
                   }
                 }}
-                className={`bg-[#F8F9FA] border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center flex-1 text-center my-1 cursor-pointer transition-all ${
+                className={`bg-[#F8FAFC] border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center flex-1 text-center my-1 cursor-pointer transition-all ${
                   isDragging
-                    ? "border-orange-500 bg-orange-50/30 scale-[0.99]"
-                    : "border-gray-200 hover:border-orange-300"
+                    ? "border-[#2563EB] bg-[#F8FAFC]/30 scale-[0.99]"
+                    : "border-gray-200 hover:border-[#2563EB]"
                 }`}
               >
-                <div className="w-14 h-14 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center mb-3">
+                <div className="w-14 h-14 bg-[#F8FAFC] text-[#2563EB] rounded-2xl flex items-center justify-center mb-3">
                   <UploadCloud size={28} />
                 </div>
-                <span className="text-xs font-bold text-gray-800 block">
+                <span className="text-xs font-bold text-[#0F172A] block">
                   Add images to get started
                 </span>
                 <span className="text-[10px] text-gray-400 mt-1">
@@ -970,7 +968,7 @@ export default function ImagesToPdf() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto p-1 rounded-xl transition-all ${
-                  isDragging ? "ring-2 ring-orange-400 ring-offset-2" : ""
+                  isDragging ? "ring-2 ring-[#2563EB] ring-offset-2" : ""
                 }`}
               >
                 {images.map((img, index) => {
@@ -1057,7 +1055,7 @@ export default function ImagesToPdf() {
                           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
                             <Loader2
                               size={16}
-                              className="animate-spin text-orange-400"
+                              className="animate-spin text-[#2563EB]"
                             />
                           </div>
                         )}
@@ -1087,7 +1085,7 @@ export default function ImagesToPdf() {
                             type="button"
                             disabled={index === 0}
                             onClick={() => moveImage(index, "left")}
-                            className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                            className="p-1 text-gray-400 hover:text-[#0F172A] disabled:opacity-20"
                             title="Move left"
                           >
                             <MoveLeft size={11} />
@@ -1096,7 +1094,7 @@ export default function ImagesToPdf() {
                             type="button"
                             disabled={index === images.length - 1}
                             onClick={() => moveImage(index, "right")}
-                            className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                            className="p-1 text-gray-400 hover:text-[#0F172A] disabled:opacity-20"
                             title="Move right"
                           >
                             <MoveRight size={11} />
@@ -1114,19 +1112,19 @@ export default function ImagesToPdf() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-orange-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Image Size Reducer
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -1138,13 +1136,13 @@ export default function ImagesToPdf() {
 
           <Link
             href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-orange-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -1156,13 +1154,12 @@ export default function ImagesToPdf() {
 
           <Link
             href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-orange-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
-              <Wand2 size={16} />
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">

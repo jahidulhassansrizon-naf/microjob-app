@@ -68,14 +68,14 @@ export default function RecentGenerations({
 
   return (
     <>
-      <section className="mt-4 w-full max-w-[1400px] rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-4 flex flex-col justify-between gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center">
+      <section className="mt-4 w-full max-w-[1400px] rounded-2xl bg-[#F8FAFC] p-4 shadow-sm sm:p-6 text-[#0F172A]">
+        <div className="mb-4 flex flex-col justify-between gap-3 border-b border-[#E2E8F0] pb-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <span className="h-5 w-1.5 rounded-full bg-orange-500" />
-            <h3 className="text-sm font-semibold text-gray-800">
+            <span className="h-5 w-1.5 rounded-full bg-[#2563EB]" />
+            <h3 className="text-sm font-semibold text-[#0F172A]">
               RECENT GENERATIONS
             </h3>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+            <span className="rounded-full bg-[#10B981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10B981]">
               {generations.length}
             </span>
           </div>
@@ -83,7 +83,7 @@ export default function RecentGenerations({
             <button
               type="button"
               onClick={() => scroll("left")}
-              className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-600 transition hover:bg-gray-50"
+              className="cursor-pointer rounded-lg border border-[#E2E8F0] p-1.5 text-[#0F172A] transition hover:bg-[#E2E8F0]"
               aria-label="Previous generations"
             >
               <ChevronLeft size={16} />
@@ -91,7 +91,7 @@ export default function RecentGenerations({
             <button
               type="button"
               onClick={() => scroll("right")}
-              className="cursor-pointer rounded-lg border border-gray-200 p-1.5 text-gray-600 transition hover:bg-gray-50"
+              className="cursor-pointer rounded-lg border border-[#E2E8F0] p-1.5 text-[#0F172A] transition hover:bg-[#E2E8F0]"
               aria-label="Next generations"
             >
               <ChevronRight size={16} />
@@ -99,14 +99,18 @@ export default function RecentGenerations({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="flex cursor-pointer items-center gap-1 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600"
+              className="flex cursor-pointer items-center gap-1 rounded-lg bg-[#2563EB] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#1d4ed8]"
             >
               <ExternalLink size={14} /> View all images
             </button>
             <button
               type="button"
               onClick={() => setShowMeta((previous) => !previous)}
-              className={`cursor-pointer rounded-lg border p-1.5 transition ${showMeta ? "border-orange-200 bg-orange-50 text-orange-600" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              className={`cursor-pointer rounded-lg border p-1.5 transition ${
+                showMeta
+                  ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
+                  : "border-[#E2E8F0] text-[#0F172A] hover:bg-[#E2E8F0]"
+              }`}
               aria-label="Toggle generation details"
             >
               <Settings size={16} />
@@ -122,12 +126,12 @@ export default function RecentGenerations({
             Array.from({ length: 5 }).map((_, index) => (
               <div
                 key={index}
-                className="h-36 w-28 shrink-0 animate-pulse rounded-xl border border-gray-100 bg-gray-200"
+                className="h-36 w-28 shrink-0 animate-pulse rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]"
               />
             ))
           ) : generations.length === 0 ? (
             <div className="flex min-h-[150px] w-full items-center justify-center">
-              <p className="text-xs italic text-gray-400">
+              <p className="text-xs italic text-[#0F172A]/60">
                 No recent generations yet. Click “Generate Photo” to add images
                 here.
               </p>
@@ -138,7 +142,7 @@ export default function RecentGenerations({
                 type="button"
                 key={item.id ?? index}
                 onClick={() => onImageClick(item)}
-                className="group relative flex h-36 w-28 shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-left transition hover:border-orange-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-300"
+                className="group relative flex h-36 w-28 shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-left transition hover:border-[#2563EB] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 style={
                   item.bgColor === "transparent"
                     ? TRANSPARENT_THUMBNAIL_STYLE
@@ -175,20 +179,20 @@ export default function RecentGenerations({
             event.currentTarget === event.target && setShowAll(false)
           }
         >
-          <div className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[#F8FAFC] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] p-4">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">
+                <h2 className="text-sm font-semibold text-[#0F172A]">
                   All generated images
                 </h2>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-[#0F172A]/60">
                   {generations.length} image(s)
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAll(false)}
-                className="cursor-pointer rounded-lg p-2 text-gray-500 transition hover:bg-gray-100"
+                className="cursor-pointer rounded-lg p-2 text-[#0F172A] transition hover:bg-[#E2E8F0]"
                 aria-label="Close gallery"
               >
                 <X size={18} />
@@ -203,7 +207,7 @@ export default function RecentGenerations({
                     onImageClick(item);
                     setShowAll(false);
                   }}
-                  className="group relative aspect-[4/5] overflow-hidden rounded-xl border border-gray-200 bg-gray-50 cursor-pointer"
+                  className="group relative aspect-[4/5] overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] cursor-pointer hover:border-[#2563EB] transition"
                   style={
                     item.bgColor === "transparent"
                       ? TRANSPARENT_THUMBNAIL_STYLE

@@ -108,7 +108,7 @@ export default function ImageToText() {
   };
 
   return (
-    <div className="w-full text-gray-800 font-sans pb-16">
+    <div className="w-full text-[#0F172A] font-sans pb-16">
       <div className="w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -116,27 +116,27 @@ export default function ImageToText() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
                 title="Go back"
               >
                 <ArrowLeft size={16} />
               </button>
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
               <span>/</span>
-              <span className="hover:text-gray-700 cursor-pointer">
+              <span className="hover:text-[#0F172A] cursor-pointer">
                 Text Tools
               </span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">Image to Text</span>
+              <span className="text-[#0F172A] font-semibold">Image to Text</span>
             </div>
 
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <ScanText size={18} />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Image to Text
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
@@ -152,14 +152,14 @@ export default function ImageToText() {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setIsFavorite(!isFavorite)}
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-amber-500 hover:border-amber-300 transition-all shadow-2xs"
+              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs"
             >
               <Star
                 size={16}
-                className={isFavorite ? "fill-amber-400 text-amber-400" : ""}
+                className={isFavorite ? "fill-amber-400 text-[#2563EB]" : ""}
               />
             </button>
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs">
+            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16} />
             </button>
           </div>
@@ -171,7 +171,7 @@ export default function ImageToText() {
           <div className="lg:col-span-4 space-y-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-900 tracking-wide uppercase">
+                <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase">
                   Files {selectedFile ? "(1)" : "(0)"}
                 </span>
                 {selectedFile && (
@@ -194,7 +194,7 @@ export default function ImageToText() {
                   <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <Upload size={20} />
                   </div>
-                  <span className="text-xs font-bold text-gray-800 mb-1">
+                  <span className="text-xs font-bold text-[#0F172A] mb-1">
                     Drop an image here or click to upload
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium">
@@ -220,7 +220,7 @@ export default function ImageToText() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-800 truncate">
+                    <p className="text-xs font-bold text-[#0F172A] truncate">
                       {selectedFile.name}
                     </p>
                     <p className="text-[10px] text-gray-400">
@@ -232,13 +232,13 @@ export default function ImageToText() {
 
               {/* Language Selection */}
               <div className="space-y-1.5 pt-2 border-t border-gray-100">
-                <span className="text-[11px] font-bold text-gray-700 block">
+                <span className="text-[11px] font-bold text-[#0F172A] block">
                   OCR Language
                 </span>
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 >
                   <option value="eng+ben">English + Bengali (উভয়ই)</option>
                   <option value="eng">English Only</option>
@@ -253,7 +253,7 @@ export default function ImageToText() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[420px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                     Image preview & Extracted text
                   </span>
                   <span
@@ -273,7 +273,7 @@ export default function ImageToText() {
                       <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-3">
                         <ScanText size={24} />
                       </div>
-                      <h3 className="text-xs font-bold text-gray-900 mb-1">
+                      <h3 className="text-xs font-bold text-[#0F172A] mb-1">
                         Upload an image to extract text
                       </h3>
                       <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed">
@@ -326,7 +326,7 @@ export default function ImageToText() {
                             <textarea
                               value={extractedText}
                               onChange={(e) => setExtractedText(e.target.value)}
-                              className="w-full h-full min-h-[160px] bg-transparent text-xs font-medium text-gray-800 focus:outline-none resize-none leading-relaxed"
+                              className="w-full h-full min-h-[160px] bg-transparent text-xs font-medium text-[#0F172A] focus:outline-none resize-none leading-relaxed"
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-400">
@@ -352,7 +352,7 @@ export default function ImageToText() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleReset}
-                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors"
+                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] rounded-xl text-xs font-bold transition-colors"
                     >
                       Reset
                     </button>
@@ -383,7 +383,7 @@ export default function ImageToText() {
         <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -414,7 +414,7 @@ export default function ImageToText() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -430,7 +430,7 @@ export default function ImageToText() {
                     <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-emerald-100 transition-colors">
                       <ToolIcon size={18} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-emerald-600 transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">

@@ -108,9 +108,9 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
+    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-slate-50 font-sans overflow-x-hidden relative">
       {/* Left Visual Banner */}
-      <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
+      <div className="lg:w-1/2 bg-slate-900 py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
         <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
             src="https://app.sohozkaj.com/images/authImage.svg"
@@ -120,7 +120,7 @@ function LoginContent() {
         </div>
 
         <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
-          <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
+          <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
             <span className="block">
               Create documents, designs, and print media with photo editing, AI
               photo editing, manual editing, and bulk editing -
@@ -137,20 +137,20 @@ function LoginContent() {
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span>Back</span>
           </button>
 
-          <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
+          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-md text-xs font-semibold">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
               className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "EN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               EN
@@ -160,8 +160,8 @@ function LoginContent() {
               onClick={() => changeGoogleLanguage("BN")}
               className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "BN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               বাং
@@ -173,24 +173,24 @@ function LoginContent() {
         <div className="w-full max-w-md mx-auto my-auto py-6">
           <div className="flex flex-col items-center mb-6">
             <Link href="/" className="flex items-center gap-2 mb-1.5 group">
-              <div className="w-9 h-9 bg-[#FF5D00] rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
                 SK
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-2xl font-black tracking-tight text-gray-900">
-                  Sohoz<span className="text-[#FF5D00]">kaj</span>
+                <span className="text-2xl font-black tracking-tight text-slate-900">
+                  Sohoz<span className="text-blue-600">kaj</span>
                 </span>
-                <span className="text-[9px] tracking-widest text-gray-400 font-bold uppercase mt-0.5">
+                <span className="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5">
                   WWW.SOHOZKAJ.COM
                 </span>
               </div>
             </Link>
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium">
               Login to your account
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/80 p-5 sm:p-8">
             {errorMessage && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
                 {errorMessage}
@@ -199,11 +199,11 @@ function LoginContent() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700">
+                <label className="text-xs font-semibold text-slate-700">
                   Phone or Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
-                  <div className="absolute left-3.5 text-gray-400">
+                  <div className="absolute left-3.5 text-slate-400">
                     <Mail size={16} />
                   </div>
                   <input
@@ -215,17 +215,17 @@ function LoginContent() {
                     onChange={(e) =>
                       setFormData({ ...formData, identifier: e.target.value })
                     }
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] focus:ring-1 focus:ring-[#FF5D00] transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700">
+                <label className="text-xs font-semibold text-slate-700">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
-                  <div className="absolute left-3.5 text-gray-400">
+                  <div className="absolute left-3.5 text-slate-400">
                     <Lock size={16} />
                   </div>
                   <input
@@ -237,12 +237,12 @@ function LoginContent() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#ffffff] border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] focus:ring-1 focus:ring-[#FF5D00] transition-all"
+                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -253,7 +253,7 @@ function LoginContent() {
               </div>
 
               <div className="flex items-center justify-between text-xs pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-gray-600 select-none">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
                   <input
                     type="checkbox"
                     checked={formData.rememberMe}
@@ -263,14 +263,14 @@ function LoginContent() {
                         rememberMe: e.target.checked,
                       })
                     }
-                    className="w-4 h-4 rounded border-gray-300 text-[#FF5D00] focus:ring-[#FF5D00]"
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
                   />
                   <span>Remember me</span>
                 </label>
 
                 <Link
                   href="/forgot-password"
-                  className="text-[#FF5D00] hover:underline font-semibold"
+                  className="text-blue-600 hover:underline font-semibold"
                 >
                   Forgot password?
                 </Link>
@@ -279,7 +279,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -294,7 +294,7 @@ function LoginContent() {
           </div>
 
           <div className="text-center mt-6">
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-slate-600">
               Don't have an account?{" "}
               <Link
                 href={
@@ -302,7 +302,7 @@ function LoginContent() {
                     ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
                     : "/register"
                 }
-                className="text-[#FF5D00] font-bold hover:underline ml-0.5"
+                className="text-blue-600 font-bold hover:underline ml-0.5"
               >
                 Sign up
               </Link>
@@ -329,7 +329,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
       <LoginContent />
     </Suspense>
   );

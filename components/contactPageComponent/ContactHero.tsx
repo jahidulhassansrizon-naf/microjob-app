@@ -25,7 +25,6 @@ export default function ContactHero() {
     setLoading(true);
     setStatus(null);
 
-    // EmailJS এ ডেটা পাঠানোর ফরম্যাট
     const templateParams = {
       from_name: formData.name,
       from_email: formData.email,
@@ -36,10 +35,10 @@ export default function ContactHero() {
 
     try {
       await emailjs.send(
-        "service_qblb0l8", // আপনার Service ID
-        "template_7a9yiov", // আপনার Template ID
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_qblb0l8",
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_7a9yiov",
         templateParams,
-        "Q7oRWHz649z3LiY0f", // আপনার Public Key
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "Q7oRWHz649z3LiY0f",
       );
 
       setStatus({ type: "success", msg: "Message sent successfully!" });
@@ -56,9 +55,9 @@ export default function ContactHero() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#e5e7eb] px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-[#F8FAFC] px-4 sm:px-6 lg:px-8">
       {/* Background Gradient */}
-      <div className="absolute inset-x-0 top-0 h-[680px] bg-gradient-to-b from-[#ffe6d0] via-[#fadae2] to-[#dbe0f0]" />
+      <div className="absolute inset-x-0 top-0 h-[680px] bg-gradient-to-b from-[#EFF6FF] via-[#E0F2FE]/50 to-[#F8FAFC]" />
 
       {/* Main Content */}
       <div className="relative z-10 mx-auto max-w-[1100px] pt-[102px] pb-24">
@@ -73,7 +72,7 @@ export default function ContactHero() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="inline-flex h-[35px] items-center rounded-full border border-[#ff8a00] bg-white/40 px-[17px] text-[13px] font-semibold leading-none text-[#ff7a00] shadow-sm backdrop-blur-sm"
+            className="inline-flex h-[35px] items-center rounded-full border border-[#2563EB]/20 bg-white/60 px-[17px] text-[13px] font-semibold leading-none text-[#2563EB] shadow-sm backdrop-blur-sm"
           >
             Do you have questions?
           </motion.span>
@@ -82,9 +81,9 @@ export default function ContactHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-            className="mt-[25px] text-center text-[52px] font-extrabold leading-[1.36] tracking-[-1.7px] text-black sm:text-[54px]"
+            className="mt-[25px] text-center text-[52px] font-extrabold leading-[1.36] tracking-[-1.7px] text-[#0F172A] sm:text-[54px]"
           >
-            <span className="text-[#ff7a00]">Easy communication</span>{" "}
+            <span className="text-[#2563EB]">Easy communication</span>{" "}
             <span>Do it,</span>
             <br />
             <span>you will get the solution</span>
@@ -96,7 +95,7 @@ export default function ContactHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-            className="mx-auto mt-[30px] max-w-[700px] text-[17px] font-normal leading-[1.55] text-[#15243a]"
+            className="mx-auto mt-[30px] max-w-[700px] text-[17px] font-normal leading-[1.55] text-[#334155]"
           >
             Our team is ready to answer your questions and support you. Fill out
             the form below
@@ -112,19 +111,19 @@ export default function ContactHero() {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-            className="rounded-[26px] bg-white px-[34px] py-[31px] shadow-[0_12px_40px_rgba(26,31,44,0.08)]"
+            className="rounded-[26px] border border-[#E2E8F0] bg-white px-[34px] py-[31px] shadow-[0_12px_40px_rgba(15,23,42,0.06)]"
           >
-            <h2 className="text-[29px] font-extrabold leading-[1.25] tracking-[-0.8px] text-black">
-              Send your <span className="text-[#ff7a00]">message.</span>
+            <h2 className="text-[29px] font-extrabold leading-[1.25] tracking-[-0.8px] text-[#0F172A]">
+              Send your <span className="text-[#2563EB]">message.</span>
             </h2>
 
-            <p className="mt-[8px] text-[16px] leading-[1.45] text-[#344054]">
+            <p className="mt-[8px] text-[16px] leading-[1.45] text-[#475569]">
               Fill out the form and we will contact you soon.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-[26px] space-y-[13px]">
               <div>
-                <label className="mb-[7px] block text-[13px] font-bold text-black">
+                <label className="mb-[7px] block text-[13px] font-bold text-[#0F172A]">
                   Your name
                 </label>
                 <input
@@ -135,13 +134,13 @@ export default function ContactHero() {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="h-[43px] w-full rounded-[7px] border border-[#d7dbe2] bg-white px-[15px] text-[13px] text-black outline-none placeholder:text-[#a3afbf] focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/10"
+                  className="h-[43px] w-full rounded-[7px] border border-[#E2E8F0] bg-white px-[15px] text-[13px] text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
               <div>
-                <label className="mb-[7px] block text-[13px] font-bold text-black">
-                  Email Address <span className="text-[#ff7a00]">*</span>
+                <label className="mb-[7px] block text-[13px] font-bold text-[#0F172A]">
+                  Email Address <span className="text-[#10B981]">*</span>
                 </label>
                 <input
                   type="email"
@@ -151,13 +150,13 @@ export default function ContactHero() {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="h-[43px] w-full rounded-[7px] border border-[#d7dbe2] bg-white px-[15px] text-[13px] text-black outline-none placeholder:text-[#a3afbf] focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/10"
+                  className="h-[43px] w-full rounded-[7px] border border-[#E2E8F0] bg-white px-[15px] text-[13px] text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
               <div>
-                <label className="mb-[7px] block text-[13px] font-bold text-black">
-                  Phone number <span className="text-[#ff7a00]">*</span>
+                <label className="mb-[7px] block text-[13px] font-bold text-[#0F172A]">
+                  Phone number <span className="text-[#10B981]">*</span>
                 </label>
                 <input
                   type="tel"
@@ -167,12 +166,12 @@ export default function ContactHero() {
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  className="h-[43px] w-full rounded-[7px] border border-[#d7dbe2] bg-white px-[15px] text-[13px] text-black outline-none placeholder:text-[#a3afbf] focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/10"
+                  className="h-[43px] w-full rounded-[7px] border border-[#E2E8F0] bg-white px-[15px] text-[13px] text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
               <div>
-                <label className="mb-[7px] block text-[13px] font-bold text-black">
+                <label className="mb-[7px] block text-[13px] font-bold text-[#0F172A]">
                   Subject
                 </label>
                 <input
@@ -182,13 +181,13 @@ export default function ContactHero() {
                   onChange={(e) =>
                     setFormData({ ...formData, subject: e.target.value })
                   }
-                  className="h-[43px] w-full rounded-[7px] border border-[#d7dbe2] bg-white px-[15px] text-[13px] text-black outline-none placeholder:text-[#a3afbf] focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/10"
+                  className="h-[43px] w-full rounded-[7px] border border-[#E2E8F0] bg-white px-[15px] text-[13px] text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
               <div>
-                <label className="mb-[7px] block text-[13px] font-bold text-black">
-                  Details <span className="text-[#ff7a00]">*</span>
+                <label className="mb-[7px] block text-[13px] font-bold text-[#0F172A]">
+                  Details <span className="text-[#10B981]">*</span>
                 </label>
                 <textarea
                   rows={5}
@@ -198,7 +197,7 @@ export default function ContactHero() {
                   onChange={(e) =>
                     setFormData({ ...formData, details: e.target.value })
                   }
-                  className="h-[102px] w-full resize-none rounded-[7px] border border-[#d7dbe2] bg-white px-[15px] py-[12px] text-[13px] text-black outline-none placeholder:text-[#a3afbf] focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/10"
+                  className="h-[102px] w-full resize-none rounded-[7px] border border-[#E2E8F0] bg-white px-[15px] py-[12px] text-[13px] text-[#0F172A] outline-none placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
@@ -207,7 +206,7 @@ export default function ContactHero() {
                 <p
                   className={`text-[13px] font-semibold ${
                     status.type === "success"
-                      ? "text-green-600"
+                      ? "text-[#10B981]"
                       : "text-red-500"
                   }`}
                 >
@@ -220,7 +219,7 @@ export default function ContactHero() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={loading}
-                className="mt-[3px] flex h-[45px] w-full cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-[#ff5a00] px-6 text-[13px] font-bold text-white transition hover:bg-[#f45100] disabled:cursor-not-allowed disabled:opacity-70"
+                className="mt-[3px] flex h-[45px] w-full cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-[#2563EB] px-6 text-[13px] font-bold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-70 shadow-sm"
               >
                 {loading ? (
                   <>
@@ -242,28 +241,27 @@ export default function ContactHero() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="min-h-[167px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+              className="min-h-[167px] rounded-[24px] border border-[#E2E8F0] bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(15,23,42,0.04)]"
             >
               <div className="flex items-start gap-[16px]">
-                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#00cc67] text-white">
+                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#10B981] text-white">
                   <Phone className="h-[27px] w-[27px]" strokeWidth={2.1} />
                 </div>
 
                 <div className="min-w-0 pt-[1px]">
-                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-black">
+                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-[#0F172A]">
                     Phone number
                   </h3>
-                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#7b8798]">
+                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#64748B]">
                     9 am to 6 pm
                   </p>
                 </div>
               </div>
 
-              <div className="my-[16px] h-px bg-[#dfe3e8]" />
+              <div className="my-[16px] h-px bg-[#E2E8F0]" />
 
-              <div className="space-y-[4px] text-[14px] font-semibold leading-[1.2] text-[#334155]">
-                <p>+88 01700-559595</p>
-                <p>+88 01718-542596</p>
+              <div className="space-y-[4px] text-[13px] italic font-normal text-[#64748B]">
+                <p>Phone number will be updated soon...</p>
               </div>
             </motion.div>
 
@@ -273,28 +271,27 @@ export default function ContactHero() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.6, ease: "easeOut" }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="min-h-[167px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+              className="min-h-[167px] rounded-[24px] border border-[#E2E8F0] bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(15,23,42,0.04)]"
             >
               <div className="flex items-start gap-[16px]">
-                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#1e9eff] text-white">
+                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#2563EB] text-white">
                   <Mail className="h-[27px] w-[27px]" strokeWidth={2.1} />
                 </div>
 
                 <div className="min-w-0 pt-[1px]">
-                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-black">
+                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-[#0F172A]">
                     Email
                   </h3>
-                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#7b8798]">
+                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#64748B]">
                     Reply within 24 hours
                   </p>
                 </div>
               </div>
 
-              <div className="my-[16px] h-px bg-[#dfe3e8]" />
+              <div className="my-[16px] h-px bg-[#E2E8F0]" />
 
-              <div className="space-y-[4px] text-[13px] font-semibold leading-[1.2] text-[#334155]">
-                <p>hello@sohozkaj.com</p>
-                <p>support@sohozkaj.com</p>
+              <div className="space-y-[4px] text-[13px] italic font-normal text-[#64748B]">
+                <p>Email address will be updated soon...</p>
               </div>
             </motion.div>
 
@@ -304,34 +301,38 @@ export default function ContactHero() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="min-h-[175px] rounded-[24px] border border-black/10 bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(26,31,44,0.06)]"
+              className="min-h-[175px] rounded-[24px] border border-[#E2E8F0] bg-white px-[26px] py-[25px] shadow-[0_8px_30px_rgba(15,23,42,0.04)]"
             >
               <div className="flex items-start gap-[16px]">
-                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#d43ce8] text-white">
+                <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[13px] bg-[#6366F1] text-white">
                   <Clock className="h-[27px] w-[27px]" strokeWidth={2.1} />
                 </div>
 
                 <div className="min-w-0 pt-[1px]">
-                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-black">
+                  <h3 className="text-[17px] font-extrabold leading-[1.1] text-[#0F172A]">
                     Office hours
                   </h3>
-                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#7b8798]">
+                  <p className="mt-[4px] text-[12px] leading-[1.2] text-[#64748B]">
                     Reliable and fast support
                   </p>
                 </div>
               </div>
 
-              <div className="my-[16px] h-px bg-[#dfe3e8]" />
+              <div className="my-[16px] h-px bg-[#E2E8F0]" />
 
-              <div className="space-y-[13px] text-[12px] text-[#475467]">
+              <div className="space-y-[13px] text-[12px] text-[#475569]">
                 <div>
-                  <p className="font-extrabold text-black">Sunday - Thursday</p>
-                  <p className="mt-[3px] text-[#667085]">09:00 AM - 05:00 PM</p>
+                  <p className="font-extrabold text-[#0F172A]">
+                    Sunday - Thursday
+                  </p>
+                  <p className="mt-[3px] text-[#64748B]">09:00 AM - 05:00 PM</p>
                 </div>
 
                 <div>
-                  <p className="font-extrabold text-black">Friday - Saturday</p>
-                  <p className="mt-[3px] text-[#98a2b3]">Weekend</p>
+                  <p className="font-extrabold text-[#0F172A]">
+                    Friday - Saturday
+                  </p>
+                  <p className="mt-[3px] text-[#94A3B8]">Weekend</p>
                 </div>
               </div>
             </motion.div>

@@ -171,7 +171,7 @@ function GeoCombobox({
           }}
           onFocus={() => !disabled && setOpen(true)}
           placeholder={selected ? "" : placeholder}
-          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-gray-800 placeholder:text-gray-400 disabled:cursor-not-allowed"
+          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#0F172A] placeholder:text-gray-400 disabled:cursor-not-allowed"
         />
 
         <ChevronDown
@@ -208,7 +208,7 @@ function GeoCombobox({
                   className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-blue-50 transition-colors truncate ${
                     option.id === value
                       ? "bg-blue-50 text-blue-700 font-semibold"
-                      : "text-gray-700"
+                      : "text-[#0F172A]"
                   }`}
                 >
                   {option.bn}
@@ -265,7 +265,7 @@ function TextInput({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-blue-500"
+      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-blue-500"
     />
   );
 }
@@ -314,7 +314,7 @@ function FamilyCardPreview({
     <div
       ref={documentRef}
       id="family-card-print-page"
-      className="family-card-print-document relative w-[210mm] h-[297mm] shrink-0 bg-white text-gray-900 font-serif overflow-hidden"
+      className="family-card-print-document relative w-[210mm] h-[297mm] shrink-0 bg-white text-[#0F172A] font-serif overflow-hidden"
       style={{
         boxSizing: "border-box",
         padding: "17mm",
@@ -1029,7 +1029,7 @@ export default function FamilyCardForm() {
   const isZoomedBeyondFit = zoomFactor > 1.001;
 
   return (
-    <div className="family-card-root w-full text-gray-800 font-sans pb-28">
+    <div className="family-card-root w-full text-[#0F172A] font-sans pb-28">
       <style>{`
         .family-card-print-only {
           display: none;
@@ -1112,21 +1112,21 @@ export default function FamilyCardForm() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
                 title="Go back"
                 type="button"
               >
                 <ArrowLeft size={16} />
               </button>
 
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
 
               <span>/</span>
               <span>General Tools</span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">
+              <span className="text-[#0F172A] font-semibold">
                 Family Card Form
               </span>
             </div>
@@ -1136,7 +1136,7 @@ export default function FamilyCardForm() {
                 <CreditCard size={18} />
               </div>
 
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Family Card Form
               </h1>
 
@@ -1170,7 +1170,7 @@ export default function FamilyCardForm() {
             </button>
 
             <button
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs"
+              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs"
               type="button"
               aria-label="Share"
             >
@@ -1183,7 +1183,7 @@ export default function FamilyCardForm() {
           <div className="lg:col-span-5 space-y-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Settings
                 </span>
                 <span className="text-[11px] text-gray-400 font-medium">
@@ -1201,7 +1201,7 @@ export default function FamilyCardForm() {
                     <select
                       value={recipient}
                       onChange={(event) => setRecipient(event.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-blue-500"
                     >
                       <option value="Ward Member">Ward Member</option>
                       <option value="Ward Representative">
@@ -1397,7 +1397,7 @@ export default function FamilyCardForm() {
           <div className="lg:col-span-7">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
                   <span>Preview</span>
                 </span>
@@ -1432,7 +1432,7 @@ export default function FamilyCardForm() {
 
                     <button
                       onClick={() => setZoom(100)}
-                      className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-gray-700"
+                      className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-[#0F172A]"
                       type="button"
                       aria-label="Reset zoom"
                     >
@@ -1443,7 +1443,7 @@ export default function FamilyCardForm() {
                   <span
                     className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${
                       anyFieldFilled
-                        ? "text-orange-600 bg-orange-50"
+                        ? "text-[#2563EB] bg-[#F8FAFC]"
                         : "text-gray-400 bg-gray-100"
                     }`}
                   >
@@ -1510,7 +1510,7 @@ export default function FamilyCardForm() {
             Important Information and Instructions:
           </h3>
 
-          <p className="text-xs text-gray-700 font-medium">
+          <p className="text-xs text-[#0F172A] font-medium">
             The following documents must be attached:
           </p>
 
@@ -1559,7 +1559,7 @@ export default function FamilyCardForm() {
         <div className="print-hide bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse((open) => !open)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
             type="button"
           >
             <div className="flex items-center gap-2">
@@ -1585,7 +1585,7 @@ export default function FamilyCardForm() {
         </div>
 
         <div className="print-hide pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
 
@@ -1604,7 +1604,7 @@ export default function FamilyCardForm() {
                       <ToolIcon size={18} />
                     </div>
 
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-blue-600 transition-colors">
                       {tool.title}
                     </h3>
 
@@ -1619,7 +1619,7 @@ export default function FamilyCardForm() {
         </div>
 
         <div className="print-hide fixed bottom-0 left-0 right-0 z-40 px-3 sm:px-4 pb-3 pointer-events-none">
-          <div className="w-full pointer-events-auto bg-[#fffdf1]/95 backdrop-blur-md border border-gray-200/80 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_-8px_28px_rgba(30,30,30,.12)]">
+          <div className="w-full pointer-events-auto bg-[#F8FAFC]/95 backdrop-blur-md border border-gray-200/80 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_-8px_28px_rgba(30,30,30,.12)]">
             <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -1638,7 +1638,7 @@ export default function FamilyCardForm() {
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
               <button
                 onClick={handleClear}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors"
                 type="button"
               >
                 Clear all
@@ -1646,7 +1646,7 @@ export default function FamilyCardForm() {
 
               <button
                 onClick={handleRestoreLastApplication}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
                 type="button"
               >
                 <RefreshCw size={13} />
@@ -1656,7 +1656,7 @@ export default function FamilyCardForm() {
               <button
                 onClick={handlePrint}
                 disabled={isProcessing !== null}
-                className="px-5 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+                className="px-5 py-2 bg-white hover:bg-gray-50 text-[#0F172A] border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
                 type="button"
               >
                 {isProcessing === "print" ? (
@@ -1673,7 +1673,7 @@ export default function FamilyCardForm() {
               <button
                 onClick={handleDownloadPdf}
                 disabled={isProcessing !== null}
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+                className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
                 type="button"
               >
                 {isProcessing === "download" ? (

@@ -15,38 +15,38 @@ export default function WhyChooseUs() {
     {
       title: "File sharing without USB drives",
       desc: "Your time is valuable, so we deliver service as fast as possible.",
-      icon: <Clock className="text-[#3B82F6]" size={20} />,
+      icon: <Clock className="text-blue-600" size={20} />,
       iconBg: "bg-blue-50",
     },
     {
       title: "Cybersecurity & permissions",
       desc: "Control access for multiple employees in your office or shop",
-      icon: <ShieldCheck className="text-[#10B981]" size={20} />,
-      iconBg: "bg-emerald-50",
+      icon: <ShieldCheck className="text-indigo-600" size={20} />,
+      iconBg: "bg-indigo-50",
     },
     {
       title: "Instant search & tags",
       desc: "A simple and beautiful interface that anyone can use with ease.",
-      icon: <ThumbsUp className="text-[#8B5CF6]" size={20} />,
-      iconBg: "bg-purple-50",
+      icon: <ThumbsUp className="text-violet-600" size={20} />,
+      iconBg: "bg-violet-50",
     },
     {
       title: "Fast search system",
       desc: "Quickly find edited or printed files by name, date and category",
-      icon: <Headphones className="text-[#F97316]" size={20} />,
-      iconBg: "bg-orange-50",
+      icon: <Headphones className="text-sky-600" size={20} />,
+      iconBg: "bg-sky-50",
     },
     {
       title: "Pin your favorite files",
       desc: "Pin favorite files/templates for quick access",
-      icon: <Zap className="text-[#EAB308]" size={20} />,
-      iconBg: "bg-yellow-50",
+      icon: <Zap className="text-blue-600" size={20} />,
+      iconBg: "bg-blue-50",
     },
     {
       title: "Direct save, print & email",
       desc: "Save, print, or even send created files directly to a customer's email",
-      icon: <Bookmark className="text-[#EC4899]" size={20} />,
-      iconBg: "bg-pink-50",
+      icon: <Bookmark className="text-indigo-600" size={20} />,
+      iconBg: "bg-indigo-50",
     },
   ];
 
@@ -70,8 +70,9 @@ export default function WhyChooseUs() {
   };
 
   return (
-    <section className="bg-[#F8F9FA] py-20 px-6 md:px-12 overflow-hidden">
+    <section className="bg-slate-50/50 py-20 px-6 md:px-12 overflow-hidden">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-14">
+        {/* Top Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -79,21 +80,22 @@ export default function WhyChooseUs() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center max-w-3xl mx-auto space-y-4"
         >
-          <div className="inline-flex items-center bg-orange-100/70 border border-orange-200/80 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
+          <div className="inline-flex items-center bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full shadow-xs">
             Why Choose Us
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tight leading-[1.15]">
-            <span className="text-[#FF5D00]">Easy to use,</span> and more <br />
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
+            <span className="text-blue-600">Easy to use,</span> and more <br />
             benefits
           </h2>
 
-          <p className="text-gray-500 font-medium text-sm md:text-base max-w-xl mx-auto pt-1">
+          <p className="text-slate-500 font-medium text-sm md:text-base max-w-xl mx-auto pt-1">
             We provide fast, safe, and reliable solutions to simplify your daily
             work
           </p>
         </motion.div>
 
+        {/* 6 Feature Cards Grid */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -106,7 +108,7 @@ export default function WhyChooseUs() {
               key={idx}
               variants={cardVariants}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className="bg-white rounded-[28px] p-7 border border-gray-100 shadow-xs flex flex-col justify-start min-h-[190px] transition hover:shadow-md"
+              className="bg-white rounded-[28px] p-7 border border-slate-100 shadow-xs flex flex-col justify-start min-h-[190px] transition hover:shadow-md hover:shadow-slate-200/50"
             >
               <div
                 className={`w-10 h-10 ${item.iconBg} rounded-xl flex items-center justify-center mb-5`}
@@ -114,10 +116,10 @@ export default function WhyChooseUs() {
                 {item.icon}
               </div>
 
-              <h3 className="text-lg font-bold text-gray-950 mb-2 tracking-tight leading-snug">
+              <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight leading-snug">
                 {item.title}
               </h3>
-              <p className="text-xs text-gray-400 font-medium leading-relaxed">
+              <p className="text-xs text-slate-400 font-medium leading-relaxed">
                 {item.desc}
               </p>
             </motion.div>

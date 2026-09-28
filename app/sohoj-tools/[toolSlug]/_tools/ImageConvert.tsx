@@ -10,7 +10,6 @@ import {
   Download,
   FileType,
   CreditCard,
-  Wand2,
   Zap,
   Scale,
   Feather,
@@ -175,7 +174,7 @@ export default function ImageConvert() {
   };
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -190,7 +189,7 @@ export default function ImageConvert() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Sohoj Tools</span>
@@ -198,18 +197,18 @@ export default function ImageConvert() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">Image Convert</span>
+        <span className="font-semibold text-[#0F172A]">Image Convert</span>
       </div>
 
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 border border-amber-100">
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <FileType size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">Image Convert</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">Image Convert</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -238,7 +237,7 @@ export default function ImageConvert() {
           <div className="space-y-4">
             {/* Output Format Card */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-              <h2 className="text-xs font-bold text-gray-900">Output format</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">Output format</h2>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { id: "jpg", label: "JPG" },
@@ -254,7 +253,7 @@ export default function ImageConvert() {
                     }}
                     className={`py-3 px-1 rounded-xl border text-[10px] font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                       format === item.id
-                        ? "border-amber-500 bg-amber-50/40 text-amber-500 shadow-2xs"
+                        ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
                         : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200"
                     }`}
                   >
@@ -267,7 +266,7 @@ export default function ImageConvert() {
 
             {/* Quality Preset Card */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-              <h2 className="text-xs font-bold text-gray-900">Quality</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">Quality</h2>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   {
@@ -296,7 +295,7 @@ export default function ImageConvert() {
                       }}
                       className={`py-3 px-1 rounded-xl border text-[10px] font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
                         quality === item.id
-                          ? "border-amber-500 bg-amber-50/40 text-amber-500 shadow-2xs"
+                          ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
                           : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200"
                       }`}
                     >
@@ -325,7 +324,7 @@ export default function ImageConvert() {
                 disabled={files.length === 0 || isConverting}
                 className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
                   files.length > 0 && !isConverting
-                    ? "bg-amber-500 hover:bg-amber-600 text-white shadow-xs cursor-pointer"
+                    ? "bg-[#2563EB] hover:bg-[#2563EB] text-white shadow-xs cursor-pointer"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
@@ -341,7 +340,7 @@ export default function ImageConvert() {
             ) : (
               <button
                 onClick={handleDownloadAll}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-2.5 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Download size={14} />
                 Download All
@@ -354,7 +353,7 @@ export default function ImageConvert() {
         <div className="lg:col-span-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[440px] flex flex-col justify-between">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-gray-900">
+              <h2 className="text-xs font-bold text-[#0F172A]">
                 Conversion preview
               </h2>
               <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">
@@ -366,12 +365,12 @@ export default function ImageConvert() {
             {files.length === 0 ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-[#F8F9FA] border border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center flex-1 text-center my-1 border-dashed cursor-pointer hover:bg-gray-100/50 transition-all min-h-[360px]"
+                className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center flex-1 text-center my-1 border-dashed cursor-pointer hover:bg-gray-100/50 transition-all min-h-[360px]"
               >
-                <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-3">
+                <div className="w-14 h-14 bg-[#F8FAFC] text-[#2563EB] rounded-2xl flex items-center justify-center mb-3">
                   <ImageIcon size={28} />
                 </div>
-                <span className="text-xs font-bold text-gray-800 block">
+                <span className="text-xs font-bold text-[#0F172A] block">
                   Add an image to get started
                 </span>
                 <span className="text-[10px] text-gray-400 mt-1 font-medium">
@@ -398,7 +397,7 @@ export default function ImageConvert() {
                           className="w-12 h-12 rounded-lg object-cover border border-gray-200 bg-white"
                         />
                         <div className="overflow-hidden">
-                          <p className="text-xs font-bold text-gray-800 truncate">
+                          <p className="text-xs font-bold text-[#0F172A] truncate">
                             {fileItem.file.name}
                           </p>
                           <p className="text-[10px] text-gray-400">
@@ -411,7 +410,7 @@ export default function ImageConvert() {
                         {fileItem.status === "done" && (
                           <button
                             onClick={() => handleDownloadSingle(fileItem)}
-                            className="p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all"
+                            className="p-1.5 bg-[#2563EB] hover:bg-[#2563EB] text-white rounded-lg transition-all"
                             title="Download Converted Image"
                           >
                             <Download size={13} />
@@ -433,7 +432,7 @@ export default function ImageConvert() {
                 <div className="pt-2 text-center">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-bold text-amber-500 hover:text-amber-600 underline"
+                    className="text-xs font-bold text-[#2563EB] hover:text-[#2563EB] underline"
                   >
                     + Add more images
                   </button>
@@ -446,19 +445,19 @@ export default function ImageConvert() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Image Size Reducer
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -470,13 +469,13 @@ export default function ImageConvert() {
 
           <Link
             href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -488,13 +487,12 @@ export default function ImageConvert() {
 
           <Link
             href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
-              <Wand2 size={16} />
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">

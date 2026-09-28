@@ -2701,7 +2701,7 @@ export function useQuestionManager() {
       fontWeight: 400,
       fontStyle: "normal",
       textAlign: "left",
-      textColor: "#111827",
+      textColor: "#0F172A",
       backgroundColor: "transparent",
       borderRadius: 4,
       padding: 6,

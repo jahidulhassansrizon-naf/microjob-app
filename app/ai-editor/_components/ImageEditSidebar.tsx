@@ -148,19 +148,19 @@ export default function ImageEditSidebar({
 
   return (
     <aside
-      className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#1f2937]/95 backdrop-blur-md border-l border-gray-700 text-white p-5 flex flex-col z-20 shadow-2xl"
+      className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#0F172A]/95 backdrop-blur-md border-l border-slate-700 text-white p-5 flex flex-col z-20 shadow-2xl"
       aria-label="Image editing tools"
     >
       <div className="overflow-y-auto pr-1">
-        <div className="flex items-center justify-between border-b border-gray-700 pb-3 mb-4">
-          <div className="flex gap-2 bg-gray-800/80 p-1 rounded-lg">
+        <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+          <div className="flex gap-2 bg-slate-800/80 p-1 rounded-lg">
             <button
               type="button"
               onClick={() => setActiveTab("adjust")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                 activeTab === "adjust"
-                  ? "bg-orange-500 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[#2563EB] text-white"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <Sliders size={14} /> Adjustments
@@ -170,8 +170,8 @@ export default function ImageEditSidebar({
               onClick={() => setActiveTab("crop")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                 activeTab === "crop"
-                  ? "bg-orange-500 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[#2563EB] text-white"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <Crop size={14} /> Aspect Ratio
@@ -181,7 +181,7 @@ export default function ImageEditSidebar({
             type="button"
             onClick={onClose}
             aria-label="Close image editor"
-            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer"
+            className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -190,8 +190,8 @@ export default function ImageEditSidebar({
         {activeTab === "adjust" ? (
           <>
             <div className="mb-5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-300 mb-2.5">
-                <Sparkles size={14} className="text-orange-400" />
+              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2.5">
+                <Sparkles size={14} className="text-[#10B981]" />
                 <span>Quick Presets</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -204,8 +204,8 @@ export default function ImageEditSidebar({
                       onClick={() => setFilters(preset.filters)}
                       className={`text-xs py-2 px-1 rounded-lg border transition cursor-pointer font-medium text-center truncate ${
                         active
-                          ? "bg-orange-500/20 border-orange-500 text-orange-400"
-                          : "bg-white/5 border-gray-700 text-gray-300 hover:bg-white/10 hover:border-gray-600"
+                          ? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB]"
+                          : "bg-white/5 border-slate-700 text-slate-300 hover:bg-white/10 hover:border-slate-600"
                       }`}
                     >
                       {preset.name}
@@ -215,16 +215,16 @@ export default function ImageEditSidebar({
               </div>
             </div>
 
-            <div className="border-t border-gray-700/80 pt-4 mb-2">
-              <span className="text-xs font-medium text-gray-300 block mb-3">
+            <div className="border-t border-slate-700/80 pt-4 mb-2">
+              <span className="text-xs font-medium text-slate-300 block mb-3">
                 Manual Controls
               </span>
               <div className="space-y-4">
                 {CONTROLS.map((control) => (
                   <label key={control.key} className="block space-y-1.5">
-                    <div className="flex justify-between text-xs text-gray-300">
+                    <div className="flex justify-between text-xs text-slate-300">
                       <span>{control.label}</span>
-                      <span className="font-mono text-gray-400">
+                      <span className="font-mono text-slate-400">
                         {filters[control.key]}
                         {control.unit}
                       </span>
@@ -238,7 +238,7 @@ export default function ImageEditSidebar({
                       onChange={(event) =>
                         handleChange(control.key, Number(event.target.value))
                       }
-                      className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                      className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
                     />
                   </label>
                 ))}
@@ -247,7 +247,7 @@ export default function ImageEditSidebar({
           </>
         ) : (
           <div className="space-y-3 pt-2">
-            <span className="text-xs font-medium text-gray-300 block mb-2">
+            <span className="text-xs font-medium text-slate-300 block mb-2">
               Select Aspect Ratio Crop
             </span>
             <div className="grid grid-cols-2 gap-2.5">
@@ -260,13 +260,13 @@ export default function ImageEditSidebar({
                     onClick={() => setSelectedAspect?.(item.value)}
                     className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${
                       selected
-                        ? "bg-orange-500/20 border-orange-500 text-orange-400"
-                        : "bg-white/5 border-gray-700 text-gray-300 hover:bg-white/10 hover:border-gray-600"
+                        ? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB]"
+                        : "bg-white/5 border-slate-700 text-slate-300 hover:bg-white/10 hover:border-slate-600"
                     }`}
                   >
                     <Crop
                       size={16}
-                      className={selected ? "text-orange-400" : "text-gray-400"}
+                      className={selected ? "text-[#2563EB]" : "text-slate-400"}
                     />
                     <span>{item.label}</span>
                   </button>
@@ -277,7 +277,7 @@ export default function ImageEditSidebar({
         )}
       </div>
 
-      <div className="pt-4 border-t border-gray-700 flex gap-2">
+      <div className="pt-4 border-t border-slate-700 flex gap-2">
         <button
           type="button"
           onClick={handleReset}

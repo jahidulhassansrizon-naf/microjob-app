@@ -8,8 +8,8 @@ import Footer from "@/components/Footer";
 
 export default function AboutPage() {
   return (
-    <>
-      <main className="min-h-screen bg-slate-50/30 space-y-8 pt-8 pb-12">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans selection:bg-blue-100 selection:text-[#2563EB]">
+      <main className="space-y-12 md:space-y-16 pt-6 pb-16">
         <AboutHero />
         <AboutJourney />
         <AboutValues />
@@ -18,6 +18,6 @@ export default function AboutPage() {
       </main>
       <CtaBanner />
       <Footer />
-    </>
+    </div>
   );
 }

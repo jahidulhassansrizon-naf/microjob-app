@@ -889,7 +889,7 @@ export default function GovtJobPhotoSignResizer() {
       `}</style>
 
       <div id="govt-job-print-sheet" className="hidden">
-        <div className="flex min-h-[277mm] w-[190mm] flex-col p-[4mm] font-sans text-gray-900">
+        <div className="flex min-h-[277mm] w-[190mm] flex-col p-[4mm] font-sans text-[#0F172A]">
           <div className="border-b border-gray-300 pb-3">
             <h2 className="text-lg font-bold">Govt Job Photo & Sign Resizer</h2>
             <p className="mt-1 text-xs text-gray-500">
@@ -936,34 +936,34 @@ export default function GovtJobPhotoSignResizer() {
         </div>
       </div>
 
-      <div className="w-full space-y-6 pb-16 font-sans text-gray-800">
+      <div className="w-full space-y-6 pb-16 font-sans text-[#0F172A]">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <nav className="mb-2 flex items-center gap-1.5 text-xs text-gray-500">
-              <Link href="/" className="transition-colors hover:text-gray-800">
+              <Link href="/" className="transition-colors hover:text-[#0F172A]">
                 <Crop size={14} className="mr-1 inline" />
               </Link>
               <span>/</span>
               <Link
                 href="/sohoj-tools"
-                className="transition-colors hover:text-gray-800"
+                className="transition-colors hover:text-[#0F172A]"
               >
                 Sohoj Tools
               </Link>
               <span>/</span>
               <span>Educational Tools</span>
               <span>/</span>
-              <span className="font-semibold text-gray-800">
+              <span className="font-semibold text-[#0F172A]">
                 Govt Job Photo & Sign Resizer
               </span>
             </nav>
 
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8FAFC] text-[#2563EB]">
                 <Crop size={20} />
               </div>
 
-              <h1 className="text-xl font-extrabold tracking-tight text-gray-900 md:text-2xl">
+              <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A] md:text-2xl">
                 Govt Job Photo & Sign Resizer
               </h1>
 
@@ -984,7 +984,7 @@ export default function GovtJobPhotoSignResizer() {
               onClick={() => setFavorite((value) => !value)}
               className={`rounded-xl border bg-white p-2 shadow-sm transition-colors hover:bg-gray-50 ${
                 favorite
-                  ? "border-amber-300 text-amber-500"
+                  ? "border-[#2563EB] text-[#2563EB]"
                   : "border-gray-200 text-gray-600"
               }`}
               title="Favorite"
@@ -1008,7 +1008,7 @@ export default function GovtJobPhotoSignResizer() {
           <div className="space-y-4 lg:col-span-4">
             <div className="space-y-5 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
               <div>
-                <h2 className="text-xs font-bold text-gray-900">
+                <h2 className="text-xs font-bold text-[#0F172A]">
                   Position & crop
                 </h2>
                 <p className="mt-1 text-[10px] text-gray-400">
@@ -1018,7 +1018,7 @@ export default function GovtJobPhotoSignResizer() {
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Photo 300×300 px
                   </label>
 
@@ -1026,7 +1026,7 @@ export default function GovtJobPhotoSignResizer() {
                     <button
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
-                      className="text-[10px] font-bold text-amber-600 hover:text-amber-700"
+                      className="text-[10px] font-bold text-[#2563EB] hover:text-[#2563EB]"
                     >
                       Change
                     </button>
@@ -1044,7 +1044,7 @@ export default function GovtJobPhotoSignResizer() {
                 <button
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-full rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/40 p-4 text-center transition-colors hover:border-amber-400"
+                  className="w-full rounded-xl border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/40 p-4 text-center transition-colors hover:border-[#2563EB]"
                 >
                   {photo && photoPreview ? (
                     <div className="flex items-center gap-3 text-left">
@@ -1057,7 +1057,7 @@ export default function GovtJobPhotoSignResizer() {
                       </div>
 
                       <div className="min-w-0">
-                        <div className="truncate text-xs font-bold text-gray-800">
+                        <div className="truncate text-xs font-bold text-[#0F172A]">
                           {photo.name}
                         </div>
                         <div className="mt-0.5 text-[10px] text-gray-400">
@@ -1067,10 +1067,10 @@ export default function GovtJobPhotoSignResizer() {
                     </div>
                   ) : (
                     <>
-                      <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100/80 text-amber-600">
+                      <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[#E2E8F0]/80 text-[#2563EB]">
                         <Upload size={16} />
                       </div>
-                      <div className="text-xs font-bold text-gray-800">
+                      <div className="text-xs font-bold text-[#0F172A]">
                         Upload passport photo
                       </div>
                       <div className="mt-0.5 text-[10px] text-gray-400">
@@ -1098,7 +1098,7 @@ export default function GovtJobPhotoSignResizer() {
                         onChange={(event) =>
                           setPhotoZoom(Number(event.target.value))
                         }
-                        className="w-full accent-amber-500"
+                        className="w-full accent-[#2563EB]"
                       />
                       <ZoomIn size={14} className="text-gray-400" />
                     </div>
@@ -1115,7 +1115,7 @@ export default function GovtJobPhotoSignResizer() {
                           onChange={(event) =>
                             setPhotoOffsetX(Number(event.target.value))
                           }
-                          className="mt-1 w-full accent-amber-500"
+                          className="mt-1 w-full accent-[#2563EB]"
                         />
                       </label>
 
@@ -1130,7 +1130,7 @@ export default function GovtJobPhotoSignResizer() {
                           onChange={(event) =>
                             setPhotoOffsetY(Number(event.target.value))
                           }
-                          className="mt-1 w-full accent-amber-500"
+                          className="mt-1 w-full accent-[#2563EB]"
                         />
                       </label>
                     </div>
@@ -1142,7 +1142,7 @@ export default function GovtJobPhotoSignResizer() {
                         setPhotoOffsetX(0);
                         setPhotoOffsetY(0);
                       }}
-                      className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 hover:text-gray-800"
+                      className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 hover:text-[#0F172A]"
                     >
                       <RotateCcw size={12} />
                       Reset crop
@@ -1153,7 +1153,7 @@ export default function GovtJobPhotoSignResizer() {
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Signature 300×80 px
                   </label>
 
@@ -1161,7 +1161,7 @@ export default function GovtJobPhotoSignResizer() {
                     <button
                       type="button"
                       onClick={() => signatureInputRef.current?.click()}
-                      className="text-[10px] font-bold text-amber-600 hover:text-amber-700"
+                      className="text-[10px] font-bold text-[#2563EB] hover:text-[#2563EB]"
                     >
                       Change
                     </button>
@@ -1179,7 +1179,7 @@ export default function GovtJobPhotoSignResizer() {
                 <button
                   type="button"
                   onClick={() => signatureInputRef.current?.click()}
-                  className="w-full rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/40 p-4 text-center transition-colors hover:border-amber-400"
+                  className="w-full rounded-xl border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/40 p-4 text-center transition-colors hover:border-[#2563EB]"
                 >
                   {signature && signaturePreview ? (
                     <div className="flex items-center gap-3 text-left">
@@ -1192,7 +1192,7 @@ export default function GovtJobPhotoSignResizer() {
                       </div>
 
                       <div className="min-w-0">
-                        <div className="truncate text-xs font-bold text-gray-800">
+                        <div className="truncate text-xs font-bold text-[#0F172A]">
                           {signature.name}
                         </div>
                         <div className="mt-0.5 text-[10px] text-gray-400">
@@ -1202,10 +1202,10 @@ export default function GovtJobPhotoSignResizer() {
                     </div>
                   ) : (
                     <>
-                      <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100/80 text-amber-600">
+                      <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[#E2E8F0]/80 text-[#2563EB]">
                         <Upload size={16} />
                       </div>
-                      <div className="text-xs font-bold text-gray-800">
+                      <div className="text-xs font-bold text-[#0F172A]">
                         Upload signature
                       </div>
                       <div className="mt-0.5 text-[10px] text-gray-400">
@@ -1221,7 +1221,7 @@ export default function GovtJobPhotoSignResizer() {
                     setIsSignatureStudioOpen((value) => !value);
                     setStatusMessage(null);
                   }}
-                  className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 hover:text-gray-800"
+                  className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 hover:text-[#0F172A]"
                 >
                   <PenLine size={12} />
                   {signature
@@ -1232,7 +1232,7 @@ export default function GovtJobPhotoSignResizer() {
             </div>
 
             <div className="space-y-2 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
-              <h2 className="mb-2 text-xs font-bold text-gray-900">
+              <h2 className="mb-2 text-xs font-bold text-[#0F172A]">
                 Output specs
               </h2>
               <p className="text-[11px] leading-relaxed text-gray-500">
@@ -1251,7 +1251,7 @@ export default function GovtJobPhotoSignResizer() {
           <div className="space-y-4 lg:col-span-8">
             <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-xs font-bold text-gray-900">
+                <h2 className="text-xs font-bold text-[#0F172A]">
                   Output preview
                 </h2>
 
@@ -1315,11 +1315,11 @@ export default function GovtJobPhotoSignResizer() {
                   </div>
                 ) : (
                   <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB]">
                       <ImageIcon size={24} />
                     </div>
 
-                    <h3 className="mb-1 text-xs font-bold text-gray-800">
+                    <h3 className="mb-1 text-xs font-bold text-[#0F172A]">
                       Upload photo and signature
                     </h3>
 
@@ -1332,7 +1332,7 @@ export default function GovtJobPhotoSignResizer() {
               </div>
 
               {statusMessage ? (
-                <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold text-[#2563EB]">
                   {statusMessage}
                 </div>
               ) : null}
@@ -1347,7 +1347,7 @@ export default function GovtJobPhotoSignResizer() {
                         <PenLine size={18} />
                       </div>
 
-                      <h2 className="text-sm font-bold text-gray-900">
+                      <h2 className="text-sm font-bold text-[#0F172A]">
                         Create your signature
                       </h2>
                     </div>
@@ -1363,7 +1363,7 @@ export default function GovtJobPhotoSignResizer() {
                       onClick={() => setSignatureMode("draw")}
                       className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${
                         signatureMode === "draw"
-                          ? "bg-white text-gray-900 shadow-sm"
+                          ? "bg-white text-[#0F172A] shadow-sm"
                           : "text-gray-500"
                       }`}
                     >
@@ -1375,7 +1375,7 @@ export default function GovtJobPhotoSignResizer() {
                       onClick={() => setSignatureMode("type")}
                       className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${
                         signatureMode === "type"
-                          ? "bg-white text-gray-900 shadow-sm"
+                          ? "bg-white text-[#0F172A] shadow-sm"
                           : "text-gray-500"
                       }`}
                     >
@@ -1393,7 +1393,7 @@ export default function GovtJobPhotoSignResizer() {
                         setTypedSignature(event.target.value)
                       }
                       placeholder="Type your name"
-                      className="h-10 flex-1 rounded-xl border border-gray-200 px-3 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                      className="h-10 flex-1 rounded-xl border border-gray-200 px-3 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0]"
                     />
 
                     <button
@@ -1425,7 +1425,7 @@ export default function GovtJobPhotoSignResizer() {
                     <button
                       type="button"
                       onClick={clearSignatureCanvas}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-gray-500 hover:text-gray-800"
+                      className="flex items-center gap-1 text-[10px] font-semibold text-gray-500 hover:text-[#0F172A]"
                     >
                       <Eraser size={12} />
                       Clear
@@ -1450,7 +1450,7 @@ export default function GovtJobPhotoSignResizer() {
                     <button
                       type="button"
                       onClick={() => setIsSignatureStudioOpen(false)}
-                      className="text-[10px] font-semibold text-gray-500 hover:text-gray-800"
+                      className="text-[10px] font-semibold text-gray-500 hover:text-[#0F172A]"
                     >
                       Close signature studio
                     </button>
@@ -1476,7 +1476,7 @@ export default function GovtJobPhotoSignResizer() {
               <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">
+                    <h2 className="text-sm font-bold text-[#0F172A]">
                       Export options
                     </h2>
                     <p className="mt-1 text-[10px] text-gray-400">
@@ -1488,7 +1488,7 @@ export default function GovtJobPhotoSignResizer() {
                   <button
                     type="button"
                     onClick={() => setShowExportOptions(false)}
-                    className="self-start rounded-lg px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-800 sm:self-auto"
+                    className="self-start rounded-lg px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 hover:text-[#0F172A] sm:self-auto"
                   >
                     Close
                   </button>
@@ -1509,7 +1509,7 @@ export default function GovtJobPhotoSignResizer() {
                             onClick={() => setExportFormat(format)}
                             className={`rounded-xl border px-3 py-2 text-xs font-bold uppercase transition ${
                               exportFormat === format
-                                ? "border-amber-400 bg-amber-50 text-amber-700"
+                                ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
                                 : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                             }`}
                           >
@@ -1531,7 +1531,7 @@ export default function GovtJobPhotoSignResizer() {
                         onClick={() => setExportMode("separate")}
                         className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
                           exportMode === "separate"
-                            ? "border-amber-400 bg-amber-50 text-amber-700"
+                            ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
                             : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                         }`}
                       >
@@ -1543,7 +1543,7 @@ export default function GovtJobPhotoSignResizer() {
                         onClick={() => setExportMode("zip")}
                         className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
                           exportMode === "zip"
-                            ? "border-amber-400 bg-amber-50 text-amber-700"
+                            ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
                             : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                         }`}
                       >
@@ -1567,7 +1567,7 @@ export default function GovtJobPhotoSignResizer() {
                     disabled={!canExport}
                     className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold transition sm:w-auto ${
                       canExport
-                        ? "bg-amber-500 text-white hover:bg-amber-600"
+                        ? "bg-[#2563EB] text-white hover:bg-[#2563EB]"
                         : "cursor-not-allowed bg-gray-200 text-gray-400"
                     }`}
                   >
@@ -1611,7 +1611,7 @@ export default function GovtJobPhotoSignResizer() {
               disabled={!hasInput || isProcessing}
               className={`flex-1 rounded-xl border px-5 py-2 text-xs font-bold transition sm:flex-initial ${
                 hasInput && !isProcessing
-                  ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  ? "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"
                   : "cursor-not-allowed border-gray-100 bg-gray-100 text-gray-400"
               }`}
             >
@@ -1627,7 +1627,7 @@ export default function GovtJobPhotoSignResizer() {
               disabled={!hasInput}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold transition-all sm:flex-initial ${
                 hasInput
-                  ? "cursor-pointer bg-amber-500 text-white shadow-sm hover:bg-amber-600"
+                  ? "cursor-pointer bg-[#2563EB] text-white shadow-sm hover:bg-[#2563EB]"
                   : "cursor-not-allowed bg-gray-100 text-gray-400"
               }`}
             >
@@ -1651,8 +1651,8 @@ export default function GovtJobPhotoSignResizer() {
             className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-gray-50/60"
           >
             <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-500">?</span>
-              <span className="text-xs font-bold text-gray-800">
+              <span className="font-bold text-[#2563EB]">?</span>
+              <span className="text-xs font-bold text-[#0F172A]">
                 How to use
               </span>
             </div>
@@ -1683,7 +1683,7 @@ export default function GovtJobPhotoSignResizer() {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-gray-700">
+          <h3 className="text-xs font-bold text-[#0F172A]">
             Tools in the same category
           </h3>
 
@@ -1697,7 +1697,7 @@ export default function GovtJobPhotoSignResizer() {
               </div>
 
               <div>
-                <h4 className="text-xs font-bold text-gray-800 transition-colors group-hover:text-teal-600">
+                <h4 className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-teal-600">
                   Education Board Result
                 </h4>
 
@@ -1717,7 +1717,7 @@ export default function GovtJobPhotoSignResizer() {
               </div>
 
               <div>
-                <h4 className="text-xs font-bold text-gray-800 transition-colors group-hover:text-teal-600">
+                <h4 className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-teal-600">
                   National University Result
                 </h4>
 

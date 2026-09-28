@@ -24,27 +24,27 @@ export default function FloatingToolbar({
   return (
     <div
       data-print-control="true"
-      className="screen-only absolute left-1 top-1 z-[60] flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-[0_12px_28px_rgba(17,24,39,0.14)]"
+      className="screen-only absolute left-1 top-1 z-[60] flex items-center gap-1 rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-[0_12px_28px_rgba(17,24,39,0.14)]"
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
       <button
         type="button"
         onClick={() => adjustFont(-5)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         title="Smaller text"
       >
         <Minus size={12} />
       </button>
 
-      <span className="min-w-10 text-center text-[8px] font-extrabold text-gray-600">
+      <span className="min-w-10 text-center text-[8px] font-extrabold text-[#0F172A]">
         {annotation.fontScale}%
       </span>
 
       <button
         type="button"
         onClick={() => adjustFont(5)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         title="Larger text"
       >
         <Plus size={12} />
@@ -57,8 +57,8 @@ export default function FloatingToolbar({
         }
         className={`flex h-7 w-7 items-center justify-center rounded-lg ${
           annotation.fontWeight === 700
-            ? "bg-gray-900 text-white"
-            : "text-gray-500 hover:bg-gray-100"
+            ? "bg-[#0F172A] text-white"
+            : "text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         }`}
         title="Bold"
       >
@@ -74,15 +74,15 @@ export default function FloatingToolbar({
         }
         className={`flex h-7 w-7 items-center justify-center rounded-lg ${
           annotation.fontStyle === "italic"
-            ? "bg-gray-900 text-white"
-            : "text-gray-500 hover:bg-gray-100"
+            ? "bg-[#0F172A] text-white"
+            : "text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         }`}
         title="Italic"
       >
         <Italic size={12} />
       </button>
 
-      <div className="mx-0.5 h-5 w-px bg-gray-200" />
+      <div className="mx-0.5 h-5 w-px bg-[#E2E8F0]" />
 
       {ALIGN_OPTIONS.map((align) => (
         <button
@@ -91,8 +91,8 @@ export default function FloatingToolbar({
           onClick={() => onUpdate({ textAlign: align })}
           className={`rounded-md px-1.5 py-1 text-[8px] font-bold uppercase ${
             annotation.textAlign === align
-              ? "bg-orange-50 text-[#F3A847]"
-              : "text-gray-500 hover:bg-gray-100"
+              ? "bg-[#E2E8F0] text-[#2563EB]"
+              : "text-[#0F172A]/70 hover:bg-[#E2E8F0]"
           }`}
           title={`Align ${align}`}
         >
@@ -103,7 +103,7 @@ export default function FloatingToolbar({
       <button
         type="button"
         onClick={onDelete}
-        className="ml-0.5 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500"
+        className="ml-0.5 flex h-7 w-7 items-center justify-center rounded-lg text-[#0F172A]/55 hover:bg-red-50 hover:text-red-500"
         title="Delete selected area"
       >
         <Trash2 size={12} />

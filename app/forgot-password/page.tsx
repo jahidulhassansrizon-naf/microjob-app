@@ -113,25 +113,28 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] flex flex-col justify-center items-center px-4 py-12">
-      <div className="max-w-md w-full bg-white border border-gray-100 rounded-3xl p-8 shadow-sm space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans flex flex-col justify-center items-center px-4 py-12 relative">
+      <div className="max-w-md w-full bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 space-y-6 relative overflow-hidden">
+        {/* Accent Top Gradient Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2563EB] via-[#10B981] to-[#2563EB]" />
+
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-800 transition"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#2563EB] transition-colors"
         >
           <ArrowLeft size={14} /> Back to Sign In
         </Link>
 
         <div>
-          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 mb-3">
+          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#2563EB] mb-3">
             {step === 1 ? <KeyRound size={22} /> : <ShieldCheck size={22} />}
           </div>
 
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-[#0F172A]">
             {step === 1 ? "Forgot Password?" : "Reset Password"}
           </h2>
 
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {step === 1
               ? "Enter your account email to receive a password reset OTP code."
               : `Enter the 6-digit OTP code sent to ${email}`}
@@ -139,13 +142,13 @@ export default function ForgotPasswordPage() {
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600">
             {error}
           </div>
         )}
 
         {message && (
-          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs font-semibold text-emerald-600">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-[#10B981]">
             {message}
           </div>
         )}
@@ -153,14 +156,14 @@ export default function ForgotPasswordPage() {
         {step === 1 ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
                 Email Address
               </label>
 
               <div className="relative">
                 <Mail
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
                 <input
@@ -169,7 +172,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-amber-50/30 border border-amber-100 focus:border-amber-400 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none transition"
+                  className="w-full bg-white border border-[#E2E8F0] focus:border-[#2563EB] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-slate-400 outline-none transition-all"
                 />
               </div>
             </div>
@@ -177,7 +180,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#FF5722] hover:bg-[#E64A19] disabled:opacity-60 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
+              className="w-full bg-[#2563EB] hover:bg-[#1d4ed8] disabled:opacity-60 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-[0.99] cursor-pointer"
             >
               {loading && <Loader2 size={15} className="animate-spin" />}
               {loading ? "Sending OTP..." : "Send OTP Code"}
@@ -186,7 +189,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
                 OTP Verification Code
               </label>
 
@@ -197,19 +200,19 @@ export default function ForgotPasswordPage() {
                 placeholder="Enter 6-digit OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full bg-amber-50/30 border border-amber-100 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs outline-none text-center tracking-widest font-bold transition"
+                className="w-full bg-white border border-[#E2E8F0] focus:border-[#2563EB] rounded-xl px-4 py-2.5 text-xs text-[#0F172A] placeholder-slate-400 outline-none text-center tracking-widest font-bold transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
                 New Password
               </label>
 
               <div className="relative">
                 <Lock
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
                 <input
@@ -218,20 +221,20 @@ export default function ForgotPasswordPage() {
                   placeholder="Enter new password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-amber-50/30 border border-amber-100 focus:border-amber-400 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none transition"
+                  className="w-full bg-white border border-[#E2E8F0] focus:border-[#2563EB] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-slate-400 outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
                 Confirm New Password
               </label>
 
               <div className="relative">
                 <Lock
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
                 <input
@@ -240,7 +243,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-amber-50/30 border border-amber-100 focus:border-amber-400 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none transition"
+                  className="w-full bg-white border border-[#E2E8F0] focus:border-[#2563EB] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-slate-400 outline-none transition-all"
                 />
               </div>
             </div>
@@ -248,7 +251,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#FF5722] hover:bg-[#E64A19] disabled:opacity-60 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
+              className="w-full bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 active:scale-[0.99] cursor-pointer"
             >
               {loading && <Loader2 size={15} className="animate-spin" />}
               {loading ? "Resetting Password..." : "Reset Password"}

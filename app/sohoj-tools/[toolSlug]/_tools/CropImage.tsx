@@ -17,7 +17,6 @@ import {
   RotateCcw,
   Image as ImageIcon,
   CreditCard,
-  Wand2,
   Download,
   Upload,
 } from "lucide-react";
@@ -227,7 +226,7 @@ export default function CropImage() {
   };
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       <input
         type="file"
         ref={fileInputRef}
@@ -240,7 +239,7 @@ export default function CropImage() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Sohoj Tools</span>
@@ -248,7 +247,7 @@ export default function CropImage() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">Crop Image</span>
+        <span className="font-semibold text-[#0F172A]">Crop Image</span>
       </div>
 
       {/* Header Card */}
@@ -259,7 +258,7 @@ export default function CropImage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">Crop Image</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">Crop Image</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -287,7 +286,7 @@ export default function CropImage() {
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-5 self-start">
           {/* Aspect Ratio Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-gray-900">Aspect ratio</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Aspect ratio</h2>
             <div className="grid grid-cols-5 gap-2">
               {[
                 { label: "Free", value: "free" },
@@ -316,7 +315,7 @@ export default function CropImage() {
 
           {/* Output Format Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-gray-900">Output format</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Output format</h2>
             <div className="grid grid-cols-4 gap-2">
               {["JPG", "PNG", "WebP", "AVIF"].map((format) => (
                 <button
@@ -338,7 +337,7 @@ export default function CropImage() {
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={handleReset}
-              className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-800 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5"
             >
               <RotateCcw size={13} /> Reset
             </button>
@@ -360,7 +359,7 @@ export default function CropImage() {
         <div className="lg:col-span-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-gray-900">Crop preview</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">Crop preview</h2>
               <div className="flex items-center gap-2">
                 {imgSrc && (
                   <button
@@ -392,13 +391,13 @@ export default function CropImage() {
                 className={`border border-dashed rounded-2xl p-10 min-h-[360px] flex flex-col items-center justify-center flex-1 text-center my-1 cursor-pointer transition-all ${
                   isDragging
                     ? "bg-sky-50/80 border-sky-400 scale-[0.99]"
-                    : "bg-[#F8F9FA] border-gray-200 hover:border-sky-300 hover:bg-sky-50/20"
+                    : "bg-[#F8FAFC] border-gray-200 hover:border-sky-300 hover:bg-sky-50/20"
                 }`}
               >
                 <div className="w-14 h-14 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mb-3">
                   <ImageIcon size={28} />
                 </div>
-                <span className="text-xs font-bold text-gray-800 block">
+                <span className="text-xs font-bold text-[#0F172A] block">
                   Click or drag an image here
                 </span>
                 <span className="text-[10px] text-gray-400 mt-1">
@@ -409,7 +408,7 @@ export default function CropImage() {
                 </span>
               </div>
             ) : (
-              <div className="flex-1 bg-[#F8F9FA] border border-gray-100 rounded-2xl p-3 flex items-center justify-center min-h-[360px]">
+              <div className="flex-1 bg-[#F8FAFC] border border-gray-100 rounded-2xl p-3 flex items-center justify-center min-h-[360px]">
                 <ReactCrop
                   crop={crop}
                   onChange={(c) => setCrop(c)}
@@ -433,7 +432,7 @@ export default function CropImage() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -445,7 +444,7 @@ export default function CropImage() {
               <ImageIcon size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-sky-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors">
                 Image Size Reducer
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -463,7 +462,7 @@ export default function CropImage() {
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-sky-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors">
                 NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -478,10 +477,9 @@ export default function CropImage() {
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-sky-200 transition-all flex items-start gap-3 group"
           >
             <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0">
-              <Wand2 size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-sky-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors">
                 Remove Background
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">

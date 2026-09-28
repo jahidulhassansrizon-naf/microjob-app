@@ -24,20 +24,20 @@ export default function EducationBoardResult() {
     setOpenedOfficialPortal(true);
   };
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {" "}
       {/* Breadcrumb */}{" "}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         {" "}
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           {" "}
           <ArrowLeft size={14} /> <span>Back to Tools</span>{" "}
         </Link>{" "}
         <span>/</span> <span>Educational Tools</span> <span>/</span>{" "}
-        <span className="font-semibold text-gray-900">
+        <span className="font-semibold text-[#0F172A]">
           {" "}
           Education Board Result{" "}
         </span>{" "}
@@ -55,7 +55,7 @@ export default function EducationBoardResult() {
             {" "}
             <div className="flex items-center gap-2">
               {" "}
-              <h1 className="text-lg font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-[#0F172A]">
                 {" "}
                 Education Board Result{" "}
               </h1>{" "}
@@ -101,7 +101,7 @@ export default function EducationBoardResult() {
             {" "}
             <div>
               {" "}
-              <h2 className="text-sm font-bold text-gray-900">
+              <h2 className="text-sm font-bold text-[#0F172A]">
                 {" "}
                 Check your official result{" "}
               </h2>{" "}
@@ -123,7 +123,7 @@ export default function EducationBoardResult() {
                 </div>{" "}
                 <div className="min-w-0">
                   {" "}
-                  <h3 className="text-xs font-bold text-gray-900">
+                  <h3 className="text-xs font-bold text-[#0F172A]">
                     {" "}
                     Official Education Board Website{" "}
                   </h3>{" "}
@@ -173,7 +173,7 @@ export default function EducationBoardResult() {
                 </div>{" "}
                 <div>
                   {" "}
-                  <h3 className="text-[11px] font-bold text-gray-800">
+                  <h3 className="text-[11px] font-bold text-[#0F172A]">
                     {" "}
                     Why are you being redirected?{" "}
                   </h3>{" "}
@@ -189,7 +189,7 @@ export default function EducationBoardResult() {
             {/* Steps */}{" "}
             <div>
               {" "}
-              <h3 className="text-[11px] font-bold text-gray-800 mb-2">
+              <h3 className="text-[11px] font-bold text-[#0F172A] mb-2">
                 {" "}
                 What to do next{" "}
               </h3>{" "}
@@ -204,7 +204,7 @@ export default function EducationBoardResult() {
                   <p className="text-[10px] text-gray-500 leading-relaxed">
                     {" "}
                     Click{" "}
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold text-[#0F172A]">
                       {" "}
                       Open Official Result Website{" "}
                     </span>{" "}
@@ -255,7 +255,7 @@ export default function EducationBoardResult() {
           {" "}
           <div className="flex items-center justify-between">
             {" "}
-            <h2 className="text-xs font-bold text-gray-700">
+            <h2 className="text-xs font-bold text-[#0F172A]">
               {" "}
               Official result access{" "}
             </h2>{" "}
@@ -272,7 +272,7 @@ export default function EducationBoardResult() {
                 {" "}
                 <GraduationCap size={30} />{" "}
               </div>{" "}
-              <h3 className="mt-4 text-base font-bold text-gray-900">
+              <h3 className="mt-4 text-base font-bold text-[#0F172A]">
                 {" "}
                 View your result on the official website{" "}
               </h3>{" "}
@@ -328,12 +328,12 @@ export default function EducationBoardResult() {
         <button
           type="button"
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-gray-800 hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
         >
           {" "}
           <div className="flex items-center gap-2">
             {" "}
-            <span className="text-orange-500"> ? </span>{" "}
+            <span className="text-[#2563EB]"> ? </span>{" "}
             <span> How to use </span>{" "}
           </div>{" "}
           {showHowToUse ? (
@@ -350,7 +350,7 @@ export default function EducationBoardResult() {
               <p>
                 {" "}
                 1. Click the{" "}
-                <span className="font-semibold text-gray-700">
+                <span className="font-semibold text-[#0F172A]">
                   {" "}
                   Open Official Result Website{" "}
                 </span>{" "}
@@ -374,7 +374,7 @@ export default function EducationBoardResult() {
       {/* Related Tools */}{" "}
       <div className="space-y-3 pt-2">
         {" "}
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           {" "}
           Tools in the same category{" "}
         </h3>{" "}
@@ -391,7 +391,7 @@ export default function EducationBoardResult() {
             </div>{" "}
             <div>
               {" "}
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-emerald-600 transition-colors">
                 {" "}
                 National University Result{" "}
               </h4>{" "}
@@ -412,7 +412,7 @@ export default function EducationBoardResult() {
             </div>{" "}
             <div>
               {" "}
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-blue-600 transition-colors">
                 {" "}
                 ATS Friendly CV Maker{" "}
               </h4>{" "}

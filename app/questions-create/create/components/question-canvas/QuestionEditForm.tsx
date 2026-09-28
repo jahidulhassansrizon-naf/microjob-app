@@ -40,9 +40,9 @@ export default function QuestionEditForm({
   onSave: () => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-[#F3A847]/30 bg-white p-2 print:hidden">
+    <div className="space-y-2 rounded-lg border border-[#2563EB]/30 bg-white p-2 print:hidden">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[8px] font-extrabold uppercase tracking-[0.08em] text-gray-400">
+        <span className="text-[8px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/55">
           Edit Question {questionNumber}
         </span>
 
@@ -52,18 +52,18 @@ export default function QuestionEditForm({
             event.stopPropagation();
             setShowReplace(!showReplace);
           }}
-          className="rounded-md border border-gray-200 px-2 py-1 text-[8px] font-bold text-gray-500 hover:bg-gray-50"
+          className="rounded-md border border-[#E2E8F0] px-2 py-1 text-[8px] font-bold text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         >
           Change question
         </button>
       </div>
 
       {showReplace ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
+        <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-2">
           <select
             defaultValue=""
             onChange={(event) => onReplace(event.target.value)}
-            className="h-8 w-full rounded-md border border-gray-200 bg-white px-2 text-[8px] font-semibold text-gray-600 outline-none focus:border-[#F3A847]"
+            className="h-8 w-full rounded-md border border-[#E2E8F0] bg-white px-2 text-[8px] font-semibold text-[#0F172A] outline-none focus:border-[#2563EB]"
           >
             <option value="">Select replacement…</option>
             {replacementCandidates
@@ -86,7 +86,7 @@ export default function QuestionEditForm({
           }))
         }
         rows={3}
-        className="w-full resize-y rounded-md border border-gray-200 px-2 py-1.5 text-[9px] leading-relaxed text-gray-700 outline-none focus:border-[#F3A847]"
+        className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]"
         placeholder="Question text"
         onClick={(event) => event.stopPropagation()}
       />
@@ -102,7 +102,7 @@ export default function QuestionEditForm({
               }))
             }
             rows={3}
-            className="w-full resize-y rounded-md border border-gray-200 px-2 py-1.5 text-[9px] leading-relaxed text-gray-700 outline-none focus:border-[#F3A847]"
+            className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]"
             placeholder="Stimulus / context"
             onClick={(event) => event.stopPropagation()}
           />
@@ -125,7 +125,7 @@ export default function QuestionEditForm({
                     ),
                   }))
                 }
-                className="h-8 rounded-md border border-gray-200 px-2 text-[8px] font-bold outline-none focus:border-[#F3A847]"
+                className="h-8 rounded-md border border-[#E2E8F0] px-2 text-[8px] font-bold outline-none focus:border-[#2563EB]"
                 onClick={(event) => event.stopPropagation()}
                 placeholder="a"
               />
@@ -144,7 +144,7 @@ export default function QuestionEditForm({
                   }))
                 }
                 rows={2}
-                className="w-full resize-y rounded-md border border-gray-200 px-2 py-1.5 text-[8px] leading-relaxed outline-none focus:border-[#F3A847]"
+                className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[8px] leading-relaxed outline-none focus:border-[#2563EB]"
                 onClick={(event) => event.stopPropagation()}
               />
             </div>
@@ -167,7 +167,7 @@ export default function QuestionEditForm({
                   ),
                 }))
               }
-              className="h-8 rounded-md border border-gray-200 px-2 text-[8px] outline-none focus:border-[#F3A847]"
+              className="h-8 rounded-md border border-[#E2E8F0] px-2 text-[8px] outline-none focus:border-[#2563EB]"
               onClick={(event) => event.stopPropagation()}
             />
           ))}
@@ -181,7 +181,7 @@ export default function QuestionEditForm({
             event.stopPropagation();
             onCancel();
           }}
-          className="rounded-md border border-gray-200 px-2.5 py-1 text-[8px] font-bold text-gray-500 hover:bg-gray-50"
+          className="rounded-md border border-[#E2E8F0] px-2.5 py-1 text-[8px] font-bold text-[#0F172A]/70 hover:bg-[#E2E8F0]"
         >
           Cancel
         </button>
@@ -192,7 +192,7 @@ export default function QuestionEditForm({
             event.stopPropagation();
             onSave();
           }}
-          className="rounded-md bg-[#F3A847] px-2.5 py-1 text-[8px] font-bold text-white"
+          className="rounded-md bg-[#2563EB] px-2.5 py-1 text-[8px] font-bold text-white"
         >
           Save changes
         </button>

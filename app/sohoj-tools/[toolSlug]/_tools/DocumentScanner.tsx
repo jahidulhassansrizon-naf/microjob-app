@@ -15,7 +15,6 @@ import {
   ImagePlus,
   Plus,
   Minus,
-  Sparkles,
   X,
   Loader2,
   Columns,
@@ -2018,7 +2017,7 @@ export default function DocumentScanner() {
     void handleApplyServerMode("python-color");
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
+    <div className="w-full min-h-screen bg-slate-50 text-[#0F172A] font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
       <canvas ref={processedCanvasRef} className="hidden" />
 
       <input
@@ -2060,7 +2059,7 @@ export default function DocumentScanner() {
             </div>
 
             <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+              <h1 className="text-base sm:text-lg font-bold text-[#0F172A] leading-tight">
                 Document Print
               </h1>
               <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
@@ -2232,7 +2231,7 @@ export default function DocumentScanner() {
                     <button
                       onClick={handleReset}
                       disabled={isPythonLoading || isSavingDocument}
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Reset all edits, crops, and adjustments to original state"
                     >
                       <RotateCcw size={15} />
@@ -2242,7 +2241,7 @@ export default function DocumentScanner() {
                     <button
                       onClick={() => replaceFileInputRef.current?.click()}
                       disabled={isPythonLoading || isSavingDocument}
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Replace current image with a new file"
                     >
                       <ImagePlus size={15} />
@@ -2256,7 +2255,7 @@ export default function DocumentScanner() {
                       disabled={
                         isPythonLoading || isManualCropping || isSavingDocument
                       }
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title={
                         isManualCropping
                           ? "Finish manual crop first"
@@ -2303,7 +2302,7 @@ export default function DocumentScanner() {
                           size={32}
                           className="text-emerald-600 animate-spin"
                         />
-                        <span className="text-xs font-bold text-slate-900">
+                        <span className="text-xs font-bold text-[#0F172A]">
                           Processing Image...
                         </span>
                       </div>
@@ -2315,7 +2314,7 @@ export default function DocumentScanner() {
                           size={30}
                           className="text-emerald-600 animate-spin"
                         />
-                        <span className="text-xs font-bold text-slate-900">
+                        <span className="text-xs font-bold text-[#0F172A]">
                           Saving document...
                         </span>
                         <span className="text-[10px] text-slate-500">
@@ -2434,7 +2433,7 @@ export default function DocumentScanner() {
 
           <div className="w-full lg:w-[320px] shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Crop
               </div>
@@ -2463,7 +2462,7 @@ export default function DocumentScanner() {
             </div>
 
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Magic
               </div>
@@ -2486,13 +2485,12 @@ export default function DocumentScanner() {
                 }
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles size={14} />
                 Document Clean
               </button>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Mode
               </div>
@@ -2519,7 +2517,7 @@ export default function DocumentScanner() {
 
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                   Adjustments
                 </div>
@@ -2531,7 +2529,7 @@ export default function DocumentScanner() {
                     images.length === 0 ||
                     (blackness === 0 && contrast === 0 && brightness === 0)
                   }
-                  className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-800 text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-[#0F172A] text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Reset only adjustments"
                 >
                   Reset
@@ -2618,7 +2616,7 @@ export default function DocumentScanner() {
                 </p>
                 <h2
                   id="saved-document-preview-title"
-                  className="text-sm sm:text-base font-bold text-slate-900 truncate"
+                  className="text-sm sm:text-base font-bold text-[#0F172A] truncate"
                 >
                   {previewSavedDocument.name}
                 </h2>
@@ -2707,14 +2705,14 @@ export default function DocumentScanner() {
         >
           <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0">
                 <Save size={19} />
               </div>
 
               <div className="min-w-0">
                 <h2
                   id="unsaved-document-title"
-                  className="text-sm font-bold text-slate-900"
+                  className="text-sm font-bold text-[#0F172A]"
                 >
                   Save current document?
                 </h2>
@@ -2750,7 +2748,7 @@ export default function DocumentScanner() {
       <section className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-sm font-bold text-[#0F172A]">
               Saved Documents
             </h2>
             <p className="text-[10px] text-slate-400 mt-0.5">
@@ -2831,7 +2829,7 @@ export default function DocumentScanner() {
                   <div className="p-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold text-slate-800 truncate">
+                        <p className="text-[11px] font-bold text-[#0F172A] truncate">
                           {savedDocument.name}
                         </p>
                         <p className="text-[10px] text-slate-400 mt-0.5">

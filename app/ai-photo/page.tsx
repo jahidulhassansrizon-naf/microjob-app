@@ -1387,13 +1387,13 @@ export default function AITemplatePage() {
 
       <style jsx global>{`
         :root {
-          --orange: #ff9e0b;
-          --orange2: #ff6a1a;
-          --text: #171717;
-          --muted: #6f7175;
-          --page: #f5f5f6;
-          --line: #e5e5e7;
-          --navy: #101a2c;
+          --primary: #2563eb;
+          --secondary: #e2e8f0;
+          --accent: #10b981;
+          --text: #0f172a;
+          --muted: #64748b;
+          --page: #f8fafc;
+          --line: #e2e8f0;
         }
 
         * {
@@ -1432,16 +1432,16 @@ export default function AITemplatePage() {
           background:
             radial-gradient(
               circle at 38% 88%,
-              rgba(190, 188, 255, 0.26),
+              rgba(37, 99, 235, 0.08),
               transparent 34%
             ),
             radial-gradient(
               circle at 72% 94%,
-              rgba(255, 210, 171, 0.22),
+              rgba(16, 185, 129, 0.08),
               transparent 34%
             ),
-            linear-gradient(180deg, #fbfbfc 0%, #f8f8f9 55%, #f7f7f8 100%);
-          border-top: 1px solid #ededee;
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
+          border-top: 1px solid var(--line);
         }
         .hero-inner {
           width: min(100%, 1000px);
@@ -1453,12 +1453,12 @@ export default function AITemplatePage() {
           align-items: center;
           justify-content: center;
           padding: 8px 18px;
-          border: 1.5px solid #efb84f;
+          border: 1.5px solid #93c5fd;
           border-radius: 999px;
-          color: #c88911;
+          color: var(--primary);
           font-size: 13px;
           font-weight: 700;
-          background: #fffaf0;
+          background: #eff6ff;
         }
         .hero h1 {
           margin: 20px 0 17px;
@@ -1466,13 +1466,14 @@ export default function AITemplatePage() {
           line-height: 1;
           letter-spacing: -1.6px;
           font-weight: 800;
+          color: var(--text);
         }
         .hero h1 span {
-          color: var(--orange);
+          color: var(--primary);
         }
         .hero p {
           margin: 0;
-          color: #53565b;
+          color: var(--muted);
           font-size: 16px;
           line-height: 1.45;
         }
@@ -1480,14 +1481,14 @@ export default function AITemplatePage() {
           width: min(100%, 434px);
           height: 53px;
           margin: 32px auto 0;
-          border: 2px solid #efb84f;
+          border: 2px solid #93c5fd;
           border-radius: 28px;
           background: white;
           display: flex;
           align-items: center;
           gap: 10px;
           padding: 0 13px 0 20px;
-          box-shadow: 0 4px 13px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 4px 13px rgba(37, 99, 235, 0.06);
         }
         .search-wrap input {
           min-width: 0;
@@ -1495,16 +1496,16 @@ export default function AITemplatePage() {
           border: 0;
           outline: none;
           font-size: 14px;
-          color: #4c4e53;
+          color: var(--text);
           background: transparent;
         }
         .search-wrap input::placeholder {
-          color: #989a9e;
+          color: #94a3b8;
         }
         .search-wrap kbd {
-          border: 1px solid #d8d1f9;
-          background: #f4f2ff;
-          color: #7c73c9;
+          border: 1px solid var(--line);
+          background: #f1f5f9;
+          color: #475569;
           border-radius: 5px;
           font-size: 10px;
           font-weight: 800;
@@ -1516,7 +1517,7 @@ export default function AITemplatePage() {
           padding: 0;
           border: 0;
           background: none;
-          color: #7d72d2;
+          color: var(--primary);
           cursor: pointer;
           display: grid;
           place-items: center;
@@ -1526,7 +1527,7 @@ export default function AITemplatePage() {
           position: sticky;
           top: 0;
           z-index: 20;
-          background: rgba(255, 255, 255, 0.97);
+          background: rgba(248, 250, 252, 0.95);
           backdrop-filter: blur(12px);
           border-top: 1px solid var(--line);
           border-bottom: 1px solid var(--line);
@@ -1550,8 +1551,8 @@ export default function AITemplatePage() {
         .filter-pill,
         .more-button {
           border: 1px solid transparent;
-          background: #f0f1f4;
-          color: #63666c;
+          background: var(--secondary);
+          color: #475569;
           height: 33px;
           padding: 0 15px;
           border-radius: 999px;
@@ -1563,7 +1564,7 @@ export default function AITemplatePage() {
         .filter-pill.active {
           color: white;
           border-color: transparent;
-          background: linear-gradient(90deg, #ff9d00, #d86cff);
+          background: var(--primary);
         }
         .more-wrap {
           position: relative;
@@ -1571,7 +1572,7 @@ export default function AITemplatePage() {
         }
         .more-button {
           background: white;
-          border-color: #dedfe4;
+          border-color: var(--line);
           display: flex;
           align-items: center;
           gap: 7px;
@@ -1583,10 +1584,10 @@ export default function AITemplatePage() {
           top: 42px;
           width: 230px;
           padding: 8px 0;
-          border: 1px solid #e1e1e4;
+          border: 1px solid var(--line);
           background: white;
           border-radius: 9px;
-          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.11);
+          box-shadow: 0 12px 34px rgba(15, 23, 42, 0.1);
         }
         .more-menu button {
           width: 100%;
@@ -1594,12 +1595,12 @@ export default function AITemplatePage() {
           background: white;
           text-align: left;
           padding: 10px 15px;
-          color: #55585e;
+          color: var(--text);
           font-size: 12px;
           cursor: pointer;
         }
         .more-menu button:hover {
-          background: #fafafa;
+          background: var(--page);
         }
 
         .content-shell {
@@ -1622,11 +1623,12 @@ export default function AITemplatePage() {
           font-size: 15px;
           font-weight: 800;
           letter-spacing: -0.25px;
+          color: var(--text);
         }
         .see-all {
           border: 0;
           background: none;
-          color: #7469cc;
+          color: var(--primary);
           font-size: 12px;
           cursor: pointer;
           font-weight: 600;
@@ -1656,7 +1658,7 @@ export default function AITemplatePage() {
           overflow: hidden;
           border: 0;
           border-radius: 16px;
-          background: #ddd;
+          background: var(--secondary);
           cursor: pointer;
           text-align: left;
           box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
@@ -1682,7 +1684,7 @@ export default function AITemplatePage() {
           z-index: 3;
           padding: 4px 8px;
           border-radius: 999px;
-          background: rgba(25, 25, 22, 0.74);
+          background: rgba(15, 23, 42, 0.75);
           color: #fff;
           font-size: 9px;
           font-weight: 700;
@@ -1698,8 +1700,8 @@ export default function AITemplatePage() {
           background: linear-gradient(
             to bottom,
             transparent 2%,
-            rgba(0, 0, 0, 0.03) 20%,
-            rgba(0, 0, 0, 0.72) 100%
+            rgba(15, 23, 42, 0.03) 20%,
+            rgba(15, 23, 42, 0.78) 100%
           );
         }
         .card-caption {
@@ -1735,20 +1737,20 @@ export default function AITemplatePage() {
           gap: 5px;
           padding: 10px 13px;
           border-radius: 8px;
-          background: rgba(255, 122, 35, 0.96);
+          background: var(--accent);
           color: white;
           font-size: 11px;
           font-weight: 800;
           white-space: nowrap;
           transition: all 0.18s ease;
-          box-shadow: 0 7px 20px rgba(0, 0, 0, 0.17);
+          box-shadow: 0 7px 20px rgba(16, 185, 129, 0.3);
         }
         .template-card:hover .create-button {
           opacity: 1;
           transform: translate(-50%, -50%) translateY(0);
         }
         .template-card:hover img {
-          filter: brightness(0.82);
+          filter: brightness(0.85);
         }
 
         .empty-state {
@@ -1761,15 +1763,16 @@ export default function AITemplatePage() {
         .empty-state h3 {
           margin: 0 0 7px;
           font-size: 20px;
+          color: var(--text);
         }
         .empty-state p {
           margin: 0 0 15px;
-          color: #777;
+          color: var(--muted);
         }
         .empty-state button {
           border: 0;
           color: white;
-          background: linear-gradient(90deg, #ff9d00, #ff7b27);
+          background: var(--primary);
           padding: 10px 16px;
           border-radius: 999px;
           cursor: pointer;
@@ -1778,7 +1781,7 @@ export default function AITemplatePage() {
 
         .faq-section {
           background: white;
-          border-top: 1px solid #eee;
+          border-top: 1px solid var(--line);
           padding: 57px 24px 68px;
           text-align: center;
         }
@@ -1787,10 +1790,10 @@ export default function AITemplatePage() {
           align-items: center;
           justify-content: center;
           padding: 8px 18px;
-          border: 1.5px solid #efb84f;
+          border: 1.5px solid #93c5fd;
           border-radius: 999px;
-          color: #c88911;
-          background: #fffaf0;
+          color: var(--primary);
+          background: #eff6ff;
           font-size: 12px;
           font-weight: 700;
         }
@@ -1799,13 +1802,14 @@ export default function AITemplatePage() {
           font-size: 31px;
           line-height: 1.05;
           letter-spacing: -0.7px;
+          color: var(--text);
         }
         .faq-section h2 span {
-          color: #ef8511;
+          color: var(--primary);
         }
         .faq-section > p {
           margin: 0 auto 34px;
-          color: #56585c;
+          color: var(--muted);
           font-size: 14px;
         }
         .faq-list {
@@ -1820,7 +1824,7 @@ export default function AITemplatePage() {
           width: 100%;
           min-height: 54px;
           padding: 0 16px;
-          border: 1px solid #e2e2e4;
+          border: 1px solid var(--line);
           border-radius: 11px;
           background: white;
           display: grid;
@@ -1836,27 +1840,27 @@ export default function AITemplatePage() {
         .faq-index {
           font-size: 10px;
           font-weight: 800;
-          color: #bcbec3;
+          color: #94a3b8;
         }
         .faq-question {
           font-size: 12px;
           font-weight: 700;
-          color: #414348;
+          color: var(--text);
         }
         .faq-icon {
           width: 26px;
           height: 26px;
           border-radius: 50%;
-          border: 1px solid #e3e3e5;
-          background: #f9f9f9;
+          border: 1px solid var(--line);
+          background: var(--page);
           display: grid;
           place-items: center;
-          color: #8e9095;
+          color: #64748b;
         }
         .faq-answer {
           grid-column: 2 / 3;
           padding: 0 0 15px;
-          color: #73757a;
+          color: var(--muted);
           font-size: 12px;
           line-height: 1.55;
         }

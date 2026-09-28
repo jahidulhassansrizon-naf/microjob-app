@@ -160,7 +160,7 @@ function PosterLogo({ color }: { color: Poster["color"] }) {
       className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 bg-white text-xs font-black ${
         color === "red"
           ? "border-red-200 text-red-600"
-          : "border-emerald-100 text-[#0B8F62]"
+          : "border-emerald-100 text-[#10B981]"
       }`}
     >
       বাংলা
@@ -176,20 +176,20 @@ function downloadPoster(poster: Poster) {
   const titleSvg = titleLines
     .map(
       (line, index) =>
-        `<text x="360" y="${138 + index * 28}" text-anchor="middle" font-size="25" font-weight="900" fill="#F4D24D">${line}</text>`,
+        `<text x="360" y="${138 + index * 28}" text-anchor="middle" font-size="25" font-weight="900" fill="#2563EB">${line}</text>`,
     )
     .join("");
 
   const svg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="720" height="1040" viewBox="0 0 720 1040">
-    <rect width="720" height="1040" fill="#0A4432"/>
-    <rect x="16" y="16" width="688" height="1008" rx="22" fill="none" stroke="#D4C44A" stroke-width="5"/>
-    <rect x="28" y="28" width="664" height="984" rx="18" fill="none" stroke="#507A61" stroke-width="2"/>
+    <rect width="720" height="1040" fill="#0F172A"/>
+    <rect x="16" y="16" width="688" height="1008" rx="22" fill="none" stroke="#2563EB" stroke-width="5"/>
+    <rect x="28" y="28" width="664" height="984" rx="18" fill="none" stroke="#E2E8F0" stroke-width="2"/>
 
     <rect x="45" y="45" width="84" height="84" rx="16" fill="#FFFFFF"/>
-    <text x="87" y="94" text-anchor="middle" font-size="20" font-weight="900" fill="#09855C">বাংলা</text>
+    <text x="87" y="94" text-anchor="middle" font-size="20" font-weight="900" fill="#10B981">বাংলা</text>
 
-    <rect x="544" y="45" width="128" height="70" rx="15" fill="#D1493D"/>
+    <rect x="544" y="45" width="128" height="70" rx="15" fill="#2563EB"/>
     <text x="608" y="75" text-anchor="middle" font-size="15" font-weight="900" fill="#FFFFFF">Recruitment</text>
     <text x="608" y="96" text-anchor="middle" font-size="15" font-weight="900" fill="#FFFFFF">Notice</text>
 
@@ -197,40 +197,40 @@ function downloadPoster(poster: Poster) {
 
     <text x="360" y="256" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">${poster.subtitle}</text>
 
-    <rect x="45" y="285" width="300" height="44" rx="22" fill="#062E22"/>
-    <rect x="375" y="285" width="300" height="44" rx="22" fill="#062E22"/>
+    <rect x="45" y="285" width="300" height="44" rx="22" fill="#0F172A"/>
+    <rect x="375" y="285" width="300" height="44" rx="22" fill="#0F172A"/>
 
     <text x="65" y="313" font-size="15" font-weight="900" fill="#FFFFFF">Start:</text>
-    <text x="120" y="313" font-size="15" font-weight="900" fill="#F4D24D">${poster.published}</text>
+    <text x="120" y="313" font-size="15" font-weight="900" fill="#2563EB">${poster.published}</text>
 
     <text x="395" y="313" font-size="15" font-weight="900" fill="#FFFFFF">Deadline:</text>
-    <text x="490" y="313" font-size="15" font-weight="900" fill="#F4D24D">${poster.deadline}</text>
+    <text x="490" y="313" font-size="15" font-weight="900" fill="#2563EB">${poster.deadline}</text>
 
-    <rect x="45" y="355" width="200" height="115" rx="15" fill="#F7F2E7"/>
-    <rect x="260" y="355" width="200" height="115" rx="15" fill="#F7F2E7"/>
-    <rect x="475" y="355" width="200" height="115" rx="15" fill="#F7F2E7"/>
+    <rect x="45" y="355" width="200" height="115" rx="15" fill="#E2E8F0"/>
+    <rect x="260" y="355" width="200" height="115" rx="15" fill="#E2E8F0"/>
+    <rect x="475" y="355" width="200" height="115" rx="15" fill="#E2E8F0"/>
 
-    <text x="145" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0A6D51">Qualification</text>
-    <text x="145" y="430" text-anchor="middle" font-size="29" font-weight="900" fill="#253A31">${poster.qualification}</text>
+    <text x="145" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0F172A">Qualification</text>
+    <text x="145" y="430" text-anchor="middle" font-size="29" font-weight="900" fill="#0F172A">${poster.qualification}</text>
 
-    <text x="360" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0A6D51">Vacancies</text>
-    <text x="360" y="430" text-anchor="middle" font-size="31" font-weight="900" fill="#B84439">${poster.vacancies} posts</text>
+    <text x="360" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0F172A">Vacancies</text>
+    <text x="360" y="430" text-anchor="middle" font-size="31" font-weight="900" fill="#0F172A">${poster.vacancies} posts</text>
 
-    <text x="575" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0A6D51">Age Limit</text>
-    <text x="575" y="430" text-anchor="middle" font-size="29" font-weight="900" fill="#253A31">${poster.age}</text>
+    <text x="575" y="387" text-anchor="middle" font-size="14" font-weight="800" fill="#0F172A">Age Limit</text>
+    <text x="575" y="430" text-anchor="middle" font-size="29" font-weight="900" fill="#0F172A">${poster.age}</text>
 
     <text x="360" y="505" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">✓ A trusted provider for all kinds of online services.</text>
 
-    <rect x="45" y="540" width="630" height="66" rx="14" fill="#0A9D68" stroke="#D6C54C" stroke-width="3"/>
+    <rect x="45" y="540" width="630" height="66" rx="14" fill="#10B981" stroke="#2563EB" stroke-width="3"/>
     <text x="360" y="582" text-anchor="middle" font-size="28" font-weight="900" fill="#FFFFFF">Contact for application</text>
 
-    <line x1="45" y1="638" x2="675" y2="638" stroke="#537662" stroke-width="2"/>
+    <line x1="45" y1="638" x2="675" y2="638" stroke="#E2E8F0" stroke-width="2"/>
 
-    <text x="360" y="714" text-anchor="middle" font-size="43" font-weight="900" fill="#F4D24D">Dokan Name</text>
-    <text x="360" y="754" text-anchor="middle" font-size="20" fill="#B5C4BC">Set address from the button above</text>
+    <text x="360" y="714" text-anchor="middle" font-size="43" font-weight="900" fill="#2563EB">Dokan Name</text>
+    <text x="360" y="754" text-anchor="middle" font-size="20" fill="#E2E8F0">Set address from the button above</text>
     <text x="360" y="800" text-anchor="middle" font-size="29" font-weight="900" fill="#FFFFFF">01783666743</text>
 
-    <text x="360" y="935" text-anchor="middle" font-size="16" font-weight="700" fill="#A5BEB3">SOHOJKAI • JOBS</text>
+    <text x="360" y="935" text-anchor="middle" font-size="16" font-weight="700" fill="#E2E8F0">SOHOJKAI • JOBS</text>
   </svg>`;
 
   const blob = new Blob([svg], {
@@ -266,7 +266,7 @@ export default function AdvertisementPosters({
           </button>
 
           <div className="flex items-center gap-2">
-            <Megaphone size={19} className="text-[#C78B00]" />
+            <Megaphone size={19} className="text-[#2563EB]" />
 
             <h2 className="text-[23px] font-black">Advertisement Posters</h2>
           </div>
@@ -277,7 +277,7 @@ export default function AdvertisementPosters({
         </div>
 
         <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm">
-          <span className="text-[#C89515]">◉</span>
+          <span className="text-[#2563EB]">◉</span>
           Poster theme:
           <select
             value={theme}
@@ -299,10 +299,10 @@ export default function AdvertisementPosters({
           >
             <div
               className={`p-2.5 ${
-                theme === "নীল ও সোনালী" ? "bg-[#083349]" : "bg-[#0B4635]"
+                theme === "নীল ও সোনালী" ? "bg-[#0F172A]" : "bg-[#0F172A]"
               }`}
             >
-              <div className="relative overflow-hidden rounded-xl border-2 border-[#CFC050] p-2.5">
+              <div className="relative overflow-hidden rounded-xl border-2 border-[#2563EB] p-2.5">
                 <div className="absolute inset-0 opacity-[0.08]">
                   <div className="grid h-full grid-cols-7 gap-5">
                     {Array.from({ length: 40 }).map((_, index) => (
@@ -318,7 +318,7 @@ export default function AdvertisementPosters({
                   <div className="flex items-start justify-between gap-3">
                     <PosterLogo color={poster.color} />
 
-                    <div className="rounded-lg bg-[#D44C3F] px-3 py-2 text-center text-[9px] font-black leading-3 text-white shadow-md">
+                    <div className="rounded-lg bg-[#2563EB] px-3 py-2 text-center text-[9px] font-black leading-3 text-white shadow-md">
                       📢
                       <br />
                       Recruitment
@@ -327,7 +327,7 @@ export default function AdvertisementPosters({
                     </div>
                   </div>
 
-                  <h3 className="mt-3 text-center text-[25px] font-black leading-[1.13] text-[#F4D24D]">
+                  <h3 className="mt-3 text-center text-[25px] font-black leading-[1.13] text-[#2563EB]">
                     {poster.title}
                   </h3>
 
@@ -336,26 +336,26 @@ export default function AdvertisementPosters({
                   </p>
 
                   <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] font-black text-white">
-                    <div className="flex items-center gap-1 rounded-full bg-[#062E22] px-3 py-2">
+                    <div className="flex items-center gap-1 rounded-full bg-[#0F172A] px-3 py-2">
                       <span>Start:</span>
 
-                      <span className="rounded-full bg-[#F4D24D] px-2 py-1 text-[#26372F]">
+                      <span className="rounded-full bg-[#2563EB] px-2 py-1 text-[#0F172A]">
                         {poster.published}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 rounded-full bg-[#062E22] px-3 py-2">
+                    <div className="flex items-center gap-1 rounded-full bg-[#0F172A] px-3 py-2">
                       <span>Deadline:</span>
 
-                      <span className="rounded-full bg-[#F4D24D] px-2 py-1 text-[#26372F]">
+                      <span className="rounded-full bg-[#2563EB] px-2 py-1 text-[#0F172A]">
                         {poster.deadline}
                       </span>
                     </div>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2">
-                    <div className="rounded-lg bg-[#F6F2E8] p-2 text-center">
-                      <div className="text-[9px] font-bold text-[#0B6B51]">
+                    <div className="rounded-lg bg-[#E2E8F0] p-2 text-center">
+                      <div className="text-[9px] font-bold text-[#0F172A]">
                         Qualification:
                       </div>
 
@@ -364,12 +364,12 @@ export default function AdvertisementPosters({
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-[#F6F2E8] p-2 text-center">
-                      <div className="text-[9px] font-bold text-[#0B6B51]">
+                    <div className="rounded-lg bg-[#E2E8F0] p-2 text-center">
+                      <div className="text-[9px] font-bold text-[#0F172A]">
                         Vacancies:
                       </div>
 
-                      <div className="mt-1 text-[27px] font-black leading-none text-[#BB4339]">
+                      <div className="mt-1 text-[27px] font-black leading-none text-[#0F172A]">
                         {poster.vacancies}
                       </div>
 
@@ -378,8 +378,8 @@ export default function AdvertisementPosters({
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-[#F6F2E8] p-2 text-center">
-                      <div className="text-[9px] font-bold text-[#0B6B51]">
+                    <div className="rounded-lg bg-[#E2E8F0] p-2 text-center">
+                      <div className="text-[9px] font-bold text-[#0F172A]">
                         Age Limit:
                       </div>
 
@@ -393,16 +393,16 @@ export default function AdvertisementPosters({
                     ✓ A trusted provider for all kinds of online services.
                   </p>
 
-                  <div className="mt-3 rounded-lg border-2 border-[#D6C74F] bg-[#0A9D68] py-2.5 text-center text-[15px] font-black text-white shadow-sm">
+                  <div className="mt-3 rounded-lg border-2 border-[#2563EB] bg-[#10B981] py-2.5 text-center text-[15px] font-black text-white shadow-sm">
                     Contact for application
                   </div>
 
-                  <div className="mt-3 border-t border-[#466C59] pt-4 text-center">
-                    <div className="text-[24px] font-black text-[#F4D24D]">
+                  <div className="mt-3 border-t border-[#E2E8F0] pt-4 text-center">
+                    <div className="text-[24px] font-black text-[#2563EB]">
                       Dokan Name
                     </div>
 
-                    <div className="mt-1 text-[11px] text-[#B8C5BE]">
+                    <div className="mt-1 text-[11px] text-[#E2E8F0]">
                       Set address from the button above
                     </div>
 
@@ -418,7 +418,7 @@ export default function AdvertisementPosters({
               <button
                 type="button"
                 onClick={() => downloadPoster(poster)}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#F19A00] py-2.5 text-[11px] font-black text-white hover:bg-[#DD8E00]"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-2.5 text-[11px] font-black text-white hover:bg-[#2563EB]"
               >
                 <ArrowDownToLine size={14} />
                 Download

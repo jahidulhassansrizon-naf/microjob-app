@@ -103,12 +103,6 @@ const CLOTHING_NAMES = [
   "Jacket",
 ];
 
-/*
- * IMPORTANT:
- * These are the actual paint colors used by your uploaded raw SVGs.
- * We recolor only these paint groups. Skin, outlines, background-card
- * fills, ties, and unrelated details stay untouched.
- */
 const RECOLOR_PALETTE: Record<number, string[]> = {
   0: [
     "#A0B7D8",
@@ -408,7 +402,7 @@ function RawSvgClothingPreview({
   }, [index, originalSrc, selected, color]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg bg-gray-50">
+    <div className="relative w-full h-full overflow-hidden rounded-lg bg-slate-50">
       <img
         src={displaySrc}
         alt={alt}
@@ -506,18 +500,18 @@ export default function GenerationSettings({
   }, []);
 
   return (
-    <div className="w-full max-w-full lg:w-[320px] bg-white rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] flex flex-col justify-between relative shrink-0">
+    <div className="w-full max-w-full lg:w-[320px] bg-[#F8FAFC] rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] flex flex-col justify-between relative shrink-0 text-[#0F172A]">
       <div>
         <div className="flex items-center justify-between mb-4">
-          <span className="font-semibold text-sm text-gray-800 flex items-center gap-2">
-            <span className="w-1 h-4 bg-orange-500 rounded-full" />
+          <span className="font-semibold text-sm text-[#0F172A] flex items-center gap-2">
+            <span className="w-1 h-4 bg-[#2563EB] rounded-full" />
             Generation settings
           </span>
         </div>
 
         {/* PHOTO SIZE SECTION */}
         <div className="mb-6 relative" ref={visaPopupRef}>
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>PHOTO SIZE</span>
             <button
               type="button"
@@ -528,7 +522,7 @@ export default function GenerationSettings({
                 onResetSettings?.();
               }}
               title="Reset generation settings"
-              className="text-orange-500 hover:rotate-180 transition-transform duration-300 cursor-pointer"
+              className="text-[#2563EB] hover:rotate-180 transition-transform duration-300 cursor-pointer"
             >
               <RefreshCw size={14} />
             </button>
@@ -546,18 +540,18 @@ export default function GenerationSettings({
                   type="button"
                   className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] relative transition-all cursor-pointer ${
                     isActive
-                      ? "border-orange-500 bg-orange-50/50 text-orange-600 font-medium"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
+                      : "border-[#E2E8F0] text-[#0F172A] hover:border-slate-300"
                   }`}
                 >
-                  <div className="w-6 h-6 mb-1 rounded bg-gray-100 flex items-center justify-center text-gray-500">
+                  <div className="w-6 h-6 mb-1 rounded bg-slate-100 flex items-center justify-center text-slate-500">
                     <ImageIcon size={14} />
                   </div>
 
                   <span className="truncate max-w-full">{size.label}</span>
 
                   {isActive && (
-                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
+                    <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
                       <Check size={8} />
                     </span>
                   )}
@@ -567,8 +561,8 @@ export default function GenerationSettings({
           </div>
 
           {showVisaPopup && (
-            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
-              <h4 className="text-xs font-semibold text-gray-800 mb-3">
+            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
+              <h4 className="text-xs font-semibold text-[#0F172A] mb-3">
                 Visa Photo Size
               </h4>
 
@@ -589,8 +583,8 @@ export default function GenerationSettings({
                     className={`py-2 px-1 text-[11px] rounded-lg border text-center transition-all cursor-pointer ${
                       selectedVisaSize === vItem.label &&
                       selectedSize === "Visa"
-                        ? "border-orange-500 bg-orange-50 text-orange-600 font-medium"
-                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                        ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
+                        : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
                     }`}
                   >
                     {vItem.label}
@@ -603,7 +597,7 @@ export default function GenerationSettings({
 
         {/* BACKGROUND SECTION */}
         <div className="mb-6 relative" ref={colorPickerRef}>
-          <div className="text-xs text-gray-500 mb-2">BACKGROUND</div>
+          <div className="text-xs text-slate-500 mb-2">BACKGROUND</div>
 
           <div className="grid grid-cols-4 gap-2">
             {backgroundColors.map((bg, idx) => {
@@ -620,8 +614,8 @@ export default function GenerationSettings({
                     }}
                     title="Transparent background"
                     aria-label="Transparent background"
-                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-gray-300 ${
-                      isSelected ? "ring-2 ring-orange-500 ring-offset-2" : ""
+                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${
+                      isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""
                     }`}
                     style={{
                       backgroundImage:
@@ -635,7 +629,7 @@ export default function GenerationSettings({
                       PNG
                     </span>
                     {isSelected && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
+                      <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
                         <Check size={8} />
                       </span>
                     )}
@@ -655,14 +649,14 @@ export default function GenerationSettings({
                     style={{ backgroundColor: customBgColor }}
                     className={`h-9 rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
                       isSelected
-                        ? "ring-2 ring-orange-500 ring-offset-2"
-                        : "border border-gray-200"
+                        ? "ring-2 ring-[#2563EB] ring-offset-2"
+                        : "border border-slate-200"
                     }`}
                   >
                     <Palette size={16} className="text-white drop-shadow-md" />
 
                     {isSelected && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-0.5">
+                      <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
                         <Check size={8} />
                       </span>
                     )}
@@ -679,11 +673,11 @@ export default function GenerationSettings({
                     setShowColorPicker(false);
                   }}
                   className={`h-9 rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${
-                    isSelected ? "ring-2 ring-orange-500 ring-offset-2" : ""
+                    isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute bg-orange-500 text-white rounded-full p-0.5">
+                    <span className="absolute bg-[#2563EB] text-white rounded-full p-0.5">
                       <Check size={10} />
                     </span>
                   )}
@@ -693,16 +687,16 @@ export default function GenerationSettings({
           </div>
 
           {showColorPicker && (
-            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-50">
+            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-gray-800">
+                <span className="text-xs font-semibold text-[#0F172A]">
                   Custom Background Color
                 </span>
 
                 <button
                   type="button"
                   onClick={() => setShowColorPicker(false)}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer p-1"
                 >
                   <X size={14} />
                 </button>
@@ -716,7 +710,7 @@ export default function GenerationSettings({
                     onChange={(e) =>
                       setCustomBgColor(e.target.value.toUpperCase())
                     }
-                    className="w-12 h-10 rounded-lg cursor-pointer border border-gray-200 p-0 bg-transparent"
+                    className="w-12 h-10 rounded-lg cursor-pointer border border-slate-200 p-0 bg-transparent"
                   />
 
                   <input
@@ -735,7 +729,7 @@ export default function GenerationSettings({
                         setCustomBgColor("#8B1E1E");
                       }
                     }}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-mono text-gray-700 uppercase focus:outline-none focus:border-orange-500"
+                    className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono text-[#0F172A] uppercase focus:outline-none focus:border-[#2563EB]"
                     aria-label="Custom background hex color"
                   />
                 </div>
@@ -746,18 +740,18 @@ export default function GenerationSettings({
 
         {/* CLOTHING STYLE SECTION WITH UPCOMING OVERLAY */}
         <div className="mb-6 relative" ref={clothingColorPopupRef}>
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>CLOTHING STYLE</span>
 
-            <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
               14/14
             </span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
             {/* UPCOMING OVERLAY LAYER */}
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-amber-300">
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-[#10B981]">
+              <span className="bg-gradient-to-r from-[#2563EB] to-[#10B981] text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} />
                 Upcoming
               </span>
@@ -771,14 +765,14 @@ export default function GenerationSettings({
                     setSelectedClothing(-1);
                     setShowClothingColorPicker(false);
                   }}
-                  className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 ${
+                  className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
                     selectedClothing === -1
-                      ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                      : "border-gray-200"
+                      ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
+                      : "border-[#E2E8F0]"
                   }`}
                   aria-label="No clothing"
                 >
-                  <Ban size={18} className="text-gray-400" />
+                  <Ban size={18} className="text-slate-400" />
                 </button>
 
                 {CLOTHING_NAMES.map((name, idx) => {
@@ -789,10 +783,10 @@ export default function GenerationSettings({
                       key={idx}
                       type="button"
                       onClick={() => handleClothingClick(idx)}
-                      className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
+                      className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                         isSelected
-                          ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                          : "border-gray-200"
+                          ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
+                          : "border-[#E2E8F0]"
                       }`}
                       aria-label={name}
                     >
@@ -804,7 +798,7 @@ export default function GenerationSettings({
                       />
 
                       {isSelected && (
-                        <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                        <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                           <Check size={8} strokeWidth={3} />
                         </span>
                       )}
@@ -815,7 +809,7 @@ export default function GenerationSettings({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <p className="text-[11px] font-medium text-gray-600 mb-1.5">
+                  <p className="text-[11px] font-medium text-slate-600 mb-1.5">
                     Left Person
                   </p>
 
@@ -825,10 +819,10 @@ export default function GenerationSettings({
                         key={`left-${idx}`}
                         type="button"
                         onClick={() => setLeftClothing(idx)}
-                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
+                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           leftClothing === idx
-                            ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                            : "border-gray-200"
+                            ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
+                            : "border-[#E2E8F0]"
                         }`}
                       >
                         <RawSvgClothingPreview
@@ -838,7 +832,7 @@ export default function GenerationSettings({
                         />
 
                         {leftClothing === idx && (
-                          <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                          <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={8} strokeWidth={3} />
                           </span>
                         )}
@@ -848,7 +842,7 @@ export default function GenerationSettings({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-gray-600 mb-1.5">
+                  <p className="text-[11px] font-medium text-slate-600 mb-1.5">
                     Right Person
                   </p>
 
@@ -858,10 +852,10 @@ export default function GenerationSettings({
                         key={`right-${idx}`}
                         type="button"
                         onClick={() => setRightClothing(idx)}
-                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-gray-50 cursor-pointer transition-all hover:bg-gray-100 p-0.5 overflow-hidden ${
+                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           rightClothing === idx
-                            ? "border-orange-500 ring-2 ring-orange-500/50 bg-orange-50/20"
-                            : "border-gray-200"
+                            ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
+                            : "border-[#E2E8F0]"
                         }`}
                       >
                         <RawSvgClothingPreview
@@ -871,7 +865,7 @@ export default function GenerationSettings({
                         />
 
                         {rightClothing === idx && (
-                          <span className="absolute bottom-0.5 right-0.5 bg-orange-500 text-white rounded-full p-0.5 shadow-sm z-10">
+                          <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={8} strokeWidth={3} />
                           </span>
                         )}
@@ -884,9 +878,9 @@ export default function GenerationSettings({
           </div>
 
           {showClothingColorPicker && selectedClothing >= 0 && (
-            <div className="absolute left-0 top-12 w-full max-w-[280px] bg-white border-2 border-orange-400 rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute left-0 top-12 w-full max-w-[280px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-gray-800">
+                <span className="text-xs font-semibold text-[#0F172A]">
                   {CLOTHING_NAMES[selectedClothing] || "Clothing"} — Pick a
                   Color
                 </span>
@@ -894,7 +888,7 @@ export default function GenerationSettings({
                 <button
                   type="button"
                   onClick={() => setShowClothingColorPicker(false)}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
                   aria-label="Close clothing color picker"
                 >
                   <X size={14} />
@@ -913,9 +907,9 @@ export default function GenerationSettings({
                       onClick={() => handleColorChange(color.hex)}
                       title={color.name}
                       style={{ backgroundColor: color.hex }}
-                      className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${
+                      className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${
                         isColorActive
-                          ? "ring-2 ring-orange-500 ring-offset-2"
+                          ? "ring-2 ring-[#2563EB] ring-offset-2"
                           : ""
                       }`}
                     >
@@ -924,7 +918,7 @@ export default function GenerationSettings({
                           size={12}
                           className={
                             color.hex === "#FFFFFF" || color.hex === "#E5E7EB"
-                              ? "text-gray-900"
+                              ? "text-slate-900"
                               : "text-white"
                           }
                           strokeWidth={3}
@@ -940,17 +934,17 @@ export default function GenerationSettings({
 
         {/* EXTRA EDITING GUIDE WITH UPCOMING OVERLAY */}
         <div className="mb-4 relative">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>EXTRA EDITING GUIDE</span>
-            <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
               {activeGuides.length}/22
             </span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
             {/* UPCOMING OVERLAY LAYER */}
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-amber-300">
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-[#10B981]">
+              <span className="bg-gradient-to-r from-[#2563EB] to-[#10B981] text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} />
                 Upcoming
               </span>
@@ -1008,13 +1002,13 @@ export default function GenerationSettings({
                     }}
                     className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
                       active
-                        ? "border-orange-400 bg-orange-50 text-orange-700"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
+                        : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
                     }`}
                   >
                     <Sparkles
                       size={14}
-                      className={`mb-1 ${active ? "text-orange-500" : "text-gray-400"}`}
+                      className={`mb-1 ${active ? "text-[#2563EB]" : "text-slate-400"}`}
                     />
                     <span className="leading-tight">
                       {item === "Custom Instruction" && active
@@ -1036,8 +1030,8 @@ export default function GenerationSettings({
           disabled={isGenerating}
           className={`w-full font-medium py-3 rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${
             isGenerating
-              ? "bg-amber-400 text-white cursor-not-allowed opacity-90"
-              : "bg-[#f59e0b] hover:bg-[#d97706] text-white cursor-pointer active:scale-[0.98]"
+              ? "bg-[#10B981]/70 text-white cursor-not-allowed opacity-90"
+              : "bg-[#10B981] hover:bg-[#059669] text-white cursor-pointer active:scale-[0.98]"
           }`}
         >
           {isGenerating ? (

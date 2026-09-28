@@ -22,14 +22,14 @@ export default function CanvasSidebar({
 
   return (
     <aside className="screen-only flex w-full min-h-0 shrink-0 flex-col gap-3 lg:w-[315px] xl:w-[330px]">
-      <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+      <div className="flex rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
         <button
           type="button"
           onClick={() => setSelectedTab("browse")}
           className={`flex-1 rounded-lg py-2 text-[11px] font-bold transition ${
             selectedTab === "browse"
-              ? "bg-orange-50 text-[#F3A847]"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-[#E2E8F0] text-[#2563EB]"
+              : "text-[#0F172A]/70 hover:text-[#0F172A]"
           }`}
         >
           Browse &amp; pick
@@ -40,8 +40,8 @@ export default function CanvasSidebar({
           onClick={() => setSelectedTab("auto")}
           className={`flex-1 rounded-lg py-2 text-[11px] font-bold transition ${
             selectedTab === "auto"
-              ? "bg-orange-50 text-[#F3A847]"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-[#E2E8F0] text-[#2563EB]"
+              : "text-[#0F172A]/70 hover:text-[#0F172A]"
           }`}
         >
           Auto create

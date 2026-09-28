@@ -23,7 +23,7 @@ function Toggle({
       type="button"
       aria-pressed={checked}
       onClick={onChange}
-      className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${checked ? "bg-[#F3A847]" : "bg-[#D9DDE3]"}`}
+      className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${checked ? "bg-[#2563EB]" : "bg-[#E2E8F0]"}`}
     >
       <span
         className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-4" : "translate-x-0"}`}
@@ -73,7 +73,7 @@ export default function PaperToolbar({
   } = manager;
 
   return (
-    <div className="screen-only rounded-xl border border-gray-200 bg-white p-3 shadow-sm xl:p-4">
+    <div className="screen-only rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm xl:p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[85px_110px_minmax(270px,1fr)_115px_140px] xl:items-start">
         <div>
           <span className="field-label">LOGO</span>
@@ -89,7 +89,7 @@ export default function PaperToolbar({
           <button
             type="button"
             onClick={() => logoInputRef.current?.click()}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-2 text-[10px] font-semibold text-gray-500 hover:border-gray-400"
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#E2E8F0] bg-white px-2 text-[10px] font-semibold text-[#0F172A]/70 hover:border-[#0F172A]/25"
           >
             <ImageIcon size={11} />
 
@@ -111,23 +111,23 @@ export default function PaperToolbar({
         <div>
           <span className="field-label">FONT</span>
 
-          <div className="flex h-8 items-center justify-between rounded-lg border border-gray-200 bg-white px-2">
+          <div className="flex h-8 items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-2">
             <button
               type="button"
               onClick={() => setFontScale((value) => Math.max(70, value - 5))}
-              className="text-gray-400 hover:text-gray-700"
+              className="text-[#0F172A]/55 hover:text-[#0F172A]"
             >
               <Minus size={11} />
             </button>
 
-            <span className="text-[10px] font-bold text-gray-700">
+            <span className="text-[10px] font-bold text-[#0F172A]">
               {fontScale}%
             </span>
 
             <button
               type="button"
               onClick={() => setFontScale((value) => Math.min(140, value + 5))}
-              className="text-gray-400 hover:text-gray-700"
+              className="text-[#0F172A]/55 hover:text-[#0F172A]"
             >
               <Plus size={11} />
             </button>
@@ -137,7 +137,7 @@ export default function PaperToolbar({
         <div className="col-span-2 md:col-span-2 xl:col-span-1">
           <span className="field-label">PAGE</span>
 
-          <div className="flex h-8 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 p-0.5">
+          <div className="flex h-8 overflow-hidden rounded-lg border border-[#E2E8F0] bg-[#E2E8F0] p-0.5">
             {(["A4", "A5", "Joint"] as const).map((size) => (
               <button
                 key={size}
@@ -145,8 +145,8 @@ export default function PaperToolbar({
                 onClick={() => handlePageSizeChange(size)}
                 className={`flex-1 rounded-md px-2 text-[9px] font-bold transition ${
                   pageSize === size
-                    ? "bg-[#F3A847] text-white shadow-sm"
-                    : "text-gray-600 hover:bg-white"
+                    ? "bg-[#2563EB] text-white shadow-sm"
+                    : "text-[#0F172A] hover:bg-white"
                 }`}
               >
                 {size === "A5"
@@ -173,10 +173,10 @@ export default function PaperToolbar({
                 value={setNo}
                 onChange={(event) => setSetNo(event.target.value)}
                 placeholder="e.g. A"
-                className="h-8 w-full rounded-lg border border-gray-200 px-2 text-[9px] font-semibold outline-none focus:border-[#F3A847]"
+                className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-semibold outline-none focus:border-[#2563EB]"
               />
             ) : (
-              <span className="text-[9px] font-semibold text-gray-400">
+              <span className="text-[9px] font-semibold text-[#0F172A]/55">
                 Off
               </span>
             )}
@@ -186,7 +186,7 @@ export default function PaperToolbar({
                 type="button"
                 onClick={shuffleSelected}
                 title="Shuffle selected questions"
-                className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-gray-200 px-2 text-[9px] font-bold text-gray-600 hover:bg-gray-50"
+                className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
               >
                 <Shuffle size={10} />
                 Shuffle
@@ -201,15 +201,15 @@ export default function PaperToolbar({
           <button
             type="button"
             onClick={() => setLayoutOpen((value) => !value)}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 text-[9px] font-bold text-gray-600 hover:bg-gray-50"
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
           >
-            <Settings2 size={10} className="text-gray-400" />
+            <Settings2 size={10} className="text-[#0F172A]/55" />
             Options
           </button>
 
           {layoutOpen ? (
-            <div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-gray-200 bg-white p-3 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-gray-400">
+            <div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/55">
                 Columns
               </p>
 
@@ -221,8 +221,8 @@ export default function PaperToolbar({
                     onClick={() => setLayoutColumns(columns as 1 | 2)}
                     className={`rounded-lg border px-2 py-2 text-[9px] font-bold ${
                       layoutColumns === columns
-                        ? "border-[#F3A847] bg-orange-50 text-[#F3A847]"
-                        : "border-gray-200 text-gray-500"
+                        ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
+                        : "border-[#E2E8F0] text-[#0F172A]/70"
                     }`}
                   >
                     {columns} column
@@ -231,7 +231,7 @@ export default function PaperToolbar({
                 ))}
               </div>
 
-              <label className="mt-3 flex items-center justify-between gap-2 text-[9px] font-semibold text-gray-500">
+              <label className="mt-3 flex items-center justify-between gap-2 text-[9px] font-semibold text-[#0F172A]/70">
                 Compact spacing
                 <Toggle
                   checked={compactSpacing}
@@ -243,7 +243,7 @@ export default function PaperToolbar({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 md:grid-cols-4 xl:grid-cols-[1fr_1fr_1fr_2fr]">
+      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#E2E8F0] pt-3 md:grid-cols-4 xl:grid-cols-[1fr_1fr_1fr_2fr]">
         <div>
           <span className="field-label">SELECT ANSWER</span>
 
@@ -253,7 +253,7 @@ export default function PaperToolbar({
               onChange={() => setSelectAnswerEnabled((value) => !value)}
             />
 
-            <span className="text-[9px] font-semibold text-gray-400">
+            <span className="text-[9px] font-semibold text-[#0F172A]/55">
               {selectAnswerEnabled ? "On" : "Off"}
             </span>
           </div>
@@ -273,10 +273,10 @@ export default function PaperToolbar({
                 value={headerNote}
                 onChange={(event) => setHeaderNote(event.target.value)}
                 placeholder="Enter a note"
-                className="h-8 w-full rounded-lg border border-gray-200 px-2 text-[9px] outline-none focus:border-[#F3A847]"
+                className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] outline-none focus:border-[#2563EB]"
               />
             ) : (
-              <span className="text-[9px] font-semibold text-gray-400">
+              <span className="text-[9px] font-semibold text-[#0F172A]/55">
                 Off
               </span>
             )}
@@ -289,7 +289,7 @@ export default function PaperToolbar({
           <input
             value={footerText}
             onChange={(event) => setFooterText(event.target.value)}
-            className="h-8 w-full rounded-lg border border-gray-200 px-2.5 text-[9px] font-semibold text-gray-600 outline-none focus:border-[#F3A847]"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2.5 text-[9px] font-semibold text-[#0F172A] outline-none focus:border-[#2563EB]"
           />
         </div>
 
@@ -301,8 +301,8 @@ export default function PaperToolbar({
             onClick={loadDemo}
             className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-[9px] font-extrabold transition ${
               demoMode
-                ? "border-[#F3A847] bg-orange-50 text-[#F3A847]"
-                : "border-[#F3A847]/40 bg-white text-[#D58A24] hover:border-[#F3A847] hover:bg-orange-50/40"
+                ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
+                : "border-[#2563EB]/40 bg-white text-[#2563EB] hover:border-[#2563EB] hover:bg-[#E2E8F0]/60"
             }`}
             title="Load a complete demo question paper for UI testing"
           >

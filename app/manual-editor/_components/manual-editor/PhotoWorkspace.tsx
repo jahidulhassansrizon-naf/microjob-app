@@ -448,9 +448,6 @@ export default function PhotoWorkspace() {
             localB = adjusted.b;
           }
 
-          // Object Adjust is calculated first, then the normal Image Adjustments
-          // are applied to the complete result. This mirrors the final exported
-          // image after Object Adjust has been baked into activePhoto.
           objectBlendedR = originalR * (1 - blend) + localR * blend;
           objectBlendedG = originalG * (1 - blend) + localG * blend;
           objectBlendedB = originalB * (1 - blend) + localB * blend;
@@ -521,7 +518,7 @@ export default function PhotoWorkspace() {
 
   return (
     <>
-      <main className="lg:col-span-6 bg-[#1A1F2F] border border-gray-700/60 rounded-3xl p-5 md:p-6 flex flex-col items-center justify-center relative min-h-[520px] shadow-lg">
+      <main className="lg:col-span-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 md:p-6 flex flex-col items-center justify-center relative min-h-[520px] shadow-lg text-[#0F172A]">
         <input
           ref={fileInputRef}
           type="file"
@@ -532,10 +529,10 @@ export default function PhotoWorkspace() {
 
         {!activePhoto && photoMode !== "dual" ? (
           <div
-            className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 bg-[#282E3B]/60 cursor-pointer transition ${
+            className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 bg-[#E2E8F0]/40 cursor-pointer transition ${
               isDragging
-                ? "border-amber-400 ring-2 ring-amber-400/30"
-                : "border-gray-600/70 hover:border-gray-500"
+                ? "border-[#2563EB] ring-2 ring-[#2563EB]/30"
+                : "border-slate-300 hover:border-[#2563EB]"
             }`}
             style={getResponsiveCanvasStyle(presetRatio)}
             onClick={openFilePicker}
@@ -550,21 +547,21 @@ export default function PhotoWorkspace() {
             }}
             onDrop={handleDrop}
           >
-            <div className="w-12 h-12 rounded-full bg-gray-800/90 flex items-center justify-center text-gray-300 border border-gray-700">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#0F172A] border border-[#E2E8F0] shadow-sm">
               <ImageIcon size={22} />
             </div>
 
             <div>
-              <h3 className="text-white text-base font-bold">
+              <h3 className="text-[#0F172A] text-base font-bold">
                 {isDragging ? "Drop your photo here" : "Upload a Photo"}
               </h3>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-slate-500 text-xs mt-1">
                 Click or drag &amp; drop to upload
               </p>
-              <div className="mt-2 inline-flex px-3 py-1 rounded-full bg-[#1F242D] border border-gray-700 text-[11px] font-semibold text-gray-300">
+              <div className="mt-2 inline-flex px-3 py-1 rounded-full bg-white border border-[#E2E8F0] text-[11px] font-semibold text-[#0F172A] shadow-sm">
                 {currentPreset.label}
               </div>
-              <div className="mt-1 text-[9px] text-gray-500 font-semibold">
+              <div className="mt-1 text-[9px] text-slate-500 font-semibold">
                 {presetSizeText}
               </div>
             </div>
@@ -575,16 +572,16 @@ export default function PhotoWorkspace() {
                 event.stopPropagation();
                 openFilePicker();
               }}
-              className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold text-xs px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2"
+              className="bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition"
             >
               <Upload size={14} />
               Upload Photo
             </button>
 
-            <div className="border border-gray-700 bg-[#1F242D] px-2.5 py-0.5 rounded-md text-[10px] font-mono text-gray-400">
+            <div className="border border-[#E2E8F0] bg-white px-2.5 py-0.5 rounded-md text-[10px] font-mono text-slate-600 shadow-sm">
               Ctrl+U
             </div>
-            <p className="text-[9px] text-gray-500">
+            <p className="text-[9px] text-slate-500">
               JPG, PNG, WEBP • Max 10 MB
             </p>
           </div>
@@ -592,12 +589,12 @@ export default function PhotoWorkspace() {
           <div className="relative flex h-full w-full flex-col items-center justify-center gap-4">
             {photoMode === "dual" ? (
               <>
-                <div className="w-full max-w-[760px] rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="w-full max-w-[760px] rounded-2xl border border-[#E2E8F0] bg-[#E2E8F0]/30 p-4">
                   <div className="text-center mb-3">
-                    <div className="text-[11px] font-black text-white">
+                    <div className="text-[11px] font-black text-[#0F172A]">
                       {currentPreset.label}
                     </div>
-                    <div className="text-[9px] text-gray-500 mt-0.5">
+                    <div className="text-[9px] text-slate-500 mt-0.5">
                       {presetSizeText}
                     </div>
                   </div>
@@ -612,9 +609,9 @@ export default function PhotoWorkspace() {
                           onClick={() => setActiveDualSlot(index as 0 | 1)}
                           className={`relative w-full overflow-hidden rounded-xl border-2 ${
                             activeDualSlot === index
-                              ? "border-amber-400"
-                              : "border-white/10"
-                          } bg-white flex items-center justify-center cursor-pointer transition`}
+                              ? "border-[#2563EB]"
+                              : "border-[#E2E8F0]"
+                          } bg-white flex items-center justify-center cursor-pointer transition shadow-sm`}
                           style={{
                             aspectRatio: presetRatio,
                             boxSizing: "border-box",
@@ -628,18 +625,18 @@ export default function PhotoWorkspace() {
                               className="block w-full h-full object-contain"
                             />
                           ) : (
-                            <div className="text-xs text-gray-400 text-center">
-                              <div className="font-bold">
+                            <div className="text-xs text-slate-400 text-center">
+                              <div className="font-bold text-slate-600">
                                 Empty {index === 0 ? "Left" : "Right"} Slot
                               </div>
-                              <div className="text-[9px] text-gray-500 mt-1">
+                              <div className="text-[9px] text-slate-400 mt-1">
                                 {presetSizeText}
                               </div>
                             </div>
                           )}
 
                           {activeDualSlot === index && (
-                            <div className="absolute left-2 top-2 rounded-full bg-amber-500 text-gray-900 px-2 py-1 text-[8px] font-black">
+                            <div className="absolute left-2 top-2 rounded-full bg-[#10B981] text-white px-2 py-1 text-[8px] font-black shadow-sm">
                               ACTIVE
                             </div>
                           )}
@@ -653,10 +650,10 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setActiveDualSlot(0)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition ${
                       activeDualSlot === 0
-                        ? "bg-amber-500 text-gray-900"
-                        : "bg-[#282E3B] text-white"
+                        ? "bg-[#2563EB] text-white shadow-md"
+                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"
                     }`}
                   >
                     Left
@@ -664,10 +661,10 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setActiveDualSlot(1)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition ${
                       activeDualSlot === 1
-                        ? "bg-amber-500 text-gray-900"
-                        : "bg-[#282E3B] text-white"
+                        ? "bg-[#2563EB] text-white shadow-md"
+                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"
                     }`}
                   >
                     Right
@@ -675,7 +672,7 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={swapDualPhotos}
-                    className="px-4 py-2 rounded-xl bg-[#282E3B] text-white text-xs font-black flex gap-2 items-center"
+                    className="px-4 py-2 rounded-xl bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex gap-2 items-center transition"
                   >
                     <ArrowLeftRight size={14} />
                     Swap
@@ -683,7 +680,7 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={openFilePicker}
-                    className="px-4 py-2 rounded-xl bg-amber-500 text-gray-900 text-xs font-black"
+                    className="px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-black transition shadow-sm"
                   >
                     <Upload size={14} className="inline mr-1" />
                     Upload slot
@@ -693,17 +690,17 @@ export default function PhotoWorkspace() {
             ) : (
               <>
                 <div className="flex flex-col items-center gap-2">
-                  <div className="text-[11px] font-black text-white">
+                  <div className="text-[11px] font-black text-[#0F172A]">
                     {currentPreset.label}
                   </div>
-                  <div className="text-[9px] text-gray-500">
+                  <div className="text-[9px] text-slate-500">
                     {presetSizeText}
                   </div>
                 </div>
 
                 <div
                   ref={previewHostRef}
-                  className="relative overflow-hidden rounded-2xl border border-gray-700 shadow-xl flex items-center justify-center"
+                  className="relative overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-xl flex items-center justify-center"
                   style={{
                     ...getResponsiveCanvasStyle(presetRatio),
                     backgroundColor: activeBackground,
@@ -740,7 +737,7 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={removeActivePhoto}
-                    className="absolute right-3 top-3 h-8 w-8 rounded-full bg-black/60 hover:bg-black/75 text-white flex items-center justify-center z-40"
+                    className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition"
                     title="Remove photo"
                   >
                     <X size={14} />
@@ -751,18 +748,18 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setZoom(Math.max(25, zoom - 10))}
-                    className="h-9 w-9 rounded-lg bg-[#282E3B] text-white flex items-center justify-center"
+                    className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition"
                     title="Zoom out"
                   >
                     <ZoomOut size={14} />
                   </button>
-                  <span className="h-9 px-3 rounded-lg bg-[#282E3B] text-white flex items-center text-xs font-black">
+                  <span className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] flex items-center text-xs font-black">
                     {zoom}%
                   </span>
                   <button
                     type="button"
                     onClick={() => setZoom(Math.min(300, zoom + 10))}
-                    className="h-9 w-9 rounded-lg bg-[#282E3B] text-white flex items-center justify-center"
+                    className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition"
                     title="Zoom in"
                   >
                     <ZoomIn size={14} />
@@ -770,7 +767,7 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setRotation((rotation - 90 + 360) % 360)}
-                    className="h-9 px-3 rounded-lg bg-[#282E3B] text-white text-xs font-black flex items-center gap-1"
+                    className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition"
                   >
                     <RotateCcw size={13} />
                     Rotate
@@ -778,7 +775,7 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setRotation((rotation + 90) % 360)}
-                    className="h-9 px-3 rounded-lg bg-[#282E3B] text-white text-xs font-black flex items-center gap-1"
+                    className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition"
                   >
                     <RotateCw size={13} />
                     Rotate
@@ -786,10 +783,10 @@ export default function PhotoWorkspace() {
                   <button
                     type="button"
                     onClick={() => setFlipX(!flipX)}
-                    className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 ${
+                    className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 transition ${
                       flipX
-                        ? "bg-amber-500 text-gray-900"
-                        : "bg-[#282E3B] text-white"
+                        ? "bg-[#2563EB] text-white shadow-md"
+                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"
                     }`}
                   >
                     <FlipHorizontal2 size={13} />
@@ -802,7 +799,7 @@ export default function PhotoWorkspace() {
                       setRotation(0);
                       setFlipX(false);
                     }}
-                    className="h-9 px-3 rounded-lg bg-[#282E3B] text-white text-xs font-black flex items-center gap-1"
+                    className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition"
                   >
                     <Maximize2 size={13} />
                     Reset
@@ -812,7 +809,7 @@ export default function PhotoWorkspace() {
             )}
 
             {uploadError && (
-              <div className="absolute bottom-3 left-4 right-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2 text-center text-[10px] font-semibold text-red-200">
+              <div className="absolute bottom-3 left-4 right-4 rounded-xl border border-red-500/30 bg-red-50 px-4 py-2 text-center text-[10px] font-semibold text-red-600 shadow-sm">
                 {uploadError}
               </div>
             )}

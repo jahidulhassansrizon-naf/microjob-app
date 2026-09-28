@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  FormEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,10 +24,23 @@ import {
   AlertCircle,
   Search,
   ChevronDown,
+  ShieldCheck,
 } from "lucide-react";
 
+// কান্ট্রি ডাটার টাইপ ডেফিনিশন
+interface Country {
+  name: string;
+  code: string;
+  flag: string;
+  regex: RegExp;
+  example: string;
+}
+
+type OtpMethod = "email" | "phone";
+type Language = "EN" | "BN";
+
 // পৃথিবীর সমস্ত দেশের তালিকা
-const countriesList = [
+const countriesList: Country[] = [
   {
     name: "Bangladesh",
     code: "+880",
@@ -572,23 +591,24 @@ const countriesList = [
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [lang, setLang] = useState<"EN" | "BN">("EN");
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [lang, setLang] = useState<Language>("EN");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const [isCountryOpen, setIsCountryOpen] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
+  const [isCountryOpen, setIsCountryOpen] = useState<boolean>(false);
+  const [countrySearch, setCountrySearch] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
-  const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email");
-  const [methodNotice, setMethodNotice] = useState("");
+  const [isMethodModalOpen, setIsMethodModalOpen] = useState<boolean>(false);
+  const [otpMethod, setOtpMethod] = useState<OtpMethod>("email");
+  const [methodNotice, setMethodNotice] = useState<string>("");
 
-  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpError, setOtpError] = useState("");
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState<boolean>(false);
+  const [otp, setOtp] = useState<string>("");
+  const [otpError, setOtpError] = useState<string>("");
 
   const [formData, setFormData] = useState({
     countryName: "Bangladesh",
@@ -604,7 +624,7 @@ export default function RegisterPage() {
   });
 
   // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
-  const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
+  const changeGoogleLanguage = (targetLang: Language) => {
     setLang(targetLang);
     const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
     document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
@@ -625,7 +645,7 @@ export default function RegisterPage() {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
@@ -643,7 +663,7 @@ export default function RegisterPage() {
       c.code.includes(countrySearch),
   );
 
-  const validatePhonePattern = () => {
+  const validatePhonePattern = (): boolean => {
     const selectedCountryObj = countriesList.find(
       (c) => c.name === formData.countryName,
     );
@@ -661,7 +681,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
     setMethodNotice("");
@@ -684,7 +704,7 @@ export default function RegisterPage() {
 
     if (otpMethod === "phone") {
       setMethodNotice(
-        "সাময়িক সময়ের জন্য আমাদের SMS সার্ভিস বন্ধ রয়েছে। দয়া করে Gmail সিলেক্ট করে OTP কোডটি সংগ্রহ করুন।",
+        "সাময়িক সময়ের জন্য আমাদের SMS সার্ভিস বন্ধ রয়েছে। দয়া করে Gmail সিলেক্ট করে OTP কোডটি সংগ্রহ করুন।",
       );
       return;
     }
@@ -714,8 +734,10 @@ export default function RegisterPage() {
 
       setIsMethodModalOpen(false);
       setIsOtpModalOpen(true);
-    } catch (error: any) {
-      setMethodNotice(error.message);
+    } catch (error) {
+      const errMessage =
+        error instanceof Error ? error.message : "Failed to send OTP!";
+      setMethodNotice(errMessage);
     } finally {
       setLoading(false);
     }
@@ -754,16 +776,19 @@ export default function RegisterPage() {
       alert("Registration successful!");
       setIsOtpModalOpen(false);
       router.push("/login");
-    } catch (error: any) {
-      setOtpError(error.message);
+    } catch (error) {
+      const errMessage =
+        error instanceof Error ? error.message : "Registration failed!";
+      setOtpError(errMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-white font-sans overflow-x-hidden relative">
-      <div className="lg:w-1/2 bg-[#222835] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-[#F8FAFC] text-[#0F172A] font-sans overflow-x-hidden relative">
+      {/* বাম পাশের হিরো সেকশন - Deep Slate Background */}
+      <div className="lg:w-1/2 bg-[#0F172A] py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
         <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
           <img
             src="https://app.sohozkaj.com/images/authImage.svg"
@@ -773,7 +798,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
-          <p className="text-gray-300 text-xs sm:text-sm font-normal leading-relaxed">
+          <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
             <span className="block">
               Create documents, designs, and print media with photo editing, AI
               photo editing, manual editing, and bulk editing -
@@ -783,24 +808,26 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
+      {/* ডান পাশের ফর্ম সেকশন - Soft Off-White Background */}
+      <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-[#F8FAFC]">
         <div className="flex justify-between items-center w-full">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#FF5D00] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#2563EB] transition-colors"
           >
             <ArrowLeft size={16} />
             <span>Back to Home</span>
           </Link>
 
-          <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-md text-xs font-semibold">
+          {/* ভাষা সিলেক্টর */}
+          <div className="inline-flex items-center bg-[#E2E8F0] p-0.5 rounded-md text-xs font-semibold">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
               className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "EN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#2563EB] text-white shadow-sm"
+                  : "text-slate-700 hover:text-slate-900"
               }`}
             >
               EN
@@ -810,8 +837,8 @@ export default function RegisterPage() {
               onClick={() => changeGoogleLanguage("BN")}
               className={`px-3 py-1 rounded transition-all cursor-pointer ${
                 lang === "BN"
-                  ? "bg-[#FF5D00] text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#2563EB] text-white shadow-sm"
+                  : "text-slate-700 hover:text-slate-900"
               }`}
             >
               বাং
@@ -822,25 +849,27 @@ export default function RegisterPage() {
         <div className="w-full max-w-xl mx-auto my-auto py-6">
           <div className="flex flex-col items-center mb-6">
             <Link href="/" className="flex items-center gap-2 mb-1.5 group">
-              <div className="w-9 h-9 bg-[#FF5D00] rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 bg-[#2563EB] rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
                 SK
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-2xl font-black tracking-tight text-gray-900">
-                  Sohoz<span className="text-[#FF5D00]">kaj</span>
+                <span className="text-2xl font-black tracking-tight text-[#0F172A]">
+                  Sohoz<span className="text-[#2563EB]">kaj</span>
                 </span>
-                <span className="text-[9px] tracking-widest text-gray-400 font-bold uppercase mt-0.5">
+                <span className="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5">
                   WWW.SOHOZKAJ.COM
                 </span>
               </div>
             </Link>
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium">
               Create your account
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/60 p-5 sm:p-8 relative">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF5D00] to-orange-300 rounded-t-2xl" />
+          {/* ফর্ম কার্ড */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xl shadow-slate-200/60 p-5 sm:p-8 relative">
+            {/* মেইন হাইলাইট গ্রাডিয়ান্ট বর্ডার (Royal Blue to Emerald Green) */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2563EB] via-[#10B981] to-[#2563EB] rounded-t-2xl" />
 
             {errorMessage && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
@@ -851,13 +880,13 @@ export default function RegisterPage() {
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1 relative" ref={dropdownRef}>
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Country <span className="text-red-500">*</span>
                   </label>
 
                   <div
                     onClick={() => setIsCountryOpen(!isCountryOpen)}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-800 flex items-center justify-between cursor-pointer focus:border-[#FF5D00] transition-all"
+                    className="w-full px-3 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#0F172A] flex items-center justify-between cursor-pointer focus:border-[#2563EB] transition-all"
                   >
                     <div className="flex items-center gap-2 truncate">
                       <span className="text-sm">{formData.countryFlag}</span>
@@ -867,25 +896,25 @@ export default function RegisterPage() {
                     </div>
                     <ChevronDown
                       size={14}
-                      className={`text-gray-400 transition-transform ${
+                      className={`text-slate-400 transition-transform ${
                         isCountryOpen ? "rotate-180" : ""
                       }`}
                     />
                   </div>
 
                   {isCountryOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-2 max-h-60 flex flex-col">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-50 p-2 max-h-60 flex flex-col">
                       <div className="relative mb-2">
                         <Search
                           size={14}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                         />
                         <input
                           type="text"
                           placeholder="Search country..."
                           value={countrySearch}
                           onChange={(e) => setCountrySearch(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#FF5D00]"
+                          className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
                           autoFocus
                         />
                       </div>
@@ -907,21 +936,21 @@ export default function RegisterPage() {
                               }}
                               className={`flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
                                 formData.countryName === c.name
-                                  ? "bg-orange-50 text-[#FF5D00] font-bold"
-                                  : "hover:bg-gray-100 text-gray-700"
+                                  ? "bg-blue-50 text-[#2563EB] font-bold"
+                                  : "hover:bg-[#E2E8F0]/50 text-[#0F172A]"
                               }`}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="text-base">{c.flag}</span>
                                 <span>{c.name}</span>
                               </div>
-                              <span className="text-gray-400 font-medium">
+                              <span className="text-slate-400 font-medium">
                                 {c.code}
                               </span>
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-3 text-xs text-gray-400">
+                          <div className="text-center py-3 text-xs text-slate-400">
                             No country found
                           </div>
                         )}
@@ -931,11 +960,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    <div className="absolute left-3 text-gray-400">
+                    <div className="absolute left-3 text-slate-400">
                       <Phone size={15} />
                     </div>
                     <input
@@ -946,7 +975,7 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, phone: e.target.value })
                       }
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] transition-all"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                     />
                   </div>
                 </div>
@@ -954,14 +983,14 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Email{" "}
-                    <span className="text-gray-400 font-normal">
+                    <span className="text-slate-400 font-normal">
                       (required)
                     </span>
                   </label>
                   <div className="relative flex items-center">
-                    <div className="absolute left-3 text-gray-400">
+                    <div className="absolute left-3 text-slate-400">
                       <Mail size={15} />
                     </div>
                     <input
@@ -972,17 +1001,17 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] transition-all"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    <div className="absolute left-3 text-gray-400">
+                    <div className="absolute left-3 text-slate-400">
                       <User size={15} />
                     </div>
                     <input
@@ -993,18 +1022,18 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, fullName: e.target.value })
                       }
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] transition-all"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700">
+                <label className="text-xs font-semibold text-[#0F172A]">
                   District <span className="text-red-500">*</span>
                 </label>
                 <div className="relative flex items-center">
-                  <div className="absolute left-3 text-gray-400 pointer-events-none">
+                  <div className="absolute left-3 text-slate-400 pointer-events-none">
                     <MapPin size={15} />
                   </div>
                   <select
@@ -1013,7 +1042,7 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, district: e.target.value })
                     }
-                    className="w-full pl-9 pr-8 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:border-[#FF5D00] transition-all appearance-none cursor-pointer"
+                    className="w-full pl-9 pr-8 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB] transition-all appearance-none cursor-pointer"
                   >
                     <option value="" disabled>
                       e.g. Dhaka
@@ -1028,7 +1057,7 @@ export default function RegisterPage() {
                     <option value="Rangpur">Rangpur</option>
                     <option value="Mymensingh">Mymensingh</option>
                   </select>
-                  <span className="absolute right-3 pointer-events-none text-gray-400 text-xs">
+                  <span className="absolute right-3 pointer-events-none text-slate-400 text-xs">
                     ▼
                   </span>
                 </div>
@@ -1036,11 +1065,11 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    <div className="absolute left-3 text-gray-400">
+                    <div className="absolute left-3 text-slate-400">
                       <Lock size={15} />
                     </div>
                     <input
@@ -1051,12 +1080,12 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      className="w-full pl-9 pr-9 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] transition-all"
+                      className="w-full pl-9 pr-9 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none cursor-pointer"
+                      className="absolute right-3 text-[#2563EB] hover:text-[#0F172A] focus:outline-none cursor-pointer transition-colors"
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -1064,11 +1093,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative flex items-center">
-                    <div className="absolute left-3 text-gray-400">
+                    <div className="absolute left-3 text-slate-400">
                       <Lock size={15} />
                     </div>
                     <input
@@ -1082,14 +1111,14 @@ export default function RegisterPage() {
                           confirmPassword: e.target.value,
                         })
                       }
-                      className="w-full pl-9 pr-9 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#FF5D00] transition-all"
+                      className="w-full pl-9 pr-9 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 text-[#FF5D00] hover:text-gray-600 focus:outline-none cursor-pointer"
+                      className="absolute right-3 text-[#2563EB] hover:text-[#0F172A] focus:outline-none cursor-pointer transition-colors"
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={15} />
@@ -1102,7 +1131,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600 select-none">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
                   <input
                     type="checkbox"
                     required
@@ -1110,13 +1139,13 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, agreeTerms: e.target.checked })
                     }
-                    className="w-4 h-4 rounded border-gray-300 text-[#FF5D00] focus:ring-[#FF5D00]"
+                    className="w-4 h-4 rounded border-[#E2E8F0] text-[#2563EB] focus:ring-[#2563EB]"
                   />
                   <span>
                     I agree to the{" "}
                     <Link
                       href="/terms"
-                      className="text-[#FF5D00] font-semibold hover:underline"
+                      className="text-[#2563EB] font-semibold hover:underline"
                     >
                       Terms & Conditions
                     </Link>
@@ -1124,22 +1153,23 @@ export default function RegisterPage() {
                 </label>
               </div>
 
+              {/* প্রাইমারি বাটন (Royal Blue `#2563EB`) */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 bg-[#FF5D00] hover:bg-[#e05200] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-orange-500/20 active:scale-[0.99] mt-2 cursor-pointer"
+                className="w-full py-3 px-4 bg-[#2563EB] hover:bg-[#1d4ed8] disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
               >
-                Register
+                <span>Register</span>
               </button>
             </form>
           </div>
 
           <div className="text-center mt-6">
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-slate-600">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-[#FF5D00] font-bold hover:underline ml-0.5"
+                className="text-[#2563EB] font-bold hover:underline ml-0.5"
               >
                 Sign In
               </Link>
@@ -1147,12 +1177,13 @@ export default function RegisterPage() {
           </div>
         </div>
 
+        {/* Floating Support Button - Accent Emerald Green (#10B981) */}
         <div className="fixed bottom-5 right-5 z-50">
           <a
             href="https://wa.me/8801700559595"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all"
+            className="w-12 h-12 bg-[#10B981] hover:bg-[#059669] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all"
             title="Chat with Support"
           >
             <MessageCircle size={26} className="fill-current" />
@@ -1160,30 +1191,34 @@ export default function RegisterPage() {
         </div>
       </div>
 
+      {/* OTP মেথড চয়েস মোডাল */}
       {isMethodModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-[#E2E8F0] relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsMethodModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
 
             <div className="text-center">
-              <div className="w-12 h-12 bg-orange-100 text-[#FF5D00] rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-blue-50 text-[#2563EB] rounded-full flex items-center justify-center mx-auto mb-3">
                 <KeyRound size={24} />
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1">
+              <h3 className="text-base font-bold text-[#0F172A] mb-1">
                 ভেরিফিকেশন মাধ্যম বেছে নিন
               </h3>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 আপনি কোথায় OTP কোডটি পেতে চান?
               </p>
 
               {methodNotice && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl text-left flex items-start gap-2 animate-in fade-in duration-200">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl text-left flex items-start gap-2 animate-in fade-in duration-200">
+                  <AlertCircle
+                    size={18}
+                    className="shrink-0 mt-0.5 text-amber-600"
+                  />
                   <p className="leading-tight font-medium">{methodNotice}</p>
                 </div>
               )}
@@ -1196,8 +1231,8 @@ export default function RegisterPage() {
                   }}
                   className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                     otpMethod === "email"
-                      ? "border-[#FF5D00] bg-orange-50/60 text-gray-900 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600 bg-white"
+                      ? "border-[#2563EB] bg-blue-50/60 text-[#0F172A] shadow-sm"
+                      : "border-[#E2E8F0] hover:border-slate-300 text-slate-600 bg-white"
                   }`}
                 >
                   <input
@@ -1208,13 +1243,13 @@ export default function RegisterPage() {
                       setOtpMethod("email");
                       setMethodNotice("");
                     }}
-                    className="accent-[#FF5D00] w-4 h-4"
+                    className="accent-[#2563EB] w-4 h-4"
                   />
                   <div className="overflow-hidden">
-                    <p className="text-xs font-bold text-gray-800">
+                    <p className="text-xs font-bold text-[#0F172A]">
                       Gmail (ইমেইল)
                     </p>
-                    <p className="text-[11px] text-gray-500 truncate">
+                    <p className="text-[11px] text-slate-500 truncate">
                       {formData.email || "example@gmail.com"}
                     </p>
                   </div>
@@ -1224,8 +1259,8 @@ export default function RegisterPage() {
                   onClick={() => setOtpMethod("phone")}
                   className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                     otpMethod === "phone"
-                      ? "border-[#FF5D00] bg-orange-50/60 text-gray-900 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600 bg-white"
+                      ? "border-[#2563EB] bg-blue-50/60 text-[#0F172A] shadow-sm"
+                      : "border-[#E2E8F0] hover:border-slate-300 text-slate-600 bg-white"
                   }`}
                 >
                   <input
@@ -1233,13 +1268,13 @@ export default function RegisterPage() {
                     name="otpMethod"
                     checked={otpMethod === "phone"}
                     onChange={() => setOtpMethod("phone")}
-                    className="accent-[#FF5D00] w-4 h-4"
+                    className="accent-[#2563EB] w-4 h-4"
                   />
                   <div>
-                    <p className="text-xs font-bold text-gray-800">
+                    <p className="text-xs font-bold text-[#0F172A]">
                       Phone (ফোন নম্বর)
                     </p>
-                    <p className="text-[11px] text-gray-500">
+                    <p className="text-[11px] text-slate-500">
                       {formData.countryCode} {formData.phone || "017XXXXXXXX"}
                     </p>
                   </div>
@@ -1249,7 +1284,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleSendOtp}
                 disabled={loading}
-                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-bold text-xs rounded-lg shadow-md shadow-blue-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Sending OTP..." : "Send OTP"}
               </button>
@@ -1258,26 +1293,27 @@ export default function RegisterPage() {
         </div>
       )}
 
+      {/* OTP ইনপুট ও ভেরিফিকেশন মোডাল */}
       {isOtpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#E2E8F0] relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsOtpModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-orange-100 text-[#FF5D00] rounded-full flex items-center justify-center mb-3">
-                <KeyRound size={24} />
+              <div className="w-12 h-12 bg-emerald-100 text-[#10B981] rounded-full flex items-center justify-center mb-3">
+                <ShieldCheck size={26} />
               </div>
-              <h3 className="text-base font-bold text-gray-900">
+              <h3 className="text-base font-bold text-[#0F172A]">
                 Verification Code Sent
               </h3>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 We've sent a 6-digit OTP code to{" "}
-                <span className="font-semibold text-gray-800">
+                <span className="font-semibold text-[#0F172A]">
                   {otpMethod === "email" ? formData.email : formData.phone}
                 </span>
               </p>
@@ -1289,7 +1325,7 @@ export default function RegisterPage() {
               )}
 
               <div className="w-full my-5">
-                <label className="block text-left text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-left text-xs font-medium text-slate-700 mb-1">
                   Enter 6-Digit OTP
                 </label>
                 <input
@@ -1298,14 +1334,15 @@ export default function RegisterPage() {
                   placeholder="e.g. 123456"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="w-full text-center tracking-[0.5em] text-lg font-bold py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FF5D00] transition-colors"
+                  className="w-full text-center tracking-[0.5em] text-lg font-bold py-2.5 border border-[#E2E8F0] text-[#0F172A] rounded-lg focus:outline-none focus:border-[#2563EB] transition-colors"
                 />
               </div>
 
+              {/* Accent Emerald Green (`#10B981`) Complete CTA Button */}
               <button
                 onClick={handleVerifyAndRegister}
                 disabled={loading}
-                className="w-full py-3 bg-[#FF5D00] hover:bg-[#e05200] text-white font-bold text-xs rounded-lg shadow-md shadow-orange-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-xs rounded-lg shadow-md shadow-emerald-500/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Verifying..." : "Verify & Complete Registration"}
               </button>
@@ -1313,7 +1350,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleSendOtp}
                 type="button"
-                className="mt-3 text-xs text-gray-500 hover:text-[#FF5D00] font-medium transition-colors cursor-pointer"
+                className="mt-3 text-xs text-slate-500 hover:text-[#2563EB] font-medium transition-colors cursor-pointer"
               >
                 Didn't receive code? Resend OTP
               </button>

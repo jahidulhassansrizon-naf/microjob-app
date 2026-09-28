@@ -220,7 +220,7 @@ export default function UsefulLinks({ onBack }: UsefulLinksProps) {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF1F9] text-[#356EAA]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E2E8F0] text-[#2563EB]">
               <Link2 size={17} />
             </div>
 
@@ -252,7 +252,7 @@ export default function UsefulLinks({ onBack }: UsefulLinksProps) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search useful links..."
-            className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-xs font-semibold text-gray-700 outline-none placeholder:text-gray-400 focus:border-[#D6A11E]"
+            className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-xs font-semibold text-gray-700 outline-none placeholder:text-gray-400 focus:border-[#2563EB]"
           />
         </div>
       </div>
@@ -271,7 +271,7 @@ export default function UsefulLinks({ onBack }: UsefulLinksProps) {
               rel="noreferrer"
               className="group relative flex min-h-[138px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 py-4 text-center shadow-[0_2px_8px_rgba(16,24,40,.04)] transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#6AC7A4]" />
+              <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#10B981]" />
 
               <div
                 className={`flex h-14 w-14 items-center justify-center rounded-2xl text-[11px] font-black ${tone}`}
@@ -314,8 +314,8 @@ export default function UsefulLinks({ onBack }: UsefulLinksProps) {
       )}
 
       {/* DISCLAIMER */}
-      <div className="mt-6 rounded-2xl border border-[#F1D7A7] bg-[#FFF9E7] p-5">
-        <p className="text-xs font-black text-[#B8790C]">
+      <div className="mt-6 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
+        <p className="text-xs font-black text-[#0F172A]">
           Warning &amp; Disclaimer
         </p>
 

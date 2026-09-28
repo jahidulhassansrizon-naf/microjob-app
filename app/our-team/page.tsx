@@ -13,7 +13,6 @@ type TeamItem = {
     | "Customer Team"
     | "Support"
     | "Group photos";
-  image: string;
   wide?: boolean;
 };
 
@@ -31,148 +30,128 @@ type Filter = (typeof filters)[number];
 const team: TeamItem[] = [
   {
     id: 1,
-    name: "Sahajaka Team — 2025",
+    name: "Name will be updated soon...",
     role: "Group photos",
     category: "Group photos",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-team-4.webp",
     wide: true,
   },
   {
     id: 2,
-    name: "Salim Rana",
+    name: "Name will be updated soon...",
     role: "Founder and CEO",
     category: "Leadership",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-ceo.webp",
   },
   {
     id: 3,
-    name: "Al Imran",
+    name: "Name will be updated soon...",
     role: "CTO",
     category: "Leadership",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-cto.webp",
   },
   {
     id: 4,
-    name: "Arkam Hossain",
+    name: "Name will be updated soon...",
     role: "Lead Developer",
     category: "Development",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-dev-team-3.webp",
   },
   {
     id: 5,
-    name: "Arafat Akash",
+    name: "Name will be updated soon...",
     role: "Developer",
     category: "Development",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-dev-team-2.webp",
   },
   {
     id: 6,
-    name: "Development Team",
+    name: "Name will be updated soon...",
     role: "Development",
     category: "Development",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-dev-team-1.webp",
     wide: true,
   },
   {
     id: 7,
-    name: "Sahajaka Team",
+    name: "Name will be updated soon...",
     role: "Group photos",
     category: "Group photos",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-team-2.webp",
     wide: true,
   },
   {
     id: 8,
-    name: "Shamim Hasan",
+    name: "Name will be updated soon...",
     role: "Developer",
     category: "Development",
-    image: "https://files.sohozkaj.com/teams/shamim-dev.webp",
   },
   {
     id: 9,
-    name: "Tanjidul Islam Shakib",
+    name: "Name will be updated soon...",
     role: "Customer Support",
     category: "Customer Team",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-support-1.webp",
   },
   {
     id: 10,
-    name: "Tajbir Alam",
+    name: "Name will be updated soon...",
     role: "Developer",
     category: "Development",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-tazbir.webp",
   },
   {
     id: 11,
-    name: "Habib Ali",
+    name: "Name will be updated soon...",
     role: "Customer Support",
     category: "Customer Team",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-hasib.webp",
   },
   {
     id: 12,
-    name: "Sakib Alim",
+    name: "Name will be updated soon...",
     role: "Video editing",
     category: "Support",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-video-team-1.webp",
   },
   {
     id: 13,
-    name: "Mehdi Hassan Echo",
+    name: "Name will be updated soon...",
     role: "Customer Support",
     category: "Customer Team",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-support-2.webp",
   },
   {
     id: 14,
-    name: "Sahajaka Team",
+    name: "Name will be updated soon...",
     role: "Group photos",
     category: "Group photos",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-team-5.webp",
     wide: true,
   },
   {
     id: 15,
-    name: "Abu Imran",
+    name: "Name will be updated soon...",
     role: "Content",
     category: "Support",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-team-1.webp",
   },
   {
     id: 16,
-    name: "Md. Aljami Javad",
+    name: "Name will be updated soon...",
     role: "Customer Team",
     category: "Customer Team",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-jami.webp",
   },
   {
     id: 17,
-    name: "Al Sajjadul",
+    name: "Name will be updated soon...",
     role: "Customer Team",
     category: "Customer Team",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-suza.webp",
   },
   {
     id: 18,
-    name: "Manjur Rahman",
+    name: "Name will be updated soon...",
     role: "Marketing",
     category: "Support",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-ridoy.webp",
   },
   {
     id: 19,
-    name: "Video Team",
+    name: "Name will be updated soon...",
     role: "Group photos",
     category: "Group photos",
-    image: "https://files.sohozkaj.com/teams/video-team.webp",
     wide: true,
   },
   {
     id: 20,
-    name: "Team Moment",
+    name: "Name will be updated soon...",
     role: "Group photos",
     category: "Group photos",
-    image: "https://files.sohozkaj.com/teams/sohozkaj-shehan.webp",
   },
 ];
 
@@ -231,6 +210,26 @@ function PhotoBadge() {
   );
 }
 
+function PhotoPlaceholderIcon() {
+  return (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+    </svg>
+  );
+}
+
 export default function OurTeamPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
 
@@ -275,7 +274,7 @@ export default function OurTeamPage() {
               </div>
 
               <span className="picture-count">
-                <span className="count-dot" /> {team.length} pictures
+                <span className="count-dot" /> {team.length} members
               </span>
             </div>
           </header>
@@ -293,31 +292,27 @@ export default function OurTeamPage() {
                 </button>
               ))}
             </div>
-            <span className="result-count">{visibleTeam.length} pictures</span>
+            <span className="result-count">{visibleTeam.length} members</span>
           </div>
 
-          <section className="gallery" aria-label="Our team photos">
+          <section className="gallery" aria-label="Our team members">
             {visibleTeam.map((member) => (
               <article
                 key={member.id}
                 className={`team-card ${member.wide ? "wide" : ""}`}
               >
                 <div className="photo-wrap">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    loading={member.id <= 6 ? "eager" : "lazy"}
-                    onError={(event) => {
-                      const image = event.currentTarget;
-                      image.style.display = "none";
-                      image.parentElement?.classList.add("image-missing");
-                    }}
-                  />
+                  <div className="photo-placeholder">
+                    <PhotoPlaceholderIcon />
+                    <span>Photo will be added soon...</span>
+                  </div>
                   <PhotoBadge />
                 </div>
 
                 <div className="card-copy">
-                  <h2>{member.name}</h2>
+                  <h2 className="italic text-slate-400 font-normal">
+                    {member.name}
+                  </h2>
                   <p>
                     <span className="role-bullet" />
                     {member.role}
@@ -344,8 +339,8 @@ export default function OurTeamPage() {
           }
 
           body {
-            background: #fbfcfe;
-            color: #10203b;
+            background: #f8fafc;
+            color: #0f172a;
             font-family:
               Inter,
               ui-sans-serif,
@@ -369,10 +364,10 @@ export default function OurTeamPage() {
             background:
               radial-gradient(
                 circle at top left,
-                rgba(255, 126, 0, 0.035),
+                rgba(37, 99, 235, 0.035),
                 transparent 27%
               ),
-              #fbfcfe;
+              #f8fafc;
           }
 
           .team-shell {
@@ -382,7 +377,7 @@ export default function OurTeamPage() {
 
           .page-header {
             padding: 2px 0 20px;
-            border-bottom: 1px solid #e8ebf1;
+            border-bottom: 1px solid #e2e8f0;
           }
 
           .header-topline,
@@ -402,14 +397,14 @@ export default function OurTeamPage() {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #91a0b4;
+            color: #64748b;
             font-size: 11px;
             font-weight: 600;
             letter-spacing: -0.01em;
           }
 
           .crumbs strong {
-            color: #23324d;
+            color: #0f172a;
             font-weight: 800;
           }
 
@@ -417,11 +412,11 @@ export default function OurTeamPage() {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #7e8ba0;
+            color: #64748b;
           }
 
           .crumb-separator {
-            color: #c5ccd6;
+            color: #cbd5e1;
             font-size: 15px;
             transform: translateY(-1px);
           }
@@ -430,7 +425,7 @@ export default function OurTeamPage() {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            color: #8996aa;
+            color: #64748b;
             text-decoration: none;
             font-size: 11px;
             font-weight: 700;
@@ -438,7 +433,7 @@ export default function OurTeamPage() {
           }
 
           .back-link:hover {
-            color: #10203b;
+            color: #2563eb;
           }
 
           .title-row {
@@ -459,17 +454,17 @@ export default function OurTeamPage() {
             border-radius: 10px;
             display: grid;
             place-items: center;
-            background: linear-gradient(180deg, #fffaf3, #fff3e5);
-            border: 1px solid #ffdcb2;
-            box-shadow: 0 2px 5px rgba(51, 32, 0, 0.04);
+            background: linear-gradient(180deg, #eff6ff, #dbeafe);
+            border: 1px solid #bfdbfe;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.05);
           }
 
           .title-icon span {
             width: 8px;
             height: 8px;
             border-radius: 3px;
-            background: #ff7a00;
-            box-shadow: 0 0 0 1px rgba(255, 122, 0, 0.04);
+            background: #2563eb;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
           }
 
           h1 {
@@ -477,13 +472,13 @@ export default function OurTeamPage() {
             font-size: clamp(22px, 2.2vw, 27px);
             line-height: 1;
             letter-spacing: -0.035em;
-            color: #0f1b33;
+            color: #0f172a;
             font-weight: 850;
           }
 
           .title-left p {
             margin: 6px 0 0;
-            color: #8e9aae;
+            color: #64748b;
             font-size: 11px;
             line-height: 1.35;
             font-weight: 600;
@@ -493,9 +488,9 @@ export default function OurTeamPage() {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            color: #d87a16;
-            border: 1px solid #ffd7ac;
-            background: #fffaf3;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
             border-radius: 999px;
             padding: 8px 11px;
             font-size: 10px;
@@ -507,12 +502,12 @@ export default function OurTeamPage() {
             width: 5px;
             height: 5px;
             border-radius: 50%;
-            background: #ff7a00;
+            background: #2563eb;
           }
 
           .filter-bar {
             padding: 16px 0 14px;
-            border-bottom: 1px solid #eef0f4;
+            border-bottom: 1px solid #e2e8f0;
           }
 
           .filter-row {
@@ -523,9 +518,9 @@ export default function OurTeamPage() {
           }
 
           .filter-pill {
-            border: 1px solid #dbe0e8;
+            border: 1px solid #cbd5e1;
             background: #fff;
-            color: #5f6d83;
+            color: #475569;
             min-height: 31px;
             padding: 7px 14px;
             border-radius: 999px;
@@ -544,19 +539,19 @@ export default function OurTeamPage() {
 
           .filter-pill:hover {
             transform: translateY(-1px);
-            border-color: #cbd3df;
-            box-shadow: 0 5px 12px rgba(26, 40, 65, 0.05);
+            border-color: #94a3b8;
+            box-shadow: 0 5px 12px rgba(15, 23, 42, 0.05);
           }
 
           .filter-pill.active {
             color: #fff;
-            background: #ff7a00;
-            border-color: #ff7a00;
-            box-shadow: 0 8px 16px rgba(255, 122, 0, 0.18);
+            background: #2563eb;
+            border-color: #2563eb;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
           }
 
           .result-count {
-            color: #99a4b4;
+            color: #64748b;
             font-size: 10px;
             font-weight: 800;
             white-space: nowrap;
@@ -573,10 +568,18 @@ export default function OurTeamPage() {
           .team-card {
             min-width: 0;
             overflow: hidden;
-            border: 1px solid #e4e7ed;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             background: #fff;
-            box-shadow: 0 2px 5px rgba(20, 30, 50, 0.045);
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+            transition:
+              border-color 200ms ease,
+              box-shadow 200ms ease;
+          }
+
+          .team-card:hover {
+            border-color: #bfdbfe;
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
           }
 
           .team-card.wide {
@@ -587,20 +590,24 @@ export default function OurTeamPage() {
             position: relative;
             height: 174px;
             overflow: hidden;
-            background: linear-gradient(135deg, #eef1f5, #f7f8fa);
+            background: #f1f5f9;
           }
 
-          .photo-wrap img {
+          .photo-placeholder {
             width: 100%;
             height: 100%;
-            display: block;
-            object-fit: cover;
-            object-position: center;
-            transition: transform 260ms ease;
-          }
-
-          .team-card:hover .photo-wrap img {
-            transform: scale(1.028);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 600;
+            font-style: italic;
+            padding: 12px;
+            text-align: center;
+            user-select: none;
           }
 
           .photo-badge {
@@ -613,10 +620,10 @@ export default function OurTeamPage() {
             width: 22px;
             height: 22px;
             border-radius: 7px;
-            color: #647287;
-            background: rgba(255, 255, 255, 0.86);
+            color: #475569;
+            background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 2px 7px rgba(22, 32, 48, 0.11);
+            box-shadow: 0 2px 7px rgba(15, 23, 42, 0.1);
             backdrop-filter: blur(3px);
           }
 
@@ -626,11 +633,9 @@ export default function OurTeamPage() {
 
           .card-copy h2 {
             margin: 0;
-            color: #152440;
             font-size: 11px;
             line-height: 1.22;
             letter-spacing: -0.015em;
-            font-weight: 850;
           }
 
           .card-copy p {
@@ -638,7 +643,7 @@ export default function OurTeamPage() {
             align-items: center;
             gap: 6px;
             margin: 5px 0 0;
-            color: #99a3b3;
+            color: #64748b;
             font-size: 9px;
             line-height: 1.15;
             font-weight: 700;
@@ -649,18 +654,7 @@ export default function OurTeamPage() {
             height: 5px;
             flex: 0 0 5px;
             border-radius: 2px;
-            background: #ff7a00;
-          }
-
-          .image-missing::before {
-            content: "Team photo";
-            position: absolute;
-            inset: 0;
-            display: grid;
-            place-items: center;
-            color: #a7b0bf;
-            font-size: 12px;
-            font-weight: 800;
+            background: #2563eb;
           }
 
           @media (max-width: 860px) {

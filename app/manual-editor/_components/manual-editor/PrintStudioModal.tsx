@@ -77,8 +77,6 @@ const PRESETS: Preset[] = [
   { id: "5R", label: "5R", widthMm: 127, heightMm: 177.8 },
   { id: "6R", label: "6R", widthMm: 152.4, heightMm: 203.2 },
   { id: "8R", label: "8R", widthMm: 203.2, heightMm: 254 },
-  // The supplied reference does not specify physical B-size dimensions.
-  // Keep these in one table so they can be changed without touching layout code.
   { id: "4B", label: "4B", widthMm: 101.6, heightMm: 152.4 },
   { id: "5B", label: "5B", widthMm: 127, heightMm: 177.8 },
   { id: "6B", label: "6B", widthMm: 152.4, heightMm: 203.2 },
@@ -101,8 +99,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
 
-    // Saved history images are Cloudinary URLs. Anonymous CORS is required
-    // before drawing them into the export canvas for PDF/Print.
     image.crossOrigin = "anonymous";
     image.decoding = "async";
 
@@ -762,7 +758,7 @@ export default function PrintStudioModal() {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const width = item.widthMm * scale;
       const height = item.heightMm * scale;
       const x = item.xMm * scale;
@@ -774,13 +770,13 @@ export default function PrintStudioModal() {
       drawCover(ctx, image, -width / 2, -height / 2, width, height);
 
       if (imageBorder) {
-        ctx.strokeStyle = "#202020";
+        ctx.strokeStyle = "#0F172A";
         ctx.lineWidth = Math.max(1, 0.25 * scale);
         ctx.strokeRect(-width / 2, -height / 2, width, height);
       }
 
       if (cuttingBorder) {
-        ctx.strokeStyle = "#555555";
+        ctx.strokeStyle = "#475569";
         ctx.lineWidth = Math.max(1, 0.18 * scale);
         ctx.setLineDash([1.1 * scale, 1.1 * scale]);
         ctx.strokeRect(-width / 2, -height / 2, width, height);
@@ -910,17 +906,17 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
   const selectedItem = items.find((item) => item.id === selectedId) ?? null;
 
   const modal = (
-    <div className="fixed inset-0 z-[10000] bg-[#dfe2e7] text-gray-900 flex flex-col font-sans overflow-hidden">
-      <header className="h-14 shrink-0 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-5 shadow-sm">
+    <div className="fixed inset-0 z-[10000] bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans overflow-hidden">
+      <header className="h-14 shrink-0 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-4 sm:px-5 shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shrink-0">
             <ImageIcon size={16} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-extrabold truncate">
+            <h1 className="text-sm font-extrabold truncate text-[#0F172A]">
               Print This Image
             </h1>
-            <p className="text-[9px] text-gray-400 truncate">
+            <p className="text-[9px] text-[#0F172A]/60 truncate">
               Photo Layout & Print Studio
             </p>
           </div>
@@ -928,7 +924,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
         <button
           type="button"
           onClick={closePrintStudio}
-          className="w-8 h-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer"
+          className="w-8 h-8 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] flex items-center justify-center cursor-pointer text-[#0F172A] transition-colors"
           aria-label="Close print studio"
         >
           <X size={16} />
@@ -936,25 +932,25 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
       </header>
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <aside className="w-[280px] shrink-0 bg-white border-r border-gray-200 overflow-y-auto flex flex-col">
-          <div className="p-4 border-b border-gray-100">
+        <aside className="w-[280px] shrink-0 bg-white border-r border-[#E2E8F0] overflow-y-auto flex flex-col">
+          <div className="p-4 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2 mb-3">
               <img
                 src={printStudioImage}
                 alt="Current photo"
-                className="w-12 h-14 object-cover rounded-md border border-gray-200 bg-gray-50"
+                className="w-12 h-14 object-cover rounded-md border border-[#E2E8F0] bg-[#F8FAFC]"
               />
               <div className="min-w-0">
-                <p className="text-[10px] font-extrabold text-gray-800">
+                <p className="text-[10px] font-extrabold text-[#0F172A]">
                   Quick Add
                 </p>
-                <p className="text-[8px] text-gray-400 mt-0.5 leading-relaxed">
+                <p className="text-[8px] text-[#0F172A]/60 mt-0.5 leading-relaxed">
                   Add multiple copies of the current photo in different sizes.
                 </p>
               </div>
             </div>
 
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-gray-500 mb-1.5">
+            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5">
               Units
             </p>
             <div className="grid grid-cols-4 gap-1.5 mb-3">
@@ -964,7 +960,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     key={quantity}
                     type="button"
                     onClick={() => addPreset(sourcePreset, quantity)}
-                    className="h-8 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-extrabold cursor-pointer"
+                    className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[9px] font-extrabold cursor-pointer transition-colors"
                     title={`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`}
                   >
                     {quantity}U
@@ -997,10 +993,10 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     className="grid grid-cols-[1fr_repeat(3,32px)] gap-1.5 items-center"
                   >
                     <div>
-                      <p className="text-[9px] font-bold text-gray-800">
+                      <p className="text-[9px] font-bold text-[#0F172A]">
                         {preset.label}
                       </p>
-                      <p className="text-[8px] text-gray-400">
+                      <p className="text-[8px] text-[#0F172A]/60">
                         {preset.widthMm}×{preset.heightMm} mm
                       </p>
                     </div>
@@ -1009,7 +1005,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                         key={`${preset.id}-${quantity}`}
                         type="button"
                         onClick={() => addPreset(preset, quantity)}
-                        className="h-7 rounded-md bg-gray-700 hover:bg-gray-800 text-white text-[8px] font-extrabold cursor-pointer"
+                        className="h-7 rounded-md bg-[#0F172A] hover:bg-[#1E293B] text-white text-[8px] font-extrabold cursor-pointer transition-colors"
                       >
                         {quantity}+
                       </button>
@@ -1019,7 +1015,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               })}
             </div>
 
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-gray-500 mt-4 mb-1.5">
+            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mt-4 mb-1.5">
               Photo Sizes
             </p>
             <div className="grid grid-cols-4 gap-1.5">
@@ -1030,7 +1026,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                   key={preset.id}
                   type="button"
                   onClick={() => addPreset(preset)}
-                  className="h-8 rounded-md bg-sky-500 hover:bg-sky-600 text-white text-[8px] font-extrabold cursor-pointer"
+                  className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[8px] font-extrabold cursor-pointer transition-colors"
                 >
                   {preset.label}
                 </button>
@@ -1045,7 +1041,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                   key={preset.id}
                   type="button"
                   onClick={() => addPreset(preset)}
-                  className="h-8 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-[8px] font-extrabold cursor-pointer"
+                  className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[8px] font-extrabold cursor-pointer transition-colors"
                 >
                   {preset.label}
                 </button>
@@ -1053,8 +1049,8 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="p-4 border-b border-gray-100">
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-gray-500 mb-1.5">
+          <div className="p-4 border-b border-[#E2E8F0]">
+            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5">
               Options
             </p>
             <div className="space-y-1.5">
@@ -1079,23 +1075,23 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               ).map(({ label, checked, setChecked }) => (
                 <label
                   key={label}
-                  className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] cursor-pointer transition-colors"
                 >
-                  <span className="text-[9px] font-semibold text-gray-700">
+                  <span className="text-[9px] font-semibold text-[#0F172A]">
                     {label}
                   </span>
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={(event) => setChecked(event.target.checked)}
-                    className="accent-amber-500 cursor-pointer"
+                    className="accent-[#2563EB] cursor-pointer"
                   />
                 </label>
               ))}
             </div>
 
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-1 text-[9px] font-bold text-gray-500">
+              <div className="flex items-center justify-between mb-1 text-[9px] font-bold text-[#0F172A]/70">
                 <span>Image Gap (mm): {gapMm}</span>
               </div>
               <input
@@ -1105,9 +1101,9 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 step={0.5}
                 value={gapMm}
                 onChange={(event) => setGapMm(Number(event.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
+                className="w-full accent-[#2563EB] cursor-pointer"
               />
-              <div className="flex justify-between text-[8px] text-gray-400 mt-0.5">
+              <div className="flex justify-between text-[8px] text-[#0F172A]/50 mt-0.5">
                 <span>0</span>
                 <span>5</span>
                 <span>10</span>
@@ -1115,15 +1111,15 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="p-4 border-b border-gray-100">
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-gray-500 mb-1.5">
+          <div className="p-4 border-b border-[#E2E8F0]">
+            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5">
               Page & Layout
             </p>
 
             <select
               value={pageSizeKey}
               onChange={(event) => setPage(event.target.value as PageSizeKey)}
-              className="w-full h-8 rounded-lg border border-gray-200 bg-white px-2 text-[9px] font-semibold cursor-pointer"
+              className="w-full h-8 rounded-lg border border-[#E2E8F0] bg-white text-[#0F172A] px-2 text-[9px] font-semibold cursor-pointer"
             >
               {Object.entries(PAGE_SIZES).map(([key, page]) => (
                 <option key={key} value={key}>
@@ -1136,14 +1132,14 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button
                 type="button"
                 onClick={() => setPageOrientation("portrait")}
-                className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer ${orientation === "portrait" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#2563EB] text-white" : "bg-[#E2E8F0] text-[#0F172A] hover:bg-[#cbd5e1]"}`}
               >
                 Portrait
               </button>
               <button
                 type="button"
                 onClick={() => setPageOrientation("landscape")}
-                className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer ${orientation === "landscape" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#2563EB] text-white" : "bg-[#E2E8F0] text-[#0F172A] hover:bg-[#cbd5e1]"}`}
               >
                 Landscape
               </button>
@@ -1153,7 +1149,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button
                 type="button"
                 onClick={centerAlign}
-                className="h-8 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1"
+                className="h-8 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1"
               >
                 <AlignCenterHorizontal size={11} />
                 Center
@@ -1161,7 +1157,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button
                 type="button"
                 onClick={rightAlign}
-                className="h-8 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1"
+                className="h-8 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1"
               >
                 <AlignRight size={11} />
                 Right
@@ -1169,7 +1165,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button
                 type="button"
                 onClick={autoArrange}
-                className="h-8 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1"
+                className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors"
               >
                 <Grid3X3 size={11} />
                 Auto
@@ -1181,7 +1177,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 type="button"
                 onClick={undo}
                 disabled={!history.length}
-                className="h-8 rounded-md border border-gray-200 text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                className="h-8 rounded-md border border-[#E2E8F0] text-[#0F172A] text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
               >
                 <Undo2 size={11} />
                 Undo
@@ -1190,7 +1186,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 type="button"
                 onClick={redo}
                 disabled={!future.length}
-                className="h-8 rounded-md border border-gray-200 text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                className="h-8 rounded-md border border-[#E2E8F0] text-[#0F172A] text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
               >
                 <Redo2 size={11} />
                 Redo
@@ -1198,12 +1194,12 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="mt-auto p-4 border-t border-gray-100">
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 mb-2.5">
-              <p className="text-[8px] uppercase font-bold text-gray-400">
+          <div className="mt-auto p-4 border-t border-[#E2E8F0]">
+            <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 mb-2.5">
+              <p className="text-[8px] uppercase font-bold text-[#0F172A]/50">
                 Total
               </p>
-              <p className="text-[11px] font-extrabold text-gray-800 mt-0.5">
+              <p className="text-[11px] font-extrabold text-[#0F172A] mt-0.5">
                 {items.length} {items.length === 1 ? "photo" : "photos"}
               </p>
             </div>
@@ -1211,7 +1207,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button
                 type="button"
                 onClick={() => commit([], items)}
-                className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer"
+                className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors"
                 title="Remove all"
               >
                 <Trash2 size={15} />
@@ -1220,7 +1216,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 type="button"
                 onClick={downloadPdf}
                 disabled={!items.length || isExporting}
-                className="h-10 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-[9px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                className="h-10 rounded-lg bg-[#E2E8F0] hover:bg-[#cbd5e1] text-[#0F172A] text-[9px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors"
               >
                 <Download size={13} />
                 {isExporting ? "Preparing…" : "Download PDF"}
@@ -1230,7 +1226,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               type="button"
               onClick={printLayout}
               disabled={!items.length || isExporting}
-              className="w-full mt-2 h-11 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+              className="w-full mt-2 h-11 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors"
             >
               <Printer size={15} />
               Print
@@ -1238,9 +1234,9 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#dfe2e7]">
-          <div className="h-11 shrink-0 bg-white/80 border-b border-gray-200 px-4 flex items-center justify-between">
-            <div className="text-[9px] font-bold text-gray-500">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F8FAFC]">
+          <div className="h-11 shrink-0 bg-white/80 border-b border-[#E2E8F0] px-4 flex items-center justify-between">
+            <div className="text-[9px] font-bold text-[#0F172A]/70">
               {items.length} items • {pageWidthMm.toFixed(1)}×
               {pageHeightMm.toFixed(1)} mm
             </div>
@@ -1252,11 +1248,11 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     clamp(value - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX),
                   )
                 }
-                className="w-7 h-7 rounded-md bg-white border border-gray-200 flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] flex items-center justify-center cursor-pointer hover:bg-[#F8FAFC]"
               >
                 <Minus size={12} />
               </button>
-              <span className="w-12 text-center text-[9px] font-extrabold text-gray-600">
+              <span className="w-12 text-center text-[9px] font-extrabold text-[#0F172A]">
                 {zoom}%
               </span>
               <button
@@ -1266,7 +1262,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     clamp(value + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX),
                   )
                 }
-                className="w-7 h-7 rounded-md bg-white border border-gray-200 flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] flex items-center justify-center cursor-pointer hover:bg-[#F8FAFC]"
               >
                 <Plus size={12} />
               </button>
@@ -1275,7 +1271,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                   key={value}
                   type="button"
                   onClick={() => setZoom(value)}
-                  className="w-8 h-7 rounded-md bg-white border border-gray-200 text-[8px] font-extrabold cursor-pointer"
+                  className="w-8 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] text-[8px] font-extrabold cursor-pointer hover:bg-[#F8FAFC]"
                 >
                   {value}
                 </button>
@@ -1290,7 +1286,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
           >
             <div
               ref={pageRef}
-              className="relative shrink-0 bg-white border border-gray-200 shadow-[0_18px_48px_rgba(0,0,0,0.16)]"
+              className="relative shrink-0 bg-white border border-[#E2E8F0] shadow-[0_18px_48px_rgba(15,23,42,0.12)]"
               style={{
                 width: `${pageWidthMm * visualScale}px`,
                 height: `${pageHeightMm * visualScale}px`,
@@ -1326,7 +1322,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     onPointerCancel={endInteraction}
                   >
                     <div
-                      className={`relative w-full h-full bg-white overflow-visible ${selected ? "ring-2 ring-amber-400 ring-offset-1" : ""}`}
+                      className={`relative w-full h-full bg-white overflow-visible ${selected ? "ring-2 ring-[#2563EB] ring-offset-1" : ""}`}
                     >
                       <img
                         src={printStudioImage}
@@ -1335,10 +1331,10 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                         className="block w-full h-full object-cover pointer-events-none select-none"
                       />
                       {imageBorder && (
-                        <div className="absolute inset-0 border border-gray-900/80 pointer-events-none" />
+                        <div className="absolute inset-0 border border-[#0F172A]/80 pointer-events-none" />
                       )}
                       {cuttingBorder && (
-                        <div className="absolute inset-0 border border-dashed border-gray-600/80 pointer-events-none" />
+                        <div className="absolute inset-0 border border-dashed border-[#0F172A]/60 pointer-events-none" />
                       )}
 
                       {selected && (
@@ -1361,7 +1357,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                             onPointerDown={(event) =>
                               beginInteraction(event, item.id, "rotate")
                             }
-                            className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-amber-500 text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing"
+                            className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing"
                             title="Rotate"
                           >
                             <RotateCw size={10} />
@@ -1372,13 +1368,13 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                             onPointerDown={(event) =>
                               beginInteraction(event, item.id, "resize")
                             }
-                            className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-blue-500 text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize"
+                            className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize"
                             title="Resize"
                           >
                             <Move size={10} className="rotate-45" />
                           </button>
 
-                          <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-slate-900/90 text-white px-1.5 py-1 text-[7px] font-bold whitespace-nowrap pointer-events-none">
+                          <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-[#0F172A]/90 text-white px-1.5 py-1 text-[7px] font-bold whitespace-nowrap pointer-events-none">
                             {item.label} · {item.widthMm.toFixed(1)}×
                             {item.heightMm.toFixed(1)} mm
                           </div>
@@ -1392,13 +1388,13 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               {!items.length && (
                 <div className="absolute inset-0 flex items-center justify-center text-center pointer-events-none">
                   <div>
-                    <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-2 text-gray-400">
+                    <div className="w-11 h-11 rounded-xl bg-[#E2E8F0] flex items-center justify-center mx-auto mb-2 text-[#0F172A]/40">
                       <Grid3X3 size={19} />
                     </div>
-                    <p className="text-xs font-extrabold text-gray-400">
+                    <p className="text-xs font-extrabold text-[#0F172A]/60">
                       Your print page is empty
                     </p>
-                    <p className="text-[9px] text-gray-400 mt-1">
+                    <p className="text-[9px] text-[#0F172A]/40 mt-1">
                       Use Quick Add to place photos.
                     </p>
                   </div>
@@ -1407,7 +1403,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="h-9 shrink-0 bg-white/80 border-t border-gray-200 px-4 flex items-center justify-center gap-2 text-[8px] text-gray-500">
+          <div className="h-9 shrink-0 bg-white/80 border-t border-[#E2E8F0] px-4 flex items-center justify-center gap-2 text-[8px] text-[#0F172A]/60">
             <Move size={11} />
             Drag
             <span>•</span>
@@ -1426,24 +1422,24 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
         </main>
 
         {toast && (
-          <div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-amber-200 bg-white shadow-xl p-3">
-            <p className="text-[10px] font-extrabold text-gray-900">
+          <div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-white shadow-xl p-3">
+            <p className="text-[10px] font-extrabold text-[#0F172A]">
               Page Full
             </p>
-            <p className="text-[9px] text-gray-500 mt-0.5 leading-relaxed">
+            <p className="text-[9px] text-[#0F172A]/70 mt-0.5 leading-relaxed">
               {toast}
             </p>
           </div>
         )}
       </div>
 
-      <footer className="h-8 shrink-0 bg-white border-t border-gray-200 px-4 flex items-center justify-between text-[8px] text-gray-400">
+      <footer className="h-8 shrink-0 bg-white border-t border-[#E2E8F0] px-4 flex items-center justify-between text-[8px] text-[#0F172A]/50">
         <span>Photo Layout & Print Studio</span>
         <button
           type="button"
           onClick={rotateSelected}
           disabled={!selectedId}
-          className="flex items-center gap-1 hover:text-gray-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1 hover:text-[#0F172A] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <RotateCw size={10} />
           Rotate selected 90°

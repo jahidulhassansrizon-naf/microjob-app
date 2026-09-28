@@ -23,7 +23,6 @@ import {
   Upload,
   Image as ImageIcon,
   CreditCard,
-  Wand2,
   Crop,
   Trash2,
   Check,
@@ -982,7 +981,7 @@ function ProcessedThumbnail({
   if (!src) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
-        <span className="w-4 h-4 rounded-full border-2 border-amber-300 border-t-amber-600 animate-spin" />
+        <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-amber-600 animate-spin" />
       </div>
     );
   }
@@ -1211,10 +1210,10 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
         }
       }}
     >
-      <div className="w-full max-w-6xl bg-[#fffdf2] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-amber-100">
+      <div className="w-full max-w-6xl bg-[#F8FAFC] rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-[#E2E8F0]">
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-900">
+            <h3 className="text-sm font-bold text-[#0F172A]">
               Crop & straighten passport page
             </h3>
             <p className="text-[11px] text-gray-500 mt-1">
@@ -1227,7 +1226,7 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-white transition-colors shrink-0"
+            className="p-2 rounded-xl text-gray-400 hover:text-[#0F172A] hover:bg-white transition-colors shrink-0"
             aria-label="Close crop editor"
           >
             <X size={18} />
@@ -1369,10 +1368,10 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-t border-amber-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-t border-[#E2E8F0]">
           <div className="flex flex-col gap-1 text-[10px] text-gray-500">
             <div className="flex items-center gap-2">
-              <GripVertical size={13} className="text-amber-500" />
+              <GripVertical size={13} className="text-[#2563EB]" />
               <span>
                 Corner handles move independently; edge handles move two corners
                 together.
@@ -1388,21 +1387,21 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
             <button
               type="button"
               onClick={resetCrop}
-              className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-white transition-colors"
+              className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-[#0F172A] hover:bg-white transition-colors"
             >
               Reset crop
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-white transition-colors"
+              className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-[#0F172A] hover:bg-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={() => onApply(getSafeCrop(crop, crop))}
-              className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#2563EB] text-white text-xs font-bold hover:bg-[#2563EB] transition-colors flex items-center gap-1.5"
             >
               <Check size={14} />
               Apply crop
@@ -1453,7 +1452,7 @@ function UploadSlot({
 
   return (
     <div
-      className="relative w-full border-2 border-dashed border-amber-300 bg-amber-50/30 hover:bg-amber-50/60 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer min-h-[220px] transition-all overflow-hidden"
+      className="relative w-full border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/30 hover:bg-[#F8FAFC]/60 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer min-h-[220px] transition-all overflow-hidden"
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("button")) {
           return;
@@ -1497,7 +1496,7 @@ function UploadSlot({
               </div>
 
               <div className="min-w-0 flex-1 text-left">
-                <p className="text-[10px] font-bold text-gray-800 truncate">
+                <p className="text-[10px] font-bold text-[#0F172A] truncate">
                   {asset.file.name}
                 </p>
                 <p className="text-[9px] text-gray-400">
@@ -1512,7 +1511,7 @@ function UploadSlot({
                     event.stopPropagation();
                     onCrop(slot);
                   }}
-                  className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
+                  className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors"
                   title="Crop image"
                   aria-label={`Crop ${label}`}
                 >
@@ -1536,14 +1535,14 @@ function UploadSlot({
         </>
       ) : (
         <>
-          <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-2">
+          <div className="w-10 h-10 bg-[#E2E8F0] text-[#2563EB] rounded-full flex items-center justify-center mb-2">
             <Upload size={18} />
           </div>
-          <span className="text-xs font-bold text-gray-800">{label}</span>
+          <span className="text-xs font-bold text-[#0F172A]">{label}</span>
           <span className="text-[9px] text-gray-400 mt-0.5">
             Click or drop an image here
           </span>
-          <span className="text-[8px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded mt-2">
+          <span className="text-[8px] bg-[#E2E8F0] text-[#2563EB] font-bold px-1.5 py-0.5 rounded mt-2">
             JPG • PNG • WEBP • HEIC
           </span>
           <span className="text-[8px] text-gray-400 mt-1">Maximum 20 MB</span>
@@ -1635,7 +1634,7 @@ function PreviewImage({
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-50">
-          <span className="w-4 h-4 rounded-full border-2 border-amber-300 border-t-amber-600 animate-spin" />
+          <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-amber-600 animate-spin" />
         </div>
       )}
     </div>
@@ -2200,7 +2199,7 @@ export default function PassportToPdf() {
         : null;
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {notice ? (
         <div
           className={`fixed right-5 top-5 z-[120] max-w-sm rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${
@@ -2208,7 +2207,7 @@ export default function PassportToPdf() {
               ? "bg-red-50/95 border-red-200 text-red-700"
               : notice.type === "success"
                 ? "bg-emerald-50/95 border-emerald-200 text-emerald-700"
-                : "bg-white/95 border-gray-200 text-gray-700"
+                : "bg-white/95 border-gray-200 text-[#0F172A]"
           }`}
           role="status"
         >
@@ -2236,7 +2235,7 @@ export default function PassportToPdf() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Sohoj Tools</span>
@@ -2244,17 +2243,17 @@ export default function PassportToPdf() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">Passport to PDF</span>
+        <span className="font-semibold text-[#0F172A]">Passport to PDF</span>
       </div>
 
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 border border-amber-100">
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <BookOpen size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-[#0F172A]">
                 Passport to PDF
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -2274,7 +2273,7 @@ export default function PassportToPdf() {
             onClick={toggleFavorite}
             className={`p-2 rounded-xl transition-all border ${
               isFavorite
-                ? "text-amber-600 bg-amber-50 border-amber-100"
+                ? "text-[#2563EB] bg-[#F8FAFC] border-[#E2E8F0]"
                 : "text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 border-gray-100"
             }`}
             aria-label={
@@ -2296,7 +2295,7 @@ export default function PassportToPdf() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <div className="lg:col-span-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-4 max-h-[750px] overflow-y-auto">
-          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">
+          <h2 className="text-xs font-bold text-[#0F172A] border-b border-gray-100 pb-2">
             Settings
           </h2>
 
@@ -2320,8 +2319,8 @@ export default function PassportToPdf() {
                   disabled={isProcessing}
                   className={`py-1.5 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1 ${
                     orientation === value
-                      ? "bg-white text-amber-600 shadow-xs border border-gray-100"
-                      : "text-gray-500 hover:text-gray-800"
+                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                      : "text-gray-500 hover:text-[#0F172A]"
                   } disabled:opacity-50`}
                 >
                   {value === "portrait" ? (
@@ -2349,7 +2348,7 @@ export default function PassportToPdf() {
                     previous === "stacked" ? "side-by-side" : "stacked",
                   )
                 }
-                className="text-[10px] text-amber-600 font-bold hover:underline disabled:opacity-50"
+                className="text-[10px] text-[#2563EB] font-bold hover:underline disabled:opacity-50"
               >
                 Switch
               </button>
@@ -2361,13 +2360,13 @@ export default function PassportToPdf() {
                 disabled={isProcessing}
                 className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all ${
                   layout === "side-by-side"
-                    ? "bg-white text-amber-600 shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                    : "text-gray-500 hover:text-[#0F172A]"
                 } disabled:opacity-50`}
               >
                 <div className="flex gap-0.5">
-                  <div className="w-3 h-4 bg-amber-500 rounded-xs" />
-                  <div className="w-3 h-4 bg-amber-500 rounded-xs" />
+                  <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
+                  <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
                 </div>
               </button>
               <button
@@ -2376,13 +2375,13 @@ export default function PassportToPdf() {
                 disabled={isProcessing}
                 className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all ${
                   layout === "stacked"
-                    ? "bg-white text-amber-600 shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                    : "text-gray-500 hover:text-[#0F172A]"
                 } disabled:opacity-50`}
               >
                 <div className="flex flex-col gap-0.5">
-                  <div className="w-5 h-2 bg-amber-500 rounded-xs" />
-                  <div className="w-5 h-2 bg-amber-500 rounded-xs" />
+                  <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
+                  <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
                 </div>
               </button>
             </div>
@@ -2395,7 +2394,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
                 disabled={isProcessing}
-                className="text-[10px] text-amber-600 font-bold flex items-center gap-1 hover:underline disabled:opacity-50"
+                className="text-[10px] text-[#2563EB] font-bold flex items-center gap-1 hover:underline disabled:opacity-50"
               >
                 <RotateCw size={10} />
                 Rotate 90°
@@ -2410,7 +2409,7 @@ export default function PassportToPdf() {
                   disabled={isProcessing}
                   className={`py-1.5 rounded-lg text-center transition-all ${
                     rotation === deg
-                      ? "bg-white text-amber-600 shadow-xs border border-gray-100"
+                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
                       : "hover:bg-white/50"
                   } disabled:opacity-50`}
                 >
@@ -2436,7 +2435,7 @@ export default function PassportToPdf() {
                   disabled={isProcessing}
                   className={`py-1.5 rounded-lg transition-all capitalize ${
                     position === value
-                      ? "bg-white text-amber-600 shadow-xs border border-gray-100"
+                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
                       : "hover:bg-white/50"
                   } disabled:opacity-50`}
                 >
@@ -2459,7 +2458,7 @@ export default function PassportToPdf() {
                   disabled={isProcessing}
                   className={`py-1.5 rounded-lg transition-all ${
                     copies === num
-                      ? "bg-white text-amber-600 shadow-xs border border-gray-100"
+                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
                       : "hover:bg-white/50"
                   } disabled:opacity-50`}
                 >
@@ -2474,7 +2473,7 @@ export default function PassportToPdf() {
 
           <div className="flex items-center justify-between pt-1">
             <div>
-              <span className="text-xs font-bold text-gray-700 block">
+              <span className="text-xs font-bold text-[#0F172A] block">
                 Rounded corners (14px)
               </span>
               <span className="text-[10px] text-gray-400 block">
@@ -2487,7 +2486,7 @@ export default function PassportToPdf() {
               disabled={isProcessing}
               className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center ${
                 roundedCorners
-                  ? "bg-amber-500 justify-end"
+                  ? "bg-[#2563EB] justify-end"
                   : "bg-gray-300 justify-start"
               } disabled:opacity-50`}
               aria-pressed={roundedCorners}
@@ -2498,7 +2497,7 @@ export default function PassportToPdf() {
 
           <div className="space-y-3 border-t border-gray-100 pt-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-800">
+              <span className="text-xs font-bold text-[#0F172A]">
                 Adjustments
               </span>
               <button
@@ -2509,7 +2508,7 @@ export default function PassportToPdf() {
                   setSharpening(50);
                 }}
                 disabled={isProcessing}
-                className="text-[10px] text-amber-600 font-bold hover:underline disabled:opacity-50"
+                className="text-[10px] text-[#2563EB] font-bold hover:underline disabled:opacity-50"
               >
                 Reset
               </button>
@@ -2518,7 +2517,7 @@ export default function PassportToPdf() {
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-bold text-gray-600">
                 <span>Brightness {brightness}%</span>
-                <span className="bg-amber-100 text-amber-700 px-1 rounded">
+                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
                   {brightness}
                 </span>
               </div>
@@ -2529,14 +2528,14 @@ export default function PassportToPdf() {
                 value={brightness}
                 onChange={(event) => setBrightness(Number(event.target.value))}
                 disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-bold text-gray-600">
                 <span>Contrast {contrast}%</span>
-                <span className="bg-amber-100 text-amber-700 px-1 rounded">
+                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
                   {contrast}
                 </span>
               </div>
@@ -2547,14 +2546,14 @@ export default function PassportToPdf() {
                 value={contrast}
                 onChange={(event) => setContrast(Number(event.target.value))}
                 disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-bold text-gray-600">
                 <span>Sharpening {sharpening}</span>
-                <span className="bg-amber-100 text-amber-700 px-1 rounded">
+                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
                   {sharpening}
                 </span>
               </div>
@@ -2565,7 +2564,7 @@ export default function PassportToPdf() {
                 value={sharpening}
                 onChange={(event) => setSharpening(Number(event.target.value))}
                 disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
               />
             </div>
           </div>
@@ -2586,9 +2585,9 @@ export default function PassportToPdf() {
             type="button"
             onClick={() => void handlePrint()}
             disabled={!hasImages || isProcessing}
-            className={`w-full py-2.5 border text-xs font-bold rounded-xl hover:bg-amber-50 transition-all flex items-center justify-center gap-1.5 ${
+            className={`w-full py-2.5 border text-xs font-bold rounded-xl hover:bg-[#F8FAFC] transition-all flex items-center justify-center gap-1.5 ${
               hasImages && !isProcessing
-                ? "border-amber-500 text-amber-600"
+                ? "border-[#2563EB] text-[#2563EB]"
                 : "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50"
             }`}
           >
@@ -2607,7 +2606,7 @@ export default function PassportToPdf() {
         >
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-bold text-gray-800">Live preview</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">Live preview</h2>
               <span className="text-[10px] text-gray-400 font-medium">
                 A4 —{" "}
                 {geometry.orientation === "portrait"
@@ -2622,7 +2621,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => setZoom((value) => clamp(value + 10, 50, 160))}
                 disabled={isProcessing}
-                className="hover:text-gray-800 disabled:opacity-40"
+                className="hover:text-[#0F172A] disabled:opacity-40"
                 aria-label="Zoom in"
               >
                 <ZoomIn size={14} />
@@ -2631,7 +2630,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
                 disabled={isProcessing}
-                className="hover:text-gray-800 disabled:opacity-40"
+                className="hover:text-[#0F172A] disabled:opacity-40"
                 aria-label="Rotate both passport pages"
               >
                 <RotateCw size={14} />
@@ -2640,7 +2639,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => setZoom((value) => clamp(value - 10, 50, 160))}
                 disabled={isProcessing}
-                className="hover:text-gray-800 disabled:opacity-40"
+                className="hover:text-[#0F172A] disabled:opacity-40"
                 aria-label="Zoom out"
               >
                 <ZoomOut size={14} />
@@ -2649,7 +2648,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => setZoom(100)}
                 disabled={isProcessing}
-                className="text-[10px] hover:text-gray-800 disabled:opacity-40"
+                className="text-[10px] hover:text-[#0F172A] disabled:opacity-40"
                 title="Reset zoom"
               >
                 Reset
@@ -2658,7 +2657,7 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => void toggleFullscreen()}
                 disabled={isProcessing}
-                className="hover:text-gray-800 disabled:opacity-40"
+                className="hover:text-[#0F172A] disabled:opacity-40"
                 aria-label="Toggle fullscreen preview"
               >
                 <Maximize2 size={14} />
@@ -2666,7 +2665,7 @@ export default function PassportToPdf() {
             </div>
           </div>
 
-          <div className="bg-[#F8F9FA] border border-gray-200 rounded-2xl p-4 md:p-6 my-4 flex-1 flex justify-center items-start min-h-[580px] overflow-auto">
+          <div className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-4 md:p-6 my-4 flex-1 flex justify-center items-start min-h-[580px] overflow-auto">
             <div
               className="relative transition-transform duration-200 origin-top shadow-md border border-gray-200 bg-white shrink-0"
               style={{
@@ -2689,10 +2688,10 @@ export default function PassportToPdf() {
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-center p-8">
                   <div>
-                    <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-3">
+                    <div className="w-12 h-12 rounded-full bg-[#F8FAFC] text-[#2563EB] flex items-center justify-center mx-auto mb-3">
                       <Upload size={21} />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-800">
+                    <h3 className="text-sm font-bold text-[#0F172A]">
                       Upload your passport page
                     </h3>
                     <p className="text-[10px] text-gray-400 mt-1 max-w-[220px] mx-auto">
@@ -2759,7 +2758,7 @@ export default function PassportToPdf() {
         <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
-              hasImages ? "bg-emerald-500" : "bg-amber-500"
+              hasImages ? "bg-emerald-500" : "bg-[#2563EB]"
             }`}
           />
           <span>
@@ -2774,7 +2773,7 @@ export default function PassportToPdf() {
             type="button"
             onClick={resetAll}
             disabled={isProcessing}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
           >
             Reset
           </button>
@@ -2784,7 +2783,7 @@ export default function PassportToPdf() {
             disabled={!hasImages || isProcessing}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               hasImages && !isProcessing
-                ? "bg-amber-500 text-white shadow-xs hover:bg-amber-600"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -2804,19 +2803,19 @@ export default function PassportToPdf() {
       </div>
 
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Image Size Reducer
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -2828,13 +2827,13 @@ export default function PassportToPdf() {
 
           <Link
             href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 NID Joiner
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
@@ -2846,13 +2845,12 @@ export default function PassportToPdf() {
 
           <Link
             href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-amber-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
-              <Wand2 size={16} />
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-amber-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background
               </h4>
               <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">

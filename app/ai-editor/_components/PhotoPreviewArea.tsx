@@ -29,7 +29,7 @@ interface PhotoPreviewAreaProps {
 
 const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
   backgroundImage:
-    "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
+    "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)",
   backgroundSize: "16px 16px",
   backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
   backgroundColor: "#ffffff",
@@ -51,20 +51,20 @@ function EmptyUploadBox({
   onUpload: () => void;
 }) {
   return (
-    <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#1a2234] p-4 text-center">
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400">
+    <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E2E8F0] p-4 text-center">
+      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB]">
         <Upload size={18} />
       </div>
-      <h3 className="mb-1 text-xs font-medium text-white">{title}</h3>
+      <h3 className="mb-1 text-xs font-medium text-[#0F172A]">{title}</h3>
       {subtitle && (
-        <p className="mb-3 text-[10px] leading-tight text-gray-400">
+        <p className="mb-3 text-[10px] leading-tight text-[#0F172A]/70">
           {subtitle}
         </p>
       )}
       <button
         type="button"
         onClick={onUpload}
-        className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-1.5 text-[11px] font-medium text-white shadow-md transition hover:opacity-90 active:scale-95"
+        className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-[11px] font-medium text-white shadow-md transition hover:bg-[#2563EB]/90 active:scale-95"
       >
         <Upload size={12} /> Upload Photo
       </button>
@@ -89,12 +89,12 @@ function PhotoCard({
 }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5">
-      <span className="max-w-full truncate text-xs font-semibold uppercase tracking-wider text-gray-300">
+      <span className="max-w-full truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
         {label}
       </span>
       <div
-        className={`relative overflow-hidden rounded-2xl shadow-2xl ${
-          showBorder ? "border-2 border-gray-700" : ""
+        className={`relative overflow-hidden rounded-2xl shadow-xl ${
+          showBorder ? "border-2 border-[#E2E8F0]" : ""
         }`}
         style={{
           width: "min(100%, 290px)",
@@ -113,11 +113,11 @@ function PhotoCard({
               type="button"
               onClick={onRemove}
               aria-label={`Remove ${label}`}
-              className="absolute right-2 top-2 z-10 rounded-full bg-gray-900/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
+              className="absolute right-2 top-2 z-10 rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
             >
               <X size={14} />
             </button>
-            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
               {boxInfo.text}
             </div>
           </div>
@@ -172,23 +172,29 @@ export default function PhotoPreviewArea({
   } as React.CSSProperties;
 
   return (
-    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl bg-[#121826] p-4 sm:p-6 shadow-lg">
+    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl bg-[#F8FAFC] p-4 sm:p-6 shadow-lg border border-[#E2E8F0]">
       {(isGenerating || isDeleting) && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-black/75 p-4 text-center backdrop-blur-md">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-[#F8FAFC]/90 p-4 text-center backdrop-blur-md">
           <div
-            className={`mb-5 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent ${isDeleting ? "border-red-500/20 border-t-red-500" : "border-orange-500/20 border-t-orange-500"}`}
+            className={`mb-5 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent ${
+              isDeleting
+                ? "border-red-500/20 border-t-red-500"
+                : "border-[#2563EB]/20 border-t-[#2563EB]"
+            }`}
           />
-          <h3 className="mb-1 text-base font-semibold tracking-wide text-white">
+          <h3 className="mb-1 text-base font-semibold tracking-wide text-[#0F172A]">
             {isDeleting ? "Deleting Photo..." : "Generating Your Photo..."}
           </h3>
-          <p className="max-w-xs text-xs leading-relaxed text-gray-300">
+          <p className="max-w-xs text-xs leading-relaxed text-[#0F172A]/70">
             {isDeleting
               ? "Removing your photo, please wait..."
               : "Uploading & applying AI edits, please wait a moment."}
           </p>
-          <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-gray-700/50 bg-gray-800">
+          <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-[#E2E8F0] bg-[#E2E8F0]">
             <div
-              className={`h-full w-full animate-pulse rounded-full ${isDeleting ? "bg-red-500" : "bg-orange-500"}`}
+              className={`h-full w-full animate-pulse rounded-full ${
+                isDeleting ? "bg-red-500" : "bg-[#10B981]"
+              }`}
             />
           </div>
         </div>
@@ -215,10 +221,10 @@ export default function PhotoPreviewArea({
             </div>
           ) : (
             <div
-              className={`relative overflow-hidden rounded-2xl shadow-2xl ${
+              className={`relative overflow-hidden rounded-2xl shadow-xl ${
                 uploadedImage
                   ? "border-2 border-transparent"
-                  : "border-2 border-dashed border-gray-600"
+                  : "border-2 border-dashed border-[#2563EB]/40"
               }`}
               style={cardStyle}
             >
@@ -235,12 +241,12 @@ export default function PhotoPreviewArea({
                   <button
                     type="button"
                     onClick={handleRemoveSingle}
-                    className="absolute right-2 top-2 z-10 rounded-full bg-gray-900/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
+                    className="absolute right-2 top-2 z-10 rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
                     aria-label="Remove current photo"
                   >
                     <X size={14} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+                  <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
                 </div>
@@ -258,9 +264,9 @@ export default function PhotoPreviewArea({
             <button
               type="button"
               onClick={enableDualMode}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-gray-700 bg-gray-800/80 px-4 py-2 text-xs text-gray-300 shadow-sm transition hover:border-gray-600 hover:bg-gray-800"
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]"
             >
-              <ImageIcon size={14} className="text-orange-400" /> Upload 2
+              <ImageIcon size={14} className="text-[#2563EB]" /> Upload 2
               separate images
             </button>
           )}
@@ -269,11 +275,11 @@ export default function PhotoPreviewArea({
         <div className="flex w-full max-w-[760px] flex-col items-center gap-5">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-center text-xs font-semibold uppercase tracking-wider text-gray-300">
+              <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Left Person
               </span>
               <div
-                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-gray-700 shadow-xl"
+                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
                 style={cardStyle}
               >
                 {leftImage ? (
@@ -305,11 +311,11 @@ export default function PhotoPreviewArea({
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-center text-xs font-semibold uppercase tracking-wider text-gray-300">
+              <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Right Person
               </span>
               <div
-                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-gray-700 shadow-xl"
+                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
                 style={cardStyle}
               >
                 {rightImage ? (
@@ -348,7 +354,7 @@ export default function PhotoPreviewArea({
                 setLeftImage(rightImage);
                 setRightImage(leftImage);
               }}
-              className="cursor-pointer rounded-xl border border-gray-700 bg-gray-800 p-2 text-gray-300 transition hover:border-gray-500 hover:bg-gray-700"
+              className="cursor-pointer rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-2 text-[#0F172A] transition hover:bg-[#E2E8F0]/80"
               title="Swap images"
               aria-label="Swap images"
             >
@@ -361,7 +367,7 @@ export default function PhotoPreviewArea({
                 setRightImage(null);
                 exitDualMode();
               }}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-900/50 bg-gray-800/80 px-3.5 py-1.5 text-xs text-red-400 transition hover:bg-red-900/40"
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100"
             >
               <RefreshCw size={14} /> Exit dual mode
             </button>

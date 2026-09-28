@@ -33,7 +33,6 @@ import {
   RotateCw,
   Share2,
   ShieldCheck,
-  Sparkles,
   Star,
   Trash2,
   Upload,
@@ -405,7 +404,7 @@ const templates: Array<{
   accent: string;
   preview: string;
 }> = [
-  { id: "classic", label: "Classic ATS", accent: "#f59e0b", preview: "amber" },
+  { id: "classic", label: "Classic ATS", accent: "#2563EB", preview: "amber" },
   { id: "modern", label: "Modern", accent: "#0f8d91", preview: "teal" },
   {
     id: "professional",
@@ -445,7 +444,7 @@ function Field({
 }: FieldProps) {
   return (
     <label className="block space-y-1.5">
-      <span className="flex items-center justify-between gap-2 text-[10px] font-semibold text-gray-700">
+      <span className="flex items-center justify-between gap-2 text-[10px] font-semibold text-[#0F172A]">
         <span>
           {label} {required ? <span className="text-rose-500">*</span> : null}
         </span>
@@ -462,9 +461,9 @@ function Field({
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 ${
+          className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0] ${
             icon ? "pl-9" : ""
-          } ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-amber-200"}`}
+          } ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-[#E2E8F0]"}`}
         />
       </div>
       {error ? (
@@ -489,13 +488,13 @@ function TextAreaField({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-[10px] font-semibold text-gray-700">{label}</span>
+      <span className="text-[10px] font-semibold text-[#0F172A]">{label}</span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full resize-y rounded-lg border border-amber-200 bg-white px-3 py-2 text-[11px] leading-relaxed text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+        className="w-full resize-y rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[11px] leading-relaxed text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0]"
       />
     </label>
   );
@@ -522,7 +521,7 @@ function PrimaryButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
@@ -564,10 +563,10 @@ function SectionCard({
   action?: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-xl border border-amber-200/80 bg-white p-4">
+    <section className="space-y-3 rounded-xl border border-[#E2E8F0]/80 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[11px] font-extrabold uppercase tracking-wide text-amber-600">
+          <h3 className="text-[11px] font-extrabold uppercase tracking-wide text-[#2563EB]">
             {title}
           </h3>
           {description ? (
@@ -602,8 +601,8 @@ function IconButton({
       onClick={onClick}
       className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
         active
-          ? "border-orange-300 bg-orange-50 text-orange-600"
-          : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+          ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
+          : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-[#0F172A]"
       }`}
     >
       {children}
@@ -1832,10 +1831,10 @@ export default function AtsCvMaker() {
   };
 
   const renderStepNavigation = () => (
-    <div className="space-y-3 rounded-xl border border-amber-200/80 bg-amber-50/40 p-3.5">
+    <div className="space-y-3 rounded-xl border border-[#E2E8F0]/80 bg-[#F8FAFC]/40 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-bold text-gray-800">
+          <div className="text-[11px] font-bold text-[#0F172A]">
             {steps[currentStep - 1].label}
           </div>
 
@@ -1844,8 +1843,8 @@ export default function AtsCvMaker() {
           </div>
         </div>
 
-        <div className="rounded-md bg-orange-50 px-2 py-1 text-right">
-          <div className="text-[10px] font-extrabold text-orange-600">
+        <div className="rounded-md bg-[#F8FAFC] px-2 py-1 text-right">
+          <div className="text-[10px] font-extrabold text-[#2563EB]">
             {currentStep}/8
           </div>
 
@@ -1855,9 +1854,9 @@ export default function AtsCvMaker() {
         </div>
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[#E2E8F0]">
         <div
-          className="h-full rounded-full bg-orange-500 transition-all duration-300"
+          className="h-full rounded-full bg-[#2563EB] transition-all duration-300"
           style={{
             width: `${completionPercent}%`,
           }}
@@ -1869,7 +1868,7 @@ export default function AtsCvMaker() {
           type="button"
           onClick={handlePrevStep}
           disabled={currentStep === 1}
-          className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-gray-700 disabled:opacity-30"
+          className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-[#0F172A] disabled:opacity-30"
           aria-label="Previous step"
         >
           <ChevronLeft size={13} />
@@ -1894,7 +1893,7 @@ export default function AtsCvMaker() {
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold transition ${
                     step.id === currentStep
-                      ? "bg-orange-500 text-white shadow-sm"
+                      ? "bg-[#2563EB] text-white shadow-sm"
                       : step.id < currentStep
                         ? "bg-emerald-50 text-emerald-600"
                         : "bg-white text-gray-400 ring-1 ring-gray-100 group-hover:bg-gray-50"
@@ -1906,7 +1905,7 @@ export default function AtsCvMaker() {
                 <span
                   className={`text-[7px] font-semibold ${
                     step.id === currentStep
-                      ? "text-orange-600"
+                      ? "text-[#2563EB]"
                       : "text-gray-400"
                   }`}
                 >
@@ -1921,7 +1920,7 @@ export default function AtsCvMaker() {
           type="button"
           onClick={handleNextStep}
           disabled={currentStep === steps.length}
-          className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-gray-700 disabled:opacity-30"
+          className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-[#0F172A] disabled:opacity-30"
           aria-label="Next step"
         >
           <ChevronRight size={13} />
@@ -1934,7 +1933,7 @@ export default function AtsCvMaker() {
           className={
             requiredCount === 2
               ? "font-bold text-emerald-600"
-              : "font-bold text-orange-600"
+              : "font-bold text-[#2563EB]"
           }
         >
           {requiredCount}/2
@@ -2002,9 +2001,9 @@ export default function AtsCvMaker() {
         title="1. Personal information"
         description="These details appear at the top of your CV and are synced with the preview instantly."
       >
-        <div className="rounded-lg border border-amber-100 bg-amber-50/40 p-3">
+        <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/40 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-gray-700">
+            <span className="text-[10px] font-bold text-[#0F172A]">
               Photo (optional)
             </span>
 
@@ -2048,7 +2047,7 @@ export default function AtsCvMaker() {
                   }
                   className={`rounded-lg border px-2.5 py-2 text-[9px] font-bold transition ${
                     cvData.personal.designPhoto
-                      ? "border-orange-300 bg-orange-50 text-orange-600"
+                      ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
                       : "border-gray-200 bg-white text-gray-500"
                   }`}
                 >
@@ -2072,7 +2071,7 @@ export default function AtsCvMaker() {
                     onClick={() => updatePersonal("photoShape", shape)}
                     className={`rounded-md px-2 py-1 ${
                       cvData.personal.photoShape === shape
-                        ? "bg-orange-500 text-white"
+                        ? "bg-[#2563EB] text-white"
                         : "bg-white ring-1 ring-gray-200 hover:bg-gray-50"
                     }`}
                   >
@@ -2202,7 +2201,7 @@ export default function AtsCvMaker() {
               type: "ADD_EXPERIENCE",
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[9px] font-bold text-orange-600 hover:bg-orange-100"
+          className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"
         >
           <Plus size={11} /> Add
         </button>
@@ -2228,7 +2227,7 @@ export default function AtsCvMaker() {
         {cvData.experiences.map((item, index) => (
           <div
             key={item.id}
-            className="rounded-lg border border-amber-100 bg-amber-50/30 p-3"
+            className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
@@ -2333,7 +2332,7 @@ export default function AtsCvMaker() {
                       value: event.target.checked,
                     })
                   }
-                  className="h-3.5 w-3.5 accent-orange-500"
+                  className="h-3.5 w-3.5 accent-[#2563EB]"
                 />
                 Currently employed
               </label>
@@ -2386,7 +2385,7 @@ export default function AtsCvMaker() {
               type: "ADD_EDUCATION",
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[9px] font-bold text-orange-600 hover:bg-orange-100"
+          className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"
         >
           <Plus size={11} /> Add
         </button>
@@ -2412,7 +2411,7 @@ export default function AtsCvMaker() {
         {cvData.education.map((item, index) => (
           <div
             key={item.id}
-            className="rounded-lg border border-amber-100 bg-amber-50/30 p-3"
+            className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
@@ -2552,7 +2551,7 @@ export default function AtsCvMaker() {
               type: "ADD_PROJECT",
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[9px] font-bold text-orange-600 hover:bg-orange-100"
+          className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"
         >
           <Plus size={11} /> Add
         </button>
@@ -2578,7 +2577,7 @@ export default function AtsCvMaker() {
         {cvData.projects.map((item, index) => (
           <div
             key={item.id}
-            className="rounded-lg border border-amber-100 bg-amber-50/30 p-3"
+            className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
@@ -2754,7 +2753,7 @@ export default function AtsCvMaker() {
             type: "ADD_SKILL",
           })
         }
-        className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-orange-200 bg-orange-50/50 px-3 py-2 text-[10px] font-bold text-orange-600 hover:bg-orange-50"
+        className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/50 px-3 py-2 text-[10px] font-bold text-[#2563EB] hover:bg-[#F8FAFC]"
       >
         <Plus size={12} /> Add skill
       </button>
@@ -2835,7 +2834,7 @@ export default function AtsCvMaker() {
               type: "ADD_CUSTOM",
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[9px] font-bold text-orange-600 hover:bg-orange-100"
+          className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"
         >
           <Plus size={11} /> Add
         </button>
@@ -2849,7 +2848,7 @@ export default function AtsCvMaker() {
         {cvData.customSections.map((item, index) => (
           <div
             key={item.id}
-            className="rounded-lg border border-amber-100 bg-amber-50/30 p-3"
+            className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500">
@@ -2941,11 +2940,11 @@ export default function AtsCvMaker() {
   };
 
   return (
-    <div className="ats-cv-maker w-full space-y-6 pb-16 font-sans text-gray-800">
+    <div className="ats-cv-maker w-full space-y-6 pb-16 font-sans text-[#0F172A]">
       <div className="flex flex-col gap-4 print:hidden md:flex-row md:items-center md:justify-between">
         <div>
           <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500">
-            <Link href="/" className="transition hover:text-gray-800">
+            <Link href="/" className="transition hover:text-[#0F172A]">
               <FileText size={12} className="inline" />
             </Link>
 
@@ -2953,7 +2952,7 @@ export default function AtsCvMaker() {
 
             <Link
               href="/sohoj-tools"
-              className="transition hover:text-gray-800"
+              className="transition hover:text-[#0F172A]"
             >
               Sohoz Tools
             </Link>
@@ -2962,7 +2961,7 @@ export default function AtsCvMaker() {
             <span>Educational Tools</span>
             <span>/</span>
 
-            <span className="font-semibold text-gray-800">
+            <span className="font-semibold text-[#0F172A]">
               ATS Friendly CV Maker
             </span>
           </nav>
@@ -2972,7 +2971,7 @@ export default function AtsCvMaker() {
               <FileText size={18} />
             </div>
 
-            <h1 className="text-xl font-extrabold tracking-tight text-gray-900 md:text-2xl">
+            <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A] md:text-2xl">
               ATS Friendly CV Maker
             </h1>
 
@@ -2995,7 +2994,7 @@ export default function AtsCvMaker() {
           >
             <Star
               size={15}
-              className={favorite ? "fill-orange-400 text-orange-400" : ""}
+              className={favorite ? "fill-orange-400 text-[#2563EB]" : ""}
             />
           </IconButton>
 
@@ -3012,7 +3011,7 @@ export default function AtsCvMaker() {
               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
               : notice.type === "error"
                 ? "border-rose-200 bg-rose-50 text-rose-700"
-                : "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB]"
           }`}
           role="status"
         >
@@ -3020,9 +3019,7 @@ export default function AtsCvMaker() {
             <CheckCircle2 size={14} />
           ) : notice.type === "error" ? (
             <CircleHelp size={14} />
-          ) : (
-            <Sparkles size={14} />
-          )}
+          ) : null}
 
           <span>{notice.text}</span>
 
@@ -3042,25 +3039,25 @@ export default function AtsCvMaker() {
           <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
             <div className="space-y-4">
               <div>
-                <h2 className="text-xs font-bold text-gray-900">Settings</h2>
+                <h2 className="text-xs font-bold text-[#0F172A]">Settings</h2>
 
                 <p className="mt-0.5 text-[10px] leading-relaxed text-gray-500">
                   Fill in your CV step by step. The preview updates as you type.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-orange-200 bg-orange-50/20 p-3.5">
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]/20 p-3.5">
                 <button
                   type="button"
                   onClick={() => setIsTemplateOpen((open) => !open)}
                   className="flex w-full items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-800">
+                    <span className="text-[11px] font-bold text-[#0F172A]">
                       Template
                     </span>
 
-                    <span className="text-[9px] font-medium text-amber-600">
+                    <span className="text-[9px] font-medium text-[#2563EB]">
                       More designs coming soon
                     </span>
                   </div>
@@ -3090,14 +3087,14 @@ export default function AtsCvMaker() {
                           }
                           className={`relative rounded-xl border p-2.5 text-left transition-all ${
                             selected
-                              ? "border-orange-500 bg-white shadow-sm ring-1 ring-orange-300"
+                              ? "border-[#2563EB] bg-white shadow-sm ring-1 ring-orange-300"
                               : "border-gray-200 bg-white hover:border-gray-300"
                           }`}
                         >
                           <div
                             className={`mb-2 h-12 rounded-lg p-1.5 ${
                               template.preview === "amber"
-                                ? "bg-amber-100"
+                                ? "bg-[#E2E8F0]"
                                 : template.preview === "teal"
                                   ? "bg-teal-100"
                                   : template.preview === "green"
@@ -3119,14 +3116,14 @@ export default function AtsCvMaker() {
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-gray-800">
+                            <span className="text-[10px] font-bold text-[#0F172A]">
                               {template.label}
                             </span>
 
                             {selected ? (
                               <CheckCircle2
                                 size={14}
-                                className="fill-orange-500 text-orange-500"
+                                className="fill-orange-500 text-[#2563EB]"
                               />
                             ) : null}
                           </div>
@@ -3184,7 +3181,7 @@ export default function AtsCvMaker() {
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 print:hidden">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold text-gray-900">Preview</h2>
+                  <h2 className="text-xs font-bold text-[#0F172A]">Preview</h2>
 
                   <span className="flex items-center gap-1 text-[9px] text-gray-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
@@ -3253,7 +3250,7 @@ export default function AtsCvMaker() {
                 <button
                   type="button"
                   onClick={handleViewPreview}
-                  className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-2 text-[9px] font-bold text-orange-600 hover:bg-orange-100"
+                  className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-2 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"
                 >
                   Preview
                 </button>
@@ -3292,7 +3289,7 @@ export default function AtsCvMaker() {
           <div className="flex items-center gap-2 text-[9px] font-medium text-gray-500">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                formReady ? "bg-emerald-500" : "bg-orange-500"
+                formReady ? "bg-emerald-500" : "bg-[#2563EB]"
               }`}
             />
 
@@ -3342,9 +3339,9 @@ export default function AtsCvMaker() {
           className="flex w-full items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/60"
         >
           <div className="flex items-center gap-2">
-            <span className="font-bold text-amber-500">?</span>
+            <span className="font-bold text-[#2563EB]">?</span>
 
-            <span className="text-xs font-bold text-gray-800">How to use</span>
+            <span className="text-xs font-bold text-[#0F172A]">How to use</span>
           </div>
 
           <ChevronDown
@@ -3372,7 +3369,7 @@ export default function AtsCvMaker() {
       </div>
 
       <div className="space-y-3 print:hidden">
-        <h3 className="text-xs font-bold text-gray-700">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
 
@@ -3386,7 +3383,7 @@ export default function AtsCvMaker() {
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold text-gray-800 transition group-hover:text-teal-600">
+              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600">
                 Education Board Result
               </h4>
 
@@ -3406,7 +3403,7 @@ export default function AtsCvMaker() {
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold text-gray-800 transition group-hover:text-teal-600">
+              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600">
                 National University Result
               </h4>
 
@@ -3426,7 +3423,7 @@ export default function AtsCvMaker() {
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold text-gray-800 transition group-hover:text-teal-600">
+              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600">
                 All Sohoz Tools
               </h4>
 
@@ -3441,8 +3438,8 @@ export default function AtsCvMaker() {
 
       <style jsx global>{`
         .ats-cv-maker {
-          --ats-bg: #fff8df;
-          --ats-paper: #fffef5;
+          --ats-bg: #F8FAFC;
+          --ats-paper: #FFFFFF;
         }
 
         .ats-cv-maker .cv-print-root {
@@ -3480,8 +3477,8 @@ export default function AtsCvMaker() {
           width: 28mm;
           height: 28mm;
           overflow: hidden;
-          background: #f1efe5;
-          border: 1px solid #e1dece;
+          background: #E2E8F0;
+          border: 1px solid #E2E8F0;
           display: flex;
           align-items: center;
           justify-content: center;

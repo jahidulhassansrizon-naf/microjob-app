@@ -767,9 +767,9 @@ export default function QuestionPreviewRow({
       onClick={handleRowClick}
       className={`paper-question-row group relative rounded-sm border border-transparent px-1.5 transition ${
         isDragOver
-          ? "border-dashed border-[#F3A847] bg-orange-50/30"
-          : "hover:bg-gray-50"
-      } ${isEditing ? "bg-orange-50/30 ring-1 ring-[#F3A847]/30" : ""}`}
+          ? "border-dashed border-[#2563EB] bg-[#E2E8F0]/60"
+          : "hover:bg-[#E2E8F0]"
+      } ${isEditing ? "bg-[#E2E8F0]/60 ring-1 ring-[#2563EB]/30" : ""}`}
       style={{
         paddingTop: `${Math.max(0, 2 + extraSpacing / 2)}px`,
         paddingBottom: `${Math.max(0, 2 + extraSpacing / 2)}px`,
@@ -779,7 +779,7 @@ export default function QuestionPreviewRow({
         <GripVertical
           size={10}
           data-print-control="true"
-          className="mt-1 shrink-0 cursor-grab text-gray-300 opacity-0 transition group-hover:opacity-100 print:hidden"
+          className="mt-1 shrink-0 cursor-grab text-[#0F172A]/40 opacity-0 transition group-hover:opacity-100 print:hidden"
         />
         <div className="relative min-w-0 flex-1">
           <div
@@ -793,7 +793,7 @@ export default function QuestionPreviewRow({
             <div
               className={
                 showResizeUI
-                  ? "relative rounded-[4px] ring-1 ring-[#F3A847]/20"
+                  ? "relative rounded-[4px] ring-1 ring-[#2563EB]/20"
                   : "relative"
               }
             >
@@ -811,7 +811,7 @@ export default function QuestionPreviewRow({
                         styleVariant === "Compact"
                           ? "font-semibold"
                           : "font-bold"
-                      } min-w-0 cursor-text text-gray-800`}
+                      } min-w-0 cursor-text text-[#0F172A]`}
                       style={{
                         fontSize: `${scaledFontSize}px`,
                         lineHeight: 1.45,
@@ -888,7 +888,7 @@ export default function QuestionPreviewRow({
                       <div className="mt-1.5 space-y-1.5">
                         {question.stimulus ? (
                           <div
-                            className="rounded border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700"
+                            className="rounded border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1.5 text-[#0F172A]"
                             style={{
                               fontSize: `${detailFontSize}px`,
                               lineHeight: 1.45,
@@ -969,7 +969,7 @@ export default function QuestionPreviewRow({
                             }}
                           >
                             <span
-                              className="shrink-0 font-extrabold text-gray-700"
+                              className="shrink-0 font-extrabold text-[#0F172A]"
                               data-region-edit-target={`question:${question.id}:part-label:${partIndex}`}
                               contentEditable={activeRegionTargetIds.has(
                                 `question:${question.id}:part-label:${partIndex}`,
@@ -1095,7 +1095,7 @@ export default function QuestionPreviewRow({
                             setEditingMarkId(null);
                           }
                         }}
-                        className="h-5 w-9 rounded border border-[#F3A847] px-1 text-center text-[8px] font-bold outline-none"
+                        className="h-5 w-9 rounded border border-[#2563EB] px-1 text-center text-[8px] font-bold outline-none"
                       />
                     ) : (
                       <button
@@ -1104,7 +1104,7 @@ export default function QuestionPreviewRow({
                           event.stopPropagation();
                           setEditingMarkId(question.id);
                         }}
-                        className="cursor-pointer rounded px-1 text-[8px] font-bold text-gray-500 hover:bg-orange-50 hover:text-[#F3A847]"
+                        className="cursor-pointer rounded px-1 text-[8px] font-bold text-[#0F172A]/70 hover:bg-[#E2E8F0] hover:text-[#2563EB]"
                       >
                         <span
                           data-region-edit-target={`question:${question.id}:marks`}
@@ -1141,7 +1141,7 @@ export default function QuestionPreviewRow({
                               return next;
                             });
                           }}
-                          className={`flex items-start gap-1 text-left text-gray-600 ${
+                          className={`flex items-start gap-1 text-left text-[#0F172A] ${
                             selectAnswerEnabled
                               ? "cursor-pointer"
                               : "cursor-default"
@@ -1154,8 +1154,8 @@ export default function QuestionPreviewRow({
                           <span
                             className={`mt-0.5 flex h-3 w-3 shrink-0 items-center justify-center rounded-full border text-[6px] ${
                               selected
-                                ? "border-[#F3A847] bg-[#F3A847] text-white"
-                                : "border-gray-400 text-gray-500"
+                                ? "border-[#2563EB] bg-[#2563EB] text-white"
+                                : "border-[#0F172A]/25 text-[#0F172A]/70"
                             }`}
                             data-region-edit-target={`question:${question.id}:option-label:${index}`}
                           >
@@ -1230,12 +1230,12 @@ export default function QuestionPreviewRow({
                 data-print-control="true"
                 aria-hidden="true"
               >
-                <div className="absolute inset-0 rounded-[4px] border border-dashed border-[#F3A847]/60" />
+                <div className="absolute inset-0 rounded-[4px] border border-dashed border-[#2563EB]/60" />
 
                 <button
                   type="button"
                   aria-label="Move question horizontally"
-                  className="pointer-events-auto absolute left-1/2 top-[-8px] flex h-4 min-w-7 -translate-x-1/2 items-center justify-center rounded-full border border-white bg-[#F3A847] px-1 text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)] cursor-move"
+                  className="pointer-events-auto absolute left-1/2 top-[-8px] flex h-4 min-w-7 -translate-x-1/2 items-center justify-center rounded-full border border-white bg-[#2563EB] px-1 text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)] cursor-move"
                   onPointerDown={beginQuestionMove}
                   onPointerMove={handleQuestionMoveMove}
                   onPointerUp={finishQuestionMove}
@@ -1260,7 +1260,7 @@ export default function QuestionPreviewRow({
                     key={corner}
                     type="button"
                     aria-label={`Resize question ${corner.toUpperCase()} corner`}
-                    className={`pointer-events-auto absolute h-2.5 w-2.5 rounded-full border border-white bg-[#F3A847] shadow-[0_1px_4px_rgba(0,0,0,0.18)] ${positionClass}`}
+                    className={`pointer-events-auto absolute h-2.5 w-2.5 rounded-full border border-white bg-[#2563EB] shadow-[0_1px_4px_rgba(0,0,0,0.18)] ${positionClass}`}
                     onPointerDown={beginQuestionResize}
                     onPointerMove={handleQuestionResizeMove}
                     onPointerUp={finishQuestionResize}
@@ -1275,7 +1275,7 @@ export default function QuestionPreviewRow({
 
             {isResizing ? (
               <div
-                className="screen-only pointer-events-none absolute left-1/2 top-[-20px] z-[60] -translate-x-1/2 rounded-full bg-gray-900/85 px-2 py-0.5 text-[7px] font-bold text-white"
+                className="screen-only pointer-events-none absolute left-1/2 top-[-20px] z-[60] -translate-x-1/2 rounded-full bg-[#0F172A]/85 px-2 py-0.5 text-[7px] font-bold text-white"
                 data-print-control="true"
               >
                 {Math.round(boxScale)}%
@@ -1357,14 +1357,14 @@ export default function QuestionPreviewRow({
           {showControls && !isEditing ? (
             <div
               data-print-control="true"
-              className="screen-only absolute right-1.5 top-0 z-40 flex max-w-[245px] flex-wrap items-center justify-end gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm"
+              className="screen-only absolute right-1.5 top-0 z-40 flex max-w-[245px] flex-wrap items-center justify-end gap-1 rounded-lg border border-[#E2E8F0] bg-white p-1 shadow-sm"
               onClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.preventDefault()}
             >
               <button
                 type="button"
                 onClick={beginEdit}
-                className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-gray-600 hover:bg-gray-50"
+                className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
                 title="Edit question"
               >
                 <Pencil size={9} /> Edit
@@ -1374,7 +1374,7 @@ export default function QuestionPreviewRow({
                 onClick={() =>
                   onAdjustQuestionLayout?.(question.id, "fontScale", -5)
                 }
-                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-gray-600 hover:bg-gray-50"
+                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]"
                 title="Decrease question font size"
               >
                 A−
@@ -1384,7 +1384,7 @@ export default function QuestionPreviewRow({
                 onClick={() =>
                   onAdjustQuestionLayout?.(question.id, "fontScale", 5)
                 }
-                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-gray-600 hover:bg-gray-50"
+                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]"
                 title="Increase question font size"
               >
                 A+
@@ -1394,7 +1394,7 @@ export default function QuestionPreviewRow({
                 onClick={() =>
                   onAdjustQuestionLayout?.(question.id, "spacing", -1)
                 }
-                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-gray-600 hover:bg-gray-50"
+                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]"
                 title="Reduce spacing"
               >
                 S−
@@ -1404,7 +1404,7 @@ export default function QuestionPreviewRow({
                 onClick={() =>
                   onAdjustQuestionLayout?.(question.id, "spacing", 1)
                 }
-                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-gray-600 hover:bg-gray-50"
+                className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]"
                 title="Increase spacing"
               >
                 S+
@@ -1415,7 +1415,7 @@ export default function QuestionPreviewRow({
                   onChange={(event) =>
                     onMoveToPage(question.id, Number(event.target.value))
                   }
-                  className="h-6 max-w-[68px] rounded-md border border-gray-200 bg-white px-1 text-[7px] font-bold text-gray-600 outline-none"
+                  className="h-6 max-w-[68px] rounded-md border border-[#E2E8F0] bg-white px-1 text-[7px] font-bold text-[#0F172A] outline-none"
                   title="Move question to page"
                 >
                   {Array.from({ length: pageCount }, (_, index) => (

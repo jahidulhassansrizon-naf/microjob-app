@@ -44,7 +44,7 @@ export default async function DynamicToolPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-gray-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
       <DashboardNavbar />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
         <SelectedToolComponent />

@@ -64,17 +64,17 @@ export default function AiEditorSection() {
   };
 
   return (
-    <section className="bg-[#F8F9FA] py-12 sm:py-16 md:py-20 lg:pb-24 px-4 sm:px-6 md:px-8 overflow-hidden">
+    <section className="bg-slate-50/50 py-12 sm:py-16 md:py-20 lg:pb-24 px-4 sm:px-6 md:px-8 overflow-hidden">
       <div className="max-w-[1280px] mx-auto flex flex-col gap-6">
-        {/* Top Row: Green Banner + 2 Cards */}
+        {/* Top Row: Blue/Indigo Banner + 2 Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Left Green Banner Card */}
+          {/* Left Banner Card */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="lg:col-span-6 bg-gradient-to-b from-[#05B066] via-[#04A25E] to-[#038E52] text-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col justify-between shadow-xs relative overflow-hidden min-h-[480px] sm:min-h-[520px]"
+            className="lg:col-span-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800 text-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col justify-between shadow-xs relative overflow-hidden min-h-[480px] sm:min-h-[520px]"
           >
             <div>
               {/* Top Badge */}
@@ -128,7 +128,7 @@ export default function AiEditorSection() {
             <div>
               <Link
                 href="/dashboard"
-                className="bg-white text-gray-900 font-extrabold text-xs sm:text-sm px-6 sm:px-8 py-3.5 sm:py-4 rounded-full inline-flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition w-full sm:w-auto cursor-pointer"
+                className="bg-white text-slate-900 font-extrabold text-xs sm:text-sm px-6 sm:px-8 py-3.5 sm:py-4 rounded-full inline-flex items-center justify-center gap-2 shadow-xs hover:bg-slate-50 transition w-full sm:w-auto cursor-pointer"
               >
                 <span>Start using AI Tools</span>
                 <ArrowUpRight size={18} strokeWidth={2.5} />
@@ -145,23 +145,23 @@ export default function AiEditorSection() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: 0.15 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
+              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-slate-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50"
             >
               <div>
-                <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 sm:mb-6">
                   <Sparkles size={24} />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3 tracking-tight">
                   ShohozKaj's Smart AI Editor.
                 </h3>
-                <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed max-w-lg">
+                <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed max-w-lg">
                   Create professional photos from ordinary images in just a few
                   seconds—no Photoshop required
                 </p>
               </div>
               <button
                 onClick={() => handleOpenVideo(0)}
-                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
+                className="inline-flex items-center gap-1 text-sm font-bold text-slate-800 hover:text-blue-600 transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
               </button>
@@ -174,16 +174,16 @@ export default function AiEditorSection() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: 0.3 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-gray-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
+              className="bg-white rounded-3xl md:rounded-[36px] p-6 sm:p-8 md:p-10 border border-slate-100 shadow-2xs flex flex-col justify-between flex-1 min-h-[220px] sm:min-h-[250px] transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50"
             >
               <div>
-                <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
+                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4 sm:mb-6">
                   <Palette size={24} />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3 tracking-tight">
                   One-click professional outfit editing
                 </h3>
-                <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed max-w-lg">
+                <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed max-w-lg">
                   On ShohozKaj, easily edit your photos with blue, black, or
                   gray suits, navy blazers, white shirts, polo shirts, as well
                   as casual and traditional outfits.
@@ -191,7 +191,7 @@ export default function AiEditorSection() {
               </div>
               <button
                 onClick={() => handleOpenVideo(40)}
-                className="inline-flex items-center gap-1 text-sm font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
+                className="inline-flex items-center gap-1 text-sm font-bold text-slate-800 hover:text-indigo-600 transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
               </button>
@@ -212,22 +212,22 @@ export default function AiEditorSection() {
               key={idx}
               variants={bottomCardVariants}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="bg-white rounded-3xl md:rounded-[32px] p-6 sm:p-8 border border-gray-100 shadow-2xs flex flex-col justify-between min-h-[240px] sm:min-h-[260px] transition-all duration-300 hover:shadow-lg hover:shadow-black/10"
+              className="bg-white rounded-3xl md:rounded-[32px] p-6 sm:p-8 border border-slate-100 shadow-2xs flex flex-col justify-between min-h-[240px] sm:min-h-[260px] transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50"
             >
               <div>
-                <div className="w-12 h-12 bg-[#E6F8F0] rounded-2xl flex items-center justify-center text-[#04A25E] mb-4 sm:mb-6">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 sm:mb-6">
                   {card.icon}
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 sm:mb-3 tracking-tight">
                   {card.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
                   {card.desc}
                 </p>
               </div>
               <button
                 onClick={() => handleOpenVideo(card.startTime)}
-                className="inline-flex items-center gap-1 text-xs font-bold text-gray-800 hover:text-[#04A25E] transition mt-4 sm:mt-6 cursor-pointer w-fit"
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-800 hover:text-blue-600 transition mt-4 sm:mt-6 cursor-pointer w-fit"
               >
                 See details &rsaquo;
               </button>

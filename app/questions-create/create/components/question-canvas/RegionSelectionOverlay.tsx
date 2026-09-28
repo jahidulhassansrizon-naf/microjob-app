@@ -565,7 +565,7 @@ export function RegionSelectionOverlay({
                 fontStyle: annotation.fontStyle || "normal",
                 lineHeight: 1.35,
                 textAlign: annotation.textAlign || "left",
-                color: annotation.textColor || "#111827",
+                color: annotation.textColor || "#0F172A",
                 backgroundColor: annotation.backgroundColor || "transparent",
                 borderRadius: `${Number(annotation.borderRadius ?? 4)}px`,
                 whiteSpace: "pre-wrap",
@@ -580,7 +580,7 @@ export function RegionSelectionOverlay({
       {activeRegion ? (
         <div
           data-region-selection-outline="true"
-          className="screen-only pointer-events-none absolute z-[65] box-border border-2 border-dashed border-[#F3A847] bg-[#F3A847]/5"
+          className="screen-only pointer-events-none absolute z-[65] box-border border-2 border-dashed border-[#2563EB] bg-[#2563EB]/5"
           style={{
             left: `${activeRegion.x}%`,
             top: `${activeRegion.y}%`,
@@ -603,7 +603,7 @@ export function RegionSelectionOverlay({
               event.stopPropagation();
               clearActiveSelection();
             }}
-            className="screen-only pointer-events-auto absolute right-0 top-0 flex h-4 w-4 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 focus:outline-none"
+            className="screen-only pointer-events-auto absolute right-0 top-0 flex h-4 w-4 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[#E2E8F0] bg-white text-[#0F172A]/55 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 focus:outline-none"
           >
             <X size={8} strokeWidth={2.4} />
           </button>
@@ -663,7 +663,7 @@ export function RegionSelectionOverlay({
                 editorRef.current?.blur();
               }
             }}
-            className="pointer-events-auto block min-h-[24px] w-full resize-none overflow-hidden rounded-sm border border-dashed border-[#F3A847] bg-white/95 px-1.5 py-1 text-[10px] leading-[1.35] text-gray-800 shadow-md outline-none focus:border-[#F3A847] focus:ring-1 focus:ring-[#F3A847]/20"
+            className="pointer-events-auto block min-h-[24px] w-full resize-none overflow-hidden rounded-sm border border-dashed border-[#2563EB] bg-white/95 px-1.5 py-1 text-[10px] leading-[1.35] text-[#0F172A] shadow-md outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/20"
             style={{
               minHeight: `${Math.max(24, Number(activeCanvasEditorRect.height) * 0.01)}px`,
             }}
@@ -690,7 +690,7 @@ export function RegionSelectionOverlay({
           selectionRect.width >= 0.15 &&
           selectionRect.height >= 0.15 ? (
             <div
-              className="pointer-events-none absolute box-border border-2 border-dashed border-[#F3A847] bg-[#F3A847]/5"
+              className="pointer-events-none absolute box-border border-2 border-dashed border-[#2563EB] bg-[#2563EB]/5"
               style={{
                 left: `${selectionRect.x}%`,
                 top: `${selectionRect.y}%`,
@@ -701,7 +701,7 @@ export function RegionSelectionOverlay({
           ) : null}
         </div>
       ) : null}
-      <div className="screen-only pointer-events-none absolute bottom-2 left-1/2 z-[30] -translate-x-1/2 rounded-full bg-gray-900/70 px-2.5 py-1 text-[8px] font-bold text-white">
+      <div className="screen-only pointer-events-none absolute bottom-2 left-1/2 z-[30] -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2.5 py-1 text-[8px] font-bold text-white">
         Page {pageIndex + 1}
         {pageCount ? ` / ${pageCount}` : ""}
       </div>

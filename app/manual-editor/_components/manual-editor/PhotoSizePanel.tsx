@@ -64,9 +64,10 @@ export default function PhotoSizePanel() {
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-3.5 bg-amber-500 rounded-full" />
+          {/* Primary Highlight Bar */}
+          <div className="w-1 h-3.5 bg-[#2563EB] rounded-full" />
 
-          <span className="text-xs font-black tracking-wider uppercase">
+          <span className="text-xs font-black tracking-wider uppercase text-[#0F172A]">
             PHOTO SIZE
           </span>
         </div>
@@ -74,7 +75,7 @@ export default function PhotoSizePanel() {
         <button
           type="button"
           onClick={resetEditor}
-          className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+          className="text-[#0F172A]/50 hover:text-[#0F172A] transition-colors cursor-pointer"
           title="Reset editor"
         >
           <RefreshCcw size={13} />
@@ -86,27 +87,27 @@ export default function PhotoSizePanel() {
           {
             id: "passport" as const,
             label: "Passport",
-            icon: <ImageIcon className="w-5 h-5 text-gray-400" />,
+            icon: <ImageIcon className="w-5 h-5 text-[#0F172A]/50" />,
           },
           {
             id: "dual" as const,
             label: "Dual",
-            icon: <Users className="w-5 h-5 text-gray-400" />,
+            icon: <Users className="w-5 h-5 text-[#0F172A]/50" />,
           },
           {
             id: "visa" as const,
             label: selectedVisaLabel,
-            icon: <Plane className="w-5 h-5 text-gray-400" />,
+            icon: <Plane className="w-5 h-5 text-[#0F172A]/50" />,
           },
           {
             id: "rsizes" as const,
             label: selectedRSizeLabel,
-            icon: <Printer className="w-5 h-5 text-gray-400" />,
+            icon: <Printer className="w-5 h-5 text-[#0F172A]/50" />,
           },
           {
             id: "freesize" as const,
             label: "Free size",
-            icon: <Maximize2 className="w-5 h-5 text-gray-400" />,
+            icon: <Maximize2 className="w-5 h-5 text-[#0F172A]/50" />,
           },
         ].map((item) => {
           const isActive = photoMode === item.id;
@@ -140,8 +141,8 @@ export default function PhotoSizePanel() {
                 }}
                 className={`relative flex w-full min-w-0 flex-col items-center justify-center p-2 rounded-2xl border text-[10px] font-bold transition h-16 cursor-pointer ${
                   isActive
-                    ? "border-amber-400 bg-amber-50/30 ring-1 ring-amber-400"
-                    : "border-gray-200 bg-white hover:border-gray-300"
+                    ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
+                    : "border-[#E2E8F0] bg-white hover:border-[#2563EB]/40"
                 }`}
               >
                 <span className="mb-1 shrink-0">{item.icon}</span>
@@ -149,7 +150,7 @@ export default function PhotoSizePanel() {
                 <span
                   title={item.label}
                   className={`truncate w-full text-center text-[9px] font-bold ${
-                    isActive ? "text-amber-600" : "text-gray-700"
+                    isActive ? "text-[#2563EB]" : "text-[#0F172A]"
                   }`}
                 >
                   {item.label}
@@ -163,7 +164,7 @@ export default function PhotoSizePanel() {
                   onClick={() =>
                     setSizeMenu(sizeMenu === item.id ? null : item.id)
                   }
-                  className="absolute -right-1 -top-1 rounded-full bg-white border shadow-sm text-gray-500 hover:text-gray-800 cursor-pointer"
+                  className="absolute -right-1 -top-1 rounded-full bg-white border border-[#E2E8F0] shadow-sm text-[#0F172A]/60 hover:text-[#0F172A] cursor-pointer"
                 >
                   <ChevronDown size={12} />
                 </button>
@@ -173,9 +174,10 @@ export default function PhotoSizePanel() {
         })}
       </div>
 
+      {/* Visa Size Menu */}
       {photoMode === "visa" && sizeMenu === "visa" && (
-        <div className="rounded-2xl border border-amber-300 bg-white p-3 shadow-xl">
-          <p className="text-[10px] font-black text-gray-700 mb-2">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 shadow-xl">
+          <p className="text-[10px] font-black text-[#0F172A] mb-2">
             Visa Photo Size
           </p>
 
@@ -187,8 +189,8 @@ export default function PhotoSizePanel() {
                 onClick={() => selectPreset(preset, "visa")}
                 className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${
                   selectedPreset?.id === preset.id
-                    ? "border-amber-400 bg-amber-50 text-amber-800"
-                    : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                    ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
+                    : "border-[#E2E8F0] bg-white text-[#0F172A] hover:border-[#2563EB]/40"
                 }`}
               >
                 {preset.label}
@@ -198,9 +200,10 @@ export default function PhotoSizePanel() {
         </div>
       )}
 
+      {/* Print Size Menu */}
       {photoMode === "rsizes" && sizeMenu === "rsizes" && (
-        <div className="rounded-2xl border border-amber-300 bg-white p-3 shadow-xl">
-          <p className="text-[10px] font-black text-gray-700 mb-2">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 shadow-xl">
+          <p className="text-[10px] font-black text-[#0F172A] mb-2">
             Print Size
           </p>
 
@@ -212,8 +215,8 @@ export default function PhotoSizePanel() {
                 onClick={() => selectPreset(preset, "rsizes")}
                 className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${
                   selectedPreset?.id === preset.id
-                    ? "border-amber-400 bg-amber-500 text-white shadow-sm"
-                    : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                    ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm"
+                    : "border-[#E2E8F0] bg-white text-[#0F172A] hover:border-[#2563EB]/40"
                 }`}
               >
                 {compactPresetLabel(preset.label)}
@@ -223,14 +226,15 @@ export default function PhotoSizePanel() {
         </div>
       )}
 
+      {/* Free Size Menu */}
       {photoMode === "freesize" && freeSizeOpen && (
-        <div className="rounded-2xl border border-amber-300 bg-white p-3 shadow-xl">
-          <p className="text-[10px] font-black text-gray-700 mb-2">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 shadow-xl">
+          <p className="text-[10px] font-black text-[#0F172A] mb-2">
             Free Size (mm)
           </p>
 
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[9px] font-bold text-gray-500">
+            <label className="text-[9px] font-bold text-[#0F172A]/70">
               Width
               <input
                 type="number"
@@ -242,11 +246,11 @@ export default function PhotoSizePanel() {
                     Math.min(500, Math.max(5, Number(event.target.value) || 5)),
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold outline-none focus:border-amber-400"
+                className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] outline-none focus:border-[#2563EB]"
               />
             </label>
 
-            <label className="text-[9px] font-bold text-gray-500">
+            <label className="text-[9px] font-bold text-[#0F172A]/70">
               Height
               <input
                 type="number"
@@ -258,19 +262,20 @@ export default function PhotoSizePanel() {
                     Math.min(500, Math.max(5, Number(event.target.value) || 5)),
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold outline-none focus:border-amber-400"
+                className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] outline-none focus:border-[#2563EB]"
               />
             </label>
           </div>
 
-          <div className="mt-2 text-[9px] font-bold text-gray-400">
+          <div className="mt-2 text-[9px] font-bold text-[#0F172A]/60">
             Current: {currentPreset.label}
           </div>
 
+          {/* Accent CTA Button */}
           <button
             type="button"
             onClick={() => setFreeSizeOpen(false)}
-            className="mt-2 w-full rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-gray-900 hover:bg-amber-600 transition-colors cursor-pointer"
+            className="mt-2 w-full rounded-xl bg-[#10B981] px-3 py-2 text-[10px] font-black text-white hover:bg-[#059669] transition-colors cursor-pointer"
           >
             Apply size
           </button>

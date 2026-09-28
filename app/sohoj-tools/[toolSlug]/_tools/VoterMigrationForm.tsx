@@ -302,7 +302,7 @@ function GeoCombobox({
           }}
           onFocus={() => !disabled && setOpen(true)}
           placeholder={selected ? "" : placeholder}
-          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-gray-800 placeholder:text-gray-400 disabled:cursor-not-allowed"
+          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#0F172A] placeholder:text-gray-400 disabled:cursor-not-allowed"
         />
         <ChevronDown
           size={13}
@@ -338,7 +338,7 @@ function GeoCombobox({
                   className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-indigo-50 transition-colors truncate ${
                     o.id === value
                       ? "bg-indigo-50 text-indigo-700 font-semibold"
-                      : "text-gray-700"
+                      : "text-[#0F172A]"
                   }`}
                 >
                   {o.bn}
@@ -391,7 +391,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-indigo-500"
+      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-indigo-500"
     />
   );
 }
@@ -438,7 +438,7 @@ function DobPicker({
       >
         <CalendarIcon size={13} className="text-gray-400 shrink-0" />
         {value ? (
-          <span className="flex-1 text-gray-800 font-semibold">
+          <span className="flex-1 text-[#0F172A] font-semibold">
             {formatDateBn(value)}
           </span>
         ) : (
@@ -469,7 +469,7 @@ function DobPicker({
               <ChevronLeft size={14} />
             </button>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-gray-800">
+              <span className="text-xs font-bold text-[#0F172A]">
                 {EN_MONTHS[month]}
               </span>
               <select
@@ -477,7 +477,7 @@ function DobPicker({
                 onChange={(e) =>
                   setViewDate(new Date(Number(e.target.value), month, 1))
                 }
-                className="text-[11px] font-bold text-gray-800 border border-gray-200 rounded px-1 py-0.5 outline-none"
+                className="text-[11px] font-bold text-[#0F172A] border border-gray-200 rounded px-1 py-0.5 outline-none"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
@@ -528,7 +528,7 @@ function DobPicker({
                       ? "bg-indigo-600 text-white font-bold"
                       : isFuture
                         ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-700 hover:bg-indigo-50"
+                        : "text-[#0F172A] hover:bg-indigo-50"
                   }`}
                 >
                   {day}
@@ -580,7 +580,7 @@ function MonthYearPicker({
       >
         <CalendarIcon size={13} className="text-gray-400 shrink-0" />
         {display ? (
-          <span className="flex-1 text-gray-800 font-semibold">{display}</span>
+          <span className="flex-1 text-[#0F172A] font-semibold">{display}</span>
         ) : (
           <span className="flex-1 text-gray-400">{placeholder}</span>
         )}
@@ -596,7 +596,7 @@ function MonthYearPicker({
             >
               <ChevronLeft size={14} />
             </button>
-            <span className="text-xs font-bold text-gray-800">{viewYear}</span>
+            <span className="text-xs font-bold text-[#0F172A]">{viewYear}</span>
             <button
               type="button"
               onClick={() => setViewYear((y) => y + 1)}
@@ -626,7 +626,7 @@ function MonthYearPicker({
                       ? "bg-indigo-600 text-white font-bold"
                       : disabled
                         ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-700 hover:bg-indigo-50"
+                        : "text-[#0F172A] hover:bg-indigo-50"
                   }`}
                 >
                   {m}
@@ -660,21 +660,21 @@ function AgeWarningModal({
         >
           <X size={16} />
         </button>
-        <div className="w-11 h-11 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-3">
+        <div className="w-11 h-11 mx-auto rounded-full bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center mb-3">
           <AlertTriangle size={20} />
         </div>
-        <h3 className="text-sm font-bold text-gray-900 text-center">
+        <h3 className="text-sm font-bold text-[#0F172A] text-center">
           Age {age} — not yet 18
         </h3>
         <p className="text-xs text-gray-500 text-center mt-1">
           The electoral roll requires an age of at least 18.
         </p>
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mt-4 text-left text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 mt-4 text-left text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
           <p>
             • But under 18 the name is not added to the voter list — the office
             may return this form.
           </p>
-          <p className="text-amber-700 font-bold">
+          <p className="text-[#2563EB] font-bold">
             • Turns 18 on: {formatDateEn(turns18On)}
           </p>
         </div>
@@ -687,7 +687,7 @@ function AgeWarningModal({
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition-colors"
+            className="flex-1 py-2 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-colors"
           >
             Continue anyway
           </button>
@@ -1290,7 +1290,7 @@ export default function VoterMigrationForm() {
       : undefined;
 
   return (
-    <div className="voter-migration-root w-full text-gray-800 font-sans pb-16">
+    <div className="voter-migration-root w-full text-[#0F172A] font-sans pb-16">
       <style>{`
         @media print {
           @page {
@@ -1500,20 +1500,20 @@ export default function VoterMigrationForm() {
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-gray-700 flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
                 title="Go back"
               >
                 <ArrowLeft size={16} />
               </button>
-              <Link href="/sohoj-tools" className="hover:text-gray-700">
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
                 Sohoj Tools
               </Link>
               <span>/</span>
-              <span className="hover:text-gray-700 cursor-pointer">
+              <span className="hover:text-[#0F172A] cursor-pointer">
                 General Tools
               </span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">
+              <span className="text-[#0F172A] font-semibold">
                 Voter Migration Form
               </span>
             </div>
@@ -1522,7 +1522,7 @@ export default function VoterMigrationForm() {
               <div className="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <FileText size={18} />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
                 Voter Migration Form
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
@@ -1549,7 +1549,7 @@ export default function VoterMigrationForm() {
                 className={isFavorite ? "fill-indigo-400 text-indigo-400" : ""}
               />
             </button>
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 transition-all shadow-2xs">
+            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16} />
             </button>
           </div>
@@ -1559,7 +1559,7 @@ export default function VoterMigrationForm() {
           <div className="print-hide lg:col-span-5 space-y-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Settings
                 </span>
                 <span className="text-[11px] text-gray-400 font-medium">
@@ -1883,7 +1883,7 @@ export default function VoterMigrationForm() {
             <div className="print-preview-shell bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[900px]">
               <div>
                 <div className="print-hide flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                     <span>Live preview</span>
                   </span>
@@ -1917,13 +1917,13 @@ export default function VoterMigrationForm() {
                         <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
                           <button
                             onClick={() => scrollToPage(1)}
-                            className="w-full text-left px-3 py-1.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
                           >
                             Page 1
                           </button>
                           <button
                             onClick={() => scrollToPage(2)}
-                            className="w-full text-left px-3 py-1.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
                           >
                             Page 2
                           </button>
@@ -1949,7 +1949,7 @@ export default function VoterMigrationForm() {
                   >
                     <div
                       ref={page1Ref}
-                      className="print-page bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-gray-800 font-serif text-[11px] space-y-3 leading-relaxed relative"
+                      className="print-page bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-[#0F172A] font-serif text-[11px] space-y-3 leading-relaxed relative"
                     >
                       <div className="text-right font-bold text-[10px]">
                         ফরম-১৩
@@ -2153,7 +2153,7 @@ export default function VoterMigrationForm() {
 
                     <div
                       ref={page2Ref}
-                      className="print-page mt-6 bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-gray-800 font-serif text-[11px] space-y-3 leading-relaxed relative"
+                      className="print-page mt-6 bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-[#0F172A] font-serif text-[11px] space-y-3 leading-relaxed relative"
                     >
                       <div className="space-y-1.5">
                         <div className="grid grid-cols-12 gap-1">
@@ -2273,7 +2273,7 @@ export default function VoterMigrationForm() {
                 isComplete
                   ? "bg-emerald-500"
                   : anyFieldFilled
-                    ? "bg-amber-500"
+                    ? "bg-[#2563EB]"
                     : "bg-indigo-500"
               }`}
             ></span>
@@ -2289,13 +2289,13 @@ export default function VoterMigrationForm() {
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
             <button
               onClick={handleClear}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors"
             >
               Clear all
             </button>
             <button
               onClick={handleRestoreLastApplication}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
             >
               <RefreshCw size={13} />
               <span>Restore last application</span>
@@ -2303,7 +2303,7 @@ export default function VoterMigrationForm() {
             <button
               onClick={handlePrint}
               disabled={isProcessing !== null}
-              className="px-5 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+              className="px-5 py-2 bg-white hover:bg-gray-50 text-[#0F172A] border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
             >
               {isProcessing === "print" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -2317,7 +2317,7 @@ export default function VoterMigrationForm() {
             <button
               onClick={handleDownloadPdf}
               disabled={isProcessing !== null}
-              className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+              className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
             >
               {isProcessing === "download" ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -2335,7 +2335,7 @@ export default function VoterMigrationForm() {
           <h3 className="text-xs font-bold text-sky-900 uppercase tracking-wide">
             Important Information and Instructions:
           </h3>
-          <p className="text-xs text-gray-700 font-medium">
+          <p className="text-xs text-[#0F172A] font-medium">
             Attach the following documents with the application:
           </p>
           <ul className="list-disc list-inside text-xs text-gray-600 space-y-1.5 font-medium">
@@ -2375,7 +2375,7 @@ export default function VoterMigrationForm() {
         <div className="print-hide bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-gray-900 hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
@@ -2399,7 +2399,7 @@ export default function VoterMigrationForm() {
         </div>
 
         <div className="print-hide pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
             Tools in the same category
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2415,7 +2415,7 @@ export default function VoterMigrationForm() {
                     <div className="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-indigo-100 transition-colors">
                       <ToolIcon size={18} />
                     </div>
-                    <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-indigo-600 transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">

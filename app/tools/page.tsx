@@ -134,16 +134,16 @@ export default function ToolsPage() {
     .filter((cat) => cat.tools.length > 0);
 
   return (
-    <div className="min-h-screen bg-[#FFFBF7] text-gray-950 flex flex-col">
+    <div className="min-h-screen bg-slate-50/50 text-gray-950 flex flex-col">
       {/* Hero / Header Section */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-10 w-full flex flex-col items-center text-center">
-        <div className="bg-orange-50 border border-orange-200/60 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4 sm:mb-6 shadow-2xs">
+        <div className="bg-blue-50 border border-blue-200/60 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4 sm:mb-6 shadow-2xs">
           50+ Easy Tools
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 max-w-4xl leading-tight sm:leading-[1.15] mb-4 sm:mb-6">
           All your conversion work,{" "}
-          <span className="text-orange-500">in one place—</span> simple & fast
+          <span className="text-blue-600">in one place—</span> simple & fast
         </h1>
 
         <p className="text-xs sm:text-sm md:text-base text-gray-500 font-medium max-w-xl mb-8 sm:mb-10 leading-relaxed">
@@ -161,7 +161,7 @@ export default function ToolsPage() {
             placeholder="Search tools... (e.g. compress, image, pdf, qr)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200/80 rounded-full pl-12 pr-16 sm:pr-20 py-3 sm:py-3.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:border-orange-500 transition"
+            className="w-full bg-white border border-gray-200/80 rounded-full pl-12 pr-16 sm:pr-20 py-3 sm:py-3.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:border-blue-600 transition"
           />
           <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
             <span className="text-[10px] font-bold bg-gray-100 border border-gray-200 text-gray-500 px-1.5 sm:px-2 py-1 rounded-md">
@@ -185,7 +185,7 @@ export default function ToolsPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-3.5 sm:px-5 py-2 rounded-xl sm:rounded-full text-xs font-bold transition cursor-pointer ${
                 activeTab === tab
-                  ? "bg-orange-500 text-white shadow-xs"
+                  ? "bg-blue-600 text-white shadow-xs"
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
@@ -204,7 +204,7 @@ export default function ToolsPage() {
               {/* Category Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200/60 pb-3 gap-2 sm:gap-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <CategoryIcon size={18} />
                   </div>
                   <div>
@@ -218,7 +218,7 @@ export default function ToolsPage() {
                 </div>
                 <Link
                   href={getLoginRedirectUrl()}
-                  className="text-xs font-bold text-gray-500 hover:text-orange-500 transition self-end sm:self-auto"
+                  className="text-xs font-bold text-gray-500 hover:text-blue-600 transition self-end sm:self-auto"
                 >
                   See all tools &gt;
                 </Link>
@@ -230,13 +230,13 @@ export default function ToolsPage() {
                   <Link
                     key={tIdx}
                     href={getLoginRedirectUrl(tool.title)}
-                    className="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-orange-200 transition flex items-start gap-3.5 group"
+                    className="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-blue-200 transition flex items-start gap-3.5 group"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white transition">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
                       <FileText size={16} />
                     </div>
                     <div className="flex flex-col overflow-hidden">
-                      <h3 className="text-xs font-bold text-gray-900 group-hover:text-orange-500 transition truncate">
+                      <h3 className="text-xs font-bold text-gray-900 group-hover:text-blue-600 transition truncate">
                         {tool.title}
                       </h3>
                       <p className="text-[11px] text-gray-400 font-medium truncate">

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Play, Mail, Phone } from "lucide-react";
 
@@ -211,14 +213,14 @@ function VideoPreview({
       <div
         className={[
           "relative flex w-full items-center justify-center overflow-hidden rounded-[6px]",
-          "aspect-video bg-gradient-to-br from-[#eeeeee] via-[#d9d9d9] to-[#cfcfcf]",
+          "aspect-video bg-gradient-to-br from-[#F8FAFC] via-[#E2E8F0] to-[#CBD5E1]",
         ].join(" ")}
       >
         <div className="absolute inset-0 bg-black/[0.035]" />
         <div
           className={[
-            "relative z-10 grid place-items-center rounded-full bg-[#ff1744] text-white",
-            "shadow-[0_10px_25px_rgba(255,23,68,0.30)]",
+            "relative z-10 grid place-items-center rounded-full bg-[#2563EB] text-white",
+            "shadow-[0_10px_25px_rgba(37,99,235,0.30)]",
             large ? "h-[62px] w-[62px]" : "h-[46px] w-[46px]",
           ].join(" ")}
         >
@@ -244,16 +246,16 @@ function VideoPreview({
 
 function TutorialCard({ tutorial }: { tutorial: Tutorial }) {
   return (
-    <article className="rounded-[7px] border border-gray-200 bg-white p-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.035)]">
-      <div className="mb-[4px] text-[9px] font-medium text-gray-400">
+    <article className="rounded-[7px] border border-[#E2E8F0] bg-white p-[10px] shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
+      <div className="mb-[4px] text-[9px] font-medium text-[#64748B]">
         Video {tutorial.id}
       </div>
 
-      <h3 className="min-h-[34px] text-[13px] font-bold leading-[1.35] text-[#111111]">
+      <h3 className="min-h-[34px] text-[13px] font-bold leading-[1.35] text-[#0F172A]">
         {tutorial.title}
       </h3>
 
-      <p className="mt-[7px] min-h-[44px] text-[9px] leading-[1.55] text-gray-500">
+      <p className="mt-[7px] min-h-[44px] text-[9px] leading-[1.55] text-[#475569]">
         {tutorial.description}
       </p>
 
@@ -269,23 +271,22 @@ function TutorialCard({ tutorial }: { tutorial: Tutorial }) {
 
 export default function Hero() {
   return (
-    <main className="min-h-screen bg-[#f2f2f2] text-[#111111]">
-      {/* Large intro area — intentionally tall so the page matches the
-          reference screenshot at normal 100% browser zoom. */}
-      <section className="relative h-[470px] overflow-hidden border-b border-[#ece7e5] bg-[linear-gradient(180deg,#fffafa_0%,#fbf6f5_55%,#f5f0f0_100%)]">
+    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+      {/* Large intro area */}
+      <section className="relative h-[470px] overflow-hidden border-b border-[#E2E8F0] bg-[linear-gradient(180deg,#EFF6FF_0%,#F8FAFC_100%)]">
         <div className="mx-auto flex h-full max-w-[980px] flex-col items-center px-5 pt-[101px] text-center sm:px-6">
-          <span className="rounded-full border border-[#ff8b00] bg-white/80 px-[14px] py-[6px] text-[11px] font-medium text-[#e86f00]">
+          <span className="rounded-full border border-[#2563EB]/20 bg-white px-[14px] py-[6px] text-[11px] font-semibold text-[#2563EB] shadow-sm">
             Our specialty
           </span>
 
-          <h1 className="mt-[28px] font-extrabold leading-none tracking-[-0.045em] text-[#080808]">
-            <span className="text-[50px] text-[#ff8100] sm:text-[52px]">
+          <h1 className="mt-[28px] font-extrabold leading-none tracking-[-0.045em] text-[#0F172A]">
+            <span className="text-[50px] text-[#2563EB] sm:text-[52px]">
               Easy task
             </span>
             <span className="text-[50px] sm:text-[52px]"> Introduction</span>
           </h1>
 
-          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#26344a]">
+          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#334155]">
             Watch the video tutorials below to learn how to use Easy Tasks.
           </p>
         </div>
@@ -293,18 +294,18 @@ export default function Hero() {
 
       {/* Main white content panel */}
       <section className="relative z-10 px-4 pb-16 sm:px-5">
-        <div className="mx-auto -mt-[99px] max-w-[1050px] rounded-[11px] bg-white px-[47px] pb-[42px] pt-[45px] shadow-[0_4px_18px_rgba(0,0,0,0.06)] sm:px-[48px]">
+        <div className="mx-auto -mt-[99px] max-w-[1050px] rounded-[11px] bg-white border border-[#E2E8F0] px-[47px] pb-[42px] pt-[45px] shadow-[0_4px_18px_rgba(15,23,42,0.05)] sm:px-[48px]">
           {/* Featured tutorial */}
           <div>
-            <div className="mb-[10px] text-[11px] font-medium text-gray-400">
+            <div className="mb-[10px] text-[11px] font-medium text-[#64748B]">
               Video 1
             </div>
 
-            <h2 className="text-[16px] font-bold leading-6 text-[#101010]">
+            <h2 className="text-[16px] font-bold leading-6 text-[#0F172A]">
               Easy job introduction
             </h2>
 
-            <p className="mt-[4px] text-[11px] leading-5 text-[#24344d]">
+            <p className="mt-[4px] text-[11px] leading-5 text-[#334155]">
               Use various digital tools to help computer operators complete
               their daily tasks of images, documents, applications, and other
               necessary tasks easily and quickly.
@@ -336,31 +337,25 @@ export default function Hero() {
           {/* Contact */}
           <div
             id="contact"
-            className="mt-[36px] border-t border-gray-200 pt-[24px]"
+            className="mt-[36px] border-t border-[#E2E8F0] pt-[24px]"
           >
-            <h2 className="text-[15px] font-bold">Contact</h2>
+            <h2 className="text-[15px] font-bold text-[#0F172A]">Contact</h2>
 
-            <div className="mt-[10px] rounded-[7px] border border-blue-100 bg-[#f3f8ff] px-[16px] py-[14px]">
-              <p className="text-[10px] leading-5 text-gray-600">
+            <div className="mt-[10px] rounded-[7px] border border-[#E2E8F0] bg-[#EFF6FF]/60 px-[16px] py-[14px]">
+              <p className="text-[10px] leading-5 text-[#475569]">
                 Contact us for any Easy Task support or information.
               </p>
 
-              <div className="mt-[9px] flex flex-wrap items-center gap-x-[24px] gap-y-[7px] text-[10px] font-semibold text-[#1769aa]">
-                <a
-                  href="mailto:hello@sohozkaj.com"
-                  className="inline-flex items-center gap-[6px] hover:underline"
-                >
-                  <Mail size={13} />
-                  hello@sohozkaj.com
-                </a>
+              <div className="mt-[9px] flex flex-wrap items-center gap-x-[24px] gap-y-[7px] text-[10px] font-medium text-[#64748B] italic">
+                <div className="inline-flex items-center gap-[6px] not-italic">
+                  <Mail size={13} className="text-[#2563EB]" />
+                  <span>Email address will be updated soon...</span>
+                </div>
 
-                <a
-                  href="tel:+8801700000000"
-                  className="inline-flex items-center gap-[6px] hover:underline"
-                >
-                  <Phone size={13} />
-                  +88 01700-000000
-                </a>
+                <div className="inline-flex items-center gap-[6px] not-italic">
+                  <Phone size={13} className="text-[#10B981]" />
+                  <span>Phone number will be updated soon...</span>
+                </div>
               </div>
             </div>
           </div>
@@ -369,11 +364,13 @@ export default function Hero() {
 
       {/* Floating WhatsApp button */}
       <a
-        href="https://wa.me/8801700000000"
-        target="_blank"
-        rel="noreferrer"
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          alert("WhatsApp contact will be updated soon...");
+        }}
         aria-label="Contact us on WhatsApp"
-        className="fixed bottom-[22px] right-[22px] z-50 grid h-[56px] w-[56px] place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_28px_rgba(37,211,102,0.30)] transition hover:scale-105"
+        className="fixed bottom-[22px] right-[22px] z-50 grid h-[56px] w-[56px] place-items-center rounded-full bg-[#10B981] text-white shadow-[0_10px_28px_rgba(16,185,129,0.30)] transition hover:scale-105"
       >
         <span className="text-[28px] leading-none">◔</span>
       </a>

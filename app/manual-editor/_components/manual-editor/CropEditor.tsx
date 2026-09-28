@@ -222,31 +222,31 @@ export default function CropEditor() {
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-black text-white">
-      <div className="h-[50px] shrink-0 bg-white text-gray-900 border-b border-black/5 flex items-center justify-between">
+      <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-b border-[#E2E8F0] flex items-center justify-between">
         <div className="h-full flex items-center">
           <div className="pl-5 pr-4 flex items-center gap-2">
-            <div className="h-[30px] w-[30px] rounded-full bg-[#ff9900] text-white flex items-center justify-center font-black text-sm leading-none">
+            <div className="h-[30px] w-[30px] rounded-full bg-[#2563EB] text-white flex items-center justify-center font-black text-sm leading-none">
               X
             </div>
             <div className="leading-none">
-              <div className="text-[14px] font-black tracking-tight">
+              <div className="text-[14px] font-black tracking-tight text-[#0F172A]">
                 সহজকাজ
               </div>
-              <div className="text-[7px] uppercase tracking-[0.16em] text-gray-400 mt-[2px]">
+              <div className="text-[7px] uppercase tracking-[0.16em] text-[#0F172A]/60 mt-[2px]">
                 WWW.SHOHOZKAJ.COM
               </div>
             </div>
           </div>
-          <div className="h-7 w-px bg-gray-200" />
+          <div className="h-7 w-px bg-[#E2E8F0]" />
           <div className="ml-3 flex items-center gap-3">
-            <div className="h-[34px] w-[34px] rounded-xl bg-[#fff5e7] text-[#ff9800] flex items-center justify-center">
+            <div className="h-[34px] w-[34px] rounded-xl bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center">
               <CropIcon size={16} strokeWidth={2.3} />
             </div>
             <div className="flex flex-col">
-              <div className="text-[14px] font-black tracking-tight">
+              <div className="text-[14px] font-black tracking-tight text-[#0F172A]">
                 Crop &amp; Rotate Image
               </div>
-              <div className="text-[8px] text-gray-400 font-bold">
+              <div className="text-[8px] text-[#0F172A]/60 font-bold">
                 Independent photo crop • canvas fit after crop
               </div>
             </div>
@@ -290,24 +290,24 @@ export default function CropEditor() {
         </div>
       </div>
 
-      <div className="h-[50px] shrink-0 bg-white text-gray-900 border-t border-gray-200 flex items-stretch justify-between">
+      <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-t border-[#E2E8F0] flex items-stretch justify-between">
         <div className="flex items-stretch">
           <button
             type="button"
             aria-label="Zoom out"
             onClick={() => setZoom((value) => clamp(value - 10, 100, 300))}
-            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors cursor-pointer"
+            className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer"
           >
             <Minus size={17} strokeWidth={2.2} />
           </button>
-          <div className="w-[48px] bg-white flex items-center justify-center text-[12px] font-black border-r border-gray-200">
+          <div className="w-[48px] bg-[#F8FAFC] flex items-center justify-center text-[12px] font-black border-r border-[#E2E8F0] text-[#0F172A]">
             {zoom}%
           </div>
           <button
             type="button"
             aria-label="Zoom in"
             onClick={() => setZoom((value) => clamp(value + 10, 100, 300))}
-            className="w-[55px] bg-[#069b79] text-white flex items-center justify-center hover:bg-[#058b6d] transition-colors cursor-pointer"
+            className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer"
           >
             <Plus size={17} strokeWidth={2.2} />
           </button>
@@ -315,7 +315,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Rotate image"
             onClick={handleRotate}
-            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors cursor-pointer"
+            className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer"
           >
             <RotateCcw size={15} strokeWidth={2} />
             Rotate
@@ -324,7 +324,7 @@ export default function CropEditor() {
             type="button"
             aria-label="Mirror image"
             onClick={handleMirror}
-            className="w-[100px] bg-[#625ee9] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#544fde] transition-colors cursor-pointer"
+            className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer"
           >
             <FlipHorizontal2 size={15} strokeWidth={2} />
             Mirror
@@ -335,16 +335,16 @@ export default function CropEditor() {
           <button
             type="button"
             onClick={closeCrop}
-            className="w-[155px] px-4 bg-white text-gray-700 flex items-center justify-center gap-2 text-[12px] font-black border-l border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="w-[155px] px-4 bg-[#E2E8F0] text-[#0F172A] flex items-center justify-center gap-2 text-[12px] font-black border-l border-[#E2E8F0] hover:bg-[#cbd5e1] transition-colors cursor-pointer"
           >
-            <ScanLine size={15} strokeWidth={2} className="text-gray-500" />
+            <ScanLine size={15} strokeWidth={2} className="text-[#0F172A]/70" />
             No Crop Needed
           </button>
           <button
             type="button"
             disabled={busy || !completedCrop}
             onClick={() => void applyCrop()}
-            className="w-[172px] bg-[#ff9f1c] hover:bg-[#ef9210] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="w-[172px] bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <Check size={14} strokeWidth={2.4} />
             {busy ? "Cropping…" : "Crop"}

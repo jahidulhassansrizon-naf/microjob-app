@@ -1,3 +1,4 @@
+// app/reviews/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -141,24 +142,24 @@ export default function ReviewsPage() {
   >(null);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-gray-900 flex flex-col relative">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col relative">
       {/* 1. Header Banner Block */}
       <section
-        className="w-full py-12 sm:py-16 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden"
+        className="w-full py-12 sm:py-16 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden border-b border-[#E2E8F0]"
         style={{
           background:
-            "radial-gradient(100% 100% at 50% 50%, #F7F4F9 0%, #F0EAE6 50%, #EBE2DD 100%)",
+            "radial-gradient(100% 100% at 50% 50%, #EFF6FF 0%, #F1F5F9 50%, #E2E8F0 100%)",
         }}
       >
-        <div className="inline-flex items-center px-4 py-1 rounded-full border border-[#FF8C00]/60 bg-white/40 text-[#C84B15] text-xs sm:text-sm font-medium mb-6 shadow-2xs">
+        <div className="inline-flex items-center px-4 py-1 rounded-full border border-blue-200 bg-white/60 text-[#2563EB] text-xs sm:text-sm font-semibold mb-6 shadow-2xs">
           Customer Reviews
         </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-4">
-          What Our <span className="text-[#FF6B00]">Customers Say</span>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#0F172A] mb-4">
+          What Our <span className="text-[#2563EB]">Customers Say</span>
         </h1>
 
-        <p className="text-xs sm:text-sm md:text-base text-gray-700 max-w-xl font-normal leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base text-slate-600 max-w-xl font-medium leading-relaxed">
           Print shops, digital centers and shop owners across the country share
           their real experiences with SohojKaj.
         </p>
@@ -167,19 +168,19 @@ export default function ReviewsPage() {
       {/* 2. Main Content Section */}
       <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 pt-8 pb-16 sm:pb-24 w-full flex flex-col items-center">
         {/* Video Review Sub-header Strip */}
-        <div className="w-full flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-700 font-medium mb-6 sm:mb-8">
+        <div className="w-full flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-700 font-medium mb-6 sm:mb-8">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full border border-gray-900 flex items-center justify-center">
-              <Play size={8} className="fill-gray-900 text-gray-900 ml-0.5" />
+            <div className="w-4 h-4 rounded-full border border-[#0F172A] flex items-center justify-center">
+              <Play size={8} className="fill-[#0F172A] text-[#0F172A] ml-0.5" />
             </div>
-            <span className="font-bold text-gray-900">ভিডিও রিভিউ</span>
+            <span className="font-bold text-[#0F172A]">ভিডিও রিভিউ</span>
           </div>
-          <span className="text-gray-600 font-normal">
-            <strong className="font-semibold text-gray-800">8টি ভিডিও</strong>—
+          <span className="text-slate-600 font-normal">
+            <strong className="font-semibold text-slate-800">8টি ভিডিও</strong>—
             গ্রাহকদের সরাসরি কথা
           </span>
-          <span className="text-gray-300 hidden sm:inline">•</span>
-          <span className="text-gray-500 font-normal">
+          <span className="text-slate-300 hidden sm:inline">•</span>
+          <span className="text-slate-500 font-normal">
             সম্পাদনা ছাড়াই - নিজের মুখেই
           </span>
         </div>
@@ -229,20 +230,20 @@ export default function ReviewsPage() {
         </div>
 
         {/* Divider / Section Header for Text Reviews */}
-        <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-orange-50 border border-orange-100 p-4 rounded-2xl">
-          <div className="bg-orange-500 text-white p-2 rounded-xl shrink-0">
+        <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8 bg-blue-50/60 border border-blue-100 p-4 rounded-2xl">
+          <div className="bg-[#2563EB] text-white p-2 rounded-xl shrink-0">
             <MessageSquareText size={20} />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-orange-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-md">
+              <span className="bg-[#2563EB] text-white text-[11px] font-bold px-2 py-0.5 rounded-md">
                 Text Reviews
               </span>
-              <span className="text-xs font-bold text-gray-700">
+              <span className="text-xs font-bold text-[#0F172A]">
                 {textReviews.length} written reviews from real customers
               </span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               Print shops & digital centers
             </p>
           </div>
@@ -253,26 +254,26 @@ export default function ReviewsPage() {
           {textReviews.map((rev, index) => (
             <div
               key={index}
-              className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-xs hover:shadow-md transition flex flex-col justify-between relative group"
+              className="bg-white border border-[#E2E8F0] rounded-3xl p-5 sm:p-7 shadow-xs hover:shadow-md transition flex flex-col justify-between relative group"
             >
               <div>
-                <div className="text-orange-500 mb-4 bg-orange-50 w-10 h-10 rounded-2xl flex items-center justify-center">
+                <div className="text-[#2563EB] mb-4 bg-blue-50 w-10 h-10 rounded-2xl flex items-center justify-center">
                   <Quote size={20} />
                 </div>
-                <p className="text-gray-700 text-xs sm:text-sm leading-relaxed font-normal mb-6 sm:mb-8">
+                <p className="text-slate-700 text-xs sm:text-sm leading-relaxed font-normal mb-6 sm:mb-8">
                   &ldquo;{rev.quote}&rdquo;
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="flex items-center gap-3 pt-4 border-t border-[#E2E8F0]">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-[#2563EB] flex items-center justify-center font-bold text-sm shrink-0">
                   {rev.name.charAt(0)}
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-gray-900">
+                  <h4 className="text-xs sm:text-sm font-bold text-[#0F172A]">
                     {rev.name}
                   </h4>
-                  <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
                     {rev.shop}
                   </p>
                 </div>
@@ -281,18 +282,18 @@ export default function ReviewsPage() {
           ))}
         </div>
 
-        {/* Share Your Review Section - White transition pushed lower down */}
+        {/* Share Your Review Section */}
         <div
-          className="w-full border border-[#F2E8DC]/80 rounded-[32px] p-6 sm:p-10 md:p-12 flex flex-col items-center text-center shadow-2xs overflow-hidden"
+          className="w-full border border-[#E2E8F0] rounded-[32px] p-6 sm:p-10 md:p-12 flex flex-col items-center text-center shadow-2xs overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, #FFF7ED 0%, #FFF7ED 25%, #FFFFFF 58%)",
+              "linear-gradient(180deg, #EFF6FF 0%, #EFF6FF 25%, #FFFFFF 58%)",
           }}
         >
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-1.5">
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] mb-1.5">
             Share your review
           </h3>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium mb-10">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mb-10">
             4 simple steps &middot; text or video
           </p>
 
@@ -300,88 +301,88 @@ export default function ReviewsPage() {
           <div className="w-full max-w-5xl mb-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-3 items-center relative">
               {/* Step 1 */}
-              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+              <div className="relative bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
                 <div className="relative mb-5">
-                  <div className="w-14 h-14 bg-[#FFF3E0] text-[#FB8C00] rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-blue-50 text-[#2563EB] rounded-2xl flex items-center justify-center">
                     <Wrench size={24} />
                   </div>
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF9800] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#2563EB] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
                     1
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                <h4 className="text-xs font-bold text-[#0F172A] mb-2">
                   Use SohojKaj
                 </h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                <p className="text-[11px] text-slate-500 leading-relaxed max-w-[180px]">
                   Try documents, tools or print media yourself first.
                 </p>
               </div>
 
               {/* Chevron Arrow 1-2 */}
-              <div className="hidden lg:flex absolute left-[24.2%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+              <div className="hidden lg:flex absolute left-[24.2%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-slate-300 pointer-events-none">
                 <ChevronRight size={18} strokeWidth={2.5} />
               </div>
 
               {/* Step 2 */}
-              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+              <div className="relative bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
                 <div className="relative mb-5">
-                  <div className="w-14 h-14 bg-[#F3E5F5] text-[#8E24AA] rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                     <MessageSquare size={22} />
                   </div>
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#7C4DFF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
                     2
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                <h4 className="text-xs font-bold text-[#0F172A] mb-2">
                   Write your feedback
                 </h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                <p className="text-[11px] text-slate-500 leading-relaxed max-w-[180px]">
                   Prepare a short written note or a one-minute video.
                 </p>
               </div>
 
               {/* Chevron Arrow 2-3 */}
-              <div className="hidden lg:flex absolute left-[49.5%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+              <div className="hidden lg:flex absolute left-[49.5%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-slate-300 pointer-events-none">
                 <ChevronRight size={18} strokeWidth={2.5} />
               </div>
 
               {/* Step 3 */}
-              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+              <div className="relative bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
                 <div className="relative mb-5">
-                  <div className="w-14 h-14 bg-[#E8F5E9] text-[#2E7D32] rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-emerald-50 text-[#10B981] rounded-2xl flex items-center justify-center">
                     <MessageCircle size={24} />
                   </div>
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#10B981] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
                     3
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                <h4 className="text-xs font-bold text-[#0F172A] mb-2">
                   Send on WhatsApp
                 </h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                <p className="text-[11px] text-slate-500 leading-relaxed max-w-[180px]">
                   Send on WhatsApp with your name, shop and area.
                 </p>
               </div>
 
               {/* Chevron Arrow 3-4 */}
-              <div className="hidden lg:flex absolute left-[74.8%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-gray-300 pointer-events-none">
+              <div className="hidden lg:flex absolute left-[74.8%] top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 text-slate-300 pointer-events-none">
                 <ChevronRight size={18} strokeWidth={2.5} />
               </div>
 
               {/* Step 4 */}
-              <div className="relative bg-white border border-gray-100/80 rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
+              <div className="relative bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-2xs flex flex-col items-center justify-center text-center h-full">
                 <div className="relative mb-5">
-                  <div className="w-14 h-14 bg-[#E0F2F1] text-[#00897B] rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center">
                     <Globe size={24} />
                   </div>
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#009688] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-sky-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
                     4
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-gray-900 mb-2">
+                <h4 className="text-xs font-bold text-[#0F172A] mb-2">
                   We publish
                 </h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[180px]">
+                <p className="text-[11px] text-slate-500 leading-relaxed max-w-[180px]">
                   We verify and publish it on this page.
                 </p>
               </div>
@@ -400,12 +401,12 @@ export default function ReviewsPage() {
           </a>
 
           {/* Monthly Gift Banner */}
-          <div className="w-full max-w-5xl bg-[#FFF8F0] border border-[#FFE8D1] rounded-2xl p-3.5 sm:px-6 flex items-center justify-center gap-3 text-xs sm:text-sm">
-            <div className="w-8 h-8 rounded-lg bg-[#FFE0B2] text-[#D84315] flex items-center justify-center shrink-0">
+          <div className="w-full max-w-5xl bg-amber-50/70 border border-amber-200/60 rounded-2xl p-3.5 sm:px-6 flex items-center justify-center gap-3 text-xs sm:text-sm">
+            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
               <Gift size={18} />
             </div>
-            <div className="text-left font-normal text-gray-700">
-              <strong className="font-bold text-[#B71C1C]">
+            <div className="text-left font-normal text-slate-700">
+              <strong className="font-bold text-amber-800">
                 Monthly gift:
               </strong>{" "}
               Every month, 3 reviewers will be chosen by lottery to receive a

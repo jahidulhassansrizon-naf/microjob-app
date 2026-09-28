@@ -28,23 +28,14 @@ function WhatsAppIcon() {
   );
 }
 
-function MiniTools() {
-  return (
-    <div className="mini-tools" aria-hidden="true">
-      <div className="mini-tool black">◉</div>
-      <div className="mini-tool cyan">⌣</div>
-    </div>
-  );
-}
-
 export default function PrivacyPolicyPage() {
   return (
     <main className="privacy-page">
       <style>{`
         .privacy-page {
           min-height: 100vh;
-          background: #f3f3f3;
-          color: #17202b;
+          background: #F8FAFC;
+          color: #0F172A;
           font-family: Arial, Helvetica, sans-serif;
           -webkit-font-smoothing: antialiased;
           text-rendering: optimizeLegibility;
@@ -68,20 +59,20 @@ export default function PrivacyPolicyPage() {
         .privacy-paper {
           width: min(100%, 958px);
           margin: 0 auto;
-          background: #fff;
-          border: 1px solid #e5e5e8;
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
           border-radius: 14px;
           box-shadow:
-            0 1px 2px rgba(16, 24, 40, .018),
-            0 4px 12px rgba(16, 24, 40, .025);
+            0 1px 2px rgba(15, 23, 42, .018),
+            0 4px 12px rgba(15, 23, 42, .025);
           padding: 61px 54px 39px;
         }
 
         .privacy-title {
           margin: 0;
           padding-bottom: 16px;
-          border-bottom: 1px solid #202327;
-          color: #121821;
+          border-bottom: 1px solid #E2E8F0;
+          color: #0F172A;
           font-size: 29px;
           line-height: 1.16;
           font-weight: 800;
@@ -90,7 +81,7 @@ export default function PrivacyPolicyPage() {
 
         .privacy-intro {
           margin: 31px 0 37px;
-          color: #27303a;
+          color: #0F172A;
           font-size: 16px;
           line-height: 1.48;
           letter-spacing: -0.1px;
@@ -102,7 +93,7 @@ export default function PrivacyPolicyPage() {
 
         .privacy-section h2 {
           margin: 0 0 15px;
-          color: #111722;
+          color: #0F172A;
           font-size: 18px;
           line-height: 1.22;
           font-weight: 800;
@@ -111,7 +102,7 @@ export default function PrivacyPolicyPage() {
 
         .privacy-section h3 {
           margin: 0 0 10px;
-          color: #111722;
+          color: #0F172A;
           font-size: 16px;
           line-height: 1.24;
           font-weight: 800;
@@ -120,7 +111,7 @@ export default function PrivacyPolicyPage() {
 
         .privacy-section p {
           margin: 0 0 11px;
-          color: #34404c;
+          color: #0F172A;
           font-size: 14px;
           line-height: 1.47;
           letter-spacing: -0.04px;
@@ -129,7 +120,7 @@ export default function PrivacyPolicyPage() {
         .privacy-list {
           margin: 0;
           padding-left: 27px;
-          color: #34404c;
+          color: #0F172A;
           font-size: 14px;
           line-height: 1.45;
         }
@@ -144,7 +135,7 @@ export default function PrivacyPolicyPage() {
         }
 
         .privacy-section a {
-          color: #2678da;
+          color: #2563EB;
           text-decoration: none;
         }
 
@@ -162,54 +153,19 @@ export default function PrivacyPolicyPage() {
 
         .privacy-divider {
           margin-top: 30px;
-          border-top: 1px solid #202327;
+          border-top: 1px solid #E2E8F0;
         }
 
         .privacy-closing {
           margin-top: 23px;
           text-align: center;
-          color: #32404c;
+          color: #0F172A;
           font-size: 14px;
           line-height: 1.42;
         }
 
         .privacy-closing p {
           margin: 0;
-        }
-
-        .mini-tools {
-          position: fixed;
-          right: 0;
-          top: 154px;
-          display: flex;
-          flex-direction: column;
-          gap: 9px;
-          z-index: 45;
-        }
-
-        .mini-tool {
-          width: 33px;
-          height: 35px;
-          display: grid;
-          place-items: center;
-          box-shadow: 0 3px 8px rgba(0,0,0,.12);
-        }
-
-        .mini-tool.black {
-          width: 31px;
-          height: 31px;
-          margin-right: 2px;
-          border-radius: 50%;
-          background: #000;
-          color: #fff;
-          font-size: 14px;
-        }
-
-        .mini-tool.cyan {
-          background: #2ac1ef;
-          color: #153d4f;
-          border: 1px solid #1da5cd;
-          font-size: 20px;
         }
 
         .whatsapp {
@@ -221,10 +177,10 @@ export default function PrivacyPolicyPage() {
           display: grid;
           place-items: center;
           border-radius: 50%;
-          background: #21d36a;
+          background: #10B981;
           color: #fff;
           text-decoration: none;
-          box-shadow: 0 11px 24px rgba(33, 211, 106, .25);
+          box-shadow: 0 11px 24px rgba(16, 185, 129, .25);
           z-index: 45;
         }
 
@@ -310,10 +266,6 @@ export default function PrivacyPolicyPage() {
           .privacy-list,
           .privacy-closing {
             font-size: 13px;
-          }
-
-          .mini-tools {
-            display: none;
           }
 
           .whatsapp {
@@ -600,8 +552,6 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <Footer />
-
-      <MiniTools />
 
       <a
         className="whatsapp"

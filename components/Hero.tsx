@@ -1,3 +1,4 @@
+// components/Hero.tsx
 "use client";
 
 import { useState } from "react";
@@ -7,12 +8,16 @@ import {
   ArrowRight,
   Play,
   CheckCircle2,
-  Sparkles,
-  Sliders,
-  Layers,
   Check,
-  Info,
   X,
+  Grid,
+  Scissors,
+  FileText,
+  Printer,
+  SlidersHorizontal,
+  Download,
+  User,
+  Zap,
 } from "lucide-react";
 
 // Left Content Animation Variants
@@ -42,7 +47,7 @@ export default function Hero() {
   return (
     <section className="w-full bg-transparent min-h-[calc(100vh-90px)] flex items-center py-8 lg:py-12 relative overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-        {/* Left Column with Motion */}
+        {/* ================= LEFT COLUMN ================= */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -52,21 +57,22 @@ export default function Hero() {
           {/* Active Users Tag */}
           <motion.div
             variants={itemVariants}
-            className="inline-block bg-orange-100/80 border border-[#FEA51F] text-black text-xs sm:text-[14px] font-medium px-4 py-1.5 rounded-full shadow-xs"
+            className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200/80 text-blue-700 text-xs sm:text-[14px] font-semibold px-4 py-1.5 rounded-full shadow-xs"
           >
-            35000+ Active Users
+            <Zap size={14} className="fill-blue-600 text-blue-600" />
+            35,000+ Active Users
           </motion.div>
 
           {/* Main Heading */}
           <motion.h1
             variants={itemVariants}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-tight sm:leading-tight lg:leading-[81px] font-black text-gray-950 tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-tight sm:leading-tight lg:leading-[81px] font-black text-slate-900 tracking-tight"
           >
             <span className="whitespace-normal sm:whitespace-nowrap">
-              All your <span className="text-amber-500">digital work</span>
+              All your <span className="text-blue-600">digital work</span>
             </span>{" "}
             <br className="hidden lg:inline" />
-            <span className="text-[#FC4D0B]">in one place,</span> simple{" "}
+            <span className="text-indigo-600">in one place,</span> simple{" "}
             <br className="hidden lg:inline" />
             and secure
           </motion.h1>
@@ -74,7 +80,7 @@ export default function Hero() {
           {/* Subtitle */}
           <motion.p
             variants={itemVariants}
-            className="text-gray-800 text-sm sm:text-base max-w-xl leading-relaxed font-semibold"
+            className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-semibold"
           >
             Photo edit, AI photo edit, manual edit and bulk edit, plus
             documents, design and print media — use them all with ease.
@@ -87,13 +93,13 @@ export default function Hero() {
           >
             {/* Get Started Button */}
             <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="w-full sm:w-auto"
             >
               <Link
                 href="/login"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 sm:px-7 py-3 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-orange-300/50 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-blue-500/25 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"
               >
                 Get Started Now <ArrowRight size={16} />
               </Link>
@@ -101,12 +107,12 @@ export default function Hero() {
 
             {/* Watch Demo Video Button */}
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setIsVideoOpen(true)}
-              className="flex items-center justify-center gap-2 text-gray-700 bg-white/80 border border-gray-200 px-6 py-3 rounded-full font-semibold text-xs sm:text-sm hover:bg-white transition shadow-xs cursor-pointer w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 text-slate-700 bg-white border border-slate-200 px-6 py-3.5 rounded-full font-semibold text-xs sm:text-sm hover:bg-slate-50 transition shadow-xs cursor-pointer w-full sm:w-auto"
             >
-              <Play size={14} className="text-amber-500 fill-amber-500" /> Watch
+              <Play size={14} className="text-blue-600 fill-blue-600" /> Watch
               Demo Video
             </motion.button>
           </motion.div>
@@ -114,172 +120,184 @@ export default function Hero() {
           {/* Feature Bullets */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-5 text-xs text-gray-600 pt-4 sm:pt-6 font-semibold"
+            className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-5 text-xs text-slate-600 pt-4 sm:pt-6 font-semibold"
           >
             <span className="flex items-center gap-1.5">
               <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />{" "}
               Photo edit in one click
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-sky-500 shrink-0" /> All
+              <CheckCircle2 size={16} className="text-blue-500 shrink-0" /> All
               tools in one place
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-purple-500 shrink-0" />{" "}
+              <CheckCircle2 size={16} className="text-indigo-500 shrink-0" />{" "}
               Save time, reduce hassle
             </span>
           </motion.div>
         </motion.div>
 
-        {/* Right Column Visuals with Framer Motion */}
-        <div className="lg:col-span-6 xl:col-span-6 relative flex justify-center items-center min-h-[380px] sm:min-h-[420px] px-2 sm:px-4 lg:px-0 mt-6 lg:mt-0">
-          {/* Main Base Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-            className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/80 relative z-10 overflow-hidden"
-          >
-            {/* Top Header Bar */}
-            <div className="bg-gradient-to-r from-[#C22361] via-[#A01A8A] to-[#8C00FF] h-14 sm:h-16 px-6 flex items-center justify-end gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-white/40"></span>
-              <span className="w-2.5 h-2.5 rounded-full bg-white/60"></span>
-              <span className="w-2.5 h-2.5 rounded-full bg-white"></span>
-            </div>
-
-            {/* Card Content Body */}
-            <div className="p-4 sm:p-5 space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-2xl border border-orange-100/85">
-                <div className="p-2.5 bg-orange-500 text-white rounded-xl shadow-xs shrink-0">
-                  <Sparkles size={18} />
+        {/* ================= RIGHT COLUMN (HUMAN-MADE SAAS UI) ================= */}
+        <div className="lg:col-span-6 xl:col-span-6 relative w-full max-w-xl mx-auto lg:max-w-none px-2 sm:px-0 mt-6 lg:mt-0">
+          {/* Bento Grid Container */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 sm:gap-4">
+            {/* 1. A4 Print Sheet Layout Card (Top Left - 7 Cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="sm:col-span-7 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+                    <Grid size={15} />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">
+                    A4 Grid Layout
+                  </span>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    AI Photo Edit
-                  </h4>
-                  <p className="text-xs text-gray-500">Smart auto editing</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-purple-50/50 rounded-2xl border border-purple-100/85">
-                <div className="p-2.5 bg-purple-600 text-white rounded-xl shadow-xs shrink-0">
-                  <Sliders size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Manual edit
-                  </h4>
-                  <p className="text-xs text-gray-500">Edit as you wish.</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/85">
-                <div className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-xs shrink-0">
-                  <Layers size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Bulk photo edit
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    Many pictures together
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right pt-1">
-                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                  In an instant
+                <span className="text-[10px] font-mono bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded border border-slate-200">
+                  300 DPI
                 </span>
               </div>
-            </div>
-          </motion.div>
 
-          {/* Floating Card 1 (Animated with Floating Effect) */}
-          <motion.div
-            initial={{ opacity: 0, x: -40, y: -20 }}
-            animate={{
-              opacity: 1,
-              x: 0,
-              y: [0, -10, 0], // Continuous float animation
-            }}
-            transition={{
-              opacity: { duration: 0.6, delay: 0.4 },
-              x: { duration: 0.6, delay: 0.4 },
-              y: {
-                repeat: Infinity,
-                duration: 4,
-                ease: "easeInOut",
-              },
-            }}
-            className="absolute -top-3 sm:-top-1 left-2 sm:left-6 md:left-12 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-xl border border-gray-100 flex flex-col justify-center gap-2 w-52 sm:w-60 h-[96px] sm:h-[104px]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-md shrink-0">
-                <Check size={16} strokeWidth={3} />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-medium leading-tight">
-                  Time saved per month
-                </p>
-                <p className="text-xs sm:text-sm font-bold text-gray-800">
-                  120+ Hours
-                </p>
-              </div>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 sm:h-2 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "75%" }}
-                transition={{ duration: 1, delay: 0.8 }}
-                className="bg-emerald-500 h-full rounded-full"
-              />
-            </div>
-          </motion.div>
+              {/* Real Photo Grid with Crop Lines */}
+              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 grid grid-cols-4 gap-1.5">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-[3/4] bg-white rounded border border-slate-300 relative flex flex-col items-center justify-center overflow-hidden"
+                  >
+                    {/* Crop Mark Corners */}
+                    <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l border-blue-500" />
+                    <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 border-t border-r border-blue-500" />
+                    <div className="absolute bottom-0.5 left-0.5 w-1.5 h-1.5 border-b border-l border-blue-500" />
+                    <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r border-blue-500" />
 
-          {/* Floating Card 2 (Animated with Floating Effect) */}
-          <motion.div
-            initial={{ opacity: 0, x: 40, y: 20 }}
-            animate={{
-              opacity: 1,
-              x: 0,
-              y: [0, 10, 0], // Continuous float animation
-            }}
-            transition={{
-              opacity: { duration: 0.6, delay: 0.5 },
-              x: { duration: 0.6, delay: 0.5 },
-              y: {
-                repeat: Infinity,
-                duration: 4.5,
-                ease: "easeInOut",
-              },
-            }}
-            className="absolute bottom-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 -right-2 sm:-right-4 md:-right-6 z-20 bg-gradient-to-r from-orange-500 via-rose-500 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-2xl w-48 sm:w-60 h-[130px] sm:h-[150px] flex flex-col justify-between"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] sm:text-[11px] opacity-90 font-medium">
-                Total documents created
-              </p>
-              <div className="bg-white/20 p-1 rounded-full text-white">
-                <Info size={14} />
+                    <div className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 mt-1">
+                      <User size={10} />
+                    </div>
+                    <div className="w-5 h-2 bg-blue-100 rounded-t-sm mt-0.5" />
+                  </div>
+                ))}
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-none">
-                300000+
-              </h3>
-              <p className="text-base sm:text-lg font-bold tracking-tight">
-                Images
-              </p>
-            </div>
-            <p className="text-[10px] sm:text-[11px] opacity-90 font-light">
-              edited using SohozKaj
-            </p>
-          </motion.div>
+
+              <div className="flex items-center justify-between mt-3 text-[11px] text-slate-500 font-medium">
+                <span>8 Copies • Passport</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check size={13} strokeWidth={3} /> Auto-Fit
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 2. Transparent Background Cutout Card (Top Right - 5 Cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+              className="sm:col-span-5 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">
+                  <Scissors size={15} />
+                </div>
+                <span className="text-xs font-bold text-slate-800">
+                  Cutout Tool
+                </span>
+              </div>
+
+              {/* Photoshop-style Checkerboard BG */}
+              <div className="my-2 p-3 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:8px_8px] rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-sm mb-1.5">
+                  <User size={18} />
+                </div>
+                <span className="text-[10px] font-bold bg-white text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 shadow-2xs">
+                  BG Removed
+                </span>
+              </div>
+
+              <div className="text-[11px] font-medium text-slate-500 flex items-center justify-between">
+                <span>Edge Clean</span>
+                <span className="text-slate-800 font-mono font-bold">100%</span>
+              </div>
+            </motion.div>
+
+            {/* 3. Exact Presets Card (Bottom Left - 6 Cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.35 }}
+              className="sm:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
+                    <FileText size={15} />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">
+                    Dimensions
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
+                  MM Scale
+                </span>
+              </div>
+
+              <div className="space-y-1.5 my-1">
+                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 text-[11px]">
+                  <span className="text-slate-600 font-medium">NID Size</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    85.6 × 54 mm
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 text-[11px]">
+                  <span className="text-slate-600 font-medium">Passport</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    40 × 50 mm
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 4. Instant Output Export Card (Bottom Right - 6 Cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.45 }}
+              className="sm:col-span-6 bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 shadow-md flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-slate-800 text-slate-200 rounded-lg border border-slate-700">
+                    <Printer size={15} />
+                  </div>
+                  <span className="text-xs font-bold text-white">
+                    Print Ready
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded">
+                  <SlidersHorizontal size={10} /> CMYK
+                </div>
+              </div>
+
+              <div className="my-2.5 flex items-center justify-between bg-slate-800/80 px-2.5 py-2 rounded-lg border border-slate-700/80">
+                <div className="flex items-center gap-2">
+                  <Download size={14} className="text-blue-400" />
+                  <span className="text-[11px] font-medium text-slate-300">
+                    File Output
+                  </span>
+                </div>
+                <span className="bg-blue-600 text-white font-mono font-bold px-2 py-0.5 rounded text-[10px]">
+                  PDF / JPG
+                </span>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* Demo Video Popup Modal with AnimatePresence */}
+      {/* Demo Video Popup Modal */}
       <AnimatePresence>
         {isVideoOpen && (
           <motion.div
@@ -298,7 +316,6 @@ export default function Hero() {
               className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={() => setIsVideoOpen(false)}
                 className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1"
@@ -307,7 +324,6 @@ export default function Hero() {
                 <X size={26} />
               </button>
 
-              {/* Youtube Embedded Video */}
               <iframe
                 src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
                 title="SohozKaj Demo Video"

@@ -561,12 +561,12 @@ export default function PdfToImage() {
   const canConvert = !!selectedFile && !isProcessing;
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
 
@@ -579,7 +579,7 @@ export default function PdfToImage() {
 
         <span>/</span>
 
-        <span className="font-semibold text-gray-900">PDF to Image</span>
+        <span className="font-semibold text-[#0F172A]">PDF to Image</span>
       </div>
 
       {/* Header Card */}
@@ -591,7 +591,7 @@ export default function PdfToImage() {
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">PDF to Image</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">PDF to Image</h1>
 
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
@@ -622,7 +622,7 @@ export default function PdfToImage() {
           {/* Upload Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-gray-900">
+              <h2 className="text-xs font-bold text-[#0F172A]">
                 Files ({selectedFile ? 1 : 0})
               </h2>
 
@@ -646,7 +646,7 @@ export default function PdfToImage() {
                   <Upload size={20} />
                 </div>
 
-                <span className="text-xs font-bold text-gray-800">
+                <span className="text-xs font-bold text-[#0F172A]">
                   Drop PDF files here or click to upload
                 </span>
 
@@ -669,7 +669,7 @@ export default function PdfToImage() {
                   </div>
 
                   <div className="truncate">
-                    <p className="text-xs font-bold text-gray-800 truncate">
+                    <p className="text-xs font-bold text-[#0F172A] truncate">
                       {selectedFile.name}
                     </p>
 
@@ -691,7 +691,7 @@ export default function PdfToImage() {
 
           {/* Image Format Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-gray-900">Image format</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Image format</h2>
 
             <div className="grid grid-cols-4 gap-2">
               {(["JPG", "PNG", "WebP", "AVIF"] as const).map((fmt) => (
@@ -700,7 +700,7 @@ export default function PdfToImage() {
                   onClick={() => handleFormatChange(fmt)}
                   className={`py-2 text-xs font-bold rounded-xl border transition-all ${
                     imageFormat === fmt
-                      ? "border-amber-400 bg-amber-50/40 text-amber-600 shadow-2xs"
+                      ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
                       : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -712,7 +712,7 @@ export default function PdfToImage() {
 
           {/* Resolution Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-gray-900">Resolution</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Resolution</h2>
 
             <div className="space-y-2">
               {/* Standard */}
@@ -720,11 +720,11 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("standard")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "standard"
-                    ? "border-amber-400 bg-amber-50/40 text-gray-800 shadow-2xs"
+                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
                     : "border-gray-200 bg-white hover:bg-gray-50"
                 }`}
               >
-                <p className="text-xs font-bold text-gray-800">Standard</p>
+                <p className="text-xs font-bold text-[#0F172A]">Standard</p>
 
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   96 DPI — good for screen and sharing
@@ -736,11 +736,11 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("high")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "high"
-                    ? "border-amber-400 bg-amber-50/40 text-gray-800 shadow-2xs"
+                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
                     : "border-gray-200 bg-white hover:bg-gray-50"
                 }`}
               >
-                <p className="text-xs font-bold text-gray-800">High</p>
+                <p className="text-xs font-bold text-[#0F172A]">High</p>
 
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   144 DPI — sharper text and details
@@ -752,11 +752,11 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("ultra")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "ultra"
-                    ? "border-amber-400 bg-amber-50/40 text-gray-800 shadow-2xs"
+                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
                     : "border-gray-200 bg-white hover:bg-gray-50"
                 }`}
               >
-                <p className="text-xs font-bold text-gray-800">Ultra high</p>
+                <p className="text-xs font-bold text-[#0F172A]">Ultra high</p>
 
                 <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                   216 DPI — best for print
@@ -769,7 +769,7 @@ export default function PdfToImage() {
         {/* Right Side: Preview */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[520px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-gray-700">Preview</h2>
+            <h2 className="text-xs font-bold text-[#0F172A]">Preview</h2>
 
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
@@ -778,7 +778,7 @@ export default function PdfToImage() {
                   : pages
                     ? "bg-emerald-100 text-emerald-700"
                     : isProcessing
-                      ? "bg-amber-100 text-amber-700"
+                      ? "bg-[#E2E8F0] text-[#2563EB]"
                       : selectedFile
                         ? "bg-blue-100 text-blue-600"
                         : "bg-gray-100 text-gray-500"
@@ -800,7 +800,7 @@ export default function PdfToImage() {
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
               <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
 
-              <p className="text-xs font-bold text-gray-800">
+              <p className="text-xs font-bold text-[#0F172A]">
                 Rendering your PDF…
               </p>
 
@@ -832,7 +832,7 @@ export default function PdfToImage() {
                     <CheckCircle2 size={16} />
                   </div>
 
-                  <p className="text-xs font-bold text-gray-800">
+                  <p className="text-xs font-bold text-[#0F172A]">
                     {pages.length} page
                     {pages.length === 1 ? "" : "s"} converted
                   </p>
@@ -863,7 +863,7 @@ export default function PdfToImage() {
                       />
                     </div>
 
-                    <p className="text-[11px] font-bold text-gray-800 truncate w-full">
+                    <p className="text-[11px] font-bold text-[#0F172A] truncate w-full">
                       Page {page.pageNumber}
                     </p>
 
@@ -873,7 +873,7 @@ export default function PdfToImage() {
 
                     <button
                       onClick={() => downloadPage(page)}
-                      className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-gray-700 text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all"
+                      className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all"
                     >
                       <Download size={11} />
                       Download
@@ -888,7 +888,7 @@ export default function PdfToImage() {
                 <FileText size={20} />
               </div>
 
-              <p className="text-xs font-bold text-gray-800">
+              <p className="text-xs font-bold text-[#0F172A]">
                 Add files to get started
               </p>
 
@@ -912,7 +912,7 @@ export default function PdfToImage() {
                 : pages
                   ? "bg-emerald-500"
                   : isProcessing
-                    ? "bg-amber-400 animate-pulse"
+                    ? "bg-[#2563EB] animate-pulse"
                     : "bg-gray-400"
             }`}
           />
@@ -937,7 +937,7 @@ export default function PdfToImage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
           >
             Reset
           </button>
@@ -976,10 +976,10 @@ export default function PdfToImage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-gray-800 hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="text-orange-500">?</span>
+            <span className="text-[#2563EB]">?</span>
 
             <span>How to use</span>
           </div>
@@ -998,7 +998,7 @@ export default function PdfToImage() {
 
       {/* Tools in Same Category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
 
@@ -1012,7 +1012,7 @@ export default function PdfToImage() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
                 Compress PDF
               </h4>
 
@@ -1032,7 +1032,7 @@ export default function PdfToImage() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-gray-900 group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
                 Merge PDFs
               </h4>
 

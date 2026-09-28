@@ -78,7 +78,7 @@ export default function PaperHeader({
               event.stopPropagation();
             }
           }}
-          className="relative border-b border-[#8B8B8B] pb-2.5 text-center"
+          className="relative border-b border-[#0F172A] pb-2.5 text-center"
         >
           {logoUrl ? (
             <img
@@ -88,7 +88,7 @@ export default function PaperHeader({
             />
           ) : null}
 
-          <div className="absolute right-0 top-0 text-[8px] font-semibold text-gray-500">
+          <div className="absolute right-0 top-0 text-[8px] font-semibold text-[#0F172A]/70">
             {setNoEnabled ? (
               <>
                 <span
@@ -169,7 +169,7 @@ export default function PaperHeader({
           </div>
 
           {headerNoteEnabled && headerNote ? (
-            <div className="mb-1 text-[8px] font-semibold text-gray-500">
+            <div className="mb-1 text-[8px] font-semibold text-[#0F172A]/70">
               <span
                 data-region-edit-target="paper:header-note"
                 contentEditable={activeRegionTargetIds.has("paper:header-note")}
@@ -214,7 +214,7 @@ export default function PaperHeader({
                 : "Institution name (school / coaching / college)"
             }
             onChange={(event) => setInstitutionName(event.target.value)}
-            className="w-full border-0 bg-transparent text-center font-extrabold text-gray-900 outline-none placeholder:text-gray-300 placeholder:opacity-60"
+            className="w-full border-0 bg-transparent text-center font-extrabold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60"
             style={{
               fontSize: `${Math.max(14, fontSize + 3)}px`,
             }}
@@ -226,7 +226,7 @@ export default function PaperHeader({
             value={examName}
             placeholder={headerActive ? "" : "Set the exam name here"}
             onChange={(event) => setExamName(event.target.value)}
-            className="mt-0.5 w-full border-0 bg-transparent text-center font-bold text-gray-600 outline-none placeholder:text-gray-300 placeholder:opacity-60"
+            className="mt-0.5 w-full border-0 bg-transparent text-center font-bold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60"
             style={{
               fontSize: `${Math.max(11, fontSize + 1)}px`,
             }}
@@ -234,7 +234,7 @@ export default function PaperHeader({
             data-region-edit-target="paper:exam"
           />
 
-          <p className="mt-2 text-[9px] font-semibold text-gray-700">
+          <p className="mt-2 text-[9px] font-semibold text-[#0F172A]">
             <span
               data-region-edit-target="paper:subject-label"
               contentEditable={activeRegionTargetIds.has("paper:subject-label")}
@@ -311,7 +311,7 @@ export default function PaperHeader({
             </span>
           </p>
 
-          <p className="text-[9px] font-semibold text-gray-700">
+          <p className="text-[9px] font-semibold text-[#0F172A]">
             <span
               data-region-edit-target="paper:class-label"
               contentEditable={activeRegionTargetIds.has("paper:class-label")}
@@ -385,7 +385,7 @@ export default function PaperHeader({
             </span>
           </p>
 
-          <div className="mt-2 flex items-center justify-between border-t border-dashed border-gray-500 pt-1.5 text-[8px] font-semibold text-gray-700">
+          <div className="mt-2 flex items-center justify-between border-t border-dashed border-[#0F172A]/30 pt-1.5 text-[8px] font-semibold text-[#0F172A]">
             <span>
               <span
                 data-region-edit-target="paper:time-label"
@@ -565,7 +565,7 @@ export default function PaperHeader({
               event.stopPropagation();
             }
           }}
-          className="mt-2 text-left text-[8px] text-gray-500"
+          className="mt-2 text-left text-[8px] text-[#0F172A]/70"
         >
           <span
             data-region-edit-target="paper:chapter-label"

@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   ChevronDown,
   CreditCard,
-  Wand2,
   BookOpen,
   Crop,
   FileText,
@@ -1127,7 +1126,7 @@ export default function ImageSizeReducer() {
   }, [showNotification]);
 
   return (
-    <div className="w-full space-y-5 text-gray-800 font-sans pb-24 relative">
+    <div className="w-full space-y-5 text-[#0F172A] font-sans pb-24 relative">
       {/* Toast Notification */}
       {showToast && (
         <div
@@ -1187,7 +1186,7 @@ export default function ImageSizeReducer() {
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
-          className="flex items-center gap-1 hover:text-gray-900 transition-colors cursor-pointer"
+          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors cursor-pointer"
           href="/sohoj-tools"
         >
           <ArrowLeft size={14} />
@@ -1196,18 +1195,18 @@ export default function ImageSizeReducer() {
         <span>/</span>
         <span>Image Tools</span>
         <span>/</span>
-        <span className="font-semibold text-gray-900">Image Size Reducer</span>
+        <span className="font-semibold text-[#0F172A]">Image Size Reducer</span>
       </div>
 
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 border border-amber-100">
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <ImageIcon size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-[#0F172A]">
                 Image Size Reducer
               </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -1243,8 +1242,8 @@ export default function ImageSizeReducer() {
           {/* Quality Slider */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-700">Quality</label>
-              <span className="text-xs font-bold text-gray-800">
+              <label className="text-xs font-bold text-[#0F172A]">Quality</label>
+              <span className="text-xs font-bold text-[#0F172A]">
                 {quality}%
               </span>
             </div>
@@ -1257,7 +1256,7 @@ export default function ImageSizeReducer() {
                 setQuality(Number(e.target.value));
                 setIsCompressed(false);
               }}
-              className="w-full accent-amber-500 bg-gray-200 rounded-lg h-2 cursor-pointer"
+              className="w-full accent-[#2563EB] bg-gray-200 rounded-lg h-2 cursor-pointer"
             />
             <p className="text-[10px] text-gray-400 font-medium">
               {outputFormat === "PNG"
@@ -1271,12 +1270,12 @@ export default function ImageSizeReducer() {
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2 relative"
             ref={dropdownRef}
           >
-            <label className="text-xs font-bold text-gray-700 block">
+            <label className="text-xs font-bold text-[#0F172A] block">
               Max dimension
             </label>
             <div
               onClick={() => setIsDimensionOpen(!isDimensionOpen)}
-              className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-800 cursor-pointer hover:border-amber-400 transition-all shadow-xs"
+              className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-[#0F172A] cursor-pointer hover:border-[#2563EB] transition-all shadow-xs"
             >
               <span>{maxDimension}</span>
               <ChevronDown
@@ -1299,8 +1298,8 @@ export default function ImageSizeReducer() {
                     }}
                     className={`px-3 py-2 text-xs font-medium cursor-pointer transition-colors ${
                       maxDimension === opt
-                        ? "bg-amber-50 text-amber-600 font-bold"
-                        : "text-gray-700 hover:bg-gray-50"
+                        ? "bg-[#F8FAFC] text-[#2563EB] font-bold"
+                        : "text-[#0F172A] hover:bg-gray-50"
                     }`}
                   >
                     {opt}
@@ -1317,7 +1316,7 @@ export default function ImageSizeReducer() {
           {/* Preserve EXIF */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-gray-700 block">
+              <label className="text-xs font-bold text-[#0F172A] block">
                 Preserve EXIF
               </label>
               <p className="text-[10px] text-gray-400 font-medium">
@@ -1330,7 +1329,7 @@ export default function ImageSizeReducer() {
                 setIsCompressed(false);
               }}
               className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                preserveExif ? "bg-amber-500" : "bg-gray-200"
+                preserveExif ? "bg-[#2563EB]" : "bg-gray-200"
               }`}
             >
               <div
@@ -1344,7 +1343,7 @@ export default function ImageSizeReducer() {
           {/* Keep original name */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-gray-700 block">
+              <label className="text-xs font-bold text-[#0F172A] block">
                 Keep original name
               </label>
               <p className="text-[10px] text-gray-400 font-medium">
@@ -1357,7 +1356,7 @@ export default function ImageSizeReducer() {
                 setIsCompressed(false);
               }}
               className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                keepOriginalName ? "bg-amber-500" : "bg-gray-200"
+                keepOriginalName ? "bg-[#2563EB]" : "bg-gray-200"
               }`}
             >
               <div
@@ -1370,7 +1369,7 @@ export default function ImageSizeReducer() {
 
           {/* Output Format */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2">
-            <label className="text-xs font-bold text-gray-700 block">
+            <label className="text-xs font-bold text-[#0F172A] block">
               Output format
             </label>
             <div className="grid grid-cols-5 gap-1.5 bg-gray-50/80 p-1 rounded-xl border border-gray-100">
@@ -1391,8 +1390,8 @@ export default function ImageSizeReducer() {
                     }}
                     className={`py-2 px-1 rounded-lg text-[10px] font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
                       outputFormat === item.name
-                        ? "bg-white text-amber-600 shadow-xs border border-gray-100"
-                        : "text-gray-500 hover:text-gray-800"
+                        ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+                        : "text-gray-500 hover:text-[#0F172A]"
                     }`}
                   >
                     <IconComponent size={14} />
@@ -1410,11 +1409,11 @@ export default function ImageSizeReducer() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[460px] transition-colors ${
-            isDragging ? "bg-amber-50/30 border-amber-300" : ""
+            isDragging ? "bg-[#F8FAFC]/30 border-[#2563EB]" : ""
           }`}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold text-gray-700">
+            <h2 className="text-xs font-bold text-[#0F172A]">
               Compression preview
             </h2>
             <span
@@ -1422,7 +1421,7 @@ export default function ImageSizeReducer() {
                 isCompressed
                   ? "bg-emerald-100 text-emerald-700"
                   : selectedFiles.length > 0
-                    ? "bg-amber-100 text-amber-700"
+                    ? "bg-[#E2E8F0] text-[#2563EB]"
                     : "bg-gray-100 text-gray-500"
               }`}
             >
@@ -1439,14 +1438,14 @@ export default function ImageSizeReducer() {
               onClick={() => fileInputRef.current?.click()}
               className={`rounded-2xl border border-dashed p-8 flex flex-col items-center justify-center my-auto text-center py-24 cursor-pointer transition-all ${
                 isDragging
-                  ? "border-amber-500 bg-amber-50/40"
-                  : "border-gray-200 bg-gray-50/60 hover:border-amber-400 hover:bg-amber-50/20"
+                  ? "border-[#2563EB] bg-[#F8FAFC]/40"
+                  : "border-gray-200 bg-gray-50/60 hover:border-[#2563EB] hover:bg-[#F8FAFC]/20"
               }`}
             >
-              <div className="w-10 h-10 bg-amber-50 text-amber-400 rounded-xl flex items-center justify-center mb-3 border border-amber-100">
+              <div className="w-10 h-10 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
                 <Upload size={20} />
               </div>
-              <p className="text-xs font-bold text-gray-800">
+              <p className="text-xs font-bold text-[#0F172A]">
                 Add an image to get started
               </p>
               <p className="text-[11px] text-gray-400 mt-1">
@@ -1511,7 +1510,7 @@ export default function ImageSizeReducer() {
 
                     <div className="p-3 bg-white flex flex-col justify-center">
                       <p
-                        className="text-xs font-bold text-gray-800 truncate"
+                        className="text-xs font-bold text-[#0F172A] truncate"
                         title={
                           isCompressed && compRes ? compRes.name : file?.name
                         }
@@ -1543,7 +1542,7 @@ export default function ImageSizeReducer() {
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-44 h-52 rounded-2xl border-2 border-dashed border-gray-200 hover:border-amber-400 bg-gray-50/40 hover:bg-amber-50/20 flex flex-col items-center justify-center text-gray-400 hover:text-amber-500 cursor-pointer transition-all shrink-0"
+                className="w-44 h-52 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#2563EB] bg-gray-50/40 hover:bg-[#F8FAFC]/20 flex flex-col items-center justify-center text-gray-400 hover:text-[#2563EB] cursor-pointer transition-all shrink-0"
               >
                 <Plus className="text-gray-400" size={22} />
                 <span className="text-xs font-semibold text-gray-500 mt-2">
@@ -1559,7 +1558,7 @@ export default function ImageSizeReducer() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-4">
-        <h3 className="text-xs font-bold text-gray-900">
+        <h3 className="text-xs font-bold text-[#0F172A]">
           Tools in the same category
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -1573,7 +1572,7 @@ export default function ImageSizeReducer() {
             {
               name: "Remove Background",
               href: "/sohoj-tools/remove-background",
-              icon: Wand2,
+              icon: null,
               bg: "bg-emerald-500",
             },
             {
@@ -1591,7 +1590,7 @@ export default function ImageSizeReducer() {
                 className={`${tool.bg} aspect-square flex flex-col items-center justify-center p-6 rounded-3xl shadow-sm text-center text-white hover:opacity-95 transition-all group cursor-pointer`}
               >
                 <div className="w-10 h-10 mb-2 flex items-center justify-center">
-                  <Icon className="text-white" size={28} />
+                  {Icon && <Icon className="text-white" size={28} />}
                 </div>
                 <span className="text-[11px] font-bold leading-tight">
                   {tool.name}
@@ -1608,11 +1607,11 @@ export default function ImageSizeReducer() {
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               isCompressing
-                ? "bg-amber-400 animate-pulse"
+                ? "bg-[#2563EB] animate-pulse"
                 : isCompressed
                   ? "bg-emerald-500"
                   : selectedFiles.length > 0
-                    ? "bg-amber-400"
+                    ? "bg-[#2563EB]"
                     : "bg-gray-300"
             }`}
           ></span>
@@ -1630,7 +1629,7 @@ export default function ImageSizeReducer() {
           {isCompressing && (
             <span className="hidden sm:block w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
               <span
-                className="block h-full bg-amber-500 transition-all duration-200"
+                className="block h-full bg-[#2563EB] transition-all duration-200"
                 style={{ width: `${compressionProgress}%` }}
               />
             </span>
@@ -1640,7 +1639,7 @@ export default function ImageSizeReducer() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
           >
             Reset
           </button>
@@ -1649,7 +1648,7 @@ export default function ImageSizeReducer() {
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <RefreshCw size={14} />
                 <span>Compress more images</span>
@@ -1658,7 +1657,7 @@ export default function ImageSizeReducer() {
               <button
                 disabled={isZipping}
                 onClick={handleDownloadAll}
-                className="px-5 py-2 text-xs font-bold bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                className="px-5 py-2 text-xs font-bold bg-[#2563EB] text-white rounded-xl hover:bg-[#2563EB] transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50"
               >
                 {isZipping ? (
                   <Loader2 className="animate-spin" size={14} />
@@ -1682,7 +1681,7 @@ export default function ImageSizeReducer() {
               onClick={handleCompress}
               className={`px-5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${
                 selectedFiles.length > 0 && !isCompressing
-                  ? "bg-amber-500 text-white hover:bg-amber-600 cursor-pointer shadow-md"
+                  ? "bg-[#2563EB] text-white hover:bg-[#2563EB] cursor-pointer shadow-md"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
@@ -1747,7 +1746,7 @@ export default function ImageSizeReducer() {
                 <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs z-10">
                   <button
                     onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
-                    className="hover:text-amber-400 transition-colors cursor-pointer"
+                    className="hover:text-[#2563EB] transition-colors cursor-pointer"
                   >
                     <ZoomOut size={14} />
                   </button>
@@ -1756,7 +1755,7 @@ export default function ImageSizeReducer() {
                   </span>
                   <button
                     onClick={() => setZoomLevel((z) => Math.min(200, z + 25))}
-                    className="hover:text-amber-400 transition-colors cursor-pointer"
+                    className="hover:text-[#2563EB] transition-colors cursor-pointer"
                   >
                     <ZoomIn size={14} />
                   </button>
@@ -1794,7 +1793,7 @@ export default function ImageSizeReducer() {
                       onClick={() => setIsEditing(!isEditing)}
                       className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${
                         isEditing
-                          ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-400"
+                          ? "bg-[#2563EB] hover:bg-[#2563EB] text-white border-[#2563EB]"
                           : "bg-white/10 hover:bg-white/20 text-white border-white/20"
                       }`}
                     >
@@ -1830,7 +1829,7 @@ export default function ImageSizeReducer() {
                   <div className="absolute top-0 right-0 h-full w-64 bg-white shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
                     <div className="p-6 flex flex-col mt-14 overflow-y-auto flex-1">
                       <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                        <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider">
                           Image Editing
                         </h3>
                         <button
@@ -1844,7 +1843,7 @@ export default function ImageSizeReducer() {
                       <div className="space-y-6 flex-1">
                         {/* Brightness */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
                             <span>Brightness</span>
                             <span>{editSettings.brightness}%</span>
                           </div>
@@ -1859,13 +1858,13 @@ export default function ImageSizeReducer() {
                                 brightness: Number(e.target.value),
                               })
                             }
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
                           />
                         </div>
 
                         {/* Contrast */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
                             <span>Contrast</span>
                             <span>{editSettings.contrast}%</span>
                           </div>
@@ -1880,13 +1879,13 @@ export default function ImageSizeReducer() {
                                 contrast: Number(e.target.value),
                               })
                             }
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
                           />
                         </div>
 
                         {/* Saturation */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700 uppercase">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
                             <span>Saturation</span>
                             <span>{editSettings.saturation}%</span>
                           </div>
@@ -1901,7 +1900,7 @@ export default function ImageSizeReducer() {
                                 saturation: Number(e.target.value),
                               })
                             }
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
                           />
                         </div>
                       </div>
@@ -1909,7 +1908,7 @@ export default function ImageSizeReducer() {
                       <button
                         onClick={handleApplyEditing}
                         disabled={isApplyingEdit}
-                        className="mt-6 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="mt-6 w-full py-2.5 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {isApplyingEdit && (
                           <Loader2 className="animate-spin" size={14} />
