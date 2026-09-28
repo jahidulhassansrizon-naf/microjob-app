@@ -522,7 +522,7 @@ function FieldLabel({
 
 const INPUT_CLASS =
   "h-9 w-full rounded-md border bg-white/60 px-3 text-[11px] text-[#111827] outline-none transition placeholder:text-[#B4B0A5] focus:bg-white focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50";
-const INPUT_OK = "border-[#EEE5CC] focus:border-[#C998D8] focus:ring-[#E6C8EA]";
+const INPUT_OK = "border-[#EEE5CC] focus:border-[#2563EB] focus:ring-[#BFDBFE]";
 const INPUT_BAD =
   "border-[#E3A0A6] focus:border-[#D46A75] focus:ring-[#F2C4C8]";
 
@@ -626,7 +626,7 @@ function DateField({
           type="button"
           onClick={openPicker}
           aria-label="Open calendar"
-          className="absolute left-2 top-2 z-10 text-[#B8B1A4] hover:text-[#8A3D9A]"
+          className="absolute left-2 top-2 z-10 text-[#B8B1A4] hover:text-[#2563EB]"
         >
           <CalendarDays className="h-4 w-4" />
         </button>
@@ -682,7 +682,7 @@ function ChoicePill({
       className={cx(
         "rounded-md border px-3 py-2 text-[10px] font-medium transition",
         active
-          ? "border-[#C07AD0] bg-[#F3E3F5] text-[#7C3B87]"
+          ? "border-[#2563EB] bg-[#DBEAFE] text-[#1D4ED8]"
           : "border-[#EEE5CC] bg-white/60 text-[#555048] hover:border-[#D7CBD1] hover:bg-white",
       )}
     >
@@ -711,10 +711,10 @@ function CheckBox({
       <span
         className={cx(
           "flex h-4 w-4 shrink-0 items-center justify-center rounded border bg-white transition",
-          checked ? "border-[#B76DCB] bg-[#F4E3F7]" : "border-[#DCCFB0]",
+          checked ? "border-[#2563EB] bg-[#DBEAFE]" : "border-[#DCCFB0]",
         )}
       >
-        {checked ? <Check className="h-3 w-3 text-[#8A3D9A]" /> : null}
+        {checked ? <Check className="h-3 w-3 text-[#2563EB]" /> : null}
       </span>
       {label}
     </button>
@@ -735,7 +735,7 @@ function SectionCard({
   return (
     <section className="rounded-xl border border-[#EFE3C5] bg-white p-3.5 shadow-[0_3px_12px_rgba(119,93,41,0.05)]">
       <div className="mb-3">
-        <h2 className="text-[12px] font-bold text-[#8A3D9A]">
+        <h2 className="text-[12px] font-bold text-[#2563EB]">
           {number}. {title}
         </h2>
         {description ? (
@@ -2702,7 +2702,7 @@ export default function VoterRegistrationForm() {
         <div className="mb-4 flex items-start justify-between gap-4 px-1">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#F7EAF8] text-[#A148B3]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#DBEAFE] text-[#2563EB]">
                 <FileText className="h-4 w-4" />
               </span>
               <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#111827]">
