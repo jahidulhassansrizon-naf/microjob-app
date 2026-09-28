@@ -49,10 +49,10 @@ export default function MyFilesPage() {
   // লোডিং হওয়ার সময় ক্লিন স্পিনার
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#FF5D00] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs font-semibold text-gray-500">
+          <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-semibold text-[#0F172A]/70">
             যাচাই করা হচ্ছে...
           </p>
         </div>
@@ -64,14 +64,14 @@ export default function MyFilesPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7]">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Navbar */}
       <DashboardNavbar />
 
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Page Title */}
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-6">
+        <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] mb-6">
           My Files
         </h1>
 
@@ -81,23 +81,23 @@ export default function MyFilesPage() {
             className="flex items-center gap-3 overflow-x-auto pb-3 pr-8"
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "#CBD5E1 transparent",
+              scrollbarColor: "#E2E8F0 transparent",
             }}
           >
             <button
               onClick={() => setActiveTab("generated-images")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === "generated-images"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-[#2563EB] text-white shadow-md"
+                  : "bg-white text-[#0F172A] border border-[#E2E8F0] hover:bg-[#E2E8F0]/40"
               }`}
             >
               <Sparkles
                 size={16}
                 className={
                   activeTab === "generated-images"
-                    ? "text-orange-400"
-                    : "text-gray-500"
+                    ? "text-[#10B981]"
+                    : "text-[#0F172A]/60"
                 }
               />
               Generated Images
@@ -107,11 +107,18 @@ export default function MyFilesPage() {
               onClick={() => setActiveTab("print-media")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === "print-media"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-[#2563EB] text-white shadow-md"
+                  : "bg-white text-[#0F172A] border border-[#E2E8F0] hover:bg-[#E2E8F0]/40"
               }`}
             >
-              <Printer size={16} className="text-orange-500" />
+              <Printer
+                size={16}
+                className={
+                  activeTab === "print-media"
+                    ? "text-[#10B981]"
+                    : "text-[#2563EB]"
+                }
+              />
               Print Media
             </button>
 
@@ -119,11 +126,18 @@ export default function MyFilesPage() {
               onClick={() => setActiveTab("regular-documents")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === "regular-documents"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-[#2563EB] text-white shadow-md"
+                  : "bg-white text-[#0F172A] border border-[#E2E8F0] hover:bg-[#E2E8F0]/40"
               }`}
             >
-              <FileText size={16} className="text-blue-500" />
+              <FileText
+                size={16}
+                className={
+                  activeTab === "regular-documents"
+                    ? "text-[#10B981]"
+                    : "text-[#2563EB]"
+                }
+              />
               Regular Documents
             </button>
 
@@ -131,34 +145,41 @@ export default function MyFilesPage() {
               onClick={() => setActiveTab("question-papers")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === "question-papers"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-[#2563EB] text-white shadow-md"
+                  : "bg-white text-[#0F172A] border border-[#E2E8F0] hover:bg-[#E2E8F0]/40"
               }`}
             >
-              <FileText size={16} className="text-red-500" />
+              <FileText
+                size={16}
+                className={
+                  activeTab === "question-papers"
+                    ? "text-[#10B981]"
+                    : "text-[#10B981]"
+                }
+              />
               Question Papers
             </button>
           </div>
           {/* Right Fade Indicator */}
-          <div className="absolute right-0 top-0 bottom-3 w-10 bg-gradient-to-l from-[#FDFBF7] to-transparent pointer-events-none sm:hidden"></div>
+          <div className="absolute right-0 top-0 bottom-3 w-10 bg-gradient-to-l from-[#F8FAFC] to-transparent pointer-events-none sm:hidden"></div>
         </div>
 
         {/* Sub-tabs for Generated Images (Visible Scrollbar Line for Mobile) */}
         {activeTab === "generated-images" && (
           <div className="relative mb-6">
             <div
-              className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-xs overflow-x-auto pb-2 pr-8"
+              className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-[#E2E8F0] shadow-xs overflow-x-auto pb-2 pr-8"
               style={{
                 scrollbarWidth: "thin",
-                scrollbarColor: "#CBD5E1 transparent",
+                scrollbarColor: "#E2E8F0 transparent",
               }}
             >
               <button
                 onClick={() => setSubTab("ai-photo-edit")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   subTab === "ai-photo-edit"
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#2563EB] text-white"
+                    : "text-[#0F172A] hover:bg-[#E2E8F0]/50"
                 }`}
               >
                 AI Photo Edit
@@ -167,8 +188,8 @@ export default function MyFilesPage() {
                 onClick={() => setSubTab("manually-edited")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   subTab === "manually-edited"
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#2563EB] text-white"
+                    : "text-[#0F172A] hover:bg-[#E2E8F0]/50"
                 }`}
               >
                 Manually Edited
@@ -177,8 +198,8 @@ export default function MyFilesPage() {
                 onClick={() => setSubTab("ai-template-generated")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   subTab === "ai-template-generated"
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#2563EB] text-white"
+                    : "text-[#0F172A] hover:bg-[#E2E8F0]/50"
                 }`}
               >
                 AI Template Generated
@@ -187,8 +208,8 @@ export default function MyFilesPage() {
                 onClick={() => setSubTab("bulk-photo-edit")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   subTab === "bulk-photo-edit"
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#2563EB] text-white"
+                    : "text-[#0F172A] hover:bg-[#E2E8F0]/50"
                 }`}
               >
                 Bulk Photo Edit
@@ -205,14 +226,14 @@ export default function MyFilesPage() {
           <div className="relative sm:col-span-2 lg:col-span-2">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F172A]/40"
             />
             <input
               type="text"
               placeholder="Search images by filename"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-gray-400"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-xs focus:outline-none focus:border-[#2563EB]"
             />
           </div>
 
@@ -222,13 +243,13 @@ export default function MyFilesPage() {
               type="date"
               value={dateQuery}
               onChange={(e) => setDateQuery(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:border-gray-400"
+              className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
             />
           </div>
 
           {/* Background Dropdown */}
           <div className="col-span-1">
-            <select className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:border-gray-400">
+            <select className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]">
               <option>All backgrounds</option>
               <option>White Background</option>
               <option>Transparent</option>
@@ -237,7 +258,7 @@ export default function MyFilesPage() {
 
           {/* Dress Dropdown */}
           <div className="col-span-1">
-            <select className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:border-gray-400">
+            <select className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]">
               <option>All dress</option>
               <option>Formal</option>
               <option>Casual</option>
@@ -246,29 +267,31 @@ export default function MyFilesPage() {
 
           {/* Sort Dropdown */}
           <div className="col-span-1">
-            <select className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:border-gray-400">
+            <select className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#2563EB]">
               <option>Newest first</option>
               <option>Oldest first</option>
             </select>
           </div>
 
           {/* View Toggle Icons (Grid / List) */}
-          <div className="col-span-full sm:col-span-1 flex items-center gap-1 justify-start sm:justify-end bg-white border border-gray-200 rounded-xl px-2 py-1">
-            <button className="p-1.5 bg-amber-600 text-white rounded-lg shadow-xs cursor-pointer">
+          <div className="col-span-full sm:col-span-1 flex items-center gap-1 justify-start sm:justify-end bg-white border border-[#E2E8F0] rounded-xl px-2 py-1">
+            <button className="p-1.5 bg-[#2563EB] text-white rounded-lg shadow-xs cursor-pointer">
               <Grid size={14} />
             </button>
-            <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer">
+            <button className="p-1.5 text-[#0F172A]/50 hover:text-[#0F172A] rounded-lg cursor-pointer">
               <List size={14} />
             </button>
           </div>
         </div>
 
         {/* Results Container (No Images Found Box) */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 sm:p-16 flex flex-col items-center justify-center text-center shadow-xs">
-          <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 mb-3 border border-gray-100">
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-12 sm:p-16 flex flex-col items-center justify-center text-center shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-[#F8FAFC] flex items-center justify-center text-[#0F172A]/40 mb-3 border border-[#E2E8F0]">
             <ImageIcon size={24} />
           </div>
-          <p className="text-gray-500 text-xs font-medium">No images found</p>
+          <p className="text-[#0F172A]/70 text-xs font-medium">
+            No images found
+          </p>
         </div>
       </div>
     </div>

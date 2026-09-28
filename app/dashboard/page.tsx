@@ -229,13 +229,13 @@ function RealSohojToolsGrid() {
   return (
     <section>
       <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-        <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+        <h2 className="text-xl font-bold text-[#0F172A] sm:text-2xl">
           Sohoj Tools
         </h2>
 
         <Link
           href="/sohoj-tools"
-          className="text-sm font-semibold text-gray-600 transition hover:text-[#FF5D00]"
+          className="text-sm font-semibold text-gray-600 transition hover:text-[#2563EB]"
         >
           View all →
         </Link>
@@ -265,7 +265,7 @@ function RealSohojToolsGrid() {
                       <Icon size={31} strokeWidth={1.9} />
                     </div>
 
-                    <span className="mt-2.5 max-w-[155px] text-xs font-semibold leading-snug text-gray-800 transition group-hover:text-[#FF5D00] sm:text-sm">
+                    <span className="mt-2.5 max-w-[155px] text-xs font-semibold leading-snug text-[#0F172A] transition group-hover:text-[#2563EB] sm:text-sm">
                       {tool.name}
                     </span>
                   </Link>
@@ -346,14 +346,16 @@ export default function DashboardPage() {
   // অথেন্টিকেশন চেক না হওয়া পর্যন্ত বা সাকসেস পপআপ চলাকালীন লোডিং/পপআপ স্টেট
   if (!isAuthenticated && !showLoginSuccess) {
     return (
-      <div className="min-h-screen bg-[#FDFBF9] flex items-center justify-center font-sans">
-        <p className="text-gray-500 font-medium">Checking authentication...</p>
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-sans">
+        <p className="text-[#0F172A]/70 font-medium">
+          Checking authentication...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col justify-between relative">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col justify-between relative">
       <div>
         <DashboardNavbar />
 
@@ -368,10 +370,10 @@ export default function DashboardPage() {
       {/* 🟢 Login Success Modal with Close Option & Cleaned up UI */}
       {showLoginSuccess && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center relative overflow-hidden transform animate-in zoom-in-95 duration-300 border border-orange-100">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center relative overflow-hidden transform animate-in zoom-in-95 duration-300 border border-[#E2E8F0]">
             {/* Background Glow Effect */}
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-200 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
-            <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-amber-200 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#2563EB]/20 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
+            <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#10B981]/20 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
 
             {/* Close Button */}
             <button
@@ -380,28 +382,28 @@ export default function DashboardPage() {
                 setShowLoginSuccess(false);
                 setIsAuthenticated(true);
               }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer z-10"
+              className="absolute top-4 right-4 text-gray-400 hover:text-[#0F172A] p-1.5 rounded-full bg-gray-50 hover:bg-[#E2E8F0] transition-all cursor-pointer z-10"
               aria-label="Close modal"
             >
               <X size={18} />
             </button>
 
             {/* Success Icon with Bounce Animation */}
-            <div className="relative w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-5 text-[#FF5D00] shadow-inner">
+            <div className="relative w-20 h-20 bg-[#2563EB]/10 rounded-full flex items-center justify-center mx-auto mb-5 text-[#2563EB] shadow-inner">
               <CheckCircle2 size={48} className="animate-bounce" />
             </div>
 
             {/* Welcome Heading (Emojis and Subtitle Removed) */}
-            <h3 className="text-xl font-black text-gray-900 mb-1">
+            <h3 className="text-xl font-black text-[#0F172A] mb-1">
               Login Successful!
             </h3>
-            <p className="text-xs font-bold text-[#FF5D00] mb-6">
+            <p className="text-xs font-bold text-[#2563EB] mb-6">
               Welcome back, {userName}!
             </p>
 
             {/* Loading Bar Progress Animation */}
-            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5">
-              <div className="bg-gradient-to-r from-amber-500 to-[#FF5D00] h-full rounded-full animate-pulse w-full"></div>
+            <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden p-0.5">
+              <div className="bg-gradient-to-r from-[#2563EB] to-[#10B981] h-full rounded-full animate-pulse w-full"></div>
             </div>
           </div>
         </div>

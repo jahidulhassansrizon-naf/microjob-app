@@ -326,7 +326,7 @@ export default function PhotoEditorPage() {
   const backgroundColors = [
     {
       type: "preset",
-      className: "bg-white border border-gray-200",
+      className: "bg-white border border-[#E2E8F0]",
       value: "#FFFFFF",
     },
     { type: "preset", className: "bg-blue-500", value: "#3B82F6" },
@@ -1204,14 +1204,14 @@ export default function PhotoEditorPage() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-[#f3efe6] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f3efe6] flex flex-col relative select-none">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col relative select-none">
       <DashboardNavbar />
 
       <input
@@ -1232,17 +1232,17 @@ export default function PhotoEditorPage() {
         <div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
           {isCropping && (
             <div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3">
-              <Loader2 className="w-10 h-10 animate-spin text-[#00A859]" />
+              <Loader2 className="w-10 h-10 animate-spin text-[#059669]" />
               <p className="text-sm font-medium tracking-wide">Saving...</p>
             </div>
           )}
 
           <div className="h-14 bg-white flex items-center justify-between pl-6 pr-0 shadow-md shrink-0">
             <div className="flex items-center gap-3">
-              <span className="bg-orange-500 text-white p-1 rounded-lg">
+              <span className="bg-[#4F46E5] text-white p-1 rounded-lg">
                 <ImageIcon size={16} />
               </span>
-              <h2 className="text-sm font-semibold text-gray-800">
+              <h2 className="text-sm font-semibold text-[#0F172A]">
                 Crop & Rotate Image
               </h2>
             </div>
@@ -1254,13 +1254,13 @@ export default function PhotoEditorPage() {
                 setTempImageForCrop(null);
                 setShowCropModal(false);
               }}
-              className="h-14 w-16 bg-[#E81123] text-white flex items-center justify-center cursor-pointer hover:bg-red-700 transition"
+              className="h-14 w-16 bg-[#4F46E5] text-white flex items-center justify-center cursor-pointer hover:bg-[#4338CA] transition"
             >
               <X size={18} />
             </button>
           </div>
 
-          <div className="bg-[#151c28] text-gray-300 text-xs py-2 text-center border-b border-gray-800 shrink-0 px-2">
+          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2">
             For passport size photos, center your face in the crop area — this
             gives the best result.
           </div>
@@ -1288,23 +1288,23 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <div className="h-16 bg-white border-t border-gray-200 flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
+          <div className="h-16 bg-white border-t border-[#E2E8F0] flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
             <div className="flex items-center gap-1">
               <div className="flex items-center rounded-lg overflow-hidden shadow-sm">
                 <button
                   onClick={() => setZoom((prev) => Math.max(prev - 10, 100))}
                   disabled={isCropping}
-                  className="bg-[#00A859] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-green-700 transition disabled:opacity-50"
+                  className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"
                 >
                   -
                 </button>
-                <div className="bg-white text-gray-900 font-semibold text-xs px-3 py-2">
+                <div className="bg-white text-[#0F172A] font-semibold text-xs px-3 py-2">
                   {zoom}%
                 </div>
                 <button
                   onClick={() => setZoom((prev) => Math.min(prev + 10, 300))}
                   disabled={isCropping}
-                  className="bg-[#00A859] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-green-700 transition disabled:opacity-50"
+                  className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"
                 >
                   +
                 </button>
@@ -1312,7 +1312,7 @@ export default function PhotoEditorPage() {
               <button
                 onClick={() => setRotate((prev) => (prev + 90) % 360)}
                 disabled={isCropping}
-                className="ml-2 bg-[#00A859] text-white px-3 py-2 rounded-lg text-xs flex items-center gap-1 cursor-pointer hover:bg-green-700 transition disabled:opacity-50"
+                className="ml-2 bg-[#059669] text-white px-3 py-2 rounded-lg text-xs flex items-center gap-1 cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"
               >
                 <RotateCw size={14} /> Rotate
               </button>
@@ -1328,14 +1328,14 @@ export default function PhotoEditorPage() {
                   setShowCropModal(false);
                 }}
                 disabled={isCropping}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-gray-200 transition disabled:opacity-50"
+                className="bg-[#F1F5F9] text-[#334155] px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-[#E2E8F0] transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirmCrop(imgRef.current)}
                 disabled={isCropping}
-                className="h-16 bg-[#00A859] text-white px-6 text-xs flex items-center gap-2 cursor-pointer hover:bg-green-700 transition font-semibold disabled:opacity-50"
+                className="h-16 bg-[#059669] text-white px-6 text-xs flex items-center gap-2 cursor-pointer hover:bg-[#047857] transition font-semibold disabled:opacity-50"
               >
                 {isCropping ? (
                   <>

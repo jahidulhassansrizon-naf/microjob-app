@@ -1,4 +1,4 @@
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 export default function ProfileProgress({
   profileCompletion,
@@ -20,9 +20,7 @@ export default function ProfileProgress({
           >
             {profileCompletion >= 100 ? (
               <CheckCircle2 size={12} />
-            ) : (
-              <Sparkles size={12} />
-            )}
+            ) : null}
 
             {profileCompletion >= 100
               ? "Profile Complete"

@@ -69,10 +69,10 @@ export default function PrintMediaPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "#F8F2EF" }}
+        style={{ backgroundColor: "#F8FAFC" }}
       >
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-200/80 shadow-xs">
-          <Loader2 size={16} className="animate-spin text-[#FF5D00]" />
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#475569] bg-white px-5 py-3 rounded-2xl border border-[#E2E8F0] shadow-xs">
+          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
           Checking authentication...
         </div>
       </div>
@@ -80,18 +80,18 @@ export default function PrintMediaPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F2EF]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* ড্যাশবোর্ড নেভবার */}
       <DashboardNavbar />
 
       <div className="flex-1 p-3 sm:p-4 md:p-6 w-full space-y-4">
         {/* ১. টপ হেডার (Print Media টাইটেল এবং ডানপাশের টপ বাটনগুলো) */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-gray-200/60 pb-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#E2E8F0]/60 pb-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0F172A]">
               Print Media
             </h1>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">
               Choose a template and customize it on the canvas.
             </p>
           </div>
@@ -99,26 +99,26 @@ export default function PrintMediaPage() {
           {/* টপ রাইট অ্যাকশন বাটন সেকশন (রেসপন্সিভ স্ক্রোলযোগ্য) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full lg:w-auto no-scrollbar">
             {/* ১. প্রথম সিগমেন্টেড পিল */}
-            <div className="flex items-center bg-white border border-gray-200/90 rounded-2xl p-1 shadow-xs shrink-0">
-              <button className="flex items-center gap-1.5 bg-[#E0672A] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition">
+            <div className="flex items-center bg-white border border-[#E2E8F0] rounded-2xl p-1 shadow-xs shrink-0">
+              <button className="flex items-center gap-1.5 bg-[#4F46E5] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition">
                 <ArrowUpDown size={13} />
                 <span>Featured order</span>
               </button>
-              <button className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl transition">
-                <Clock size={13} className="text-[#E0672A]" />
+              <button className="flex items-center gap-1.5 text-[#334155] hover:text-[#0F172A] text-xs font-bold px-3 py-1.5 rounded-xl transition">
+                <Clock size={13} className="text-[#4F46E5]" />
                 <span>Newest first</span>
               </button>
             </div>
 
             {/* ২. দ্বিতীয় পিল (Sort: ASC) */}
-            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
-              <SlidersHorizontal size={13} className="text-[#E0672A]" />
+            <button className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
+              <SlidersHorizontal size={13} className="text-[#4F46E5]" />
               <span>Sort: ASC</span>
             </button>
 
             {/* ৩. তৃতীয় পিল (My Favorites) */}
-            <button className="flex items-center gap-1.5 bg-white border border-gray-200/90 text-gray-700 hover:bg-gray-50 text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
-              <Heart size={13} className="text-[#E0672A]" />
+            <button className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
+              <Heart size={13} className="text-[#4F46E5]" />
               <span>My Favorites</span>
             </button>
           </div>
@@ -127,15 +127,15 @@ export default function PrintMediaPage() {
         {/* ২. মূল বডি (সাইডবার এবং মেইন কন্টেন্ট) */}
         <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
           {/* বাম দিকের কলাম: ফিল্টার সাইডবার */}
-          <aside className="w-full lg:w-64 shrink-0 bg-white border border-gray-200/80 p-4 sm:p-5 rounded-3xl shadow-xs space-y-5 lg:sticky lg:top-6">
+          <aside className="w-full lg:w-64 shrink-0 bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl shadow-xs space-y-5 lg:sticky lg:top-6">
             {/* ফিল্টার হেডার ও রিসেট বাটন */}
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2 font-black text-xs text-gray-900">
-                <Filter size={14} className="text-[#FF5D00]" /> Filter
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <div className="flex items-center gap-2 font-black text-xs text-[#0F172A]">
+                <Filter size={14} className="text-[#2563EB]" /> Filter
               </div>
               <button
                 onClick={handleResetFilter}
-                className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-[#FF5D00] transition-colors cursor-pointer"
+                className="flex items-center gap-1 text-[11px] font-bold text-[#94A3B8] hover:text-[#2563EB] transition-colors cursor-pointer"
               >
                 <RotateCcw size={12} /> Reset
               </button>
@@ -143,7 +143,7 @@ export default function PrintMediaPage() {
 
             {/* ক্যাটাগরি সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider">
                 Category
               </p>
               <div className="space-y-1 max-h-48 sm:max-h-56 overflow-y-auto pr-1">
@@ -155,16 +155,16 @@ export default function PrintMediaPage() {
                       onClick={() => setSelectedCategory(cat.name)}
                       className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-[#FFF4EE] text-[#FF5D00] font-bold shadow-xs border border-orange-100"
-                          : "text-gray-600 hover:bg-gray-50 font-semibold"
+                          ? "bg-[#EEF2FF] text-[#2563EB] font-bold shadow-xs border border-indigo-100"
+                          : "text-[#475569] hover:bg-[#F1F5F9] font-semibold"
                       }`}
                     >
                       <span className="text-xs truncate">{cat.name}</span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full ${
                           isSelected
-                            ? "bg-orange-200/60 text-[#FF5D00]"
-                            : "bg-gray-100 text-gray-400"
+                            ? "bg-indigo-200/60 text-[#2563EB]"
+                            : "bg-[#F1F5F9] text-[#94A3B8]"
                         }`}
                       >
                         {cat.count}
@@ -175,11 +175,11 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            <hr className="border-gray-100" />
+            <hr className="border-[#E2E8F0]" />
 
             {/* প্রাইসিং সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider">
                 Pricing
               </p>
               <div className="space-y-2">
@@ -189,20 +189,20 @@ export default function PrintMediaPage() {
                     onClick={() => setSelectedPricing(type)}
                     className={`flex items-center px-3 py-2.5 rounded-xl cursor-pointer transition-all text-xs font-semibold ${
                       selectedPricing === type
-                        ? "bg-[#FFF4EE] text-[#FF5D00] font-bold border border-orange-100"
-                        : "hover:bg-gray-50 text-gray-700"
+                        ? "bg-[#EEF2FF] text-[#2563EB] font-bold border border-indigo-100"
+                        : "hover:bg-[#F1F5F9] text-[#334155]"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span
                         className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
                           selectedPricing === type
-                            ? "border-[#FF5D00]"
-                            : "border-gray-300"
+                            ? "border-[#2563EB]"
+                            : "border-[#CBD5E1]"
                         }`}
                       >
                         {selectedPricing === type && (
-                          <span className="w-2 h-2 rounded-full bg-[#FF5D00]"></span>
+                          <span className="w-2 h-2 rounded-full bg-[#2563EB]"></span>
                         )}
                       </span>
                       <span>{type}</span>
@@ -212,11 +212,11 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            <hr className="border-gray-100" />
+            <hr className="border-[#E2E8F0]" />
 
             {/* সর্ট সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider">
                 Sort
               </p>
               <div className="space-y-1">
@@ -234,8 +234,8 @@ export default function PrintMediaPage() {
                       onClick={() => setSelectedSort(sortItem.name)}
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer transition-all text-xs ${
                         isSelected
-                          ? "bg-[#FFF4EE] text-[#FF5D00] font-bold shadow-xs border border-orange-100"
-                          : "hover:bg-gray-50 text-gray-700 font-semibold"
+                          ? "bg-[#EEF2FF] text-[#2563EB] font-bold shadow-xs border border-indigo-100"
+                          : "hover:bg-[#F1F5F9] text-[#334155] font-semibold"
                       }`}
                     >
                       {sortItem.icon}
@@ -250,18 +250,18 @@ export default function PrintMediaPage() {
           {/* ডান দিকের কলাম: সার্চ বার + পিলস + কন্টেন্ট গ্রিড */}
           <main className="flex-1 space-y-4 min-w-0 w-full">
             {/* সার্চ বার */}
-            <div className="bg-white border border-gray-200/80 p-3.5 rounded-3xl shadow-xs flex items-center gap-4">
+            <div className="bg-white border border-[#E2E8F0] p-3.5 rounded-3xl shadow-xs flex items-center gap-4">
               <div className="relative w-full">
                 <Search
                   size={16}
-                  className="absolute left-4 top-3 text-gray-400"
+                  className="absolute left-4 top-3 text-[#94A3B8]"
                 />
                 <input
                   type="text"
                   placeholder="Search print templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-11 pr-4 py-2 text-xs font-semibold text-gray-700 outline-none focus:border-[#FF5D00]"
+                  className="w-full bg-[#F1F5F9] border border-[#E2E8F0] rounded-2xl pl-11 pr-4 py-2 text-xs font-semibold text-[#334155] outline-none focus:border-[#2563EB]"
                 />
               </div>
             </div>
@@ -276,8 +276,8 @@ export default function PrintMediaPage() {
                     onClick={() => setSelectedCategory(cat.name)}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       selectedCategory === cat.name
-                        ? "bg-[#FF5D00] text-white shadow-xs"
-                        : "bg-white hover:bg-gray-100 border border-gray-200 text-gray-700"
+                        ? "bg-[#2563EB] text-white shadow-xs"
+                        : "bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#334155]"
                     }`}
                   >
                     {cat.name}
@@ -287,20 +287,20 @@ export default function PrintMediaPage() {
 
               {/* কাউন্ট ও সর্ট বাটন */}
               <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                <span className="text-xs font-medium text-[#64748B] whitespace-nowrap">
                   {TEMPLATE_IMAGE_URLS.length} templates found
                 </span>
 
                 <div className="relative">
                   <button
                     onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 shadow-xs transition cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] px-3 py-1.5 rounded-xl text-xs font-bold text-[#334155] shadow-xs transition cursor-pointer"
                   >
-                    <ArrowUpDown size={12} className="text-gray-500" />
+                    <ArrowUpDown size={12} className="text-[#64748B]" />
                     <span>Sort</span>
                     <ChevronDown
                       size={12}
-                      className={`text-gray-400 transition-transform duration-200 ${
+                      className={`text-[#94A3B8] transition-transform duration-200 ${
                         isSortDropdownOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -308,9 +308,9 @@ export default function PrintMediaPage() {
 
                   {/* সর্ট ড্রপডাউন পপআপ */}
                   {isSortDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200/90 rounded-2xl shadow-xl z-50 p-2 space-y-3">
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl z-50 p-2 space-y-3">
                       <div>
-                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#94A3B8]">
                           Sort By
                         </p>
                         <div className="space-y-0.5">
@@ -329,8 +329,8 @@ export default function PrintMediaPage() {
                               }}
                               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 selectedSort === option
-                                  ? "bg-[#FFF4EE] text-[#FF5D00]"
-                                  : "text-gray-700 hover:bg-gray-50"
+                                  ? "bg-[#EEF2FF] text-[#2563EB]"
+                                  : "text-[#334155] hover:bg-[#F1F5F9]"
                               }`}
                             >
                               <span>{option}</span>
@@ -340,10 +340,10 @@ export default function PrintMediaPage() {
                         </div>
                       </div>
 
-                      <hr className="border-gray-100" />
+                      <hr className="border-[#E2E8F0]" />
 
                       <div>
-                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#94A3B8]">
                           Date
                         </p>
                         <div className="space-y-0.5">
@@ -362,8 +362,8 @@ export default function PrintMediaPage() {
                               }}
                               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 selectedDateFilter === timeOption
-                                  ? "bg-[#FFF4EE] text-[#FF5D00]"
-                                  : "text-gray-700 hover:bg-gray-50"
+                                  ? "bg-[#EEF2FF] text-[#2563EB]"
+                                  : "text-[#334155] hover:bg-[#F1F5F9]"
                               }`}
                             >
                               <span>{timeOption}</span>
@@ -385,10 +385,10 @@ export default function PrintMediaPage() {
               {TEMPLATE_IMAGE_URLS.map((imageUrl, idx) => (
                 <div
                   key={idx}
-                  className="bg-white border border-gray-200/85 rounded-3xl p-3.5 shadow-xs flex flex-col gap-3 hover:shadow-md transition group cursor-pointer"
+                  className="bg-white border border-[#E2E8F0] rounded-3xl p-3.5 shadow-xs flex flex-col gap-3 hover:shadow-md transition group cursor-pointer"
                 >
-                  <div className="w-full h-44 bg-gray-100 rounded-2xl flex items-center justify-center relative overflow-hidden border border-gray-100">
-                    <span className="absolute top-2.5 left-2.5 bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs z-10">
+                  <div className="w-full h-44 bg-[#F1F5F9] rounded-2xl flex items-center justify-center relative overflow-hidden border border-[#E2E8F0]">
+                    <span className="absolute top-2.5 left-2.5 bg-[#059669] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs z-10">
                       Free
                     </span>
                     <img
@@ -398,10 +398,10 @@ export default function PrintMediaPage() {
                     />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-gray-900 truncate">
+                    <h3 className="text-xs font-black text-[#0F172A] truncate">
                       প্রিন্ট মিডিয়া টেমপ্লেট #{idx + 1}
                     </h3>
-                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                    <p className="text-[10px] text-[#94A3B8] font-medium mt-0.5">
                       কাস্টমাইজ করুন ক্যানভাসে
                     </p>
                   </div>

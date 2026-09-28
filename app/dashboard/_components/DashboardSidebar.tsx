@@ -87,27 +87,28 @@ export default function DashboardSidebar({
         onClick={onClose}
       ></div>
 
-      {/* Drawer Content */}
-      <div className="relative w-80 bg-white h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+      {/* Drawer Content - Soft off-white Background (#F8FAFC) */}
+      <div className="relative w-80 bg-[#F8FAFC] h-full shadow-2xl flex flex-col z-10 overflow-y-auto border-r border-[#E2E8F0]">
+        <div className="flex items-center justify-between p-4 border-b border-[#E2E8F0] sticky top-0 bg-[#F8FAFC] z-10">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-[#FF5D00] rounded-lg flex items-center justify-center font-black text-white text-sm">
+            <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center font-black text-white text-sm">
               SK
             </div>
-            <span className="font-black text-gray-900 text-base">
-              Sohoz<span className="text-[#FF5D00]">kaj</span>
+            <span className="font-black text-[#0F172A] text-base">
+              Sohoz<span className="text-[#2563EB]">kaj</span>
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="p-4 space-y-4 text-xs font-semibold text-gray-700 flex-1">
-          <button className="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors">
+        <div className="p-4 space-y-4 text-xs font-semibold text-[#0F172A] flex-1">
+          {/* Primary CTA Button (#2563EB) */}
+          <button className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors">
             <Zap size={16} /> Buy Credits
           </button>
 
@@ -115,33 +116,35 @@ export default function DashboardSidebar({
             <Link
               href="/credit-usage"
               onClick={onClose}
-              className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
             >
               <div className="flex items-center gap-2.5">
                 <CreditCard size={16} className="text-gray-500" />
                 <span>Credit Usage</span>
               </div>
-              <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+              {/* Accent Badge (#10B981) */}
+              <span className="bg-[#10B981] text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                 2
               </span>
             </Link>
             <Link
               href="/profile"
               onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
             >
               <UserIcon size={16} className="text-gray-500" />
               <span>My Profile</span>
             </Link>
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-[#E2E8F0]" />
 
           <div className="space-y-1">
+            {/* Active Link: Secondary BG (#E2E8F0) & Primary Text (#2563EB) */}
             <Link
               href="/dashboard"
               onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg bg-orange-50 text-[#FF5D00]"
+              className="flex items-center gap-2.5 p-2 rounded-lg bg-[#E2E8F0] text-[#2563EB] font-bold"
             >
               <LayoutGrid size={16} />
               <span>Dashboard</span>
@@ -149,14 +152,14 @@ export default function DashboardSidebar({
             <Link
               href="#"
               onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
             >
-              <Award size={16} className="text-amber-500" />
+              <Award size={16} className="text-[#2563EB]" />
               <span>SohozKaj Contest</span>
             </Link>
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-[#E2E8F0]" />
 
           {/* Features & Tools */}
           <div>
@@ -167,25 +170,25 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <FileText size={16} className="text-blue-500" />
+                <FileText size={16} className="text-[#2563EB]" />
                 <span>Document Toiri</span>
               </Link>
 
               <Link
                 href="/ai-editor"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <Sparkles size={16} className="text-orange-500" />
+                <Sparkles size={16} className="text-[#2563EB]" />
                 <span>AI Editor</span>
               </Link>
 
               <Link
                 href="/manual-editor"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <Edit3 size={16} className="text-blue-600" />
                 <span>Manual Editor</span>
@@ -194,13 +197,14 @@ export default function DashboardSidebar({
               <Link
                 href="/bulk-photo-edit"
                 onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <Layers size={16} className="text-emerald-600" />
+                  <Layers size={16} className="text-[#10B981]" />
                   <span>Bulk Photo Edit</span>
                 </div>
-                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                {/* Accent Badge (#10B981) */}
+                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                   New
                 </span>
               </Link>
@@ -208,7 +212,7 @@ export default function DashboardSidebar({
               <Link
                 href="/ai-template"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <LayoutGrid size={16} className="text-purple-500" />
                 <span>AI Template</span>
@@ -218,14 +222,14 @@ export default function DashboardSidebar({
               <div>
                 <button
                   onClick={() => toggleSubMenu("question-papers")}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 text-left"
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 text-left transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
                     <FileText size={16} className="text-red-500" />
                     <span>Question Papers</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                    <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                       New
                     </span>
                     <ChevronDown
@@ -237,18 +241,18 @@ export default function DashboardSidebar({
                   </div>
                 </button>
                 {openSubMenu === "question-papers" && (
-                  <div className="ml-7 pl-2 border-l border-gray-200 space-y-1 my-1">
+                  <div className="ml-7 pl-2 border-l border-[#E2E8F0] space-y-1 my-1">
                     <Link
                       href="/questions-create/create"
                       onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
                     >
                       Create Question
                     </Link>
                     <Link
                       href="/questions-create/manual"
                       onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
                     >
                       Manual Question
                     </Link>
@@ -259,24 +263,24 @@ export default function DashboardSidebar({
               <Link
                 href="/print-media"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <Printer size={16} className="text-orange-600" />
+                <Printer size={16} className="text-[#2563EB]" />
                 <span>Print Media</span>
               </Link>
 
-              {/* 🟢 SohozTools Submenu (Fixed Correct Routes) */}
+              {/* SohozTools Submenu */}
               <div>
                 <button
                   onClick={() => toggleSubMenu("sohoz-tools")}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 text-left"
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 text-left transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
                     <Wrench size={16} className="text-pink-500" />
                     <span>SohozTools</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                    <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                       FREE
                     </span>
                     <ChevronDown
@@ -288,25 +292,25 @@ export default function DashboardSidebar({
                   </div>
                 </button>
                 {openSubMenu === "sohoz-tools" && (
-                  <div className="ml-7 pl-2 border-l border-gray-200 space-y-1 my-1">
+                  <div className="ml-7 pl-2 border-l border-[#E2E8F0] space-y-1 my-1">
                     <Link
                       href="/sohoj-tools"
                       onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
                     >
                       All Free Tools
                     </Link>
                     <Link
                       href="/sohoj-tools?category=pdf"
                       onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
                     >
                       PDF Tools
                     </Link>
                     <Link
                       href="/sohoj-tools?category=image"
                       onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-gray-50 text-gray-600"
+                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
                     >
                       Image Tools
                     </Link>
@@ -317,13 +321,13 @@ export default function DashboardSidebar({
               <Link
                 href="/jobs"
                 onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <Briefcase size={16} className="text-amber-600" />
+                  <Briefcase size={16} className="text-[#2563EB]" />
                   <span>Jobs</span>
                 </div>
-                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                   New
                 </span>
               </Link>
@@ -331,20 +335,20 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <Globe size={16} className="text-amber-500" />
+                  <Globe size={16} className="text-[#2563EB]" />
                   <span>Useful Links</span>
                 </div>
-                <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                   New
                 </span>
               </Link>
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-[#E2E8F0]" />
 
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
@@ -354,23 +358,23 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <DollarSign size={16} className="text-emerald-500" />
+                <DollarSign size={16} className="text-[#10B981]" />
                 <span>Income & Expense</span>
               </Link>
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <FileText size={16} className="text-blue-600" />
+                <FileText size={16} className="text-[#2563EB]" />
                 <span>Invoice</span>
               </Link>
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <UserIcon size={16} className="text-purple-500" />
                 <span>Customers</span>
@@ -378,15 +382,15 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <Plus size={16} className="text-blue-500" />
+                <Plus size={16} className="text-[#2563EB]" />
                 <span>Add Income / Expense</span>
               </Link>
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <FileText size={16} className="text-gray-500" />
                 <span>Income/Expense List</span>
@@ -394,7 +398,7 @@ export default function DashboardSidebar({
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-[#E2E8F0]" />
 
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
@@ -404,7 +408,7 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <Settings size={16} className="text-gray-500" />
                 <span>Photo Edit Settings</span>
@@ -412,7 +416,7 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <Settings size={16} className="text-gray-500" />
                 <span>Settings</span>
@@ -420,25 +424,25 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <ShoppingBag size={16} className="text-amber-600" />
+                <ShoppingBag size={16} className="text-[#2563EB]" />
                 <span>Manage Shop</span>
               </Link>
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <MessageCircle size={16} className="text-emerald-600" />
+                <MessageCircle size={16} className="text-[#10B981]" />
                 <span>WhatsApp সাপোর্ট</span>
               </Link>
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
-                <MessageCircle size={16} className="text-emerald-500" />
+                <MessageCircle size={16} className="text-[#10B981]" />
                 <span>WhatsApp Support Group</span>
               </Link>
 
@@ -447,7 +451,7 @@ export default function DashboardSidebar({
                 onClick={() =>
                   changeGoogleLanguage(lang === "EN" ? "BN" : "EN")
                 }
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <Globe size={16} className="text-gray-500" />
@@ -456,8 +460,8 @@ export default function DashboardSidebar({
                 <span
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
                     lang === "BN"
-                      ? "bg-[#FF5D00] text-white"
-                      : "bg-amber-100 text-amber-800"
+                      ? "bg-[#2563EB] text-white"
+                      : "bg-[#E2E8F0] text-[#0F172A]"
                   }`}
                 >
                   EN | বাংলা
@@ -467,7 +471,7 @@ export default function DashboardSidebar({
               <Link
                 href="#"
                 onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
               >
                 <Video size={16} className="text-red-500" />
                 <span>Introduce Video</span>
@@ -475,24 +479,25 @@ export default function DashboardSidebar({
             </div>
           </div>
 
+          {/* User Profile Card - Secondary Accent BG (#E2E8F0) */}
           <div className="pt-2">
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+            <div className="p-3 bg-[#E2E8F0]/70 border border-[#E2E8F0] rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs uppercase">
+                <div className="w-8 h-8 rounded-full bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase">
                   {user?.fullName ? user.fullName.slice(0, 2) : "JH"}
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-xs truncate max-w-[120px]">
+                  <p className="font-bold text-[#0F172A] text-xs truncate max-w-[120px]">
                     {user?.fullName || "Jahidul Hassan Srizon"}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[10px] text-gray-500">
                     {user?.phoneNumber || "01783666743"}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="text-red-500 hover:text-red-700 p-1"
+                className="text-red-500 hover:text-red-700 p-1 transition-colors"
               >
                 <LogOut size={16} />
               </button>

@@ -46,7 +46,7 @@ export default function DevicesLoginTab({
 
       {loadingDevices ? (
         <div className="py-10 flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold">
-          <Loader2 size={15} className="animate-spin text-amber-500" />
+          <Loader2 size={15} className="animate-spin text-[#2563EB]" />
           Loading devices...
         </div>
       ) : devices.length === 0 ? (

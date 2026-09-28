@@ -225,7 +225,7 @@ export default function PersonalInfoTab({
                         }))
                       }
                       placeholder="Enter your address"
-                      className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                      className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
                     />
                   </div>
 
@@ -244,7 +244,7 @@ export default function PersonalInfoTab({
                         }))
                       }
                       placeholder="Tell us a little about yourself"
-                      className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                      className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
                     />
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export default function PersonalInfoTab({
                   <button
                     type="submit"
                     disabled={savingProfile}
-                    className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-[#2563EB] hover:bg-[#2563EB] text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {savingProfile ? (
                       <Loader2 size={13} className="animate-spin" />

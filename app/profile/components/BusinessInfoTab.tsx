@@ -40,14 +40,14 @@ export default function BusinessInfoTab({
     >
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-          <Store size={17} className="text-amber-500" />
+          <Store size={17} className="text-[#2563EB]" />
           Shop / Business Information
         </div>
 
         <button
           type="submit"
           disabled={savingBusiness}
-          className="bg-amber-500 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+          className="bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
         >
           {savingBusiness ? (
             <Loader2 size={12} className="animate-spin" />
@@ -137,7 +137,7 @@ export default function BusinessInfoTab({
               }))
             }
             placeholder="Enter complete business address"
-            className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
           />
         </div>
       </div>

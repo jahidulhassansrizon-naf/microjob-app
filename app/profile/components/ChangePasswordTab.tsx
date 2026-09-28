@@ -38,7 +38,7 @@ export default function ChangePasswordTab({
     >
       <div className="border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-          <LockKeyhole size={17} className="text-amber-500" />
+          <LockKeyhole size={17} className="text-[#2563EB]" />
           Change Password
         </div>
 
@@ -90,7 +90,7 @@ export default function ChangePasswordTab({
         <button
           type="submit"
           disabled={savingPassword}
-          className="bg-black hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2"
+          className="bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2"
         >
           {savingPassword ? (
             <Loader2 size={13} className="animate-spin" />

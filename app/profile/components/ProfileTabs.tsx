@@ -23,7 +23,7 @@ export default function ProfileTabs({
           onClick={() => onChange(tab)}
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
             activeTab === tab
-              ? "bg-black text-white shadow-xs"
+              ? "bg-[#2563EB] text-white shadow-xs"
               : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
           }`}
         >

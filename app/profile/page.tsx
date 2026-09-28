@@ -686,9 +686,9 @@ export default function ProfilePage() {
 
   if (isAuthenticated === null || (loading && !user)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-          <Loader2 size={16} className="animate-spin text-amber-500" />
+          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
           Loading profile...
         </div>
       </div>
@@ -696,7 +696,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-gray-800 font-sans pb-12">
+    <div className="min-h-screen bg-[#F8FAFC] text-gray-800 font-sans pb-12">
       <DashboardNavbar />
 
       <main className="max-w-[1200px] mx-auto px-4 py-6 space-y-4">

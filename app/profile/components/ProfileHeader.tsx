@@ -29,7 +29,7 @@ export default function ProfileHeader({
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="flex items-center gap-4 min-w-0">
-        <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0">
+        <div className="w-14 h-14 bg-[#E2E8F0] text-[#2563EB] rounded-2xl flex items-center justify-center text-lg font-bold shrink-0">
           {getInitials(user?.fullName)}
         </div>
 
@@ -52,8 +52,8 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      <div className="bg-amber-50/60 border border-amber-200/60 rounded-xl p-3 px-4 flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
-        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+      <div className="bg-[#E2E8F0]/60 border border-[#E2E8F0]/60 rounded-xl p-3 px-4 flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
+        <div className="w-8 h-8 rounded-lg bg-[#E2E8F0] flex items-center justify-center text-[#2563EB]">
           <Coins size={18} />
         </div>
 
@@ -62,7 +62,7 @@ export default function ProfileHeader({
             Credit Balance
           </p>
 
-          <p className="text-sm font-bold text-amber-600">
+          <p className="text-sm font-bold text-[#2563EB]">
             Credits <span className="text-base">{credits}</span>
           </p>
         </div>

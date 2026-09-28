@@ -48,7 +48,7 @@ export default function UserInfoCard({
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3">
         <div className="flex items-center gap-2 text-xs font-bold text-gray-700 min-w-0">
-          <User size={16} className="text-amber-500 shrink-0" />
+          <User size={16} className="text-[#2563EB] shrink-0" />
 
           <span className="truncate">{user?.fullName || "Guest User"}</span>
         </div>
@@ -56,7 +56,7 @@ export default function UserInfoCard({
         <button
           type="button"
           onClick={onEdit}
-          className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0"
+          className="bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0"
         >
           <Edit size={12} />
           <span>Edit</span>
@@ -122,25 +122,25 @@ export default function UserInfoCard({
         {renderField(
           "Profession / Designation",
           user?.profession,
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField(
           "Gender",
           user?.gender,
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField(
           "Date of Birth",
           user?.dob ? user.dob.slice(0, 10) : "",
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField(
           "Address",
           user?.address,
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField("District", user?.district)}
@@ -148,19 +148,19 @@ export default function UserInfoCard({
         {renderField(
           "Thana / Upazila",
           user?.thana,
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField(
           "Postcode",
           user?.postcode,
-          "bg-amber-50/40 border-amber-200/50",
+          "bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
 
         {renderField(
           "About yourself",
           user?.about,
-          "md:col-span-2 bg-amber-50/40 border-amber-200/50",
+          "md:col-span-2 bg-[#E2E8F0]/40 border-[#E2E8F0]/50",
         )}
       </div>
     </div>
