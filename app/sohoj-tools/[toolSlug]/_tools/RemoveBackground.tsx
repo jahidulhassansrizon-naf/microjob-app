@@ -25,6 +25,9 @@ export default function RemoveBackground() {
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  // "download" = model/wasm files are being fetched (real % available)
+  // "process"  = the actual background removal is running (no real % exists)
+  const [phase, setPhase] = useState<"download" | "process" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Refs keep the latest object URLs so the paste listener (registered once)
@@ -58,6 +61,7 @@ export default function RemoveBackground() {
       setProcessedUrl(null);
       setIsProcessing(false);
       setProgress(null);
+      setPhase(null);
       setErrorMessage(null);
     },
     [revokeUrls],
@@ -109,6 +113,7 @@ export default function RemoveBackground() {
     setProcessedUrl(null);
     setIsProcessing(false);
     setProgress(null);
+    setPhase(null);
     setErrorMessage(null);
   };
 
@@ -121,7 +126,16 @@ export default function RemoveBackground() {
 
     setIsProcessing(true);
     setProgress(null);
+    setPhase("download");
     setErrorMessage(null);
+
+    // The library reports progress per asset key. "fetch:*" keys are the model /
+    // wasm downloads (real byte progress). "compute:*" keys are the actual
+    // inference stages, which have no meaningful percentage. So we only show a
+    // % for downloads, and switch to a "processing" phase (scan animation)
+    // once compute starts.
+    const downloads = new Map<string, { current: number; total: number }>();
+    let highestProgress = 0;
 
     try {
       // Dynamic import: the library only ever loads in the browser (no SSR issues)
@@ -129,10 +143,32 @@ export default function RemoveBackground() {
 
       const resultBlob = await removeBackground(imageFile, {
         output: { format: "image/png" },
-        progress: (_key: string, current: number, total: number) => {
+        progress: (key: string, current: number, total: number) => {
           if (jobId !== jobIdRef.current) return;
-          if (total > 0) {
-            setProgress(Math.min(100, Math.round((current / total) * 100)));
+
+          if (key.startsWith("compute")) {
+            setPhase("process");
+            return;
+          }
+          if (!(total > 0)) return;
+
+          downloads.set(key, { current: Math.min(current, total), total });
+
+          let sumCurrent = 0;
+          let sumTotal = 0;
+          downloads.forEach((asset) => {
+            sumCurrent += asset.current;
+            sumTotal += asset.total;
+          });
+
+          // Monotonic: new assets raise the total and must not move the bar back.
+          const overall = Math.min(
+            100,
+            Math.floor((sumCurrent / sumTotal) * 100),
+          );
+          if (overall > highestProgress) {
+            highestProgress = overall;
+            setProgress(overall);
           }
         },
       });
@@ -158,6 +194,7 @@ export default function RemoveBackground() {
       if (jobId === jobIdRef.current) {
         setIsProcessing(false);
         setProgress(null);
+        setPhase(null);
       }
     }
   };
@@ -373,7 +410,11 @@ export default function RemoveBackground() {
                   <>
                     <RefreshCw size={14} className="animate-spin" />
                     <span>
-                      Processing...{progress !== null ? ` ${progress}%` : ""}
+                      {phase === "process"
+                        ? "Removing background..."
+                        : progress !== null
+                          ? `Downloading AI model... ${progress}%`
+                          : "Preparing..."}
                     </span>
                   </>
                 ) : (
@@ -429,6 +470,36 @@ export default function RemoveBackground() {
                   alt="Cutout Preview"
                   className="max-h-[360px] object-contain rounded-lg transition-all"
                 />
+
+                {/* Scan animation while the background is being removed */}
+                {isProcessing && (
+                  <div className="pointer-events-none absolute inset-0">
+                    <style>{`
+                      /* transform-only animation: runs on the compositor thread,
+                         so it keeps moving even while the main thread is
+                         blocked by the model inference. Do NOT animate top/left. */
+                      @keyframes rb-scan {
+                        0% { transform: translate3d(0, -100%, 0); }
+                        100% { transform: translate3d(0, 400%, 0); }
+                      }
+                      .rb-scan-line {
+                        top: 0;
+                        height: 25%;
+                        will-change: transform;
+                        animation: rb-scan 1.6s ease-in-out infinite alternate;
+                        background: linear-gradient(
+                          to bottom,
+                          rgba(37, 99, 235, 0),
+                          rgba(37, 99, 235, 0.35)
+                        );
+                        border-bottom: 2px solid #2563eb;
+                        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+                      }
+                    `}</style>
+                    <div className="absolute inset-0 bg-[#2563EB]/10" />
+                    <div className="rb-scan-line absolute left-0 right-0" />
+                  </div>
+                )}
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center text-center cursor-pointer p-8 w-full h-full">

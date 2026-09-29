@@ -17,7 +17,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import type * as Ort from "onnxruntime-web-upscaler";
+import type * as Ort from "onnxruntime-web";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -496,6 +496,12 @@ export default function ImageUpscaler() {
     if (current) return current.promise;
 
     const promise: Promise<OrtSessionBundle> = (async () => {
+      // The npm alias points to onnxruntime-web@1.30.0 at runtime.
+      // Its generated types.d.ts is not exposed as a TS module, so TypeScript
+      // cannot type-check this package name directly on Vercel. The runtime
+      // module is still valid and is bundled normally by Next.js.
+      // @ts-ignore onnxruntime-web-upscaler is an npm alias whose generated
+      // types.d.ts is not recognized as an external TS module by Vercel TS.
       const ort = await import("onnxruntime-web-upscaler");
 
       // Next.js does not ship ORT's .wasm/.mjs runtime files, so tell ORT where
