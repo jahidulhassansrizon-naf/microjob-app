@@ -28,6 +28,7 @@ import {
   Video,
   Calculator,
   Scan,
+  Sparkles,
   FileUser,
   UserCheck,
   Crop,
@@ -111,6 +112,14 @@ const toolsData: ToolItem[] = [
     category: "Image",
     bgColor: "bg-[#4ade80]",
     icon: ImageIcon,
+    badge: "New",
+  },
+  {
+    id: "27",
+    name: "Image Upscaler",
+    category: "Image",
+    bgColor: "bg-[#6366f1]",
+    icon: Sparkles,
     badge: "New",
   },
   {
@@ -376,7 +385,7 @@ function SohojToolsContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                26 free tools to speed up daily work.
+                27 free tools to speed up daily work.
               </p>
             </div>
           </div>

@@ -16,9 +16,13 @@
     "@google/genai": "^2.21.0",
     "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.13.28",
+    "@huggingface/transformers": "^4.3.0",
+    "@imgly/background-removal": "^1.7.0",
     "@jspawn/qpdf-wasm": "^0.0.2",
     "@subhesadek/avro-phonetic": "^2.1.4",
     "@techstark/opencv-js": "^5.0.0-release.1",
+    "@tensorflow/tfjs": "^4.11.0",
+    "@upscalerjs/esrgan-thick": "^1.0.0",
     "avro-phonetic": "^1.1.5",
     "bcryptjs": "^3.0.3",
     "bijoy-to-unicode-bengali-conversion": "^0.1.4",
@@ -39,6 +43,7 @@
     "lucide-react": "^1.48.0",
     "mongoose": "^9.9.4",
     "next": "16.3.4",
+    "onnxruntime-web": "^1.30.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "piexifjs": "^1.0.6",
@@ -49,7 +54,8 @@
     "react-image-crop": "^11.1.2",
     "replicate": "^1.4.0",
     "set-cookie-parser": "^3.1.2",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "upscaler": "^1.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

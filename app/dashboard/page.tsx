@@ -2,277 +2,18 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  CheckCircle2,
-  X,
-  CreditCard,
-  UserCheck,
-  GraduationCap,
-  Calculator,
-  BookOpen,
-  FileText,
-  Wand2,
-  Scan,
-  Image as ImageIcon,
-  Crop,
-  FileImage,
-  AlignLeft,
-  Minimize2,
-  Combine,
-  FileCode,
-  Lock,
-  Edit3,
-  Languages,
-  Keyboard,
-  FileUser,
-  Video,
-} from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
 import DashboardFooter from "./_components/DashboardFooter";
 
-type DashboardTool = {
-  name: string;
-  slug: string;
-  bgColor: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
-  badge?: "New" | "Hot";
-};
-
-const dashboardTools: DashboardTool[] = [
-  {
-    name: "NID Joiner",
-    slug: "nid-joiner",
-    bgColor: "bg-[#22c55e]",
-    icon: CreditCard,
-    badge: "Hot",
-  },
-  {
-    name: "Govt Job Photo & Sign Resizer",
-    slug: "govt-job-photo-sign-resizer",
-    bgColor: "bg-[#7c3aed]",
-    icon: UserCheck,
-  },
-  {
-    name: "Education Board Result",
-    slug: "education-board-result",
-    bgColor: "bg-[#10ca7e]",
-    icon: GraduationCap,
-  },
-  {
-    name: "National University Result",
-    slug: "national-university-result",
-    bgColor: "bg-[#06b6d4]",
-    icon: GraduationCap,
-  },
-  {
-    name: "Age Calculator",
-    slug: "age-calculator",
-    bgColor: "bg-[#db2777]",
-    icon: Calculator,
-  },
-  {
-    name: "Passport Joiner",
-    slug: "passport-joiner",
-    bgColor: "bg-[#10b981]",
-    icon: BookOpen,
-    badge: "Hot",
-  },
-  {
-    name: "Voter Migration Form",
-    slug: "voter-migration-form",
-    bgColor: "bg-[#4f46e5]",
-    icon: FileText,
-    badge: "New",
-  },
-  {
-    name: "Family Card Form",
-    slug: "family-card-form",
-    bgColor: "bg-[#2563eb]",
-    icon: CreditCard,
-  },
-  {
-    name: "Reduce Video File Size",
-    slug: "reduce-video-file-size",
-    bgColor: "bg-[#7c3aed]",
-    icon: Video,
-    badge: "New",
-  },
-  {
-    name: "Remove Background",
-    slug: "remove-background",
-    bgColor: "bg-[#16a34a]",
-    icon: Wand2,
-    badge: "Hot",
-  },
-  {
-    name: "Document Scanner",
-    slug: "document-scanner",
-    bgColor: "bg-[#84cc16]",
-    icon: Scan,
-    badge: "New",
-  },
-  {
-    name: "Image Size Reducer",
-    slug: "image-size-reducer",
-    bgColor: "bg-[#4ade80]",
-    icon: ImageIcon,
-    badge: "New",
-  },
-  {
-    name: "Crop Image",
-    slug: "crop-image",
-    bgColor: "bg-[#0369a1]",
-    icon: Crop,
-  },
-  {
-    name: "Images to PDF",
-    slug: "images-to-pdf",
-    bgColor: "bg-[#2563eb]",
-    icon: FileImage,
-  },
-  {
-    name: "Image Convert",
-    slug: "image-convert",
-    bgColor: "bg-[#a855f7]",
-    icon: ImageIcon,
-    badge: "Hot",
-  },
-  {
-    name: "Image to Text",
-    slug: "image-to-text",
-    bgColor: "bg-[#14b8a6]",
-    icon: AlignLeft,
-    badge: "New",
-  },
-  {
-    name: "Compress PDF",
-    slug: "compress-pdf",
-    bgColor: "bg-[#1cc2e6]",
-    icon: Minimize2,
-    badge: "Hot",
-  },
-  {
-    name: "Merge PDFs",
-    slug: "merge-pdfs",
-    bgColor: "bg-[#0eb2ed]",
-    icon: Combine,
-    badge: "Hot",
-  },
-  {
-    name: "Split PDF",
-    slug: "split-pdf",
-    bgColor: "bg-[#2563eb]",
-    icon: FileCode,
-  },
-  {
-    name: "Lock / Unlock PDF",
-    slug: "lock-unlock-pdf",
-    bgColor: "bg-[#4338ca]",
-    icon: Lock,
-  },
-  {
-    name: "PDF to Image",
-    slug: "pdf-to-image",
-    bgColor: "bg-[#3b82f6]",
-    icon: FileImage,
-  },
-  {
-    name: "Edit PDF",
-    slug: "edit-pdf",
-    bgColor: "bg-[#ea580c]",
-    icon: Edit3,
-    badge: "New",
-  },
-  {
-    name: "Bijoy - Unicode",
-    slug: "bijoy-unicode",
-    bgColor: "bg-[#a3e635]",
-    icon: Languages,
-  },
-  {
-    name: "Banglish Typing",
-    slug: "banglish-typing",
-    bgColor: "bg-[#84cc16]",
-    icon: Keyboard,
-  },
-  {
-    name: "ATS Friendly CV Maker",
-    slug: "ats-friendly-cv-maker",
-    bgColor: "bg-[#2563eb]",
-    icon: FileUser,
-  },
-];
-
-function RealSohojToolsGrid() {
-  const groups = [
-    {
-      title: "Online Application & Result",
-      items: dashboardTools.slice(0, 9),
-    },
-    {
-      title: "Image & Scan Editing",
-      items: dashboardTools.slice(9, 16),
-    },
-    {
-      title: "PDF Processing",
-      items: dashboardTools.slice(16, 22),
-    },
-    {
-      title: "Typing & CV Tools",
-      items: dashboardTools.slice(22),
-    },
-  ];
-
+function ComingSoonSection() {
   return (
-    <section className="font-sans antialiased">
-      <div className="flex items-center justify-between border-b border-gray-200/80 pb-3">
-        <h2 className="text-xl font-bold tracking-tight text-[#0F172A] sm:text-2xl">
-          Sohoj Tools
-        </h2>
-
-        <Link
-          href="/sohoj-tools"
-          className="text-sm font-semibold text-gray-600 transition hover:text-[#2563EB]"
-        >
-          View all →
-        </Link>
-      </div>
-
-      <div className="mt-6 space-y-8">
-        {groups.map((group) => (
-          <div key={group.title}>
-            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">
-              {group.title}
-            </h3>
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {group.items.map((tool) => {
-                const Icon = tool.icon;
-
-                return (
-                  <Link
-                    key={tool.slug}
-                    href={`/sohoj-tools/${tool.slug}`}
-                    className="group flex min-w-0 flex-col items-center text-center rounded-2xl p-2 transition-all duration-200 hover:bg-white/80 hover:shadow-sm"
-                    aria-label={tool.name}
-                  >
-                    <div
-                      className={`flex h-16 w-16 items-center justify-center rounded-[20px] text-white shadow-sm transition-transform duration-200 group-hover:-translate-y-1 sm:h-[72px] sm:w-[72px] ${tool.bgColor}`}
-                    >
-                      <Icon size={31} strokeWidth={1.9} />
-                    </div>
-
-                    <span className="mt-2.5 max-w-[155px] text-xs font-semibold leading-snug tracking-tight text-[#0F172A] transition group-hover:text-[#2563EB] sm:text-sm">
-                      {tool.name}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+    <section className="min-h-[60vh] flex items-center justify-center relative overflow-hidden py-16">
+      <div className="transform -rotate-12 select-none p-6 sm:p-10 border-4 border-dashed border-[#2563EB]/30 rounded-3xl bg-white/60 backdrop-blur-sm shadow-xl">
+        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-[#2563EB] tracking-wider uppercase text-center drop-shadow-md">
+          Coming Soon
+        </h1>
       </div>
     </section>
   );
@@ -350,7 +91,7 @@ export default function DashboardPage() {
         <DashboardNavbar />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-12">
-          <RealSohojToolsGrid />
+          <ComingSoonSection />
         </main>
       </div>
 
@@ -362,13 +103,14 @@ export default function DashboardPage() {
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#2563EB]/20 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
             <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#10B981]/20 rounded-full blur-2xl opacity-50 pointer-events-none"></div>
 
+            {/* আপডেট করা লাল রঙের ক্লোজ বাটন */}
             <button
               type="button"
               onClick={() => {
                 setShowLoginSuccess(false);
                 setIsAuthenticated(true);
               }}
-              className="absolute top-4 right-[#10px] text-gray-400 hover:text-[#0F172A] p-1.5 rounded-full bg-gray-50 hover:bg-[#E2E8F0] transition-all cursor-pointer z-10"
+              className="absolute top-4 right-4 text-red-500 hover:text-red-600 p-1.5 rounded-full bg-red-50 hover:bg-red-100 transition-all cursor-pointer z-10"
               aria-label="Close modal"
             >
               <X size={18} />

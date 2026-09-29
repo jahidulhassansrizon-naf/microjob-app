@@ -17,6 +17,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   'remove-background': dynamic(() => import("./_tools/RemoveBackground")),
   'document-scanner': dynamic(() => import("./_tools/DocumentScanner")),
   'image-size-reducer': dynamic(() => import("./_tools/ImageSizeReducer")),
+  'image-upscaler': dynamic(() => import("./_tools/ImageUpscaler")),
   'crop-image': dynamic(() => import("./_tools/CropImage")),
   'images-to-pdf': dynamic(() => import("./_tools/ImagesToPdf")),
   'image-convert': dynamic(() => import("./_tools/ImageConvert")),

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -15,8 +15,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 export default function RemoveBackground() {
   const [bgType, setBgType] = useState<"transparent" | "solid" | "photo">(
     "transparent",
@@ -26,9 +24,46 @@ export default function RemoveBackground() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Ctrl+V দিয়ে ইমেজ পেস্ট হ্যান্ডলার
+  // Refs keep the latest object URLs so the paste listener (registered once)
+  // and the unmount cleanup never work with stale values.
+  const previewUrlRef = useRef<string | null>(null);
+  const processedUrlRef = useRef<string | null>(null);
+  // Incremented on every new file / reset so an in-flight job can be ignored.
+  const jobIdRef = useRef(0);
+
+  const revokeUrls = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    if (processedUrlRef.current) {
+      URL.revokeObjectURL(processedUrlRef.current);
+      processedUrlRef.current = null;
+    }
+  }, []);
+
+  const handleNewFile = useCallback(
+    (file: File) => {
+      jobIdRef.current += 1;
+      revokeUrls();
+
+      const newPreviewUrl = URL.createObjectURL(file);
+      previewUrlRef.current = newPreviewUrl;
+
+      setImageFile(file);
+      setPreviewUrl(newPreviewUrl);
+      setProcessedUrl(null);
+      setIsProcessing(false);
+      setProgress(null);
+      setErrorMessage(null);
+    },
+    [revokeUrls],
+  );
+
+  // Ctrl+V দিয়ে ইমেজ পেস্ট হ্যান্ডলার
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -47,66 +82,82 @@ export default function RemoveBackground() {
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, []);
+  }, [handleNewFile]);
 
-  const handleNewFile = (file: File) => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (processedUrl) URL.revokeObjectURL(processedUrl);
-
-    setImageFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setProcessedUrl(null);
-    setErrorMessage(null);
-  };
+  // কম্পোনেন্ট আনমাউন্ট হলে মেমোরি ক্লিনআপ
+  useEffect(() => {
+    return () => {
+      jobIdRef.current += 1;
+      revokeUrls();
+    };
+  }, [revokeUrls]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       handleNewFile(e.target.files[0]);
     }
+    // একই ফাইল আবার সিলেক্ট করা যাবে
+    e.target.value = "";
   };
 
   const handleReset = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (processedUrl) URL.revokeObjectURL(processedUrl);
+    jobIdRef.current += 1;
+    revokeUrls();
 
     setImageFile(null);
     setPreviewUrl(null);
     setProcessedUrl(null);
     setIsProcessing(false);
+    setProgress(null);
     setErrorMessage(null);
   };
 
-  // ব্যাকএন্ড API কানেকশন
+  // ক্লায়েন্ট-সাইড ব্যাকগ্রাউন্ড রিমুভাল (@imgly/background-removal)
   const handleRemoveBg = async () => {
-    if (!imageFile) return;
+    if (!imageFile || isProcessing) return;
+
+    const jobId = ++jobIdRef.current;
 
     setIsProcessing(true);
+    setProgress(null);
     setErrorMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", imageFile);
+      // Dynamic import: the library only ever loads in the browser (no SSR issues)
+      const { removeBackground } = await import("@imgly/background-removal");
 
-      const response = await fetch(`${API_BASE_URL}/api/remove-background`, {
-        method: "POST",
-        body: formData,
+      const resultBlob = await removeBackground(imageFile, {
+        output: { format: "image/png" },
+        progress: (_key: string, current: number, total: number) => {
+          if (jobId !== jobIdRef.current) return;
+          if (total > 0) {
+            setProgress(Math.min(100, Math.round((current / total) * 100)));
+          }
+        },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Background removal failed.");
-      }
+      // ইউজার ইতিমধ্যে নতুন ইমেজ দিলে বা রিসেট করলে এই রেজাল্ট বাদ
+      if (jobId !== jobIdRef.current) return;
 
-      const imageBlob = await response.blob();
-      const outputUrl = URL.createObjectURL(imageBlob);
+      if (processedUrlRef.current) {
+        URL.revokeObjectURL(processedUrlRef.current);
+      }
+      const outputUrl = URL.createObjectURL(resultBlob);
+      processedUrlRef.current = outputUrl;
       setProcessedUrl(outputUrl);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (jobId !== jobIdRef.current) return;
       console.error("[Remove Background Error]:", error);
       setErrorMessage(
-        error.message || "Something went wrong while removing background.",
+        error instanceof Error && error.message
+          ? error.message
+          : "Something went wrong while removing background.",
       );
     } finally {
-      setIsProcessing(false);
+      if (jobId === jobIdRef.current) {
+        setIsProcessing(false);
+        setProgress(null);
+      }
     }
   };
 
@@ -125,8 +176,8 @@ export default function RemoveBackground() {
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
         const ctx = canvas.getContext("2d");
 
         if (ctx) {
@@ -136,11 +187,23 @@ export default function RemoveBackground() {
           }
           ctx.drawImage(img, 0, 0);
 
-          const a = document.createElement("a");
-          a.href = canvas.toDataURL("image/png");
-          a.download = `remove-bg-${Date.now()}.png`;
-          a.click();
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              setErrorMessage("Could not create the download file.");
+              return;
+            }
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `remove-bg-${Date.now()}.png`;
+            a.click();
+            // ডাউনলোড শুরু হওয়ার পর টেম্পোরারি URL মুছে ফেলা
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+          }, "image/png");
         }
+      };
+      img.onerror = () => {
+        setErrorMessage("Could not load the processed image for download.");
       };
       img.src = processedUrl;
     }
@@ -166,8 +229,7 @@ export default function RemoveBackground() {
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
-          </div>
+          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]"></div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-[#0F172A]">
@@ -309,7 +371,9 @@ export default function RemoveBackground() {
                 {isProcessing ? (
                   <>
                     <RefreshCw size={14} className="animate-spin" />
-                    <span>Processing...</span>
+                    <span>
+                      Processing...{progress !== null ? ` ${progress}%` : ""}
+                    </span>
                   </>
                 ) : (
                   <>
