@@ -17,7 +17,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import type * as Ort from "onnxruntime-web";
+import type * as Ort from "onnxruntime-web-upscaler";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -483,7 +483,8 @@ export default function ImageUpscaler() {
   };
 
   /**
-   * Lazily loads onnxruntime-web and the Real-ESRGAN model in the browser only.
+   * Lazily loads the dedicated 1.30.x onnxruntime-web runtime and the
+   * Real-ESRGAN model in the browser only.
    * - The dynamic import keeps ORT out of SSR.
    * - The model is fetched once (with progress) and kept in the Cache API.
    * - WebGPU is tried first; if it can't start, we fall back to WASM (CPU).
@@ -495,12 +496,13 @@ export default function ImageUpscaler() {
     if (current) return current.promise;
 
     const promise: Promise<OrtSessionBundle> = (async () => {
-      const ort = await import("onnxruntime-web");
+      const ort = await import("onnxruntime-web-upscaler");
 
       // Next.js does not ship ORT's .wasm/.mjs runtime files, so tell ORT where
-      // to load them from. The URL is pinned to the installed package version.
-      // To self-host instead: copy node_modules/onnxruntime-web/dist/*.wasm and
-      // *.mjs into /public/ort/ and use ort.env.wasm.wasmPaths = "/ort/".
+      // to load them from. This is the dedicated 1.30.x Upscaler runtime.
+      // To self-host instead: copy the alias package
+      // node_modules/onnxruntime-web-upscaler/dist/*.wasm and *.mjs into
+      // /public/ort/ and use ort.env.wasm.wasmPaths = "/ort/".
       // Hide ORT's harmless internal warnings (they show up as red "Console
       // Error" overlays in Next.js dev mode). Real errors are still reported.
       ort.env.logLevel = "error";

@@ -113,6 +113,7 @@ export default function RemoveBackground() {
   };
 
   // ক্লায়েন্ট-সাইড ব্যাকগ্রাউন্ড রিমুভাল (@imgly/background-removal)
+  // This package uses the root onnxruntime-web@1.21.0 peer dependency.
   const handleRemoveBg = async () => {
     if (!imageFile || isProcessing) return;
 
