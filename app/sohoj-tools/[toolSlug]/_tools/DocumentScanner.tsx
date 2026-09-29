@@ -81,33 +81,71 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const normalizeAngle = (angle: number): number => ((angle % 360) + 360) % 360;
 
-// Magic effects can now be stacked. They always run in this fixed order
-// (Color -> Clean -> Enhance) so the result is the same no matter which
-// button the user pressed first. Enhance is last because it upscales 2x.
+// The editor works as a CHAIN: every action (Color, Magic Clean, Document
+// Clean, Auto crop, Manual crop) is applied on top of the image that is on
+// screen right now, exactly once. Nothing is re-processed just because a later
+// step happened (e.g. cropping after Magic Clean does NOT run Magic Clean
+// again). Each step remembers the state before it, so it can be undone.
+// Document Clean is only available after Magic Clean, so the backend always
+// receives the Magic Clean image.
+// `enhance` (Magic Clean) is a pass counter: 0 = off, 1 = applied once,
+// 2 = "Again Magic Clean" pressed once more on top of the previous result...
 type EffectKey = "color" | "clean" | "enhance";
-type Effects = Record<EffectKey, boolean>;
+type Effects = { color: boolean; clean: boolean; enhance: number };
+type StepKind = EffectKey | "autoCrop" | "manualCrop";
 
-const NO_EFFECTS: Effects = { color: false, clean: false, enhance: false };
-const EFFECT_ORDER: EffectKey[] = ["color", "clean", "enhance"];
+// The state right before a step ran. Restoring it undoes that step.
+type Snapshot = {
+  original: string; // effect-free image ("Normal" in the compare view)
+  processed: string; // image with every effect so far
+  effects: Effects;
+  bakedRotation: number;
+  autoCrop: boolean;
+};
+type HistoryEntry = { step: StepKind; prev: Snapshot };
+
+const MAX_HISTORY = 8;
+const STEP_LABELS: Record<StepKind, string> = {
+  color: "Color Document",
+  enhance: "Magic Clean",
+  clean: "Document Clean",
+  autoCrop: "Auto crop",
+  manualCrop: "Manual crop",
+};
+
+const NO_EFFECTS: Effects = { color: false, clean: false, enhance: 0 };
 const EFFECT_ENDPOINTS: Record<"color" | "clean", string> = {
   color: "/api/color-document",
   clean: "/api/clean-document",
 };
-const ENHANCE_LABEL = "Ultra HD Restore";
-const MAX_EFFECT_CACHE_ENTRIES = 8;
+const ENHANCE_LABEL = "Magic Clean";
+// How many times Magic Clean can be stacked with "Again Magic Clean".
+const MAX_ENHANCE_PASSES = 3;
+// Every pass upscales 2x; keep the result at A4 @300dpi size at most so
+// repeated passes do not run the device out of memory.
+const MAX_ENHANCE_SIDE = 3508;
 
-const hasAnyEffect = (e: Effects): boolean => e.color || e.clean || e.enhance;
+const capCanvasSize = (
+  canvas: HTMLCanvasElement,
+  maxSide: number,
+): HTMLCanvasElement => {
+  const longest = Math.max(canvas.width, canvas.height);
+  if (longest <= maxSide) return canvas;
 
-// Cheap fingerprint of a (huge) data URL, used as a cache key.
-const hashString = (value: string): string => {
-  let h = 2166136261;
-  const step = Math.max(1, Math.floor(value.length / 4096));
-  for (let i = 0; i < value.length; i += step) {
-    h ^= value.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return `${value.length}-${(h >>> 0).toString(36)}`;
+  const ratio = maxSide / longest;
+  const out = document.createElement("canvas");
+  out.width = Math.max(1, Math.round(canvas.width * ratio));
+  out.height = Math.max(1, Math.round(canvas.height * ratio));
+  const ctx = out.getContext("2d");
+  if (!ctx) return canvas;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(canvas, 0, 0, out.width, out.height);
+  return out;
 };
+
+const hasAnyEffect = (e: Effects): boolean =>
+  e.color || e.clean || e.enhance > 0;
 
 export default function DocumentScanner() {
   const [images, setImages] = useState<string[]>([]);
@@ -132,6 +170,10 @@ export default function DocumentScanner() {
   const [rotation, setRotation] = useState<number>(0);
   const [bakedRotation, setBakedRotation] = useState<number>(0);
   const [manualCropSourceSrc, setManualCropSourceSrc] = useState<string>("");
+  // Effect-free twin of manualCropSourceSrc, cropped with the same corners.
+  const [manualCropOriginalSrc, setManualCropOriginalSrc] =
+    useState<string>("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [manualCropSourceBakedRotation, setManualCropSourceBakedRotation] =
     useState<number>(0);
 
@@ -179,9 +221,6 @@ export default function DocumentScanner() {
   const processingIdRef = useRef<number>(0);
   const activeServerRequestRef = useRef<AbortController | null>(null);
   const enhanceAbortRef = useRef<AbortController | null>(null);
-  // Cache of finished effect stages so toggling an effect off/on again (or
-  // re-cropping) does not re-run slow AI work for the same input.
-  const effectCacheRef = useRef<Map<string, string>>(new Map());
   const cloudinarySaveRequestRef = useRef<AbortController | null>(null);
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 
@@ -362,6 +401,8 @@ export default function DocumentScanner() {
     setRotation(0);
     setBakedRotation(0);
     setEffects(NO_EFFECTS);
+    setHistory([]);
+    setManualCropOriginalSrc("");
     setBlackness(0);
     setContrast(0);
     setBrightness(0);
@@ -637,6 +678,8 @@ export default function DocumentScanner() {
       setBakedRotation(0);
       setRotation(0);
       setEffects(NO_EFFECTS);
+      setHistory([]);
+      setManualCropOriginalSrc("");
       setBlackness(0);
       setContrast(0);
       setBrightness(0);
@@ -652,12 +695,14 @@ export default function DocumentScanner() {
     }
   };
 
-  const applyPerspectiveWarp = useCallback(
+  // Core warp: `imagePoints` are already in pixel coordinates of sourceCanvas.
+  const warpByImagePoints = useCallback(
     (
       sourceCanvas: HTMLCanvasElement,
-      uiCorners: Point[],
+      imagePoints: Point[],
+      maxOutputSize: number = 2500,
     ): HTMLCanvasElement | null => {
-      if (!isCvLoaded || !window.cv || uiCorners.length !== 4) return null;
+      if (!isCvLoaded || !window.cv || imagePoints.length !== 4) return null;
 
       const cv = window.cv;
       let src: any = null;
@@ -668,12 +713,7 @@ export default function DocumentScanner() {
 
       try {
         src = cv.imread(sourceCanvas);
-        const targetCorners = uiPointsToImage(
-          uiCorners,
-          sourceCanvas.width,
-          sourceCanvas.height,
-        );
-        const ordered = orderPoints(targetCorners);
+        const ordered = orderPoints(imagePoints);
 
         const distance = (a: Point, b: Point) =>
           Math.hypot(b.x - a.x, b.y - a.y);
@@ -691,7 +731,6 @@ export default function DocumentScanner() {
           Math.round(Math.max(heightLeft, heightRight)),
         );
 
-        const maxOutputSize = 2500;
         const outputScale = Math.min(
           1,
           maxOutputSize / Math.max(outputWidth, outputHeight),
@@ -751,7 +790,154 @@ export default function DocumentScanner() {
         if (warped) warped.delete();
       }
     },
-    [isCvLoaded, uiPointsToImage, orderPoints],
+    [isCvLoaded, orderPoints],
+  );
+
+  // Warp using corner handles that live in UI (container %) coordinates.
+  const applyPerspectiveWarp = useCallback(
+    (
+      sourceCanvas: HTMLCanvasElement,
+      uiCorners: Point[],
+      maxOutputSize: number = 2500,
+    ): HTMLCanvasElement | null => {
+      if (uiCorners.length !== 4) return null;
+
+      return warpByImagePoints(
+        sourceCanvas,
+        uiPointsToImage(uiCorners, sourceCanvas.width, sourceCanvas.height),
+        maxOutputSize,
+      );
+    },
+    [warpByImagePoints, uiPointsToImage],
+  );
+
+  /**
+   * Finds the document corners in the browser (same idea as the Python
+   * auto-crop: blur -> Canny -> biggest 4-corner contour, with a
+   * minAreaRect fallback). It works on a small copy, so it is fast, and it
+   * returns corners as 0..1 fractions of the image so they can be applied to
+   * an image of ANY size (e.g. the 2x Magic Clean image).
+   */
+  const detectDocumentCorners = useCallback(
+    (source: HTMLCanvasElement): Point[] | null => {
+      if (!isCvLoaded || !window.cv) return null;
+
+      const cv = window.cv;
+      const scale = Math.min(1, 1000 / Math.max(source.width, source.height));
+      const small = document.createElement("canvas");
+      small.width = Math.max(1, Math.round(source.width * scale));
+      small.height = Math.max(1, Math.round(source.height * scale));
+      const smallCtx = small.getContext("2d");
+      if (!smallCtx) return null;
+      smallCtx.imageSmoothingEnabled = true;
+      smallCtx.imageSmoothingQuality = "high";
+      smallCtx.drawImage(source, 0, 0, small.width, small.height);
+
+      const minArea = small.width * small.height * 0.15;
+      const quadArea = (q: Point[]) => {
+        let sum = 0;
+        for (let i = 0; i < 4; i++) {
+          const a = q[i];
+          const b = q[(i + 1) % 4];
+          sum += a.x * b.y - b.x * a.y;
+        }
+        return Math.abs(sum) / 2;
+      };
+      const normalize = (q: Point[]): Point[] =>
+        q.map((pt) => ({
+          x: Math.min(1, Math.max(0, pt.x / small.width)),
+          y: Math.min(1, Math.max(0, pt.y / small.height)),
+        }));
+
+      let src: any = null;
+      let gray: any = null;
+      let blurred: any = null;
+      let edged: any = null;
+      let contours: any = null;
+      let hierarchy: any = null;
+
+      try {
+        src = cv.imread(small);
+        gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        blurred = new cv.Mat();
+        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+        edged = new cv.Mat();
+        cv.Canny(blurred, edged, 50, 200);
+
+        contours = new cv.MatVector();
+        hierarchy = new cv.Mat();
+        cv.findContours(
+          edged,
+          contours,
+          hierarchy,
+          cv.RETR_LIST,
+          cv.CHAIN_APPROX_SIMPLE,
+        );
+
+        const ranked: { index: number; area: number }[] = [];
+        for (let i = 0; i < contours.size(); i++) {
+          const c = contours.get(i);
+          ranked.push({ index: i, area: cv.contourArea(c) });
+          c.delete();
+        }
+        ranked.sort((a, b) => b.area - a.area);
+        const top = ranked.slice(0, 5);
+
+        for (const { index } of top) {
+          const c = contours.get(index);
+          const approx = new cv.Mat();
+          try {
+            const peri = cv.arcLength(c, true);
+            cv.approxPolyDP(c, approx, 0.02 * peri, true);
+
+            if (approx.rows === 4) {
+              const d = approx.data32S;
+              const quad: Point[] = [
+                { x: d[0], y: d[1] },
+                { x: d[2], y: d[3] },
+                { x: d[4], y: d[5] },
+                { x: d[6], y: d[7] },
+              ];
+              // Ignore small 4-corner blobs (a word, a stamp, a box).
+              if (quadArea(quad) >= minArea) return normalize(quad);
+            }
+          } finally {
+            approx.delete();
+            c.delete();
+          }
+        }
+
+        // Fallback: tilted bounding box of the biggest shape.
+        if (top.length > 0) {
+          const c = contours.get(top[0].index);
+          try {
+            const rect = cv.minAreaRect(c);
+            const box: Point[] = cv.RotatedRect.points(rect).map(
+              (pt: Point) => ({ x: pt.x, y: pt.y }),
+            );
+            if (box.length === 4 && quadArea(box) >= minArea) {
+              return normalize(box);
+            }
+          } finally {
+            c.delete();
+          }
+        }
+
+        return null;
+      } catch (error) {
+        console.error("Document corner detection failed:", error);
+        return null;
+      } finally {
+        if (src) src.delete();
+        if (gray) gray.delete();
+        if (blurred) blurred.delete();
+        if (edged) edged.delete();
+        if (contours) contours.delete();
+        if (hierarchy) hierarchy.delete();
+      }
+    },
+    [isCvLoaded],
   );
 
   const processCanvasWithServer = useCallback(
@@ -839,26 +1025,27 @@ export default function DocumentScanner() {
     let active = true;
     const currentProcessingId = ++processingIdRef.current;
     const sourceSrc = manualCropSourceSrc || selectedImageSrc;
+    const originalSrc = manualCropOriginalSrc || sourceSrc;
     const sourceBakedRotation = manualCropSourceSrc
       ? manualCropSourceBakedRotation
       : 0;
 
     loadImage(sourceSrc)
-      .then((img) => {
+      .then(async (img) => {
         if (!active || currentProcessingId !== processingIdRef.current) return;
 
-        const displayCanvas = createRotatedCanvas(
-          img,
-          normalizeAngle(rotation - sourceBakedRotation),
-        );
+        const angle = normalizeAngle(rotation - sourceBakedRotation);
+        const displayCanvas = createRotatedCanvas(img, angle);
 
         setUncroppedSrc(displayCanvas.toDataURL("image/png"));
 
         if (!cropReady || debouncedCorners.length !== 4) return;
 
+        // Effects are already baked into the source, so allow the larger size.
         const warpedCanvas = applyPerspectiveWarp(
           displayCanvas,
           debouncedCorners,
+          MAX_ENHANCE_SIDE,
         );
 
         if (
@@ -870,9 +1057,42 @@ export default function DocumentScanner() {
         }
 
         const cropUrl = warpedCanvas.toDataURL("image/png");
-        setCroppedOriginalSrc(cropUrl);
+        let originalCropUrl = cropUrl;
+
+        // Crop the effect-free "Normal" twin with the same corners so the
+        // compare / hold view stays aligned.
+        if (originalSrc !== sourceSrc) {
+          try {
+            const originalImg = await loadImage(originalSrc);
+            if (!active || currentProcessingId !== processingIdRef.current)
+              return;
+
+            const originalCanvas = createRotatedCanvas(originalImg, angle);
+            const sameShape =
+              Math.abs(
+                originalCanvas.width / originalCanvas.height -
+                  displayCanvas.width / displayCanvas.height,
+              ) < 0.02;
+            const warpedOriginal = sameShape
+              ? applyPerspectiveWarp(
+                  originalCanvas,
+                  debouncedCorners,
+                  MAX_ENHANCE_SIDE,
+                )
+              : null;
+
+            if (warpedOriginal)
+              originalCropUrl = warpedOriginal.toDataURL("image/png");
+          } catch (error) {
+            console.error("Manual crop original preview failed:", error);
+          }
+        }
+
+        if (!active || currentProcessingId !== processingIdRef.current) return;
+
+        setCroppedOriginalSrc(originalCropUrl);
         setCleanBaseSrc(cropUrl);
-        setRotatedOriginalSrc(cropUrl);
+        setRotatedOriginalSrc(originalCropUrl);
         setBakedRotation(rotation);
         setAutoCrop(false);
         setHasUnsavedChanges(true);
@@ -890,6 +1110,7 @@ export default function DocumentScanner() {
     debouncedCorners,
     selectedImageSrc,
     manualCropSourceSrc,
+    manualCropOriginalSrc,
     manualCropSourceBakedRotation,
     rotation,
     loadImage,
@@ -1741,6 +1962,8 @@ export default function DocumentScanner() {
     setRotation(0);
     setBakedRotation(0);
     setEffects(NO_EFFECTS);
+    setHistory([]);
+    setManualCropOriginalSrc("");
     setBlackness(0);
     setContrast(0);
     setBrightness(0);
@@ -1864,6 +2087,8 @@ export default function DocumentScanner() {
     setContrast(0);
     setBrightness(0);
     setEffects(NO_EFFECTS);
+    setHistory([]);
+    setManualCropOriginalSrc("");
     setRotation(0);
     setBakedRotation(0);
     setAutoCrop(false);
@@ -1887,112 +2112,6 @@ export default function DocumentScanner() {
     }
   };
 
-  const canvasFromSrc = async (src: string): Promise<HTMLCanvasElement> => {
-    const img = await loadImage(src);
-    return createRotatedCanvas(img, 0);
-  };
-
-  /**
-   * Runs every enabled effect on `working`, in EFFECT_ORDER, and returns the
-   * final image. Each finished stage is cached, so only the stages whose
-   * input actually changed are recomputed.
-   */
-  const runEffectsPipeline = async (
-    working: HTMLCanvasElement,
-    target: Effects,
-    processingId: number,
-    signal: AbortSignal,
-  ): Promise<{ workingSrc: string; resultSrc: string } | null> => {
-    const isStale = () =>
-      signal.aborted || processingId !== processingIdRef.current;
-
-    const workingSrc = working.toDataURL("image/png");
-    if (!hasAnyEffect(target)) return { workingSrc, resultSrc: workingSrc };
-
-    let currentCanvas = working;
-    let resultSrc = workingSrc;
-    let key = hashString(workingSrc);
-
-    for (const stage of EFFECT_ORDER) {
-      if (!target[stage]) continue;
-      key += `|${stage}`;
-
-      const cached = effectCacheRef.current.get(key);
-      if (cached) {
-        currentCanvas = await canvasFromSrc(cached);
-        if (isStale()) return null;
-        resultSrc = cached;
-        continue;
-      }
-
-      setActiveStage(stage);
-      setIsPythonLoading(true);
-
-      let stageSrc: string;
-
-      if (stage === "enhance") {
-        setEnhanceProgress({ stage: "load", percent: 0 });
-
-        const enhanced = await enhanceCanvas(currentCanvas, {
-          scale: 2,
-          signal,
-          onProgress: (progress) => {
-            if (!isStale()) setEnhanceProgress(progress);
-          },
-        });
-
-        if (isStale()) return null;
-        setEnhanceProgress(null);
-        stageSrc = enhanced.toDataURL("image/png");
-      } else {
-        const url = await processWithPythonBackend(
-          currentCanvas,
-          EFFECT_ENDPOINTS[stage],
-        );
-
-        if (!url || isStale()) {
-          if (url) revokeTrackedObjectURL(url);
-          return null;
-        }
-
-        // processCanvasWithServer turns the busy flag off when it finishes;
-        // keep it on while the next stage is still pending.
-        setIsPythonLoading(true);
-
-        try {
-          const stageImg = await loadImage(url);
-          const stageCanvas = document.createElement("canvas");
-          stageCanvas.width = stageImg.naturalWidth || stageImg.width;
-          stageCanvas.height = stageImg.naturalHeight || stageImg.height;
-          const stageCtx = stageCanvas.getContext("2d");
-          if (!stageCtx) throw new Error("Canvas context unavailable");
-          stageCtx.imageSmoothingEnabled = true;
-          stageCtx.imageSmoothingQuality = "high";
-          stageCtx.drawImage(stageImg, 0, 0);
-          stageSrc = stageCanvas.toDataURL("image/png");
-        } finally {
-          revokeTrackedObjectURL(url);
-        }
-
-        if (isStale()) return null;
-      }
-
-      const cache = effectCacheRef.current;
-      cache.set(key, stageSrc);
-      while (cache.size > MAX_EFFECT_CACHE_ENTRIES) {
-        const oldest = cache.keys().next().value;
-        if (oldest === undefined) break;
-        cache.delete(oldest);
-      }
-
-      currentCanvas = await canvasFromSrc(stageSrc);
-      if (isStale()) return null;
-      resultSrc = stageSrc;
-    }
-
-    return { workingSrc, resultSrc };
-  };
-
   const describeEffectError = (error: unknown): string => {
     const message = error instanceof Error ? error.message : "";
     return /MODEL_FETCH_FAILED|failed to fetch|network/i.test(message)
@@ -2002,16 +2121,92 @@ export default function DocumentScanner() {
         : "Document processing সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।";
   };
 
+  // Turns a blob/object URL coming back from the server into a PNG data URL.
+  const serverUrlToDataUrl = async (url: string): Promise<string> => {
+    try {
+      const img = await loadImage(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas context unavailable");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0);
+      return canvas.toDataURL("image/png");
+    } finally {
+      revokeTrackedObjectURL(url);
+    }
+  };
+
+  const canChangeImage = (): boolean =>
+    !!selectedImageSrc &&
+    !!cleanBaseSrc &&
+    !isPythonLoading &&
+    !isManualCropping &&
+    !isSavingDocument;
+
+  // ---- history (undo) -------------------------------------------------------
+
+  const takeSnapshot = (): Snapshot => ({
+    original: croppedOriginalSrc || selectedImageSrc,
+    processed: cleanBaseSrc,
+    effects,
+    bakedRotation,
+    autoCrop,
+  });
+
+  const pushHistory = (step: StepKind) => {
+    const entry: HistoryEntry = { step, prev: takeSnapshot() };
+    setHistory((prev) => [...prev, entry].slice(-MAX_HISTORY));
+  };
+
+  // Index of the newest history entry for this effect, or -1 when it cannot
+  // be removed any more (a crop happened after it, or it is not applied).
+  const findEffectUndoIndex = (stage: EffectKey): number => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const step = history[i].step;
+      if (step === stage) return i;
+      if (step === "autoCrop" || step === "manualCrop") return -1;
+    }
+    return -1;
+  };
+
+  // Go back to the state before history[index] (and drop everything after it).
+  const undoTo = (index: number) => {
+    const entry = history[index];
+    if (!entry || !canChangeImage()) return;
+
+    cancelActiveServerRequest();
+    cancelCloudinarySaveRequest();
+    processingIdRef.current += 1;
+
+    setErrorMessage(null);
+    setCroppedOriginalSrc(entry.prev.original);
+    setRotatedOriginalSrc(entry.prev.original);
+    setCleanBaseSrc(entry.prev.processed);
+    setEffects(entry.prev.effects);
+    setBakedRotation(entry.prev.bakedRotation);
+    setAutoCrop(entry.prev.autoCrop);
+    setHasUnsavedChanges(true);
+    setHistory((prev) => prev.slice(0, index));
+  };
+
+  const handleUndoLast = () => undoTo(history.length - 1);
+
+  const handleUndoEffect = (stage: EffectKey) => {
+    const index = findEffectUndoIndex(stage);
+    if (index >= 0) undoTo(index);
+  };
+
+  // ---- effects ------------------------------------------------------------
+
   /**
-   * Applies the given set of effects to the current (uncropped-by-effects)
-   * working image. Because the effect-free original is always kept in
-   * `croppedOriginalSrc`, effects can be added and removed independently.
+   * Applies ONE effect step on top of the image that is on screen now.
+   * (Magic Clean pressed again = one more pass on the previous result.)
    */
-  const applyEffects = async (
-    target: Effects,
-    options?: { resetEffectsOnFail?: boolean },
-  ) => {
-    if (!selectedImageSrc) return;
+  const applyEffectStep = async (stage: EffectKey) => {
+    if (!canChangeImage()) return;
 
     cancelActiveServerRequest();
     cancelCloudinarySaveRequest();
@@ -2021,33 +2216,80 @@ export default function DocumentScanner() {
     const controller = new AbortController();
     enhanceAbortRef.current = controller;
     const rotationAtStart = rotation;
+    const pendingRotation = normalizeAngle(rotation - bakedRotation);
     const isStale = () =>
       controller.signal.aborted ||
       currentProcessingId !== processingIdRef.current;
 
-    let applied = false;
-
     try {
       setErrorMessage(null);
+      setActiveStage(stage);
       setIsPythonLoading(true);
 
-      const working = await createCurrentWorkingCanvas();
-      if (!working || isStale()) return;
+      // Input = what the person sees now (all earlier steps included).
+      const inputImg = await loadImage(cleanBaseSrc);
+      if (isStale()) return;
+      const input = createRotatedCanvas(inputImg, pendingRotation);
 
-      const output = await runEffectsPipeline(
-        working,
-        target,
-        currentProcessingId,
-        controller.signal,
-      );
-      if (!output || isStale()) return;
+      let stageSrc: string;
 
-      applied = true;
-      setEffects(target);
+      if (stage === "enhance") {
+        setEnhanceProgress({ stage: "load", percent: 0 });
+
+        const enhanced = await enhanceCanvas(input, {
+          scale: 2,
+          signal: controller.signal,
+          onProgress: (progress) => {
+            if (!isStale()) setEnhanceProgress(progress);
+          },
+        });
+
+        if (isStale()) return;
+        setEnhanceProgress(null);
+        stageSrc = capCanvasSize(enhanced, MAX_ENHANCE_SIDE).toDataURL(
+          "image/png",
+        );
+      } else {
+        const url = await processWithPythonBackend(
+          input,
+          EFFECT_ENDPOINTS[stage],
+        );
+
+        if (!url || isStale()) {
+          if (url) revokeTrackedObjectURL(url);
+          return;
+        }
+
+        setIsPythonLoading(true);
+        stageSrc = await serverUrlToDataUrl(url);
+        if (isStale()) return;
+      }
+
+      // The effect-free twin only gets the pending rotation baked in.
+      let originalSrc = croppedOriginalSrc || selectedImageSrc;
+      if (pendingRotation !== 0) {
+        const originalImg = await loadImage(originalSrc);
+        originalSrc = createRotatedCanvas(
+          originalImg,
+          pendingRotation,
+        ).toDataURL("image/png");
+      }
+      if (isStale()) return;
+
+      pushHistory(stage);
+      setEffects({
+        ...effects,
+        color: stage === "color" ? true : effects.color,
+        clean: stage === "clean" ? true : effects.clean,
+        enhance:
+          stage === "enhance"
+            ? Math.min(MAX_ENHANCE_PASSES, effects.enhance + 1)
+            : effects.enhance,
+      });
       setHasUnsavedChanges(true);
-      setCroppedOriginalSrc(output.workingSrc);
-      setRotatedOriginalSrc(output.workingSrc);
-      setCleanBaseSrc(output.resultSrc);
+      setCroppedOriginalSrc(originalSrc);
+      setRotatedOriginalSrc(originalSrc);
+      setCleanBaseSrc(stageSrc);
       setBakedRotation(rotationAtStart);
     } catch (error) {
       if (
@@ -2056,17 +2298,9 @@ export default function DocumentScanner() {
       )
         return;
 
-      console.error("Applying effects failed:", error);
+      console.error("Applying effect failed:", error);
       setErrorMessage(describeEffectError(error));
     } finally {
-      if (
-        !applied &&
-        options?.resetEffectsOnFail &&
-        currentProcessingId === processingIdRef.current
-      ) {
-        setEffects(NO_EFFECTS);
-      }
-
       if (enhanceAbortRef.current === controller) {
         enhanceAbortRef.current = null;
         setIsPythonLoading(false);
@@ -2076,22 +2310,27 @@ export default function DocumentScanner() {
     }
   };
 
-  const handleSetEffect = (key: EffectKey, enabled: boolean) => {
-    if (
-      !selectedImageSrc ||
-      !cleanBaseSrc ||
-      isPythonLoading ||
-      isManualCropping ||
-      isSavingDocument ||
-      effects[key] === enabled
-    )
-      return;
+  const handleApplyEffect = (stage: EffectKey) => {
+    if (!canChangeImage()) return;
 
-    void applyEffects({ ...effects, [key]: enabled });
+    // Already applied -> never run it a second time by accident.
+    if (stage === "color" && effects.color) return;
+    if (stage === "clean" && effects.clean) return;
+    // Document Clean needs a Magic Clean image first.
+    if (stage === "clean" && effects.enhance === 0) return;
+    if (stage === "enhance" && effects.enhance >= MAX_ENHANCE_PASSES) return;
+
+    void applyEffectStep(stage);
   };
 
+  // ---- crop -----------------------------------------------------------------
+
   const handleTriggerAutoCrop = async () => {
-    if (!selectedImageSrc || isPythonLoading || isSavingDocument) return;
+    if (!canChangeImage()) return;
+
+    // The current image was already auto-cropped and nothing changed since:
+    // there is nothing left to crop.
+    if (autoCrop && history[history.length - 1]?.step === "autoCrop") return;
 
     cancelActiveServerRequest();
     cancelCloudinarySaveRequest();
@@ -2101,104 +2340,139 @@ export default function DocumentScanner() {
     const controller = new AbortController();
     enhanceAbortRef.current = controller;
     const rotationAtStart = rotation;
-    // Effects the user already turned on must survive the crop.
-    const effectsAtStart = effects;
+    const pendingRotation = normalizeAngle(rotation - bakedRotation);
+    const hasEffects = hasAnyEffect(effects);
     const isStale = () =>
       controller.signal.aborted ||
       currentProcessingId !== processingIdRef.current;
-
-    let cropShown = false;
-    let effectsRestored = false;
 
     setIsManualCropping(false);
     setCropReady(false);
     resetCorners();
     setErrorMessage(null);
+    setActiveStage(null);
 
     try {
-      const img = await loadImage(selectedImageSrc);
+      // Crop exactly what is on screen (Magic Clean etc. stay as they are).
+      const processedImg = await loadImage(cleanBaseSrc);
       if (isStale()) return;
 
-      const workingCanvas = createRotatedCanvas(img, rotationAtStart);
-      const resultUrl = await processWithPythonAutoCrop(workingCanvas);
+      const processedCanvas = createRotatedCanvas(
+        processedImg,
+        pendingRotation,
+      );
 
-      if (!resultUrl || isStale()) {
-        if (resultUrl) revokeTrackedObjectURL(resultUrl);
-        return;
+      let croppedProcessed = "";
+      let croppedOriginal = "";
+
+      if (hasEffects && isCvLoaded) {
+        // Effects are on the image: never send the big Magic Clean image to
+        // the server. Find the corners on the small effect-free twin (a plain
+        // photo, which auto-crop handles well) and cut BOTH images with them.
+        setIsPythonLoading(true);
+
+        const originalImg = await loadImage(
+          croppedOriginalSrc || selectedImageSrc,
+        );
+        if (isStale()) return;
+        const originalCanvas = createRotatedCanvas(
+          originalImg,
+          pendingRotation,
+        );
+
+        const sameShape =
+          Math.abs(
+            originalCanvas.width / originalCanvas.height -
+              processedCanvas.width / processedCanvas.height,
+          ) < 0.02;
+
+        const corners = detectDocumentCorners(
+          sameShape ? originalCanvas : processedCanvas,
+        );
+        if (!corners) {
+          setErrorMessage(
+            "ডকুমেন্টের কিনারা খুঁজে পাওয়া যায়নি। Manual crop ব্যবহার করুন।",
+          );
+          return;
+        }
+
+        const toPixels = (c: HTMLCanvasElement): Point[] =>
+          corners.map((pt) => ({ x: pt.x * c.width, y: pt.y * c.height }));
+
+        const processedCrop = warpByImagePoints(
+          processedCanvas,
+          toPixels(processedCanvas),
+          MAX_ENHANCE_SIDE,
+        );
+        if (!processedCrop) throw new Error("Crop warp failed");
+
+        croppedProcessed = processedCrop.toDataURL("image/png");
+        croppedOriginal = croppedProcessed;
+
+        if (sameShape) {
+          const originalCrop = warpByImagePoints(
+            originalCanvas,
+            toPixels(originalCanvas),
+          );
+          if (originalCrop) {
+            croppedOriginal = originalCrop.toDataURL("image/png");
+          }
+        }
+
+        if (isStale()) return;
+      } else {
+        // No effects yet (or OpenCV not ready): the normal server auto-crop.
+        const resultUrl = await processWithPythonAutoCrop(processedCanvas);
+
+        if (!resultUrl || isStale()) {
+          if (resultUrl) revokeTrackedObjectURL(resultUrl);
+          return;
+        }
+
+        croppedProcessed = await serverUrlToDataUrl(resultUrl);
+        if (isStale()) return;
+        croppedOriginal = croppedProcessed;
+
+        if (hasEffects) {
+          // OpenCV not ready: keep the "Normal" twin cropped (best effort).
+          const originalImg = await loadImage(
+            croppedOriginalSrc || selectedImageSrc,
+          );
+          const originalCanvas = createRotatedCanvas(
+            originalImg,
+            pendingRotation,
+          );
+          croppedOriginal = originalCanvas.toDataURL("image/png");
+
+          setIsPythonLoading(true);
+          const originalResultUrl =
+            await processWithPythonAutoCrop(originalCanvas);
+          if (isStale()) {
+            if (originalResultUrl) revokeTrackedObjectURL(originalResultUrl);
+            return;
+          }
+          if (originalResultUrl) {
+            croppedOriginal = await serverUrlToDataUrl(originalResultUrl);
+          }
+          setErrorMessage(null);
+          if (isStale()) return;
+        }
       }
 
-      let croppedCanvas: HTMLCanvasElement;
-
-      try {
-        const resultImg = await loadImage(resultUrl);
-        croppedCanvas = document.createElement("canvas");
-        croppedCanvas.width = resultImg.naturalWidth || resultImg.width;
-        croppedCanvas.height = resultImg.naturalHeight || resultImg.height;
-
-        const ctx = croppedCanvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas context unavailable");
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(resultImg, 0, 0);
-      } finally {
-        revokeTrackedObjectURL(resultUrl);
-      }
-
-      // Show the plain crop right away...
-      const cropUrl = croppedCanvas.toDataURL("image/png");
-
+      pushHistory("autoCrop");
       setHasUnsavedChanges(true);
-      setCroppedOriginalSrc(cropUrl);
-      setCleanBaseSrc(cropUrl);
-      setRotatedOriginalSrc(cropUrl);
+      setCroppedOriginalSrc(croppedOriginal);
+      setRotatedOriginalSrc(croppedOriginal);
+      setCleanBaseSrc(croppedProcessed);
       setBakedRotation(rotationAtStart);
       setAutoCrop(true);
       setIsManualCropping(false);
-      cropShown = true;
-
-      if (!hasAnyEffect(effectsAtStart)) {
-        effectsRestored = true;
-        return;
-      }
-
-      // ...then re-apply Clean / Color / Enhance on top of the new crop.
-      setIsPythonLoading(true);
-
-      const output = await runEffectsPipeline(
-        croppedCanvas,
-        effectsAtStart,
-        currentProcessingId,
-        controller.signal,
-      );
-      if (!output || isStale()) return;
-
-      setCleanBaseSrc(output.resultSrc);
-      effectsRestored = true;
     } catch (error) {
-      if (
-        isEnhanceAbort(error) ||
-        currentProcessingId !== processingIdRef.current
-      )
-        return;
+      if (currentProcessingId !== processingIdRef.current) return;
 
       console.error("Auto crop failed:", error);
-      setErrorMessage(
-        cropShown
-          ? describeEffectError(error)
-          : "Auto crop সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।",
-      );
+      setErrorMessage("Auto crop সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
     } finally {
-      // Crop is on screen but the effects could not be re-applied: make the
-      // buttons tell the truth.
-      if (
-        cropShown &&
-        !effectsRestored &&
-        currentProcessingId === processingIdRef.current
-      ) {
-        setEffects(NO_EFFECTS);
-      }
-
       if (enhanceAbortRef.current === controller) {
         enhanceAbortRef.current = null;
         setIsPythonLoading(false);
@@ -2209,7 +2483,13 @@ export default function DocumentScanner() {
   };
 
   const handleTriggerManualCrop = () => {
-    if (!selectedImageSrc || isPythonLoading || isSavingDocument) return;
+    if (
+      !selectedImageSrc ||
+      !cleanBaseSrc ||
+      isPythonLoading ||
+      isSavingDocument
+    )
+      return;
 
     cancelActiveServerRequest();
     cancelCloudinarySaveRequest();
@@ -2218,44 +2498,55 @@ export default function DocumentScanner() {
     if (isManualCropping) {
       setIsManualCropping(false);
       setManualCropSourceSrc("");
+      setManualCropOriginalSrc("");
       setHasUnsavedChanges(true);
 
-      // The live crop preview is effect-free; put the effects back on the
-      // finished crop.
-      if (cropReady && hasAnyEffect(effects)) {
-        void applyEffects(effects, { resetEffectsOnFail: true });
-      }
+      // The crop preview already works on the finished (Magic Clean etc.)
+      // image, so nothing has to be re-applied. If the corners were never
+      // moved, the step that was recorded when cropping started is dropped.
+      if (!cropReady) setHistory((prev) => prev.slice(0, -1));
       return;
     }
 
+    // Crop the image that is on screen now, effects included.
+    pushHistory("manualCrop");
     setAutoCrop(false);
     setCropReady(false);
     resetCorners();
-    setManualCropSourceSrc(croppedOriginalSrc || selectedImageSrc);
+    setManualCropSourceSrc(cleanBaseSrc || selectedImageSrc);
+    setManualCropOriginalSrc(croppedOriginalSrc || selectedImageSrc);
     setManualCropSourceBakedRotation(bakedRotation);
     setIsManualCropping(true);
   };
 
   const renderEffectRow = (
-    key: EffectKey,
+    key: "color" | "clean",
     label: string,
     icon: React.ReactNode,
   ) => {
     const active = effects[key];
-    const disabled =
+    const busy =
       isPythonLoading ||
       images.length === 0 ||
       !cleanBaseSrc ||
       isSavingDocument ||
       isManualCropping;
+    // Document Clean stays locked until Magic Clean has been applied.
+    const waitingForMagic = key === "clean" && effects.enhance === 0;
+    const canRemove = findEffectUndoIndex(key) >= 0;
 
     return (
       <div className="flex items-stretch gap-2">
         <button
           type="button"
-          onClick={() => handleSetEffect(key, true)}
-          disabled={disabled}
+          onClick={() => handleApplyEffect(key)}
+          disabled={busy || waitingForMagic}
           aria-pressed={active}
+          title={
+            waitingForMagic
+              ? `আগে ${ENHANCE_LABEL} করুন, তারপর ${label} চালু হবে`
+              : undefined
+          }
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-emerald-600 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
         >
           {active ? <Check size={14} /> : icon}
@@ -2264,14 +2555,96 @@ export default function DocumentScanner() {
 
         <button
           type="button"
-          onClick={() => handleSetEffect(key, !active)}
-          disabled={disabled}
-          title={active ? `${label} বাদ দিন` : `${label} যোগ করুন`}
+          onClick={() =>
+            active ? handleUndoEffect(key) : handleApplyEffect(key)
+          }
+          disabled={busy || (active ? !canRemove : waitingForMagic)}
+          title={
+            active
+              ? canRemove
+                ? `${label} বাদ দিন`
+                : "Crop করার পরে আলাদা করে বাদ দেওয়া যায় না — Undo চাপুন"
+              : `${label} যোগ করুন`
+          }
           aria-label={active ? `Remove ${label}` : `Add ${label}`}
           className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"}`}
         >
           {active ? <Minus size={14} /> : <Plus size={14} />}
         </button>
+      </div>
+    );
+  };
+
+  const renderMagicCleanRow = () => {
+    const passes = effects.enhance;
+    const active = passes > 0;
+    const atMax = passes >= MAX_ENHANCE_PASSES;
+    const canRemove = findEffectUndoIndex("enhance") >= 0;
+    const busy =
+      isPythonLoading ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping;
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-stretch gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!active) handleApplyEffect("enhance");
+            }}
+            disabled={busy}
+            aria-pressed={active}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-emerald-600 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+          >
+            {active ? <Check size={14} /> : <Sparkles size={14} />}
+            {ENHANCE_LABEL}
+            {passes > 1 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-white/25 text-[10px] font-bold">
+                ×{passes}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              active
+                ? handleUndoEffect("enhance")
+                : handleApplyEffect("enhance")
+            }
+            disabled={busy || (active && !canRemove)}
+            title={
+              active
+                ? canRemove
+                  ? "শেষ Magic Clean বাদ দিন"
+                  : "Crop করার পরে আলাদা করে বাদ দেওয়া যায় না — Undo চাপুন"
+                : `${ENHANCE_LABEL} যোগ করুন`
+            }
+            aria-label={
+              active ? `Remove ${ENHANCE_LABEL}` : `Add ${ENHANCE_LABEL}`
+            }
+            className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"}`}
+          >
+            {active ? <Minus size={14} /> : <Plus size={14} />}
+          </button>
+        </div>
+
+        {active && (
+          <button
+            type="button"
+            onClick={() => handleApplyEffect("enhance")}
+            disabled={busy || atMax}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RotateCw size={14} />
+            {atMax
+              ? `${ENHANCE_LABEL} সর্বোচ্চ হয়েছে`
+              : `Again ${ENHANCE_LABEL}`}
+          </button>
+        )}
       </div>
     );
   };
@@ -2751,16 +3124,24 @@ export default function DocumentScanner() {
                 "Color Document",
                 <Palette size={14} />,
               )}
+              {renderMagicCleanRow()}
               {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
-              {renderEffectRow(
-                "enhance",
-                ENHANCE_LABEL,
-                <Sparkles size={14} />,
-              )}
-              <p className="text-[10px] text-slate-400 text-center leading-snug">
-                একসাথে একাধিক চালু রাখা যায় · − চাপলে সেটি বাদ যাবে · আপনার
-                ডিভাইসেই চলে
-              </p>
+              <button
+                type="button"
+                onClick={handleUndoLast}
+                disabled={
+                  history.length === 0 ||
+                  isPythonLoading ||
+                  isManualCropping ||
+                  isSavingDocument
+                }
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <RotateCcw size={12} />
+                {history.length > 0
+                  ? `Undo: ${STEP_LABELS[history[history.length - 1].step]}`
+                  : "Undo"}
+              </button>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
