@@ -389,7 +389,6 @@ const PAPER_W = 478;
 const PAPER_H = 676;
 const INK = "#0F172A";
 const PAPER = "#FFFFFF";
-const LW = "0.8em";
 const FORM_FONT =
   '"SolaimanLipi","Kalpurush","Noto Serif Bengali","Noto Sans Bengali","Nirmala UI","Vrinda","Siyam Rupali",serif';
 
@@ -821,863 +820,1401 @@ function RelativeInputs({
     </div>
   );
 }
-
 /* -------------------------------------------------------------------------- */
-/*  Paper helpers                                                              */
+/*  Paper layout                                                                */
 /* -------------------------------------------------------------------------- */
 
-function fitSize(text: string, width: number, base: number) {
-  const capacity = width / (base * 0.62);
-  if (text.length <= capacity) return base;
-  return Math.max(base * 0.42, base * (capacity / text.length));
-}
+let measureCtx: CanvasRenderingContext2D | null | undefined;
+const measureCache = new Map<string, number>();
 
-function Txt({
-  x,
-  y,
-  s = 8,
-  a = "l",
-  bold = false,
-  children,
-}: {
-  x: number;
-  y: number;
-  s?: number;
-  a?: "l" | "r" | "c";
-  bold?: boolean;
-  children: ReactNode;
-}) {
-  const outer: CSSProperties = {
-    position: "absolute",
-    top: `${y}em`,
-    whiteSpace: "nowrap",
-    lineHeight: 1,
-  };
-  if (a === "l") {
-    outer.left = `${x}em`;
-    outer.transform = "translateY(-50%)";
-  } else if (a === "r") {
-    outer.right = `${PAPER_W - x}em`;
-    outer.transform = "translateY(-50%)";
-  } else {
-    outer.left = `${x}em`;
-    outer.transform = "translate(-50%, -50%)";
+function measureBold(text: string, size: number) {
+  const key = `${text}|${size}`;
+  let measured = measureCache.get(key);
+  if (measured === undefined) {
+    if (measureCtx === undefined) {
+      measureCtx =
+        typeof document !== "undefined"
+          ? document.createElement("canvas").getContext("2d")
+          : null;
+    }
+
+    if (measureCtx) {
+      measureCtx.font = `700 ${size * 100}px ${FORM_FONT}`;
+      measured = Math.max(measureCtx.measureText(text).width / 100, 0.01);
+    } else {
+      measured = Math.max(Array.from(text).length * size * 0.62, 0.01);
+    }
+
+    measureCache.set(key, measured);
   }
-  return (
-    <div style={outer}>
-      <span style={{ fontSize: `${s}em`, fontWeight: bold ? 700 : 400 }}>
-        {children}
-      </span>
-    </div>
-  );
+  return measured;
 }
-function Dots({ x1, x2, y }: { x1: number; x2: number; y: number }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${x1}em`,
-        top: `${y}em`,
-        width: `${x2 - x1}em`,
-        borderBottom: `${LW} dotted ${INK}`,
-      }}
-    />
-  );
+
+function fitSize(text: string, width: number, base: number, min = 0.45 * base) {
+  if (!text) return base;
+  const safeWidth = Math.max(width, 1);
+  const measured = measureBold(text, base);
+  if (measured <= safeWidth) return base;
+  return Math.max(min, base * (safeWidth / measured));
 }
-function Val({
-  x1,
-  x2,
-  y,
+
+const PAPER_CONTENT_WIDTH = PAPER_W - 70;
+
+function PaperValue({
   text,
-  s = 8.4,
+  width,
+  size = 7.2,
   align = "left",
 }: {
-  x1: number;
-  x2: number;
-  y: number;
   text: string;
-  s?: number;
-  align?: "left" | "center";
+  width: number;
+  size?: number;
+  align?: "left" | "center" | "right";
 }) {
-  if (!text) return null;
-  const width = x2 - x1;
-  const size = fitSize(text, width - 3, s);
+  const value = text.trim();
+  const fontSize = fitSize(value, Math.max(width - 4, 1), size);
+
+  return (
+    <span
+      style={{
+        display: "block",
+        width: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        textOverflow: "clip",
+        textAlign: align,
+        fontSize: `${fontSize}em`,
+        fontWeight: 700,
+        lineHeight: 1.1,
+        padding: "0 2em 0.25em",
+        boxSizing: "border-box",
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
+function PaperLine({
+  label,
+  value = "",
+  labelSize = 7.2,
+  valueSize = 7.2,
+  height = 16.5,
+  gap = 3,
+}: {
+  label: string;
+  value?: string;
+  labelSize?: number;
+  valueSize?: number;
+  height?: number;
+  gap?: number;
+}) {
+  const labelWidth = label ? measureBold(label, labelSize) : 0;
+  const valueWidth = Math.max(PAPER_CONTENT_WIDTH - labelWidth - gap, 1);
+
   return (
     <div
       style={{
-        position: "absolute",
-        left: `${x1}em`,
-        width: `${width}em`,
-        top: `${y - 0.6}em`,
-        transform: "translateY(-100%)",
-        whiteSpace: "nowrap",
-        lineHeight: 1,
-        textAlign: align,
-        paddingLeft: align === "left" ? "1.5em" : 0,
+        display: "grid",
+        gridTemplateColumns: "max-content minmax(0, 1fr)",
+        alignItems: "end",
+        columnGap: `${gap}em`,
+        height: `${height}em`,
+        minWidth: 0,
+        overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
-      <span style={{ fontSize: `${size}em`, fontWeight: 700 }}>{text}</span>
+      <span
+        style={{
+          minWidth: 0,
+          whiteSpace: "nowrap",
+          fontSize: `${labelSize}em`,
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
+
+      <div
+        style={{
+          minWidth: 0,
+          width: "100%",
+          overflow: "hidden",
+          borderBottom: `0.8px dotted ${INK}`,
+          boxSizing: "border-box",
+        }}
+      >
+        <PaperValue text={value} width={valueWidth} size={valueSize} />
+      </div>
     </div>
   );
 }
-function Boxes({
-  x,
-  y,
-  w,
-  h,
-  n,
-  value = "",
-  fs = 9,
+
+function PaperInlineFields({
+  columns,
+  height = 16.5,
 }: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  n: number;
-  value?: string;
-  fs?: number;
+  columns: Array<
+    | { type: "label"; text: string; size?: number }
+    | { type: "value"; text: string; width?: number; size?: number }
+  >;
+  height?: number;
 }) {
-  const chars = Array.from(value);
+  const template = columns
+    .map((column) =>
+      column.type === "label"
+        ? "max-content"
+        : column.width
+          ? `minmax(0, ${column.width}em)`
+          : "minmax(0, 1fr)",
+    )
+    .join(" ");
+
   return (
     <div
       style={{
-        position: "absolute",
-        left: `${x}em`,
-        top: `${y}em`,
-        width: `${w}em`,
-        height: `${h}em`,
-        display: "flex",
-        border: `${LW} solid ${INK}`,
+        display: "grid",
+        gridTemplateColumns: template,
+        alignItems: "end",
+        columnGap: "3em",
+        height: `${height}em`,
+        minWidth: 0,
+        overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
-      {Array.from({ length: n }, (_, i) => (
+      {columns.map((column, index) => {
+        if (column.type === "label") {
+          return (
+            <span
+              key={`${column.text}-${index}`}
+              style={{
+                whiteSpace: "nowrap",
+                fontSize: `${column.size ?? 7}em`,
+                lineHeight: 1.1,
+              }}
+            >
+              {column.text}
+            </span>
+          );
+        }
+
+        return (
+          <div
+            key={`value-${index}`}
+            style={{
+              minWidth: 0,
+              width: "100%",
+              overflow: "hidden",
+              borderBottom: `0.8px dotted ${INK}`,
+              boxSizing: "border-box",
+            }}
+          >
+            <PaperValue
+              text={column.text}
+              width={column.width ?? 100}
+              size={column.size ?? 7}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PaperBoxes({
+  value = "",
+  count,
+  width,
+  height = 12.5,
+  fontSize = 8.1,
+}: {
+  value?: string;
+  count: number;
+  width?: number;
+  height?: number;
+  fontSize?: number;
+}) {
+  const chars = Array.from(value).slice(0, count);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
+        width: width ? `${width}em` : "100%",
+        maxWidth: "100%",
+        height: `${height}em`,
+        minWidth: 0,
+        border: `0.8px solid ${INK}`,
+        boxSizing: "border-box",
+        overflow: "hidden",
+        background: PAPER,
+      }}
+    >
+      {Array.from({ length: count }, (_, index) => (
         <div
-          key={i}
+          key={index}
           style={{
-            flex: 1,
-            minWidth: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderLeft: i === 0 ? "none" : `${LW} solid ${INK}`,
+            minWidth: 0,
+            overflow: "hidden",
+            borderLeft: index === 0 ? undefined : `0.8px solid ${INK}`,
+            boxSizing: "border-box",
           }}
         >
-          <span style={{ fontSize: `${fs}em`, fontWeight: 700, lineHeight: 1 }}>
-            {chars[i] ?? ""}
+          <span
+            style={{
+              display: "block",
+              maxWidth: "100%",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              fontSize: `${fontSize}em`,
+              fontWeight: 700,
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {chars[index] ?? ""}
           </span>
         </div>
       ))}
     </div>
   );
 }
-function WideBox({
-  x,
-  y,
-  w,
-  h,
+
+function PaperWideField({
   text,
+  width = 112,
+  height = 12,
+  fontSize = 7,
 }: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
   text: string;
+  width?: number;
+  height?: number;
+  fontSize?: number;
 }) {
-  const size = fitSize(text, w - 4, 8.7);
+  const value = text.trim();
+  const size = fitSize(value, Math.max(width - 6, 1), fontSize);
+
   return (
     <div
       style={{
-        position: "absolute",
-        left: `${x}em`,
-        top: `${y}em`,
-        width: `${w}em`,
-        height: `${h}em`,
-        border: `${LW} solid ${INK}`,
-        boxSizing: "border-box",
+        width: `${width}em`,
+        maxWidth: "100%",
+        height: `${height}em`,
+        minWidth: 0,
         display: "flex",
         alignItems: "center",
-        paddingLeft: "2em",
+        padding: "0 3em",
+        border: `0.8px solid ${INK}`,
+        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
-      {text ? (
-        <span
-          style={{
-            fontSize: `${size}em`,
-            fontWeight: 700,
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {text}
-        </span>
-      ) : null}
+      <span
+        style={{
+          display: "block",
+          minWidth: 0,
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          textOverflow: "clip",
+          fontSize: `${size}em`,
+          fontWeight: 700,
+          lineHeight: 1.1,
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
-function Tick({
-  x,
-  y,
-  w = 13,
-  h = 13,
-  on = false,
+
+function PaperCheckBox({
+  checked,
+  label,
 }: {
-  x: number;
-  y: number;
-  w?: number;
-  h?: number;
-  on?: boolean;
+  checked: boolean;
+  label: string;
 }) {
   return (
     <div
       style={{
-        position: "absolute",
-        left: `${x}em`,
-        top: `${y}em`,
-        width: `${w}em`,
-        height: `${h}em`,
-        border: `${LW} solid ${INK}`,
-        boxSizing: "border-box",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4em",
+        minWidth: 0,
+        maxWidth: "100%",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
       }}
     >
-      {on ? (
-        <svg
-          viewBox="0 0 10 10"
-          width="100%"
-          height="100%"
-          style={{ display: "block" }}
-        >
-          <path
-            d="M1.6 5.4 4 7.8 8.6 2.2"
-            fill="none"
-            stroke={INK}
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
+      <span
+        aria-hidden
+        style={{
+          width: "13em",
+          height: "13em",
+          flex: "0 0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: `0.8px solid ${INK}`,
+          boxSizing: "border-box",
+        }}
+      >
+        {checked ? (
+          <span
+            style={{
+              fontSize: "10em",
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+          >
+            ✓
+          </span>
+        ) : null}
+      </span>
+
+      <span
+        style={{
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "clip",
+          fontSize: "6.6em",
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
     </div>
   );
 }
-function A4DateBoxes({ x, y, value }: { x: number; y: number; value: string }) {
+
+function PaperBoxField({
+  label,
+  value,
+  count,
+  width,
+  labelSize = 7,
+  boxFontSize = 8,
+  height = 16.5,
+  trailing,
+}: {
+  label: string;
+  value: string;
+  count: number;
+  width: number;
+  labelSize?: number;
+  boxFontSize?: number;
+  height?: number;
+  trailing?: ReactNode;
+}) {
   return (
-    <Boxes
-      x={x}
-      y={y}
-      w={66}
-      h={12}
-      n={8}
-      value={digitString(value, 8)}
-      fs={8.1}
-    />
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `max-content minmax(0, ${width}em) minmax(0, 1fr)`,
+        alignItems: "center",
+        columnGap: "3em",
+        height: `${height}em`,
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <span
+        style={{
+          whiteSpace: "nowrap",
+          fontSize: `${labelSize}em`,
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
+
+      <PaperBoxes
+        value={value}
+        count={count}
+        width={width}
+        height={12.5}
+        fontSize={boxFontSize}
+      />
+
+      <div
+        style={{
+          minWidth: 0,
+          width: "100%",
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          overflow: "hidden",
+        }}
+      >
+        {trailing}
+      </div>
+    </div>
+  );
+}
+
+function PaperDateRow({
+  label,
+  value,
+  width = 66,
+  labelSize = 7.0,
+  boxFontSize = 8,
+  height = 16.5,
+}: {
+  label: string;
+  value: string;
+  width?: number;
+  labelSize?: number;
+  boxFontSize?: number;
+  height?: number;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `max-content minmax(0, ${width}em)`,
+        alignItems: "center",
+        columnGap: "3em",
+        height: `${height}em`,
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <span
+        style={{
+          whiteSpace: "nowrap",
+          fontSize: `${labelSize}em`,
+          lineHeight: 1.1,
+        }}
+      >
+        {label}
+      </span>
+      <PaperBoxes
+        value={digitString(value, 8)}
+        count={8}
+        width={width}
+        height={12}
+        fontSize={boxFontSize}
+      />
+    </div>
+  );
+}
+
+function PaperSpacer({ height }: { height: number }) {
+  return <div aria-hidden style={{ height: `${height}em` }} />;
+}
+
+function PaperSignatureLine({
+  label,
+  width = 110,
+  align = "left",
+}: {
+  label: string;
+  width?: number;
+  align?: "left" | "center";
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: `${width}em`,
+        maxWidth: "100%",
+        gap: "4em",
+        alignItems: align === "center" ? "center" : "flex-start",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          minHeight: "10em",
+          borderBottom: `0.8px dotted ${INK}`,
+        }}
+      />
+      <span
+        style={{
+          fontSize: "6.6em",
+          lineHeight: 1.1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </span>
+    </div>
   );
 }
 
 function AddressPaperBlock({
-  x,
-  y,
   title,
   data,
   prefix,
 }: {
-  x: number;
-  y: number;
   title: string;
   data: SpecialInformationFormState;
   prefix: "fatherAddress" | "grandfatherAddress";
 }) {
   const get = (name: string) =>
     String(data[`${prefix}${name}` as FormKey] ?? "").trim();
+
   return (
-    <>
-      <Txt x={x} y={y} s={7.3}>
-        {title} বিভাগঃ
-      </Txt>
-      <Dots x1={x + 105} x2={x + 165} y={y + 3.3} />
-      <Val x1={x + 105} x2={x + 165} y={y + 3.3} text={get("Division")} />
-      <Txt x={x + 167} y={y} s={7.3}>
-        জেলা :
-      </Txt>
-      <Dots x1={x + 195} x2={x + 258} y={y + 3.3} />
-      <Val x1={x + 195} x2={x + 258} y={y + 3.3} text={get("District")} />
-      <Txt x={x + 260} y={y} s={7.3}>
-        উপজেলা/থানা :
-      </Txt>
-      <Dots x1={x + 330} x2={x + 438} y={y + 3.3} />
-      <Val x1={x + 330} x2={x + 438} y={y + 3.3} text={get("Upazila")} />
-
-      <Txt x={x} y={y + 16.5} s={6.5}>
-        সিটি কর্পোরেশন/পৌরসভা/ইউনিয়ন/ক্যান্টঃ বোর্ডঃ
-      </Txt>
-      <Dots x1={x + 156} x2={x + 332} y={y + 19.8} />
-      <Val x1={x + 156} x2={x + 332} y={y + 19.8} text={get("City")} />
-      <Txt x={x + 335} y={y + 16.5} s={6.8}>
-        ওয়ার্ড নম্বরঃ
-      </Txt>
-      <Boxes
-        x={x + 393}
-        y={y + 10.5}
-        w={45}
-        h={12}
-        n={2}
-        value={digitString(get("Ward"), 2)}
-        fs={8.2}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minWidth: 0,
+        overflow: "hidden",
+      }}
+    >
+      <PaperInlineFields
+        height={16.5}
+        columns={[
+          { type: "label", text: `${title} বিভাগঃ`, size: 7.2 },
+          { type: "value", text: get("Division"), width: 60, size: 7 },
+          { type: "label", text: "জেলাঃ", size: 7.2 },
+          { type: "value", text: get("District"), width: 63, size: 7 },
+          { type: "label", text: "উপজেলা/থানাঃ", size: 7.2 },
+          { type: "value", text: get("Upazila"), size: 7 },
+        ]}
       />
 
-      <Txt x={x} y={y + 33.5} s={6.9}>
-        মৌজাঃ
-      </Txt>
-      <Dots x1={x + 30} x2={x + 148} y={y + 36.8} />
-      <Val x1={x + 30} x2={x + 148} y={y + 36.8} text={get("Mouza")} />
-      <Txt x={x + 151} y={y + 33.5} s={6.5}>
-        গ্রাম/মহল্লা/রাস্তার নাম ও নম্বরঃ
-      </Txt>
-      <Dots x1={x + 277} x2={x + 438} y={y + 36.8} />
-      <Val x1={x + 277} x2={x + 438} y={y + 36.8} text={get("Village")} />
-
-      <Txt x={x} y={y + 50.3} s={6.8}>
-        বাসা/হোল্ডিং নংঃ
-      </Txt>
-      <Dots x1={x + 69} x2={x + 155} y={y + 53.6} />
-      <Val x1={x + 69} x2={x + 155} y={y + 53.6} text={get("House")} />
-      <Txt x={x + 158} y={y + 50.3} s={6.8}>
-        ডাকঘরঃ
-      </Txt>
-      <Dots x1={x + 195} x2={x + 290} y={y + 53.6} />
-      <Val x1={x + 195} x2={x + 290} y={y + 53.6} text={get("PostOffice")} />
-      <Txt x={x + 303} y={y + 50.3} s={6.8}>
-        পোস্ট কোডঃ
-      </Txt>
-      <Boxes
-        x={x + 357}
-        y={y + 44.3}
-        w={81}
-        h={12}
-        n={4}
-        value={digitString(get("PostCode"), 4)}
-        fs={8.2}
+      <PaperInlineFields
+        height={16.5}
+        columns={[
+          {
+            type: "label",
+            text: "সিটি কর্পোরেশন/পৌরসভা/ইউনিয়ন/ক্যান্টঃ বোর্ডঃ",
+            size: 6.5,
+          },
+          { type: "value", text: get("City"), width: 166, size: 6.8 },
+          { type: "label", text: "ওয়ার্ড নম্বরঃ", size: 6.8 },
+          {
+            type: "value",
+            text: digitString(get("Ward"), 2),
+            width: 45,
+            size: 8,
+          },
+        ]}
       />
-    </>
+
+      <PaperInlineFields
+        height={16.5}
+        columns={[
+          { type: "label", text: "মৌজাঃ", size: 6.9 },
+          { type: "value", text: get("Mouza"), width: 118, size: 6.9 },
+          {
+            type: "label",
+            text: "গ্রাম/মহল্লা/রাস্তার নাম ও নম্বরঃ",
+            size: 6.5,
+          },
+          { type: "value", text: get("Village"), size: 6.8 },
+        ]}
+      />
+
+      <PaperInlineFields
+        height={16.5}
+        columns={[
+          { type: "label", text: "বাসা/হোল্ডিং নংঃ", size: 6.8 },
+          { type: "value", text: get("House"), width: 86, size: 6.8 },
+          { type: "label", text: "ডাকঘরঃ", size: 6.8 },
+          { type: "value", text: get("PostOffice"), width: 95, size: 6.8 },
+          { type: "label", text: "পোস্ট কোডঃ", size: 6.8 },
+          {
+            type: "value",
+            text: digitString(get("PostCode"), 4),
+            width: 81,
+            size: 8.1,
+          },
+        ]}
+      />
+    </div>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Two-page paper                                                              */
-/* -------------------------------------------------------------------------- */
-
 function PageHeader({ form2Number }: { form2Number: string }) {
   return (
-    <>
-      <Txt x={239} y={27} a="c" s={7.7} bold>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "35em",
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          minWidth: 0,
+          overflow: "hidden",
+          textAlign: "center",
+          fontSize: "7.7em",
+          fontWeight: 700,
+          lineHeight: 1.35,
+          whiteSpace: "nowrap",
+        }}
+      >
         আবেদনকারীর বিশেষ তথ্য ফরম (ফরম-২ এর অতিরিক্ত তথ্য)
-      </Txt>
-      <Txt x={350} y={39} a="r" s={7.2}>
-        ফরম-২ এর নম্বরঃ
-      </Txt>
-      <WideBox x={354} y={31.5} w={112} h={12} text={form2Number.trim()} />
-    </>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: "4em",
+          minWidth: 0,
+          marginTop: "5em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "7.2em", whiteSpace: "nowrap" }}>
+          ফরম-২ এর নম্বরঃ
+        </span>
+        <PaperWideField
+          text={form2Number}
+          width={112}
+          height={12}
+          fontSize={6.8}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RelativePaperBlock({
+  keyLabel,
+  relative,
+}: {
+  keyLabel: string;
+  relative: {
+    name: string;
+    nid: string;
+    relation: string;
+    dob: string;
+    mobile: string;
+  };
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minWidth: 0,
+        overflow: "hidden",
+      }}
+    >
+      <PaperLine
+        label={`(${keyLabel}) নামঃ`}
+        value={relative.name}
+        labelSize={7}
+        valueSize={7}
+      />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "max-content minmax(0, 1fr) max-content minmax(0, 60em)",
+          alignItems: "center",
+          columnGap: "3em",
+          height: "16.5em",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", fontSize: "6.6em" }}>
+          NID নম্বরঃ
+        </span>
+        <PaperBoxes
+          value={digitString(relative.nid, 17)}
+          count={17}
+          height={12}
+          fontSize={7.9}
+        />
+        <span style={{ whiteSpace: "nowrap", fontSize: "6.6em" }}>
+          সম্পর্কঃ
+        </span>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        >
+          <PaperValue text={relative.relation} width={60} size={7} />
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 85em max-content minmax(0, 1fr)",
+          alignItems: "center",
+          columnGap: "3em",
+          height: "16.5em",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", fontSize: "6.5em" }}>
+          জন্ম তারিখঃ
+        </span>
+        <PaperBoxes
+          value={relative.dob}
+          count={8}
+          width={85}
+          height={12}
+          fontSize={7.9}
+        />
+        <span style={{ whiteSpace: "nowrap", fontSize: "6.5em" }}>
+          মোবাইল (ব্যক্তির নামেঃ)
+        </span>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        >
+          <PaperValue text={relative.mobile} width={150} size={7} />
+        </div>
+      </div>
+    </div>
   );
 }
 
 function SpecialPage1({ d }: { d: SpecialInformationFormState }) {
-  const rel = (prefix: "first" | "second" | "third") => {
-    const p = `${prefix}Relative` as const;
-    return {
-      // FormKey is a union of string and boolean keys, so normalize the
-      // dynamically accessed values before using string-only methods.
-      name: String(d[`${p}Name` as FormKey] ?? "").trim(),
-      nid: String(d[`${p}Nid` as FormKey] ?? "").trim(),
-      relation: String(d[`${p}Relation` as FormKey] ?? "").trim(),
-      dob: String(d[`${p}Dob` as FormKey] ?? "").replace(/\D/g, ""),
-      mobile: String(d[`${p}Mobile` as FormKey] ?? "").trim(),
-    };
-  };
-  const r1 = rel("first");
-  const r2 = rel("second");
-  const r3 = rel("third");
+  const relatives = [
+    {
+      keyLabel: "ক",
+      name: d.firstRelativeName.trim(),
+      nid: d.firstRelativeNid,
+      relation: d.firstRelativeRelation.trim(),
+      dob: String(d.firstRelativeDob ?? "").replace(/\D/g, ""),
+      mobile: d.firstRelativeMobile.trim(),
+    },
+    {
+      keyLabel: "খ",
+      name: d.secondRelativeName.trim(),
+      nid: d.secondRelativeNid,
+      relation: d.secondRelativeRelation.trim(),
+      dob: String(d.secondRelativeDob ?? "").replace(/\D/g, ""),
+      mobile: d.secondRelativeMobile.trim(),
+    },
+    {
+      keyLabel: "গ",
+      name: d.thirdRelativeName.trim(),
+      nid: d.thirdRelativeNid,
+      relation: d.thirdRelativeRelation.trim(),
+      dob: String(d.thirdRelativeDob ?? "").replace(/\D/g, ""),
+      mobile: d.thirdRelativeMobile.trim(),
+    },
+  ];
+
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+        padding: "10em 35em 10em",
+      }}
+    >
       <PageHeader form2Number={d.form2Number} />
+      <PaperSpacer height={25} />
 
-      <Txt x={35} y={79} s={7.7}>
-        ১। নাম (বাংলায়):
-      </Txt>
-      <Dots x1={105} x2={438} y={82.4} />
-      <Val x1={105} x2={438} y={82.4} text={d.nameBn.trim()} />
-      <Txt x={35} y={96.5} s={7.7}>
-        ২। পিতা/স্বামীর নাম:
-      </Txt>
-      <Dots x1={129} x2={438} y={99.9} />
-      <Val x1={129} x2={438} y={99.9} text={d.fatherHusbandName.trim()} />
+      <PaperLine
+        label="১। নাম (বাংলায়):"
+        value={d.nameBn}
+        labelSize={7.7}
+        valueSize={8}
+      />
+      <PaperLine
+        label="২। পিতা/স্বামীর নাম:"
+        value={d.fatherHusbandName}
+        labelSize={7.7}
+        valueSize={8}
+      />
 
+      <PaperSpacer height={2} />
       <AddressPaperBlock
-        x={35}
-        y={115.8}
         title="৩। পিতা/স্বামীর স্থায়ী ঠিকানা:"
         data={d}
         prefix="fatherAddress"
       />
 
-      <Txt x={35} y={177} s={7.2}>
-        ৪। পিতা/স্বামী/মাতা জীবিত না থাকিলে অভিভাবকের তথ্য দিন: অভিভাবকের নামঃ
-      </Txt>
-      <Dots x1={302} x2={438} y={180.4} />
-      <Val x1={302} x2={438} y={180.4} text={d.guardianName.trim()} />
-      <Txt x={35} y={194.2} s={7.2}>
-        NID নম্বরঃ
-      </Txt>
-      <Boxes
-        x={83}
-        y={188.2}
-        w={247}
-        h={12.5}
-        n={17}
-        value={digitString(d.guardianNid, 17)}
-        fs={8.3}
+      <PaperSpacer height={1.5} />
+      <PaperLine
+        label="৪। পিতা/স্বামী/মাতা জীবিত না থাকিলে অভিভাবকের তথ্য দিন: অভিভাবকের নামঃ"
+        value={d.guardianName}
+        labelSize={7.2}
+        valueSize={7.4}
       />
-      <Txt x={336} y={194.2} s={7.0}>
-        সম্পর্কঃ
-      </Txt>
-      <Dots x1={374} x2={438} y={197.5} />
-      <Val
-        x1={374}
-        x2={438}
-        y={197.5}
-        text={d.guardianRelation.trim()}
-        s={7.7}
-      />
-      <Txt x={35} y={211} s={7.2}>
-        জন্ম তারিখঃ
-      </Txt>
-      <A4DateBoxes x={84} y={205} value={d.guardianDob} />
 
-      <Txt x={35} y={232.5} s={7.5}>
-        ৫। পিতামহের নামঃ
-      </Txt>
-      <Dots x1={122} x2={438} y={235.8} />
-      <Val x1={122} x2={438} y={235.8} text={d.grandfatherName.trim()} />
-      <Txt x={35} y={250.3} s={7.5}>
-        ৬। পিতামহের NID নম্বরঃ
-      </Txt>
-      <Boxes
-        x={150}
-        y={244.2}
-        w={290}
-        h={12.5}
-        n={17}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "max-content minmax(0, 247em) max-content minmax(0, 64em)",
+          alignItems: "center",
+          columnGap: "3em",
+          height: "16.5em",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", fontSize: "7.1em" }}>
+          NID নম্বরঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.guardianNid, 17)}
+          count={17}
+          width={247}
+          height={12.5}
+          fontSize={8.2}
+        />
+        <span style={{ whiteSpace: "nowrap", fontSize: "7em" }}>সম্পর্কঃ</span>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        >
+          <PaperValue text={d.guardianRelation} width={64} size={7.5} />
+        </div>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 66em",
+          alignItems: "center",
+          gap: "3em",
+          height: "16.5em",
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", fontSize: "7.1em" }}>
+          জন্ম তারিখঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.guardianDob.replace(/\D/g, ""), 8)}
+          count={8}
+          width={66}
+          height={12}
+          fontSize={8.1}
+        />
+      </div>
+
+      <PaperSpacer height={5} />
+      <PaperLine
+        label="৫। পিতামহের নামঃ"
+        value={d.grandfatherName}
+        labelSize={7.5}
+        valueSize={7.8}
+      />
+
+      <PaperBoxField
+        label="৬। পিতামহের NID নম্বরঃ"
         value={
           d.grandfatherNidNotApplicable ? "" : digitString(d.grandfatherNid, 17)
         }
-        fs={8.2}
+        count={17}
+        width={238}
+        labelSize={7.5}
+        boxFontSize={8.1}
+        trailing={
+          <PaperCheckBox
+            checked={d.grandfatherNidNotApplicable}
+            label="প্রযোজ্য নয়ঃ"
+          />
+        }
       />
-      <Txt x={401} y={250.3} s={6.8}>
-        প্রযোজ্য নয়ঃ
-      </Txt>
-      <Tick x={447} y={244} w={14} h={13} on={d.grandfatherNidNotApplicable} />
 
+      <PaperSpacer height={2} />
       <AddressPaperBlock
-        x={35}
-        y={269}
         title="৭। পিতামহের স্থায়ী ঠিকানা:"
         data={d}
         prefix="grandfatherAddress"
       />
 
-      <Txt x={35} y={330} s={6.9}>
+      <PaperSpacer height={2.5} />
+      <div style={{ fontSize: "6.9em", lineHeight: 1.2 }}>
         ৮। জাতীয় পরিচয়পত্র প্রাপ্ত আপন তিন জনের (ভাই/বোন/চাচা/ফুফু এই
         ক্রমানুসারে) বিবরণ দিনঃ
-      </Txt>
+      </div>
+      <PaperSpacer height={1.5} />
 
-      {[
-        { key: "ক", r: r1, y: 347 },
-        { key: "খ", r: r2, y: 382 },
-        { key: "গ", r: r3, y: 417 },
-      ].map((item) => (
-        <div key={item.key}>
-          <Txt x={35} y={item.y} s={7.0}>
-            ({item.key}) নামঃ
-          </Txt>
-          <Dots x1={82} x2={438} y={item.y + 3.3} />
-          <Val x1={82} x2={438} y={item.y + 3.3} text={item.r.name} />
-          <Txt x={48} y={item.y + 16} s={6.6}>
-            NID নম্বরঃ
-          </Txt>
-          <Boxes
-            x={95}
-            y={item.y + 10}
-            w={243}
-            h={12}
-            n={17}
-            value={digitString(item.r.nid, 17)}
-            fs={7.9}
-          />
-          <Txt x={343} y={item.y + 16} s={6.6}>
-            সম্পর্কঃ
-          </Txt>
-          <Dots x1={378} x2={438} y={item.y + 19.3} />
-          <Val
-            x1={378}
-            x2={438}
-            y={item.y + 19.3}
-            text={item.r.relation}
-            s={7.0}
-          />
-          <Txt x={48} y={item.y + 32} s={6.5}>
-            জন্ম তারিখঃ
-          </Txt>
-          <Boxes
-            x={96}
-            y={item.y + 26}
-            w={85}
-            h={12}
-            n={8}
-            value={item.r.dob}
-            fs={7.9}
-          />
-          <Txt x={187} y={item.y + 32} s={6.5}>
-            মোবাইল (ব্যক্তির নামে):
-          </Txt>
-          <Dots x1={286} x2={438} y={item.y + 35.3} />
-          <Val
-            x1={286}
-            x2={438}
-            y={item.y + 35.3}
-            text={item.r.mobile}
-            s={7.0}
-          />
-        </div>
+      {relatives.map((relative) => (
+        <RelativePaperBlock
+          key={relative.keyLabel}
+          keyLabel={relative.keyLabel}
+          relative={relative}
+        />
       ))}
 
-      <Txt x={35} y={528} s={7.2}>
-        ৯। বর্তমান ঠিকানার বিবরণঃ
-      </Txt>
-      <Tick
-        x={129}
-        y={521.5}
-        w={13}
-        h={13}
-        on={d.presentHoldingType === "Own property"}
-      />
-      <Txt x={149} y={528} s={6.8}>
-        নিজস্ব মালিকানাধীন
-      </Txt>
-      <Tick
-        x={220}
-        y={521.5}
-        w={13}
-        h={13}
-        on={d.presentHoldingType === "Rented"}
-      />
-      <Txt x={240} y={528} s={6.8}>
-        ভাড়া
-      </Txt>
-      <Tick
-        x={278}
-        y={521.5}
-        w={13}
-        h={13}
-        on={d.presentHoldingType === "Other"}
-      />
-      <Txt x={298} y={528} s={6.8}>
-        অন্যান্য
-      </Txt>
-      <Txt x={35} y={546} s={6.2}>
-        (ক) নিজস্ব মালিকানার ক্ষেত্রে: জমির দলিলের ফটোকপি সংযুক্ত করিতে হইবেঃ
-      </Txt>
-      <Txt x={35} y={564} s={6.7}>
-        (খ) ভাড়ার ক্ষেত্রে: অবস্থানের মেয়াদ:
-      </Txt>
-      <Boxes
-        x={206}
-        y={558}
-        w={82}
-        h={11.8}
-        n={8}
-        value={digitString(d.residenceStartDate.replace(/\D/g, ""), 8)}
-        fs={7.7}
-      />
-      <Txt x={293} y={565} s={6.3}>
-        হইতে
-      </Txt>
-      <Boxes
-        x={317}
-        y={558}
-        w={82}
-        h={11.8}
-        n={8}
-        value={digitString(d.residenceEndDate.replace(/\D/g, ""), 8)}
-        fs={7.7}
-      />
-      <Txt x={403} y={565} s={6.3}>
-        পর্যন্ত
-      </Txt>
+      <PaperSpacer height={3} />
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "12em",
+          minHeight: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", fontSize: "7.2em" }}>
+          ৯। বর্তমান ঠিকানার বিবরণঃ
+        </span>
+        <PaperCheckBox
+          checked={d.presentHoldingType === "Own property"}
+          label="নিজস্ব মালিকানাধীন"
+        />
+        <PaperCheckBox
+          checked={d.presentHoldingType === "Rented"}
+          label="ভাড়া"
+        />
+        <PaperCheckBox
+          checked={d.presentHoldingType === "Other"}
+          label="অন্যান্য"
+        />
+      </div>
 
-      <Txt x={35} y={604} s={5.8}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          minHeight: "18em",
+          gap: "4em",
+          fontSize: "6.3em",
+          overflow: "hidden",
+        }}
+      >
+        (ক) নিজস্ব মালিকানার ক্ষেত্রে: জমির দলিলের ফটোকপি সংযুক্ত করিতে হইবেঃ
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 82em max-content 82em max-content",
+          alignItems: "center",
+          columnGap: "5em",
+          minHeight: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "6.7em", whiteSpace: "nowrap" }}>
+          (খ) ভাড়ার ক্ষেত্রে: অবস্থানের মেয়াদ:
+        </span>
+        <PaperBoxes
+          value={digitString(d.residenceStartDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={82}
+          height={11.8}
+          fontSize={7.7}
+        />
+        <span style={{ fontSize: "6.3em", whiteSpace: "nowrap" }}>হইতে</span>
+        <PaperBoxes
+          value={digitString(d.residenceEndDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={82}
+          height={11.8}
+          fontSize={7.7}
+        />
+        <span style={{ fontSize: "6.3em", whiteSpace: "nowrap" }}>পর্যন্ত</span>
+      </div>
+
+      <PaperSpacer height={17} />
+      <div
+        style={{
+          fontSize: "5.8em",
+          lineHeight: 1.15,
+          whiteSpace: "nowrap",
+        }}
+      >
         বিশেষ তথ্য ফরমের পরবর্তী অংশের তথ্য পরবর্তী পৃষ্ঠায় প্রদান করতে হবে।
-      </Txt>
-    </>
+      </div>
+    </div>
   );
 }
 
 function SpecialPage2({ d }: { d: SpecialInformationFormState }) {
   return (
-    <>
-      <Txt x={35} y={28} s={6.6}>
-        (গ) অন্যান্য ক্ষেত্রে: বাড়ির মালিকের নামঃ
-      </Txt>
-      <Dots x1={190} x2={438} y={31.4} />
-      <Val x1={190} x2={438} y={31.4} text={d.ownerOtherName.trim()} />
-      <Txt x={48} y={45} s={6.6}>
-        বাড়ির মালিকের NID নম্বরঃ
-      </Txt>
-      <Boxes
-        x={176}
-        y={39}
-        w={264}
-        h={12.5}
-        n={17}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+        padding: "10em 35em 10em",
+      }}
+    >
+      <PaperSpacer height={8} />
+
+      <PaperLine
+        label="(গ) অন্যান্য ক্ষেত্রে: বাড়ির মালিকের নামঃ"
+        value={d.ownerOtherName}
+        labelSize={6.6}
+        valueSize={7}
+      />
+
+      <PaperBoxField
+        label="বাড়ির মালিকের NID নম্বরঃ"
         value={digitString(d.ownerOtherNid, 17)}
-        fs={8.0}
+        count={17}
+        width={264}
+        labelSize={6.6}
+        boxFontSize={8}
       />
 
-      <Txt x={35} y={64} s={6.7}>
-        অবস্থানকাল:
-      </Txt>
-      <Boxes
-        x={90}
-        y={58}
-        w={82}
-        h={11.8}
-        n={8}
-        value={digitString(d.residenceStartDate.replace(/\D/g, ""), 8)}
-        fs={7.7}
-      />
-      <Txt x={178} y={65} s={6.3}>
-        হইতে
-      </Txt>
-      <Boxes
-        x={202}
-        y={58}
-        w={82}
-        h={11.8}
-        n={8}
-        value={digitString(d.residenceEndDate.replace(/\D/g, ""), 8)}
-        fs={7.7}
-      />
-      <Txt x={289} y={65} s={6.3}>
-        পর্যন্ত
-      </Txt>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 82em max-content 82em",
+          alignItems: "center",
+          columnGap: "6em",
+          height: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "6.7em", whiteSpace: "nowrap" }}>
+          অবস্থানকাল:
+        </span>
+        <PaperBoxes
+          value={digitString(d.residenceStartDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={82}
+          height={11.8}
+          fontSize={7.7}
+        />
+        <span style={{ fontSize: "6.3em", whiteSpace: "nowrap" }}>হইতে</span>
+        <PaperBoxes
+          value={digitString(d.residenceEndDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={82}
+          height={11.8}
+          fontSize={7.7}
+        />
+      </div>
 
-      <Txt x={35} y={84} s={7.0}>
-        ১০। অন্য দেশ হতে গ্রহণকারীর ক্ষেত্রে:
-      </Txt>
-      <Txt x={49} y={102} s={6.6}>
-        বাংলাদেশে আগমনের তারিখঃ
-      </Txt>
-      <Boxes
-        x={160}
-        y={96}
-        w={87}
-        h={12}
-        n={8}
-        value={digitString(d.abroadArrivalDate.replace(/\D/g, ""), 8)}
-        fs={7.8}
+      <PaperSpacer height={2} />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 87em max-content minmax(0, 1fr)",
+          alignItems: "center",
+          columnGap: "5em",
+          height: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "6.6em", whiteSpace: "nowrap" }}>
+          বাংলাদেশে আগমনের তারিখঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.abroadArrivalDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={87}
+          height={12}
+          fontSize={7.8}
+        />
+        <span
+          style={{
+            fontSize: "6.2em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          পাসপোর্টের বিবরণ: প্রদানের তারিখঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.passportIssueDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={76}
+          height={12}
+          fontSize={7.5}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content minmax(0, 1fr) max-content 79em",
+          alignItems: "center",
+          columnGap: "5em",
+          height: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "6.6em", whiteSpace: "nowrap" }}>
+          প্রদানের স্থানঃ
+        </span>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        >
+          <PaperValue text={d.passportIssuePlace} width={159} size={7} />
+        </div>
+        <span style={{ fontSize: "6.5em", whiteSpace: "nowrap" }}>
+          মেয়াদ উত্তীর্ণের তারিখঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.passportExpiryDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={79}
+          height={12}
+          fontSize={7.5}
+        />
+      </div>
+
+      <PaperSpacer height={3} />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 87em max-content minmax(0, 1fr)",
+          alignItems: "center",
+          columnGap: "4em",
+          height: "18em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "7em", whiteSpace: "nowrap" }}>
+          ১১। বর্তমান পেশা গ্রহণের তারিখঃ
+        </span>
+        <PaperBoxes
+          value={digitString(d.occupationJoinDate.replace(/\D/g, ""), 8)}
+          count={8}
+          width={87}
+          height={12}
+          fontSize={7.7}
+        />
+        <span style={{ fontSize: "6.7em", whiteSpace: "nowrap" }}>
+          নিয়োগকারীর নামঃ
+        </span>
+        <div
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        >
+          <PaperValue text={d.employerName} width={80} size={6.9} />
+        </div>
+      </div>
+
+      <PaperLine
+        label="নিয়োগকারীর ঠিকানাঃ"
+        value={d.employerAddress}
+        labelSize={6.6}
+        valueSize={7}
       />
-      <Txt x={253} y={102} s={6.2}>
-        পাসপোর্টের বিবরণ: প্রদানের তারিখঃ
-      </Txt>
-      <Boxes
-        x={385}
-        y={96}
-        w={76}
-        h={12}
-        n={8}
-        value={digitString(d.passportIssueDate.replace(/\D/g, ""), 8)}
-        fs={7.5}
-      />
-      <Txt x={49} y={119} s={6.6}>
-        প্রদানের স্থানঃ
-      </Txt>
-      <Dots x1={111} x2={270} y={122.3} />
-      <Val
-        x1={111}
-        x2={270}
-        y={122.3}
-        text={d.passportIssuePlace.trim()}
-        s={7.0}
-      />
-      <Txt x={279} y={119} s={6.5}>
-        মেয়াদ উত্তীর্ণের তারিখঃ
-      </Txt>
-      <Boxes
-        x={382}
-        y={113}
-        w={79}
-        h={12}
-        n={8}
-        value={digitString(d.passportExpiryDate.replace(/\D/g, ""), 8)}
-        fs={7.5}
+      <PaperInlineFields
+        height={16.5}
+        columns={[
+          { type: "label", text: "", size: 6.6 },
+          { type: "value", text: d.employerAddress2, width: 208, size: 7 },
+          { type: "label", text: "মোবাইলঃ", size: 6.3 },
+          { type: "value", text: d.employerMobile, width: 63, size: 6.8 },
+        ]}
       />
 
-      <Txt x={35} y={141} s={7.0}>
-        ১১। বর্তমান পেশা গ্রহণের তারিখঃ
-      </Txt>
-      <Boxes
-        x={190}
-        y={135}
-        w={87}
-        h={12}
-        n={8}
-        value={digitString(d.occupationJoinDate.replace(/\D/g, ""), 8)}
-        fs={7.7}
-      />
-      <Txt x={284} y={141} s={6.7}>
-        নিয়োগকারীর নামঃ
-      </Txt>
-      <Dots x1={356} x2={438} y={144.3} />
-      <Val x1={356} x2={438} y={144.3} text={d.employerName.trim()} s={6.9} />
-      <Txt x={35} y={158} s={6.6}>
-        নিয়োগকারীর ঠিকানাঃ
-      </Txt>
-      <Dots x1={122} x2={438} y={161.3} />
-      <Val
-        x1={122}
-        x2={438}
-        y={161.3}
-        text={d.employerAddress.trim()}
-        s={7.0}
-      />
-      <Dots x1={122} x2={330} y={177.5} />
-      <Val
-        x1={122}
-        x2={330}
-        y={177.5}
-        text={d.employerAddress2.trim()}
-        s={7.0}
-      />
-      <Txt x={333} y={174} s={6.3}>
-        মোবাইলঃ
-      </Txt>
-      <Dots x1={375} x2={438} y={177.5} />
-      <Val x1={375} x2={438} y={177.5} text={d.employerMobile.trim()} s={6.8} />
+      <PaperSpacer height={4} />
 
-      <Txt x={35} y={197} s={6.9}>
+      <div style={{ fontSize: "6.9em", lineHeight: 1.2 }}>
         ১২। সর্বশেষ দুইটি শিক্ষা প্রতিষ্ঠানের বিবরণঃ
-      </Txt>
-      <Txt x={48} y={214} s={6.4}>
-        (ক) শিক্ষা প্রতিষ্ঠানের নাম ও ঠিকানাঃ
-      </Txt>
-      <Dots x1={198} x2={438} y={217.3} />
-      <Val
-        x1={198}
-        x2={438}
-        y={217.3}
-        text={d.firstInstitutionNameAddress.trim()}
-        s={6.9}
-      />
-      <Txt x={66} y={231} s={6.2}>
-        অধ্যয়নকালঃ
-      </Txt>
-      <Dots x1={123} x2={207} y={234.3} />
-      <Val x1={123} x2={207} y={234.3} text={d.firstStudyFrom.trim()} s={6.7} />
-      <Txt x={211} y={231} s={6.1}>
-        হইতে
-      </Txt>
-      <Dots x1={238} x2={321} y={234.3} />
-      <Val x1={238} x2={321} y={234.3} text={d.firstStudyTo.trim()} s={6.7} />
-      <Txt x={326} y={231} s={6.0}>
-        পর্যন্ত, অর্জিত শিক্ষাগত যোগ্যতাঃ
-      </Txt>
-      <Dots x1={430} x2={438} y={234.3} />
-      <Dots x1={66} x2={438} y={249.3} />
-      <Val
-        x1={66}
-        x2={438}
-        y={249.3}
-        text={d.firstQualification.trim()}
-        s={6.8}
-      />
+      </div>
 
-      <Txt x={48} y={267} s={6.4}>
-        (খ) শিক্ষা প্রতিষ্ঠানের নাম ও ঠিকানাঃ
-      </Txt>
-      <Dots x1={198} x2={438} y={270.3} />
-      <Val
-        x1={198}
-        x2={438}
-        y={270.3}
-        text={d.secondInstitutionNameAddress.trim()}
-        s={6.9}
-      />
-      <Txt x={66} y={284} s={6.2}>
-        অধ্যয়নকালঃ
-      </Txt>
-      <Dots x1={123} x2={207} y={287.3} />
-      <Val
-        x1={123}
-        x2={207}
-        y={287.3}
-        text={d.secondStudyFrom.trim()}
-        s={6.7}
-      />
-      <Txt x={211} y={284} s={6.1}>
-        হইতে
-      </Txt>
-      <Dots x1={238} x2={321} y={287.3} />
-      <Val x1={238} x2={321} y={287.3} text={d.secondStudyTo.trim()} s={6.7} />
-      <Txt x={326} y={284} s={6.0}>
-        পর্যন্ত, অর্জিত শিক্ষাগত যোগ্যতাঃ
-      </Txt>
-      <Dots x1={430} x2={438} y={287.3} />
-      <Dots x1={66} x2={438} y={302.3} />
-      <Val
-        x1={66}
-        x2={438}
-        y={302.3}
-        text={d.secondQualification.trim()}
-        s={6.8}
-      />
+      <PaperSpacer height={2} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <PaperLine
+          label="(ক) শিক্ষা প্রতিষ্ঠানের নাম ও ঠিকানাঃ"
+          value={d.firstInstitutionNameAddress}
+          labelSize={6.4}
+          valueSize={6.9}
+        />
+        <PaperInlineFields
+          height={16.5}
+          columns={[
+            { type: "label", text: "অধ্যয়নকালঃ", size: 6.2 },
+            { type: "value", text: d.firstStudyFrom, width: 84, size: 6.7 },
+            { type: "label", text: "হইতে", size: 6.1 },
+            { type: "value", text: d.firstStudyTo, width: 83, size: 6.7 },
+            {
+              type: "label",
+              text: "পর্যন্ত, অর্জিত শিক্ষাগত যোগ্যতাঃ",
+              size: 6,
+            },
+          ]}
+        />
+        <PaperLine
+          label=""
+          value={d.firstQualification}
+          labelSize={6.2}
+          valueSize={6.8}
+        />
+      </div>
 
-      <Txt x={35} y={328} s={6.7}>
+      <PaperSpacer height={2} />
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <PaperLine
+          label="(খ) শিক্ষা প্রতিষ্ঠানের নাম ও ঠিকানাঃ"
+          value={d.secondInstitutionNameAddress}
+          labelSize={6.4}
+          valueSize={6.9}
+        />
+        <PaperInlineFields
+          height={16.5}
+          columns={[
+            { type: "label", text: "অধ্যয়নকালঃ", size: 6.2 },
+            { type: "value", text: d.secondStudyFrom, width: 84, size: 6.7 },
+            { type: "label", text: "হইতে", size: 6.1 },
+            { type: "value", text: d.secondStudyTo, width: 83, size: 6.7 },
+            {
+              type: "label",
+              text: "পর্যন্ত, অর্জিত শিক্ষাগত যোগ্যতাঃ",
+              size: 6,
+            },
+          ]}
+        />
+        <PaperLine
+          label=""
+          value={d.secondQualification}
+          labelSize={6.2}
+          valueSize={6.8}
+        />
+      </div>
+
+      <PaperSpacer height={5} />
+
+      <div
+        style={{
+          fontSize: "6.7em",
+          lineHeight: 1.25,
+          maxWidth: "100%",
+          overflow: "hidden",
+        }}
+      >
         ১৩। আবেদনকারীর প্রত্যয়নঃ আমি বাংলাদেশের নাগরিক এবং এই ফরমে বর্ণিত তথ্য
         আমার জ্ঞান ও বিশ্বাস মতে সম্পূর্ণ সত্য;
-      </Txt>
-      <Txt x={49} y={341.5} s={5.0}>
-        স্বাক্ষর/টিপসহিঃ
-      </Txt>
-      <Dots x1={101} x2={190} y={345} />
+      </div>
 
-      <Txt x={35} y={365} s={7.0}>
-        ১৪। তথ্য সংগ্রহকারীর NID নম্বরঃ
-      </Txt>
-      <Boxes
-        x={185}
-        y={359}
-        w={252}
-        h={12.5}
-        n={17}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 90em",
+          alignItems: "end",
+          columnGap: "4em",
+          height: "22em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "5em", whiteSpace: "nowrap" }}>
+          স্বাক্ষর/টিপসহিঃ
+        </span>
+        <div
+          style={{
+            width: "100%",
+            minWidth: 0,
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        />
+      </div>
+
+      <PaperBoxField
+        label="১৪। তথ্য সংগ্রহকারীর NID নম্বরঃ"
         value={digitString(d.dataCollectorNid, 17)}
-        fs={8.1}
+        count={17}
+        width={252}
+        labelSize={7}
+        boxFontSize={8.1}
       />
-      <Txt x={35} y={384} s={6.7}>
-        স্বাক্ষরঃ
-      </Txt>
-      <Dots x1={74} x2={185} y={387.2} />
 
-      <Txt x={35} y={407} s={7.0}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "max-content 111em",
+          alignItems: "end",
+          columnGap: "4em",
+          height: "22em",
+          overflow: "hidden",
+        }}
+      >
+        <span style={{ fontSize: "6.7em", whiteSpace: "nowrap" }}>
+          স্বাক্ষরঃ
+        </span>
+        <div
+          style={{
+            width: "100%",
+            minWidth: 0,
+            borderBottom: `0.8px dotted ${INK}`,
+          }}
+        />
+      </div>
+
+      <PaperSpacer height={6} />
+
+      <div style={{ fontSize: "7em", lineHeight: 1.2 }}>
         ১৫। বিশেষ কমিটির সিদ্ধান্তঃ
-      </Txt>
-      <Dots x1={35} x2={196} y={458} />
-      <Txt x={116} y={466} a="c" s={6.6}>
-        সদস্য সচিবের স্বাক্ষর ও তারিখঃ
-      </Txt>
-      <Dots x1={302} x2={463} y={458} />
-      <Txt x={383} y={466} a="c" s={6.6}>
-        আহ্বায়কের স্বাক্ষর ও তারিখঃ
-      </Txt>
-    </>
+      </div>
+
+      <PaperSpacer height={28} />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "30em",
+          alignItems: "end",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <PaperSignatureLine
+          label="সদস্য সচিবের স্বাক্ষর ও তারিখঃ"
+          width={161}
+          align="center"
+        />
+        <PaperSignatureLine
+          label="আহ্বায়কের স্বাক্ষর ও তারিখঃ"
+          width={161}
+          align="center"
+        />
+      </div>
+    </div>
   );
 }
 
@@ -1694,7 +2231,6 @@ function FormPage({
     <div
       data-form-page={page}
       style={{
-        position: "relative",
         width: `${PAPER_W}em`,
         height: `${PAPER_H}em`,
         fontSize: unit,
@@ -1703,6 +2239,7 @@ function FormPage({
         fontFamily: FORM_FONT,
         overflow: "hidden",
         lineHeight: 1,
+        boxSizing: "border-box",
         WebkitPrintColorAdjust: "exact",
         printColorAdjust: "exact",
       }}

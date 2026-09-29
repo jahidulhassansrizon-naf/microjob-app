@@ -264,6 +264,14 @@ const toolsData: ToolItem[] = [
     icon: FileText,
     badge: "New",
   },
+  {
+    id: "30",
+    name: "Fuel Card Form",
+    category: "General",
+    bgColor: "bg-[#2563EB]",
+    icon: CreditCard,
+    badge: "New",
+  },
 ];
 
 const categories = [

@@ -122,7 +122,9 @@ function GeoCombobox({
 
   const filtered = useMemo(() => {
     const q = query.trim();
+
     if (!q) return options;
+
     return options.filter((option) => option.bn.includes(q));
   }, [options, query]);
 
@@ -131,7 +133,9 @@ function GeoCombobox({
       <div
         onClick={() => {
           if (disabled) return;
+
           setOpen(true);
+
           requestAnimationFrame(() => inputRef.current?.focus());
         }}
         className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-colors ${
@@ -143,11 +147,13 @@ function GeoCombobox({
         {selected ? (
           <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
             <span className="truncate">{selected.bn}</span>
+
             {!disabled && (
               <button
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
+
                   onChange("");
                   setQuery("");
                 }}
@@ -234,7 +240,9 @@ function Field({
   return (
     <div className="space-y-1">
       <label className="text-[11px] font-semibold text-gray-600">{label}</label>
+
       {children}
+
       {hint ? (
         <p className="text-[10px] text-red-600 font-semibold leading-snug">
           {hint}
@@ -270,6 +278,457 @@ function TextInput({
   );
 }
 
+const FAMILY_CARD_PRINT_CSS = `
+  .family-card-page {
+    --fc-ink: #111111;
+    --fc-muted: #555555;
+    --fc-line: #6f6f6f;
+
+    box-sizing: border-box;
+    width: 210mm;
+    height: 297mm;
+    min-width: 210mm;
+    max-width: 210mm;
+    min-height: 297mm;
+    max-height: 297mm;
+    margin: 0;
+    padding: 14mm 15mm 14mm;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #ffffff;
+    color: var(--fc-ink);
+
+    font-family:
+      "Times New Roman",
+      Times,
+      "Noto Serif Bengali",
+      "Noto Serif",
+      serif;
+    font-size: 13.2px;
+    line-height: 1.45;
+    font-weight: 400;
+
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .family-card-page *,
+  .family-card-page *::before,
+  .family-card-page *::after {
+    box-sizing: border-box;
+  }
+
+  .family-card-heading {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    color: #111111;
+    font-size: 15.5px;
+    line-height: 1.2;
+    font-weight: 400;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    letter-spacing: 0;
+  }
+
+  .family-card-top {
+    display: block;
+    position: relative;
+    margin-top: 13mm;
+    min-height: 15mm;
+  }
+
+  .family-card-recipient {
+    display: grid;
+    gap: 1mm;
+    width: calc(100% - 47mm);
+    min-width: 0;
+    padding-top: 0;
+    font-size: 13.2px;
+    line-height: 1.42;
+    font-weight: 400;
+  }
+
+  .family-card-recipient strong {
+    font-weight: 700;
+  }
+
+  .family-card-photo {
+    position: absolute;
+    top: -17mm;
+    right: 0;
+    width: 39mm;
+    height: 48mm;
+    border: 1px dashed #8a8a8a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #555555;
+
+    font-family: "Times New Roman", Times, serif;
+    font-size: 10.5px;
+    line-height: 1.25;
+    font-weight: 400;
+
+    padding: 3mm;
+    white-space: pre-line;
+  }
+
+  .family-card-recipient-union {
+    padding: 0;
+    border: 0;
+    min-height: 0;
+  }
+
+  .family-card-section {
+    min-width: 0;
+    margin-top: 13mm;
+  }
+
+  .family-card-subject {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.38;
+    font-weight: 400;
+  }
+
+  .family-card-body {
+    margin-top: 7mm;
+  }
+
+  .family-card-paragraph {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+    text-align: left;
+  }
+
+  .family-card-list {
+    display: grid;
+    gap: 7mm;
+    margin-top: 7mm;
+  }
+
+  .family-card-item {
+    display: grid;
+    grid-template-columns: 7mm 31mm minmax(0, 1fr);
+    gap: 1.5mm;
+    align-items: start;
+    min-width: 0;
+    font-size: 12.8px;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+
+  .family-card-number {
+    font-weight: 400;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .family-card-label {
+    min-width: 0;
+    font-weight: 400;
+  }
+
+  .family-card-content {
+    min-width: 0;
+  }
+
+  .family-card-line {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 4.6mm;
+    align-items: flex-end;
+    vertical-align: baseline;
+    border-bottom: 1px dotted var(--fc-line);
+    overflow: hidden;
+  }
+
+  .family-card-line.compact {
+    min-width: 22mm;
+    width: auto;
+    padding: 0 1mm;
+    margin: 0 0.3mm;
+  }
+
+  .family-card-line.medium {
+    min-width: 30mm;
+    width: auto;
+    padding: 0 1mm;
+    margin: 0 0.3mm;
+  }
+
+  .family-card-line.small {
+    min-width: 14mm;
+    width: auto;
+    padding: 0 1mm;
+    margin: 0 0.3mm;
+  }
+
+  .family-card-value {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.8mm;
+    color: #111111;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    line-height: 1.1;
+    transform: translateY(0.3mm);
+  }
+
+  .family-card-value.placeholder {
+    color: transparent;
+  }
+
+  .family-card-address-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 7mm;
+    row-gap: 5.5mm;
+    min-width: 0;
+  }
+
+  .family-card-address-cell {
+    min-width: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 1.2mm;
+    line-height: 1.32;
+  }
+
+  .family-card-address-cell.wide {
+    grid-column: 1 / -1;
+  }
+
+  .family-card-address-name {
+    flex: 0 0 auto;
+    min-width: fit-content;
+  }
+
+  .family-card-address-rule {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 4.5mm;
+    display: flex;
+    align-items: flex-end;
+    border-bottom: 1px dotted var(--fc-line);
+    overflow: hidden;
+  }
+
+  .family-card-family-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 7mm;
+    min-width: 0;
+  }
+
+  .family-card-family-cell {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.2mm;
+    min-width: 0;
+  }
+
+  .family-card-family-label {
+    flex: 0 0 auto;
+  }
+
+  .family-card-family-rule {
+    flex: 1 1 auto;
+    min-width: 10mm;
+    min-height: 4.5mm;
+    display: flex;
+    align-items: flex-end;
+    border-bottom: 1px dotted var(--fc-line);
+    overflow: hidden;
+  }
+
+  .family-card-conclusion {
+    margin-top: 14mm;
+  }
+
+  .family-card-signatures {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: 70mm 70mm;
+    justify-content: space-between;
+    gap: 40mm;
+    padding-top: 10mm;
+
+    font-family:
+      "Times New Roman",
+      Times,
+      "Noto Serif Bengali",
+      serif;
+    font-size: 10.8px;
+    line-height: 1.25;
+    font-weight: 400;
+    text-align: center;
+  }
+
+  .family-card-signature {
+    min-width: 0;
+  }
+
+  .family-card-signature-line {
+    height: 7mm;
+    border-bottom: 1px solid #111111;
+    margin-bottom: 1.6mm;
+  }
+
+  .family-card-signature-label {
+    font-weight: 400;
+  }
+
+  .family-card-signature-label span {
+    display: block;
+  }
+
+  .family-card-screen-page {
+    box-shadow: 0 4px 14px -10px rgba(20, 20, 30, 0.3);
+  }
+
+  .family-card-print-only {
+    display: none;
+  }
+
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    html,
+    body {
+      width: 210mm !important;
+      height: 297mm !important;
+      min-width: 210mm !important;
+      max-width: 210mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      background: #ffffff !important;
+    }
+
+    body {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body > * {
+      visibility: hidden !important;
+    }
+
+    .family-card-root,
+    .family-card-root .family-card-print-only,
+    .family-card-root .family-card-print-only * {
+      visibility: visible !important;
+    }
+
+    .family-card-root {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 210mm !important;
+      height: 297mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      background: #ffffff !important;
+    }
+
+    .family-card-screen {
+      display: none !important;
+    }
+
+    .family-card-print-only {
+      display: block !important;
+      width: 210mm !important;
+      height: 297mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      background: #ffffff !important;
+    }
+
+    .family-card-page {
+      width: 210mm !important;
+      height: 297mm !important;
+      min-width: 210mm !important;
+      max-width: 210mm !important;
+      min-height: 297mm !important;
+      max-height: 297mm !important;
+      margin: 0 !important;
+      padding: 14mm 15mm 14mm !important;
+      box-shadow: none !important;
+      overflow: hidden !important;
+      break-after: avoid !important;
+      page-break-after: avoid !important;
+      background: #ffffff !important;
+    }
+
+    .family-card-page,
+    .family-card-section,
+    .family-card-list,
+    .family-card-item,
+    .family-card-address-grid,
+    .family-card-family-grid,
+    .family-card-signatures {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+  }
+`;
+
+function fitFamilyCardFont(value: string, basePx: number, maxChars: number) {
+  const length = Array.from(value.trim()).length;
+
+  if (length <= maxChars) return basePx;
+
+  const ratio = Math.max(0.72, maxChars / length);
+
+  return Math.round(basePx * ratio * 10) / 10;
+}
+
+function FamilyCardLine({
+  value,
+  className = "",
+  basePx = 12.3,
+  maxChars = 48,
+}: {
+  value: string;
+  className?: string;
+  basePx?: number;
+  maxChars?: number;
+}) {
+  const trimmed = value.trim();
+
+  const fontSize = fitFamilyCardFont(trimmed, basePx, maxChars);
+
+  return (
+    <span className={`family-card-line ${className}`.trim()}>
+      <span
+        className={`family-card-value ${trimmed ? "" : "placeholder"}`.trim()}
+        style={{
+          fontSize: `${fontSize}px`,
+        }}
+      >
+        {trimmed || "\u00A0"}
+      </span>
+    </span>
+  );
+}
+
 function FamilyCardPreview({
   recipient,
   unionName,
@@ -288,6 +747,7 @@ function FamilyCardPreview({
   numSons,
   numDaughters,
   documentRef,
+  printable = false,
 }: {
   recipient: string;
   unionName: string;
@@ -306,47 +766,56 @@ function FamilyCardPreview({
   numSons: string;
   numDaughters: string;
   documentRef?: React.RefObject<HTMLDivElement | null>;
+  printable?: boolean;
 }) {
-  const valueOrDots = (value: string) =>
-    value || "......................................";
+  const addressDistrict = districtLabel || district;
+
+  const addressUpazila = upazilaLabel || upazila;
 
   return (
     <div
       ref={documentRef}
-      id="family-card-print-page"
-      className="family-card-print-document relative w-[210mm] h-[297mm] shrink-0 bg-white text-[#0F172A] font-serif overflow-hidden"
-      style={{
-        boxSizing: "border-box",
-        padding: "17mm",
-        boxShadow: "0 10px 26px -8px rgba(20,20,30,.28)",
-      }}
+      id={printable ? "family-card-print-page" : "family-card-preview-page"}
+      className={`family-card-page ${
+        printable ? "family-card-print-page" : "family-card-screen-page"
+      }`}
+      role={printable ? undefined : "document"}
+      aria-label={printable ? undefined : "Family Card Application preview"}
     >
-      <div className="family-card-print-heading text-center font-bold underline uppercase tracking-wide mb-7 text-[15px]">
-        Family Card Application
-      </div>
+      <h2 className="family-card-heading">Family Card Application</h2>
 
-      <div className="family-card-print-stamp absolute top-[17mm] right-[17mm] w-[31mm] h-[35mm] border-2 border-dashed border-gray-500 flex items-center justify-center text-center text-gray-500 p-2 text-[9.5px] leading-tight">
-        Passport-size photo
-        <br />
-        (attach with stapler)
-      </div>
+      <div className="family-card-top">
+        <div className="family-card-recipient">
+          <strong>To,</strong>
 
-      <div className="family-card-print-body text-[13.5px] leading-[1.58] space-y-4">
-        <div className="space-y-1.5 pr-[40mm]">
-          <p className="font-bold">To,</p>
-          <p className="font-semibold">{valueOrDots(recipient)}</p>
-          <p>{valueOrDots(unionName)}</p>
+          <strong>{recipient.trim() || "Ward Member"}</strong>
+
+          <div className="family-card-recipient-union">
+            {unionName.trim() || "[Union/municipality name]"}
+          </div>
         </div>
 
-        <div className="pt-1">
-          <p className="font-bold">
-            Subject: Regarding Family Card / application for Family Card.
+        <div className="family-card-photo">
+          {"Passport-size photo\n(attach with stapler)"}
+        </div>
+      </div>
+
+      <section className="family-card-section" aria-label="Application details">
+        <div className="family-card-subject">
+          Subject: Regarding Family Card / application for Family Card.
+        </div>
+
+        <div className="family-card-body">
+          <p className="family-card-paragraph">
+            <strong>Sir,</strong>
           </p>
-        </div>
 
-        <div className="pt-1">
-          <p className="font-bold">Sir,</p>
-          <p className="mt-1 text-justify">
+          <p
+            className="family-card-paragraph"
+            style={{
+              marginTop: "3mm",
+            }}
+          >
             I hereby certify that I am a permanent resident of the said
             ward/union/municipality area. Due to socio-economic reasons and to
             receive government benefits and VGF/ration-related services, I need
@@ -355,122 +824,222 @@ function FamilyCardPreview({
           </p>
         </div>
 
-        <div className="space-y-2.5 pt-1">
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">১.</span>
-            <span className="col-span-3 font-semibold">Applicant name:</span>
-            <span className="col-span-8 border-b border-dotted border-gray-500 min-w-0">
-              {applicantName}
-            </span>
+        <div className="family-card-list">
+          <div className="family-card-item">
+            <span className="family-card-number">১।</span>
+
+            <span className="family-card-label">Applicant name:</span>
+
+            <FamilyCardLine value={applicantName} basePx={12.7} maxChars={50} />
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">২.</span>
-            <span className="col-span-3 font-semibold">
-              Father/husband name:
-            </span>
-            <span className="col-span-8 border-b border-dotted border-gray-500 min-w-0">
-              {fatherHusband}
-            </span>
+          <div className="family-card-item">
+            <span className="family-card-number">২।</span>
+
+            <span className="family-card-label">Father/husband name:</span>
+
+            <FamilyCardLine value={fatherHusband} basePx={12.7} maxChars={50} />
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">৩.</span>
-            <span className="col-span-3 font-semibold">Mother name:</span>
-            <span className="col-span-8 border-b border-dotted border-gray-500 min-w-0">
-              {motherName}
-            </span>
+          <div className="family-card-item">
+            <span className="family-card-number">৩।</span>
+
+            <span className="family-card-label">Mother name:</span>
+
+            <FamilyCardLine value={motherName} basePx={12.7} maxChars={50} />
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">৪.</span>
-            <span className="col-span-3 font-semibold">
-              National ID number:
-            </span>
-            <span className="col-span-8 border-b border-dotted border-gray-500 min-w-0">
-              {nidNumber}
-            </span>
+          <div className="family-card-item">
+            <span className="family-card-number">৪।</span>
+
+            <span className="family-card-label">National ID number:</span>
+
+            <FamilyCardLine value={nidNumber} basePx={12.7} maxChars={26} />
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">৫.</span>
-            <span className="col-span-3 font-semibold">Mobile number:</span>
-            <span className="col-span-8 border-b border-dotted border-gray-500 min-w-0">
-              {mobileNumber}
-            </span>
+          <div className="family-card-item">
+            <span className="family-card-number">৫।</span>
+
+            <span className="family-card-label">Mobile number:</span>
+
+            <FamilyCardLine value={mobileNumber} basePx={12.7} maxChars={26} />
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2">
-            <span className="col-span-1 font-bold">৬.</span>
-            <span className="col-span-3 font-semibold">
+          <div className="family-card-item">
+            <span className="family-card-number">৬।</span>
+
+            <span className="family-card-label">
               Current and permanent address:
             </span>
-            <span className="col-span-8 min-w-0">
-              Village/neighbourhood:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[24mm] px-1">
-                {village}
-              </span>
-              , Post office:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[24mm] px-1">
-                {postOffice}
-              </span>
-              <br />
-              Ward no.:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[16mm] px-1">
-                {wardNo}
-              </span>
-              , Upazila:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[22mm] px-1">
-                {upazila || upazilaLabel}
-              </span>
-              <br />
-              District:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[32mm] px-1">
-                {district || districtLabel}
-              </span>
-            </span>
+
+            <div className="family-card-content">
+              <div className="family-card-address-grid">
+                <div className="family-card-address-cell">
+                  <span className="family-card-address-name">
+                    Village/neighbourhood:
+                  </span>
+
+                  <span className="family-card-address-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(village, 12.6, 26)}px`,
+                      }}
+                    >
+                      {village.trim() || "\u00A0"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="family-card-address-cell">
+                  <span className="family-card-address-name">Post office:</span>
+
+                  <span className="family-card-address-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(
+                          postOffice,
+                          12.6,
+                          22,
+                        )}px`,
+                      }}
+                    >
+                      {postOffice.trim() || "\u00A0"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="family-card-address-cell">
+                  <span className="family-card-address-name">Ward no.:</span>
+
+                  <span className="family-card-address-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(wardNo, 12.6, 8)}px`,
+                      }}
+                    >
+                      {wardNo.trim() || "\u00A0"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="family-card-address-cell">
+                  <span className="family-card-address-name">Upazila:</span>
+
+                  <span className="family-card-address-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(
+                          addressUpazila,
+                          12.6,
+                          18,
+                        )}px`,
+                      }}
+                    >
+                      {addressUpazila.trim() || "\u00A0"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="family-card-address-cell wide">
+                  <span className="family-card-address-name">District:</span>
+
+                  <span className="family-card-address-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(
+                          addressDistrict,
+                          12.6,
+                          24,
+                        )}px`,
+                      }}
+                    >
+                      {addressDistrict.trim() || "\u00A0"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-x-2 pt-0.5">
-            <span className="col-span-1 font-bold">৭.</span>
-            <span className="col-span-3 font-semibold">
-              Family member details:
-            </span>
-            <span className="col-span-8 min-w-0">
-              ছেলে সন্তান:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[13mm] px-2">
-                {numSons}
-              </span>{" "}
-              জন&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; মেয়ে সন্তান:{" "}
-              <span className="border-b border-dotted border-gray-500 inline-block min-w-[13mm] px-2">
-                {numDaughters}
-              </span>{" "}
-              জন
-            </span>
+          <div className="family-card-item">
+            <span className="family-card-number">৭।</span>
+
+            <span className="family-card-label">Family member details:</span>
+
+            <div className="family-card-content">
+              <div className="family-card-family-grid">
+                <div className="family-card-family-cell">
+                  <span className="family-card-family-label">ছেলে সন্তান:</span>
+
+                  <span className="family-card-family-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(numSons, 12.6, 6)}px`,
+                      }}
+                    >
+                      {numSons.trim() || "\u00A0"}
+                    </span>
+                  </span>
+
+                  <span>জন</span>
+                </div>
+
+                <div className="family-card-family-cell">
+                  <span className="family-card-family-label">
+                    মেয়ে সন্তান:
+                  </span>
+
+                  <span className="family-card-family-rule">
+                    <span
+                      className="family-card-value"
+                      style={{
+                        fontSize: `${fitFamilyCardFont(
+                          numDaughters,
+                          12.6,
+                          6,
+                        )}px`,
+                      }}
+                    >
+                      {numDaughters.trim() || "\u00A0"}
+                    </span>
+                  </span>
+
+                  <span>জন</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="pt-3">
-          <p className="text-justify">
+        <div className="family-card-conclusion">
+          <p className="family-card-paragraph">
             Therefore, after verifying the above information, I kindly request
             you to take the necessary steps to issue me a Family Card.
           </p>
         </div>
-      </div>
+      </section>
 
-      <div className="absolute left-[17mm] right-[17mm] bottom-[17mm] flex justify-between items-end text-center text-[11px]">
-        <div className="w-[52mm]">
-          <div className="border-b border-black mb-1.5" />
-          <p className="font-bold">
-            Signature (recipient / ward
-            <br />
-            representative)
-          </p>
+      <div className="family-card-signatures">
+        <div className="family-card-signature">
+          <div className="family-card-signature-line" />
+
+          <div className="family-card-signature-label">
+            <span>Signature (recipient / ward</span>
+
+            <span>representative)</span>
+          </div>
         </div>
 
-        <div className="w-[52mm]">
-          <div className="border-b border-black mb-1.5" />
-          <p className="font-bold">Applicant signature</p>
+        <div className="family-card-signature">
+          <div className="family-card-signature-line" />
+
+          <div className="family-card-signature-label">Applicant signature</div>
         </div>
       </div>
     </div>
@@ -481,57 +1050,93 @@ export default function FamilyCardForm() {
   const router = useRouter();
 
   const [recipient, setRecipient] = useState(EMPTY_STATE.recipient);
+
   const [unionName, setUnionName] = useState(EMPTY_STATE.unionName);
+
   const [applicantName, setApplicantName] = useState(EMPTY_STATE.applicantName);
-  const [fatherHusband, setFatherHusband] = useState(
-    EMPTY_STATE.fatherHusband,
-  );
+
+  const [fatherHusband, setFatherHusband] = useState(EMPTY_STATE.fatherHusband);
+
   const [motherName, setMotherName] = useState(EMPTY_STATE.motherName);
+
   const [nidNumber, setNidNumber] = useState(EMPTY_STATE.nidNumber);
+
   const [mobileNumber, setMobileNumber] = useState(EMPTY_STATE.mobileNumber);
 
   const [village, setVillage] = useState(EMPTY_STATE.village);
+
   const [postOffice, setPostOffice] = useState(EMPTY_STATE.postOffice);
+
   const [wardNo, setWardNo] = useState(EMPTY_STATE.wardNo);
+
   const [upazila, setUpazila] = useState(EMPTY_STATE.upazila);
+
   const [district, setDistrict] = useState(EMPTY_STATE.district);
 
   const [numSons, setNumSons] = useState(EMPTY_STATE.numSons);
+
   const [numDaughters, setNumDaughters] = useState(EMPTY_STATE.numDaughters);
 
   const [isFavorite, setIsFavorite] = useState(false);
+
   const [showHowToUse, setShowHowToUse] = useState(false);
+
   const [zoom, setZoom] = useState(100);
-  const [isProcessing, setIsProcessing] = useState<
-    "print" | "download" | null
-  >(null);
+
+  const [isProcessing, setIsProcessing] = useState<"print" | "download" | null>(
+    null,
+  );
+
   const [usageCount, setUsageCount] = useState(0);
+
   const [toast, setToast] = useState<string | null>(null);
 
   const previewScrollRef = useRef<HTMLDivElement>(null);
+
   const pageRef = useRef<HTMLDivElement>(null);
+
+  const printPageRef = useRef<HTMLDivElement>(null);
+
+  const panStateRef = useRef({
+    active: false,
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+  });
+
+  const [isPanning, setIsPanning] = useState(false);
+
   const [previewFitScale, setPreviewFitScale] = useState(0.62);
 
   React.useEffect(() => {
     const container = previewScrollRef.current;
+
     if (!container) return;
 
     const updateFitScale = () => {
-      // Fit the complete A4 sheet inside the preview viewport at 100% zoom.
-      // The zoom control then scales this fitted sheet up/down from that base.
       const availableWidth = Math.max(280, container.clientWidth - 40);
+
       const availableHeight = Math.max(420, container.clientHeight - 40);
+
       const a4CssWidth = (210 / 25.4) * 96;
+
       const a4CssHeight = (297 / 25.4) * 96;
+
       const widthScale = availableWidth / a4CssWidth;
+
       const heightScale = availableHeight / a4CssHeight;
+
       const nextScale = Math.min(1, widthScale, heightScale);
+
       setPreviewFitScale(nextScale);
     };
 
     updateFitScale();
 
     const observer = new ResizeObserver(updateFitScale);
+
     observer.observe(container);
 
     return () => observer.disconnect();
@@ -540,6 +1145,7 @@ export default function FamilyCardForm() {
   React.useEffect(() => {
     try {
       const rawUsage = window.localStorage.getItem(USAGE_KEY);
+
       if (rawUsage) {
         setUsageCount(Number(rawUsage) || 0);
       }
@@ -550,19 +1156,27 @@ export default function FamilyCardForm() {
 
   React.useEffect(() => {
     if (!toast) return;
+
     const timer = window.setTimeout(() => setToast(null), 2800);
+
     return () => window.clearTimeout(timer);
   }, [toast]);
 
   const allUpazilaOptions = useMemo<GeoOption[]>(() => {
     const seen = new Set<string>();
+
     const result: GeoOption[] = [];
 
     for (const districtOption of DISTRICTS) {
       const options = upazilasForDistrict(districtOption.id);
+
       for (const option of options) {
-        if (seen.has(option.id)) continue;
+        if (seen.has(option.id)) {
+          continue;
+        }
+
         seen.add(option.id);
+
         result.push(option);
       }
     }
@@ -576,6 +1190,7 @@ export default function FamilyCardForm() {
   );
 
   const districtLabel = district ? districtBnById(district) : "";
+
   const upazilaLabel = upazila ? upazilaBnById(upazila) : "";
 
   const phoneHint =
@@ -622,8 +1237,7 @@ export default function FamilyCardForm() {
       numDaughters,
     ].some((value) => value.trim() !== "");
 
-  const isComplete =
-    filledRequired === requiredFields.length && !phoneHint;
+  const isComplete = filledRequired === requiredFields.length && !phoneHint;
 
   const currentFormState = (): FormState => ({
     recipient,
@@ -644,18 +1258,31 @@ export default function FamilyCardForm() {
 
   const applyFormState = (state: FormState) => {
     setRecipient(state.recipient || EMPTY_STATE.recipient);
+
     setUnionName(state.unionName || "");
+
     setApplicantName(state.applicantName || "");
+
     setFatherHusband(state.fatherHusband || "");
+
     setMotherName(state.motherName || "");
+
     setNidNumber(state.nidNumber || "");
+
     setMobileNumber(state.mobileNumber || "");
+
     setVillage(state.village || "");
+
     setPostOffice(state.postOffice || "");
+
     setWardNo(state.wardNo || "");
+
     setUpazila(state.upazila || "");
+
     setDistrict(state.district || "");
+
     setNumSons(state.numSons || "");
+
     setNumDaughters(state.numDaughters || "");
   };
 
@@ -673,7 +1300,9 @@ export default function FamilyCardForm() {
   const bumpUsageCount = () => {
     try {
       const next = usageCount + 1;
+
       window.localStorage.setItem(USAGE_KEY, String(next));
+
       setUsageCount(next);
     } catch {
       // Ignore storage errors.
@@ -690,7 +1319,9 @@ export default function FamilyCardForm() {
       }
 
       const parsed = JSON.parse(raw) as FormState;
+
       applyFormState(parsed);
+
       setToast("Last application restored.");
     } catch {
       setToast("Couldn't restore the last application.");
@@ -699,6 +1330,7 @@ export default function FamilyCardForm() {
 
   const handleClear = () => {
     applyFormState(EMPTY_STATE);
+
     setToast("All fields cleared.");
   };
 
@@ -722,189 +1354,228 @@ export default function FamilyCardForm() {
               return;
             }
 
-            image.addEventListener("load", () => resolve(), { once: true });
-            image.addEventListener("error", () => resolve(), { once: true });
+            image.addEventListener("load", () => resolve(), {
+              once: true,
+            });
+
+            image.addEventListener("error", () => resolve(), {
+              once: true,
+            });
           }),
       ),
     );
   };
 
   const getPrintableClone = () => {
-    if (!pageRef.current) return null;
+    if (!printPageRef.current) {
+      return null;
+    }
 
-    const clone = pageRef.current.cloneNode(true) as HTMLDivElement;
+    const clone = printPageRef.current.cloneNode(true) as HTMLDivElement;
+
+    clone.removeAttribute("id");
+
     clone.classList.add("family-card-print-page");
+
     clone.style.width = "210mm";
+
     clone.style.minWidth = "210mm";
+
     clone.style.maxWidth = "210mm";
+
     clone.style.height = "297mm";
+
     clone.style.minHeight = "297mm";
+
     clone.style.maxHeight = "297mm";
+
     clone.style.margin = "0";
-    clone.style.padding = "17mm";
+
+    clone.style.padding = "16mm 17mm 14mm";
+
     clone.style.boxSizing = "border-box";
+
     clone.style.overflow = "hidden";
+
     clone.style.transform = "none";
-    clone.style.transformOrigin = "initial";
+
+    clone.style.transformOrigin = "top left";
+
     clone.style.boxShadow = "none";
+
     clone.style.border = "0";
+
     clone.style.borderRadius = "0";
+
     clone.style.background = "#ffffff";
+
+    clone.style.breakAfter = "avoid";
+
+    clone.style.pageBreakAfter = "avoid";
 
     return clone;
   };
 
-  const validateForOutput = () => {
-    if (!isComplete) {
-      setToast(
-        phoneHint
-          ? "Please fix the mobile number before printing or downloading."
-          : "Please complete all required fields before printing or downloading.",
-      );
-      return false;
-    }
-
-    return true;
-  };
-
   const handlePrint = async () => {
-    if (!validateForOutput()) return;
+    // Printing is intentionally allowed even when every field is blank.
+    // Users may print the paper form first and fill it out by hand later.
 
     const printable = getPrintableClone();
+
     if (!printable) return;
 
     setIsProcessing("print");
+
     saveLastApplication();
 
-    const printWindow = window.open(
-      "",
-      "_blank",
-      "width=1000,height=1200",
-      );
+    const printWindow = window.open("", "_blank", "width=1000,height=1200");
 
     if (!printWindow) {
       setIsProcessing(null);
-      window.print();
-      bumpUsageCount();
+
+      setToast("Please allow pop-ups to open the print preview.");
+
       return;
     }
 
-    const styleBlocks = Array.from(
-      document.head.querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
-        'link[rel="stylesheet"], style',
-      ),
-    );
-
     const printStyles = `
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
+        ${FAMILY_CARD_PRINT_CSS}
 
-      html,
-      body {
-        width: 210mm !important;
-        min-width: 210mm !important;
-        max-width: 210mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #ffffff !important;
-        overflow: visible !important;
-      }
+        @page {
+          size: A4 portrait;
+          margin: 0;
+        }
 
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box !important;
-      }
+        html,
+        body {
+          width: 210mm !important;
+          height: 297mm !important;
+          min-width: 210mm !important;
+          max-width: 210mm !important;
+          min-height: 297mm !important;
+          max-height: 297mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: #ffffff !important;
+        }
 
-      body {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
+        body {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
 
-      #print-root {
-        width: 210mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
+        #print-root {
+          width: 210mm !important;
+          height: 297mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+        }
 
-      .family-card-print-page {
-        width: 210mm !important;
-        height: 297mm !important;
-        min-height: 297mm !important;
-        max-height: 297mm !important;
-        padding: 17mm !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        box-shadow: none !important;
-        border: 0 !important;
-        background: #ffffff !important;
-        break-after: auto !important;
-        page-break-after: auto !important;
-      }
+        .family-card-print-page {
+          display: flex !important;
+          position: relative !important;
 
-      .family-card-print-body {
-        font-size: 14px !important;
-        line-height: 1.58 !important;
-      }
+          width: 210mm !important;
+          height: 297mm !important;
 
-      .family-card-print-heading {
-        font-size: 16px !important;
-        margin-bottom: 7mm !important;
-      }
+          min-width: 210mm !important;
+          max-width: 210mm !important;
 
-      .family-card-print-stamp {
-        font-size: 10px !important;
-      }
+          min-height: 297mm !important;
+          max-height: 297mm !important;
 
-      .family-card-print-page .text-\\[11px\\] {
-        font-size: 11px !important;
-      }
+          padding: 14mm 15mm 14mm !important;
 
-      .family-card-print-page .text-\\[9\\.5px\\] {
-        font-size: 9.5px !important;
-      }
-    `;
+          margin: 0 !important;
+          overflow: hidden !important;
+
+          box-shadow: none !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+
+          background: #ffffff !important;
+          color: #111111 !important;
+
+          break-after: avoid !important;
+          page-break-after: avoid !important;
+        }
+
+        /* The popup contains only the printable form.
+           Do not inherit the main-page print isolation rule here. */
+
+        body > *,
+        #print-root,
+        #print-root * {
+          visibility: visible !important;
+        }
+
+        #print-root {
+          display: block !important;
+
+          width: 210mm !important;
+          height: 297mm !important;
+
+          visibility: visible !important;
+        }
+      `;
 
     try {
       printWindow.document.open();
-      printWindow.document.write(
-        `<!doctype html><html><head><meta charset="utf-8"><title>Family Card Application</title>`,
-      );
-
-      for (const styleNode of styleBlocks) {
-        printWindow.document.head.appendChild(
-          printWindow.document.importNode(styleNode, true),
-        );
-      }
-
-      const styleElement = printWindow.document.createElement("style");
-      styleElement.textContent = printStyles;
-      printWindow.document.head.appendChild(styleElement);
 
       printWindow.document.write(
-        `</head><body><main id="print-root"></main></body></html>`,
+        `<!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+
+              <meta
+                name="viewport"
+                content="width=210mm, initial-scale=1"
+              />
+
+              <title>
+                Family Card Application
+              </title>
+
+              <style>
+                ${printStyles}
+              </style>
+            </head>
+
+            <body>
+              <main
+                id="print-root"
+              ></main>
+            </body>
+          </html>`,
       );
+
       printWindow.document.close();
 
-      printWindow.document
-        .getElementById("print-root")
-        ?.appendChild(printable);
+      printWindow.document.getElementById("print-root")?.appendChild(printable);
 
       await waitForPrintAssets(printWindow.document);
+
+      await new Promise<void>((resolve) => {
+        printWindow.requestAnimationFrame(() => resolve());
+      });
 
       printWindow.onafterprint = () => {
         printWindow.close();
       };
 
       printWindow.focus();
+
       printWindow.print();
 
       bumpUsageCount();
     } catch (error) {
       console.error(error);
+
       printWindow.close();
+
       setToast("Couldn't open the print dialog. Please try again.");
     } finally {
       setIsProcessing(null);
@@ -912,9 +1583,10 @@ export default function FamilyCardForm() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!validateForOutput()) return;
+    // PDF download is also allowed for a completely blank paper form.
 
     setIsProcessing("download");
+
     saveLastApplication();
 
     let pdfHost: HTMLDivElement | null = null;
@@ -926,25 +1598,47 @@ export default function FamilyCardForm() {
       ]);
 
       const printable = getPrintableClone();
+
       if (!printable) {
         throw new Error("Printable page is not available.");
       }
 
       pdfHost = document.createElement("div");
+
       pdfHost.setAttribute("aria-hidden", "true");
+
       pdfHost.style.position = "fixed";
+
       pdfHost.style.left = "-100000px";
+
       pdfHost.style.top = "0";
+
       pdfHost.style.width = "210mm";
+
       pdfHost.style.height = "297mm";
+
       pdfHost.style.margin = "0";
+
       pdfHost.style.padding = "0";
+
       pdfHost.style.background = "#ffffff";
+
       pdfHost.style.overflow = "hidden";
+
       pdfHost.style.pointerEvents = "none";
+
       pdfHost.style.zIndex = "-1";
 
+      pdfHost.style.contain = "layout paint style";
+
+      const pdfStyle = document.createElement("style");
+
+      pdfStyle.textContent = FAMILY_CARD_PRINT_CSS;
+
+      pdfHost.appendChild(pdfStyle);
+
       pdfHost.appendChild(printable);
+
       document.body.appendChild(pdfHost);
 
       if (document.fonts?.ready) {
@@ -956,36 +1650,48 @@ export default function FamilyCardForm() {
       }
 
       await new Promise<void>((resolve) =>
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => resolve()),
-        ),
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4",
-        compress: true,
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
 
       const canvas = await html2canvas(printable, {
         scale: 3,
         useCORS: true,
+
         backgroundColor: "#ffffff",
-        width: printable.scrollWidth,
-        height: printable.scrollHeight,
-        windowWidth: printable.scrollWidth,
-        windowHeight: printable.scrollHeight,
+
+        width: printable.clientWidth,
+
+        height: printable.clientHeight,
+
+        windowWidth: printable.clientWidth,
+
+        windowHeight: printable.clientHeight,
+
         logging: false,
+
+        imageTimeout: 0,
+
+        scrollX: 0,
+
+        scrollY: 0,
       });
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
+      const pdf = new jsPDF({
+        orientation: "portrait",
+
+        unit: "pt",
+
+        format: "a4",
+
+        compress: true,
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
       pdf.addImage(
-        imgData,
+        canvas.toDataURL("image/png", 1),
         "PNG",
         0,
         0,
@@ -1008,10 +1714,13 @@ export default function FamilyCardForm() {
         : "family-card-application.pdf";
 
       pdf.save(fileName);
+
       bumpUsageCount();
+
       setToast("PDF downloaded.");
     } catch (error) {
       console.error(error);
+
       setToast("Couldn't generate the PDF. Please try again.");
     } finally {
       if (pdfHost?.parentNode) {
@@ -1023,85 +1732,113 @@ export default function FamilyCardForm() {
   };
 
   const zoomFactor = zoom / 100;
+
   const previewScale = previewFitScale * zoomFactor;
+
   const scaledPreviewWidth = 210 * previewScale;
+
   const scaledPreviewHeight = 297 * previewScale;
+
   const isZoomedBeyondFit = zoomFactor > 1.001;
+
+  const handlePreviewPointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    if (!isZoomedBeyondFit) {
+      return;
+    }
+
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const container = previewScrollRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    panStateRef.current = {
+      active: true,
+      pointerId: event.pointerId,
+
+      startX: event.clientX,
+
+      startY: event.clientY,
+
+      startScrollLeft: container.scrollLeft,
+
+      startScrollTop: container.scrollTop,
+    };
+
+    container.setPointerCapture(event.pointerId);
+
+    setIsPanning(true);
+
+    event.preventDefault();
+  };
+
+  const handlePreviewPointerMove = (
+    event: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    const pan = panStateRef.current;
+
+    if (!pan.active || pan.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const container = previewScrollRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const dx = event.clientX - pan.startX;
+
+    const dy = event.clientY - pan.startY;
+
+    container.scrollLeft = pan.startScrollLeft - dx;
+
+    container.scrollTop = pan.startScrollTop - dy;
+
+    event.preventDefault();
+  };
+
+  const endPreviewPan = (event?: React.PointerEvent<HTMLDivElement>) => {
+    const pan = panStateRef.current;
+
+    if (!pan.active) {
+      return;
+    }
+
+    const container = previewScrollRef.current;
+
+    if (container && event && container.hasPointerCapture(event.pointerId)) {
+      container.releasePointerCapture(event.pointerId);
+    }
+
+    panStateRef.current = {
+      active: false,
+      pointerId: -1,
+
+      startX: 0,
+      startY: 0,
+
+      startScrollLeft: 0,
+      startScrollTop: 0,
+    };
+
+    setIsPanning(false);
+  };
 
   return (
     <div className="family-card-root w-full text-[#0F172A] font-sans pb-28">
-      <style>{`
-        .family-card-print-only {
-          display: none;
-        }
-
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
-
-          html,
-          body {
-            width: 210mm !important;
-            min-width: 210mm !important;
-            max-width: 210mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #ffffff !important;
-            overflow: visible !important;
-          }
-
-          body {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          .family-card-screen {
-            display: none !important;
-          }
-
-          .family-card-print-only {
-            display: block !important;
-            width: 210mm !important;
-            height: 297mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-          }
-
-          .family-card-print-page {
-            display: block !important;
-            position: relative !important;
-            width: 210mm !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
-            padding: 17mm !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            overflow: hidden !important;
-            background: #ffffff !important;
-          }
-
-          .family-card-print-body {
-            font-size: 14px !important;
-            line-height: 1.58 !important;
-          }
-
-          .family-card-print-heading {
-            font-size: 16px !important;
-          }
-
-          .family-card-print-stamp {
-            font-size: 10px !important;
-          }
-        }
-      `}</style>
+      <style>{FAMILY_CARD_PRINT_CSS}</style>
 
       {toast ? (
         <div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
+
           {toast}
         </div>
       ) : null}
@@ -1124,8 +1861,11 @@ export default function FamilyCardForm() {
               </Link>
 
               <span>/</span>
+
               <span>General Tools</span>
+
               <span>/</span>
+
               <span className="text-[#0F172A] font-semibold">
                 Family Card Form
               </span>
@@ -1186,6 +1926,7 @@ export default function FamilyCardForm() {
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Settings
                 </span>
+
                 <span className="text-[11px] text-gray-400 font-medium">
                   Fill in all fields. Preview updates as you type.
                 </span>
@@ -1204,10 +1945,13 @@ export default function FamilyCardForm() {
                       className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-blue-500"
                     >
                       <option value="Ward Member">Ward Member</option>
+
                       <option value="Ward Representative">
                         Ward Representative
                       </option>
+
                       <option value="Chairman">Chairman</option>
+
                       <option value="Mayor">Mayor</option>
                     </select>
                   </Field>
@@ -1264,7 +2008,9 @@ export default function FamilyCardForm() {
                     <TextInput
                       value={mobileNumber}
                       onChange={(value) =>
-                        setMobileNumber(value.replace(/[^0-9]/g, "").slice(0, 11))
+                        setMobileNumber(
+                          value.replace(/[^0-9]/g, "").slice(0, 11),
+                        )
                       }
                       placeholder="01712345678"
                       inputMode="tel"
@@ -1313,6 +2059,7 @@ export default function FamilyCardForm() {
                       value={district}
                       onChange={(id) => {
                         setDistrict(id);
+
                         setUpazila("");
                       }}
                       options={DISTRICTS}
@@ -1372,6 +2119,7 @@ export default function FamilyCardForm() {
                   type="button"
                 >
                   <RotateCcw size={14} />
+
                   <span>Clear all</span>
                 </button>
 
@@ -1386,6 +2134,7 @@ export default function FamilyCardForm() {
                   ) : (
                     <Printer size={14} />
                   )}
+
                   <span>
                     {isProcessing === "print" ? "Processing..." : "Print"}
                   </span>
@@ -1399,6 +2148,7 @@ export default function FamilyCardForm() {
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
+
                   <span>Preview</span>
                 </span>
 
@@ -1421,7 +2171,9 @@ export default function FamilyCardForm() {
 
                     <button
                       onClick={() =>
-                        setZoom((currentZoom) => Math.min(150, currentZoom + 10))
+                        setZoom((currentZoom) =>
+                          Math.min(150, currentZoom + 10),
+                        )
                       }
                       className="p-1 hover:bg-white rounded-md text-gray-500"
                       type="button"
@@ -1456,14 +2208,38 @@ export default function FamilyCardForm() {
                 <span className="inline-flex items-center justify-center w-4 h-4 rounded border border-gray-300 bg-white">
                   ▣
                 </span>
+
                 <span>Live preview</span>
+
+                {isZoomedBeyondFit ? (
+                  <span className="text-[10px] text-gray-400">
+                    • Drag to move
+                  </span>
+                ) : null}
               </div>
 
               <div
                 ref={previewScrollRef}
-                className={`bg-[#3d3934] rounded-xl overflow-auto max-h-[730px] min-h-[580px] p-4 sm:p-5 flex items-start ${
-                  isZoomedBeyondFit ? "justify-start" : "justify-center"
-                }`}
+                onPointerDown={handlePreviewPointerDown}
+                onPointerMove={handlePreviewPointerMove}
+                onPointerUp={endPreviewPan}
+                onPointerCancel={endPreviewPan}
+                onLostPointerCapture={() => endPreviewPan()}
+                aria-label={
+                  isZoomedBeyondFit
+                    ? "Zoomed form preview. Drag to move the page."
+                    : "Form preview"
+                }
+                className={`bg-[#3d3934] rounded-xl overflow-auto max-h-[730px] min-h-[580px] p-4 sm:p-5 flex items-start select-none ${
+                  isZoomedBeyondFit
+                    ? isPanning
+                      ? "cursor-grabbing"
+                      : "cursor-grab"
+                    : "cursor-default"
+                } ${isZoomedBeyondFit ? "justify-start" : "justify-center"}`}
+                style={{
+                  touchAction: isZoomedBeyondFit ? "none" : "auto",
+                }}
               >
                 <div
                   aria-hidden="true"
@@ -1519,14 +2295,17 @@ export default function FamilyCardForm() {
               Attach one colour passport-size photo to the application form with
               a stapler.
             </li>
+
             <li>
               Submit a photocopy of the National ID (NID) with the application
               form.
             </li>
+
             <li>
               Submit photocopies of National IDs of other family members (if
               any).
             </li>
+
             <li>An active mobile number must be provided.</li>
           </ul>
 
@@ -1550,6 +2329,7 @@ export default function FamilyCardForm() {
 
         <div className="print-hide bg-blue-50/60 border border-blue-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-blue-900 font-medium">
           <ShieldCheck size={16} className="text-blue-600 shrink-0" />
+
           <span>
             Your files are processed in the browser — they are not uploaded to
             any server.
@@ -1564,6 +2344,7 @@ export default function FamilyCardForm() {
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+
               <span>How to use</span>
             </div>
 
@@ -1576,9 +2357,11 @@ export default function FamilyCardForm() {
                 1. Fill in your personal details, address, and family
                 information on the left panel.
               </p>
+
               <p>
                 2. Watch the application letter update live on the right panel.
               </p>
+
               <p>3. Print or download the form as a PDF to submit.</p>
             </div>
           ) : null}
@@ -1621,17 +2404,11 @@ export default function FamilyCardForm() {
         <div className="print-hide fixed bottom-0 left-0 right-0 z-40 px-3 sm:px-4 pb-3 pointer-events-none">
           <div className="w-full pointer-events-auto bg-[#F8FAFC]/95 backdrop-blur-md border border-gray-200/80 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_-8px_28px_rgba(30,30,30,.12)]">
             <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isComplete ? "bg-emerald-500" : "bg-red-500"
-                }`}
-              />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+
               <span>
-                {isComplete
-                  ? "Form complete — download or print your application."
-                  : anyFieldFilled
-                    ? "Complete all required fields to print or download."
-                    : "Add an input to get started"}
+                Print or download a blank form now, then fill it in by hand
+                later.
               </span>
             </div>
 
@@ -1650,6 +2427,7 @@ export default function FamilyCardForm() {
                 type="button"
               >
                 <RefreshCw size={13} />
+
                 <span>Restore last application</span>
               </button>
 
@@ -1711,6 +2489,8 @@ export default function FamilyCardForm() {
           upazilaLabel={upazilaLabel ?? ""}
           numSons={numSons}
           numDaughters={numDaughters}
+          documentRef={printPageRef}
+          printable
         />
       </div>
     </div>

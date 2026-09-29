@@ -33,6 +33,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   'banglish-typing': dynamic(() => import("./_tools/BanglishTyping")),
   'ats-friendly-cv-maker': dynamic(() => import("./_tools/AtsCvMaker")),
   'special-information-form': dynamic(() => import("./_tools/SpecialInformationForm")),
+  'fuel-card-form': dynamic(() => import("./_tools/FuelCardForm")),
 };
 
 export default async function DynamicToolPage({
