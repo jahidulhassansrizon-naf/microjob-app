@@ -20,6 +20,9 @@ import {
   Columns,
   AlertCircle,
   Palette,
+  Sparkles,
+  Wand2,
+  Check,
   Eye,
   Edit,
   Save,
@@ -27,6 +30,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import jsPDF from "jspdf";
+import {
+  enhanceCanvas,
+  isEnhanceAbort,
+  type EnhanceProgress,
+} from "./realEsrganEngine";
 
 declare global {
   interface Window {
@@ -73,6 +81,34 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const normalizeAngle = (angle: number): number => ((angle % 360) + 360) % 360;
 
+// Magic effects can now be stacked. They always run in this fixed order
+// (Color -> Clean -> Enhance) so the result is the same no matter which
+// button the user pressed first. Enhance is last because it upscales 2x.
+type EffectKey = "color" | "clean" | "enhance";
+type Effects = Record<EffectKey, boolean>;
+
+const NO_EFFECTS: Effects = { color: false, clean: false, enhance: false };
+const EFFECT_ORDER: EffectKey[] = ["color", "clean", "enhance"];
+const EFFECT_ENDPOINTS: Record<"color" | "clean", string> = {
+  color: "/api/color-document",
+  clean: "/api/clean-document",
+};
+const ENHANCE_LABEL = "Ultra HD Restore";
+const MAX_EFFECT_CACHE_ENTRIES = 8;
+
+const hasAnyEffect = (e: Effects): boolean => e.color || e.clean || e.enhance;
+
+// Cheap fingerprint of a (huge) data URL, used as a cache key.
+const hashString = (value: string): string => {
+  let h = 2166136261;
+  const step = Math.max(1, Math.floor(value.length / 4096));
+  for (let i = 0; i < value.length; i += step) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `${value.length}-${(h >>> 0).toString(36)}`;
+};
+
 export default function DocumentScanner() {
   const [images, setImages] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -87,7 +123,8 @@ export default function DocumentScanner() {
   const [corners, setCorners] = useState<Point[]>(DEFAULT_CORNERS);
   const [draggingCorner, setDraggingCorner] = useState<number | null>(null);
 
-  const [mode, setMode] = useState<string>("normal");
+  const [effects, setEffects] = useState<Effects>(NO_EFFECTS);
+  const [activeStage, setActiveStage] = useState<EffectKey | null>(null);
 
   const [blackness, setBlackness] = useState<number>(0);
   const [contrast, setContrast] = useState<number>(0);
@@ -129,6 +166,10 @@ export default function DocumentScanner() {
   const [isCvLoaded, setCvLoaded] = useState<boolean>(false);
   const [cropReady, setCropReady] = useState<boolean>(false);
   const [isPythonLoading, setIsPythonLoading] = useState<boolean>(false);
+  // AI Enhance reuses `isPythonLoading` as its "busy" flag (disables all buttons,
+  // shows the overlay); this only carries the progress text / percent.
+  const [enhanceProgress, setEnhanceProgress] =
+    useState<EnhanceProgress | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,8 +178,14 @@ export default function DocumentScanner() {
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const processingIdRef = useRef<number>(0);
   const activeServerRequestRef = useRef<AbortController | null>(null);
+  const enhanceAbortRef = useRef<AbortController | null>(null);
+  // Cache of finished effect stages so toggling an effect off/on again (or
+  // re-cropping) does not re-run slow AI work for the same input.
+  const effectCacheRef = useRef<Map<string, string>>(new Map());
   const cloudinarySaveRequestRef = useRef<AbortController | null>(null);
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => () => enhanceAbortRef.current?.abort(), []);
 
   const createTrackedObjectURL = useCallback((blob: Blob | File): string => {
     const url = URL.createObjectURL(blob);
@@ -308,12 +355,13 @@ export default function DocumentScanner() {
     processingIdRef.current += 1;
     cancelActiveServerRequest();
     cancelCloudinarySaveRequest();
+    enhanceAbortRef.current?.abort();
 
     setIsPythonLoading(false);
     setErrorMessage(null);
     setRotation(0);
     setBakedRotation(0);
-    setMode("normal");
+    setEffects(NO_EFFECTS);
     setBlackness(0);
     setContrast(0);
     setBrightness(0);
@@ -588,7 +636,7 @@ export default function DocumentScanner() {
       setManualCropSourceBakedRotation(0);
       setBakedRotation(0);
       setRotation(0);
-      setMode("normal");
+      setEffects(NO_EFFECTS);
       setBlackness(0);
       setContrast(0);
       setBrightness(0);
@@ -1692,7 +1740,7 @@ export default function DocumentScanner() {
     setErrorMessage(null);
     setRotation(0);
     setBakedRotation(0);
-    setMode("normal");
+    setEffects(NO_EFFECTS);
     setBlackness(0);
     setContrast(0);
     setBrightness(0);
@@ -1815,7 +1863,7 @@ export default function DocumentScanner() {
     setBlackness(0);
     setContrast(0);
     setBrightness(0);
-    setMode("normal");
+    setEffects(NO_EFFECTS);
     setRotation(0);
     setBakedRotation(0);
     setAutoCrop(false);
@@ -1839,15 +1887,228 @@ export default function DocumentScanner() {
     }
   };
 
+  const canvasFromSrc = async (src: string): Promise<HTMLCanvasElement> => {
+    const img = await loadImage(src);
+    return createRotatedCanvas(img, 0);
+  };
+
+  /**
+   * Runs every enabled effect on `working`, in EFFECT_ORDER, and returns the
+   * final image. Each finished stage is cached, so only the stages whose
+   * input actually changed are recomputed.
+   */
+  const runEffectsPipeline = async (
+    working: HTMLCanvasElement,
+    target: Effects,
+    processingId: number,
+    signal: AbortSignal,
+  ): Promise<{ workingSrc: string; resultSrc: string } | null> => {
+    const isStale = () =>
+      signal.aborted || processingId !== processingIdRef.current;
+
+    const workingSrc = working.toDataURL("image/png");
+    if (!hasAnyEffect(target)) return { workingSrc, resultSrc: workingSrc };
+
+    let currentCanvas = working;
+    let resultSrc = workingSrc;
+    let key = hashString(workingSrc);
+
+    for (const stage of EFFECT_ORDER) {
+      if (!target[stage]) continue;
+      key += `|${stage}`;
+
+      const cached = effectCacheRef.current.get(key);
+      if (cached) {
+        currentCanvas = await canvasFromSrc(cached);
+        if (isStale()) return null;
+        resultSrc = cached;
+        continue;
+      }
+
+      setActiveStage(stage);
+      setIsPythonLoading(true);
+
+      let stageSrc: string;
+
+      if (stage === "enhance") {
+        setEnhanceProgress({ stage: "load", percent: 0 });
+
+        const enhanced = await enhanceCanvas(currentCanvas, {
+          scale: 2,
+          signal,
+          onProgress: (progress) => {
+            if (!isStale()) setEnhanceProgress(progress);
+          },
+        });
+
+        if (isStale()) return null;
+        setEnhanceProgress(null);
+        stageSrc = enhanced.toDataURL("image/png");
+      } else {
+        const url = await processWithPythonBackend(
+          currentCanvas,
+          EFFECT_ENDPOINTS[stage],
+        );
+
+        if (!url || isStale()) {
+          if (url) revokeTrackedObjectURL(url);
+          return null;
+        }
+
+        // processCanvasWithServer turns the busy flag off when it finishes;
+        // keep it on while the next stage is still pending.
+        setIsPythonLoading(true);
+
+        try {
+          const stageImg = await loadImage(url);
+          const stageCanvas = document.createElement("canvas");
+          stageCanvas.width = stageImg.naturalWidth || stageImg.width;
+          stageCanvas.height = stageImg.naturalHeight || stageImg.height;
+          const stageCtx = stageCanvas.getContext("2d");
+          if (!stageCtx) throw new Error("Canvas context unavailable");
+          stageCtx.imageSmoothingEnabled = true;
+          stageCtx.imageSmoothingQuality = "high";
+          stageCtx.drawImage(stageImg, 0, 0);
+          stageSrc = stageCanvas.toDataURL("image/png");
+        } finally {
+          revokeTrackedObjectURL(url);
+        }
+
+        if (isStale()) return null;
+      }
+
+      const cache = effectCacheRef.current;
+      cache.set(key, stageSrc);
+      while (cache.size > MAX_EFFECT_CACHE_ENTRIES) {
+        const oldest = cache.keys().next().value;
+        if (oldest === undefined) break;
+        cache.delete(oldest);
+      }
+
+      currentCanvas = await canvasFromSrc(stageSrc);
+      if (isStale()) return null;
+      resultSrc = stageSrc;
+    }
+
+    return { workingSrc, resultSrc };
+  };
+
+  const describeEffectError = (error: unknown): string => {
+    const message = error instanceof Error ? error.message : "";
+    return /MODEL_FETCH_FAILED|failed to fetch|network/i.test(message)
+      ? "AI মডেল লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।"
+      : /memory|allocate|RangeError/i.test(message)
+        ? "ডিভাইসের মেমোরি শেষ হয়ে গেছে। অন্য ট্যাব বন্ধ করে আবার চেষ্টা করুন।"
+        : "Document processing সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।";
+  };
+
+  /**
+   * Applies the given set of effects to the current (uncropped-by-effects)
+   * working image. Because the effect-free original is always kept in
+   * `croppedOriginalSrc`, effects can be added and removed independently.
+   */
+  const applyEffects = async (
+    target: Effects,
+    options?: { resetEffectsOnFail?: boolean },
+  ) => {
+    if (!selectedImageSrc) return;
+
+    cancelActiveServerRequest();
+    cancelCloudinarySaveRequest();
+    enhanceAbortRef.current?.abort();
+
+    const currentProcessingId = ++processingIdRef.current;
+    const controller = new AbortController();
+    enhanceAbortRef.current = controller;
+    const rotationAtStart = rotation;
+    const isStale = () =>
+      controller.signal.aborted ||
+      currentProcessingId !== processingIdRef.current;
+
+    let applied = false;
+
+    try {
+      setErrorMessage(null);
+      setIsPythonLoading(true);
+
+      const working = await createCurrentWorkingCanvas();
+      if (!working || isStale()) return;
+
+      const output = await runEffectsPipeline(
+        working,
+        target,
+        currentProcessingId,
+        controller.signal,
+      );
+      if (!output || isStale()) return;
+
+      applied = true;
+      setEffects(target);
+      setHasUnsavedChanges(true);
+      setCroppedOriginalSrc(output.workingSrc);
+      setRotatedOriginalSrc(output.workingSrc);
+      setCleanBaseSrc(output.resultSrc);
+      setBakedRotation(rotationAtStart);
+    } catch (error) {
+      if (
+        isEnhanceAbort(error) ||
+        currentProcessingId !== processingIdRef.current
+      )
+        return;
+
+      console.error("Applying effects failed:", error);
+      setErrorMessage(describeEffectError(error));
+    } finally {
+      if (
+        !applied &&
+        options?.resetEffectsOnFail &&
+        currentProcessingId === processingIdRef.current
+      ) {
+        setEffects(NO_EFFECTS);
+      }
+
+      if (enhanceAbortRef.current === controller) {
+        enhanceAbortRef.current = null;
+        setIsPythonLoading(false);
+        setEnhanceProgress(null);
+        setActiveStage(null);
+      }
+    }
+  };
+
+  const handleSetEffect = (key: EffectKey, enabled: boolean) => {
+    if (
+      !selectedImageSrc ||
+      !cleanBaseSrc ||
+      isPythonLoading ||
+      isManualCropping ||
+      isSavingDocument ||
+      effects[key] === enabled
+    )
+      return;
+
+    void applyEffects({ ...effects, [key]: enabled });
+  };
+
   const handleTriggerAutoCrop = async () => {
     if (!selectedImageSrc || isPythonLoading || isSavingDocument) return;
 
     cancelActiveServerRequest();
     cancelCloudinarySaveRequest();
+    enhanceAbortRef.current?.abort();
 
     const currentProcessingId = ++processingIdRef.current;
+    const controller = new AbortController();
+    enhanceAbortRef.current = controller;
     const rotationAtStart = rotation;
-    const modeAtStart = mode;
+    // Effects the user already turned on must survive the crop.
+    const effectsAtStart = effects;
+    const isStale = () =>
+      controller.signal.aborted ||
+      currentProcessingId !== processingIdRef.current;
+
+    let cropShown = false;
+    let effectsRestored = false;
 
     setIsManualCropping(false);
     setCropReady(false);
@@ -1856,16 +2117,21 @@ export default function DocumentScanner() {
 
     try {
       const img = await loadImage(selectedImageSrc);
-      if (currentProcessingId !== processingIdRef.current) return;
+      if (isStale()) return;
 
       const workingCanvas = createRotatedCanvas(img, rotationAtStart);
       const resultUrl = await processWithPythonAutoCrop(workingCanvas);
 
-      if (!resultUrl || currentProcessingId !== processingIdRef.current) return;
+      if (!resultUrl || isStale()) {
+        if (resultUrl) revokeTrackedObjectURL(resultUrl);
+        return;
+      }
+
+      let croppedCanvas: HTMLCanvasElement;
 
       try {
         const resultImg = await loadImage(resultUrl);
-        const croppedCanvas = document.createElement("canvas");
+        croppedCanvas = document.createElement("canvas");
         croppedCanvas.width = resultImg.naturalWidth || resultImg.width;
         croppedCanvas.height = resultImg.naturalHeight || resultImg.height;
 
@@ -1875,52 +2141,69 @@ export default function DocumentScanner() {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
         ctx.drawImage(resultImg, 0, 0);
-
-        const cropUrl = croppedCanvas.toDataURL("image/png");
-
-        setHasUnsavedChanges(true);
-        setCroppedOriginalSrc(cropUrl);
-        setCleanBaseSrc(cropUrl);
-        setRotatedOriginalSrc(cropUrl);
-        setBakedRotation(rotationAtStart);
-        setAutoCrop(true);
-        setIsManualCropping(false);
-
-        if (modeAtStart === "python-clean" || modeAtStart === "python-color") {
-          const endpoint =
-            modeAtStart === "python-clean"
-              ? "/api/clean-document"
-              : "/api/color-document";
-
-          const cleanUrl = await processWithPythonBackend(
-            croppedCanvas,
-            endpoint,
-          );
-          if (!cleanUrl || currentProcessingId !== processingIdRef.current)
-            return;
-
-          try {
-            const cleanImg = await loadImage(cleanUrl);
-            const cleanCanvas = document.createElement("canvas");
-            cleanCanvas.width = cleanImg.naturalWidth || cleanImg.width;
-            cleanCanvas.height = cleanImg.naturalHeight || cleanImg.height;
-
-            const cleanCtx = cleanCanvas.getContext("2d");
-            if (!cleanCtx) throw new Error("Canvas context unavailable");
-
-            cleanCtx.drawImage(cleanImg, 0, 0);
-            setCleanBaseSrc(cleanCanvas.toDataURL("image/png"));
-          } finally {
-            revokeTrackedObjectURL(cleanUrl);
-          }
-        }
       } finally {
         revokeTrackedObjectURL(resultUrl);
       }
+
+      // Show the plain crop right away...
+      const cropUrl = croppedCanvas.toDataURL("image/png");
+
+      setHasUnsavedChanges(true);
+      setCroppedOriginalSrc(cropUrl);
+      setCleanBaseSrc(cropUrl);
+      setRotatedOriginalSrc(cropUrl);
+      setBakedRotation(rotationAtStart);
+      setAutoCrop(true);
+      setIsManualCropping(false);
+      cropShown = true;
+
+      if (!hasAnyEffect(effectsAtStart)) {
+        effectsRestored = true;
+        return;
+      }
+
+      // ...then re-apply Clean / Color / Enhance on top of the new crop.
+      setIsPythonLoading(true);
+
+      const output = await runEffectsPipeline(
+        croppedCanvas,
+        effectsAtStart,
+        currentProcessingId,
+        controller.signal,
+      );
+      if (!output || isStale()) return;
+
+      setCleanBaseSrc(output.resultSrc);
+      effectsRestored = true;
     } catch (error) {
-      if (currentProcessingId === processingIdRef.current) {
-        console.error("Auto crop failed:", error);
-        setErrorMessage("Auto crop সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
+      if (
+        isEnhanceAbort(error) ||
+        currentProcessingId !== processingIdRef.current
+      )
+        return;
+
+      console.error("Auto crop failed:", error);
+      setErrorMessage(
+        cropShown
+          ? describeEffectError(error)
+          : "Auto crop সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।",
+      );
+    } finally {
+      // Crop is on screen but the effects could not be re-applied: make the
+      // buttons tell the truth.
+      if (
+        cropShown &&
+        !effectsRestored &&
+        currentProcessingId === processingIdRef.current
+      ) {
+        setEffects(NO_EFFECTS);
+      }
+
+      if (enhanceAbortRef.current === controller) {
+        enhanceAbortRef.current = null;
+        setIsPythonLoading(false);
+        setEnhanceProgress(null);
+        setActiveStage(null);
       }
     }
   };
@@ -1936,10 +2219,15 @@ export default function DocumentScanner() {
       setIsManualCropping(false);
       setManualCropSourceSrc("");
       setHasUnsavedChanges(true);
+
+      // The live crop preview is effect-free; put the effects back on the
+      // finished crop.
+      if (cropReady && hasAnyEffect(effects)) {
+        void applyEffects(effects, { resetEffectsOnFail: true });
+      }
       return;
     }
 
-    setMode("normal");
     setAutoCrop(false);
     setCropReady(false);
     resetCorners();
@@ -1948,73 +2236,45 @@ export default function DocumentScanner() {
     setIsManualCropping(true);
   };
 
-  const handleApplyServerMode = async (
-    requestedMode: "python-clean" | "python-color",
+  const renderEffectRow = (
+    key: EffectKey,
+    label: string,
+    icon: React.ReactNode,
   ) => {
-    if (
-      !selectedImageSrc ||
+    const active = effects[key];
+    const disabled =
       isPythonLoading ||
-      isManualCropping ||
-      isSavingDocument
-    )
-      return;
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping;
 
-    cancelActiveServerRequest();
-    cancelCloudinarySaveRequest();
+    return (
+      <div className="flex items-stretch gap-2">
+        <button
+          type="button"
+          onClick={() => handleSetEffect(key, true)}
+          disabled={disabled}
+          aria-pressed={active}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-emerald-600 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+        >
+          {active ? <Check size={14} /> : icon}
+          {label}
+        </button>
 
-    const currentProcessingId = ++processingIdRef.current;
-
-    try {
-      const workingCanvas = await createCurrentWorkingCanvas();
-      if (!workingCanvas || currentProcessingId !== processingIdRef.current)
-        return;
-
-      const endpoint =
-        requestedMode === "python-clean"
-          ? "/api/clean-document"
-          : "/api/color-document";
-      const resultUrl = await processWithPythonBackend(workingCanvas, endpoint);
-
-      if (!resultUrl || currentProcessingId !== processingIdRef.current) return;
-
-      try {
-        const resultImg = await loadImage(resultUrl);
-        const resultCanvas = document.createElement("canvas");
-        resultCanvas.width = resultImg.naturalWidth || resultImg.width;
-        resultCanvas.height = resultImg.naturalHeight || resultImg.height;
-
-        const ctx = resultCanvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas context unavailable");
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(resultImg, 0, 0);
-
-        const resultSrc = resultCanvas.toDataURL("image/png");
-        const workingSrc = workingCanvas.toDataURL("image/png");
-
-        setMode(requestedMode);
-        setHasUnsavedChanges(true);
-        setCroppedOriginalSrc(workingSrc);
-        setCleanBaseSrc(resultSrc);
-        setRotatedOriginalSrc(workingSrc);
-        setBakedRotation(rotation);
-      } finally {
-        revokeTrackedObjectURL(resultUrl);
-      }
-    } catch (error) {
-      if (currentProcessingId === processingIdRef.current) {
-        console.error("Magic processing failed:", error);
-        setErrorMessage(
-          "Document processing সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।",
-        );
-      }
-    }
+        <button
+          type="button"
+          onClick={() => handleSetEffect(key, !active)}
+          disabled={disabled}
+          title={active ? `${label} বাদ দিন` : `${label} যোগ করুন`}
+          aria-label={active ? `Remove ${label}` : `Add ${label}`}
+          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"}`}
+        >
+          {active ? <Minus size={14} /> : <Plus size={14} />}
+        </button>
+      </div>
+    );
   };
-
-  const handleApplyMagic = () => void handleApplyServerMode("python-clean");
-  const handleApplyColorMagic = () =>
-    void handleApplyServerMode("python-color");
 
   return (
     <div className="w-full min-h-screen bg-slate-50 text-[#0F172A] font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
@@ -2303,8 +2563,27 @@ export default function DocumentScanner() {
                           className="text-emerald-600 animate-spin"
                         />
                         <span className="text-xs font-bold text-[#0F172A]">
-                          Processing Image...
+                          {enhanceProgress
+                            ? enhanceProgress.stage === "download"
+                              ? `AI মডেল ডাউনলোড হচ্ছে… ${enhanceProgress.percent}% (প্রথমবার)`
+                              : enhanceProgress.stage === "load"
+                                ? "AI ইঞ্জিন চালু হচ্ছে…"
+                                : `${ENHANCE_LABEL} হচ্ছে… ${enhanceProgress.percent}%`
+                            : activeStage === "clean"
+                              ? "Document Clean হচ্ছে…"
+                              : activeStage === "color"
+                                ? "Color Document হচ্ছে…"
+                                : "Processing Image..."}
                         </span>
+                        {enhanceProgress && (
+                          <button
+                            type="button"
+                            onClick={() => enhanceAbortRef.current?.abort()}
+                            className="mt-1 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold rounded-lg cursor-pointer flex items-center gap-1"
+                          >
+                            <X size={12} /> Cancel
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -2467,26 +2746,21 @@ export default function DocumentScanner() {
                 Magic
               </div>
 
-              <button
-                onClick={handleApplyColorMagic}
-                disabled={
-                  isPythonLoading || images.length === 0 || isSavingDocument
-                }
-                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${mode === "python-color" ? "bg-slate-800 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
-              >
-                <Palette size={14} />
-                Color Document
-              </button>
-
-              <button
-                onClick={handleApplyMagic}
-                disabled={
-                  isPythonLoading || images.length === 0 || isSavingDocument
-                }
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Document Clean
-              </button>
+              {renderEffectRow(
+                "color",
+                "Color Document",
+                <Palette size={14} />,
+              )}
+              {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
+              {renderEffectRow(
+                "enhance",
+                ENHANCE_LABEL,
+                <Sparkles size={14} />,
+              )}
+              <p className="text-[10px] text-slate-400 text-center leading-snug">
+                একসাথে একাধিক চালু রাখা যায় · − চাপলে সেটি বাদ যাবে · আপনার
+                ডিভাইসেই চলে
+              </p>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
