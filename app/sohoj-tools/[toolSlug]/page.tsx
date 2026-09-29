@@ -32,6 +32,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   'bijoy-unicode': dynamic(() => import("./_tools/BijoyToUnicode")),
   'banglish-typing': dynamic(() => import("./_tools/BanglishTyping")),
   'ats-friendly-cv-maker': dynamic(() => import("./_tools/AtsCvMaker")),
+  'special-information-form': dynamic(() => import("./_tools/SpecialInformationForm")),
 };
 
 export default async function DynamicToolPage({

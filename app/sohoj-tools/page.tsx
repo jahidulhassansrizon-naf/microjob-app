@@ -256,6 +256,14 @@ const toolsData: ToolItem[] = [
     bgColor: "bg-[#84cc16]",
     icon: Keyboard,
   },
+  {
+    id: "29",
+    name: "Special Information Form",
+    category: "General",
+    bgColor: "bg-[#0ea5e9]",
+    icon: FileText,
+    badge: "New",
+  },
 ];
 
 const categories = [
