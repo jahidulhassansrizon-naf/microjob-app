@@ -1185,11 +1185,13 @@ function SpecialPage1({ d }: { d: SpecialInformationFormState }) {
   const rel = (prefix: "first" | "second" | "third") => {
     const p = `${prefix}Relative` as const;
     return {
-      name: d[`${p}Name` as FormKey].trim(),
-      nid: d[`${p}Nid` as FormKey].trim(),
-      relation: d[`${p}Relation` as FormKey].trim(),
-      dob: d[`${p}Dob` as FormKey].replace(/\D/g, ""),
-      mobile: d[`${p}Mobile` as FormKey].trim(),
+      // FormKey is a union of string and boolean keys, so normalize the
+      // dynamically accessed values before using string-only methods.
+      name: String(d[`${p}Name` as FormKey] ?? "").trim(),
+      nid: String(d[`${p}Nid` as FormKey] ?? "").trim(),
+      relation: String(d[`${p}Relation` as FormKey] ?? "").trim(),
+      dob: String(d[`${p}Dob` as FormKey] ?? "").replace(/\D/g, ""),
+      mobile: String(d[`${p}Mobile` as FormKey] ?? "").trim(),
     };
   };
   const r1 = rel("first");
