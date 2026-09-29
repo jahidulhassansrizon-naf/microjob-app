@@ -54,6 +54,14 @@ const toolsData: ToolItem[] = [
     badge: "Hot",
   },
   {
+    id: "28",
+    name: "NID Information Correction Form",
+    category: "General",
+    bgColor: "bg-[#8b5cf6]",
+    icon: FileText,
+    badge: "New",
+  },
+  {
     id: "11",
     name: "Document Scanner",
     category: "General",
@@ -385,7 +393,7 @@ function SohojToolsContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                27 free tools to speed up daily work.
+                28 free tools to speed up daily work.
               </p>
             </div>
           </div>

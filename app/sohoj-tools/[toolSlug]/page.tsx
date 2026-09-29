@@ -13,6 +13,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   'voter-migration-form': dynamic(() => import("./_tools/VoterMigrationForm")),
   'voter-registration-form': dynamic(() => import("./_tools/VoterRegistrationForm")),
   'family-card-form': dynamic(() => import("./_tools/FamilyCardForm")),
+  'nid-information-correction-form': dynamic(() => import("./_tools/NidInformationCorrectionForm")),
   'reduce-video-file-size': dynamic(() => import("./_tools/AllowanceApplicationTracking")),
   'remove-background': dynamic(() => import("./_tools/RemoveBackground")),
   'document-scanner': dynamic(() => import("./_tools/DocumentScanner")),
@@ -43,6 +44,19 @@ export default async function DynamicToolPage({
 
   if (!SelectedToolComponent) {
     notFound();
+  }
+
+  const isNidCorrection = toolSlug === "nid-information-correction-form";
+
+  if (isNidCorrection) {
+    return (
+      <div className="min-h-screen w-full bg-[#FFF4D7] text-[#0F172A] flex flex-col font-sans">
+        <DashboardNavbar />
+        <main className="w-full flex-1">
+          <SelectedToolComponent />
+        </main>
+      </div>
+    );
   }
 
   return (
