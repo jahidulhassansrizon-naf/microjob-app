@@ -4,6 +4,7 @@
 import React, {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -19,10 +20,12 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Minimize2,
   Printer,
   Upload,
   Image as ImageIcon,
   CreditCard,
+  Scissors,
   Crop,
   Trash2,
   Check,
@@ -33,22 +36,20 @@ import {
   Download,
 } from "lucide-react";
 
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
+
 type Orientation = "auto" | "portrait" | "landscape";
+type SheetOrientation = "portrait" | "landscape";
 type Layout = "stacked" | "side-by-side";
 type Position = "top" | "center" | "bottom";
 type ImageSlot = "front" | "back";
+type CopyArrangement = "vertical" | "horizontal";
 
-type Point = {
-  x: number;
-  y: number;
-};
+type Point = { x: number; y: number };
 
-type CropPolygon = {
-  tl: Point;
-  tr: Point;
-  br: Point;
-  bl: Point;
-};
+type CropPolygon = { tl: Point; tr: Point; br: Point; bl: Point };
 
 type CropHandle =
   | "move"
@@ -63,79 +64,150 @@ type CropHandle =
 
 type ImageAsset = {
   file: File;
+  /** Object URL of the decoded (possibly HEIC-converted) image. */
   url: string;
+  /** Decoded image, kept so it is never re-decoded while adjusting settings. */
+  image: HTMLImageElement;
   naturalWidth: number;
   naturalHeight: number;
   crop: CropPolygon;
 };
 
-type Notice = {
-  type: "success" | "error" | "info";
-  message: string;
+type Notice = { type: "success" | "error" | "info"; message: string };
+
+type RenderSettings = {
+  brightness: number;
+  contrast: number;
+  sharpening: number;
+  rotation: number;
+  roundedCorners: boolean;
 };
 
-type SheetOrientation = "portrait" | "landscape";
+type Placement = { x: number; y: number; width: number; height: number };
 
-type Placement = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+type PlacedItem = {
+  slot: ImageSlot;
+  copy: number;
+  /** The slot reserved for the passport page (mm, sheet coordinates). */
+  box: Placement;
+  /** The picture itself, fitted inside `box` (mm, sheet coordinates). */
+  image: Placement;
 };
 
 type SheetGeometry = {
   orientation: SheetOrientation;
   sheetWidth: number;
   sheetHeight: number;
-  itemWidth: number;
-  itemHeight: number;
-  front: Placement | null;
-  back: Placement | null;
+  /** 1 = actual size (88×125 mm). Below 1 the content had to be shrunk. */
+  scale: number;
+  items: PlacedItem[];
 };
 
+type ExportImage = { dataUrl: string; width: number; height: number };
+
+/* -------------------------------------------------------------------------- */
+/*  Constants                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const SLOTS: ImageSlot[] = ["front", "back"];
+
+const A4_WIDTH_MM = 210;
+const A4_HEIGHT_MM = 297;
 const PASSPORT_WIDTH_MM = 88;
 const PASSPORT_HEIGHT_MM = 125;
-const GAP_MM = 4;
-const SAFE_MARGIN_MM = 10;
 const TARGET_RATIO = PASSPORT_WIDTH_MM / PASSPORT_HEIGHT_MM;
+
+const SAFE_MARGIN_MM = 10;
+const ITEM_GAP_MM = 4;
+const COPY_GAP_MM = 6;
+
+/** 14 CSS px at 96 dpi, expressed physically so preview, PDF and print agree. */
+const CORNER_RADIUS_MM = (14 * 25.4) / 96;
+
+const EXPORT_PX_PER_MM = 300 / 25.4; // 300 DPI
+const PREVIEW_PX_PER_MM = 150 / 25.4; // 150 DPI is plenty for a screen
+const THUMB_PX_PER_MM = 2.4;
+
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const OUTPUT_PX_PER_MM = 300 / 25.4;
+const MIN_SIDE_PX = 240;
+const MAX_WORK_PIXELS = 12_000_000;
+
+const TOOLS_BASE = "/sohoj-tools";
+const FAVORITE_KEY = "sohoj-passport-joiner-favorite";
+
+/* -------------------------------------------------------------------------- */
+/*  Small helpers                                                             */
+/* -------------------------------------------------------------------------- */
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function normalizeRotation(rotation: number) {
+  return ((rotation % 360) + 360) % 360;
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) =>
+    window.requestAnimationFrame(() => resolve()),
+  );
+}
+
+function createCanvas(width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = Math.max(1, Math.round(height));
+  return canvas;
+}
+
+function get2d(
+  canvas: HTMLCanvasElement,
+  willReadFrequently = false,
+): CanvasRenderingContext2D {
+  const context = canvas.getContext(
+    "2d",
+    willReadFrequently ? { willReadFrequently: true } : undefined,
+  );
+
+  if (!context) {
+    throw new Error("Your browser could not create a drawing canvas.");
+  }
+
+  return context;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Crop polygon maths                                                        */
+/* -------------------------------------------------------------------------- */
+
 function getDefaultCrop(imageWidth: number, imageHeight: number): CropPolygon {
   const imageRatio = imageWidth / imageHeight;
 
   if (imageRatio > TARGET_RATIO) {
-    const width = imageHeight * TARGET_RATIO;
-    const x = (imageWidth - width) / 2 / imageWidth;
+    const width = (imageHeight * TARGET_RATIO) / imageWidth;
+    const x = (1 - width) / 2;
 
     return {
       tl: { x, y: 0 },
-      tr: { x: x + width / imageWidth, y: 0 },
-      br: { x: x + width / imageWidth, y: 1 },
+      tr: { x: x + width, y: 0 },
+      br: { x: x + width, y: 1 },
       bl: { x, y: 1 },
     };
   }
 
-  const height = imageWidth / TARGET_RATIO;
-  const y = (imageHeight - height) / 2 / imageHeight;
+  const height = imageWidth / TARGET_RATIO / imageHeight;
+  const y = (1 - height) / 2;
 
   return {
     tl: { x: 0, y },
     tr: { x: 1, y },
-    br: { x: 1, y: y + height / imageHeight },
-    bl: { x: 0, y: y + height / imageHeight },
+    br: { x: 1, y: y + height },
+    bl: { x: 0, y: y + height },
   };
 }
 
 function clampPoint(point: Point): Point {
-  return {
-    x: clamp(point.x, 0, 1),
-    y: clamp(point.y, 0, 1),
-  };
+  return { x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) };
 }
 
 function cloneCrop(crop: CropPolygon): CropPolygon {
@@ -199,8 +271,23 @@ function isValidCropPolygon(crop: CropPolygon): boolean {
   );
 }
 
+function lerpCrop(a: CropPolygon, b: CropPolygon, t: number): CropPolygon {
+  const mix = (p: Point, q: Point): Point => ({
+    x: p.x + (q.x - p.x) * t,
+    y: p.y + (q.y - p.y) * t,
+  });
+
+  return {
+    tl: mix(a.tl, b.tl),
+    tr: mix(a.tr, b.tr),
+    br: mix(a.br, b.br),
+    bl: mix(a.bl, b.bl),
+  };
+}
+
+/** Keeps a dragged crop inside the image and convex, sliding back if needed. */
 function getSafeCrop(start: CropPolygon, candidate: CropPolygon): CropPolygon {
-  const bounded = {
+  const bounded: CropPolygon = {
     tl: clampPoint(candidate.tl),
     tr: clampPoint(candidate.tr),
     br: clampPoint(candidate.br),
@@ -216,52 +303,15 @@ function getSafeCrop(start: CropPolygon, candidate: CropPolygon): CropPolygon {
 
   for (let step = 0; step < 14; step += 1) {
     const middle = (low + high) / 2;
-    const test: CropPolygon = {
-      tl: {
-        x: start.tl.x + (bounded.tl.x - start.tl.x) * middle,
-        y: start.tl.y + (bounded.tl.y - start.tl.y) * middle,
-      },
-      tr: {
-        x: start.tr.x + (bounded.tr.x - start.tr.x) * middle,
-        y: start.tr.y + (bounded.tr.y - start.tr.y) * middle,
-      },
-      br: {
-        x: start.br.x + (bounded.br.x - start.br.x) * middle,
-        y: start.br.y + (bounded.br.y - start.br.y) * middle,
-      },
-      bl: {
-        x: start.bl.x + (bounded.bl.x - start.bl.x) * middle,
-        y: start.bl.y + (bounded.bl.y - start.bl.y) * middle,
-      },
-    };
 
-    if (isValidCropPolygon(test)) {
+    if (isValidCropPolygon(lerpCrop(start, bounded, middle))) {
       low = middle;
     } else {
       high = middle;
     }
   }
 
-  return low === 0
-    ? cloneCrop(start)
-    : {
-        tl: {
-          x: start.tl.x + (bounded.tl.x - start.tl.x) * low,
-          y: start.tl.y + (bounded.tl.y - start.tl.y) * low,
-        },
-        tr: {
-          x: start.tr.x + (bounded.tr.x - start.tr.x) * low,
-          y: start.tr.y + (bounded.tr.y - start.tr.y) * low,
-        },
-        br: {
-          x: start.br.x + (bounded.br.x - start.br.x) * low,
-          y: start.br.y + (bounded.br.y - start.br.y) * low,
-        },
-        bl: {
-          x: start.bl.x + (bounded.bl.x - start.bl.x) * low,
-          y: start.bl.y + (bounded.bl.y - start.bl.y) * low,
-        },
-      };
+  return low === 0 ? cloneCrop(start) : lerpCrop(start, bounded, low);
 }
 
 function moveCrop(crop: CropPolygon, dx: number, dy: number): CropPolygon {
@@ -282,10 +332,48 @@ function moveCrop(crop: CropPolygon, dx: number, dy: number): CropPolygon {
   };
 }
 
-function readImageDimensions(url: string): Promise<{
-  width: number;
-  height: number;
-}> {
+/** Average width/height of the cropped quadrilateral, in source pixels. */
+function getCropDimensions(
+  crop: CropPolygon,
+  sourceWidth: number,
+  sourceHeight: number,
+) {
+  const edge = (a: Point, b: Point) =>
+    Math.hypot((b.x - a.x) * sourceWidth, (b.y - a.y) * sourceHeight);
+
+  return {
+    width: Math.max(1, (edge(crop.tl, crop.tr) + edge(crop.bl, crop.br)) / 2),
+    height: Math.max(1, (edge(crop.tl, crop.bl) + edge(crop.tr, crop.br)) / 2),
+  };
+}
+
+function getCropRatio(asset: ImageAsset): number {
+  const { width, height } = getCropDimensions(
+    asset.crop,
+    asset.naturalWidth,
+    asset.naturalHeight,
+  );
+  return width / height;
+}
+
+/** Content size (mm) of the un-rotated page, contained in the 88×125 mm slot. */
+function getContentSizeMm(asset: ImageAsset) {
+  const ratio = getCropRatio(asset);
+
+  return ratio > TARGET_RATIO
+    ? { width: PASSPORT_WIDTH_MM, height: PASSPORT_WIDTH_MM / ratio }
+    : { width: PASSPORT_HEIGHT_MM * ratio, height: PASSPORT_HEIGHT_MM };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Image loading (incl. HEIC)                                                */
+/* -------------------------------------------------------------------------- */
+
+function isHeic(file: File) {
+  return /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
 
@@ -296,23 +384,31 @@ function readImageDimensions(url: string): Promise<{
         );
         return;
       }
-
-      resolve({
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      });
+      resolve(image);
     };
 
-    image.onerror = () => {
-      reject(
-        new Error(
-          "This image could not be decoded by the browser. HEIC/HEIF files may need to be converted to JPG or PNG first.",
-        ),
-      );
-    };
+    image.onerror = () =>
+      reject(new Error("This image could not be decoded by your browser."));
 
     image.src = url;
   });
+}
+
+async function convertHeicToJpeg(file: File): Promise<Blob> {
+  try {
+    const { default: heic2any } = await import("heic2any");
+    const result = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.92,
+    });
+
+    return Array.isArray(result) ? result[0] : result;
+  } catch {
+    throw new Error(
+      "This HEIC photo could not be converted. Please export it as JPG or PNG and try again.",
+    );
+  }
 }
 
 async function createImageAsset(file: File): Promise<ImageAsset> {
@@ -320,30 +416,44 @@ async function createImageAsset(file: File): Promise<ImageAsset> {
     !file.type.startsWith("image/") &&
     !/\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name)
   ) {
-    throw new Error(
-      "Please choose a JPG, PNG, WebP, GIF, BMP, HEIC, or HEIF image.",
-    );
+    throw new Error("Please choose a JPG, PNG, WebP or HEIC image.");
   }
 
   if (file.size > MAX_FILE_BYTES) {
     throw new Error("Image size must be 20 MB or smaller.");
   }
 
-  const url = URL.createObjectURL(file);
+  let url = URL.createObjectURL(file);
 
   try {
-    const { width, height } = await readImageDimensions(url);
+    let image: HTMLImageElement;
 
-    if (width < 240 || height < 240) {
+    try {
+      image = await loadImage(url);
+    } catch (error) {
+      // Safari decodes HEIC natively; every other browser needs a conversion.
+      if (!isHeic(file)) {
+        throw error;
+      }
+
       URL.revokeObjectURL(url);
+      url = URL.createObjectURL(await convertHeicToJpeg(file));
+      image = await loadImage(url);
+    }
+
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+
+    if (width < MIN_SIDE_PX || height < MIN_SIDE_PX) {
       throw new Error(
-        "Please upload a higher-resolution image (at least 240 × 240 px).",
+        `Please upload a higher-resolution image (at least ${MIN_SIDE_PX} × ${MIN_SIDE_PX} px).`,
       );
     }
 
     return {
       file,
       url,
+      image,
       naturalWidth: width,
       naturalHeight: height,
       crop: getDefaultCrop(width, height),
@@ -354,45 +464,70 @@ async function createImageAsset(file: File): Promise<ImageAsset> {
   }
 }
 
-function applySharpening(
-  imageData: ImageData,
-  amountPercent: number,
-): ImageData {
-  if (amountPercent <= 0) {
-    return imageData;
+/* -------------------------------------------------------------------------- */
+/*  Rendering pipeline: crop → adjust → rotate → round                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Scales a region of `source` into a new white-backed canvas. Large reductions
+ * are done in halving steps so browsers without high-quality resampling do not
+ * alias.
+ */
+function scaleRegionToCanvas(
+  source: CanvasImageSource,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number,
+  dw: number,
+  dh: number,
+): HTMLCanvasElement {
+  let current: CanvasImageSource = source;
+  let cx = sx;
+  let cy = sy;
+  let cw = sw;
+  let ch = sh;
+
+  while (cw > dw * 2 || ch > dh * 2) {
+    const nw = cw > dw * 2 ? Math.max(dw, Math.ceil(cw / 2)) : Math.round(cw);
+    const nh = ch > dh * 2 ? Math.max(dh, Math.ceil(ch / 2)) : Math.round(ch);
+    const step = createCanvas(nw, nh);
+    const stepContext = get2d(step);
+
+    stepContext.imageSmoothingEnabled = true;
+    stepContext.imageSmoothingQuality = "high";
+    stepContext.drawImage(
+      current,
+      cx,
+      cy,
+      cw,
+      ch,
+      0,
+      0,
+      step.width,
+      step.height,
+    );
+
+    current = step;
+    cx = 0;
+    cy = 0;
+    cw = step.width;
+    ch = step.height;
   }
 
-  const amount = clamp(amountPercent / 100, 0, 1) * 0.85;
-  const { width, height, data } = imageData;
-  const source = new Uint8ClampedArray(data);
-  const index = (x: number, y: number) => (y * width + x) * 4;
+  const output = createCanvas(dw, dh);
+  const context = get2d(output);
 
-  for (let y = 1; y < height - 1; y += 1) {
-    for (let x = 1; x < width - 1; x += 1) {
-      const center = index(x, y);
-      const left = index(x - 1, y);
-      const right = index(x + 1, y);
-      const top = index(x, y - 1);
-      const bottom = index(x, y + 1);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, output.width, output.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(current, cx, cy, cw, ch, 0, 0, output.width, output.height);
 
-      for (let channel = 0; channel < 3; channel += 1) {
-        const value =
-          source[center + channel] * (1 + amount * 4) -
-          amount *
-            (source[left + channel] +
-              source[right + channel] +
-              source[top + channel] +
-              source[bottom + channel]);
-
-        data[center + channel] = clamp(Math.round(value), 0, 255);
-      }
-    }
-  }
-
-  return imageData;
+  return output;
 }
 
-function solveHomography(source: [Point, Point, Point, Point]): number[] {
+function solveHomography(source: Point[]): number[] {
   const destination: [number, number][] = [
     [0, 0],
     [1, 0],
@@ -426,9 +561,7 @@ function solveHomography(source: [Point, Point, Point, Point]): number[] {
     }
 
     if (pivotRow !== column) {
-      const temporary = matrix[column];
-      matrix[column] = matrix[pivotRow];
-      matrix[pivotRow] = temporary;
+      [matrix[column], matrix[pivotRow]] = [matrix[pivotRow], matrix[column]];
     }
 
     const pivot = matrix[column][column];
@@ -457,544 +590,813 @@ function solveHomography(source: [Point, Point, Point, Point]): number[] {
   return matrix.map((row) => row[8]);
 }
 
-function sampleBilinear(
-  source: Uint8ClampedArray,
-  width: number,
-  height: number,
-  x: number,
-  y: number,
-): [number, number, number, number] {
-  const safeX = clamp(x, 0, width - 1);
-  const safeY = clamp(y, 0, height - 1);
-
-  const x0 = Math.floor(safeX);
-  const y0 = Math.floor(safeY);
-  const x1 = Math.min(x0 + 1, width - 1);
-  const y1 = Math.min(y0 + 1, height - 1);
-
-  const fx = safeX - x0;
-  const fy = safeY - y0;
-
-  const index00 = (y0 * width + x0) * 4;
-  const index10 = (y0 * width + x1) * 4;
-  const index01 = (y1 * width + x0) * 4;
-  const index11 = (y1 * width + x1) * 4;
-
-  const output: [number, number, number, number] = [0, 0, 0, 0];
-
-  for (let channel = 0; channel < 4; channel += 1) {
-    const top =
-      source[index00 + channel] * (1 - fx) + source[index10 + channel] * fx;
-    const bottom =
-      source[index01 + channel] * (1 - fx) + source[index11 + channel] * fx;
-
-    output[channel] = Math.round(top * (1 - fy) + bottom * fy);
-  }
-
-  return output;
-}
-
-function perspectiveCropToCanvas(
-  sourceCanvas: HTMLCanvasElement,
+/** Straightens the crop quadrilateral into an `outW × outH` canvas. */
+function warpPerspective(
+  asset: ImageAsset,
   crop: CropPolygon,
-  outputWidth: number,
-  outputHeight: number,
+  outW: number,
+  outH: number,
 ): HTMLCanvasElement {
-  if (!isValidCropPolygon(crop)) {
-    throw new Error("Please keep all four crop corners inside the image.");
-  }
+  const { naturalWidth: W, naturalHeight: H } = asset;
+  const points = cropPoints(crop);
 
-  const sourceContext = sourceCanvas.getContext("2d", {
-    willReadFrequently: true,
-  });
-
-  if (!sourceContext) {
-    throw new Error("Your browser could not read the uploaded image.");
-  }
-
-  const sourceData = sourceContext.getImageData(
+  const minX = clamp(
+    Math.floor(Math.min(...points.map((p) => p.x)) * W) - 1,
     0,
+    W - 1,
+  );
+  const maxX = clamp(
+    Math.ceil(Math.max(...points.map((p) => p.x)) * W) + 1,
+    minX + 1,
+    W,
+  );
+  const minY = clamp(
+    Math.floor(Math.min(...points.map((p) => p.y)) * H) - 1,
     0,
-    sourceCanvas.width,
-    sourceCanvas.height,
+    H - 1,
   );
-  const sourcePixels = sourceData.data;
-
-  const sourcePoints: [Point, Point, Point, Point] = [
-    crop.tl,
-    crop.tr,
-    crop.br,
-    crop.bl,
-  ];
-
-  const homography = solveHomography(sourcePoints);
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = outputWidth;
-  outputCanvas.height = outputHeight;
-
-  const outputContext = outputCanvas.getContext("2d");
-
-  if (!outputContext) {
-    throw new Error("Your browser could not create the crop canvas.");
-  }
-
-  const outputImageData = outputContext.createImageData(
-    outputWidth,
-    outputHeight,
+  const maxY = clamp(
+    Math.ceil(Math.max(...points.map((p) => p.y)) * H) + 1,
+    minY + 1,
+    H,
   );
-  const outputPixels = outputImageData.data;
+
+  const boxW = maxX - minX;
+  const boxH = maxY - minY;
+  const cropSize = getCropDimensions(crop, W, H);
+
+  // Work at ~2× the output resolution (never more than the memory budget) so
+  // bilinear sampling stays smooth instead of aliasing on big photos.
+  const scale = Math.min(
+    1,
+    (outW * 2) / cropSize.width,
+    (outH * 2) / cropSize.height,
+    Math.sqrt(MAX_WORK_PIXELS / (boxW * boxH)),
+  );
+
+  const work = scaleRegionToCanvas(
+    asset.image,
+    minX,
+    minY,
+    boxW,
+    boxH,
+    Math.max(1, Math.round(boxW * scale)),
+    Math.max(1, Math.round(boxH * scale)),
+  );
+
+  const workW = work.width;
+  const workH = work.height;
+  const scaleX = workW / boxW;
+  const scaleY = workH / boxH;
+
+  const homography = solveHomography(
+    points.map((p) => ({
+      x: (p.x * W - minX) * scaleX,
+      y: (p.y * H - minY) * scaleY,
+    })),
+  );
+
+  const pixels = get2d(work, true).getImageData(0, 0, workW, workH).data;
+  const output = createCanvas(outW, outH);
+  const outputContext = get2d(output);
+  const outputData = outputContext.createImageData(output.width, output.height);
+  const out = outputData.data;
 
   const [h11, h12, h13, h21, h22, h23, h31, h32] = homography;
 
-  for (let y = 0; y < outputHeight; y += 1) {
-    const v = outputHeight === 1 ? 0 : y / (outputHeight - 1);
-    const rowOffset = y * outputWidth * 4;
+  for (let y = 0; y < output.height; y += 1) {
+    const v = (y + 0.5) / output.height;
 
-    for (let x = 0; x < outputWidth; x += 1) {
-      const u = outputWidth === 1 ? 0 : x / (outputWidth - 1);
+    for (let x = 0; x < output.width; x += 1) {
+      const u = (x + 0.5) / output.width;
       const denominator = h31 * u + h32 * v + 1;
+      const o = (y * output.width + x) * 4;
 
       if (Math.abs(denominator) < 1e-10) {
+        out[o] = out[o + 1] = out[o + 2] = out[o + 3] = 255;
         continue;
       }
 
-      const sourceX =
-        ((h11 * u + h12 * v + h13) / denominator) * (sourceCanvas.width - 1);
-      const sourceY =
-        ((h21 * u + h22 * v + h23) / denominator) * (sourceCanvas.height - 1);
-
-      const rgba = sampleBilinear(
-        sourcePixels,
-        sourceCanvas.width,
-        sourceCanvas.height,
-        sourceX,
-        sourceY,
+      const sx = clamp(
+        (h11 * u + h12 * v + h13) / denominator - 0.5,
+        0,
+        workW - 1,
+      );
+      const sy = clamp(
+        (h21 * u + h22 * v + h23) / denominator - 0.5,
+        0,
+        workH - 1,
       );
 
-      const destinationIndex = rowOffset + x * 4;
-      outputPixels[destinationIndex] = rgba[0];
-      outputPixels[destinationIndex + 1] = rgba[1];
-      outputPixels[destinationIndex + 2] = rgba[2];
-      outputPixels[destinationIndex + 3] = rgba[3];
+      const x0 = Math.floor(sx);
+      const y0 = Math.floor(sy);
+      const x1 = Math.min(x0 + 1, workW - 1);
+      const y1 = Math.min(y0 + 1, workH - 1);
+      const fx = sx - x0;
+      const fy = sy - y0;
+
+      const i00 = (y0 * workW + x0) * 4;
+      const i10 = (y0 * workW + x1) * 4;
+      const i01 = (y1 * workW + x0) * 4;
+      const i11 = (y1 * workW + x1) * 4;
+
+      const w00 = (1 - fx) * (1 - fy);
+      const w10 = fx * (1 - fy);
+      const w01 = (1 - fx) * fy;
+      const w11 = fx * fy;
+
+      out[o] =
+        pixels[i00] * w00 +
+        pixels[i10] * w10 +
+        pixels[i01] * w01 +
+        pixels[i11] * w11;
+      out[o + 1] =
+        pixels[i00 + 1] * w00 +
+        pixels[i10 + 1] * w10 +
+        pixels[i01 + 1] * w01 +
+        pixels[i11 + 1] * w11;
+      out[o + 2] =
+        pixels[i00 + 2] * w00 +
+        pixels[i10 + 2] * w10 +
+        pixels[i01 + 2] * w01 +
+        pixels[i11 + 2] * w11;
+      out[o + 3] = 255;
     }
   }
 
-  outputContext.putImageData(outputImageData, 0, 0);
-  return outputCanvas;
+  outputContext.putImageData(outputData, 0, 0);
+  return output;
 }
 
-function getCropDimensions(
-  crop: CropPolygon,
-  sourceWidth: number,
-  sourceHeight: number,
-) {
-  const topW = Math.hypot(
-    (crop.tr.x - crop.tl.x) * sourceWidth,
-    (crop.tr.y - crop.tl.y) * sourceHeight,
-  );
-  const botW = Math.hypot(
-    (crop.br.x - crop.bl.x) * sourceWidth,
-    (crop.br.y - crop.bl.y) * sourceHeight,
-  );
-  const leftH = Math.hypot(
-    (crop.bl.x - crop.tl.x) * sourceWidth,
-    (crop.bl.y - crop.tl.y) * sourceHeight,
-  );
-  const rightH = Math.hypot(
-    (crop.br.x - crop.tr.x) * sourceWidth,
-    (crop.br.y - crop.tr.y) * sourceHeight,
-  );
+function getAxisAlignedRect(crop: CropPolygon) {
+  const eps = 0.0005;
+  const { tl, tr, br, bl } = crop;
 
-  const avgWidth = Math.max(1, (topW + botW) / 2);
-  const avgHeight = Math.max(1, (leftH + rightH) / 2);
+  const aligned =
+    Math.abs(tl.x - bl.x) < eps &&
+    Math.abs(tr.x - br.x) < eps &&
+    Math.abs(tl.y - tr.y) < eps &&
+    Math.abs(bl.y - br.y) < eps;
 
-  return { width: avgWidth, height: avgHeight };
-}
-
-function calculateFitPlacement(
-  placement: Placement,
-  imgWidth: number,
-  imgHeight: number,
-): Placement {
-  const containerRatio = placement.width / placement.height;
-  const imgRatio = imgWidth / imgHeight;
-
-  let fitWidth = placement.width;
-  let fitHeight = placement.height;
-
-  if (imgRatio > containerRatio) {
-    fitHeight = placement.width / imgRatio;
-  } else {
-    fitWidth = placement.height * imgRatio;
+  if (!aligned) {
+    return null;
   }
 
-  const x = placement.x + (placement.width - fitWidth) / 2;
-  const y = placement.y + (placement.height - fitHeight) / 2;
+  const x0 = (tl.x + bl.x) / 2;
+  const x1 = (tr.x + br.x) / 2;
+  const y0 = (tl.y + tr.y) / 2;
+  const y1 = (bl.y + br.y) / 2;
 
-  return { x, y, width: fitWidth, height: fitHeight };
+  return x1 > x0 && y1 > y0 ? { x0, x1, y0, y1 } : null;
 }
 
-type ProcessedImageResult = {
-  dataUrl: string;
-  width: number;
-  height: number;
-};
+const croppedCache = new WeakMap<ImageAsset, Map<string, HTMLCanvasElement>>();
 
-async function renderProcessedImage(
+/** Crops (and straightens) the asset to `outW × outH`. Cached for previews. */
+function getCroppedCanvas(
   asset: ImageAsset,
-  brightness: number,
-  contrast: number,
-  sharpening: number,
-  rotation: number,
-  roundedCorners: boolean,
-  pixelsPerMm = OUTPUT_PX_PER_MM,
-): Promise<ProcessedImageResult> {
-  const image = new Image();
+  outW: number,
+  outH: number,
+  useCache: boolean,
+): HTMLCanvasElement {
+  const key = `${outW}x${outH}`;
+  const cache = croppedCache.get(asset);
+  const hit = useCache ? cache?.get(key) : undefined;
 
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = () =>
-      reject(new Error("The uploaded image could not be processed."));
-    image.src = asset.url;
-  });
-
-  const maxSourceDimension = 3200;
-  const sourceScale = Math.min(
-    1,
-    maxSourceDimension / Math.max(image.naturalWidth, image.naturalHeight),
-  );
-  const sourceWidth = Math.max(1, Math.round(image.naturalWidth * sourceScale));
-  const sourceHeight = Math.max(
-    1,
-    Math.round(image.naturalHeight * sourceScale),
-  );
-
-  const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = sourceWidth;
-  sourceCanvas.height = sourceHeight;
-
-  const sourceContext = sourceCanvas.getContext("2d");
-
-  if (!sourceContext) {
-    throw new Error("Your browser could not create an image canvas.");
+  if (hit) {
+    return hit;
   }
 
-  sourceContext.imageSmoothingEnabled = true;
-  sourceContext.imageSmoothingQuality = "high";
-  sourceContext.drawImage(
-    image,
-    0,
-    0,
-    image.naturalWidth,
-    image.naturalHeight,
-    0,
-    0,
-    sourceWidth,
-    sourceHeight,
-  );
-
-  const cropDim = getCropDimensions(asset.crop, sourceWidth, sourceHeight);
-  const cropRatio = cropDim.width / cropDim.height;
-
-  const targetHeight = Math.max(
-    136,
-    Math.round(PASSPORT_HEIGHT_MM * pixelsPerMm),
-  );
-  const baseHeight = targetHeight;
-  const baseWidth = Math.max(1, Math.round(baseHeight * cropRatio));
-
-  let croppedCanvas = perspectiveCropToCanvas(
-    sourceCanvas,
-    asset.crop,
-    baseWidth,
-    baseHeight,
-  );
-
-  const adjustedCanvas = document.createElement("canvas");
-  adjustedCanvas.width = baseWidth;
-  adjustedCanvas.height = baseHeight;
-
-  const cropContext = adjustedCanvas.getContext("2d", {
-    alpha: true,
-    willReadFrequently: sharpening > 0,
-  });
-
-  if (!cropContext) {
-    throw new Error("Your browser could not process the cropped image.");
+  if (!isValidCropPolygon(asset.crop)) {
+    throw new Error("Please keep all four crop corners inside the image.");
   }
 
-  cropContext.imageSmoothingEnabled = true;
-  cropContext.imageSmoothingQuality = "high";
-  cropContext.filter = `brightness(${brightness / 100}) contrast(${contrast / 100})`;
-  cropContext.drawImage(croppedCanvas, 0, 0);
-  cropContext.filter = "none";
+  const rect = getAxisAlignedRect(asset.crop);
+  const canvas = rect
+    ? scaleRegionToCanvas(
+        asset.image,
+        rect.x0 * asset.naturalWidth,
+        rect.y0 * asset.naturalHeight,
+        (rect.x1 - rect.x0) * asset.naturalWidth,
+        (rect.y1 - rect.y0) * asset.naturalHeight,
+        outW,
+        outH,
+      )
+    : warpPerspective(asset, asset.crop, outW, outH);
 
-  croppedCanvas = adjustedCanvas;
+  if (useCache) {
+    const store = cache ?? new Map<string, HTMLCanvasElement>();
 
-  if (sharpening > 0) {
-    const imageData = cropContext.getImageData(
-      0,
-      0,
-      croppedCanvas.width,
-      croppedCanvas.height,
-    );
+    if (store.size >= 4) {
+      const oldest = store.keys().next().value;
+      if (oldest !== undefined) {
+        store.delete(oldest);
+      }
+    }
 
-    applySharpening(imageData, sharpening);
-    cropContext.putImageData(imageData, 0, 0);
+    store.set(key, canvas);
+    croppedCache.set(asset, store);
   }
 
-  const turns = ((rotation % 360) + 360) % 360;
-  const rotated = turns === 90 || turns === 270;
+  return canvas;
+}
 
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = rotated ? baseHeight : baseWidth;
-  outputCanvas.height = rotated ? baseWidth : baseHeight;
+/** Same maths as CSS `brightness()` followed by `contrast()`, but Safari-safe. */
+function buildToneLut(brightness: number, contrast: number) {
+  const lut = new Uint8ClampedArray(256);
+  const b = brightness / 100;
+  const c = contrast / 100;
 
-  const outputContext = outputCanvas.getContext("2d");
-
-  if (!outputContext) {
-    throw new Error("Your browser could not create the output canvas.");
+  for (let value = 0; value < 256; value += 1) {
+    lut[value] = (value * b - 127.5) * c + 127.5;
   }
 
-  outputContext.imageSmoothingEnabled = true;
-  outputContext.imageSmoothingQuality = "high";
+  return lut;
+}
 
-  if (roundedCorners) {
+function sharpenPixels(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  amountPercent: number,
+  radius: number,
+) {
+  const amount = clamp(amountPercent / 100, 0, 1) * 0.85;
+  const source = new Uint8ClampedArray(data);
+
+  for (let y = 0; y < height; y += 1) {
+    const above = Math.max(0, y - radius);
+    const below = Math.min(height - 1, y + radius);
+
+    for (let x = 0; x < width; x += 1) {
+      const leftX = Math.max(0, x - radius);
+      const rightX = Math.min(width - 1, x + radius);
+
+      const center = (y * width + x) * 4;
+      const left = (y * width + leftX) * 4;
+      const right = (y * width + rightX) * 4;
+      const top = (above * width + x) * 4;
+      const bottom = (below * width + x) * 4;
+
+      for (let channel = 0; channel < 3; channel += 1) {
+        data[center + channel] =
+          source[center + channel] * (1 + amount * 4) -
+          amount *
+            (source[left + channel] +
+              source[right + channel] +
+              source[top + channel] +
+              source[bottom + channel]);
+      }
+    }
+  }
+}
+
+function roundedRectPath(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  context.beginPath();
+  context.moveTo(radius, 0);
+  context.arcTo(width, 0, width, height, radius);
+  context.arcTo(width, height, 0, height, radius);
+  context.arcTo(0, height, 0, 0, radius);
+  context.arcTo(0, 0, width, 0, radius);
+  context.closePath();
+}
+
+/**
+ * Renders one passport page to a canvas at `pxPerMm`.
+ * The bitmap is exactly the size of the picture on paper, so
+ * `EXPORT_PX_PER_MM` gives a true 300 DPI image at 100% scale.
+ */
+function renderPassportCanvas(
+  asset: ImageAsset,
+  settings: RenderSettings,
+  pxPerMm: number,
+  useCache: boolean,
+): HTMLCanvasElement {
+  const content = getContentSizeMm(asset);
+  const outW = Math.max(8, Math.round(content.width * pxPerMm));
+  const outH = Math.max(8, Math.round(content.height * pxPerMm));
+
+  const cropped = getCroppedCanvas(asset, outW, outH, useCache);
+
+  const adjusted = createCanvas(outW, outH);
+  const adjustedContext = get2d(adjusted, true);
+  adjustedContext.drawImage(cropped, 0, 0);
+
+  const needsTone = settings.brightness !== 100 || settings.contrast !== 100;
+
+  if (needsTone || settings.sharpening > 0) {
+    const imageData = adjustedContext.getImageData(0, 0, outW, outH);
+
+    if (needsTone) {
+      const lut = buildToneLut(settings.brightness, settings.contrast);
+      const { data } = imageData;
+
+      for (let index = 0; index < data.length; index += 4) {
+        data[index] = lut[data[index]];
+        data[index + 1] = lut[data[index + 1]];
+        data[index + 2] = lut[data[index + 2]];
+      }
+    }
+
+    if (settings.sharpening > 0) {
+      // Keep the physical sharpening radius (~0.17 mm) stable across resolutions.
+      const radius = Math.max(1, Math.round(pxPerMm / 6));
+      sharpenPixels(imageData.data, outW, outH, settings.sharpening, radius);
+    }
+
+    adjustedContext.putImageData(imageData, 0, 0);
+  }
+
+  const turns = normalizeRotation(settings.rotation);
+  const swapped = turns === 90 || turns === 270;
+  const finalCanvas = createCanvas(
+    swapped ? outH : outW,
+    swapped ? outW : outH,
+  );
+  const context = get2d(finalCanvas);
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  if (settings.roundedCorners) {
     const radius = Math.min(
-      14,
-      outputCanvas.width / 8,
-      outputCanvas.height / 8,
+      CORNER_RADIUS_MM * pxPerMm,
+      finalCanvas.width / 2,
+      finalCanvas.height / 2,
     );
-
-    outputContext.save();
-    outputContext.beginPath();
-    outputContext.roundRect(
-      0,
-      0,
-      outputCanvas.width,
-      outputCanvas.height,
-      radius,
-    );
-    outputContext.clip();
+    roundedRectPath(context, finalCanvas.width, finalCanvas.height, radius);
+    context.clip();
   }
 
-  outputContext.save();
-  outputContext.translate(outputCanvas.width / 2, outputCanvas.height / 2);
-  outputContext.rotate((turns * Math.PI) / 180);
-  outputContext.drawImage(
-    croppedCanvas,
-    -baseWidth / 2,
-    -baseHeight / 2,
-    baseWidth,
-    baseHeight,
-  );
-  outputContext.restore();
-
-  if (roundedCorners) {
-    outputContext.restore();
+  // Integer-exact quarter-turn matrices avoid the half-pixel blur of rotate().
+  if (turns === 90) {
+    context.setTransform(0, 1, -1, 0, outH, 0);
+  } else if (turns === 180) {
+    context.setTransform(-1, 0, 0, -1, outW, outH);
+  } else if (turns === 270) {
+    context.setTransform(0, -1, 1, 0, 0, outW);
   }
+
+  context.drawImage(adjusted, 0, 0);
+
+  return finalCanvas;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sheet geometry (A4, copies, orientation, layout)                          */
+/* -------------------------------------------------------------------------- */
+
+function fitInside(box: Placement, ratio: number): Placement {
+  const boxRatio = box.width / box.height;
+  const width = ratio > boxRatio ? box.width : box.height * ratio;
+  const height = ratio > boxRatio ? box.width / ratio : box.height;
 
   return {
-    dataUrl: outputCanvas.toDataURL("image/png"),
-    width: outputCanvas.width,
-    height: outputCanvas.height,
+    x: box.x + (box.width - width) / 2,
+    y: box.y + (box.height - height) / 2,
+    width,
+    height,
   };
 }
 
-function getGeometry(
-  frontImage: ImageAsset | null,
-  backImage: ImageAsset | null,
-  orientation: Orientation,
-  layout: Layout,
-  position: Position,
-  rotation: number,
-): SheetGeometry {
-  const rotated =
-    ((rotation % 360) + 360) % 360 === 90 ||
-    ((rotation % 360) + 360) % 360 === 270;
-  const itemWidth = rotated ? PASSPORT_HEIGHT_MM : PASSPORT_WIDTH_MM;
-  const itemHeight = rotated ? PASSPORT_WIDTH_MM : PASSPORT_HEIGHT_MM;
+type GeometryInput = {
+  slots: { slot: ImageSlot; ratio: number }[];
+  orientation: Orientation;
+  layout: Layout;
+  position: Position;
+  rotation: number;
+  copies: number;
+};
 
-  const hasFront = Boolean(frontImage);
-  const hasBack = Boolean(backImage);
-  const count = Number(hasFront) + Number(hasBack);
+function getSheetGeometry(input: GeometryInput): SheetGeometry {
+  const { slots, layout, position } = input;
+  const copies = clamp(Math.round(input.copies), 1, 2);
+  const turns = normalizeRotation(input.rotation);
+  const swapped = turns === 90 || turns === 270;
 
-  const autoFitsPortrait = () => {
-    const sheetWidth = 210;
-    const sheetHeight = 297;
-    const gap = count > 1 ? GAP_MM : 0;
-    const groupWidth =
-      layout === "side-by-side" ? itemWidth * count + gap : itemWidth;
-    const groupHeight =
-      layout === "stacked" ? itemHeight * count + gap : itemHeight;
+  const itemW = swapped ? PASSPORT_HEIGHT_MM : PASSPORT_WIDTH_MM;
+  const itemH = swapped ? PASSPORT_WIDTH_MM : PASSPORT_HEIGHT_MM;
+  const count = Math.max(1, slots.length);
 
-    return (
-      groupWidth <= sheetWidth - SAFE_MARGIN_MM * 2 &&
-      groupHeight <= sheetHeight - SAFE_MARGIN_MM * 2
-    );
-  };
+  const blockW =
+    layout === "side-by-side"
+      ? itemW * count + ITEM_GAP_MM * (count - 1)
+      : itemW;
+  const blockH =
+    layout === "stacked" ? itemH * count + ITEM_GAP_MM * (count - 1) : itemH;
 
-  let sheetOrientation: SheetOrientation;
-  if (orientation === "portrait") {
-    sheetOrientation = "portrait";
-  } else if (orientation === "landscape") {
-    sheetOrientation = "landscape";
-  } else {
-    sheetOrientation = autoFitsPortrait() ? "portrait" : "landscape";
+  const orientations: SheetOrientation[] =
+    input.orientation === "auto"
+      ? ["portrait", "landscape"]
+      : [input.orientation];
+  const arrangements: CopyArrangement[] =
+    copies > 1 ? ["vertical", "horizontal"] : ["vertical"];
+
+  // Pick the sheet orientation / copy arrangement that needs the least shrinking.
+  // Ties keep portrait + vertical, so the result is stable.
+  let best: {
+    orientation: SheetOrientation;
+    arrangement: CopyArrangement;
+    scale: number;
+  } | null = null;
+
+  for (const orientation of orientations) {
+    const sheetW = orientation === "portrait" ? A4_WIDTH_MM : A4_HEIGHT_MM;
+    const sheetH = orientation === "portrait" ? A4_HEIGHT_MM : A4_WIDTH_MM;
+
+    for (const arrangement of arrangements) {
+      const totalW =
+        arrangement === "horizontal"
+          ? blockW * copies + COPY_GAP_MM * (copies - 1)
+          : blockW;
+      const totalH =
+        arrangement === "vertical"
+          ? blockH * copies + COPY_GAP_MM * (copies - 1)
+          : blockH;
+
+      const scale = Math.min(
+        1,
+        (sheetW - SAFE_MARGIN_MM * 2) / totalW,
+        (sheetH - SAFE_MARGIN_MM * 2) / totalH,
+      );
+
+      if (!best || scale > best.scale + 1e-6) {
+        best = { orientation, arrangement, scale };
+      }
+    }
   }
 
-  const sheetWidth = sheetOrientation === "portrait" ? 210 : 297;
-  const sheetHeight = sheetOrientation === "portrait" ? 297 : 210;
+  const chosen = best ?? {
+    orientation: "portrait" as const,
+    arrangement: "vertical" as const,
+    scale: 1,
+  };
+  const sheetWidth =
+    chosen.orientation === "portrait" ? A4_WIDTH_MM : A4_HEIGHT_MM;
+  const sheetHeight =
+    chosen.orientation === "portrait" ? A4_HEIGHT_MM : A4_WIDTH_MM;
 
-  if (!count) {
+  if (!slots.length) {
     return {
-      orientation: sheetOrientation,
+      orientation: chosen.orientation,
       sheetWidth,
       sheetHeight,
-      itemWidth,
-      itemHeight,
-      front: null,
-      back: null,
+      scale: 1,
+      items: [],
     };
   }
 
-  const gap = count > 1 ? GAP_MM : 0;
+  const scale = chosen.scale;
+  const iw = itemW * scale;
+  const ih = itemH * scale;
+  const gap = ITEM_GAP_MM * scale;
+  const copyGap = COPY_GAP_MM * scale;
+  const bw = blockW * scale;
+  const bh = blockH * scale;
 
-  const groupWidth =
-    layout === "side-by-side" ? itemWidth * count + gap : itemWidth;
-  const groupHeight =
-    layout === "stacked" ? itemHeight * count + gap : itemHeight;
+  const totalW =
+    chosen.arrangement === "horizontal"
+      ? bw * copies + copyGap * (copies - 1)
+      : bw;
+  const totalH =
+    chosen.arrangement === "vertical"
+      ? bh * copies + copyGap * (copies - 1)
+      : bh;
 
-  const scale = Math.min(
-    1,
-    (sheetWidth - SAFE_MARGIN_MM * 2) / groupWidth,
-    (sheetHeight - SAFE_MARGIN_MM * 2) / groupHeight,
-  );
-
-  const scaledItemWidth = itemWidth * scale;
-  const scaledItemHeight = itemHeight * scale;
-  const scaledGap = gap * scale;
-  const scaledGroupWidth =
-    layout === "side-by-side"
-      ? scaledItemWidth * count + scaledGap
-      : scaledItemWidth;
-  const scaledGroupHeight =
-    layout === "stacked"
-      ? scaledItemHeight * count + scaledGap
-      : scaledItemHeight;
-
-  const groupX = (sheetWidth - scaledGroupWidth) / 2;
-  const groupY =
+  const startX = (sheetWidth - totalW) / 2;
+  const startY =
     position === "top"
       ? SAFE_MARGIN_MM
       : position === "center"
-        ? (sheetHeight - scaledGroupHeight) / 2
-        : sheetHeight - scaledGroupHeight - SAFE_MARGIN_MM;
+        ? (sheetHeight - totalH) / 2
+        : sheetHeight - totalH - SAFE_MARGIN_MM;
 
-  const makePlacement = (slot: ImageSlot): Placement | null => {
-    const exists = slot === "front" ? hasFront : hasBack;
-    if (!exists) {
-      return null;
-    }
+  const items: PlacedItem[] = [];
 
-    const index = slot === "front" ? 0 : hasFront ? 1 : 0;
+  for (let copy = 0; copy < copies; copy += 1) {
+    const blockX =
+      startX +
+      (chosen.arrangement === "horizontal" ? copy * (bw + copyGap) : 0);
+    const blockY =
+      startY + (chosen.arrangement === "vertical" ? copy * (bh + copyGap) : 0);
 
-    if (layout === "side-by-side") {
-      return {
-        x: groupX + index * (scaledItemWidth + scaledGap),
-        y: groupY,
-        width: scaledItemWidth,
-        height: scaledItemHeight,
-      };
-    }
+    slots.forEach(({ slot, ratio }, index) => {
+      const box: Placement =
+        layout === "side-by-side"
+          ? { x: blockX + index * (iw + gap), y: blockY, width: iw, height: ih }
+          : {
+              x: blockX,
+              y: blockY + index * (ih + gap),
+              width: iw,
+              height: ih,
+            };
 
-    return {
-      x: groupX,
-      y: groupY + index * (scaledItemHeight + scaledGap),
-      width: scaledItemWidth,
-      height: scaledItemHeight,
-    };
-  };
+      items.push({
+        slot,
+        copy,
+        box,
+        image: fitInside(box, swapped ? 1 / ratio : ratio),
+      });
+    });
+  }
 
   return {
-    orientation: sheetOrientation,
+    orientation: chosen.orientation,
     sheetWidth,
     sheetHeight,
-    itemWidth,
-    itemHeight,
-    front: makePlacement("front"),
-    back: makePlacement("back"),
+    scale,
+    items,
   };
 }
 
-const PREVIEW_PIXELS_PER_MM = 96 / 25.4;
+/* -------------------------------------------------------------------------- */
+/*  PDF + print                                                               */
+/* -------------------------------------------------------------------------- */
 
-type ProcessedThumbnailProps = {
-  asset: ImageAsset;
-  brightness: number;
-  contrast: number;
-  rotation: number;
-  roundedCorners: boolean;
-  alt: string;
-  className?: string;
-};
+async function createPdfDocument(
+  geometry: SheetGeometry,
+  images: Partial<Record<ImageSlot, ExportImage>>,
+) {
+  const { default: JsPDF } = await import("jspdf");
 
-function ProcessedThumbnail({
-  asset,
-  brightness,
-  contrast,
-  rotation,
-  roundedCorners,
-  alt,
-  className,
-}: ProcessedThumbnailProps) {
-  const [src, setSrc] = useState<string | null>(null);
+  const doc = new JsPDF({
+    orientation: geometry.orientation === "portrait" ? "p" : "l",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+
+  doc.setProperties({
+    title: "Passport Joiner",
+    subject: "Passport page PDF",
+    creator: "SohojKaj",
+  });
+
+  for (const item of geometry.items) {
+    const image = images[item.slot];
+
+    if (!image) {
+      continue;
+    }
+
+    // The alias lets jsPDF embed each picture once, even with two copies.
+    doc.addImage(
+      image.dataUrl,
+      "JPEG",
+      item.image.x,
+      item.image.y,
+      item.image.width,
+      item.image.height,
+      `passport-${item.slot}`,
+      "NONE",
+    );
+  }
+
+  return doc;
+}
+
+function buildPrintHtml(
+  geometry: SheetGeometry,
+  images: Partial<Record<ImageSlot, ExportImage>>,
+) {
+  const tags = geometry.items
+    .filter((item) => images[item.slot])
+    .map(
+      (item) =>
+        `<img src="${images[item.slot]?.dataUrl}" alt="${item.slot} passport page" style="left:${item.image.x.toFixed(3)}mm;top:${item.image.y.toFixed(3)}mm;width:${item.image.width.toFixed(3)}mm;height:${item.image.height.toFixed(3)}mm;" />`,
+    )
+    .join("\n");
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Passport Joiner</title>
+    <style>
+      @page { size: ${geometry.sheetWidth}mm ${geometry.sheetHeight}mm; margin: 0; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .sheet { position: relative; width: ${geometry.sheetWidth}mm; height: ${geometry.sheetHeight}mm; overflow: hidden; break-inside: avoid; }
+      .sheet img { position: absolute; display: block; }
+    </style>
+  </head>
+  <body>
+    <section class="sheet">${tags}</section>
+    <script>
+      window.addEventListener("load", function () {
+        setTimeout(function () { window.focus(); window.print(); }, 250);
+      });
+    </script>
+  </body>
+</html>`;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Hooks                                                                     */
+/* -------------------------------------------------------------------------- */
+
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
 
   useEffect(() => {
-    let active = true;
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
 
-    void renderProcessedImage(
-      asset,
-      brightness,
-      contrast,
-      0,
-      rotation,
-      roundedCorners,
-      PREVIEW_PIXELS_PER_MM,
-    )
-      .then((res) => {
-        if (active) {
-          setSrc(res.dataUrl);
+  return debounced;
+}
+
+type ProcessedResult = { canvas: HTMLCanvasElement | null; failed: boolean };
+
+/** Renders an asset for on-screen use, debounced and cached. */
+function useProcessedCanvas(
+  asset: ImageAsset | null,
+  settings: RenderSettings,
+  pxPerMm: number,
+): ProcessedResult {
+  const debounced = useDebouncedValue(settings, 60);
+  const [result, setResult] = useState<ProcessedResult>({
+    canvas: null,
+    failed: false,
+  });
+
+  useEffect(() => {
+    if (!asset) {
+      setResult({ canvas: null, failed: false });
+      return;
+    }
+
+    let cancelled = false;
+
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const canvas = renderPassportCanvas(asset, debounced, pxPerMm, true);
+        if (!cancelled) {
+          setResult({ canvas, failed: false });
         }
-      })
-      .catch(() => {
-        if (active) {
-          setSrc(null);
+      } catch {
+        if (!cancelled) {
+          setResult({ canvas: null, failed: true });
         }
-      });
+      }
+    });
 
     return () => {
-      active = false;
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
     };
-  }, [asset, brightness, contrast, rotation, roundedCorners]);
+  }, [asset, debounced, pxPerMm]);
 
-  if (!src) {
+  return result;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Small UI building blocks                                                  */
+/* -------------------------------------------------------------------------- */
+
+function ProcessedCanvas({
+  result,
+  label,
+  className = "block w-full h-full object-contain select-none",
+}: {
+  result: ProcessedResult;
+  label: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  const { canvas, failed } = result;
+
+  useEffect(() => {
+    const element = ref.current;
+
+    if (!element || !canvas) {
+      return;
+    }
+
+    element.width = canvas.width;
+    element.height = canvas.height;
+    element.getContext("2d")?.drawImage(canvas, 0, 0);
+  }, [canvas]);
+
+  if (failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50 text-[9px] text-gray-400 text-center p-2">
+        Preview unavailable — check the crop.
+      </div>
+    );
+  }
+
+  if (!canvas) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
-        <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-amber-600 animate-spin" />
+        <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      draggable={false}
-      className={className ?? "w-full h-full object-contain select-none"}
-    />
+    <canvas ref={ref} role="img" aria-label={label} className={className} />
   );
 }
+
+type SegmentOption<T> = {
+  value: T;
+  label: React.ReactNode;
+  ariaLabel?: string;
+};
+
+function Segmented<T extends string | number>({
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  value: T;
+  options: SegmentOption<T>[];
+  onChange: (value: T) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      role="group"
+      className="grid gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100 text-xs font-bold"
+      style={{
+        gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
+      }}
+    >
+      {options.map((option) => (
+        <button
+          key={String(option.value)}
+          type="button"
+          onClick={() => onChange(option.value)}
+          disabled={disabled}
+          aria-pressed={value === option.value}
+          aria-label={option.ariaLabel}
+          className={`py-1.5 rounded-lg transition-all flex justify-center items-center gap-1 disabled:opacity-50 ${
+            value === option.value
+              ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
+              : "text-gray-500 hover:text-[#0F172A]"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  unit = "",
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  unit?: string;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}) {
+  const id = useId();
+
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[10px] font-bold text-gray-600">
+        <label htmlFor={id}>{label}</label>
+        <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
+          {value}
+          {unit}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        disabled={disabled}
+        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB] disabled:opacity-50"
+      />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Crop modal                                                                */
+/* -------------------------------------------------------------------------- */
 
 type CropModalProps = {
   asset: ImageAsset;
@@ -1004,6 +1406,7 @@ type CropModalProps = {
 
 function CropModal({ asset, onClose, onApply }: CropModalProps) {
   const [crop, setCrop] = useState<CropPolygon>(() => cloneCrop(asset.crop));
+  const [imageBox, setImageBox] = useState({ width: 0, height: 0 });
   const imageRef = useRef<HTMLImageElement | null>(null);
   const interactionRef = useRef<{
     action: CropHandle;
@@ -1012,40 +1415,117 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
     startCrop: CropPolygon;
   } | null>(null);
 
-  const [imageBox, setImageBox] = useState({ width: 0, height: 0 });
-
   const updateImageBox = useCallback(() => {
     if (!imageRef.current) {
       return;
     }
 
     const rect = imageRef.current.getBoundingClientRect();
-
-    setImageBox({
-      width: rect.width,
-      height: rect.height,
-    });
+    setImageBox({ width: rect.width, height: rect.height });
   }, []);
 
   useLayoutEffect(() => {
     updateImageBox();
 
-    const resizeObserver =
+    const observer =
       typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(updateImageBox)
         : null;
 
-    if (imageRef.current && resizeObserver) {
-      resizeObserver.observe(imageRef.current);
+    if (imageRef.current) {
+      observer?.observe(imageRef.current);
     }
 
     window.addEventListener("resize", updateImageBox);
 
     return () => {
-      resizeObserver?.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", updateImageBox);
     };
   }, [updateImageBox]);
+
+  // Lock page scroll while the editor is open.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (event: PointerEvent) => {
+      const interaction = interactionRef.current;
+
+      if (!interaction || !imageBox.width || !imageBox.height) {
+        return;
+      }
+
+      const dx = (event.clientX - interaction.startX) / imageBox.width;
+      const dy = (event.clientY - interaction.startY) / imageBox.height;
+      const start = interaction.startCrop;
+      const candidate = cloneCrop(start);
+
+      switch (interaction.action) {
+        case "move":
+          setCrop(getSafeCrop(start, moveCrop(start, dx, dy)));
+          return;
+        case "tl":
+        case "tr":
+        case "br":
+        case "bl":
+          candidate[interaction.action] = {
+            x: start[interaction.action].x + dx,
+            y: start[interaction.action].y + dy,
+          };
+          break;
+        case "top":
+          candidate.tl.y = start.tl.y + dy;
+          candidate.tr.y = start.tr.y + dy;
+          break;
+        case "right":
+          candidate.tr.x = start.tr.x + dx;
+          candidate.br.x = start.br.x + dx;
+          break;
+        case "bottom":
+          candidate.bl.y = start.bl.y + dy;
+          candidate.br.y = start.br.y + dy;
+          break;
+        case "left":
+          candidate.tl.x = start.tl.x + dx;
+          candidate.bl.x = start.bl.x + dx;
+          break;
+      }
+
+      setCrop(getSafeCrop(start, candidate));
+    };
+
+    const handleUp = () => {
+      interactionRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    };
+  }, [imageBox.height, imageBox.width]);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
 
   const beginInteraction = (
     action: CropHandle,
@@ -1062,108 +1542,7 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
     };
   };
 
-  useEffect(() => {
-    const handleMove = (event: PointerEvent) => {
-      const interaction = interactionRef.current;
-
-      if (!interaction || !imageBox.width || !imageBox.height) {
-        return;
-      }
-
-      const dx = (event.clientX - interaction.startX) / imageBox.width;
-      const dy = (event.clientY - interaction.startY) / imageBox.height;
-      const start = interaction.startCrop;
-      let candidate = cloneCrop(start);
-
-      switch (interaction.action) {
-        case "move":
-          candidate = moveCrop(start, dx, dy);
-          break;
-
-        case "tl":
-          candidate.tl = {
-            x: start.tl.x + dx,
-            y: start.tl.y + dy,
-          };
-          break;
-
-        case "tr":
-          candidate.tr = {
-            x: start.tr.x + dx,
-            y: start.tr.y + dy,
-          };
-          break;
-
-        case "br":
-          candidate.br = {
-            x: start.br.x + dx,
-            y: start.br.y + dy,
-          };
-          break;
-
-        case "bl":
-          candidate.bl = {
-            x: start.bl.x + dx,
-            y: start.bl.y + dy,
-          };
-          break;
-
-        case "top":
-          candidate.tl.y = start.tl.y + dy;
-          candidate.tr.y = start.tr.y + dy;
-          break;
-
-        case "right":
-          candidate.tr.x = start.tr.x + dx;
-          candidate.br.x = start.br.x + dx;
-          break;
-
-        case "bottom":
-          candidate.bl.y = start.bl.y + dy;
-          candidate.br.y = start.br.y + dy;
-          break;
-
-        case "left":
-          candidate.tl.x = start.tl.x + dx;
-          candidate.bl.x = start.bl.x + dx;
-          break;
-      }
-
-      setCrop(getSafeCrop(start, candidate));
-    };
-
-    const handleUp = () => {
-      interactionRef.current = null;
-    };
-
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", handleUp);
-
-    return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-    };
-  }, [imageBox.height, imageBox.width]);
-
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-
-    return () => {
-      window.removeEventListener("keydown", handleKey);
-    };
-  }, [onClose]);
-
-  const resetCrop = () => {
-    setCrop(getDefaultCrop(asset.naturalWidth, asset.naturalHeight));
-  };
-
-  const scalePoint = (point: Point) => ({
+  const scalePoint = (point: Point): Point => ({
     x: point.x * imageBox.width,
     y: point.y * imageBox.height,
   });
@@ -1172,23 +1551,24 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
   const tr = scalePoint(crop.tr);
   const br = scalePoint(crop.br);
   const bl = scalePoint(crop.bl);
+  const mid = (a: Point, b: Point): Point => ({
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  });
 
-  const edgeTop = {
-    x: (tl.x + tr.x) / 2,
-    y: (tl.y + tr.y) / 2,
-  };
-  const edgeRight = {
-    x: (tr.x + br.x) / 2,
-    y: (tr.y + br.y) / 2,
-  };
-  const edgeBottom = {
-    x: (bl.x + br.x) / 2,
-    y: (bl.y + br.y) / 2,
-  };
-  const edgeLeft = {
-    x: (tl.x + bl.x) / 2,
-    y: (tl.y + bl.y) / 2,
-  };
+  const cornerHandles: { key: CropHandle; point: Point; cursor: string }[] = [
+    { key: "tl", point: tl, cursor: "cursor-nwse-resize" },
+    { key: "tr", point: tr, cursor: "cursor-nesw-resize" },
+    { key: "br", point: br, cursor: "cursor-nwse-resize" },
+    { key: "bl", point: bl, cursor: "cursor-nesw-resize" },
+  ];
+
+  const edgeHandles: { key: CropHandle; point: Point; cursor: string }[] = [
+    { key: "top", point: mid(tl, tr), cursor: "cursor-ns-resize" },
+    { key: "right", point: mid(tr, br), cursor: "cursor-ew-resize" },
+    { key: "bottom", point: mid(bl, br), cursor: "cursor-ns-resize" },
+    { key: "left", point: mid(tl, bl), cursor: "cursor-ew-resize" },
+  ];
 
   const polygonPoints = `${tl.x},${tl.y} ${tr.x},${tr.y} ${br.x},${br.y} ${bl.x},${bl.y}`;
   const outerPath =
@@ -1236,6 +1616,7 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
         <div className="bg-[#151515] p-3 md:p-5">
           <div className="min-h-[420px] max-h-[72vh] flex items-center justify-center overflow-auto">
             <div className="relative inline-block max-w-full select-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 ref={imageRef}
                 src={asset.url}
@@ -1269,86 +1650,49 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
                     onPointerDown={(event) => beginInteraction("move", event)}
                   />
 
-                  <line
-                    x1={tl.x}
-                    y1={tl.y}
-                    x2={br.x}
-                    y2={br.y}
-                    stroke="rgba(251,191,36,0.5)"
-                    strokeWidth={1}
-                    strokeDasharray="6 5"
-                    pointerEvents="none"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  <line
-                    x1={tr.x}
-                    y1={tr.y}
-                    x2={bl.x}
-                    y2={bl.y}
-                    stroke="rgba(251,191,36,0.5)"
-                    strokeWidth={1}
-                    strokeDasharray="6 5"
-                    pointerEvents="none"
-                    vectorEffect="non-scaling-stroke"
-                  />
+                  {[
+                    [tl, br],
+                    [tr, bl],
+                  ].map(([a, b], index) => (
+                    <line
+                      key={index}
+                      x1={a.x}
+                      y1={a.y}
+                      x2={b.x}
+                      y2={b.y}
+                      stroke="rgba(251,191,36,0.5)"
+                      strokeWidth={1}
+                      strokeDasharray="6 5"
+                      pointerEvents="none"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
 
-                  <circle
-                    cx={tl.x}
-                    cy={tl.y}
-                    r={8}
-                    className={`${handleClass} cursor-nwse-resize`}
-                    onPointerDown={(event) => beginInteraction("tl", event)}
-                  />
-                  <circle
-                    cx={tr.x}
-                    cy={tr.y}
-                    r={8}
-                    className={`${handleClass} cursor-nesw-resize`}
-                    onPointerDown={(event) => beginInteraction("tr", event)}
-                  />
-                  <circle
-                    cx={br.x}
-                    cy={br.y}
-                    r={8}
-                    className={`${handleClass} cursor-nwse-resize`}
-                    onPointerDown={(event) => beginInteraction("br", event)}
-                  />
-                  <circle
-                    cx={bl.x}
-                    cy={bl.y}
-                    r={8}
-                    className={`${handleClass} cursor-nesw-resize`}
-                    onPointerDown={(event) => beginInteraction("bl", event)}
-                  />
+                  {cornerHandles.map((handle) => (
+                    <circle
+                      key={handle.key}
+                      cx={handle.point.x}
+                      cy={handle.point.y}
+                      r={8}
+                      className={`${handleClass} ${handle.cursor}`}
+                      onPointerDown={(event) =>
+                        beginInteraction(handle.key, event)
+                      }
+                    />
+                  ))}
 
-                  <circle
-                    cx={edgeTop.x}
-                    cy={edgeTop.y}
-                    r={6}
-                    className={`${handleClass} cursor-ns-resize`}
-                    onPointerDown={(event) => beginInteraction("top", event)}
-                  />
-                  <circle
-                    cx={edgeRight.x}
-                    cy={edgeRight.y}
-                    r={6}
-                    className={`${handleClass} cursor-ew-resize`}
-                    onPointerDown={(event) => beginInteraction("right", event)}
-                  />
-                  <circle
-                    cx={edgeBottom.x}
-                    cy={edgeBottom.y}
-                    r={6}
-                    className={`${handleClass} cursor-ns-resize`}
-                    onPointerDown={(event) => beginInteraction("bottom", event)}
-                  />
-                  <circle
-                    cx={edgeLeft.x}
-                    cy={edgeLeft.y}
-                    r={6}
-                    className={`${handleClass} cursor-ew-resize`}
-                    onPointerDown={(event) => beginInteraction("left", event)}
-                  />
+                  {edgeHandles.map((handle) => (
+                    <circle
+                      key={handle.key}
+                      cx={handle.point.x}
+                      cy={handle.point.y}
+                      r={6}
+                      className={`${handleClass} ${handle.cursor}`}
+                      onPointerDown={(event) =>
+                        beginInteraction(handle.key, event)
+                      }
+                    />
+                  ))}
 
                   <text
                     x={(tl.x + tr.x + br.x + bl.x) / 4}
@@ -1378,15 +1722,17 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
               </span>
             </div>
             <span className="text-gray-400 pl-5">
-              Your crop can be wider, narrower, taller, shorter, shifted up,
-              down, left, or right without a locked ratio.
+              The crop ratio is free — the page is fitted inside the 88×125 mm
+              slot without stretching.
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={resetCrop}
+              onClick={() =>
+                setCrop(getDefaultCrop(asset.naturalWidth, asset.naturalHeight))
+              }
               className="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold text-[#0F172A] hover:bg-white transition-colors"
             >
               Reset crop
@@ -1401,7 +1747,7 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
             <button
               type="button"
               onClick={() => onApply(getSafeCrop(crop, crop))}
-              className="px-4 py-2 rounded-xl bg-[#2563EB] text-white text-xs font-bold hover:bg-[#2563EB] transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#2563EB] text-white text-xs font-bold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5"
             >
               <Check size={14} />
               Apply crop
@@ -1413,79 +1759,77 @@ function CropModal({ asset, onClose, onApply }: CropModalProps) {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Upload slot                                                               */
+/* -------------------------------------------------------------------------- */
+
 type UploadSlotProps = {
   slot: ImageSlot;
   label: string;
   asset: ImageAsset | null;
+  settings: RenderSettings;
   onUpload: (slot: ImageSlot, files: FileList | null) => void;
   onCrop: (slot: ImageSlot) => void;
   onRemove: (slot: ImageSlot) => void;
-  brightness: number;
-  contrast: number;
-  rotation: number;
-  roundedCorners: boolean;
 };
 
 function UploadSlot({
   slot,
   label,
   asset,
+  settings,
   onUpload,
   onCrop,
   onRemove,
-  brightness,
-  contrast,
-  rotation,
-  roundedCorners,
 }: UploadSlotProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const openPicker = () => {
-    inputRef.current?.click();
-  };
+  const thumbSettings = useMemo<RenderSettings>(
+    () => ({ ...settings, sharpening: 0 }),
+    [settings],
+  );
+  const thumbnail = useProcessedCanvas(asset, thumbSettings, THUMB_PX_PER_MM);
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onUpload(slot, event.dataTransfer.files);
-  };
+  const openPicker = () => inputRef.current?.click();
 
   return (
     <div
-      className="relative w-full border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/30 hover:bg-[#F8FAFC]/60 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer min-h-[220px] transition-all overflow-hidden"
-      onClick={(event) => {
-        if ((event.target as HTMLElement).closest("button")) {
-          return;
-        }
-        openPicker();
-      }}
+      className={`relative w-full border-2 border-dashed rounded-xl p-3 flex flex-col items-center justify-center text-center min-h-[220px] transition-all overflow-hidden ${
+        isDragging
+          ? "border-[#1D4ED8] bg-[#E2E8F0]/60"
+          : "border-[#2563EB] bg-[#F8FAFC]/30 hover:bg-[#F8FAFC]/60"
+      } ${asset ? "" : "cursor-pointer"}`}
+      onClick={asset ? undefined : openPicker}
       onDragOver={(event) => {
         event.preventDefault();
-        event.stopPropagation();
+        setIsDragging(true);
       }}
-      onDrop={handleDrop}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openPicker();
-        }
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setIsDragging(false);
+        onUpload(slot, event.dataTransfer.files);
       }}
+      role={asset ? undefined : "button"}
+      tabIndex={asset ? undefined : 0}
+      aria-label={asset ? undefined : `Upload ${label}`}
+      onKeyDown={
+        asset
+          ? undefined
+          : (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openPicker();
+              }
+            }
+      }
     >
       {asset ? (
         <>
-          <div className="absolute inset-0 bg-gray-50 flex items-center justify-center p-4">
-            <div className="relative max-w-full max-h-full aspect-[88/125] h-[175px] rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-white flex items-center justify-center">
-              <ProcessedThumbnail
-                asset={asset}
-                brightness={brightness}
-                contrast={contrast}
-                rotation={rotation}
-                roundedCorners={roundedCorners}
-                alt={`${label} preview`}
-                className="w-full h-full object-contain select-none"
-              />
+          <div className="absolute inset-0 bg-gray-50 flex items-center justify-center p-4 pb-16">
+            <div className="relative aspect-[88/125] h-[150px] rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-white">
+              <ProcessedCanvas result={thumbnail} label={`${label} preview`} />
             </div>
           </div>
 
@@ -1507,10 +1851,16 @@ function UploadSlot({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onCrop(slot);
-                  }}
+                  onClick={openPicker}
+                  className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors"
+                  title="Replace image"
+                  aria-label={`Replace ${label}`}
+                >
+                  <Upload size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onCrop(slot)}
                   className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors"
                   title="Crop image"
                   aria-label={`Crop ${label}`}
@@ -1519,10 +1869,7 @@ function UploadSlot({
                 </button>
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRemove(slot);
-                  }}
+                  onClick={() => onRemove(slot)}
                   className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                   title="Remove image"
                   aria-label={`Remove ${label}`}
@@ -1552,7 +1899,7 @@ function UploadSlot({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
         onChange={(event) => {
           onUpload(slot, event.target.files);
           event.currentTarget.value = "";
@@ -1563,83 +1910,34 @@ function UploadSlot({
   );
 }
 
-type PreviewImageProps = {
-  asset: ImageAsset;
-  placement: Placement;
-  brightness: number;
-  contrast: number;
-  rotation: number;
-  roundedCorners: boolean;
-  geometry: SheetGeometry;
-  label: string;
-};
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
 
-function PreviewImage({
-  asset,
-  placement,
-  brightness,
-  contrast,
-  rotation,
-  roundedCorners,
-  geometry,
-  label,
-}: PreviewImageProps) {
-  const [src, setSrc] = useState<string | null>(null);
+const RELATED_TOOLS = [
+  {
+    href: `${TOOLS_BASE}/image-size-reducer`,
+    title: "Image Size Reducer",
+    text: "Shrink JPG, PNG, and WebP photos in your browser — quality stays sharp.",
+    icon: ImageIcon,
+  },
+  {
+    href: `${TOOLS_BASE}/nid-joiner`,
+    title: "NID Joiner",
+    text: "Turn NID card front and back photos into a clean A4 PDF — all in your browser.",
+    icon: CreditCard,
+  },
+  {
+    href: `${TOOLS_BASE}/remove-background`,
+    title: "Remove Background",
+    text: "Erase portrait, product, or logo backgrounds in your browser — download a transparent PNG.",
+    icon: Scissors,
+  },
+];
 
-  useEffect(() => {
-    let active = true;
-
-    void renderProcessedImage(
-      asset,
-      brightness,
-      contrast,
-      0,
-      rotation,
-      roundedCorners,
-      PREVIEW_PIXELS_PER_MM,
-    )
-      .then((res) => {
-        if (active) {
-          setSrc(res.dataUrl);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setSrc(null);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [asset, brightness, contrast, rotation, roundedCorners]);
-
-  return (
-    <div
-      className="absolute overflow-hidden bg-white shadow-sm border border-gray-200 flex items-center justify-center"
-      style={{
-        left: `${(placement.x / geometry.sheetWidth) * 100}%`,
-        top: `${(placement.y / geometry.sheetHeight) * 100}%`,
-        width: `${(placement.width / geometry.sheetWidth) * 100}%`,
-        height: `${(placement.height / geometry.sheetHeight) * 100}%`,
-        borderRadius: roundedCorners ? 14 : 0,
-      }}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt={`${label} passport page`}
-          draggable={false}
-          className="block w-full h-full object-contain select-none"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-50">
-          <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-amber-600 animate-spin" />
-        </div>
-      )}
-    </div>
-  );
-}
+const ZOOM_MIN = 50;
+const ZOOM_MAX = 300;
+const ZOOM_STEP = 25;
 
 export default function PassportToPdf() {
   const [orientation, setOrientation] = useState<Orientation>("auto");
@@ -1653,49 +1951,27 @@ export default function PassportToPdf() {
   const [contrast, setContrast] = useState<number>(100);
   const [sharpening, setSharpening] = useState<number>(50);
 
-  const [frontImage, setFrontImage] = useState<ImageAsset | null>(null);
-  const [backImage, setBackImage] = useState<ImageAsset | null>(null);
+  const [assets, setAssets] = useState<Record<ImageSlot, ImageAsset | null>>({
+    front: null,
+    back: null,
+  });
+  const assetsRef = useRef(assets);
+  const uploadTokens = useRef<Record<ImageSlot, number>>({ front: 0, back: 0 });
 
   const [cropTarget, setCropTarget] = useState<ImageSlot | null>(null);
   const [zoom, setZoom] = useState<number>(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
   const previewPanelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    try {
-      setIsFavorite(
-        window.localStorage.getItem("sohoj-passport-joiner-favorite") === "1",
-      );
-    } catch {
-      setIsFavorite(false);
-    }
-  }, []);
+  const isProcessing = pendingUploads > 0 || isExporting;
+  const hasImages = Boolean(assets.front || assets.back);
 
-  const frontImageRef = useRef<ImageAsset | null>(null);
-  const backImageRef = useRef<ImageAsset | null>(null);
-
-  useEffect(() => {
-    frontImageRef.current = frontImage;
-  }, [frontImage]);
-
-  useEffect(() => {
-    backImageRef.current = backImage;
-  }, [backImage]);
-
-  useEffect(() => {
-    return () => {
-      if (frontImageRef.current) {
-        URL.revokeObjectURL(frontImageRef.current.url);
-      }
-      if (backImageRef.current) {
-        URL.revokeObjectURL(backImageRef.current.url);
-      }
-    };
-  }, []);
+  /* ---- notices, favorites ---- */
 
   const showNotice = useCallback((type: Notice["type"], message: string) => {
     setNotice({ type, message });
@@ -1710,101 +1986,123 @@ export default function PassportToPdf() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const geometry = useMemo(
-    () =>
-      getGeometry(
-        frontImage,
-        backImage,
-        orientation,
-        layout,
-        position,
-        rotation,
-      ),
-    [frontImage, backImage, orientation, layout, position, rotation],
+  useEffect(() => {
+    try {
+      setIsFavorite(window.localStorage.getItem(FAVORITE_KEY) === "1");
+    } catch {
+      setIsFavorite(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreen = () =>
+      setIsFullscreen(Boolean(document.fullscreenElement));
+
+    document.addEventListener("fullscreenchange", handleFullscreen);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreen);
+  }, []);
+
+  /* ---- asset management (object-URL lifecycle lives here, not in updaters) ---- */
+
+  const setSlotAsset = useCallback(
+    (slot: ImageSlot, next: ImageAsset | null) => {
+      const previous = assetsRef.current[slot];
+      const updated = { ...assetsRef.current, [slot]: next };
+
+      assetsRef.current = updated;
+      setAssets(updated);
+
+      if (previous && previous.url !== next?.url) {
+        URL.revokeObjectURL(previous.url);
+      }
+    },
+    [],
   );
 
-  const currentPageCount = frontImage || backImage ? copies : 1;
+  useEffect(() => {
+    return () => {
+      SLOTS.forEach((slot) => {
+        const asset = assetsRef.current[slot];
+        if (asset) {
+          URL.revokeObjectURL(asset.url);
+        }
+      });
+    };
+  }, []);
 
   const replaceImage = useCallback(
-    async (slot: ImageSlot, file: File | null) => {
-      if (!file) {
-        return;
-      }
+    async (slot: ImageSlot, file: File) => {
+      const token = (uploadTokens.current[slot] += 1);
+      setPendingUploads((count) => count + 1);
 
-      setIsProcessing(true);
       try {
         const asset = await createImageAsset(file);
 
-        if (slot === "front") {
-          setFrontImage((previous) => {
-            if (previous) {
-              URL.revokeObjectURL(previous.url);
-            }
-            return asset;
-          });
-        } else {
-          setBackImage((previous) => {
-            if (previous) {
-              URL.revokeObjectURL(previous.url);
-            }
-            return asset;
-          });
+        // A newer upload or a removal happened while this one was decoding.
+        if (token !== uploadTokens.current[slot]) {
+          URL.revokeObjectURL(asset.url);
+          return;
         }
 
+        setSlotAsset(slot, asset);
         setCropTarget(null);
         showNotice(
           "success",
           `${slot === "front" ? "Front" : "Back"} passport image added.`,
         );
       } catch (error) {
-        showNotice(
-          "error",
-          error instanceof Error
-            ? error.message
-            : "The image could not be uploaded.",
-        );
+        if (token === uploadTokens.current[slot]) {
+          showNotice(
+            "error",
+            error instanceof Error
+              ? error.message
+              : "The image could not be uploaded.",
+          );
+        }
       } finally {
-        setIsProcessing(false);
+        setPendingUploads((count) => count - 1);
       }
     },
-    [showNotice],
+    [setSlotAsset, showNotice],
   );
 
   const handleUpload = useCallback(
     (slot: ImageSlot, files: FileList | null) => {
-      const file = files?.[0] ?? null;
-      void replaceImage(slot, file);
+      const list = Array.from(files ?? []);
+
+      if (!list.length) {
+        return;
+      }
+
+      void replaceImage(slot, list[0]);
+
+      // Dropping two photos at once fills the other side too.
+      if (list[1]) {
+        void replaceImage(slot === "front" ? "back" : "front", list[1]);
+      }
     },
     [replaceImage],
   );
 
-  const handleRemove = useCallback((slot: ImageSlot) => {
-    if (slot === "front") {
-      setFrontImage((previous) => {
-        if (previous) {
-          URL.revokeObjectURL(previous.url);
-        }
-        return null;
-      });
-    } else {
-      setBackImage((previous) => {
-        if (previous) {
-          URL.revokeObjectURL(previous.url);
-        }
-        return null;
-      });
-    }
-
-    setCropTarget(null);
-  }, []);
+  const handleRemove = useCallback(
+    (slot: ImageSlot) => {
+      uploadTokens.current[slot] += 1;
+      setSlotAsset(slot, null);
+      setCropTarget(null);
+    },
+    [setSlotAsset],
+  );
 
   const handleApplyCrop = (crop: CropPolygon) => {
-    if (cropTarget === "front") {
-      setFrontImage((previous) =>
-        previous ? { ...previous, crop } : previous,
-      );
-    } else if (cropTarget === "back") {
-      setBackImage((previous) => (previous ? { ...previous, crop } : previous));
+    if (!cropTarget) {
+      return;
+    }
+
+    const current = assetsRef.current[cropTarget];
+
+    if (current) {
+      setSlotAsset(cropTarget, { ...current, crop });
     }
 
     setCropTarget(null);
@@ -1812,15 +2110,11 @@ export default function PassportToPdf() {
   };
 
   const resetAll = () => {
-    if (frontImage) {
-      URL.revokeObjectURL(frontImage.url);
-    }
-    if (backImage) {
-      URL.revokeObjectURL(backImage.url);
-    }
+    SLOTS.forEach((slot) => {
+      uploadTokens.current[slot] += 1;
+      setSlotAsset(slot, null);
+    });
 
-    setFrontImage(null);
-    setBackImage(null);
     setOrientation("auto");
     setLayout("stacked");
     setRotation(0);
@@ -1835,100 +2129,85 @@ export default function PassportToPdf() {
     showNotice("info", "Passport Joiner settings have been reset.");
   };
 
-  const toggleFavorite = () => {
-    const next = !isFavorite;
-    setIsFavorite(next);
+  /* ---- derived render data ---- */
 
-    try {
-      window.localStorage.setItem(
-        "sohoj-passport-joiner-favorite",
-        next ? "1" : "0",
-      );
-    } catch {
-      // Ignore storage errors.
-    }
+  const settings = useMemo<RenderSettings>(
+    () => ({ brightness, contrast, sharpening, rotation, roundedCorners }),
+    [brightness, contrast, sharpening, rotation, roundedCorners],
+  );
 
-    showNotice(
-      "success",
-      next ? "Added to your favorites." : "Removed from your favorites.",
-    );
+  const slotInputs = useMemo(
+    () =>
+      SLOTS.flatMap((slot) => {
+        const asset = assets[slot];
+        return asset ? [{ slot, ratio: getCropRatio(asset) }] : [];
+      }),
+    [assets],
+  );
+
+  const geometry = useMemo(
+    () =>
+      getSheetGeometry({
+        slots: slotInputs,
+        orientation,
+        layout,
+        position,
+        rotation,
+        copies,
+      }),
+    [slotInputs, orientation, layout, position, rotation, copies],
+  );
+
+  const frontPreview = useProcessedCanvas(
+    assets.front,
+    settings,
+    PREVIEW_PX_PER_MM,
+  );
+  const backPreview = useProcessedCanvas(
+    assets.back,
+    settings,
+    PREVIEW_PX_PER_MM,
+  );
+  const previews: Record<ImageSlot, ProcessedResult> = {
+    front: frontPreview,
+    back: backPreview,
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: "Passport Joiner",
-      text: "Create a clean A4 passport PDF directly in the browser.",
-      url: window.location.href,
-    };
+  const selectedCropAsset = cropTarget ? assets[cropTarget] : null;
+  const scalePercent = Math.round(geometry.scale * 100);
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
+  /* ---- export ---- */
 
-      await navigator.clipboard.writeText(window.location.href);
-      showNotice("success", "Page link copied to clipboard.");
-    } catch {
-      showNotice(
-        "info",
-        "Sharing was cancelled or isn't available in this browser.",
-      );
-    }
-  };
+  const buildExportImages = async () => {
+    const images: Partial<Record<ImageSlot, ExportImage>> = {};
 
-  type OutputEntry = {
-    slot: ImageSlot;
-    asset: ImageAsset;
-    dataUrl: string;
-    width: number;
-    height: number;
-  };
+    for (const slot of SLOTS) {
+      const asset = assetsRef.current[slot];
 
-  const getOutputDataUrls = useCallback(async (): Promise<OutputEntry[]> => {
-    const entries: OutputEntry[] = [];
-
-    const assets: [ImageSlot, ImageAsset | null][] = [
-      ["front", frontImage],
-      ["back", backImage],
-    ];
-
-    for (const [slot, asset] of assets) {
       if (!asset) {
         continue;
       }
 
-      const res = await renderProcessedImage(
-        asset,
-        brightness,
-        contrast,
-        sharpening,
-        rotation,
-        roundedCorners,
-      );
+      await nextFrame(); // let the spinner paint between heavy renders
 
-      entries.push({
-        slot,
+      const canvas = renderPassportCanvas(
         asset,
-        dataUrl: res.dataUrl,
-        width: res.width,
-        height: res.height,
-      });
+        settings,
+        EXPORT_PX_PER_MM,
+        false,
+      );
+      images[slot] = {
+        dataUrl: canvas.toDataURL("image/jpeg", 0.95),
+        width: canvas.width,
+        height: canvas.height,
+      };
     }
 
-    return entries;
-  }, [
-    backImage,
-    brightness,
-    contrast,
-    frontImage,
-    roundedCorners,
-    rotation,
-    sharpening,
-  ]);
+    return images;
+  };
 
   const createPdf = async () => {
-    if (!frontImage && !backImage) {
+    if (!hasImages) {
       showNotice(
         "error",
         "Upload at least one passport page before creating the PDF.",
@@ -1936,75 +2215,15 @@ export default function PassportToPdf() {
       return;
     }
 
-    setIsProcessing(true);
+    setIsExporting(true);
 
     try {
-      const [{ default: JsPDF }, outputEntries] = await Promise.all([
-        import("jspdf"),
-        getOutputDataUrls(),
-      ]);
-
-      const doc = new JsPDF({
-        orientation: geometry.orientation === "portrait" ? "p" : "l",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
-
-      doc.setProperties({
-        title: "Passport Joiner",
-        subject: "Passport page PDF",
-        creator: "SohojKaj",
-      });
-
-      const dataEntries = new Map(
-        outputEntries.map((entry) => [entry.slot, entry]),
-      );
-
-      for (let copy = 0; copy < copies; copy += 1) {
-        if (copy > 0) {
-          doc.addPage("a4", geometry.orientation === "portrait" ? "p" : "l");
-        }
-
-        const placements: [ImageSlot, Placement | null][] = [
-          ["front", geometry.front],
-          ["back", geometry.back],
-        ];
-
-        for (const [slot, placement] of placements) {
-          if (!placement) {
-            continue;
-          }
-
-          const entry = dataEntries.get(slot);
-          if (!entry) {
-            continue;
-          }
-
-          const fit = calculateFitPlacement(
-            placement,
-            entry.width,
-            entry.height,
-          );
-
-          doc.addImage(
-            entry.dataUrl,
-            "PNG",
-            fit.x,
-            fit.y,
-            fit.width,
-            fit.height,
-            undefined,
-            "FAST",
-          );
-        }
-      }
+      await nextFrame();
+      const images = await buildExportImages();
+      const doc = await createPdfDocument(geometry, images);
 
       doc.save("passport-joiner.pdf");
-      showNotice(
-        "success",
-        `PDF created successfully — ${currentPageCount} sheet${currentPageCount === 1 ? "" : "s"}.`,
-      );
+      showNotice("success", "PDF created — A4, 300 DPI.");
     } catch (error) {
       showNotice(
         "error",
@@ -2013,137 +2232,38 @@ export default function PassportToPdf() {
           : "Something went wrong while creating the PDF.",
       );
     } finally {
-      setIsProcessing(false);
+      setIsExporting(false);
     }
   };
 
   const handlePrint = async () => {
-    if (!frontImage && !backImage) {
+    if (!hasImages) {
       showNotice("error", "Upload at least one passport page before printing.");
       return;
     }
 
+    // Open synchronously (inside the click) so pop-up blockers allow it.
     const printWindow = window.open("", "_blank", "width=1000,height=800");
 
     if (!printWindow) {
-      showNotice(
-        "error",
-        "Please allow pop-ups for this site to print the passport PDF.",
-      );
+      showNotice("error", "Please allow pop-ups for this site to print.");
       return;
     }
 
-    setIsProcessing(true);
+    setIsExporting(true);
 
     try {
-      const outputEntries = await getOutputDataUrls();
-      const dataEntries = new Map(
-        outputEntries.map((entry) => [entry.slot, entry]),
-      );
-
-      const imageTags: string[] = [];
-
-      const placements: [ImageSlot, Placement | null][] = [
-        ["front", geometry.front],
-        ["back", geometry.back],
-      ];
-
-      for (const [slot, placement] of placements) {
-        if (!placement) {
-          continue;
-        }
-
-        const entry = dataEntries.get(slot);
-        if (!entry) {
-          continue;
-        }
-
-        imageTags.push(
-          `<img class="passport-image" src="${entry.dataUrl}" alt="${slot} passport page" style="left:${placement.x}mm;top:${placement.y}mm;width:${placement.width}mm;height:${placement.height}mm;border-radius:${roundedCorners ? "3.7mm" : "0"};" />`,
-        );
-      }
-
-      const pageMarkup = Array.from({ length: copies }, (_, index) => {
-        return `
-          <section class="sheet">
-            ${imageTags.join("\n")}
-            <div class="sheet-label">Passport Joiner · Sheet ${index + 1}</div>
-          </section>
-        `;
-      }).join("\n");
-
-      const pageWidth = geometry.orientation === "portrait" ? 210 : 297;
-      const pageHeight = geometry.orientation === "portrait" ? 297 : 210;
+      await nextFrame();
+      const images = await buildExportImages();
 
       printWindow.document.open();
-      printWindow.document.write(`
-        <!doctype html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>Passport Joiner</title>
-            <style>
-              @page {
-                size: ${pageWidth}mm ${pageHeight}mm;
-                margin: 0;
-              }
-              * { box-sizing: border-box; }
-              html, body {
-                margin: 0;
-                padding: 0;
-                background: #fff;
-              }
-              body {
-                font-family: Arial, Helvetica, sans-serif;
-              }
-              .sheet {
-                position: relative;
-                width: ${pageWidth}mm;
-                height: ${pageHeight}mm;
-                overflow: hidden;
-                background: #fff;
-                page-break-after: always;
-              }
-              .passport-image {
-                position: absolute;
-                display: block;
-                object-fit: contain;
-              }
-              .sheet-label {
-                position: absolute;
-                left: 5mm;
-                bottom: 3mm;
-                font-size: 2.3mm;
-                color: #9ca3af;
-                letter-spacing: 0.02em;
-                opacity: 0.7;
-              }
-              @media print {
-                .sheet-label {
-                  display: none;
-                }
-                .sheet {
-                  page-break-after: always;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            ${pageMarkup}
-            <script>
-              window.addEventListener("load", function () {
-                setTimeout(function () {
-                  window.focus();
-                  window.print();
-                }, 350);
-              });
-            </script>
-          </body>
-        </html>
-      `);
+      printWindow.document.write(buildPrintHtml(geometry, images));
       printWindow.document.close();
 
-      showNotice("success", "Print preview opened.");
+      showNotice(
+        "success",
+        "Print dialog opened — choose 'Actual size' / 100%.",
+      );
     } catch (error) {
       printWindow.close();
       showNotice(
@@ -2153,7 +2273,46 @@ export default function PassportToPdf() {
           : "Something went wrong while preparing the print layout.",
       );
     } finally {
-      setIsProcessing(false);
+      setIsExporting(false);
+    }
+  };
+
+  /* ---- page chrome ---- */
+
+  const toggleFavorite = () => {
+    const next = !isFavorite;
+    setIsFavorite(next);
+
+    try {
+      window.localStorage.setItem(FAVORITE_KEY, next ? "1" : "0");
+    } catch {
+      // Ignore storage errors (private mode, blocked storage).
+    }
+
+    showNotice(
+      "success",
+      next ? "Added to your favorites." : "Removed from your favorites.",
+    );
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Passport Joiner",
+          text: "Create a clean A4 passport PDF directly in the browser.",
+          url: window.location.href,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(window.location.href);
+      showNotice("success", "Page link copied to clipboard.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return; // user closed the share sheet
+      }
+      showNotice("info", "Sharing isn't available in this browser.");
     }
   };
 
@@ -2161,42 +2320,22 @@ export default function PassportToPdf() {
     try {
       if (!document.fullscreenElement) {
         await previewPanelRef.current?.requestFullscreen?.();
-        setIsFullscreen(true);
       } else {
         await document.exitFullscreen();
-        setIsFullscreen(false);
       }
     } catch {
       showNotice("info", "Fullscreen mode is not available in this browser.");
     }
   };
 
-  useEffect(() => {
-    const handleFullscreen = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
+  const sheetBase = isFullscreen ? "760px" : "510px";
+  const sheetStyle: React.CSSProperties = {
+    width: `calc(min(100%, ${sheetBase}) * ${zoom / 100})`,
+    aspectRatio: `${geometry.sheetWidth} / ${geometry.sheetHeight}`,
+  };
 
-    document.addEventListener("fullscreenchange", handleFullscreen);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreen);
-    };
-  }, []);
-
-  const sheetStyle = useMemo(() => {
-    const aspect = geometry.sheetWidth / geometry.sheetHeight;
-    return {
-      width: "min(100%, 510px)",
-      aspectRatio: `${aspect}`,
-    };
-  }, [geometry.sheetHeight, geometry.sheetWidth]);
-
-  const hasImages = Boolean(frontImage || backImage);
-  const selectedCropAsset =
-    cropTarget === "front"
-      ? frontImage
-      : cropTarget === "back"
-        ? backImage
-        : null;
+  const zoomIconButton =
+    "hover:text-[#0F172A] disabled:opacity-40 transition-colors";
 
   return (
     <div className="w-full space-y-5 text-[#0F172A] font-sans">
@@ -2209,7 +2348,7 @@ export default function PassportToPdf() {
                 ? "bg-emerald-50/95 border-emerald-200 text-emerald-700"
                 : "bg-white/95 border-gray-200 text-[#0F172A]"
           }`}
-          role="status"
+          role={notice.type === "error" ? "alert" : "status"}
         >
           <div className="flex items-start gap-2">
             {notice.type === "error" ? (
@@ -2223,7 +2362,7 @@ export default function PassportToPdf() {
             <button
               type="button"
               onClick={() => setNotice(null)}
-              className="ml-1 text-current/60 hover:text-current"
+              className="ml-1 opacity-60 hover:opacity-100"
               aria-label="Close notification"
             >
               <X size={13} />
@@ -2234,7 +2373,7 @@ export default function PassportToPdf() {
 
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link
-          href="/sohoj-tools"
+          href={TOOLS_BASE}
           className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
         >
           <ArrowLeft size={14} />
@@ -2246,7 +2385,7 @@ export default function PassportToPdf() {
         <span className="font-semibold text-[#0F172A]">Passport Joiner</span>
       </div>
 
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
             <BookOpen size={24} />
@@ -2267,7 +2406,7 @@ export default function PassportToPdf() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={toggleFavorite}
@@ -2279,12 +2418,13 @@ export default function PassportToPdf() {
             aria-label={
               isFavorite ? "Remove from favorites" : "Add to favorites"
             }
+            aria-pressed={isFavorite}
           >
             <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
           </button>
           <button
             type="button"
-            onClick={handleShare}
+            onClick={() => void handleShare()}
             className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
             aria-label="Share this tool"
           >
@@ -2294,47 +2434,42 @@ export default function PassportToPdf() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* ------------------------------ Settings ------------------------------ */}
         <div className="lg:col-span-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-4 max-h-[750px] overflow-y-auto">
           <h2 className="text-xs font-bold text-[#0F172A] border-b border-gray-100 pb-2">
             Settings
           </h2>
 
           <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-[11px] font-bold text-gray-600">
-              <span>Page settings</span>
-              <span className="text-gray-400 text-[10px]">Page</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100">
-              {(
-                [
-                  ["auto", "Auto"],
-                  ["portrait", "Portrait"],
-                  ["landscape", "Landscape"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setOrientation(value)}
-                  disabled={isProcessing}
-                  className={`py-1.5 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1 ${
-                    orientation === value
-                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                      : "text-gray-500 hover:text-[#0F172A]"
-                  } disabled:opacity-50`}
-                >
-                  {value === "portrait" ? (
-                    <div className="w-3 h-4 border-2 border-current rounded-xs" />
-                  ) : value === "landscape" ? (
-                    <div className="w-4 h-3 border-2 border-current rounded-xs" />
-                  ) : (
-                    label
-                  )}
-                  {value !== "auto" ? null : null}
-                  {value === "auto" ? null : <span>{label}</span>}
-                </button>
-              ))}
-            </div>
+            <span className="text-[11px] font-bold text-gray-600 block">
+              Page orientation
+            </span>
+            <Segmented<Orientation>
+              value={orientation}
+              onChange={setOrientation}
+              disabled={isProcessing}
+              options={[
+                { value: "auto", label: "Auto" },
+                {
+                  value: "portrait",
+                  label: (
+                    <>
+                      <span className="w-3 h-4 border-2 border-current rounded-xs" />
+                      <span>Portrait</span>
+                    </>
+                  ),
+                },
+                {
+                  value: "landscape",
+                  label: (
+                    <>
+                      <span className="w-4 h-3 border-2 border-current rounded-xs" />
+                      <span>Landscape</span>
+                    </>
+                  ),
+                },
+              ]}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -2353,38 +2488,33 @@ export default function PassportToPdf() {
                 Switch
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100">
-              <button
-                type="button"
-                onClick={() => setLayout("side-by-side")}
-                disabled={isProcessing}
-                className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all ${
-                  layout === "side-by-side"
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"
-                } disabled:opacity-50`}
-              >
-                <div className="flex gap-0.5">
-                  <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
-                  <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setLayout("stacked")}
-                disabled={isProcessing}
-                className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all ${
-                  layout === "stacked"
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"
-                } disabled:opacity-50`}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
-                  <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
-                </div>
-              </button>
-            </div>
+            <Segmented<Layout>
+              value={layout}
+              onChange={setLayout}
+              disabled={isProcessing}
+              options={[
+                {
+                  value: "side-by-side",
+                  ariaLabel: "Side by side",
+                  label: (
+                    <span className="flex gap-0.5 py-0.5">
+                      <span className="w-3 h-4 bg-[#2563EB] rounded-xs" />
+                      <span className="w-3 h-4 bg-[#2563EB] rounded-xs" />
+                    </span>
+                  ),
+                },
+                {
+                  value: "stacked",
+                  ariaLabel: "Stacked",
+                  label: (
+                    <span className="flex flex-col gap-0.5 py-0.5">
+                      <span className="w-5 h-2 bg-[#2563EB] rounded-xs" />
+                      <span className="w-5 h-2 bg-[#2563EB] rounded-xs" />
+                    </span>
+                  ),
+                },
+              ]}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -2392,7 +2522,7 @@ export default function PassportToPdf() {
               <span>Rotate</span>
               <button
                 type="button"
-                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                onClick={() => setRotation((previous) => (previous + 90) % 360)}
                 disabled={isProcessing}
                 className="text-[10px] text-[#2563EB] font-bold flex items-center gap-1 hover:underline disabled:opacity-50"
               >
@@ -2400,23 +2530,15 @@ export default function PassportToPdf() {
                 Rotate 90°
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100 text-xs font-bold text-gray-600">
-              {[0, 90, 180, 270].map((deg) => (
-                <button
-                  key={deg}
-                  type="button"
-                  onClick={() => setRotation(deg)}
-                  disabled={isProcessing}
-                  className={`py-1.5 rounded-lg text-center transition-all ${
-                    rotation === deg
-                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                      : "hover:bg-white/50"
-                  } disabled:opacity-50`}
-                >
-                  {deg}°
-                </button>
-              ))}
-            </div>
+            <Segmented<number>
+              value={rotation}
+              onChange={setRotation}
+              disabled={isProcessing}
+              options={[0, 90, 180, 270].map((deg) => ({
+                value: deg,
+                label: `${deg}°`,
+              }))}
+            />
             <p className="text-[10px] text-gray-400">
               Both pages rotate together.
             </p>
@@ -2426,48 +2548,34 @@ export default function PassportToPdf() {
             <span className="text-[11px] font-bold text-gray-600 block">
               Position on page
             </span>
-            <div className="grid grid-cols-3 gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100 text-xs font-bold text-gray-600">
-              {(["top", "center", "bottom"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setPosition(value)}
-                  disabled={isProcessing}
-                  className={`py-1.5 rounded-lg transition-all capitalize ${
-                    position === value
-                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                      : "hover:bg-white/50"
-                  } disabled:opacity-50`}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
+            <Segmented<Position>
+              value={position}
+              onChange={setPosition}
+              disabled={isProcessing}
+              options={[
+                { value: "top", label: "Top" },
+                { value: "center", label: "Center" },
+                { value: "bottom", label: "Bottom" },
+              ]}
+            />
           </div>
 
           <div className="space-y-1.5">
             <span className="text-[11px] font-bold text-gray-600 block">
               Copies
             </span>
-            <div className="grid grid-cols-2 gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100 text-xs font-bold text-gray-600">
-              {[1, 2].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => setCopies(num)}
-                  disabled={isProcessing}
-                  className={`py-1.5 rounded-lg transition-all ${
-                    copies === num
-                      ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                      : "hover:bg-white/50"
-                  } disabled:opacity-50`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
+            <Segmented<number>
+              value={copies}
+              onChange={setCopies}
+              disabled={isProcessing}
+              options={[
+                { value: 1, label: "1" },
+                { value: 2, label: "2" },
+              ]}
+            />
             <p className="text-[10px] text-gray-400">
-              A copy repeats the complete passport layout on another A4 sheet.
+              Two copies are placed on the same A4 sheet, at actual size when
+              they fit.
             </p>
           </div>
 
@@ -2477,21 +2585,23 @@ export default function PassportToPdf() {
                 Rounded corners (14px)
               </span>
               <span className="text-[10px] text-gray-400 block">
-                14px round corners on page images
+                Round the corners of each page image
               </span>
             </div>
             <button
               type="button"
-              onClick={() => setRoundedCorners(!roundedCorners)}
+              role="switch"
+              aria-checked={roundedCorners}
+              aria-label="Rounded corners"
+              onClick={() => setRoundedCorners((value) => !value)}
               disabled={isProcessing}
-              className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+              className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center disabled:opacity-50 ${
                 roundedCorners
                   ? "bg-[#2563EB] justify-end"
                   : "bg-gray-300 justify-start"
-              } disabled:opacity-50`}
-              aria-pressed={roundedCorners}
+              }`}
             >
-              <div className="w-5 h-5 rounded-full bg-white shadow-md" />
+              <span className="w-5 h-5 rounded-full bg-white shadow-md" />
             </button>
           </div>
 
@@ -2514,71 +2624,55 @@ export default function PassportToPdf() {
               </button>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] font-bold text-gray-600">
-                <span>Brightness {brightness}%</span>
-                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
-                  {brightness}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="150"
-                value={brightness}
-                onChange={(event) => setBrightness(Number(event.target.value))}
-                disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] font-bold text-gray-600">
-                <span>Contrast {contrast}%</span>
-                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
-                  {contrast}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="150"
-                value={contrast}
-                onChange={(event) => setContrast(Number(event.target.value))}
-                disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] font-bold text-gray-600">
-                <span>Sharpening {sharpening}</span>
-                <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
-                  {sharpening}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={sharpening}
-                onChange={(event) => setSharpening(Number(event.target.value))}
-                disabled={isProcessing}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
-              />
-            </div>
+            <SliderRow
+              label="Brightness"
+              value={brightness}
+              min={50}
+              max={150}
+              unit="%"
+              onChange={setBrightness}
+              disabled={isProcessing}
+            />
+            <SliderRow
+              label="Contrast"
+              value={contrast}
+              min={50}
+              max={150}
+              unit="%"
+              onChange={setContrast}
+              disabled={isProcessing}
+            />
+            <SliderRow
+              label="Sharpening"
+              value={sharpening}
+              min={0}
+              max={100}
+              onChange={setSharpening}
+              disabled={isProcessing}
+            />
           </div>
 
-          <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-[11px] font-bold text-gray-500">
-            <span>
-              {currentPageCount} sheet{currentPageCount === 1 ? "" : "s"} ·{" "}
-              {geometry.orientation === "portrait"
-                ? "A4 Portrait"
-                : "A4 Landscape"}
-            </span>
-            <span>
-              {copies} copy{copies === 1 ? "" : "ies"}
-            </span>
+          <div className="border-t border-gray-100 pt-3 space-y-1 text-[11px] font-bold text-gray-500">
+            <div className="flex items-center justify-between">
+              <span>
+                A4{" "}
+                {geometry.orientation === "portrait" ? "Portrait" : "Landscape"}
+              </span>
+              <span>
+                {copies} copy{copies === 1 ? "" : "ies"} · 1 sheet
+              </span>
+            </div>
+            {hasImages ? (
+              <p
+                className={`text-[10px] font-medium ${
+                  scalePercent < 100 ? "text-amber-600" : "text-emerald-600"
+                }`}
+              >
+                {scalePercent < 100
+                  ? `Scaled to ${scalePercent}% to fit the sheet — not actual size.`
+                  : "Actual size: each page is 88×125 mm."}
+              </p>
+            ) : null}
           </div>
 
           <button
@@ -2596,13 +2690,10 @@ export default function PassportToPdf() {
           </button>
         </div>
 
+        {/* ------------------------------ Preview ------------------------------- */}
         <div
           ref={previewPanelRef}
-          className={`lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between ${
-            isFullscreen
-              ? "fixed inset-0 z-[90] rounded-none overflow-auto"
-              : ""
-          }`}
+          className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col [&:fullscreen]:overflow-auto [&:fullscreen]:rounded-none [&:fullscreen]:bg-white"
         >
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2">
@@ -2616,76 +2707,90 @@ export default function PassportToPdf() {
             </div>
 
             <div className="flex items-center gap-3 text-xs text-gray-500 font-bold">
-              <span>{zoom}%</span>
               <button
                 type="button"
-                onClick={() => setZoom((value) => clamp(value + 10, 50, 160))}
-                disabled={isProcessing}
-                className="hover:text-[#0F172A] disabled:opacity-40"
+                onClick={() =>
+                  setZoom((value) =>
+                    clamp(value - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX),
+                  )
+                }
+                disabled={zoom <= ZOOM_MIN}
+                className={zoomIconButton}
+                aria-label="Zoom out"
+              >
+                <ZoomOut size={14} />
+              </button>
+              <span className="min-w-9 text-center tabular-nums">{zoom}%</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setZoom((value) =>
+                    clamp(value + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX),
+                  )
+                }
+                disabled={zoom >= ZOOM_MAX}
+                className={zoomIconButton}
                 aria-label="Zoom in"
               >
                 <ZoomIn size={14} />
               </button>
               <button
                 type="button"
-                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                onClick={() => setZoom(100)}
+                disabled={zoom === 100}
+                className={`text-[10px] ${zoomIconButton}`}
+                title="Reset zoom to 100%"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setRotation((previous) => (previous + 90) % 360)}
                 disabled={isProcessing}
-                className="hover:text-[#0F172A] disabled:opacity-40"
+                className={zoomIconButton}
                 aria-label="Rotate both passport pages"
               >
                 <RotateCw size={14} />
               </button>
               <button
                 type="button"
-                onClick={() => setZoom((value) => clamp(value - 10, 50, 160))}
-                disabled={isProcessing}
-                className="hover:text-[#0F172A] disabled:opacity-40"
-                aria-label="Zoom out"
-              >
-                <ZoomOut size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom(100)}
-                disabled={isProcessing}
-                className="text-[10px] hover:text-[#0F172A] disabled:opacity-40"
-                title="Reset zoom"
-              >
-                Reset
-              </button>
-              <button
-                type="button"
                 onClick={() => void toggleFullscreen()}
-                disabled={isProcessing}
-                className="hover:text-[#0F172A] disabled:opacity-40"
+                className={zoomIconButton}
                 aria-label="Toggle fullscreen preview"
               >
-                <Maximize2 size={14} />
+                {isFullscreen ? (
+                  <Minimize2 size={14} />
+                ) : (
+                  <Maximize2 size={14} />
+                )}
               </button>
             </div>
           </div>
 
-          <div className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-4 md:p-6 my-4 flex-1 flex justify-center items-start min-h-[580px] overflow-auto">
+          <div className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-4 md:p-6 my-4 flex-1 min-h-[580px] overflow-auto">
             <div
-              className="relative transition-transform duration-200 origin-top shadow-md border border-gray-200 bg-white shrink-0"
-              style={{
-                ...sheetStyle,
-                transform: `scale(${zoom / 100})`,
-                marginBottom: `${Math.max(0, (zoom - 100) * 4)}px`,
-              }}
+              className="relative mx-auto bg-white shadow-md ring-1 ring-gray-200 transition-[width] duration-150"
+              style={sheetStyle}
             >
-              {geometry.front && frontImage ? (
-                <PreviewImage
-                  asset={frontImage}
-                  placement={geometry.front}
-                  brightness={brightness}
-                  contrast={contrast}
-                  rotation={rotation}
-                  roundedCorners={roundedCorners}
-                  geometry={geometry}
-                  label="Front"
-                />
-              ) : (
+              {geometry.items.map((item) => (
+                <div
+                  key={`${item.slot}-${item.copy}`}
+                  className="absolute"
+                  style={{
+                    left: `${(item.image.x / geometry.sheetWidth) * 100}%`,
+                    top: `${(item.image.y / geometry.sheetHeight) * 100}%`,
+                    width: `${(item.image.width / geometry.sheetWidth) * 100}%`,
+                    height: `${(item.image.height / geometry.sheetHeight) * 100}%`,
+                  }}
+                >
+                  <ProcessedCanvas
+                    result={previews[item.slot]}
+                    label={`${item.slot === "front" ? "Front" : "Back"} passport page, copy ${item.copy + 1}`}
+                  />
+                </div>
+              ))}
+
+              {hasImages ? null : (
                 <div className="absolute inset-0 flex items-center justify-center text-center p-8">
                   <div>
                     <div className="w-12 h-12 rounded-full bg-[#F8FAFC] text-[#2563EB] flex items-center justify-center mx-auto mb-3">
@@ -2701,25 +2806,6 @@ export default function PassportToPdf() {
                   </div>
                 </div>
               )}
-
-              {geometry.back && backImage ? (
-                <PreviewImage
-                  asset={backImage}
-                  placement={geometry.back}
-                  brightness={brightness}
-                  contrast={contrast}
-                  rotation={rotation}
-                  roundedCorners={roundedCorners}
-                  geometry={geometry}
-                  label="Back"
-                />
-              ) : null}
-
-              {hasImages ? null : (
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-2.5 py-1.5 rounded-full bg-gray-900/80 text-white text-[9px] font-semibold whitespace-nowrap">
-                  A4 output preview
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -2730,26 +2816,20 @@ export default function PassportToPdf() {
           <UploadSlot
             slot="front"
             label="Front passport page"
-            asset={frontImage}
+            asset={assets.front}
+            settings={settings}
             onUpload={handleUpload}
             onCrop={setCropTarget}
             onRemove={handleRemove}
-            brightness={brightness}
-            contrast={contrast}
-            rotation={rotation}
-            roundedCorners={roundedCorners}
           />
           <UploadSlot
             slot="back"
             label="Back passport page"
-            asset={backImage}
+            asset={assets.back}
+            settings={settings}
             onUpload={handleUpload}
             onCrop={setCropTarget}
             onRemove={handleRemove}
-            brightness={brightness}
-            contrast={contrast}
-            rotation={rotation}
-            roundedCorners={roundedCorners}
           />
         </div>
       </div>
@@ -2783,11 +2863,11 @@ export default function PassportToPdf() {
             disabled={!hasImages || isProcessing}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               hasImages && !isProcessing
-                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#1D4ED8]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {isProcessing ? (
+            {isExporting ? (
               <>
                 <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                 <span>Processing…</span>
@@ -2807,63 +2887,31 @@ export default function PassportToPdf() {
           Tools in the same category
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-              <ImageIcon size={16} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                Image Size Reducer
-              </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
-                Shrink JPG, PNG, and WebP photos in your browser — quality stays
-                sharp.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-              <CreditCard size={16} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                NID Joiner
-              </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
-                Turn NID card front and back photos into a clean A4 PDF — all in
-                your browser.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                Remove Background
-              </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
-                Erase portrait, product, or logo backgrounds in your browser —
-                download a transparent PNG.
-              </p>
-            </div>
-          </Link>
+          {RELATED_TOOLS.map(({ href, title, text, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
+            >
+              <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+                <Icon size={16} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+                  {title}
+                </h4>
+                <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
+                  {text}
+                </p>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
       {selectedCropAsset ? (
         <CropModal
+          key={selectedCropAsset.url}
           asset={selectedCropAsset}
           onClose={() => setCropTarget(null)}
           onApply={handleApplyCrop}

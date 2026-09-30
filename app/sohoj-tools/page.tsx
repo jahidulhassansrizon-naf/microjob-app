@@ -1,9 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { toolsData, ToolTile } from "@/app/_components/toolsData";
 
 import {
   Search,
@@ -14,265 +14,9 @@ import {
   Type,
   Wrench,
   GraduationCap,
-  Minimize2,
-  Combine,
-  FileCode,
-  FileImage,
-  Lock,
-  Edit3,
-  CreditCard,
-  BookOpen,
-  Languages,
-  Keyboard,
-  AlignLeft,
   Video,
-  Calculator,
-  Scan,
-  Sparkles,
-  FileUser,
-  UserCheck,
-  Crop,
   Loader2,
 } from "lucide-react";
-
-interface ToolItem {
-  id: string;
-  name: string;
-  category: "PDF" | "Image" | "Text" | "Video" | "General" | "Educational";
-  bgColor: string;
-  icon: any;
-  badge?: "New" | "Hot";
-}
-
-const toolsData: ToolItem[] = [
-  {
-    id: "1",
-    name: "Nid Joiner",
-    category: "General",
-    bgColor: "bg-[#22c55e]",
-    icon: CreditCard,
-    badge: "Hot",
-  },
-  {
-    id: "28",
-    name: "NID Information Correction Form",
-    category: "General",
-    bgColor: "bg-[#8b5cf6]",
-    icon: FileText,
-    badge: "New",
-  },
-  {
-    id: "11",
-    name: "Document Scanner",
-    category: "General",
-    bgColor: "bg-[#84cc16]",
-    icon: Scan,
-    badge: "New",
-  },
-  {
-    id: "2",
-    name: "Govt Job Photo & Sign Resizer",
-    category: "Image",
-    bgColor: "bg-[#7c3aed]",
-    icon: UserCheck,
-  },
-  {
-    id: "10",
-    name: "Remove Background",
-    category: "Image",
-    bgColor: "bg-[#16a34a]",
-    icon: null,
-    badge: "Hot",
-  },
-  {
-    id: "20",
-    name: "Lock / Unlock PDF",
-    category: "PDF",
-    bgColor: "bg-[#4338ca]",
-    icon: Lock,
-  },
-  {
-    id: "21",
-    name: "PDF to Image",
-    category: "PDF",
-    bgColor: "bg-[#3b82f6]",
-    icon: FileImage,
-  },
-  {
-    id: "17",
-    name: "Compress PDF",
-    category: "PDF",
-    bgColor: "bg-[#1cc2e6]",
-    icon: Minimize2,
-    badge: "Hot",
-  },
-  {
-    id: "18",
-    name: "Merge PDFs",
-    category: "PDF",
-    bgColor: "bg-[#0eb2ed]",
-    icon: Combine,
-    badge: "Hot",
-  },
-  {
-    id: "12",
-    name: "Image Size Reducer",
-    category: "Image",
-    bgColor: "bg-[#4ade80]",
-    icon: ImageIcon,
-    badge: "New",
-  },
-  {
-    id: "27",
-    name: "Image Upscaler",
-    category: "Image",
-    bgColor: "bg-[#6366f1]",
-    icon: Sparkles,
-    badge: "New",
-  },
-  {
-    id: "25",
-    name: "ATS Friendly CV Maker",
-    category: "General",
-    bgColor: "bg-[#2563eb]",
-    icon: FileUser,
-  },
-  {
-    id: "8",
-    name: "Family Card Form",
-    category: "General",
-    bgColor: "bg-[#2563eb]",
-    icon: CreditCard,
-  },
-  {
-    id: "7",
-    name: "Voter Migration Form",
-    category: "General",
-    bgColor: "bg-[#4f46e5]",
-    icon: FileText,
-    badge: "New",
-  },
-  {
-    id: "26",
-    name: "Voter Registration Form",
-    category: "General",
-    bgColor: "bg-[#4f46e5]",
-    icon: FileText,
-  },
-  {
-    id: "6",
-    name: "Passport Joiner",
-    category: "General",
-    bgColor: "bg-[#10b981]",
-    icon: BookOpen,
-    badge: "Hot",
-  },
-  {
-    id: "13",
-    name: "Crop Image",
-    category: "Image",
-    bgColor: "bg-[#0369a1]",
-    icon: Crop,
-  },
-  {
-    id: "5",
-    name: "Age Calculator",
-    category: "General",
-    bgColor: "bg-[#db2777]",
-    icon: Calculator,
-  },
-  {
-    id: "9",
-    name: "Reduce Video File Size",
-    category: "General",
-    bgColor: "bg-[#7c3aed]",
-    icon: Video,
-    badge: "New",
-  },
-  // Tools outside the requested priority list stay at the end.
-  {
-    id: "3",
-    name: "Change Speed",
-    category: "Video",
-    bgColor: "bg-[#10ca7e]",
-    icon: Video,
-  },
-  {
-    id: "4",
-    name: "Add Watermark",
-    category: "Video",
-    bgColor: "bg-[#06b6d4]",
-    icon: ImageIcon,
-  },
-  {
-    id: "14",
-    name: "Images to PDF",
-    category: "Image",
-    bgColor: "bg-[#2563eb]",
-    icon: FileImage,
-  },
-  {
-    id: "15",
-    name: "Image Convert",
-    category: "Image",
-    bgColor: "bg-[#a855f7]",
-    icon: ImageIcon,
-    badge: "Hot",
-  },
-  {
-    id: "16",
-    name: "Image to Text",
-    category: "Text",
-    bgColor: "bg-[#14b8a6]",
-    icon: AlignLeft,
-    badge: "New",
-  },
-  {
-    id: "19",
-    name: "Split PDF",
-    category: "PDF",
-    bgColor: "bg-[#2563eb]",
-    icon: FileCode,
-  },
-  {
-    id: "22",
-    name: "Edit PDF",
-    category: "PDF",
-    bgColor: "bg-[#2563EB]",
-    icon: Edit3,
-    badge: "New",
-  },
-  {
-    id: "23",
-    name: "Bijoy - Unicode",
-    category: "Text",
-    bgColor: "bg-[#a3e635]",
-    icon: Languages,
-  },
-  {
-    id: "24",
-    name: "Banglish Typing",
-    category: "Text",
-    bgColor: "bg-[#84cc16]",
-    icon: Keyboard,
-  },
-  {
-    id: "29",
-    name: "Special Information Form",
-    category: "General",
-    bgColor: "bg-[#0ea5e9]",
-    icon: FileText,
-    badge: "New",
-  },
-  {
-    id: "30",
-    name: "Fuel Card Form",
-    category: "General",
-    bgColor: "bg-[#2563EB]",
-    icon: CreditCard,
-    badge: "New",
-  },
-];
 
 const categories = [
   { name: "All", icon: LayoutGrid },
@@ -349,14 +93,6 @@ function SohojToolsContent() {
     window.history.replaceState(null, "", newPath);
   };
 
-  const getSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-  };
-
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -399,7 +135,7 @@ function SohojToolsContent() {
       <main className="max-w-[1320px] mx-auto px-4 py-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-[#2563EB] text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-[#2563EB]/25">
               <LayoutGrid size={20} />
             </div>
             <div>
@@ -410,18 +146,18 @@ function SohojToolsContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                28 free tools to speed up daily work.
+                {toolsData.length} free tools to speed up daily work.
               </p>
             </div>
           </div>
 
-          <div className="bg-gray-200/80 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
+          <div className="bg-white/80 border border-slate-200 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
             <button
               onClick={() => setActiveTab("Free")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Free"
-                  ? "bg-black text-white shadow-sm"
-                  : "text-gray-600 hover:text-[#0F172A]"
+                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
+                  : "text-slate-600 hover:text-[#2563EB]"
               }`}
             >
               Free Tools •
@@ -430,8 +166,8 @@ function SohojToolsContent() {
               onClick={() => setActiveTab("Paid")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Paid"
-                  ? "bg-black text-white shadow-sm"
-                  : "text-gray-500 hover:text-[#0F172A]"
+                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
+                  : "text-slate-600 hover:text-[#2563EB]"
               }`}
             >
               Paid Tools •
@@ -450,7 +186,7 @@ function SohojToolsContent() {
             placeholder="Search tools... e.g. PDF, image, video"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 shadow-xs placeholder:text-gray-400 transition-all"
+            className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:border-[#2563EB]/50 focus:ring-2 focus:ring-[#2563EB]/20 shadow-xs placeholder:text-gray-400 transition-all"
           />
         </div>
 
@@ -465,8 +201,8 @@ function SohojToolsContent() {
                 onClick={() => setSelectedCategory(cat.name)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-[#0F172A] border-gray-200 hover:bg-gray-50"
+                    ? "bg-[#2563EB] text-white border-[#2563EB] shadow-sm shadow-[#2563EB]/25"
+                    : "bg-white text-[#0F172A] border-slate-200 hover:border-[#2563EB]/40 hover:bg-blue-50 hover:text-[#2563EB]"
                 }`}
               >
                 <Icon
@@ -482,43 +218,9 @@ function SohojToolsContent() {
         {/* Tools Grid Section */}
         {filteredTools.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-7 pt-3">
-            {filteredTools.map((tool) => {
-              const IconComponent = tool.icon;
-              const slug = getSlug(tool.name);
-
-              return (
-                <Link
-                  key={tool.id}
-                  href={`/sohoj-tools/${slug}`}
-                  className="flex flex-col items-center group cursor-pointer"
-                >
-                  <div
-                    className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
-                  >
-                    {tool.badge && (
-                      <span
-                        className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${
-                          tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"
-                        }`}
-                      >
-                        {tool.badge}
-                      </span>
-                    )}
-
-                    {IconComponent && (
-                      <IconComponent
-                        size={42}
-                        className="text-[#ffffff] stroke-[1.75]"
-                      />
-                    )}
-                  </div>
-
-                  <span className="mt-2.5 text-xs font-bold text-[#0F172A] text-center line-clamp-1 group-hover:text-[#2563EB] transition-colors">
-                    {tool.name}
-                  </span>
-                </Link>
-              );
-            })}
+            {filteredTools.map((tool) => (
+              <ToolTile key={tool.id} tool={tool} />
+            ))}
           </div>
         ) : (
           /* No tools found - Empty State */
