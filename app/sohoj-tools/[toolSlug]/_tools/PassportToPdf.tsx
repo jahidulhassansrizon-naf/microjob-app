@@ -394,9 +394,74 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+type Heic2Any = (options: {
+  blob: Blob;
+  toType: string;
+  quality?: number;
+}) => Promise<Blob | Blob[]>;
+
+declare global {
+  interface Window {
+    heic2any?: Heic2Any;
+  }
+}
+
+const HEIC2ANY_SCRIPT_SRC =
+  "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js";
+
+let heic2anyLoader: Promise<Heic2Any> | null = null;
+
+function loadHeic2Any(): Promise<Heic2Any> {
+  if (window.heic2any) {
+    return Promise.resolve(window.heic2any);
+  }
+
+  if (heic2anyLoader) {
+    return heic2anyLoader;
+  }
+
+  heic2anyLoader = new Promise<Heic2Any>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-heic2any="true"]',
+    );
+
+    const finish = () => {
+      if (window.heic2any) {
+        resolve(window.heic2any);
+      } else {
+        reject(new Error("HEIC converter could not be loaded."));
+      }
+    };
+
+    if (existing) {
+      existing.addEventListener("load", finish, { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("HEIC converter could not be loaded.")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = HEIC2ANY_SCRIPT_SRC;
+    script.async = true;
+    script.dataset.heic2any = "true";
+    script.onload = finish;
+    script.onerror = () =>
+      reject(new Error("HEIC converter could not be loaded."));
+    document.head.appendChild(script);
+  }).catch((error) => {
+    heic2anyLoader = null;
+    throw error;
+  });
+
+  return heic2anyLoader;
+}
+
 async function convertHeicToJpeg(file: File): Promise<Blob> {
   try {
-    const { default: heic2any } = await import("heic2any");
+    const heic2any = await loadHeic2Any();
     const result = await heic2any({
       blob: file,
       toType: "image/jpeg",
