@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createPortal, flushSync } from "react-dom";
 import {
   ArrowLeft,
   Star,
@@ -19,6 +26,7 @@ import {
   X,
   Minus,
   Plus,
+  Maximize,
   Loader2,
   CheckCircle2,
 } from "lucide-react";
@@ -66,8 +74,18 @@ interface FormState {
   numDaughters: string;
 }
 
+const DEFAULT_RECIPIENT = "Chairman/Mayor";
+
+const RECIPIENT_OPTIONS = [
+  "Chairman/Mayor",
+  "Chairman",
+  "Mayor",
+  "Ward Member",
+  "Ward Representative",
+];
+
 const EMPTY_STATE: FormState = {
-  recipient: "Ward Member",
+  recipient: DEFAULT_RECIPIENT,
   unionName: "",
   applicantName: "",
   fatherHusband: "",
@@ -83,10 +101,84 @@ const EMPTY_STATE: FormState = {
   numDaughters: "",
 };
 
+/** Every field that counts towards the progress bar (recipient has a default). */
+const PROGRESS_KEYS: Array<keyof FormState> = [
+  "unionName",
+  "applicantName",
+  "fatherHusband",
+  "motherName",
+  "nidNumber",
+  "mobileNumber",
+  "village",
+  "postOffice",
+  "wardNo",
+  "district",
+  "upazila",
+  "numSons",
+  "numDaughters",
+];
+
 interface GeoOption {
   id: string;
   bn: string;
 }
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Bangla font (paper uses Times for Latin + Noto Serif Bengali for Bangla)  */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+const FONT_LINK_ID = "family-card-paper-fonts";
+const FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&family=Tinos:wght@400;700&display=swap";
+
+function ensurePaperFonts() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(FONT_LINK_ID)) return;
+  const link = document.createElement("link");
+  link.id = FONT_LINK_ID;
+  link.rel = "stylesheet";
+  link.href = FONT_HREF;
+  document.head.appendChild(link);
+}
+
+function nextFrames(count: number) {
+  return new Promise<void>((resolve) => {
+    const step = (left: number) => {
+      if (left <= 0) resolve();
+      else requestAnimationFrame(() => step(left - 1));
+    };
+    step(count);
+  });
+}
+
+/**
+ * Print / PDF must wait until the Bangla font is really usable,
+ * otherwise the first export can be rendered with a fallback font.
+ */
+async function waitForPaperFonts() {
+  try {
+    if (typeof document !== "undefined" && document.fonts) {
+      const sample = "অআকখ ছেলে সন্তান ১২৩৪ Family Card 0123";
+      await Promise.race([
+        Promise.all([
+          document.fonts.load('400 16px "Noto Serif Bengali"', sample),
+          document.fonts.load('700 16px "Noto Serif Bengali"', sample),
+          document.fonts.load('400 16px "Tinos"', sample),
+          document.fonts.load('700 16px "Tinos"', sample),
+        ]),
+        new Promise((resolve) => setTimeout(resolve, 4000)),
+      ]);
+      await document.fonts.ready;
+    }
+  } catch {
+    // Font readiness is best-effort.
+  }
+  await nextFrames(2);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Left-panel UI                                                             */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 function GeoCombobox({
   value,
@@ -106,7 +198,7 @@ function GeoCombobox({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     function onDocClick(event: MouseEvent) {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setOpen(false);
@@ -122,9 +214,7 @@ function GeoCombobox({
 
   const filtered = useMemo(() => {
     const q = query.trim();
-
     if (!q) return options;
-
     return options.filter((option) => option.bn.includes(q));
   }, [options, query]);
 
@@ -133,19 +223,17 @@ function GeoCombobox({
       <div
         onClick={() => {
           if (disabled) return;
-
           setOpen(true);
-
           requestAnimationFrame(() => inputRef.current?.focus());
         }}
-        className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-colors ${
+        className={`w-full bg-white border rounded-lg px-2.5 py-1.5 min-h-[34px] text-xs flex items-center gap-1.5 transition-colors ${
           disabled
-            ? "border-gray-100 bg-gray-50 cursor-not-allowed"
-            : "border-gray-200 cursor-text focus-within:border-blue-500"
+            ? "border-[#EEE7D4] bg-gray-50 cursor-not-allowed"
+            : "border-gray-200 cursor-text focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
         }`}
       >
         {selected ? (
-          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
+          <span className="inline-flex items-center gap-1 bg-[#E8EEFF] text-[#3C5FCA] rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
             <span className="truncate">{selected.bn}</span>
 
             {!disabled && (
@@ -153,11 +241,10 @@ function GeoCombobox({
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-
                   onChange("");
                   setQuery("");
                 }}
-                className="text-blue-400 hover:text-blue-700 shrink-0"
+                className="text-[#6C83D4] hover:text-[#3C5FCA] shrink-0"
                 aria-label={`Clear ${placeholder}`}
               >
                 <X size={11} />
@@ -176,8 +263,14 @@ function GeoCombobox({
             setOpen(true);
           }}
           onFocus={() => !disabled && setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setOpen(false);
+              setQuery("");
+            }
+          }}
           placeholder={selected ? "" : placeholder}
-          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#0F172A] placeholder:text-gray-400 disabled:cursor-not-allowed"
+          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#42382C] placeholder:text-[#9A907F] disabled:cursor-not-allowed"
         />
 
         <ChevronDown
@@ -211,10 +304,10 @@ function GeoCombobox({
                     setOpen(false);
                     setQuery("");
                   }}
-                  className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-blue-50 transition-colors truncate ${
+                  className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-[#F0F3FF] transition-colors truncate ${
                     option.id === value
-                      ? "bg-blue-50 text-blue-700 font-semibold"
-                      : "text-[#0F172A]"
+                      ? "bg-[#E8EEFF] text-[#3C5FCA] font-semibold"
+                      : "text-[#42382C]"
                   }`}
                 >
                   {option.bn}
@@ -228,29 +321,36 @@ function GeoCombobox({
   );
 }
 
+/** Label with the small Bangla "paper number" chip that links a field to the preview. */
 function Field({
   label,
+  no,
   children,
-  hint,
 }: {
   label: string;
+  no?: string;
   children: React.ReactNode;
-  hint?: string;
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-semibold text-gray-600">{label}</label>
+      <div className="flex items-center gap-1.5">
+        {no ? (
+          <span className="inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded bg-[#E8EEFF] px-1 text-[10px] font-bold text-[#3C5FCA]">
+            {no}
+          </span>
+        ) : null}
+        <label className="text-[11px] font-semibold text-[#665D4F]">
+          {label}
+        </label>
+      </div>
 
       {children}
-
-      {hint ? (
-        <p className="text-[10px] text-red-600 font-semibold leading-snug">
-          {hint}
-        </p>
-      ) : null}
     </div>
   );
 }
+
+const INPUT_CLASS =
+  "w-full bg-white border rounded-lg px-2.5 py-1.5 min-h-[34px] text-xs text-[#42382C] placeholder:text-[#9A907F] focus:outline-none focus:border-[#3C5FCA] focus:ring-2 focus:ring-[#E8EEFF]";
 
 function TextInput({
   value,
@@ -258,56 +358,133 @@ function TextInput({
   placeholder,
   inputMode,
   maxLength,
+  validate,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   inputMode?: "text" | "numeric" | "tel";
   maxLength?: number;
+  validate?: (value: string) => string;
 }) {
+  const [touched, setTouched] = useState(false);
+  const message = validate ? validate(value) : "";
+  const showError = touched && Boolean(message);
+
   return (
-    <input
-      type="text"
-      inputMode={inputMode}
-      maxLength={maxLength}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-blue-500"
-    />
+    <>
+      <input
+        type="text"
+        inputMode={inputMode}
+        maxLength={maxLength}
+        value={value}
+        autoComplete="off"
+        spellCheck={false}
+        aria-invalid={showError}
+        onBlur={() => setTouched(true)}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className={`${INPUT_CLASS} ${
+          showError ? "border-red-300 focus:border-red-500" : "border-gray-200"
+        }`}
+      />
+
+      {showError ? (
+        <p
+          role="alert"
+          className="text-[10px] text-red-600 font-semibold leading-snug"
+        >
+          {message}
+        </p>
+      ) : null}
+    </>
   );
 }
+
+function Section({
+  no,
+  title,
+  subtitle,
+  children,
+}: {
+  no: number;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-3.5 border border-[#E8D9A8] rounded-xl p-3.5 bg-white">
+      <div className="flex items-center gap-2.5 pb-2.5 border-b border-[#F1E7C8]">
+        <span className="w-6 h-6 shrink-0 rounded-md bg-[#3C5FCA] text-white text-[11px] font-bold flex items-center justify-center">
+          {no}
+        </span>
+
+        <div className="min-w-0">
+          <h3 className="text-xs font-bold text-[#42382C] leading-tight">
+            {title}
+          </h3>
+          <p className="text-[10px] text-[#786D5B] leading-tight">{subtitle}</p>
+        </div>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+const validateMobile = (v: string) =>
+  v && !/^01[3-9]\d{8}$/.test(v)
+    ? "Enter a valid Bangladesh mobile number (starts with 01, e.g. 01783666743)."
+    : "";
+
+const validateNid = (v: string) =>
+  v && ![10, 13, 17].includes(v.length)
+    ? "NID number must be 10, 13 or 17 digits."
+    : "";
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  A4 application paper  (preview = print = PDF, one single component)       */
+/* ────────────────────────────────────────────────────────────────────────── */
+// @@PAPER_START
+
+const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+
+const toBnDigits = (v: string) => v.replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
+
+const toEnDigits = (v: string) =>
+  v.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));
+
+/** Accepts English or Bangla digits, keeps English digits only. */
+const digitsOnly = (v: string, max: number) =>
+  toEnDigits(v)
+    .replace(/[^0-9]/g, "")
+    .slice(0, max);
+
+const PAPER_FONT_STACK = `"Times New Roman", "Tinos", Times, "Noto Serif Bengali", "Kalpurush", "Nirmala UI", "Vrinda", serif`;
 
 const FAMILY_CARD_PRINT_CSS = `
   .family-card-page {
     --fc-ink: #111111;
-    --fc-muted: #555555;
-    --fc-line: #6f6f6f;
+    --fc-muted: #5a5a5a;
+    --fc-line: #4b4b4b;
 
     box-sizing: border-box;
-    width: 210mm;
-    height: 297mm;
-    min-width: 210mm;
-    max-width: 210mm;
-    min-height: 297mm;
-    max-height: 297mm;
-    margin: 0;
-    padding: 14mm 15mm 14mm;
     position: relative;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 14mm 16mm 13mm;
     overflow: hidden;
     background: #ffffff;
     color: var(--fc-ink);
+    text-align: left;
 
-    font-family:
-      "Times New Roman",
-      Times,
-      "Noto Serif Bengali",
-      "Noto Serif",
-      serif;
-    font-size: 13.2px;
-    line-height: 1.45;
+    font-family: ${PAPER_FONT_STACK};
+    font-size: 13px;
+    line-height: 1.5;
     font-weight: 400;
 
     -webkit-print-color-adjust: exact;
@@ -320,286 +497,204 @@ const FAMILY_CARD_PRINT_CSS = `
     box-sizing: border-box;
   }
 
-  .family-card-heading {
+  .family-card-page:not(.family-card-flat) {
+    box-shadow: 0 4px 14px -10px rgba(20, 20, 30, 0.35);
+  }
+
+  /* ── header: title + recipient (left) + photo box (right) ── */
+  .fc-head {
+    position: relative;
+    min-height: 45mm;
+  }
+
+  .fc-title {
     margin: 0;
     padding: 0;
     text-align: center;
-    color: #111111;
-    font-size: 15.5px;
-    line-height: 1.2;
-    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 700;
     text-decoration-line: underline;
     text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-    letter-spacing: 0;
+    text-underline-offset: 3px;
   }
 
-  .family-card-top {
-    display: block;
-    position: relative;
-    margin-top: 13mm;
-    min-height: 15mm;
-  }
-
-  .family-card-recipient {
-    display: grid;
-    gap: 1mm;
-    width: calc(100% - 47mm);
-    min-width: 0;
-    padding-top: 0;
-    font-size: 13.2px;
-    line-height: 1.42;
-    font-weight: 400;
-  }
-
-  .family-card-recipient strong {
-    font-weight: 700;
-  }
-
-  .family-card-photo {
+  .fc-photo {
     position: absolute;
-    top: -17mm;
+    top: 0;
     right: 0;
-    width: 39mm;
-    height: 48mm;
-    border: 1px dashed #8a8a8a;
+    width: 35mm;
+    height: 45mm;
+    padding: 2.5mm;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: #555555;
-
-    font-family: "Times New Roman", Times, serif;
-    font-size: 10.5px;
-    line-height: 1.25;
-    font-weight: 400;
-
-    padding: 3mm;
-    white-space: pre-line;
+    border: 1px dashed #777777;
+    color: var(--fc-muted);
+    font-size: 11px;
+    line-height: 1.35;
   }
 
-  .family-card-recipient-union {
-    padding: 0;
-    border: 0;
-    min-height: 0;
-  }
-
-  .family-card-section {
+  .fc-recipient {
+    margin-top: 8mm;
+    width: calc(100% - 42mm);
     min-width: 0;
-    margin-top: 13mm;
-  }
-
-  .family-card-subject {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.38;
-    font-weight: 400;
-  }
-
-  .family-card-body {
-    margin-top: 7mm;
-  }
-
-  .family-card-paragraph {
-    margin: 0;
-    font-size: 13px;
     line-height: 1.5;
-    font-weight: 400;
-    text-align: left;
   }
 
-  .family-card-list {
-    display: grid;
-    gap: 7mm;
-    margin-top: 7mm;
+  .fc-placeholder {
+    color: #9a9a9a;
   }
 
-  .family-card-item {
+  .fc-union-line {
+    display: inline-block;
+    width: 70mm;
+    height: 5mm;
+    vertical-align: bottom;
+    border-bottom: 1px dotted var(--fc-line);
+  }
+
+  /* ── subject + salutation + paragraphs ── */
+  .fc-subject {
+    margin: 7mm 0 0;
+    font-weight: 700;
+  }
+
+  .fc-para {
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* ── numbered list ১। – ৭। ── */
+  .fc-list {
     display: grid;
-    grid-template-columns: 7mm 31mm minmax(0, 1fr);
-    gap: 1.5mm;
+    gap: 5.6mm;
+    margin-top: 6mm;
+  }
+
+  .fc-item {
+    display: grid;
+    grid-template-columns: 8mm 46mm minmax(0, 1fr);
+    column-gap: 1mm;
     align-items: start;
     min-width: 0;
-    font-size: 12.8px;
-    line-height: 1.45;
-    font-weight: 400;
   }
 
-  .family-card-number {
-    font-weight: 400;
-    text-align: left;
+  .fc-item.single {
+    align-items: end;
+  }
+
+  .fc-no {
     white-space: nowrap;
   }
 
-  .family-card-label {
+  .fc-label {
     min-width: 0;
-    font-weight: 400;
+    padding-bottom: 0.4mm;
+    line-height: 1.4;
   }
 
-  .family-card-content {
+  .fc-content {
     min-width: 0;
   }
 
-  .family-card-line {
-    display: inline-flex;
-    width: 100%;
-    min-width: 0;
-    min-height: 4.6mm;
+  /* dotted line with the live value sitting on it */
+  .fc-rule {
+    flex: 1 1 auto;
+    min-width: 8mm;
+    min-height: 6.6mm;
+    display: flex;
     align-items: flex-end;
-    vertical-align: baseline;
     border-bottom: 1px dotted var(--fc-line);
     overflow: hidden;
   }
 
-  .family-card-line.compact {
-    min-width: 22mm;
-    width: auto;
-    padding: 0 1mm;
-    margin: 0 0.3mm;
-  }
-
-  .family-card-line.medium {
-    min-width: 30mm;
-    width: auto;
-    padding: 0 1mm;
-    margin: 0 0.3mm;
-  }
-
-  .family-card-line.small {
-    min-width: 14mm;
-    width: auto;
-    padding: 0 1mm;
-    margin: 0 0.3mm;
-  }
-
-  .family-card-value {
+  .fc-value {
     display: block;
     width: 100%;
     min-width: 0;
-    padding: 0 0.8mm;
-    color: #111111;
-    font-weight: 400;
+    padding: 0 1mm 0.5mm;
+    font-weight: 700;
+    line-height: 1.5;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: clip;
-    line-height: 1.1;
-    transform: translateY(0.3mm);
+    text-overflow: ellipsis;
   }
 
-  .family-card-value.placeholder {
-    color: transparent;
-  }
-
-  .family-card-address-grid {
+  .fc-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: 7mm;
-    row-gap: 5.5mm;
+    row-gap: 3.6mm;
     min-width: 0;
   }
 
-  .family-card-address-cell {
-    min-width: 0;
+  .fc-cell {
     display: flex;
     align-items: flex-end;
-    gap: 1.2mm;
-    line-height: 1.32;
+    gap: 1.5mm;
+    min-width: 0;
+    line-height: 1.4;
   }
 
-  .family-card-address-cell.wide {
+  .fc-cell.wide {
     grid-column: 1 / -1;
   }
 
-  .family-card-address-name {
+  .fc-cell-label {
     flex: 0 0 auto;
-    min-width: fit-content;
+    padding-bottom: 0.4mm;
+    white-space: nowrap;
   }
 
-  .family-card-address-rule {
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 4.5mm;
-    display: flex;
-    align-items: flex-end;
-    border-bottom: 1px dotted var(--fc-line);
-    overflow: hidden;
-  }
-
-  .family-card-family-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 7mm;
-    min-width: 0;
-  }
-
-  .family-card-family-cell {
-    display: flex;
-    align-items: flex-end;
-    gap: 1.2mm;
-    min-width: 0;
-  }
-
-  .family-card-family-label {
+  .fc-cell-suffix {
     flex: 0 0 auto;
+    padding-bottom: 0.4mm;
   }
 
-  .family-card-family-rule {
-    flex: 1 1 auto;
-    min-width: 10mm;
-    min-height: 4.5mm;
-    display: flex;
-    align-items: flex-end;
-    border-bottom: 1px dotted var(--fc-line);
-    overflow: hidden;
+  /* ── closing + signatures (pinned to the bottom) ── */
+  .fc-closing {
+    margin-top: 8mm;
   }
 
-  .family-card-conclusion {
-    margin-top: 14mm;
-  }
-
-  .family-card-signatures {
+  .fc-signatures {
     margin-top: auto;
-    display: grid;
-    grid-template-columns: 70mm 70mm;
+    padding-top: 8mm;
+    display: flex;
     justify-content: space-between;
-    gap: 40mm;
-    padding-top: 10mm;
-
-    font-family:
-      "Times New Roman",
-      Times,
-      "Noto Serif Bengali",
-      serif;
-    font-size: 10.8px;
-    line-height: 1.25;
-    font-weight: 400;
+    align-items: flex-end;
+    font-size: 11.5px;
+    line-height: 1.35;
     text-align: center;
   }
 
-  .family-card-signature {
+  .fc-sign {
+    width: 68mm;
     min-width: 0;
   }
 
-  .family-card-signature-line {
-    height: 7mm;
-    border-bottom: 1px solid #111111;
+  .fc-sign-line {
+    height: 12mm;
+    border-bottom: 1px solid var(--fc-ink);
     margin-bottom: 1.6mm;
   }
 
-  .family-card-signature-label {
-    font-weight: 400;
+  .fc-sign-note {
+    margin-bottom: 1.5mm;
+    font-size: 12.5px;
+    text-align: center;
   }
 
-  .family-card-signature-label span {
-    display: block;
-  }
-
-  .family-card-screen-page {
-    box-shadow: 0 4px 14px -10px rgba(20, 20, 30, 0.3);
-  }
-
-  .family-card-print-only {
-    display: none;
+  /* ── off-screen print / PDF host ── */
+  #family-card-print-host {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+    background: #ffffff;
+    pointer-events: none;
   }
 
   @media print {
@@ -610,118 +705,66 @@ const FAMILY_CARD_PRINT_CSS = `
 
     html,
     body {
-      width: 210mm !important;
-      height: 297mm !important;
-      min-width: 210mm !important;
-      max-width: 210mm !important;
       margin: 0 !important;
       padding: 0 !important;
-      overflow: hidden !important;
+      height: auto !important;
+      min-height: 0 !important;
+      overflow: visible !important;
       background: #ffffff !important;
     }
 
-    body {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-
-    body > * {
-      visibility: hidden !important;
-    }
-
-    .family-card-root,
-    .family-card-root .family-card-print-only,
-    .family-card-root .family-card-print-only * {
-      visibility: visible !important;
-    }
-
-    .family-card-root {
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-      width: 210mm !important;
-      height: 297mm !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: hidden !important;
-      background: #ffffff !important;
-    }
-
-    .family-card-screen {
+    body > *:not(#family-card-print-host) {
       display: none !important;
     }
 
-    .family-card-print-only {
+    #family-card-print-host {
       display: block !important;
+      position: static !important;
+      left: auto !important;
+      top: auto !important;
       width: 210mm !important;
-      height: 297mm !important;
+      /* 1mm shorter than A4 so rounding never spills onto a 2nd page */
+      height: 296mm !important;
       margin: 0 !important;
       padding: 0 !important;
       overflow: hidden !important;
-      background: #ffffff !important;
-    }
-
-    .family-card-page {
-      width: 210mm !important;
-      height: 297mm !important;
-      min-width: 210mm !important;
-      max-width: 210mm !important;
-      min-height: 297mm !important;
-      max-height: 297mm !important;
-      margin: 0 !important;
-      padding: 14mm 15mm 14mm !important;
-      box-shadow: none !important;
-      overflow: hidden !important;
       break-after: avoid !important;
       page-break-after: avoid !important;
-      background: #ffffff !important;
-    }
-
-    .family-card-page,
-    .family-card-section,
-    .family-card-list,
-    .family-card-item,
-    .family-card-address-grid,
-    .family-card-family-grid,
-    .family-card-signatures {
       break-inside: avoid !important;
       page-break-inside: avoid !important;
+    }
+
+    #family-card-print-host,
+    #family-card-print-host * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
   }
 `;
 
-function fitFamilyCardFont(value: string, basePx: number, maxChars: number) {
+/** Shrinks the font slightly for long values so text never gets cut. */
+function fitPx(value: string, basePx: number, maxChars: number) {
   const length = Array.from(value.trim()).length;
-
   if (length <= maxChars) return basePx;
-
-  const ratio = Math.max(0.72, maxChars / length);
-
+  const ratio = Math.max(0.6, maxChars / length);
   return Math.round(basePx * ratio * 10) / 10;
 }
 
-function FamilyCardLine({
+function Rule({
   value,
-  className = "",
-  basePx = 12.3,
-  maxChars = 48,
+  basePx = 13,
+  maxChars = 46,
 }: {
   value: string;
-  className?: string;
   basePx?: number;
   maxChars?: number;
 }) {
   const trimmed = value.trim();
-
-  const fontSize = fitFamilyCardFont(trimmed, basePx, maxChars);
-
   return (
-    <span className={`family-card-line ${className}`.trim()}>
+    <span className="fc-rule">
       <span
-        className={`family-card-value ${trimmed ? "" : "placeholder"}`.trim()}
-        style={{
-          fontSize: `${fontSize}px`,
-        }}
+        className="fc-value"
+        style={{ fontSize: `${fitPx(trimmed, basePx, maxChars)}px` }}
       >
         {trimmed || "\u00A0"}
       </span>
@@ -729,373 +772,260 @@ function FamilyCardLine({
   );
 }
 
+function Item({
+  no,
+  label,
+  single = true,
+  children,
+}: {
+  no: number;
+  label: string;
+  single?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`fc-item${single ? " single" : ""}`}>
+      <span className="fc-no">{toBnDigits(String(no))}।</span>
+      <span className="fc-label">{label}</span>
+      <div className="fc-content">{children}</div>
+    </div>
+  );
+}
+
+function Cell({
+  label,
+  suffix,
+  wide = false,
+  children,
+}: {
+  label: string;
+  suffix?: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`fc-cell${wide ? " wide" : ""}`}>
+      <span className="fc-cell-label">{label}</span>
+      {children}
+      {suffix ? <span className="fc-cell-suffix">{suffix}</span> : null}
+    </div>
+  );
+}
+
 function FamilyCardPreview({
-  recipient,
-  unionName,
-  applicantName,
-  fatherHusband,
-  motherName,
-  nidNumber,
-  mobileNumber,
-  village,
-  postOffice,
-  wardNo,
-  upazila,
-  district,
+  values,
   districtLabel,
   upazilaLabel,
-  numSons,
-  numDaughters,
+  bnDigits = false,
+  flat = false,
   documentRef,
-  printable = false,
+  id,
 }: {
-  recipient: string;
-  unionName: string;
-  applicantName: string;
-  fatherHusband: string;
-  motherName: string;
-  nidNumber: string;
-  mobileNumber: string;
-  village: string;
-  postOffice: string;
-  wardNo: string;
-  upazila: string;
-  district: string;
+  values: FormState;
   districtLabel: string;
   upazilaLabel: string;
-  numSons: string;
-  numDaughters: string;
+  bnDigits?: boolean;
+  flat?: boolean;
   documentRef?: React.RefObject<HTMLDivElement | null>;
-  printable?: boolean;
+  id?: string;
 }) {
-  const addressDistrict = districtLabel || district;
+  // Only numeric fields switch to Bangla digits; free text is left untouched.
+  const d = (v: string) => (bnDigits ? toBnDigits(v) : v);
 
-  const addressUpazila = upazilaLabel || upazila;
+  const recipient = values.recipient.trim() || DEFAULT_RECIPIENT;
+  const union = values.unionName.trim();
+  const district = districtLabel || values.district;
+  const upazila = upazilaLabel || values.upazila;
 
   return (
     <div
+      id={id}
       ref={documentRef}
-      id={printable ? "family-card-print-page" : "family-card-preview-page"}
-      className={`family-card-page ${
-        printable ? "family-card-print-page" : "family-card-screen-page"
-      }`}
-      role={printable ? undefined : "document"}
-      aria-label={printable ? undefined : "Family Card Application preview"}
+      className={`family-card-page${flat ? " family-card-flat" : ""}`}
+      role={flat ? undefined : "document"}
+      aria-label={flat ? undefined : "Family Card Application preview"}
     >
-      <h2 className="family-card-heading">Family Card Application</h2>
+      <header className="fc-head">
+        <h2 className="fc-title">Family Card Application</h2>
 
-      <div className="family-card-top">
-        <div className="family-card-recipient">
-          <strong>To,</strong>
+        <div className="fc-photo">
+          <span>
+            Attach passport
+            <br />
+            photo with stapler
+          </span>
+        </div>
 
-          <strong>{recipient.trim() || "Ward Member"}</strong>
-
-          <div className="family-card-recipient-union">
-            {unionName.trim() || "[Union/municipality name]"}
+        <div className="fc-recipient">
+          <div>
+            <strong>To,</strong>
+          </div>
+          <div>
+            <strong>{recipient}</strong>
+          </div>
+          <div>
+            {union ? (
+              union
+            ) : flat ? (
+              <span className="fc-union-line" />
+            ) : (
+              <span className="fc-placeholder">[Union/municipality name]</span>
+            )}
           </div>
         </div>
+      </header>
 
-        <div className="family-card-photo">
-          {"Passport-size photo\n(attach with stapler)"}
-        </div>
+      <div className="fc-subject">
+        Subject: Regarding Family Card / application for Family Card.
       </div>
 
-      <section className="family-card-section" aria-label="Application details">
-        <div className="family-card-subject">
-          Subject: Regarding Family Card / application for Family Card.
+      <div style={{ marginTop: "6mm" }}>
+        <p className="fc-para">
+          <strong>Sir,</strong>
+        </p>
+        <p className="fc-para" style={{ marginTop: "2.5mm" }}>
+          I hereby certify that I am a permanent resident of the said
+          ward/union/municipality area. Due to socio-economic reasons and to
+          receive government benefits and VGF/ration-related services, I need a
+          family card. Detailed information about me and my family is provided
+          below:
+        </p>
+      </div>
+
+      <div className="fc-list">
+        <Item no={1} label="Applicant name:">
+          <Rule value={values.applicantName} maxChars={46} />
+        </Item>
+
+        <Item no={2} label="Father/husband name:">
+          <Rule value={values.fatherHusband} maxChars={46} />
+        </Item>
+
+        <Item no={3} label="Mother name:">
+          <Rule value={values.motherName} maxChars={46} />
+        </Item>
+
+        <Item no={4} label="National ID number:">
+          <Rule value={d(values.nidNumber)} maxChars={30} />
+        </Item>
+
+        <Item no={5} label="Mobile number:">
+          <Rule value={d(values.mobileNumber)} maxChars={30} />
+        </Item>
+
+        <Item no={6} label="Current and permanent address:" single={false}>
+          <div className="fc-grid">
+            <Cell label="Village/neighbourhood:" wide>
+              <Rule value={values.village} maxChars={40} />
+            </Cell>
+
+            <Cell label="Post office:">
+              <Rule value={values.postOffice} maxChars={18} />
+            </Cell>
+
+            <Cell label="Ward no.:">
+              <Rule value={d(values.wardNo)} maxChars={10} />
+            </Cell>
+
+            <Cell label="Upazila:">
+              <Rule value={upazila} maxChars={20} />
+            </Cell>
+
+            <Cell label="District:">
+              <Rule value={district} maxChars={20} />
+            </Cell>
+          </div>
+        </Item>
+
+        <Item no={7} label="Family member details:">
+          <div className="fc-grid">
+            <Cell label="ছেলে সন্তান:" suffix="জন">
+              <Rule value={d(values.numSons)} maxChars={6} />
+            </Cell>
+
+            <Cell label="মেয়ে সন্তান:" suffix="জন">
+              <Rule value={d(values.numDaughters)} maxChars={6} />
+            </Cell>
+          </div>
+        </Item>
+      </div>
+
+      <div className="fc-closing">
+        <p className="fc-para">
+          Therefore, after verifying the above information, I kindly request you
+          to take the necessary steps to issue me a Family Card.
+        </p>
+      </div>
+
+      <div className="fc-signatures">
+        <div className="fc-sign">
+          <div className="fc-sign-line" />
+          <div>Signature (recipient / ward representative)</div>
         </div>
 
-        <div className="family-card-body">
-          <p className="family-card-paragraph">
-            <strong>Sir,</strong>
-          </p>
-
-          <p
-            className="family-card-paragraph"
-            style={{
-              marginTop: "3mm",
-            }}
-          >
-            I hereby certify that I am a permanent resident of the said
-            ward/union/municipality area. Due to socio-economic reasons and to
-            receive government benefits and VGF/ration-related services, I need
-            a family card. Detailed information about me and my family is
-            provided below:
-          </p>
-        </div>
-
-        <div className="family-card-list">
-          <div className="family-card-item">
-            <span className="family-card-number">১।</span>
-
-            <span className="family-card-label">Applicant name:</span>
-
-            <FamilyCardLine value={applicantName} basePx={12.7} maxChars={50} />
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">২।</span>
-
-            <span className="family-card-label">Father/husband name:</span>
-
-            <FamilyCardLine value={fatherHusband} basePx={12.7} maxChars={50} />
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">৩।</span>
-
-            <span className="family-card-label">Mother name:</span>
-
-            <FamilyCardLine value={motherName} basePx={12.7} maxChars={50} />
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">৪।</span>
-
-            <span className="family-card-label">National ID number:</span>
-
-            <FamilyCardLine value={nidNumber} basePx={12.7} maxChars={26} />
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">৫।</span>
-
-            <span className="family-card-label">Mobile number:</span>
-
-            <FamilyCardLine value={mobileNumber} basePx={12.7} maxChars={26} />
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">৬।</span>
-
-            <span className="family-card-label">
-              Current and permanent address:
-            </span>
-
-            <div className="family-card-content">
-              <div className="family-card-address-grid">
-                <div className="family-card-address-cell">
-                  <span className="family-card-address-name">
-                    Village/neighbourhood:
-                  </span>
-
-                  <span className="family-card-address-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(village, 12.6, 26)}px`,
-                      }}
-                    >
-                      {village.trim() || "\u00A0"}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="family-card-address-cell">
-                  <span className="family-card-address-name">Post office:</span>
-
-                  <span className="family-card-address-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(
-                          postOffice,
-                          12.6,
-                          22,
-                        )}px`,
-                      }}
-                    >
-                      {postOffice.trim() || "\u00A0"}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="family-card-address-cell">
-                  <span className="family-card-address-name">Ward no.:</span>
-
-                  <span className="family-card-address-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(wardNo, 12.6, 8)}px`,
-                      }}
-                    >
-                      {wardNo.trim() || "\u00A0"}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="family-card-address-cell">
-                  <span className="family-card-address-name">Upazila:</span>
-
-                  <span className="family-card-address-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(
-                          addressUpazila,
-                          12.6,
-                          18,
-                        )}px`,
-                      }}
-                    >
-                      {addressUpazila.trim() || "\u00A0"}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="family-card-address-cell wide">
-                  <span className="family-card-address-name">District:</span>
-
-                  <span className="family-card-address-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(
-                          addressDistrict,
-                          12.6,
-                          24,
-                        )}px`,
-                      }}
-                    >
-                      {addressDistrict.trim() || "\u00A0"}
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="family-card-item">
-            <span className="family-card-number">৭।</span>
-
-            <span className="family-card-label">Family member details:</span>
-
-            <div className="family-card-content">
-              <div className="family-card-family-grid">
-                <div className="family-card-family-cell">
-                  <span className="family-card-family-label">ছেলে সন্তান:</span>
-
-                  <span className="family-card-family-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(numSons, 12.6, 6)}px`,
-                      }}
-                    >
-                      {numSons.trim() || "\u00A0"}
-                    </span>
-                  </span>
-
-                  <span>জন</span>
-                </div>
-
-                <div className="family-card-family-cell">
-                  <span className="family-card-family-label">
-                    মেয়ে সন্তান:
-                  </span>
-
-                  <span className="family-card-family-rule">
-                    <span
-                      className="family-card-value"
-                      style={{
-                        fontSize: `${fitFamilyCardFont(
-                          numDaughters,
-                          12.6,
-                          6,
-                        )}px`,
-                      }}
-                    >
-                      {numDaughters.trim() || "\u00A0"}
-                    </span>
-                  </span>
-
-                  <span>জন</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="family-card-conclusion">
-          <p className="family-card-paragraph">
-            Therefore, after verifying the above information, I kindly request
-            you to take the necessary steps to issue me a Family Card.
-          </p>
-        </div>
-      </section>
-
-      <div className="family-card-signatures">
-        <div className="family-card-signature">
-          <div className="family-card-signature-line" />
-
-          <div className="family-card-signature-label">
-            <span>Signature (recipient / ward</span>
-
-            <span>representative)</span>
-          </div>
-        </div>
-
-        <div className="family-card-signature">
-          <div className="family-card-signature-line" />
-
-          <div className="family-card-signature-label">Applicant signature</div>
+        <div className="fc-sign">
+          <div className="fc-sign-note">Yours faithfully,</div>
+          <div className="fc-sign-line" />
+          <div>Applicant signature</div>
         </div>
       </div>
     </div>
   );
 }
+// @@PAPER_END
+
+/** Off-screen host used for both Print and PDF (mounted only on demand). */
+function PrintHost({
+  values,
+  districtLabel,
+  upazilaLabel,
+  bnDigits,
+}: {
+  values: FormState;
+  districtLabel: string;
+  upazilaLabel: string;
+  bnDigits: boolean;
+}) {
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div id="family-card-print-host" aria-hidden="true">
+      <FamilyCardPreview
+        id="family-card-print-page"
+        values={values}
+        districtLabel={districtLabel}
+        upazilaLabel={upazilaLabel}
+        bnDigits={bnDigits}
+        flat
+      />
+    </div>,
+    document.body,
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Main component                                                            */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 export default function FamilyCardForm() {
   const router = useRouter();
 
-  const [recipient, setRecipient] = useState(EMPTY_STATE.recipient);
-
-  const [unionName, setUnionName] = useState(EMPTY_STATE.unionName);
-
-  const [applicantName, setApplicantName] = useState(EMPTY_STATE.applicantName);
-
-  const [fatherHusband, setFatherHusband] = useState(EMPTY_STATE.fatherHusband);
-
-  const [motherName, setMotherName] = useState(EMPTY_STATE.motherName);
-
-  const [nidNumber, setNidNumber] = useState(EMPTY_STATE.nidNumber);
-
-  const [mobileNumber, setMobileNumber] = useState(EMPTY_STATE.mobileNumber);
-
-  const [village, setVillage] = useState(EMPTY_STATE.village);
-
-  const [postOffice, setPostOffice] = useState(EMPTY_STATE.postOffice);
-
-  const [wardNo, setWardNo] = useState(EMPTY_STATE.wardNo);
-
-  const [upazila, setUpazila] = useState(EMPTY_STATE.upazila);
-
-  const [district, setDistrict] = useState(EMPTY_STATE.district);
-
-  const [numSons, setNumSons] = useState(EMPTY_STATE.numSons);
-
-  const [numDaughters, setNumDaughters] = useState(EMPTY_STATE.numDaughters);
-
+  const [form, setForm] = useState<FormState>(EMPTY_STATE);
   const [isFavorite, setIsFavorite] = useState(false);
-
   const [showHowToUse, setShowHowToUse] = useState(false);
-
   const [zoom, setZoom] = useState(100);
-
   const [isProcessing, setIsProcessing] = useState<"print" | "download" | null>(
     null,
   );
-
+  const [renderHost, setRenderHost] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
-
   const [toast, setToast] = useState<string | null>(null);
+  const [live, setLive] = useState(true);
+  const [frozen, setFrozen] = useState<FormState | null>(null);
+  const [bnDigits, setBnDigits] = useState(false);
 
   const previewScrollRef = useRef<HTMLDivElement>(null);
-
   const pageRef = useRef<HTMLDivElement>(null);
-
-  const printPageRef = useRef<HTMLDivElement>(null);
 
   const panStateRef = useRef({
     active: false,
@@ -1107,76 +1037,78 @@ export default function FamilyCardForm() {
   });
 
   const [isPanning, setIsPanning] = useState(false);
-
   const [previewFitScale, setPreviewFitScale] = useState(0.62);
 
-  React.useEffect(() => {
-    const container = previewScrollRef.current;
+  const setField = useCallback(
+    <K extends keyof FormState>(key: K, value: FormState[K]) => {
+      setForm((current) => ({ ...current, [key]: value }));
+    },
+    [],
+  );
 
+  /* load paper fonts once */
+  useEffect(() => {
+    ensurePaperFonts();
+  }, []);
+
+  /* fit the whole A4 page into the preview viewport */
+  useEffect(() => {
+    const container = previewScrollRef.current;
     if (!container) return;
 
     const updateFitScale = () => {
       const availableWidth = Math.max(280, container.clientWidth - 40);
-
       const availableHeight = Math.max(420, container.clientHeight - 40);
-
       const a4CssWidth = (210 / 25.4) * 96;
-
       const a4CssHeight = (297 / 25.4) * 96;
 
-      const widthScale = availableWidth / a4CssWidth;
-
-      const heightScale = availableHeight / a4CssHeight;
-
-      const nextScale = Math.min(1, widthScale, heightScale);
-
-      setPreviewFitScale(nextScale);
+      setPreviewFitScale(
+        Math.min(1, availableWidth / a4CssWidth, availableHeight / a4CssHeight),
+      );
     };
 
     updateFitScale();
 
     const observer = new ResizeObserver(updateFitScale);
-
     observer.observe(container);
-
     return () => observer.disconnect();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const rawUsage = window.localStorage.getItem(USAGE_KEY);
-
-      if (rawUsage) {
-        setUsageCount(Number(rawUsage) || 0);
-      }
+      if (rawUsage) setUsageCount(Number(rawUsage) || 0);
     } catch {
       // Ignore storage errors.
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!toast) return;
-
     const timer = window.setTimeout(() => setToast(null), 2800);
-
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  /* Ctrl+P / browser-menu print also gets the clean A4 page */
+  useEffect(() => {
+    const before = () => flushSync(() => setRenderHost(true));
+    const after = () => flushSync(() => setRenderHost(false));
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => {
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
+    };
+  }, []);
+
   const allUpazilaOptions = useMemo<GeoOption[]>(() => {
     const seen = new Set<string>();
-
     const result: GeoOption[] = [];
 
     for (const districtOption of DISTRICTS) {
-      const options = upazilasForDistrict(districtOption.id);
-
-      for (const option of options) {
-        if (seen.has(option.id)) {
-          continue;
-        }
-
+      for (const option of upazilasForDistrict(districtOption.id)) {
+        if (seen.has(option.id)) continue;
         seen.add(option.id);
-
         result.push(option);
       }
     }
@@ -1185,113 +1117,29 @@ export default function FamilyCardForm() {
   }, []);
 
   const upazilaOptions = useMemo(
-    () => (district ? upazilasForDistrict(district) : allUpazilaOptions),
-    [allUpazilaOptions, district],
+    () =>
+      form.district ? upazilasForDistrict(form.district) : allUpazilaOptions,
+    [allUpazilaOptions, form.district],
   );
 
-  const districtLabel = district ? districtBnById(district) : "";
+  const previewValues = live ? form : (frozen ?? form);
 
-  const upazilaLabel = upazila ? upazilaBnById(upazila) : "";
+  const districtLabel = (state: FormState) =>
+    state.district ? (districtBnById(state.district) ?? "") : "";
+  const upazilaLabel = (state: FormState) =>
+    state.upazila ? (upazilaBnById(state.upazila) ?? "") : "";
 
-  const phoneHint =
-    mobileNumber && !/^01[3-9]\d{8}$/.test(mobileNumber)
-      ? "Enter a valid Bangladesh mobile number (starts with 01, e.g. 01712345678)."
-      : undefined;
-
-  const requiredFields = [
-    recipient,
-    unionName,
-    applicantName,
-    fatherHusband,
-    motherName,
-    nidNumber,
-    mobileNumber,
-    village,
-    postOffice,
-    wardNo,
-    district,
-    upazila,
-    numSons,
-    numDaughters,
-  ];
-
-  const filledRequired = requiredFields.filter(
-    (value) => value.trim() !== "",
+  const filledCount = PROGRESS_KEYS.filter(
+    (key) => form[key].trim() !== "",
   ).length;
 
-  const anyFieldFilled =
-    filledRequired > 0 ||
-    [
-      unionName,
-      applicantName,
-      fatherHusband,
-      motherName,
-      nidNumber,
-      mobileNumber,
-      village,
-      postOffice,
-      wardNo,
-      upazila,
-      district,
-      numSons,
-      numDaughters,
-    ].some((value) => value.trim() !== "");
+  const anyFieldFilled = filledCount > 0;
 
-  const isComplete = filledRequired === requiredFields.length && !phoneHint;
-
-  const currentFormState = (): FormState => ({
-    recipient,
-    unionName,
-    applicantName,
-    fatherHusband,
-    motherName,
-    nidNumber,
-    mobileNumber,
-    village,
-    postOffice,
-    wardNo,
-    upazila,
-    district,
-    numSons,
-    numDaughters,
-  });
-
-  const applyFormState = (state: FormState) => {
-    setRecipient(state.recipient || EMPTY_STATE.recipient);
-
-    setUnionName(state.unionName || "");
-
-    setApplicantName(state.applicantName || "");
-
-    setFatherHusband(state.fatherHusband || "");
-
-    setMotherName(state.motherName || "");
-
-    setNidNumber(state.nidNumber || "");
-
-    setMobileNumber(state.mobileNumber || "");
-
-    setVillage(state.village || "");
-
-    setPostOffice(state.postOffice || "");
-
-    setWardNo(state.wardNo || "");
-
-    setUpazila(state.upazila || "");
-
-    setDistrict(state.district || "");
-
-    setNumSons(state.numSons || "");
-
-    setNumDaughters(state.numDaughters || "");
-  };
+  /* ── persistence ── */
 
   const saveLastApplication = () => {
     try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(currentFormState()),
-      );
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
     } catch {
       // Ignore storage errors.
     }
@@ -1300,9 +1148,7 @@ export default function FamilyCardForm() {
   const bumpUsageCount = () => {
     try {
       const next = usageCount + 1;
-
       window.localStorage.setItem(USAGE_KEY, String(next));
-
       setUsageCount(next);
     } catch {
       // Ignore storage errors.
@@ -1318,10 +1164,16 @@ export default function FamilyCardForm() {
         return;
       }
 
-      const parsed = JSON.parse(raw) as FormState;
+      const parsed = JSON.parse(raw) as Partial<FormState>;
+      const next: FormState = { ...EMPTY_STATE };
+      (Object.keys(EMPTY_STATE) as Array<keyof FormState>).forEach((key) => {
+        const value = parsed[key];
+        if (typeof value === "string") next[key] = value;
+      });
+      if (!next.recipient) next.recipient = DEFAULT_RECIPIENT;
 
-      applyFormState(parsed);
-
+      setForm(next);
+      setFrozen(null);
       setToast("Last application restored.");
     } catch {
       setToast("Couldn't restore the last application.");
@@ -1329,253 +1181,50 @@ export default function FamilyCardForm() {
   };
 
   const handleClear = () => {
-    applyFormState(EMPTY_STATE);
-
+    setForm({ ...EMPTY_STATE });
+    setFrozen(null);
     setToast("All fields cleared.");
   };
 
-  const waitForPrintAssets = async (doc: Document): Promise<void> => {
-    if (doc.fonts?.ready) {
-      try {
-        await doc.fonts.ready;
-      } catch {
-        // Font readiness is best-effort.
-      }
-    }
-
-    const images = Array.from(doc.images);
-
-    await Promise.all(
-      images.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            if (image.complete) {
-              resolve();
-              return;
-            }
-
-            image.addEventListener("load", () => resolve(), {
-              once: true,
-            });
-
-            image.addEventListener("error", () => resolve(), {
-              once: true,
-            });
-          }),
-      ),
-    );
-  };
-
-  const getPrintableClone = () => {
-    if (!printPageRef.current) {
-      return null;
-    }
-
-    const clone = printPageRef.current.cloneNode(true) as HTMLDivElement;
-
-    clone.removeAttribute("id");
-
-    clone.classList.add("family-card-print-page");
-
-    clone.style.width = "210mm";
-
-    clone.style.minWidth = "210mm";
-
-    clone.style.maxWidth = "210mm";
-
-    clone.style.height = "297mm";
-
-    clone.style.minHeight = "297mm";
-
-    clone.style.maxHeight = "297mm";
-
-    clone.style.margin = "0";
-
-    clone.style.padding = "16mm 17mm 14mm";
-
-    clone.style.boxSizing = "border-box";
-
-    clone.style.overflow = "hidden";
-
-    clone.style.transform = "none";
-
-    clone.style.transformOrigin = "top left";
-
-    clone.style.boxShadow = "none";
-
-    clone.style.border = "0";
-
-    clone.style.borderRadius = "0";
-
-    clone.style.background = "#ffffff";
-
-    clone.style.breakAfter = "avoid";
-
-    clone.style.pageBreakAfter = "avoid";
-
-    return clone;
-  };
-
-  const handlePrint = async () => {
-    // Printing is intentionally allowed even when every field is blank.
-    // Users may print the paper form first and fill it out by hand later.
-
-    const printable = getPrintableClone();
-
-    if (!printable) return;
-
-    setIsProcessing("print");
-
-    saveLastApplication();
-
-    const printWindow = window.open("", "_blank", "width=1000,height=1200");
-
-    if (!printWindow) {
-      setIsProcessing(null);
-
-      setToast("Please allow pop-ups to open the print preview.");
-
-      return;
-    }
-
-    const printStyles = `
-        ${FAMILY_CARD_PRINT_CSS}
-
-        @page {
-          size: A4 portrait;
-          margin: 0;
-        }
-
-        html,
-        body {
-          width: 210mm !important;
-          height: 297mm !important;
-          min-width: 210mm !important;
-          max-width: 210mm !important;
-          min-height: 297mm !important;
-          max-height: 297mm !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
-          background: #ffffff !important;
-        }
-
-        body {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        #print-root {
-          width: 210mm !important;
-          height: 297mm !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
-        }
-
-        .family-card-print-page {
-          display: flex !important;
-          position: relative !important;
-
-          width: 210mm !important;
-          height: 297mm !important;
-
-          min-width: 210mm !important;
-          max-width: 210mm !important;
-
-          min-height: 297mm !important;
-          max-height: 297mm !important;
-
-          padding: 14mm 15mm 14mm !important;
-
-          margin: 0 !important;
-          overflow: hidden !important;
-
-          box-shadow: none !important;
-          border: 0 !important;
-          border-radius: 0 !important;
-
-          background: #ffffff !important;
-          color: #111111 !important;
-
-          break-after: avoid !important;
-          page-break-after: avoid !important;
-        }
-
-        /* The popup contains only the printable form.
-           Do not inherit the main-page print isolation rule here. */
-
-        body > *,
-        #print-root,
-        #print-root * {
-          visibility: visible !important;
-        }
-
-        #print-root {
-          display: block !important;
-
-          width: 210mm !important;
-          height: 297mm !important;
-
-          visibility: visible !important;
-        }
-      `;
+  const handleShare = async () => {
+    const payload = {
+      title: "Family Card Form",
+      text: "Fill in the Family Card application online.",
+      url: window.location.href,
+    };
 
     try {
-      printWindow.document.open();
+      if (typeof navigator.share === "function") {
+        await navigator.share(payload);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(window.location.href);
+        setToast("Page link copied.");
+      } else {
+        setToast("Sharing is not supported in this browser.");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setToast("Sharing was blocked by the browser.");
+    }
+  };
 
-      printWindow.document.write(
-        `<!doctype html>
-          <html>
-            <head>
-              <meta charset="utf-8" />
+  /* ── print & PDF (both render the same off-screen A4 host) ── */
 
-              <meta
-                name="viewport"
-                content="width=210mm, initial-scale=1"
-              />
+  const handlePrint = async () => {
+    // Printing a blank form is intentionally allowed.
+    if (isProcessing) return;
 
-              <title>
-                Family Card Application
-              </title>
+    setIsProcessing("print");
+    saveLastApplication();
 
-              <style>
-                ${printStyles}
-              </style>
-            </head>
-
-            <body>
-              <main
-                id="print-root"
-              ></main>
-            </body>
-          </html>`,
-      );
-
-      printWindow.document.close();
-
-      printWindow.document.getElementById("print-root")?.appendChild(printable);
-
-      await waitForPrintAssets(printWindow.document);
-
-      await new Promise<void>((resolve) => {
-        printWindow.requestAnimationFrame(() => resolve());
-      });
-
-      printWindow.onafterprint = () => {
-        printWindow.close();
-      };
-
-      printWindow.focus();
-
-      printWindow.print();
-
+    try {
+      flushSync(() => setRenderHost(true));
+      await waitForPaperFonts();
       bumpUsageCount();
+      window.print(); // host is removed again by the "afterprint" listener
     } catch (error) {
       console.error(error);
-
-      printWindow.close();
-
+      setRenderHost(false);
       setToast("Couldn't open the print dialog. Please try again.");
     } finally {
       setIsProcessing(null);
@@ -1583,13 +1232,11 @@ export default function FamilyCardForm() {
   };
 
   const handleDownloadPdf = async () => {
-    // PDF download is also allowed for a completely blank paper form.
+    // PDF download of a blank form is allowed too.
+    if (isProcessing) return;
 
     setIsProcessing("download");
-
     saveLastApplication();
-
-    let pdfHost: HTMLDivElement | null = null;
 
     try {
       const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
@@ -1597,184 +1244,112 @@ export default function FamilyCardForm() {
         import("html2canvas"),
       ]);
 
-      const printable = getPrintableClone();
+      flushSync(() => setRenderHost(true));
+      await waitForPaperFonts();
 
-      if (!printable) {
-        throw new Error("Printable page is not available.");
-      }
+      const page = document.getElementById("family-card-print-page");
+      if (!page) throw new Error("Printable page is not available.");
 
-      pdfHost = document.createElement("div");
-
-      pdfHost.setAttribute("aria-hidden", "true");
-
-      pdfHost.style.position = "fixed";
-
-      pdfHost.style.left = "-100000px";
-
-      pdfHost.style.top = "0";
-
-      pdfHost.style.width = "210mm";
-
-      pdfHost.style.height = "297mm";
-
-      pdfHost.style.margin = "0";
-
-      pdfHost.style.padding = "0";
-
-      pdfHost.style.background = "#ffffff";
-
-      pdfHost.style.overflow = "hidden";
-
-      pdfHost.style.pointerEvents = "none";
-
-      pdfHost.style.zIndex = "-1";
-
-      pdfHost.style.contain = "layout paint style";
-
-      const pdfStyle = document.createElement("style");
-
-      pdfStyle.textContent = FAMILY_CARD_PRINT_CSS;
-
-      pdfHost.appendChild(pdfStyle);
-
-      pdfHost.appendChild(printable);
-
-      document.body.appendChild(pdfHost);
-
-      if (document.fonts?.ready) {
-        try {
-          await document.fonts.ready;
-        } catch {
-          // Font readiness is best-effort.
-        }
-      }
-
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-
-      const canvas = await html2canvas(printable, {
-        scale: 3,
-        useCORS: true,
-
+      const canvas = await html2canvas(page, {
         backgroundColor: "#ffffff",
-
-        width: printable.clientWidth,
-
-        height: printable.clientHeight,
-
-        windowWidth: printable.clientWidth,
-
-        windowHeight: printable.clientHeight,
-
+        scale: 3, // ≈ 288 dpi on A4
+        useCORS: true,
         logging: false,
-
-        imageTimeout: 0,
-
         scrollX: 0,
-
         scrollY: 0,
+        windowWidth: 1280,
+        windowHeight: 1400,
+        // The host lives off-screen. Move it into view inside the clone only,
+        // so the capture is never blank or shifted by page scroll.
+        onclone: (clonedDoc: Document) => {
+          const host = clonedDoc.getElementById("family-card-print-host");
+          if (host) {
+            host.style.position = "fixed";
+            host.style.left = "0";
+            host.style.top = "0";
+          }
+        },
       });
 
       const pdf = new jsPDF({
         orientation: "portrait",
-
-        unit: "pt",
-
+        unit: "mm",
         format: "a4",
-
         compress: true,
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
+      pdf.setProperties({
+        title: "Family Card Application",
+        subject: "Family Card Application",
+      });
 
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      // Keep the captured aspect ratio; never exceed the A4 page.
+      const imgW = 210;
+      const imgH = Math.min(297, (canvas.height * imgW) / canvas.width);
 
       pdf.addImage(
-        canvas.toDataURL("image/png", 1),
+        canvas.toDataURL("image/png"),
         "PNG",
         0,
         0,
-        pageWidth,
-        pageHeight,
+        imgW,
+        imgH,
         undefined,
         "FAST",
       );
 
-      const safeName = applicantName
+      const safeName = form.applicantName
         .trim()
-        .replace(/[^a-zA-Z0-9\s-_]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "")
+        .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 40)
         .toLowerCase();
 
-      const fileName = safeName
-        ? `family-card-${safeName}.pdf`
-        : "family-card-application.pdf";
-
-      pdf.save(fileName);
+      pdf.save(
+        safeName
+          ? `family-card-${safeName}.pdf`
+          : "family-card-application.pdf",
+      );
 
       bumpUsageCount();
-
       setToast("PDF downloaded.");
     } catch (error) {
       console.error(error);
-
       setToast("Couldn't generate the PDF. Please try again.");
     } finally {
-      if (pdfHost?.parentNode) {
-        pdfHost.parentNode.removeChild(pdfHost);
-      }
-
+      setRenderHost(false);
       setIsProcessing(null);
     }
   };
 
+  /* ── preview zoom / pan ── */
+
   const zoomFactor = zoom / 100;
-
   const previewScale = previewFitScale * zoomFactor;
-
   const scaledPreviewWidth = 210 * previewScale;
-
   const scaledPreviewHeight = 297 * previewScale;
-
   const isZoomedBeyondFit = zoomFactor > 1.001;
 
   const handlePreviewPointerDown = (
     event: React.PointerEvent<HTMLDivElement>,
   ) => {
-    if (!isZoomedBeyondFit) {
-      return;
-    }
-
-    if (event.pointerType === "mouse" && event.button !== 0) {
-      return;
-    }
+    if (!isZoomedBeyondFit) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
 
     const container = previewScrollRef.current;
-
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     panStateRef.current = {
       active: true,
       pointerId: event.pointerId,
-
       startX: event.clientX,
-
       startY: event.clientY,
-
       startScrollLeft: container.scrollLeft,
-
       startScrollTop: container.scrollTop,
     };
 
     container.setPointerCapture(event.pointerId);
-
     setIsPanning(true);
-
     event.preventDefault();
   };
 
@@ -1782,34 +1357,19 @@ export default function FamilyCardForm() {
     event: React.PointerEvent<HTMLDivElement>,
   ) => {
     const pan = panStateRef.current;
-
-    if (!pan.active || pan.pointerId !== event.pointerId) {
-      return;
-    }
+    if (!pan.active || pan.pointerId !== event.pointerId) return;
 
     const container = previewScrollRef.current;
+    if (!container) return;
 
-    if (!container) {
-      return;
-    }
-
-    const dx = event.clientX - pan.startX;
-
-    const dy = event.clientY - pan.startY;
-
-    container.scrollLeft = pan.startScrollLeft - dx;
-
-    container.scrollTop = pan.startScrollTop - dy;
-
+    container.scrollLeft = pan.startScrollLeft - (event.clientX - pan.startX);
+    container.scrollTop = pan.startScrollTop - (event.clientY - pan.startY);
     event.preventDefault();
   };
 
   const endPreviewPan = (event?: React.PointerEvent<HTMLDivElement>) => {
     const pan = panStateRef.current;
-
-    if (!pan.active) {
-      return;
-    }
+    if (!pan.active) return;
 
     const container = previewScrollRef.current;
 
@@ -1820,15 +1380,23 @@ export default function FamilyCardForm() {
     panStateRef.current = {
       active: false,
       pointerId: -1,
-
       startX: 0,
       startY: 0,
-
       startScrollLeft: 0,
       startScrollTop: 0,
     };
 
     setIsPanning(false);
+  };
+
+  const resetPreview = () => {
+    setZoom(100);
+    previewScrollRef.current?.scrollTo({ left: 0, top: 0 });
+  };
+
+  const onLiveChange = (value: boolean) => {
+    setLive(value);
+    setFrozen(value ? null : form);
   };
 
   return (
@@ -1902,6 +1470,7 @@ export default function FamilyCardForm() {
               className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-blue-500 hover:border-blue-300 transition-all shadow-2xs"
               type="button"
               aria-label="Favorite"
+              aria-pressed={isFavorite}
             >
               <Star
                 size={16}
@@ -1910,6 +1479,7 @@ export default function FamilyCardForm() {
             </button>
 
             <button
+              onClick={handleShare}
               className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs"
               type="button"
               aria-label="Share"
@@ -1920,189 +1490,214 @@ export default function FamilyCardForm() {
         </div>
 
         <div className="print-hide grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* ───────────── Left: settings ───────────── */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-5">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
-                  Settings
-                </span>
+            <div className="bg-white border border-[#E8D9A8] rounded-2xl p-4 shadow-2xs space-y-5">
+              <div className="space-y-2 pb-3 border-b border-[#F1E7C8]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#42382C] uppercase tracking-wider">
+                    Settings
+                  </span>
 
-                <span className="text-[11px] text-gray-400 font-medium">
-                  Fill in all fields. Preview updates as you type.
-                </span>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    Preview updates as you type.
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F1E7C8]">
+                    <div
+                      className="h-full rounded-full bg-[#3C5FCA] transition-all"
+                      style={{
+                        width: `${(filledCount / PROGRESS_KEYS.length) * 100}%`,
+                      }}
+                    />
+                  </div>
+
+                  <span className="text-[10px] font-semibold text-[#786D5B] tabular-nums">
+                    {filledCount} / {PROGRESS_KEYS.length}
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-3 border border-purple-200/80 rounded-xl p-3.5 bg-purple-50/20">
-                <h3 className="text-xs font-bold text-purple-900">
-                  1. General information
-                </h3>
-
+              <Section
+                no={1}
+                title="General information"
+                subtitle="Recipient, applicant and contact details"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Select recipient">
-                    <select
-                      value={recipient}
-                      onChange={(event) => setRecipient(event.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="Ward Member">Ward Member</option>
+                    <div className="relative">
+                      <select
+                        value={form.recipient}
+                        onChange={(event) =>
+                          setField("recipient", event.target.value)
+                        }
+                        className={`${INPUT_CLASS} appearance-none pr-8 cursor-pointer border-gray-200`}
+                      >
+                        {RECIPIENT_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
 
-                      <option value="Ward Representative">
-                        Ward Representative
-                      </option>
-
-                      <option value="Chairman">Chairman</option>
-
-                      <option value="Mayor">Mayor</option>
-                    </select>
+                      <ChevronDown
+                        size={13}
+                        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                    </div>
                   </Field>
 
                   <Field label="Union / municipality name">
                     <TextInput
-                      value={unionName}
-                      onChange={setUnionName}
+                      value={form.unionName}
+                      onChange={(v) => setField("unionName", v)}
                       placeholder="e.g. 1st Union Parishad"
+                      maxLength={50}
                     />
                   </Field>
                 </div>
 
-                <Field label="Applicant full name">
+                <Field label="Applicant full name" no="১">
                   <TextInput
-                    value={applicantName}
-                    onChange={setApplicantName}
+                    value={form.applicantName}
+                    onChange={(v) => setField("applicantName", v)}
                     placeholder="Applicant name"
+                    maxLength={60}
                   />
                 </Field>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <Field label="Father / husband name">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Father / husband name" no="২">
                     <TextInput
-                      value={fatherHusband}
-                      onChange={setFatherHusband}
+                      value={form.fatherHusband}
+                      onChange={(v) => setField("fatherHusband", v)}
                       placeholder="Father / husband name"
+                      maxLength={60}
                     />
                   </Field>
 
-                  <Field label="Mother name">
+                  <Field label="Mother name" no="৩">
                     <TextInput
-                      value={motherName}
-                      onChange={setMotherName}
+                      value={form.motherName}
+                      onChange={(v) => setField("motherName", v)}
                       placeholder="Mother name"
+                      maxLength={60}
                     />
                   </Field>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <Field label="National ID (NID) number">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="National ID (NID) number" no="৪">
                     <TextInput
-                      value={nidNumber}
-                      onChange={(value) =>
-                        setNidNumber(value.replace(/[^0-9]/g, "").slice(0, 17))
-                      }
+                      value={form.nidNumber}
+                      onChange={(v) => setField("nidNumber", digitsOnly(v, 17))}
                       placeholder="National ID number"
                       inputMode="numeric"
                       maxLength={17}
+                      validate={validateNid}
                     />
                   </Field>
 
-                  <Field label="Mobile number" hint={phoneHint}>
+                  <Field label="Mobile number" no="৫">
                     <TextInput
-                      value={mobileNumber}
-                      onChange={(value) =>
-                        setMobileNumber(
-                          value.replace(/[^0-9]/g, "").slice(0, 11),
-                        )
+                      value={form.mobileNumber}
+                      onChange={(v) =>
+                        setField("mobileNumber", digitsOnly(v, 11))
                       }
-                      placeholder="01712345678"
+                      placeholder="01783666743"
                       inputMode="tel"
                       maxLength={11}
+                      validate={validateMobile}
                     />
                   </Field>
                 </div>
-              </div>
+              </Section>
 
-              <div className="space-y-3 border border-purple-200/80 rounded-xl p-3.5 bg-purple-50/20">
-                <h3 className="text-xs font-bold text-purple-900">
-                  2. Full address
-                </h3>
+              <Section
+                no={2}
+                title="Full address"
+                subtitle="Current and permanent address"
+              >
+                <Field label="Village / neighbourhood" no="৬">
+                  <TextInput
+                    value={form.village}
+                    onChange={(v) => setField("village", v)}
+                    placeholder="Village name"
+                    maxLength={50}
+                  />
+                </Field>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label="Village / neighbourhood">
-                    <TextInput
-                      value={village}
-                      onChange={setVillage}
-                      placeholder="Village name"
-                    />
-                  </Field>
-
                   <Field label="Post office">
                     <TextInput
-                      value={postOffice}
-                      onChange={setPostOffice}
+                      value={form.postOffice}
+                      onChange={(v) => setField("postOffice", v)}
                       placeholder="Post office name"
+                      maxLength={30}
                     />
                   </Field>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <Field label="Ward number">
                     <TextInput
-                      value={wardNo}
-                      onChange={setWardNo}
+                      value={form.wardNo}
+                      onChange={(v) => setField("wardNo", digitsOnly(v, 3))}
                       placeholder="e.g. 05"
                       inputMode="numeric"
                       maxLength={3}
                     />
                   </Field>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="District">
                     <GeoCombobox
-                      value={district}
+                      value={form.district}
                       onChange={(id) => {
-                        setDistrict(id);
-
-                        setUpazila("");
+                        setForm((current) => ({
+                          ...current,
+                          district: id,
+                          upazila: "",
+                        }));
                       }}
                       options={DISTRICTS}
                       placeholder="District name"
                     />
                   </Field>
+
+                  <Field label="Upazila">
+                    <GeoCombobox
+                      value={form.upazila}
+                      onChange={(id) => setField("upazila", id)}
+                      options={upazilaOptions}
+                      placeholder="Upazila name"
+                    />
+                  </Field>
                 </div>
+              </Section>
 
-                <Field label="Upazila">
-                  <GeoCombobox
-                    value={upazila}
-                    onChange={setUpazila}
-                    options={upazilaOptions}
-                    placeholder="Upazila name"
-                  />
-                </Field>
-              </div>
-
-              <div className="space-y-3 border border-purple-200/80 rounded-xl p-3.5 bg-purple-50/20">
-                <h3 className="text-xs font-bold text-purple-900">
-                  3. Family details (children)
-                </h3>
-
+              <Section
+                no={3}
+                title="Family details (children)"
+                subtitle="Number of sons and daughters"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label="Number of sons">
+                  <Field label="Number of sons" no="৭">
                     <TextInput
-                      value={numSons}
-                      onChange={(value) =>
-                        setNumSons(value.replace(/[^0-9]/g, "").slice(0, 2))
-                      }
+                      value={form.numSons}
+                      onChange={(v) => setField("numSons", digitsOnly(v, 2))}
                       placeholder="e.g. 2"
                       inputMode="numeric"
                       maxLength={2}
                     />
                   </Field>
 
-                  <Field label="Number of daughters">
+                  <Field label="Number of daughters" no="৭">
                     <TextInput
-                      value={numDaughters}
-                      onChange={(value) =>
-                        setNumDaughters(
-                          value.replace(/[^0-9]/g, "").slice(0, 2),
-                        )
+                      value={form.numDaughters}
+                      onChange={(v) =>
+                        setField("numDaughters", digitsOnly(v, 2))
                       }
                       placeholder="e.g. 1"
                       inputMode="numeric"
@@ -2110,7 +1705,7 @@ export default function FamilyCardForm() {
                     />
                   </Field>
                 </div>
-              </div>
+              </Section>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
@@ -2143,9 +1738,10 @@ export default function FamilyCardForm() {
             </div>
           </div>
 
-          <div className="lg:col-span-7">
+          {/* ───────────── Right: live preview ───────────── */}
+          <div className="lg:col-span-7 lg:sticky lg:top-3">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
 
@@ -2172,7 +1768,7 @@ export default function FamilyCardForm() {
                     <button
                       onClick={() =>
                         setZoom((currentZoom) =>
-                          Math.min(150, currentZoom + 10),
+                          Math.min(200, currentZoom + 10),
                         )
                       }
                       className="p-1 hover:bg-white rounded-md text-gray-500"
@@ -2183,12 +1779,13 @@ export default function FamilyCardForm() {
                     </button>
 
                     <button
-                      onClick={() => setZoom(100)}
+                      onClick={resetPreview}
                       className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-[#0F172A]"
                       type="button"
-                      aria-label="Reset zoom"
+                      aria-label="Fit page"
+                      title="Fit page"
                     >
-                      <RotateCcw size={11} />
+                      <Maximize size={11} />
                     </button>
                   </div>
 
@@ -2204,12 +1801,38 @@ export default function FamilyCardForm() {
                 </div>
               </div>
 
-              <div className="mt-3 mb-2 text-[11px] text-gray-500 flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded border border-gray-300 bg-white">
-                  ▣
-                </span>
+              <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-gray-500">
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={live}
+                    onChange={(event) => onLiveChange(event.target.checked)}
+                    className="accent-blue-600"
+                  />
 
-                <span>Live preview</span>
+                  <span>Live preview</span>
+                </label>
+
+                {!live ? (
+                  <button
+                    type="button"
+                    onClick={() => setFrozen(form)}
+                    className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100"
+                  >
+                    Update preview
+                  </button>
+                ) : null}
+
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={bnDigits}
+                    onChange={(event) => setBnDigits(event.target.checked)}
+                    className="accent-blue-600"
+                  />
+
+                  <span>Bangla digits (০১২৩)</span>
+                </label>
 
                 {isZoomedBeyondFit ? (
                   <span className="text-[10px] text-gray-400">
@@ -2230,7 +1853,7 @@ export default function FamilyCardForm() {
                     ? "Zoomed form preview. Drag to move the page."
                     : "Form preview"
                 }
-                className={`bg-[#3d3934] rounded-xl overflow-auto max-h-[730px] min-h-[580px] p-4 sm:p-5 flex items-start select-none ${
+                className={`bg-[#3d3934] rounded-xl overflow-auto h-[min(80vh,860px)] min-h-[520px] p-4 sm:p-5 flex items-start select-none ${
                   isZoomedBeyondFit
                     ? isPanning
                       ? "cursor-grabbing"
@@ -2256,27 +1879,20 @@ export default function FamilyCardForm() {
                     }}
                   >
                     <FamilyCardPreview
-                      recipient={recipient}
-                      unionName={unionName}
-                      applicantName={applicantName}
-                      fatherHusband={fatherHusband}
-                      motherName={motherName}
-                      nidNumber={nidNumber}
-                      mobileNumber={mobileNumber}
-                      village={village}
-                      postOffice={postOffice}
-                      wardNo={wardNo}
-                      upazila={upazila}
-                      district={district}
-                      districtLabel={districtLabel ?? ""}
-                      upazilaLabel={upazilaLabel ?? ""}
-                      numSons={numSons}
-                      numDaughters={numDaughters}
+                      id="family-card-preview-page"
+                      values={previewValues}
+                      districtLabel={districtLabel(previewValues)}
+                      upazilaLabel={upazilaLabel(previewValues)}
+                      bnDigits={bnDigits}
                       documentRef={pageRef}
                     />
                   </div>
                 </div>
               </div>
+
+              <p className="mt-2 text-[10px] text-gray-400">
+                A4 · 210 × 297 mm — print and PDF use this exact layout.
+              </p>
             </div>
           </div>
         </div>
@@ -2451,7 +2067,7 @@ export default function FamilyCardForm() {
               <button
                 onClick={handleDownloadPdf}
                 disabled={isProcessing !== null}
-                className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+                className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
                 type="button"
               >
                 {isProcessing === "download" ? (
@@ -2471,28 +2087,14 @@ export default function FamilyCardForm() {
         </div>
       </div>
 
-      <div className="family-card-print-only" aria-hidden="true">
-        <FamilyCardPreview
-          recipient={recipient}
-          unionName={unionName}
-          applicantName={applicantName}
-          fatherHusband={fatherHusband}
-          motherName={motherName}
-          nidNumber={nidNumber}
-          mobileNumber={mobileNumber}
-          village={village}
-          postOffice={postOffice}
-          wardNo={wardNo}
-          upazila={upazila}
-          district={district}
-          districtLabel={districtLabel ?? ""}
-          upazilaLabel={upazilaLabel ?? ""}
-          numSons={numSons}
-          numDaughters={numDaughters}
-          documentRef={printPageRef}
-          printable
+      {renderHost ? (
+        <PrintHost
+          values={form}
+          districtLabel={districtLabel(form)}
+          upazilaLabel={upazilaLabel(form)}
+          bnDigits={bnDigits}
         />
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -469,7 +469,7 @@ const validateTin = (v: string) =>
   v && v.length !== 12 ? "TIN must be 12 digits." : "";
 const validateMobile = (v: string) =>
   v && !/^01[3-9]\d{8}$/.test(v)
-    ? "Enter a valid 11-digit mobile number, e.g. 01712345678."
+    ? "Enter a valid 11-digit mobile number, e.g. 01783666743."
     : "";
 const validatePhone = (v: string) =>
   v && v.length < 6 ? "Enter a valid telephone number." : "";
@@ -3169,7 +3169,7 @@ export default function VoterRegistrationForm() {
                 <FieldRow>
                   <TextField
                     label="Mobile number"
-                    placeholder="01712345678"
+                    placeholder="01783666743"
                     maxLength={11}
                     inputMode="tel"
                     validate={validateMobile}
@@ -3178,7 +3178,7 @@ export default function VoterRegistrationForm() {
                   />
                   <TextField
                     label="Telephone number"
-                    placeholder="01712345678"
+                    placeholder="01783666743"
                     maxLength={15}
                     inputMode="tel"
                     validate={validatePhone}

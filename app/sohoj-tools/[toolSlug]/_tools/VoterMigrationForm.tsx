@@ -68,35 +68,125 @@ const EN_MONTHS = [
   "December",
 ];
 
-// Print-only typography. The on-screen preview keeps its existing sizing,
-// while printed output gets a modest size increase for clearer Bengali text.
-const PRINT_TYPOGRAPHY_CSS = `
-  .print-page.print-output-page {
-    font-size: 12.5px !important;
-    line-height: 1.6 !important;
-    text-rendering: geometricPrecision !important;
-  }
+// ---------------------------------------------------------------------------
+// Form-13 paper: ONE source of truth for the live preview, Print and PDF.
+// The preview pages are real A4 pages (210mm x 297mm), so what you see on the
+// right is exactly what gets printed / exported. Nothing is re-scaled or
+// re-typeset at print time, which is what used to clip text.
+// ---------------------------------------------------------------------------
+const PAGE_W_PX = 794; // 210mm @ 96dpi
+const PAGE_H_PX = 1123; // 297mm @ 96dpi
+const PAGE_GAP_PX = 24;
 
-  .print-page.print-output-page [class~="text-[9px]"] {
-    font-size: 10.5px !important;
-    line-height: 1.5 !important;
-  }
+const PAPER_FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap";
+const PAPER_FONT_STACK = `"Noto Serif Bengali", "Kalpurush", "SolaimanLipi", "Siyam Rupali", "Nirmala UI", "Vrinda", "Noto Sans Bengali", serif`;
 
-  .print-page.print-output-page [class~="text-[10px]"] {
-    font-size: 11.75px !important;
-    line-height: 1.55 !important;
+const PAPER_CSS = `
+  .f13-page {
+    box-sizing: border-box;
+    width: 210mm;
+    height: 297mm;
+    padding: 15mm 16mm 14mm;
+    background: #ffffff;
+    color: #111827;
+    font-family: ${PAPER_FONT_STACK};
+    font-size: 13.5px;
+    line-height: 1.7;
+    position: relative;
+    overflow: hidden;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
   }
-
-  .print-page.print-output-page [class~="text-[11px]"] {
-    font-size: 12.5px !important;
-    line-height: 1.6 !important;
+  .f13-page *, .f13-page *::before, .f13-page *::after { box-sizing: border-box; }
+  .f13-page p { margin: 0; }
+  .f13-right { text-align: right; font-weight: 700; }
+  .f13-center { text-align: center; }
+  .f13-title { text-align: center; font-weight: 700; font-size: 16.5px; line-height: 1.6; margin-top: 6px; }
+  .f13-sec { margin-top: 16px; }
+  .f13-row { display: flex; align-items: flex-start; gap: 6px; margin-top: 9px; }
+  .f13-row.f13-sec { margin-top: 16px; }
+  .f13-num { flex: 0 0 28px; font-weight: 700; }
+  .f13-body { flex: 1 1 auto; min-width: 0; }
+  .f13-flow { line-height: 2; }
+  .f13-sub { margin-left: 34px; margin-top: 9px; }
+  .f13-cols { display: flex; align-items: flex-end; gap: 14px; margin-top: 9px; }
+  .f13-cols:first-child { margin-top: 0; }
+  .f13-fld { display: flex; align-items: flex-end; gap: 6px; min-width: 0; }
+  .f13-lbl { white-space: nowrap; flex: 0 0 auto; }
+  .f13-fill {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 1.75em;
+    padding: 0 4px;
+    border-bottom: 1.5px dotted #374151;
+    font-weight: 600;
+    overflow-wrap: anywhere;
   }
+  .f13-dots {
+    display: inline-block;
+    min-width: 120px;
+    max-width: 100%;
+    padding: 0 4px;
+    border-bottom: 1.5px dotted #374151;
+    font-weight: 600;
+    line-height: 1.7;
+    vertical-align: bottom;
+    overflow-wrap: anywhere;
+  }
+  .f13-note { margin-left: 34px; font-size: 11.5px; color: #4b5563; line-height: 1.5; }
+  .f13-pc { display: inline-flex; }
+  .f13-pcb {
+    width: 24px;
+    height: 26px;
+    margin-left: -1px;
+    border: 1px solid #374151;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .f13-item { margin-top: 5px; margin-left: 34px; }
+  .f13-sign { display: flex; justify-content: flex-end; margin-top: 46px; }
+  .f13-sign > div { width: 58mm; border-top: 1px solid #111827; text-align: center; font-weight: 700; font-size: 12px; padding-top: 4px; }
+  .f13-p2 { display: flex; flex-direction: column; }
+  .f13-receipt { margin-top: auto; padding-top: 14px; border-top: 1.5px dashed #6b7280; }
+  .f13-h { font-weight: 700; }
+  .f13-ul { text-decoration: underline; text-underline-offset: 3px; }
+`;
 
-  .print-page.print-output-page [class~="text-xs"] {
-    font-size: 13px !important;
-    line-height: 1.55 !important;
+// Extra CSS for the isolated print / PDF frame (pages sit directly in <body>).
+const FRAME_CSS = `
+  @page { size: A4 portrait; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @media print {
+    .f13-page { height: 296mm; break-after: page; page-break-after: always; }
+    .f13-page:last-child { break-after: auto; page-break-after: auto; }
   }
 `;
+
+function buildPaperDocument(pages: string[]): string {
+  return `<!doctype html><html lang="bn"><head><meta charset="utf-8"><title>Form-13</title><link rel="stylesheet" href="${PAPER_FONT_HREF}"><style>${PAPER_CSS}${FRAME_CSS}</style></head><body>${pages.join("")}</body></html>`;
+}
+
+function ensurePaperFont() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById("f13-paper-font")) return;
+  const link = document.createElement("link");
+  link.id = "f13-paper-font";
+  link.rel = "stylesheet";
+  link.href = PAPER_FONT_HREF;
+  document.head.appendChild(link);
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | void> {
+  return Promise.race([
+    p,
+    new Promise<void>((resolve) => window.setTimeout(resolve, ms)),
+  ]);
+}
 
 const relatedTools = [
   {
@@ -267,7 +357,7 @@ function GeoCombobox({
           setOpen(true);
           requestAnimationFrame(() => inputRef.current?.focus());
         }}
-        className={`w-full bg-white border rounded-lg px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-colors ${
+        className={`w-full bg-white border rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 transition-colors ${
           disabled
             ? "border-gray-100 bg-gray-50 cursor-not-allowed"
             : "border-gray-200 cursor-text focus-within:border-indigo-500"
@@ -352,18 +442,68 @@ function GeoCombobox({
   );
 }
 
+function fromBn(input: string): string {
+  return input.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));
+}
+
+// Accepts Bengali or English digits, keeps digits only, and enforces a limit.
+function digitsOnly(input: string, max: number): string {
+  return fromBn(input).replace(/\D/g, "").slice(0, max);
+}
+
+function toLocalISODate(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function parseStoredDate(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  const d = m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const GRID2 = "grid grid-cols-1 sm:grid-cols-2 gap-2";
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2 border border-indigo-200/80 rounded-xl p-3 bg-indigo-50/20">
+      <h3 className="text-[11.5px] font-bold text-indigo-900">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
 function Field({
   label,
   children,
   hint,
+  counter,
 }: {
   label: string;
   children: React.ReactNode;
   hint?: string;
+  counter?: string;
 }) {
   return (
-    <div className="space-y-1">
-      <label className="text-[11px] font-semibold text-gray-600">{label}</label>
+    <div className="space-y-0.5 min-w-0">
+      <div className="flex items-end justify-between gap-2">
+        <label className="text-[11px] font-semibold text-gray-600 leading-tight">
+          {label}
+        </label>
+        {counter && (
+          <span className="text-[10px] font-medium text-gray-400 shrink-0">
+            {counter}
+          </span>
+        )}
+      </div>
       {children}
       {hint && <p className="text-[10px] text-red-500 font-medium">{hint}</p>}
     </div>
@@ -391,8 +531,118 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-indigo-500"
+      className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#0F172A] focus:outline-none focus:border-indigo-500"
     />
+  );
+}
+
+// 4 separate boxes for the postal code (digits only, auto-advance, paste-able).
+function PostCodeBoxes({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+
+  function focusBox(i: number) {
+    const el = refs.current[Math.max(0, Math.min(3, i))];
+    el?.focus();
+    el?.select();
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          aria-label={`Post code digit ${i + 1}`}
+          value={value[i] ?? ""}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => {
+            const d = digitsOnly(e.target.value, 8).slice(-1);
+            if (!d) return;
+            const at = Math.min(i, value.length);
+            onChange(
+              (value.slice(0, at) + d + value.slice(at + 1)).slice(0, 4),
+            );
+            focusBox(at + 1);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace") {
+              e.preventDefault();
+              if (value[i]) {
+                onChange(value.slice(0, i) + value.slice(i + 1));
+              } else if (i > 0) {
+                onChange(value.slice(0, i - 1) + value.slice(i));
+                focusBox(i - 1);
+              }
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              focusBox(i - 1);
+            } else if (e.key === "ArrowRight") {
+              e.preventDefault();
+              focusBox(i + 1);
+            }
+          }}
+          onPaste={(e) => {
+            e.preventDefault();
+            const pasted = digitsOnly(e.clipboardData.getData("text"), 4);
+            if (!pasted) return;
+            onChange(pasted);
+            focusBox(pasted.length);
+          }}
+          className="w-8 h-8 text-center text-xs font-bold text-[#0F172A] bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500"
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---- Form-13 paper primitives (plain CSS classes from PAPER_CSS) ----------
+
+function P13Field({
+  label,
+  value,
+  grow = 1,
+  lblWidth,
+}: {
+  label: string;
+  value?: string;
+  grow?: number;
+  lblWidth?: number;
+}) {
+  return (
+    <div className="f13-fld" style={{ flex: `${grow} 1 0px` }}>
+      <span
+        className="f13-lbl"
+        style={lblWidth ? { minWidth: lblWidth } : undefined}
+      >
+        {label}
+      </span>
+      <span className="f13-fill">{value}</span>
+    </div>
+  );
+}
+
+function P13Dots({
+  children,
+  min,
+}: {
+  children?: React.ReactNode;
+  min?: number;
+}) {
+  return (
+    <span className="f13-dots" style={min ? { minWidth: min } : undefined}>
+      {children}
+    </span>
   );
 }
 
@@ -408,6 +658,9 @@ function DobPicker({
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(value ?? new Date(1995, 0, 1));
   const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (value) setViewDate(value);
+  }, [value]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -434,7 +687,7 @@ function DobPicker({
     <div ref={rootRef} className="relative">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500"
+        className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500"
       >
         <CalendarIcon size={13} className="text-gray-400 shrink-0" />
         {value ? (
@@ -558,6 +811,9 @@ function MonthYearPicker({
     year ?? new Date().getFullYear(),
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (year !== null) setViewYear(year);
+  }, [year]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -576,7 +832,7 @@ function MonthYearPicker({
     <div ref={rootRef} className="relative">
       <div
         onClick={() => setOpen((o) => !o)}
-        className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500"
+        className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500"
       >
         <CalendarIcon size={13} className="text-gray-400 shrink-0" />
         {display ? (
@@ -749,6 +1005,14 @@ export default function VoterMigrationForm() {
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const page1Ref = useRef<HTMLDivElement>(null);
   const page2Ref = useRef<HTMLDivElement>(null);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({
+    x: 0,
+    y: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
+  const [isPanning, setIsPanning] = useState(false);
 
   useEffect(() => {
     try {
@@ -812,6 +1076,8 @@ export default function VoterMigrationForm() {
       ? `${BN_MONTHS[residingMonth]}, ${toBn(residingYear)}`
       : "";
 
+  const phoneValid = /^01[3-9]\d{8}$/.test(newPhone);
+
   const requiredFields = [
     regDistrict,
     regUpazila,
@@ -820,7 +1086,7 @@ export default function VoterMigrationForm() {
     dob ? "x" : "",
     newDistrict,
     newUpazila,
-    newPhone,
+    phoneValid ? newPhone : "",
     residingDateLabel,
     migrationReason,
   ];
@@ -830,6 +1096,7 @@ export default function VoterMigrationForm() {
   const anyFieldFilled =
     filledRequired > 0 ||
     [
+      newPhone,
       voterNumber,
       voterAreaName,
       voterAreaCode,
@@ -852,6 +1119,26 @@ export default function VoterMigrationForm() {
 
   const isComplete = filledRequired === requiredFields.length;
 
+  // Live preview sizing: "100%" always means "fit the panel width".
+  const [previewWidth, setPreviewWidth] = useState(680);
+
+  useEffect(() => {
+    ensurePaperFont();
+  }, []);
+
+  useEffect(() => {
+    const el = previewScrollRef.current;
+    if (!el) return;
+    const update = () => setPreviewWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const previewScale =
+    Math.min(1, Math.max(0.3, (previewWidth - 16) / PAGE_W_PX)) * (zoom / 100);
+
   function handleDobPick(d: Date | null) {
     if (!d) {
       setDob(null);
@@ -868,7 +1155,7 @@ export default function VoterMigrationForm() {
       regUpazila,
       applicantName,
       nationalId,
-      dobISO: dob ? dob.toISOString() : null,
+      dobISO: dob ? toLocalISODate(dob) : null,
       voterNumber,
       voterAreaName,
       voterAreaCode,
@@ -896,12 +1183,13 @@ export default function VoterMigrationForm() {
     };
   }
 
-  function applyFormState(s: FormState) {
+  function applyFormState(input: Partial<FormState>) {
+    const s: FormState = { ...EMPTY_STATE, ...input };
     setRegDistrict(s.regDistrict);
     setRegUpazila(s.regUpazila);
     setApplicantName(s.applicantName);
     setNationalId(s.nationalId);
-    setDob(s.dobISO ? new Date(s.dobISO) : null);
+    setDob(parseStoredDate(s.dobISO));
     setVoterNumber(s.voterNumber);
     setVoterAreaName(s.voterAreaName);
     setVoterAreaCode(s.voterAreaCode);
@@ -941,7 +1229,8 @@ export default function VoterMigrationForm() {
 
   function bumpUsageCount() {
     try {
-      const next = usageCount + 1;
+      const current = Number(window.localStorage.getItem(USAGE_KEY)) || 0;
+      const next = current + 1;
       window.localStorage.setItem(USAGE_KEY, String(next));
       setUsageCount(next);
     } catch {
@@ -956,7 +1245,9 @@ export default function VoterMigrationForm() {
         setToast("No saved application found yet.");
         return;
       }
-      const parsed = JSON.parse(raw) as FormState;
+      const parsed = JSON.parse(raw) as Partial<FormState>;
+      if (!parsed || typeof parsed !== "object") throw new Error("bad data");
+      setPendingDob(null);
       applyFormState(parsed);
       setToast("Last application restored.");
     } catch {
@@ -965,281 +1256,148 @@ export default function VoterMigrationForm() {
   }
 
   function handleClear() {
+    setPendingDob(null);
     applyFormState(EMPTY_STATE);
+    setToast("Form cleared.");
   }
 
-  async function waitForPrintAssets(doc: Document): Promise<void> {
-    if (doc.fonts?.ready) {
-      try {
-        await doc.fonts.ready;
-      } catch {
-        // Font readiness is best-effort.
-      }
+  function collectPagesHtml(): string[] | null {
+    if (!page1Ref.current || !page2Ref.current) return null;
+    return [page1Ref.current.outerHTML, page2Ref.current.outerHTML];
+  }
+
+  // Renders the two A4 pages inside an isolated, off-screen iframe that only
+  // carries the paper CSS + the Bengali web font. Print and PDF both use it,
+  // so neither depends on app styles, zoom transforms or scrollbars.
+  async function createPaperFrame(pages: string[]): Promise<HTMLIFrameElement> {
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    Object.assign(frame.style, {
+      position: "fixed",
+      left: "-10000px",
+      top: "0",
+      width: "210mm",
+      height: "297mm",
+      border: "0",
+      pointerEvents: "none",
+    });
+
+    const loaded = new Promise<void>((resolve) => {
+      frame.onload = () => resolve();
+    });
+    frame.srcdoc = buildPaperDocument(pages);
+    document.body.appendChild(frame);
+    await withTimeout(loaded, 10000);
+
+    const doc = frame.contentDocument;
+    if (doc?.fonts) {
+      await withTimeout(
+        Promise.all([
+          doc.fonts.load('400 14px "Noto Serif Bengali"', "আবেদন"),
+          doc.fonts.load('600 14px "Noto Serif Bengali"', "আবেদন"),
+          doc.fonts.load('700 14px "Noto Serif Bengali"', "আবেদন"),
+        ]).catch(() => undefined),
+        4000,
+      );
+      await withTimeout(doc.fonts.ready, 4000);
     }
 
-    const images = Array.from(doc.images);
-    await Promise.all(
-      images.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            if (image.complete) {
-              resolve();
-              return;
-            }
-            image.addEventListener("load", () => resolve(), { once: true });
-            image.addEventListener("error", () => resolve(), { once: true });
-          }),
-      ),
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
     );
+    return frame;
   }
 
   async function handlePrint() {
-    if (!page1Ref.current || !page2Ref.current) return;
+    const pages = collectPagesHtml();
+    if (!pages) return;
 
     setIsProcessing("print");
     saveLastApplication();
 
-    const printWindow = window.open("", "_blank", "width=900,height=1200");
+    let frame: HTMLIFrameElement | null = null;
+    try {
+      frame = await createPaperFrame(pages);
+      const printFrame = frame;
+      const win = printFrame.contentWindow;
+      if (!win) throw new Error("Print frame unavailable");
 
-    if (!printWindow) {
-      await new Promise((resolve) => window.setTimeout(resolve, 100));
+      const cleanup = () => printFrame.remove();
+      win.addEventListener(
+        "afterprint",
+        () => window.setTimeout(cleanup, 500),
+        { once: true },
+      );
+      // Safety net for browsers that never fire afterprint.
+      window.setTimeout(cleanup, 5 * 60 * 1000);
+
+      win.focus();
+      win.print();
+      bumpUsageCount();
+    } catch (err) {
+      console.error(err);
+      frame?.remove();
+      // Last resort: print the page itself (see @media print rules below).
       window.print();
       bumpUsageCount();
+    } finally {
       setIsProcessing(null);
-      return;
     }
-
-    const page1 = page1Ref.current.cloneNode(true) as HTMLDivElement;
-    const page2 = page2Ref.current.cloneNode(true) as HTMLDivElement;
-
-    page1.classList.remove("mt-6");
-    page2.classList.remove("mt-6");
-    page1.classList.add("print-output-page");
-    page2.classList.add("print-output-page");
-
-    const styleBlocks = Array.from(
-      document.head.querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
-        'link[rel="stylesheet"], style',
-      ),
-    );
-
-    const printStyles = `
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
-
-      html,
-      body {
-        width: 210mm !important;
-        min-width: 210mm !important;
-        max-width: 210mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: visible !important;
-        background: #ffffff !important;
-      }
-
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box !important;
-      }
-
-      body {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-
-      #print-root {
-        width: 210mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: visible !important;
-      }
-
-      .print-page {
-        box-sizing: border-box !important;
-        width: 210mm !important;
-        min-width: 210mm !important;
-        max-width: 210mm !important;
-        height: 297mm !important;
-        min-height: 297mm !important;
-        max-height: 297mm !important;
-        margin: 0 !important;
-        padding: 6mm !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        overflow: hidden !important;
-        background: #ffffff !important;
-        transform: none !important;
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        break-after: page !important;
-        page-break-after: always !important;
-        position: relative !important;
-      }
-
-      .print-page:last-child {
-        break-after: auto !important;
-        page-break-after: auto !important;
-      }
-
-      ${PRINT_TYPOGRAPHY_CSS}
-
-      .print-page > div,
-      .print-page p,
-      .print-page .grid,
-      .print-page span {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-      }
-    `;
-
-    printWindow.document.open();
-    printWindow.document.write(
-      `<!doctype html><html><head><meta charset="utf-8"><title>Form-13</title>`,
-    );
-
-    for (const styleNode of styleBlocks) {
-      printWindow.document.head.appendChild(
-        printWindow.document.importNode(styleNode, true),
-      );
-    }
-
-    const styleElement = printWindow.document.createElement("style");
-    styleElement.textContent = printStyles;
-    printWindow.document.head.appendChild(styleElement);
-    printWindow.document.write(
-      `</head><body><main id="print-root"></main></body></html>`,
-    );
-    printWindow.document.close();
-
-    printWindow.document.getElementById("print-root")?.append(page1, page2);
-
-    await waitForPrintAssets(printWindow.document);
-
-    printWindow.onafterprint = () => {
-      printWindow.close();
-    };
-
-    printWindow.focus();
-    printWindow.print();
-
-    bumpUsageCount();
-    setIsProcessing(null);
   }
 
   async function handleDownloadPdf() {
-    if (!page1Ref.current || !page2Ref.current) return;
+    const pages = collectPagesHtml();
+    if (!pages) return;
 
     setIsProcessing("download");
 
-    let pdfHost: HTMLDivElement | null = null;
-    let pdfTypographyStyle: HTMLStyleElement | null = null;
-
+    let frame: HTMLIFrameElement | null = null;
     try {
       const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
         import("jspdf"),
         import("html2canvas"),
       ]);
 
-      pdfHost = document.createElement("div");
-      pdfHost.setAttribute("aria-hidden", "true");
-      pdfHost.style.position = "fixed";
-      pdfHost.style.left = "-100000px";
-      pdfHost.style.top = "0";
-      pdfHost.style.width = "210mm";
-      pdfHost.style.margin = "0";
-      pdfHost.style.padding = "0";
-      pdfHost.style.background = "#ffffff";
-      pdfHost.style.overflow = "visible";
-      pdfHost.style.pointerEvents = "none";
-      pdfHost.style.zIndex = "-1";
-
-      const sourcePages = [page1Ref.current, page2Ref.current];
-      const pdfPages = sourcePages.map((sourcePage) => {
-        const clone = sourcePage.cloneNode(true) as HTMLDivElement;
-        clone.classList.remove("mt-6");
-        clone.classList.add("print-output-page");
-        clone.style.width = "210mm";
-        clone.style.minWidth = "210mm";
-        clone.style.maxWidth = "210mm";
-        clone.style.height = "297mm";
-        clone.style.minHeight = "297mm";
-        clone.style.maxHeight = "297mm";
-        clone.style.margin = "0";
-        clone.style.padding = "6mm";
-        clone.style.boxSizing = "border-box";
-        clone.style.overflow = "hidden";
-        clone.style.transform = "none";
-        clone.style.border = "0";
-        clone.style.borderRadius = "0";
-        clone.style.boxShadow = "none";
-        clone.style.background = "#ffffff";
-        clone.style.breakInside = "avoid";
-        clone.style.pageBreakInside = "avoid";
-        return clone;
-      });
-
-      pdfHost.append(...pdfPages);
-      document.body.appendChild(pdfHost);
-
-      // Reuse the same print-only typography for the downloaded PDF so its
-      // text is as readable as the browser print output.
-      pdfTypographyStyle = document.createElement("style");
-      pdfTypographyStyle.setAttribute(
-        "data-voter-migration-print-typography",
-        "true",
-      );
-      pdfTypographyStyle.textContent = PRINT_TYPOGRAPHY_CSS;
-      document.head.appendChild(pdfTypographyStyle);
-
-      if (document.fonts?.ready) {
-        try {
-          await document.fonts.ready;
-        } catch {
-          // Font readiness is best-effort.
-        }
-      }
-
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
+      frame = await createPaperFrame(pages);
+      const doc = frame.contentDocument;
+      const sheets = doc
+        ? Array.from(doc.querySelectorAll<HTMLElement>(".f13-page"))
+        : [];
+      if (sheets.length !== 2) throw new Error("Form pages not found");
 
       const pdf = new jsPDF({
         orientation: "portrait",
-        unit: "pt",
+        unit: "mm",
         format: "a4",
         compress: true,
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      for (let i = 0; i < pdfPages.length; i++) {
-        const canvas = await html2canvas(pdfPages[i], {
-          scale: 2,
+      for (let i = 0; i < sheets.length; i++) {
+        const el = sheets[i];
+        const canvas = await html2canvas(el, {
+          scale: 3,
           useCORS: true,
           backgroundColor: "#ffffff",
-          width: pdfPages[i].scrollWidth,
-          height: pdfPages[i].scrollHeight,
-          windowWidth: pdfPages[i].scrollWidth,
-          windowHeight: pdfPages[i].scrollHeight,
           logging: false,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+          windowWidth: el.offsetWidth,
+          windowHeight: el.offsetHeight,
+          scrollX: 0,
+          scrollY: 0,
         });
 
-        const imgData = canvas.toDataURL("image/png", 1.0);
         if (i > 0) pdf.addPage("a4", "portrait");
-
+        // Each page is a full-bleed A4 image: 210 x 297 mm, no extra margin
+        // (the 15mm margins are already part of the page design).
         pdf.addImage(
-          imgData,
+          canvas.toDataURL("image/png"),
           "PNG",
           0,
           0,
-          pageWidth,
-          pageHeight,
+          210,
+          297,
           undefined,
           "FAST",
         );
@@ -1247,17 +1405,15 @@ export default function VoterMigrationForm() {
 
       const safeName = applicantName
         .trim()
-        .replace(/[^a-zA-Z0-9\s-_]/g, "")
+        .replace(new RegExp("[^\\p{L}\\p{M}\\p{N}\\s_-]", "gu"), "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
 
-      const fileName = safeName
-        ? `form-13-${safeName}.pdf`
-        : "form-13-voter-migration.pdf";
-
-      pdf.save(fileName);
+      pdf.save(
+        safeName ? `form-13-${safeName}.pdf` : "form-13-voter-migration.pdf",
+      );
       saveLastApplication();
       bumpUsageCount();
       setToast("PDF downloaded.");
@@ -1265,213 +1421,140 @@ export default function VoterMigrationForm() {
       console.error(err);
       setToast("Couldn't generate the PDF. Please try again.");
     } finally {
-      if (pdfTypographyStyle?.parentNode) {
-        pdfTypographyStyle.parentNode.removeChild(pdfTypographyStyle);
-      }
-      if (pdfHost?.parentNode) pdfHost.parentNode.removeChild(pdfHost);
+      frame?.remove();
       setIsProcessing(null);
     }
   }
 
+  function handlePreviewPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return;
+
+    const container = previewScrollRef.current;
+    if (!container) return;
+
+    isPanningRef.current = true;
+    setIsPanning(true);
+    panStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    };
+    container.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+
+  function handlePreviewPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isPanningRef.current) return;
+
+    const container = previewScrollRef.current;
+    if (!container) return;
+
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+
+    container.scrollLeft = panStartRef.current.scrollLeft - dx;
+    container.scrollTop = panStartRef.current.scrollTop - dy;
+    e.preventDefault();
+  }
+
+  function stopPreviewPan(e?: React.PointerEvent<HTMLDivElement>) {
+    const container = previewScrollRef.current;
+    if (e && container?.hasPointerCapture(e.pointerId)) {
+      container.releasePointerCapture(e.pointerId);
+    }
+    isPanningRef.current = false;
+    setIsPanning(false);
+  }
+
   function scrollToPage(page: 1 | 2) {
-    const target = page === 1 ? page1Ref.current : page2Ref.current;
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    previewScrollRef.current?.scrollTo({
+      top: page === 1 ? 0 : (PAGE_H_PX + PAGE_GAP_PX) * previewScale,
+      behavior: "smooth",
+    });
     setPageMenuOpen(false);
   }
 
   const phoneHint =
-    newPhone && !/^01[3-9]\d{8}$/.test(newPhone)
-      ? "Should be 11 digits, starting with 01"
+    newPhone && !phoneValid
+      ? `Must be 11 digits starting with 01 (${newPhone.length}/11)`
       : undefined;
 
   const postalHint =
-    newPostalCode && !/^\d{4}$/.test(newPostalCode)
-      ? "4 digit postal code"
+    newPostalCode && newPostalCode.length !== 4
+      ? "Post code must be 4 digits"
       : undefined;
 
   return (
     <div className="voter-migration-root w-full text-[#0F172A] font-sans pb-16">
       <style>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
+        ${PAPER_CSS}
 
-          html,
-          body {
-            width: 210mm !important;
-            min-width: 210mm !important;
-            max-width: 210mm !important;
-            min-height: 100% !important;
+        .f13-sheet {
+          width: 210mm;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18),
+            0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        /* Fallback only: used if the isolated print frame can't be created. */
+        @media print {
+          @page { size: A4 portrait; margin: 0; }
+
+          html, body {
             margin: 0 !important;
             padding: 0 !important;
-            overflow: visible !important;
             background: #ffffff !important;
-          }
-
-          body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
-          body * {
-            box-sizing: border-box !important;
-          }
+          .print-hide { display: none !important; }
 
-          .print-hide {
-            display: none !important;
-            visibility: hidden !important;
-          }
-
-          .voter-migration-root > * {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-          }
-
-          .voter-migration-root {
-            display: block !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            background: #ffffff !important;
-          }
-
-          .print-workspace {
-            display: block !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-          }
-
-          .print-preview-column {
-            display: block !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-          }
-
-          .print-preview-shell {
-            display: block !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
-            min-height: 0 !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            background: #ffffff !important;
-            overflow: visible !important;
-          }
-
+          .voter-migration-root,
+          .print-workspace,
+          .print-preview-column,
+          .print-preview-shell,
           .print-preview-scroll {
-            display: block !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
-            height: auto !important;
-            max-height: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-          }
-
-          #voter-migration-print-area {
             display: block !important;
             position: static !important;
             width: 210mm !important;
             max-width: 210mm !important;
-            min-width: 210mm !important;
+            height: auto !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: visible !important;
-            transform: none !important;
-            transform-origin: initial !important;
-            background: #ffffff !important;
-          }
-
-          #voter-migration-print-area .print-page {
-            box-sizing: border-box !important;
-            display: block !important;
-            width: 210mm !important;
-            min-width: 210mm !important;
-            max-width: 210mm !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
-            margin: 0 !important;
-            padding: 6mm !important;
             border: 0 !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+            overflow: visible !important;
             background: #ffffff !important;
-            overflow: hidden !important;
+          }
+
+          .print-scale-wrap {
+            width: 210mm !important;
+            height: auto !important;
+            margin: 0 !important;
+          }
+
+          #voter-migration-print-area {
+            width: 210mm !important;
             transform: none !important;
-            position: relative !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-            break-after: page !important;
-            page-break-after: always !important;
           }
 
-          #voter-migration-print-area .print-page + .print-page {
-            margin-top: 0 !important;
+          .f13-sheet {
+            margin: 0 !important;
+            box-shadow: none !important;
+            break-after: page;
+            page-break-after: always;
           }
 
-          #voter-migration-print-area .print-page:last-child {
-            break-after: auto !important;
-            page-break-after: auto !important;
+          .f13-sheet:last-child {
+            break-after: auto;
+            page-break-after: auto;
           }
 
-          #voter-migration-print-area .print-page {
-            font-size: 12.5px !important;
-            line-height: 1.6 !important;
-            text-rendering: geometricPrecision !important;
-          }
-
-          #voter-migration-print-area .print-page [class~="text-[9px]"] {
-            font-size: 10.5px !important;
-            line-height: 1.5 !important;
-          }
-
-          #voter-migration-print-area .print-page [class~="text-[10px]"] {
-            font-size: 11.75px !important;
-            line-height: 1.55 !important;
-          }
-
-          #voter-migration-print-area .print-page [class~="text-[11px]"] {
-            font-size: 12.5px !important;
-            line-height: 1.6 !important;
-          }
-
-          #voter-migration-print-area .print-page [class~="text-xs"] {
-            font-size: 13px !important;
-            line-height: 1.55 !important;
-          }
-
-          #voter-migration-print-area .print-page,
-          #voter-migration-print-area .print-page * {
-            visibility: visible !important;
-          }
-
-          #voter-migration-print-area .print-page > div,
-          #voter-migration-print-area .print-page p,
-          #voter-migration-print-area .print-page .grid {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
+          .f13-page { height: 296mm !important; }
         }
       `}</style>
 
@@ -1557,21 +1640,18 @@ export default function VoterMigrationForm() {
 
         <div className="print-workspace grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="print-hide lg:col-span-5 space-y-4">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-5">
+            <div className="bg-white border border-gray-200/80 rounded-2xl p-3 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   Settings
                 </span>
                 <span className="text-[11px] text-gray-400 font-medium">
-                  Fill in all fields. Preview updates as you type.
+                  Preview updates as you type.
                 </span>
               </div>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  1. Recipient (election office)
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Section title="1. Recipient (election office)">
+                <div className={GRID2}>
                   <Field label="District (election office)">
                     <GeoCombobox
                       value={regDistrict}
@@ -1592,12 +1672,9 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-              </div>
+              </Section>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  2. Applicant details
-                </h3>
+              <Section title="2. Applicant details">
                 <Field label="Applicant name">
                   <TextInput
                     value={applicantName}
@@ -1605,15 +1682,17 @@ export default function VoterMigrationForm() {
                     placeholder="Applicant name"
                   />
                 </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <Field label="National ID (NID) number">
+                <div className={GRID2}>
+                  <Field
+                    label="National ID (NID) number"
+                    counter={`${nationalId.length}/17`}
+                  >
                     <TextInput
                       value={nationalId}
-                      onChange={(v) =>
-                        setNationalId(v.replace(/[^\d]/g, "").slice(0, 17))
-                      }
+                      onChange={(v) => setNationalId(digitsOnly(v, 17))}
                       placeholder="National ID number"
                       inputMode="numeric"
+                      maxLength={34}
                     />
                   </Field>
                   <Field label="Date of birth">
@@ -1624,12 +1703,9 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-              </div>
+              </Section>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  3. Current enrolment
-                </h3>
+              <Section title="3. Current enrolment">
                 <Field label="Voter number">
                   <TextInput
                     value={voterNumber}
@@ -1638,7 +1714,7 @@ export default function VoterMigrationForm() {
                     inputMode="numeric"
                   />
                 </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className={GRID2}>
                   <Field label="Voter area name">
                     <TextInput
                       value={voterAreaName}
@@ -1655,7 +1731,7 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className={GRID2}>
                   <Field label="District">
                     <GeoCombobox
                       value={currentDistrict}
@@ -1676,7 +1752,7 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className={GRID2}>
                   <Field label="Village / road name and number">
                     <TextInput
                       value={currentVillage}
@@ -1692,13 +1768,10 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-              </div>
+              </Section>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  4. Area you want to move to
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Section title="4. Area you want to move to">
+                <div className={GRID2}>
                   <Field label="District (new)">
                     <GeoCombobox
                       value={newDistrict}
@@ -1719,14 +1792,16 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <Field label="City corporation / municipality / union / cantonment board">
-                    <TextInput
-                      value={newCityCorp}
-                      onChange={setNewCityCorp}
-                      placeholder="e.g. Union Parishad No."
-                    />
-                  </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2 min-w-0">
+                    <Field label="City corporation / municipality / union / cantonment board">
+                      <TextInput
+                        value={newCityCorp}
+                        onChange={setNewCityCorp}
+                        placeholder="e.g. Union Parishad name"
+                      />
+                    </Field>
+                  </div>
                   <Field label="Ward number">
                     <TextInput
                       value={newWardNo}
@@ -1735,7 +1810,7 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className={GRID2}>
                   <Field label="Voter area name (new)">
                     <TextInput
                       value={newAreaName}
@@ -1743,7 +1818,7 @@ export default function VoterMigrationForm() {
                       placeholder="Voter area name"
                     />
                   </Field>
-                  <Field label="Voter area number (new)">
+                  <Field label="Voter area code (new)">
                     <TextInput
                       value={newAreaCode}
                       onChange={setNewAreaCode}
@@ -1752,7 +1827,7 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className={GRID2}>
                   <Field label="Village / road name and number (new)">
                     <TextInput
                       value={newVillage}
@@ -1768,17 +1843,20 @@ export default function VoterMigrationForm() {
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <Field label="Telephone / mobile number" hint={phoneHint}>
-                    <TextInput
-                      value={newPhone}
-                      onChange={(v) =>
-                        setNewPhone(v.replace(/[^\d]/g, "").slice(0, 11))
-                      }
-                      placeholder="01712345678"
-                      inputMode="tel"
-                    />
-                  </Field>
+                <Field
+                  label="Mobile number"
+                  hint={phoneHint}
+                  counter={`${newPhone.length}/11`}
+                >
+                  <TextInput
+                    value={newPhone}
+                    onChange={(v) => setNewPhone(digitsOnly(v, 11))}
+                    placeholder="01783666743"
+                    inputMode="tel"
+                    maxLength={22}
+                  />
+                </Field>
+                <div className={GRID2}>
                   <Field label="Post office">
                     <TextInput
                       value={newPostOffice}
@@ -1786,64 +1864,60 @@ export default function VoterMigrationForm() {
                       placeholder="Post office name"
                     />
                   </Field>
+                  <Field label="Post code (4 digits)" hint={postalHint}>
+                    <PostCodeBoxes
+                      value={newPostalCode}
+                      onChange={setNewPostalCode}
+                    />
+                  </Field>
                 </div>
-                <Field label="Post code" hint={postalHint}>
-                  <TextInput
-                    value={newPostalCode}
-                    onChange={(v) =>
-                      setNewPostalCode(v.replace(/[^\d]/g, "").slice(0, 4))
-                    }
-                    placeholder="e.g. 1230"
-                    inputMode="numeric"
-                  />
-                </Field>
-              </div>
+              </Section>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  5. Residence period and reason
-                </h3>
-                <Field label="Living at the new address since">
-                  <MonthYearPicker
-                    month={residingMonth}
-                    year={residingYear}
-                    onPick={(m, y) => {
-                      setResidingMonth(m);
-                      setResidingYear(y);
-                    }}
-                    placeholder="e.g. since January 2023"
-                  />
-                </Field>
-                <Field label="Reason for migration">
-                  <TextInput
-                    value={migrationReason}
-                    onChange={setMigrationReason}
-                    placeholder="e.g. Job / marriage / permanent residence"
-                  />
-                </Field>
-              </div>
+              <Section title="5. Residence period and reason">
+                <div className={GRID2}>
+                  <Field label="Living at the new address since">
+                    <MonthYearPicker
+                      month={residingMonth}
+                      year={residingYear}
+                      onPick={(m, y) => {
+                        setResidingMonth(m);
+                        setResidingYear(y);
+                      }}
+                      placeholder="e.g. January 2023"
+                    />
+                  </Field>
+                  <Field label="Reason for migration">
+                    <TextInput
+                      value={migrationReason}
+                      onChange={setMigrationReason}
+                      placeholder="e.g. Job / marriage"
+                    />
+                  </Field>
+                </div>
+              </Section>
 
-              <div className="space-y-3 border border-indigo-200/80 rounded-xl p-3.5 bg-indigo-50/20">
-                <h3 className="text-xs font-bold text-indigo-900">
-                  6. Identifier details (optional)
-                </h3>
-                <Field label="Identifier name">
-                  <TextInput
-                    value={identifierName}
-                    onChange={setIdentifierName}
-                    placeholder="Identifier name"
-                  />
-                </Field>
-                <Field label="Identifier NID number">
-                  <TextInput
-                    value={identifierNid}
-                    onChange={(v) =>
-                      setIdentifierNid(v.replace(/[^\d]/g, "").slice(0, 17))
-                    }
-                    placeholder="Identifier NID number"
-                    inputMode="numeric"
-                  />
-                </Field>
+              <Section title="6. Identifier details (optional)">
+                <div className={GRID2}>
+                  <Field label="Identifier name">
+                    <TextInput
+                      value={identifierName}
+                      onChange={setIdentifierName}
+                      placeholder="Identifier name"
+                    />
+                  </Field>
+                  <Field
+                    label="Identifier NID number"
+                    counter={`${identifierNid.length}/17`}
+                  >
+                    <TextInput
+                      value={identifierNid}
+                      onChange={(v) => setIdentifierNid(digitsOnly(v, 17))}
+                      placeholder="Identifier NID number"
+                      inputMode="numeric"
+                      maxLength={34}
+                    />
+                  </Field>
+                </div>
                 <Field label="Identifier address">
                   <TextInput
                     value={identifierAddress}
@@ -1851,9 +1925,9 @@ export default function VoterMigrationForm() {
                     placeholder="Identifier address"
                   />
                 </Field>
-              </div>
+              </Section>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   onClick={handlePrint}
                   disabled={isProcessing !== null}
@@ -1879,383 +1953,393 @@ export default function VoterMigrationForm() {
             </div>
           </div>
 
-          <div className="print-preview-column lg:col-span-7 space-y-4">
-            <div className="print-preview-shell bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[900px]">
-              <div>
-                <div className="print-hide flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    <span>Live preview</span>
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-1 py-0.5">
-                      <button
-                        onClick={() => setZoom((z) => Math.max(60, z - 10))}
-                        className="p-1 hover:bg-white rounded-md text-gray-500"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="text-[11px] font-bold text-gray-600 w-9 text-center">
-                        {zoom}%
-                      </span>
-                      <button
-                        onClick={() => setZoom((z) => Math.min(150, z + 10))}
-                        className="p-1 hover:bg-white rounded-md text-gray-500"
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <button
-                        onClick={() => setPageMenuOpen((o) => !o)}
-                        className="text-[11px] font-semibold text-white bg-gray-900 px-2.5 py-1 rounded-md flex items-center gap-1"
-                      >
-                        Page {activePage} of 2
-                        <ChevronDown size={11} />
-                      </button>
-                      {pageMenuOpen && (
-                        <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
-                          <button
-                            onClick={() => scrollToPage(1)}
-                            className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
-                          >
-                            Page 1
-                          </button>
-                          <button
-                            onClick={() => scrollToPage(2)}
-                            className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
-                          >
-                            Page 2
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
-                      {anyFieldFilled ? "Preview" : "Empty"}
+          <div className="print-preview-column lg:col-span-7 lg:sticky lg:top-4 space-y-4">
+            <div className="print-preview-shell bg-white border border-gray-200/80 rounded-2xl p-3 shadow-2xs">
+              <div className="print-hide flex items-center justify-between pb-3 border-b border-gray-100">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  <span>Live preview</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-1 py-0.5">
+                    <button
+                      onClick={() => setZoom((z) => Math.max(60, z - 10))}
+                      className="p-1 hover:bg-white rounded-md text-gray-500"
+                      aria-label="Zoom out"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="text-[11px] font-bold text-gray-600 w-9 text-center">
+                      {zoom}%
                     </span>
+                    <button
+                      onClick={() => setZoom((z) => Math.min(150, z + 10))}
+                      className="p-1 hover:bg-white rounded-md text-gray-500"
+                      aria-label="Zoom in"
+                    >
+                      <Plus size={12} />
+                    </button>
                   </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setPageMenuOpen((o) => !o)}
+                      className="text-[11px] font-semibold text-white bg-gray-900 px-2.5 py-1 rounded-md flex items-center gap-1"
+                    >
+                      Page {activePage} of 2
+                      <ChevronDown size={11} />
+                    </button>
+                    {pageMenuOpen && (
+                      <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+                        <button
+                          onClick={() => scrollToPage(1)}
+                          className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
+                        >
+                          Page 1
+                        </button>
+                        <button
+                          onClick={() => scrollToPage(2)}
+                          className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"
+                        >
+                          Page 2
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                    {anyFieldFilled ? "Preview" : "Empty"}
+                  </span>
                 </div>
+              </div>
 
+              <div
+                ref={previewScrollRef}
+                className={`print-preview-scroll mt-3 max-h-[85vh] overflow-auto rounded-lg bg-gray-100/70 p-2 select-none ${
+                  isPanning ? "cursor-grabbing" : "cursor-grab"
+                }`}
+                onPointerDown={handlePreviewPointerDown}
+                onPointerMove={handlePreviewPointerMove}
+                onPointerUp={stopPreviewPan}
+                onPointerCancel={stopPreviewPan}
+                style={{ touchAction: "none" }}
+              >
                 <div
-                  ref={previewScrollRef}
-                  className="print-preview-scroll mt-4 max-h-[900px] overflow-y-auto"
+                  className="print-scale-wrap"
+                  style={{
+                    width: PAGE_W_PX * previewScale,
+                    height: (PAGE_H_PX * 2 + PAGE_GAP_PX) * previewScale,
+                    margin: "0 auto",
+                  }}
                 >
                   <div
                     id="voter-migration-print-area"
                     style={{
-                      transform: `scale(${zoom / 100})`,
-                      transformOrigin: "top center",
+                      width: PAGE_W_PX,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
                     }}
                   >
-                    <div
-                      ref={page1Ref}
-                      className="print-page bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-[#0F172A] font-serif text-[11px] space-y-3 leading-relaxed relative"
-                    >
-                      <div className="text-right font-bold text-[10px]">
-                        ফরম-১৩
-                      </div>
-                      <div className="text-center text-[10px]">
-                        [বিধি ২৬(৭) দ্রষ্টব্য]
-                      </div>
-                      <div className="text-center font-bold text-xs">
-                        এক ভোটার এলাকা হইতে অন্য ভোটার এলাকায় ভোটার
-                        স্থানান্তরের আবেদন
-                      </div>
+                    {/* ------------------------- PAGE 1 ------------------------- */}
+                    <div className="f13-sheet">
+                      <div ref={page1Ref} className="f13-page">
+                        <div className="f13-right">ফরম-১৩</div>
+                        <div className="f13-center">[বিধি ২৬(৭) দ্রষ্টব্য]</div>
+                        <div className="f13-title">
+                          এক ভোটার এলাকা হইতে অন্য ভোটার এলাকায় ভোটার
+                          স্থানান্তরের আবেদন
+                        </div>
 
-                      <div className="space-y-1 pt-1">
-                        <p className="font-bold">বরাবর,</p>
-                        <p className="font-semibold">
-                          উপজেলা/থানা নির্বাচন অফিসার
-                        </p>
-                        <p>
-                          উপজেলা/থানাঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[120px]">
-                            {regUpazilaBn}
-                          </span>
-                        </p>
-                        <p>
-                          জেলাঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[120px]">
-                            {regDistrictBn}
-                          </span>
-                        </p>
-                      </div>
+                        <div className="f13-sec">
+                          <p className="f13-h">বরাবর,</p>
+                          <p className="f13-h">উপজেলা/থানা নির্বাচন অফিসার</p>
+                          <div className="f13-cols" style={{ width: "62%" }}>
+                            <P13Field
+                              label="উপজেলা/থানাঃ"
+                              value={regUpazilaBn}
+                            />
+                          </div>
+                          <div className="f13-cols" style={{ width: "62%" }}>
+                            <P13Field label="জেলাঃ" value={regDistrictBn} />
+                          </div>
+                        </div>
 
-                      <div className="space-y-2 pt-2">
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">১।</span>
-                          <span className="col-span-4 font-semibold">
-                            আবেদনকারীর নামঃ
-                          </span>
-                          <span className="col-span-7 border-b border-dotted border-gray-400">
-                            {applicantName}
-                          </span>
+                        <div className="f13-row f13-sec">
+                          <span className="f13-num">১।</span>
+                          <div className="f13-body">
+                            <div className="f13-cols">
+                              <P13Field
+                                label="আবেদনকারীর নামঃ"
+                                value={applicantName}
+                                lblWidth={200}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">২।</span>
-                          <span className="col-span-4 font-semibold">
-                            জাতীয় পরিচয়পত্র নম্বর (NID) :
-                          </span>
-                          <span className="col-span-7 border-b border-dotted border-gray-400">
-                            {nationalId}
-                          </span>
+                        <div className="f13-row">
+                          <span className="f13-num">২।</span>
+                          <div className="f13-body">
+                            <div className="f13-cols">
+                              <P13Field
+                                label="জাতীয় পরিচয়পত্র নম্বর (NID) :"
+                                value={toBn(nationalId)}
+                                lblWidth={200}
+                              />
+                            </div>
+                            <p className="f13-note">
+                              (জাতীয় পরিচয়পত্রের ফটোকপি সংযুক্ত করিতে হইবে)
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-[9px] text-gray-500 pl-[8.5%]">
-                          (জাতীয় পরিচয়পত্রের ফটোকপি সংযুক্ত করিতে হইবে)
-                        </p>
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">৩।</span>
-                          <span className="col-span-4 font-semibold">
-                            জন্ম তারিখঃ
-                          </span>
-                          <span className="col-span-7 border-b border-dotted border-gray-400">
-                            {dob ? formatDateBn(dob) : ""}
-                          </span>
+                        <div className="f13-row">
+                          <span className="f13-num">৩।</span>
+                          <div className="f13-body">
+                            <div className="f13-cols">
+                              <P13Field
+                                label="জন্ম তারিখঃ"
+                                value={dob ? formatDateBn(dob) : ""}
+                                lblWidth={200}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">৪।</span>
-                          <span className="col-span-11 font-semibold">
+
+                        <div className="f13-row f13-sec">
+                          <span className="f13-num">৪।</span>
+                          <div className="f13-body f13-h">
                             বর্তমান তালিকাভুক্তি সংক্রান্ত তথ্যাদি-
-                          </span>
+                          </div>
                         </div>
-                        <div className="pl-[8.5%] space-y-1.5">
-                          <p>
-                            ভোটার নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[160px]">
-                              {voterNumber}
-                            </span>
-                          </p>
-                          <p>
-                            ভোটার এলাকার নামঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {voterAreaName}
-                            </span>{" "}
-                            ভোটার এলাকার নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[70px]">
-                              {voterAreaCode}
-                            </span>
-                          </p>
-                          <p>
-                            উপজেলা/থানাঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {currentUpazilaBn}
-                            </span>{" "}
-                            জেলাঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {currentDistrictBn}
-                            </span>
-                          </p>
-                          <p>
-                            গ্রাম/রাস্তার নাম ও নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {currentVillage}
-                            </span>{" "}
-                            বাসা/হোল্ডিং নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[90px]">
-                              {currentHouseNo}
-                            </span>
-                          </p>
+                        <div className="f13-sub">
+                          <div className="f13-cols">
+                            <P13Field
+                              label="ভোটার নম্বরঃ"
+                              value={toBn(voterNumber)}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="ভোটার এলাকার নামঃ"
+                              value={voterAreaName}
+                              grow={3}
+                            />
+                            <P13Field
+                              label="ভোটার এলাকার নম্বরঃ"
+                              value={toBn(voterAreaCode)}
+                              grow={2}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="উপজেলা/থানাঃ"
+                              value={currentUpazilaBn}
+                            />
+                            <P13Field label="জেলাঃ" value={currentDistrictBn} />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="গ্রাম/রাস্তার নাম ও নম্বরঃ"
+                              value={toBn(currentVillage)}
+                              grow={3}
+                            />
+                            <P13Field
+                              label="বাসা/হোল্ডিং নম্বরঃ"
+                              value={toBn(currentHouseNo)}
+                              grow={2}
+                            />
+                          </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">৫।</span>
-                          <span className="col-span-11 font-semibold">
+
+                        <div className="f13-row f13-sec">
+                          <span className="f13-num">৫।</span>
+                          <div className="f13-body f13-h">
                             যে এলাকায় স্থানান্তর হইতে ইচ্ছুক-
-                          </span>
+                          </div>
                         </div>
-                        <div className="pl-[8.5%] space-y-1.5">
-                          <p>
-                            জেলাঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {newDistrictBn}
-                            </span>{" "}
-                            উপজেলা/থানাঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {newUpazilaBn}
-                            </span>
-                          </p>
-                          <p>
-                            সিটি কর্পোরেশন/পৌরসভা/ইউনিয়ন/ক্যান্টঃ বোর্ডঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[90px]">
-                              {newCityCorp}
-                            </span>{" "}
-                            ওয়ার্ড নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[50px]">
-                              {newWardNo}
-                            </span>
-                          </p>
-                          <p>
-                            ভোটার এলাকার নামঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {newAreaName}
-                            </span>{" "}
-                            ভোটার এলাকার নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[70px]">
-                              {newAreaCode}
-                            </span>
-                          </p>
-                          <p>
-                            গ্রাম/রাস্তার নাম ও নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[110px]">
-                              {newVillage}
-                            </span>{" "}
-                            বাসা/হোল্ডিং নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[90px]">
-                              {newHouseNo}
-                            </span>
-                          </p>
-                          <p>
-                            টেলিফোন/মোবাইল ফোন নম্বরঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[130px]">
-                              {newPhone}
-                            </span>
-                          </p>
-                          <p className="flex items-center gap-2">
-                            <span>
-                              ডাকঘরঃ{" "}
-                              <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[140px]">
-                                {newPostOffice}
+                        <div className="f13-sub">
+                          <div className="f13-cols">
+                            <P13Field label="জেলাঃ" value={newDistrictBn} />
+                            <P13Field
+                              label="উপজেলা/থানাঃ"
+                              value={newUpazilaBn}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="সিটি কর্পোরেশন/পৌরসভা/ইউনিয়ন/ক্যান্টঃ বোর্ডঃ"
+                              value={newCityCorp}
+                              grow={3}
+                            />
+                            <P13Field
+                              label="ওয়ার্ড নম্বরঃ"
+                              value={toBn(newWardNo)}
+                              grow={1}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="ভোটার এলাকার নামঃ"
+                              value={newAreaName}
+                              grow={3}
+                            />
+                            <P13Field
+                              label="ভোটার এলাকার নম্বরঃ"
+                              value={toBn(newAreaCode)}
+                              grow={2}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="গ্রাম/রাস্তার নাম ও নম্বরঃ"
+                              value={toBn(newVillage)}
+                              grow={3}
+                            />
+                            <P13Field
+                              label="বাসা/হোল্ডিং নম্বরঃ"
+                              value={toBn(newHouseNo)}
+                              grow={2}
+                            />
+                          </div>
+                          <div className="f13-cols" style={{ width: "70%" }}>
+                            <P13Field
+                              label="টেলিফোন/মোবাইল ফোন নম্বরঃ"
+                              value={toBn(newPhone)}
+                            />
+                          </div>
+                          <div className="f13-cols">
+                            <P13Field
+                              label="ডাকঘরঃ"
+                              value={newPostOffice}
+                              grow={3}
+                            />
+                            <div
+                              className="f13-fld"
+                              style={{ flex: "2 1 0px" }}
+                            >
+                              <span className="f13-lbl">পোস্ট কোডঃ</span>
+                              <span className="f13-pc">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                  <span key={i} className="f13-pcb">
+                                    {newPostalCode[i]
+                                      ? toBn(newPostalCode[i])
+                                      : ""}
+                                  </span>
+                                ))}
                               </span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              পোস্ট কোডঃ
-                              {Array.from({ length: 4 }).map((_, i) => (
-                                <span
-                                  key={i}
-                                  className="w-4 h-4 border border-gray-400 inline-flex items-center justify-center text-[9px]"
-                                >
-                                  {newPostalCode[i] ?? ""}
-                                </span>
-                              ))}
-                            </span>
-                          </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-1 pt-1">
-                          <span className="col-span-1 font-bold">৬।</span>
-                          <span className="col-span-11">
+
+                        <div className="f13-row f13-sec">
+                          <span className="f13-num">৬।</span>
+                          <div className="f13-body f13-flow">
                             ৫ নম্বর ক্রমিকে বর্ণিত ঠিকানায় যে সময় হইতে অবস্থান
                             করিতেছেনঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1">
-                              {residingDateLabel}
-                            </span>
-                          </span>
+                            <P13Dots min={150}>{residingDateLabel}</P13Dots>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">৭।</span>
-                          <span className="col-span-11">
+                        <div className="f13-row">
+                          <span className="f13-num">৭।</span>
+                          <div className="f13-body f13-flow">
                             স্থানান্তরের কারণঃ{" "}
-                            <span className="border-b border-dotted border-gray-400 inline-block px-1">
-                              {migrationReason}
-                            </span>
-                          </span>
+                            <P13Dots min={260}>{migrationReason}</P13Dots>
+                          </div>
                         </div>
                       </div>
                     </div>
 
+                    {/* ------------------------- PAGE 2 ------------------------- */}
                     <div
-                      ref={page2Ref}
-                      className="print-page mt-6 bg-white border border-gray-300 rounded-lg p-6 shadow-sm text-[#0F172A] font-serif text-[11px] space-y-3 leading-relaxed relative"
+                      className="f13-sheet"
+                      style={{ marginTop: PAGE_GAP_PX }}
                     >
-                      <div className="space-y-1.5">
-                        <div className="grid grid-cols-12 gap-1">
-                          <span className="col-span-1 font-bold">৮।</span>
-                          <span className="col-span-11">
-                            ৫ নম্বর ক্রমিকে বর্ণিত ঠিকানায় অবস্থানের সমর্থনে
-                            নিম্নের দলিলাদি সংযুক্ত করিতে হইবেঃ
-                          </span>
-                        </div>
-                        <p className="pl-[8.5%]">
-                          (ক) প্রথম শ্রেণীর কর্মকর্তা/ ক্যান্টনমেন্ট বোর্ডের
-                          এক্সিকিউটিভ অফিসার/ সিটি কর্পোরেশন/পৌরসভার মেয়র
-                          /ওয়ার্ড কাউন্সিলর/ইউনিয়ন পরিষদ চেয়ারম্যান কর্তৃক
-                          প্রদত্ত প্রত্যয়ন পত্র।
-                        </p>
-                        <p className="pl-[8.5%]">
-                          (খ) ইউটিলিটি বিলের অনুলিপি (যদি থাকে)
-                        </p>
-                        <p className="pl-[8.5%]">
-                          (গ) বাড়ী ভাড়া রশিদ/চৌকিদারী কর রশিদ/পৌরকর
-                          রশিদ/অন্যান্য
-                        </p>
-                      </div>
-
-                      <div className="pt-10 flex justify-end text-center">
+                      <div ref={page2Ref} className="f13-page f13-p2">
                         <div>
-                          <div className="w-40 border-b border-black mb-1"></div>
-                          <p className="text-[9px] font-bold">
-                            আবেদনকারীর স্বাক্ষর বা টিপসহি
+                          <div className="f13-row" style={{ marginTop: 0 }}>
+                            <span className="f13-num">৮।</span>
+                            <div className="f13-body">
+                              ৫ নম্বর ক্রমিকে বর্ণিত ঠিকানায় অবস্থানের সমর্থনে
+                              নিম্নের দলিলাদি সংযুক্ত করিতে হইবেঃ
+                            </div>
+                          </div>
+                          <p className="f13-item">
+                            (ক) প্রথম শ্রেণীর কর্মকর্তা/ ক্যান্টনমেন্ট বোর্ডের
+                            এক্সিকিউটিভ অফিসার/ সিটি কর্পোরেশন/পৌরসভার মেয়র
+                            /ওয়ার্ড কাউন্সিলর/ইউনিয়ন পরিষদ চেয়ারম্যান কর্তৃক
+                            প্রদত্ত প্রত্যয়ন পত্র।
                           </p>
+                          <p className="f13-item">
+                            (খ) ইউটিলিটি বিলের অনুলিপি (যদি থাকে)
+                          </p>
+                          <p className="f13-item">
+                            (গ) বাড়ী ভাড়া রশিদ/চৌকিদারী কর রশিদ/পৌরকর
+                            রশিদ/অন্যান্য
+                          </p>
+
+                          <div className="f13-sign">
+                            <div>আবেদনকারীর স্বাক্ষর বা টিপসহি</div>
+                          </div>
+
+                          <div className="f13-sec">
+                            <p className="f13-h">
+                              আবেদনকারীকে সনাক্তকারীর স্বাক্ষরঃ
+                            </p>
+                            <div className="f13-cols" style={{ width: "88%" }}>
+                              <P13Field
+                                label="নামঃ"
+                                value={identifierName}
+                                lblWidth={150}
+                              />
+                            </div>
+                            <div className="f13-cols" style={{ width: "88%" }}>
+                              <P13Field
+                                label="জাতীয় পরিচয়পত্র নম্বরঃ"
+                                value={toBn(identifierNid)}
+                                lblWidth={150}
+                              />
+                            </div>
+                            <div className="f13-cols" style={{ width: "88%" }}>
+                              <P13Field
+                                label="ঠিকানাঃ"
+                                value={identifierAddress}
+                                lblWidth={150}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="f13-sec" style={{ marginTop: 30 }}>
+                            <p className="f13-h f13-ul f13-center">
+                              [কেবলমাত্র অফিসে ব্যবহারের জন্য]
+                            </p>
+                            <p
+                              className="f13-flow"
+                              style={{ marginTop: 8, textAlign: "justify" }}
+                            >
+                              দাখিলকৃত দলিলাদি পরীক্ষান্তে <P13Dots min={190} />{" "}
+                              ভোটার এলাকার জন্য প্রণীত ভোটার তালিকা হইতে নাম
+                              কর্তন এবং <P13Dots min={190} /> ভোটার এলাকায় নাম
+                              অন্তর্ভুক্ত করা হইল।
+                            </p>
+                          </div>
+
+                          <div className="f13-sign">
+                            <div>উপজেলা/থানা নির্বাচন কর্মকর্তা</div>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="pt-4 space-y-1">
-                        <p className="font-bold text-[10px]">
-                          আবেদনকারীকে সনাক্তকারীর স্বাক্ষরঃ
-                        </p>
-                        <p>
-                          নামঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[200px]">
-                            {identifierName}
-                          </span>
-                        </p>
-                        <p>
-                          জাতীয় পরিচয়পত্র নম্বরঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[170px]">
-                            {identifierNid}
-                          </span>
-                        </p>
-                        <p>
-                          ঠিকানাঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[200px]">
-                            {identifierAddress}
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="pt-6">
-                        <p className="font-bold text-center underline text-[10px]">
-                          [কেবলমাত্র অফিসে ব্যবহারের জন্য]
-                        </p>
-                        <p className="text-[10px] mt-2 text-justify">
-                          দাখিলকৃত দলিলাদি পরীক্ষান্তে
-                          ..................................... ভোটার এলাকার
-                          জন্য প্রণীত ভোটার তালিকা হইতে নাম কর্তন এবং
-                          ..................................... ভোটার এলাকায়
-                          নাম অন্তর্ভুক্ত করা হইল।
-                        </p>
-                      </div>
-
-                      <div className="pt-8 flex justify-end text-center">
-                        <div>
-                          <div className="w-40 border-b border-black mb-1"></div>
-                          <p className="text-[9px] font-bold">
-                            উপজেলা/থানা নির্বাচন কর্মকর্তা
+                        <div className="f13-receipt">
+                          <p className="f13-h f13-center">
+                            প্রাপ্তিস্বীকার পত্র
                           </p>
-                        </div>
-                      </div>
-
-                      <div className="pt-8 border-t border-dashed border-gray-300">
-                        <p className="font-bold text-center text-[10px] pt-3">
-                          প্রাপ্তীকার পত্র
-                        </p>
-                        <p className="text-[10px] mt-1">
-                          জনাব/বেগম{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[160px] font-semibold">
-                            {applicantName}
-                          </span>{" "}
-                          এর আবেদন ফরম গৃহীত হইল।
-                        </p>
-                        <p className="text-[10px]">
-                          আবেদন ফরম নম্বরঃ{" "}
-                          <span className="border-b border-dotted border-gray-400 inline-block px-1 min-w-[140px]" />
-                        </p>
-                      </div>
-
-                      <div className="pt-10 flex justify-end text-center">
-                        <div>
-                          <div className="w-40 border-b border-black mb-1"></div>
-                          <p className="text-[9px] font-bold">
-                            গ্রহণকারীর স্বাক্ষর
+                          <p className="f13-flow" style={{ marginTop: 6 }}>
+                            জনাব/বেগম{" "}
+                            <P13Dots min={220}>{applicantName}</P13Dots> এর
+                            আবেদন ফরম গৃহীত হইল।
                           </p>
+                          <p className="f13-flow">
+                            আবেদন ফরম নম্বরঃ <P13Dots min={180} />
+                          </p>
+                          <div className="f13-sign" style={{ marginTop: 34 }}>
+                            <div>গ্রহণকারীর স্বাক্ষর</div>
+                          </div>
                         </div>
                       </div>
                     </div>
