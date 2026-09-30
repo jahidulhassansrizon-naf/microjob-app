@@ -192,17 +192,17 @@ const toolsData: ToolItem[] = [
   // Tools outside the requested priority list stay at the end.
   {
     id: "3",
-    name: "Education Board Result",
-    category: "Educational",
+    name: "Change Speed",
+    category: "Video",
     bgColor: "bg-[#10ca7e]",
-    icon: GraduationCap,
+    icon: Video,
   },
   {
     id: "4",
-    name: "National University Result",
-    category: "Educational",
+    name: "Add Watermark",
+    category: "Video",
     bgColor: "bg-[#06b6d4]",
-    icon: GraduationCap,
+    icon: ImageIcon,
   },
   {
     id: "14",
@@ -280,6 +280,7 @@ const categories = [
   { name: "PDF Tools", icon: FileText },
   { name: "Image Tools", icon: ImageIcon },
   { name: "Text Tools", icon: Type },
+  { name: "Video Tools", icon: Video },
   { name: "General Tools", icon: Wrench },
   { name: "Educational Tools", icon: GraduationCap },
 ];
