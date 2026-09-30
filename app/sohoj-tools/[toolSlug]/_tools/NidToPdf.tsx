@@ -30,7 +30,6 @@ import {
   Eye,
   CheckCircle2,
 } from "lucide-react";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { createPortal } from "react-dom";
 import NidSettingsPanel from "@/components/nidToPdfComponent/NidSettingsPanel";
@@ -48,6 +47,551 @@ const AUTO_CROP_ERROR =
 const NID_CROP_WIDTH = 856;
 const NID_CROP_HEIGHT = 540;
 const NID_CROP_ASPECT_RATIO = NID_CROP_WIDTH / NID_CROP_HEIGHT;
+
+// ============================================================================
+// PRINT / PDF ENGINE — shared by handlePrint and handleCreatePdf
+// ============================================================================
+
+type SheetOrientation = "portrait" | "landscape";
+type SheetLayoutMode = "side-by-side" | "stacked";
+type SheetPosition = "top" | "center" | "bottom";
+type CardSide = "front" | "back";
+type CardFit = "cover" | "contain";
+
+const MM_PER_INCH = 25.4;
+const PAGE_SIZE_MM = { width: 210, height: 297 } as const; // A4 portrait
+// 856x540 px crop == ISO/IEC 7810 ID-1 (85.6 x 54 mm), so cards print at real size.
+const CARD_SIZE_MM = {
+  width: NID_CROP_WIDTH / 10,
+  height: NID_CROP_HEIGHT / 10,
+} as const;
+const PAGE_MARGIN_MM = 15; // safe for printers' unprintable edge
+const CARD_GAP_MM = 6; // front <-> back
+const ROW_GAP_MM = 8; // between copies
+const CARD_RADIUS_MM = 3.2; // real ID-1 corner radius
+const CARD_BORDER_MM = 0.2;
+const CARD_BORDER_COLOR = "#d1d5db";
+const EXPORT_DPI = 300;
+const JPEG_QUALITY = 0.95;
+// The on-screen sheet stays 540px wide (portrait); everything scales from this.
+const PREVIEW_PX_PER_MM = 540 / PAGE_SIZE_MM.width;
+
+interface CardFilter {
+  brightness: number; // percentages, same meaning as the CSS filter functions
+  contrast: number;
+  saturate: number;
+  grayscale: number;
+}
+
+interface CardInput {
+  file: File;
+  rotation: number;
+  fit: CardFit;
+}
+
+interface SheetExportOptions {
+  orientation: SheetOrientation;
+  layout: SheetLayoutMode;
+  position: SheetPosition;
+  copies: number;
+  roundedCorners: boolean;
+  filter: CardFilter;
+  front: CardInput | null;
+  back: CardInput | null;
+}
+
+interface Placement {
+  side: CardSide;
+  x: number; // mm from page top-left
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface SheetLayout {
+  pageWidth: number;
+  pageHeight: number;
+  pages: Placement[][];
+  scale: number;
+}
+
+const normalizeSheetRotation = (deg: number) => ((deg % 360) + 360) % 360;
+
+const isQuarterTurn = (deg: number) => normalizeSheetRotation(deg) % 180 !== 0;
+
+/** Pure layout: where every card goes on every page, in millimetres. */
+function computeSheetLayout(
+  o: Pick<
+    SheetExportOptions,
+    "orientation" | "layout" | "position" | "copies"
+  > & { frontRotation: number; backRotation: number },
+): SheetLayout {
+  const landscape = o.orientation === "landscape";
+  const pageWidth = landscape ? PAGE_SIZE_MM.height : PAGE_SIZE_MM.width;
+  const pageHeight = landscape ? PAGE_SIZE_MM.width : PAGE_SIZE_MM.height;
+  const availW = pageWidth - PAGE_MARGIN_MM * 2;
+  const availH = pageHeight - PAGE_MARGIN_MM * 2;
+
+  const dims = (rot: number) =>
+    isQuarterTurn(rot)
+      ? { w: CARD_SIZE_MM.height, h: CARD_SIZE_MM.width }
+      : { w: CARD_SIZE_MM.width, h: CARD_SIZE_MM.height };
+
+  const f = dims(o.frontRotation);
+  const b = dims(o.backRotation);
+  const stacked = o.layout === "stacked";
+
+  const rowW = stacked ? Math.max(f.w, b.w) : f.w + CARD_GAP_MM + b.w;
+  const rowH = stacked ? f.h + CARD_GAP_MM + b.h : Math.max(f.h, b.h);
+
+  // Uniform shrink only if a single row can't fit the printable area.
+  const s = Math.min(1, availW / rowW, availH / rowH);
+  const gap = CARD_GAP_MM * s;
+  const rowGap = ROW_GAP_MM * s;
+  const rowHs = rowH * s;
+  const rowWs = rowW * s;
+
+  const copies = Math.max(1, Math.floor(o.copies));
+  const rowsPerPage = Math.max(
+    1,
+    Math.floor((availH + rowGap) / (rowHs + rowGap) + 1e-9),
+  );
+  const singlePage = copies <= rowsPerPage;
+
+  const pages: Placement[][] = [];
+
+  for (let start = 0; start < copies; start += rowsPerPage) {
+    const rows = Math.min(rowsPerPage, copies - start);
+    const contentH = rows * rowHs + (rows - 1) * rowGap;
+
+    // Vertical position is honoured only when everything fits on one page.
+    let top = PAGE_MARGIN_MM;
+    if (singlePage && o.position === "center") {
+      top += (availH - contentH) / 2;
+    }
+    if (singlePage && o.position === "bottom") {
+      top += availH - contentH;
+    }
+
+    const placements: Placement[] = [];
+
+    for (let r = 0; r < rows; r++) {
+      const y0 = top + r * (rowHs + rowGap);
+      const x0 = PAGE_MARGIN_MM + (availW - rowWs) / 2;
+
+      if (stacked) {
+        placements.push({
+          side: "front",
+          x: PAGE_MARGIN_MM + (availW - f.w * s) / 2,
+          y: y0,
+          width: f.w * s,
+          height: f.h * s,
+        });
+
+        placements.push({
+          side: "back",
+          x: PAGE_MARGIN_MM + (availW - b.w * s) / 2,
+          y: y0 + f.h * s + gap,
+          width: b.w * s,
+          height: b.h * s,
+        });
+      } else {
+        placements.push({
+          side: "front",
+          x: x0,
+          y: y0 + (rowHs - f.h * s) / 2,
+          width: f.w * s,
+          height: f.h * s,
+        });
+
+        placements.push({
+          side: "back",
+          x: x0 + f.w * s + gap,
+          y: y0 + (rowHs - b.h * s) / 2,
+          width: b.w * s,
+          height: b.h * s,
+        });
+      }
+    }
+
+    pages.push(placements);
+  }
+
+  return { pageWidth, pageHeight, pages, scale: s };
+}
+
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not load card image."));
+    };
+
+    img.src = url;
+  });
+}
+
+/**
+ * Same maths as the CSS brightness/contrast/saturate/grayscale functions.
+ * Done per-pixel because ctx.filter is missing in Safari and html2canvas
+ * ignores CSS filters.
+ */
+function applyCardFilter(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  f: CardFilter,
+) {
+  const b = f.brightness / 100;
+  const k = f.contrast / 100;
+  const s = f.saturate / 100;
+  const g = Math.min(1, Math.max(0, f.grayscale / 100));
+
+  if (b === 1 && k === 1 && s === 1 && g === 0) return;
+
+  const image = ctx.getImageData(0, 0, width, height);
+  const d = image.data;
+  const clamp = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
+  const gi = 1 - g;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = clamp(d[i] * b);
+    let gr = clamp(d[i + 1] * b);
+    let bl = clamp(d[i + 2] * b);
+
+    r = clamp((r - 127.5) * k + 127.5);
+    gr = clamp((gr - 127.5) * k + 127.5);
+    bl = clamp((bl - 127.5) * k + 127.5);
+
+    const sr = clamp(
+      (0.213 + 0.787 * s) * r +
+        (0.715 - 0.715 * s) * gr +
+        (0.072 - 0.072 * s) * bl,
+    );
+    const sg = clamp(
+      (0.213 - 0.213 * s) * r +
+        (0.715 + 0.285 * s) * gr +
+        (0.072 - 0.072 * s) * bl,
+    );
+    const sb = clamp(
+      (0.213 - 0.213 * s) * r +
+        (0.715 - 0.715 * s) * gr +
+        (0.072 + 0.928 * s) * bl,
+    );
+
+    d[i] = clamp(
+      (0.2126 + 0.7874 * gi) * sr +
+        (0.7152 - 0.7152 * gi) * sg +
+        (0.0722 - 0.0722 * gi) * sb,
+    );
+    d[i + 1] = clamp(
+      (0.2126 - 0.2126 * gi) * sr +
+        (0.7152 + 0.2848 * gi) * sg +
+        (0.0722 - 0.0722 * gi) * sb,
+    );
+    d[i + 2] = clamp(
+      (0.2126 - 0.2126 * gi) * sr +
+        (0.7152 - 0.7152 * gi) * sg +
+        (0.0722 + 0.9278 * gi) * sb,
+    );
+  }
+
+  ctx.putImageData(image, 0, 0);
+}
+
+function roundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const rr = Math.min(r, w / 2, h / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+function createWhiteCanvas(width: number, height: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("Canvas context unavailable.");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  return { canvas, ctx };
+}
+
+/** Renders ONE card at print resolution: fit -> filter -> rounded corners -> border -> rotation. */
+async function renderCardCanvas(
+  input: CardInput,
+  filter: CardFilter,
+  rounded: boolean,
+): Promise<HTMLCanvasElement> {
+  const img = await loadImageFromFile(input.file);
+  const pxPerMm = EXPORT_DPI / MM_PER_INCH;
+  const w = Math.round(CARD_SIZE_MM.width * pxPerMm);
+  const h = Math.round(CARD_SIZE_MM.height * pxPerMm);
+
+  // 1) image fitted like the preview (object-cover / object-contain)
+  const base = createWhiteCanvas(w, h);
+  base.ctx.imageSmoothingEnabled = true;
+  base.ctx.imageSmoothingQuality = "high";
+
+  const k =
+    input.fit === "cover"
+      ? Math.max(w / img.naturalWidth, h / img.naturalHeight)
+      : Math.min(w / img.naturalWidth, h / img.naturalHeight);
+
+  const dw = img.naturalWidth * k;
+  const dh = img.naturalHeight * k;
+
+  base.ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+
+  // 2) filters
+  applyCardFilter(base.ctx, w, h, filter);
+
+  // 3) rounded clip + border on a white card
+  const radius = rounded ? CARD_RADIUS_MM * pxPerMm : 0;
+  const borderPx = Math.max(1, Math.round(CARD_BORDER_MM * pxPerMm));
+  const card = createWhiteCanvas(w, h);
+
+  card.ctx.save();
+  roundedRectPath(card.ctx, 0, 0, w, h, radius);
+  card.ctx.clip();
+  card.ctx.drawImage(base.canvas, 0, 0);
+  card.ctx.restore();
+
+  card.ctx.lineWidth = borderPx;
+  card.ctx.strokeStyle = CARD_BORDER_COLOR;
+  roundedRectPath(
+    card.ctx,
+    borderPx / 2,
+    borderPx / 2,
+    w - borderPx,
+    h - borderPx,
+    Math.max(0, radius - borderPx / 2),
+  );
+  card.ctx.stroke();
+
+  // 4) rotation (multiples of 90)
+  const rot = normalizeSheetRotation(input.rotation);
+  if (rot === 0) return card.canvas;
+
+  const swap = rot % 180 !== 0;
+  const out = createWhiteCanvas(swap ? h : w, swap ? w : h);
+
+  out.ctx.translate(out.canvas.width / 2, out.canvas.height / 2);
+  out.ctx.rotate((rot * Math.PI) / 180);
+  out.ctx.drawImage(card.canvas, -w / 2, -h / 2);
+
+  return out.canvas;
+}
+
+async function renderCards(o: SheetExportOptions) {
+  const [front, back] = await Promise.all([
+    o.front ? renderCardCanvas(o.front, o.filter, o.roundedCorners) : null,
+    o.back ? renderCardCanvas(o.back, o.filter, o.roundedCorners) : null,
+  ]);
+
+  return { front, back } as Record<CardSide, HTMLCanvasElement | null>;
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+) {
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("Canvas export failed.")),
+      type,
+      quality,
+    ),
+  );
+}
+
+/** PDF: exact A4, 300 DPI cards at mm coordinates, multi-page, images embedded once per side. */
+async function exportSheetToPdf(
+  o: SheetExportOptions,
+  filename = "nid-card.pdf",
+) {
+  const layout = computeSheetLayout({
+    ...o,
+    frontRotation: o.front?.rotation ?? 0,
+    backRotation: o.back?.rotation ?? 0,
+  });
+
+  const cards = await renderCards(o);
+
+  const pdf = new jsPDF({
+    orientation: o.orientation,
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+
+  pdf.setProperties({ title: "NID Card" });
+
+  const dataUrls: Partial<Record<CardSide, string>> = {};
+
+  (["front", "back"] as const).forEach((side) => {
+    const c = cards[side];
+    if (c) {
+      dataUrls[side] = c.toDataURL("image/jpeg", JPEG_QUALITY);
+    }
+  });
+
+  layout.pages.forEach((placements, pageIndex) => {
+    if (pageIndex > 0) {
+      pdf.addPage("a4", o.orientation);
+    }
+
+    placements.forEach((placement) => {
+      const url = dataUrls[placement.side];
+      if (!url) return;
+
+      // Same alias => jsPDF stores the JPEG once, however many copies are placed.
+      pdf.addImage(
+        url,
+        "JPEG",
+        placement.x,
+        placement.y,
+        placement.width,
+        placement.height,
+        `nid-${placement.side}`,
+        "NONE",
+      );
+    });
+  });
+
+  pdf.save(filename);
+}
+
+/** Print: isolated hidden iframe, @page A4, mm-positioned images. Never touches the React tree. */
+async function printSheet(o: SheetExportOptions) {
+  const layout = computeSheetLayout({
+    ...o,
+    frontRotation: o.front?.rotation ?? 0,
+    backRotation: o.back?.rotation ?? 0,
+  });
+
+  const cards = await renderCards(o);
+
+  const blobUrls: Partial<Record<CardSide, string>> = {};
+
+  for (const side of ["front", "back"] as const) {
+    const c = cards[side];
+
+    if (c) {
+      blobUrls[side] = URL.createObjectURL(
+        await canvasToBlob(c, "image/jpeg", JPEG_QUALITY),
+      );
+    }
+  }
+
+  const mm = (v: number) => `${v.toFixed(3)}mm`;
+
+  const pagesHtml = layout.pages
+    .map(
+      (placements) =>
+        `<section class="page">${placements
+          .filter((placement) => blobUrls[placement.side])
+          .map(
+            (placement) =>
+              `<img class="card" alt="" src="${blobUrls[placement.side]}" style="left:${mm(placement.x)};top:${mm(placement.y)};width:${mm(placement.width)};height:${mm(placement.height)}">`,
+          )
+          .join("")}</section>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>NID Card</title>
+<style>
+  @page { size: A4 ${o.orientation}; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* 1mm shorter than the sheet so sub-pixel rounding never spawns a blank extra page */
+  .page { position: relative; width: ${mm(layout.pageWidth)}; height: ${mm(layout.pageHeight - 1)};
+          overflow: hidden; break-after: page; page-break-after: always; }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+  .card { position: absolute; display: block; }
+</style></head><body>${pagesHtml}</body></html>`;
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.tabIndex = -1;
+
+  Object.assign(iframe.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: mm(layout.pageWidth),
+    height: mm(layout.pageHeight),
+    border: "0",
+    opacity: "0",
+    pointerEvents: "none",
+  });
+
+  let cleaned = false;
+
+  const cleanup = () => {
+    if (cleaned) return;
+
+    cleaned = true;
+    iframe.remove();
+
+    Object.values(blobUrls).forEach((url) => url && URL.revokeObjectURL(url));
+  };
+
+  try {
+    // srcdoc + onload are set BEFORE attaching (avoids the about:blank load quirk in Firefox)
+    await new Promise<void>((resolve) => {
+      iframe.onload = () => resolve();
+      iframe.srcdoc = html;
+      document.body.appendChild(iframe);
+    });
+
+    const win = iframe.contentWindow;
+    const doc = iframe.contentDocument;
+
+    if (!win || !doc) {
+      throw new Error("Print frame unavailable.");
+    }
+
+    await Promise.all(
+      Array.from(doc.images).map((img) => img.decode().catch(() => undefined)),
+    );
+
+    win.addEventListener("afterprint", cleanup, { once: true });
+    window.setTimeout(cleanup, 5 * 60 * 1000); // Safari may not fire afterprint
+    win.focus();
+    win.print();
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
+}
 
 async function canvasToPngFile(
   canvas: HTMLCanvasElement,
@@ -1190,6 +1734,7 @@ export default function NidToPdf() {
 
   const autoCropAbortRef = useRef<AbortController | null>(null);
   const autoCropRequestIdRef = useRef(0);
+  const isPrintingRef = useRef(false);
 
   const imageCount = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
 
@@ -1524,32 +2069,67 @@ export default function NidToPdf() {
     setBackRotation(nextRot);
   };
 
-  const imageFilterStyle = useMemo(() => {
+  const imageFilterParams = useMemo<CardFilter>(() => {
     let brightness = 100 + shadowRemoval * 0.4;
     let contrast = 100 + blackBoost * 0.6 + textDeepen * 0.5;
-    let sat = 100 + saturation;
-    let gray = 0;
+    let saturate = 100 + saturation;
+    let grayscale = 0;
 
     if (filterPreset === "bw") {
-      gray = 100;
+      grayscale = 100;
       contrast += 40;
-      sat = 0;
+      saturate = 0;
     }
 
-    return `brightness(${brightness}%) contrast(${contrast}%) saturate(${sat}%) grayscale(${gray}%)`;
+    return { brightness, contrast, saturate, grayscale };
   }, [shadowRemoval, blackBoost, saturation, textDeepen, filterPreset]);
 
-  const cardDim = useMemo(() => {
-    if (layout === "stacked") {
-      return { width: 260, height: 260 / NID_CROP_ASPECT_RATIO };
-    }
+  // Preview still uses the CSS string, so the JSX using imageFilterStyle keeps working.
+  const imageFilterStyle = useMemo(
+    () =>
+      `brightness(${imageFilterParams.brightness}%) contrast(${imageFilterParams.contrast}%) saturate(${imageFilterParams.saturate}%) grayscale(${imageFilterParams.grayscale}%)`,
+    [imageFilterParams],
+  );
 
-    if (orientation === "portrait") {
-      return { width: 232, height: 232 / NID_CROP_ASPECT_RATIO };
-    }
+  // Real 85.6x54mm card at the preview scale. Identical in print and PDF.
+  const cardDim = useMemo(
+    () => ({
+      width: CARD_SIZE_MM.width * PREVIEW_PX_PER_MM,
+      height: CARD_SIZE_MM.height * PREVIEW_PX_PER_MM,
+    }),
+    [],
+  );
 
-    return { width: 342, height: 342 / NID_CROP_ASPECT_RATIO };
-  }, [layout, orientation]);
+  // A4-exact preview sheet metrics.
+  const sheetPx = useMemo(() => {
+    const landscape = orientation === "landscape";
+
+    return {
+      width:
+        (landscape ? PAGE_SIZE_MM.height : PAGE_SIZE_MM.width) *
+        PREVIEW_PX_PER_MM,
+      height:
+        (landscape ? PAGE_SIZE_MM.width : PAGE_SIZE_MM.height) *
+        PREVIEW_PX_PER_MM,
+      margin: PAGE_MARGIN_MM * PREVIEW_PX_PER_MM,
+      rowGap: ROW_GAP_MM * PREVIEW_PX_PER_MM,
+      cardGap: CARD_GAP_MM * PREVIEW_PX_PER_MM,
+    };
+  }, [orientation]);
+
+  // Page count for the preview badge when many copies overflow.
+  const sheetLayout = useMemo(
+    () =>
+      computeSheetLayout({
+        orientation,
+        layout,
+        position,
+        copies,
+        frontRotation,
+        backRotation,
+      }),
+    [orientation, layout, position, copies, frontRotation, backRotation],
+  );
 
   const isFrontPortrait = frontRotation % 180 !== 0;
   const isBackPortrait = backRotation % 180 !== 0;
@@ -1559,187 +2139,54 @@ export default function NidToPdf() {
   const backWrapperWidth = isBackPortrait ? cardDim.height : cardDim.width;
   const backWrapperHeight = isBackPortrait ? cardDim.width : cardDim.height;
 
-  const handlePrint = () => {
-    const sheet = document.getElementById("printable-sheet");
-
-    if (!sheet) return;
-
-    const originalParent = sheet.parentNode;
-    const originalNextSibling = sheet.nextSibling;
-    const printContent = sheet.firstElementChild as HTMLElement | null;
-
-    const pageWidthPx = orientation === "portrait" ? 793.7008 : 1122.5197;
-    const pageHeightPx = orientation === "portrait" ? 1122.5197 : 793.7008;
-    const printPaddingPx = (20 / 25.4) * 96;
-    const availableHeightPx = Math.max(1, pageHeightPx - printPaddingPx * 2);
-
-    const rowGapPx = 24;
-    const cardGapPx = layout === "stacked" ? 16 : 12;
-
-    const naturalRowHeight =
-      layout === "stacked"
-        ? frontWrapperHeight + backWrapperHeight + cardGapPx
-        : Math.max(frontWrapperHeight, backWrapperHeight);
-
-    const naturalContentHeight =
-      copies * naturalRowHeight + Math.max(0, copies - 1) * rowGapPx;
-
-    const fitsOnSinglePage = naturalContentHeight <= availableHeightPx;
-
-    const previousTransform = printContent?.style.transform ?? "";
-    const previousTransformOrigin = printContent?.style.transformOrigin ?? "";
-    const previousHeight = printContent?.style.height ?? "";
-    const previousWidth = printContent?.style.width ?? "";
-    const previousSheetJustify = sheet.style.justifyContent;
-
-    if (printContent) {
-      printContent.style.transform = "none";
-      printContent.style.transformOrigin = "top center";
-      printContent.style.height = "auto";
-      printContent.style.width = "100%";
-    }
-
-    if (fitsOnSinglePage) {
-      sheet.style.justifyContent =
-        position === "top"
-          ? "flex-start"
-          : position === "center"
-            ? "center"
-            : "flex-end";
-    } else {
-      sheet.style.justifyContent = "flex-start";
-    }
-
-    document.body.classList.add("nid-print-mode");
-    document.body.appendChild(sheet);
-
-    let restored = false;
-
-    const restoreSheet = () => {
-      if (restored) return;
-      restored = true;
-
-      document.body.classList.remove("nid-print-mode");
-
-      if (printContent) {
-        printContent.style.transform = previousTransform;
-        printContent.style.transformOrigin = previousTransformOrigin;
-        printContent.style.height = previousHeight;
-        printContent.style.width = previousWidth;
-      }
-
-      sheet.style.justifyContent = previousSheetJustify;
-
-      if (originalParent) {
-        if (originalNextSibling) {
-          originalParent.insertBefore(sheet, originalNextSibling);
-        } else {
-          originalParent.appendChild(sheet);
+  const buildSheetExportOptions = (): SheetExportOptions => ({
+    orientation,
+    layout,
+    position,
+    copies,
+    roundedCorners,
+    filter: imageFilterParams,
+    front: frontImage
+      ? {
+          file: frontImage,
+          rotation: frontRotation,
+          fit: frontCropReviewReady ? "cover" : "contain",
         }
-      }
+      : null,
+    back: backImage
+      ? {
+          file: backImage,
+          rotation: backRotation,
+          fit: backCropReviewReady ? "cover" : "contain",
+        }
+      : null,
+  });
 
-      window.removeEventListener("afterprint", restoreSheet);
-    };
+  const handlePrint = async () => {
+    if (isPrintingRef.current || (!frontImage && !backImage)) return;
 
-    window.addEventListener("afterprint", restoreSheet);
+    isPrintingRef.current = true;
 
-    setTimeout(() => window.print(), 150);
-    setTimeout(restoreSheet, 5000);
+    try {
+      await printSheet(buildSheetExportOptions());
+    } catch (error) {
+      console.error("Error preparing print:", error);
+      setProcessingError("Could not prepare the print job. Please try again.");
+    } finally {
+      isPrintingRef.current = false;
+    }
   };
 
   const handleCreatePdf = async () => {
-    const sheet = document.getElementById("printable-sheet");
-    if (!sheet) return;
+    if (isGeneratingPdf || (!frontImage && !backImage)) return;
 
     setIsGeneratingPdf(true);
 
     try {
-      const canvas = await html2canvas(sheet, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: 1200,
-        windowHeight: 1200,
-        ignoreElements: (element) => {
-          return (
-            element.classList.contains("print:hidden") ||
-            element.tagName === "BUTTON"
-          );
-        },
-        onclone: (clonedDoc) => {
-          const clonedSheet = clonedDoc.getElementById("printable-sheet");
-
-          if (clonedSheet) {
-            clonedSheet.style.transform = "none";
-            clonedSheet.style.maxWidth = "none";
-            clonedSheet.style.maxHeight = "none";
-
-            if (orientation === "portrait") {
-              clonedSheet.style.width = "540px";
-              clonedSheet.style.minWidth = "540px";
-              clonedSheet.style.height = "760px";
-              clonedSheet.style.minHeight = "760px";
-            } else {
-              clonedSheet.style.width = "760px";
-              clonedSheet.style.minWidth = "760px";
-              clonedSheet.style.height = "540px";
-              clonedSheet.style.minHeight = "540px";
-            }
-
-            let parent = clonedSheet.parentElement;
-            while (parent && parent.tagName !== "BODY") {
-              parent.style.overflow = "visible";
-              parent.style.transform = "none";
-              parent.style.maxWidth = "none";
-              parent.style.maxHeight = "none";
-              parent = parent.parentElement;
-            }
-          }
-
-          const elements = clonedDoc.querySelectorAll("*");
-          elements.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            const computed = window.getComputedStyle(htmlEl);
-
-            if (
-              computed.color.includes("oklab") ||
-              computed.backgroundColor.includes("oklab")
-            ) {
-              htmlEl.style.color = "#000000";
-              htmlEl.style.backgroundColor = "#ffffff";
-            }
-          });
-        },
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF(orientation === "portrait" ? "p" : "l", "mm", "a4");
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgRatio = canvas.width / canvas.height;
-      const pageRatio = pdfWidth / pdfHeight;
-
-      let finalWidth = pdfWidth;
-      let finalHeight = pdfHeight;
-
-      if (imgRatio > pageRatio) {
-        finalWidth = pdfWidth;
-        finalHeight = pdfWidth / imgRatio;
-      } else {
-        finalHeight = pdfHeight;
-        finalWidth = pdfHeight * imgRatio;
-      }
-
-      const x = (pdfWidth - finalWidth) / 2;
-      const y = (pdfHeight - finalHeight) / 2;
-
-      pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
-      pdf.save("nid-card.pdf");
+      await exportSheetToPdf(buildSheetExportOptions());
     } catch (error) {
       console.error("Error generating PDF:", error);
+      setProcessingError("Could not generate the PDF. Please try again.");
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -1747,94 +2194,6 @@ export default function NidToPdf() {
 
   return (
     <div className="w-full space-y-5 text-[#0F172A] font-sans">
-      <style>{`
-        @media print {
-          @page {
-            size: A4 ${orientation};
-            margin: 0;
-          }
-
-          html,
-          body {
-            width: auto !important;
-            height: auto !important;
-            min-height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
-
-          body.nid-print-mode {
-            overflow: visible !important;
-          }
-
-          body.nid-print-mode > *:not(#printable-sheet) {
-            display: none !important;
-          }
-
-          body.nid-print-mode #printable-sheet,
-          body.nid-print-mode #printable-sheet * {
-            visibility: visible !important;
-          }
-
-          body.nid-print-mode #printable-sheet .absolute.left-1\/2.-translate-x-1\/2,
-          body.nid-print-mode #printable-sheet .absolute.z-20 {
-            display: none !important;
-          }
-
-          body.nid-print-mode #printable-sheet {
-            position: static !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
-            width: ${orientation === "portrait" ? "210mm" : "297mm"} !important;
-            height: auto !important;
-            min-height: 0 !important;
-            max-height: none !important;
-            margin: 0 !important;
-            padding: 20mm !important;
-            box-sizing: border-box !important;
-            overflow: visible !important;
-            background: white !important;
-            box-shadow: none !important;
-            border: none !important;
-            transform: none !important;
-            transform-origin: top center !important;
-            page-break-before: auto !important;
-            page-break-after: auto !important;
-            page-break-inside: auto !important;
-            break-before: auto !important;
-            break-after: auto !important;
-            break-inside: auto !important;
-          }
-
-          body.nid-print-mode #printable-sheet > div:first-child {
-            transform: none !important;
-            transform-origin: top center !important;
-            height: auto !important;
-            width: 100% !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-            flex: 0 0 auto !important;
-            page-break-inside: auto !important;
-            break-inside: auto !important;
-          }
-
-          body.nid-print-mode #printable-sheet > div:first-child > div {
-            page-break-inside: avoid !important;
-            break-inside: avoid-page !important;
-          }
-
-          body.nid-print-mode #printable-sheet button,
-          body.nid-print-mode #printable-sheet input,
-          body.nid-print-mode #printable-sheet label,
-          body.nid-print-mode #printable-sheet .group-hover\\:opacity-100 {
-            display: none !important;
-          }
-        }
-      `}</style>
-
       {croppingSide === "front" && frontImage && (
         <CropModal
           file={frontCropSource ?? frontImage}
@@ -1978,7 +2337,9 @@ export default function NidToPdf() {
                     B
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#0F172A]">Back only</p>
+                    <p className="text-xs font-bold text-[#0F172A]">
+                      Back only
+                    </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       Auto-crop only the back side.
                     </p>
@@ -2112,7 +2473,10 @@ export default function NidToPdf() {
             <div className="flex items-center gap-2">
               <h2 className="text-xs font-bold text-[#0F172A]">Live preview</h2>
               <span className="text-[10px] text-gray-400 font-medium">
-                A4 — 794×1123 px
+                A4 — 210 × 297 mm
+                {sheetLayout.pages.length > 1
+                  ? ` · ${sheetLayout.pages.length} pages`
+                  : ""}
               </span>
             </div>
 
@@ -2180,31 +2544,33 @@ export default function NidToPdf() {
           <div className="relative bg-[#f3f4f6] border border-gray-200/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-[620px] overflow-auto [background-image:radial-gradient(#94a3b8_1.2px,transparent_1.2px)] [background-size:16px_16px]">
             <div
               id="printable-sheet"
-              className={`bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-gray-200/60 transition-all duration-300 p-8 flex flex-col items-center ${
-                orientation === "portrait"
-                  ? "w-[540px] min-h-[760px]"
-                  : "w-[760px] min-h-[540px]"
-              } ${
-                position === "top"
-                  ? "justify-start pt-10"
-                  : position === "center"
-                    ? "justify-center"
-                    : "justify-end pb-10"
-              }`}
+              className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-gray-200/60 transition-all duration-300 flex flex-col items-center shrink-0"
               style={{
+                width: sheetPx.width,
+                minHeight: sheetPx.height,
+                padding: sheetPx.margin,
+                boxSizing: "border-box",
+                justifyContent:
+                  position === "top"
+                    ? "flex-start"
+                    : position === "center"
+                      ? "center"
+                      : "flex-end",
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: "top center",
               }}
             >
-              <div className="w-full space-y-6 flex flex-col items-center">
+              <div
+                className="w-full flex flex-col items-center"
+                style={{ rowGap: sheetPx.rowGap }}
+              >
                 {Array.from({ length: copies }).map((_, copyIndex) => (
                   <div
                     key={copyIndex}
                     className={`relative w-full flex justify-center items-center ${
-                      layout === "side-by-side"
-                        ? "flex-row gap-3"
-                        : "flex-col gap-4"
+                      layout === "side-by-side" ? "flex-row" : "flex-col"
                     }`}
+                    style={{ gap: sheetPx.cardGap }}
                   >
                     {copyIndex === 0 && imageCount > 0 && (
                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900/90 text-white rounded-full p-1 flex items-center gap-1 shadow-xl border border-slate-700/50 z-20 backdrop-blur-xs print:hidden">
@@ -2249,7 +2615,7 @@ export default function NidToPdf() {
                     >
                       <div
                         className={`absolute overflow-hidden transition-all duration-300 ${
-                          roundedCorners ? "rounded-[14px]" : "rounded-none"
+                          roundedCorners ? "rounded-[8px]" : "rounded-none"
                         }`}
                         style={{
                           width: cardDim.width,
@@ -2412,7 +2778,7 @@ export default function NidToPdf() {
                     >
                       <div
                         className={`absolute overflow-hidden transition-all duration-300 ${
-                          roundedCorners ? "rounded-[14px]" : "rounded-none"
+                          roundedCorners ? "rounded-[8px]" : "rounded-none"
                         }`}
                         style={{
                           width: cardDim.width,
@@ -2646,8 +3012,7 @@ export default function NidToPdf() {
             href="/sohoj-tools/remove-background"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
-            </div>
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform"></div>
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background
