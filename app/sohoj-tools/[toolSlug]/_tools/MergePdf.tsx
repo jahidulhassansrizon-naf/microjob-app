@@ -282,12 +282,12 @@ export default function MergePdf() {
   };
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-[#0F172A]">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
+          className="flex items-center gap-1 hover:text-[#2563EB] transition-colors"
         >
           <ArrowLeft size={14} />
 
@@ -304,9 +304,9 @@ export default function MergePdf() {
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
+          <div className="w-12 h-12 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#4F46E5]/20">
             <Combine size={24} />
           </div>
 
@@ -314,23 +314,23 @@ export default function MergePdf() {
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-[#0F172A]">Merge PDFs</h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-xs text-[#0F172A] font-medium mt-0.5">
               Combine multiple PDF files into one document in your chosen order.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Star size={16} />
           </button>
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Share2 size={16} />
           </button>
         </div>
@@ -340,7 +340,7 @@ export default function MergePdf() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Side: Upload Zone */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
             <h2 className="text-xs font-bold text-[#0F172A]">
               Files ({selectedFiles.length})
             </h2>
@@ -351,11 +351,11 @@ export default function MergePdf() {
               onDragLeave={handleDragLeaveZone}
               className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
                 isDraggingOverZone
-                  ? "border-red-400 bg-red-50/70"
-                  : "border-red-200 bg-red-50/30 hover:bg-red-50/60"
+                  ? "border-[#2563EB] bg-[#2563EB]/10"
+                  : "border-[#2563EB]/30 bg-[#2563EB]/5 hover:bg-[#2563EB]/10"
               }`}
             >
-              <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                 <Upload size={20} />
               </div>
 
@@ -363,7 +363,7 @@ export default function MergePdf() {
                 Drop PDF files here or click to upload
               </span>
 
-              <span className="text-[10px] text-gray-400 font-medium mt-1">
+              <span className="text-[10px] text-[#0F172A] font-medium mt-1">
                 PDF files, max 500 MB each (at least 2)
               </span>
 
@@ -387,19 +387,19 @@ export default function MergePdf() {
                     onDragOver={(e) => handleItemDragOver(e, idx)}
                     onDrop={() => handleItemDrop(idx)}
                     onDragEnd={handleItemDragEnd}
-                    className={`bg-gray-50 border rounded-xl p-2.5 flex items-center justify-between group transition-all ${
+                    className={`bg-[#F8FAFC] border rounded-xl p-2.5 flex items-center justify-between group transition-all ${
                       dragOverIndex === idx && dragIndex !== idx
-                        ? "border-red-400 bg-red-50/50"
-                        : "border-gray-200"
+                        ? "border-[#2563EB] bg-[#2563EB]/5"
+                        : "border-[#0F172A]/10"
                     } ${dragIndex === idx ? "opacity-50" : "opacity-100"}`}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <GripVertical
                         size={14}
-                        className="text-gray-400 cursor-grab"
+                        className="text-[#0F172A] cursor-grab"
                       />
 
-                      <div className="w-7 h-7 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 bg-[#2563EB]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
                         <FileText size={14} />
                       </div>
 
@@ -408,7 +408,7 @@ export default function MergePdf() {
                           {file.name}
                         </p>
 
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-[10px] text-[#0F172A]">
                           {(file.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
                       </div>
@@ -416,7 +416,7 @@ export default function MergePdf() {
 
                     <button
                       onClick={() => handleRemoveFile(idx)}
-                      className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                      className="p-1 text-[#0F172A] hover:text-[#4F46E5] rounded-lg transition-colors"
                     >
                       <X size={14} />
                     </button>
@@ -428,19 +428,19 @@ export default function MergePdf() {
         </div>
 
         {/* Right Side: Merge Preview */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[480px]">
+        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-[#0F172A]">Merge preview</h2>
 
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
-                  ? "bg-red-100 text-red-600"
+                  ? "bg-[#2563EB]/10 text-[#0F172A]"
                   : result
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-[#10B981]/10 text-[#10B981]"
                     : isProcessing
                       ? "bg-[#E2E8F0] text-[#2563EB]"
-                      : "bg-gray-100 text-gray-500"
+                      : "bg-[#F8FAFC] text-[#0F172A]"
               }`}
             >
               {errorMessage
@@ -457,39 +457,39 @@ export default function MergePdf() {
 
           {/* Empty / Preview / Processing / Result state */}
           {isProcessing ? (
-            <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+            <div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3" />
 
               <p className="text-xs font-bold text-[#0F172A]">
                 Merging your PDFs…
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-[#0F172A] mt-1">
                 Everything runs in your browser — larger files take a little
                 longer.
               </p>
             </div>
           ) : errorMessage ? (
-            <div className="bg-red-50/60 rounded-2xl border border-dashed border-red-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
+            <div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#2563EB]/30 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#2563EB]/30">
                 <AlertCircle size={20} />
               </div>
 
-              <p className="text-xs font-bold text-red-700">Merge failed</p>
+              <p className="text-xs font-bold text-[#0F172A]">Merge failed</p>
 
-              <p className="text-[11px] text-red-500 mt-1 max-w-xs">
+              <p className="text-[11px] text-[#4F46E5] mt-1 max-w-xs">
                 {errorMessage}
               </p>
             </div>
           ) : result ? (
             <div className="my-auto py-10 flex flex-col items-center gap-5">
-              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-100">
+              <div className="w-12 h-12 bg-[#10B981]/5 text-[#10B981] rounded-xl flex items-center justify-center border border-[#10B981]/20">
                 <CheckCircle2 size={24} />
               </div>
 
               <div className="flex items-center gap-4 sm:gap-8">
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide">
                     Files merged
                   </p>
 
@@ -499,7 +499,7 @@ export default function MergePdf() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide">
                     Total pages
                   </p>
 
@@ -509,11 +509,11 @@ export default function MergePdf() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide">
                     File size
                   </p>
 
-                  <p className="text-sm font-bold text-emerald-600">
+                  <p className="text-sm font-bold text-[#10B981]">
                     {formatBytes(result.size)}
                   </p>
                 </div>
@@ -521,15 +521,15 @@ export default function MergePdf() {
 
               <button
                 onClick={handleDownload}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-red-600 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#2563EB]/90 transition-all"
               >
                 <Download size={14} />
                 Download merged PDF
               </button>
             </div>
           ) : selectedFiles.length < 2 ? (
-            <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
+            <div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
                 <FileText size={20} />
               </div>
 
@@ -537,7 +537,7 @@ export default function MergePdf() {
                 Add at least two PDFs
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-[#0F172A] mt-1">
                 Arrange them in order, then merge into one file.
               </p>
             </div>
@@ -546,13 +546,13 @@ export default function MergePdf() {
               {selectedFiles.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex flex-col items-center text-center relative group"
+                  className="bg-[#F8FAFC] border border-[#0F172A]/10 p-3 rounded-xl flex flex-col items-center text-center relative group"
                 >
-                  <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute top-2 left-2 bg-[#2563EB] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                     {index + 1}
                   </span>
 
-                  <div className="w-12 h-16 bg-white border border-gray-200 rounded-md shadow-2xs flex items-center justify-center my-2 text-red-500">
+                  <div className="w-12 h-16 bg-white border border-[#0F172A]/10 rounded-md shadow-2xs flex items-center justify-center my-2 text-[#4F46E5]">
                     <FileText size={20} />
                   </div>
 
@@ -569,17 +569,17 @@ export default function MergePdf() {
       </div>
 
       {/* Bottom Status & Actions */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+      <div className="bg-white p-3.5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-medium text-[#0F172A]">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               errorMessage
-                ? "bg-red-500"
+                ? "bg-[#2563EB]"
                 : result
-                  ? "bg-emerald-500"
+                  ? "bg-[#10B981]"
                   : isProcessing
                     ? "bg-[#2563EB] animate-pulse"
-                    : "bg-gray-400"
+                    : "bg-[#0F172A]/40"
             }`}
           />
 
@@ -601,7 +601,7 @@ export default function MergePdf() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
+            className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-[#F8FAFC] transition-all"
           >
             Reset
           </button>
@@ -611,8 +611,8 @@ export default function MergePdf() {
             disabled={selectedFiles.length < 2 || isProcessing}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               selectedFiles.length >= 2 && !isProcessing
-                ? "bg-red-500 text-white shadow-xs hover:bg-red-600"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
+                : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"
             }`}
           >
             {isProcessing ? (
@@ -627,8 +627,8 @@ export default function MergePdf() {
       </div>
 
       {/* Security Info Banner */}
-      <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
-        <Lock size={15} className="text-emerald-600 shrink-0" />
+      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
+        <Lock size={15} className="text-[#10B981] shrink-0" />
 
         <span>
           Your files are processed in the browser — they are not uploaded to any
@@ -637,10 +637,10 @@ export default function MergePdf() {
       </div>
 
       {/* How to use Accordion */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="text-[#2563EB]">?</span>
@@ -652,7 +652,7 @@ export default function MergePdf() {
         </button>
 
         {showHowToUse && (
-          <div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3">
+          <div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3">
             Drag and drop multiple PDF files into the upload box. Reorder them
             as needed, then click "Merge PDFs" to combine all pages into a
             single document.
@@ -669,18 +669,18 @@ export default function MergePdf() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors">
                 Compress PDF
               </h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
               </p>
@@ -689,18 +689,18 @@ export default function MergePdf() {
 
           <Link
             href="/sohoj-tools/split-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <FileCode size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors">
                 Split PDF
               </h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1">
                 Extract specific pages or split every page into separate files.
               </p>
             </div>

@@ -133,7 +133,7 @@ function CreditLine() {
           '"Trebuchet MS", "Noto Sans Bengali", "Segoe UI", sans-serif',
       }}
     >
-      <span className="font-semibold text-slate-600">সৃজন</span>
+      <span className="font-semibold text-slate-600">srizon</span>
       <span className="mx-1.5 text-slate-300">·</span>
       Crafted with{" "}
       <Heart

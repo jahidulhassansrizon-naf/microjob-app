@@ -561,12 +561,12 @@ export default function PdfToImage() {
   const canConvert = !!selectedFile && !isProcessing;
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-[#0F172A]">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
+          className="flex items-center gap-1 hover:text-[#2563EB] transition-colors"
         >
           <ArrowLeft size={14} />
 
@@ -583,9 +583,9 @@ export default function PdfToImage() {
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
+          <div className="w-12 h-12 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#4F46E5]/20">
             <FileImage size={24} />
           </div>
 
@@ -593,23 +593,23 @@ export default function PdfToImage() {
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-[#0F172A]">PDF to Image</h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-xs text-[#0F172A] font-medium mt-0.5">
               Convert each PDF page to PNG, JPG, WebP, or AVIF.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Star size={16} />
           </button>
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Share2 size={16} />
           </button>
         </div>
@@ -620,13 +620,13 @@ export default function PdfToImage() {
         {/* Left Side: Controls & Upload */}
         <div className="lg:col-span-4 space-y-4">
           {/* Upload Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-[#0F172A]">
                 Files ({selectedFile ? 1 : 0})
               </h2>
 
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#4F46E5] bg-[#4F46E5]/10 hover:bg-[#2563EB]/10 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#4F46E5]/20">
                 <Plus size={12} />
 
                 <span>Add</span>
@@ -641,8 +641,8 @@ export default function PdfToImage() {
             </div>
 
             {!selectedFile ? (
-              <label className="border-2 border-dashed border-red-200 bg-red-50/30 hover:bg-red-50/60 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
-                <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+              <label className="border-2 border-dashed border-[#2563EB]/30 bg-[#2563EB]/5 hover:bg-[#2563EB]/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
 
@@ -650,7 +650,7 @@ export default function PdfToImage() {
                   Drop PDF files here or click to upload
                 </span>
 
-                <span className="text-[10px] text-gray-400 font-medium mt-1">
+                <span className="text-[10px] text-[#0F172A] font-medium mt-1">
                   PDF files, max 500 MB each
                 </span>
 
@@ -662,9 +662,9 @@ export default function PdfToImage() {
                 />
               </label>
             ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+              <div className="bg-[#F8FAFC] border border-[#0F172A]/10 rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#2563EB]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
 
@@ -673,7 +673,7 @@ export default function PdfToImage() {
                       {selectedFile.name}
                     </p>
 
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[10px] text-[#0F172A]">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
@@ -681,7 +681,7 @@ export default function PdfToImage() {
 
                 <button
                   onClick={handleReset}
-                  className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                  className="p-1 text-[#0F172A] hover:text-[#4F46E5] rounded-lg transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -690,7 +690,7 @@ export default function PdfToImage() {
           </div>
 
           {/* Image Format Selector Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
             <h2 className="text-xs font-bold text-[#0F172A]">Image format</h2>
 
             <div className="grid grid-cols-4 gap-2">
@@ -700,8 +700,8 @@ export default function PdfToImage() {
                   onClick={() => handleFormatChange(fmt)}
                   className={`py-2 text-xs font-bold rounded-xl border transition-all ${
                     imageFormat === fmt
-                      ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
-                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                      ? "border-[#2563EB] bg-[#2563EB]/5 text-[#2563EB] shadow-2xs"
+                      : "border-[#0F172A]/10 bg-white text-[#0F172A] hover:bg-white"
                   }`}
                 >
                   {fmt}
@@ -711,7 +711,7 @@ export default function PdfToImage() {
           </div>
 
           {/* Resolution Selector Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
             <h2 className="text-xs font-bold text-[#0F172A]">Resolution</h2>
 
             <div className="space-y-2">
@@ -720,13 +720,13 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("standard")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "standard"
-                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
-                    : "border-gray-200 bg-white hover:bg-gray-50"
+                    ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
+                    : "border-[#0F172A]/10 bg-white hover:bg-white"
                 }`}
               >
                 <p className="text-xs font-bold text-[#0F172A]">Standard</p>
 
-                <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5">
                   96 DPI — good for screen and sharing
                 </p>
               </button>
@@ -736,13 +736,13 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("high")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "high"
-                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
-                    : "border-gray-200 bg-white hover:bg-gray-50"
+                    ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
+                    : "border-[#0F172A]/10 bg-white hover:bg-white"
                 }`}
               >
                 <p className="text-xs font-bold text-[#0F172A]">High</p>
 
-                <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5">
                   144 DPI — sharper text and details
                 </p>
               </button>
@@ -752,13 +752,13 @@ export default function PdfToImage() {
                 onClick={() => handleResolutionChange("ultra")}
                 className={`w-full p-3 text-left rounded-xl border transition-all ${
                   resolution === "ultra"
-                    ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#0F172A] shadow-2xs"
-                    : "border-gray-200 bg-white hover:bg-gray-50"
+                    ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
+                    : "border-[#0F172A]/10 bg-white hover:bg-white"
                 }`}
               >
                 <p className="text-xs font-bold text-[#0F172A]">Ultra high</p>
 
-                <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5">
                   216 DPI — best for print
                 </p>
               </button>
@@ -767,21 +767,21 @@ export default function PdfToImage() {
         </div>
 
         {/* Right Side: Preview */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[520px]">
+        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[520px]">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-[#0F172A]">Preview</h2>
 
             <span
               className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                 errorMessage
-                  ? "bg-red-100 text-red-600"
+                  ? "bg-[#2563EB]/10 text-[#0F172A]"
                   : pages
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-[#10B981]/10 text-[#10B981]"
                     : isProcessing
                       ? "bg-[#E2E8F0] text-[#2563EB]"
                       : selectedFile
                         ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-500"
+                        : "bg-[#F8FAFC] text-[#0F172A]"
               }`}
             >
               {errorMessage
@@ -797,30 +797,30 @@ export default function PdfToImage() {
           </div>
 
           {isProcessing ? (
-            <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+            <div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3" />
 
               <p className="text-xs font-bold text-[#0F172A]">
                 Rendering your PDF…
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-[#0F172A] mt-1">
                 {progress && progress.total > 0
                   ? `Page ${progress.done} of ${progress.total}`
                   : "Getting started…"}
               </p>
             </div>
           ) : errorMessage ? (
-            <div className="bg-red-50/60 rounded-2xl border border-dashed border-red-200 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
+            <div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#2563EB]/30 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#2563EB]/30">
                 <AlertCircle size={20} />
               </div>
 
-              <p className="text-xs font-bold text-red-700">
+              <p className="text-xs font-bold text-[#0F172A]">
                 Conversion failed
               </p>
 
-              <p className="text-[11px] text-red-500 mt-1 max-w-xs">
+              <p className="text-[11px] text-[#4F46E5] mt-1 max-w-xs">
                 {errorMessage}
               </p>
             </div>
@@ -828,7 +828,7 @@ export default function PdfToImage() {
             <div className="my-auto py-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-100">
+                  <div className="w-8 h-8 bg-[#10B981]/10 text-[#10B981] rounded-lg flex items-center justify-center border border-[#10B981]/20">
                     <CheckCircle2 size={16} />
                   </div>
 
@@ -841,7 +841,7 @@ export default function PdfToImage() {
                 {pages.length > 1 && (
                   <button
                     onClick={downloadAllAsZip}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-red-600 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-[#2563EB]/90 transition-all"
                   >
                     <Download size={12} />
                     Download all (.zip)
@@ -853,9 +853,9 @@ export default function PdfToImage() {
                 {pages.map((page) => (
                   <div
                     key={page.pageNumber}
-                    className="bg-gray-50 border border-gray-200 p-2.5 rounded-xl flex flex-col items-center text-center gap-1.5"
+                    className="bg-[#F8FAFC] border border-[#0F172A]/10 p-2.5 rounded-xl flex flex-col items-center text-center gap-1.5"
                   >
-                    <div className="w-full aspect-[3/4] bg-white border border-gray-200 rounded-md overflow-hidden flex items-center justify-center">
+                    <div className="w-full aspect-[3/4] bg-white border border-[#0F172A]/10 rounded-md overflow-hidden flex items-center justify-center">
                       <img
                         src={page.thumbnailUrl}
                         alt={`Page ${page.pageNumber}`}
@@ -867,13 +867,13 @@ export default function PdfToImage() {
                       Page {page.pageNumber}
                     </p>
 
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[10px] text-[#0F172A]">
                       {formatBytes(page.blob.size)} · {page.format}
                     </p>
 
                     <button
                       onClick={() => downloadPage(page)}
-                      className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all"
+                      className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-[#0F172A]/10 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-[#E2E8F0] transition-all"
                     >
                       <Download size={11} />
                       Download
@@ -883,8 +883,8 @@ export default function PdfToImage() {
               </div>
             </div>
           ) : (
-            <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
+            <div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
                 <FileText size={20} />
               </div>
 
@@ -892,7 +892,7 @@ export default function PdfToImage() {
                 Add files to get started
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-[#0F172A] mt-1">
                 Your result will appear here after you run the tool.
               </p>
             </div>
@@ -903,17 +903,17 @@ export default function PdfToImage() {
       </div>
 
       {/* Bottom Status & Action Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+      <div className="bg-white p-3.5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-medium text-[#0F172A]">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               errorMessage
-                ? "bg-red-500"
+                ? "bg-[#2563EB]"
                 : pages
-                  ? "bg-emerald-500"
+                  ? "bg-[#10B981]"
                   : isProcessing
                     ? "bg-[#2563EB] animate-pulse"
-                    : "bg-gray-400"
+                    : "bg-[#0F172A]/40"
             }`}
           />
 
@@ -937,7 +937,7 @@ export default function PdfToImage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
+            className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-white transition-all"
           >
             Reset
           </button>
@@ -947,8 +947,8 @@ export default function PdfToImage() {
             disabled={!canConvert}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               canConvert
-                ? "bg-red-500 text-white shadow-xs hover:bg-red-600"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
+                : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"
             }`}
           >
             {isProcessing ? (
@@ -963,8 +963,8 @@ export default function PdfToImage() {
       </div>
 
       {/* Security Banner */}
-      <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
-        <Lock size={15} className="text-emerald-600 shrink-0" />
+      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
+        <Lock size={15} className="text-[#10B981] shrink-0" />
 
         <span>
           Your files are processed in the browser — they are not uploaded to any
@@ -973,10 +973,10 @@ export default function PdfToImage() {
       </div>
 
       {/* How to use Accordion */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="text-[#2563EB]">?</span>
@@ -988,7 +988,7 @@ export default function PdfToImage() {
         </button>
 
         {showHowToUse && (
-          <div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3">
+          <div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3">
             Upload your PDF, choose your preferred image format (JPG, PNG, WebP,
             or AVIF) and resolution quality, then click "Convert to images" to
             extract pages as image files.
@@ -1005,18 +1005,18 @@ export default function PdfToImage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors">
                 Compress PDF
               </h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1">
                 Shrink embedded photos and scans inside a PDF — text stays
                 sharp.
               </p>
@@ -1025,18 +1025,18 @@ export default function PdfToImage() {
 
           <Link
             href="/sohoj-tools/merge-pdfs"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors">
                 Merge PDFs
               </h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1">
                 Combine multiple PDF files into one document in your chosen
                 order.
               </p>

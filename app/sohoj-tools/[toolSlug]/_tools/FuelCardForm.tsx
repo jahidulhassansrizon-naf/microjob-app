@@ -1489,6 +1489,11 @@ export default function FuelCardForm() {
     if (!el) return;
     if (el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)
       return;
+
+    // Prevent browser text/image selection while using click-and-drag
+    // to pan the A4 preview. The custom pointer-drag scrolling still works.
+    event.preventDefault();
+
     setDragging(true);
     dragRef.current = {
       x: event.clientX,
@@ -1818,7 +1823,7 @@ export default function FuelCardForm() {
 
               <div
                 ref={viewportRef}
-                className="relative overflow-auto bg-[#334155]"
+                className="relative overflow-auto bg-[#334155] select-none touch-none"
                 style={viewportStyle}
                 onPointerDown={onPreviewPointerDown}
                 onPointerMove={onPreviewPointerMove}

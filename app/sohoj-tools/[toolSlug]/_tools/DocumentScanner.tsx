@@ -2547,7 +2547,7 @@ export default function DocumentScanner() {
               ? `আগে ${ENHANCE_LABEL} করুন, তারপর ${label} চালু হবে`
               : undefined
           }
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-emerald-600 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#2563EB] text-white" : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#334155] hover:bg-[#E2E8F0]"}`}
         >
           {active ? <Check size={14} /> : icon}
           {label}
@@ -2567,7 +2567,7 @@ export default function DocumentScanner() {
               : `${label} যোগ করুন`
           }
           aria-label={active ? `Remove ${label}` : `Add ${label}`}
-          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"}`}
+          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-[#E2E8F0] text-[#475569] hover:bg-[#E2E8F0]"}`}
         >
           {active ? <Minus size={14} /> : <Plus size={14} />}
         </button>
@@ -2597,7 +2597,7 @@ export default function DocumentScanner() {
             }}
             disabled={busy}
             aria-pressed={active}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-emerald-600 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#2563EB] text-white" : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#334155] hover:bg-[#E2E8F0]"}`}
           >
             {active ? <Check size={14} /> : <Sparkles size={14} />}
             {ENHANCE_LABEL}
@@ -2626,7 +2626,7 @@ export default function DocumentScanner() {
             aria-label={
               active ? `Remove ${ENHANCE_LABEL}` : `Add ${ENHANCE_LABEL}`
             }
-            className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"}`}
+            className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-white border-red-200 text-red-600 hover:bg-red-50" : "bg-white border-[#E2E8F0] text-[#475569] hover:bg-[#E2E8F0]"}`}
           >
             {active ? <Minus size={14} /> : <Plus size={14} />}
           </button>
@@ -2637,7 +2637,7 @@ export default function DocumentScanner() {
             type="button"
             onClick={() => handleApplyEffect("enhance")}
             disabled={busy || atMax}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] hover:bg-[#DBEAFE] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCw size={14} />
             {atMax
@@ -2650,7 +2650,7 @@ export default function DocumentScanner() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-[#0F172A] font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans p-3 sm:p-4 lg:p-6 select-none flex flex-col justify-between">
       <canvas ref={processedCanvasRef} className="hidden" />
 
       <input
@@ -2681,13 +2681,13 @@ export default function DocumentScanner() {
           <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               href="/sohoj-tools"
-              className="p-1.5 sm:p-2 text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#475569] hover:bg-[#E2E8F0]/60 rounded-lg transition-colors cursor-pointer"
               title="Back to Tools"
             >
               <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
             </Link>
 
-            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold shadow-xs shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold shadow-xs shrink-0">
               <Printer size={18} className="sm:w-5 sm:h-5" />
             </div>
 
@@ -2695,14 +2695,14 @@ export default function DocumentScanner() {
               <h1 className="text-base sm:text-lg font-bold text-[#0F172A] leading-tight">
                 Document Print
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
+              <p className="text-[11px] sm:text-xs text-[#64748B] font-medium">
                 All kind of documents print ready.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 sm:p-1 shadow-xs mr-1 sm:mr-2">
+            <div className="flex items-center bg-white border border-[#E2E8F0] rounded-lg p-0.5 sm:p-1 shadow-xs mr-1 sm:mr-2">
               <button
                 onClick={() => handlePageNavigation(-1)}
                 disabled={
@@ -2712,14 +2712,14 @@ export default function DocumentScanner() {
                   isManualCropping ||
                   isSavingDocument
                 }
-                className="p-1 sm:p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="p-1 sm:p-1.5 text-[#475569] hover:bg-[#E2E8F0] rounded-md transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Previous document page"
                 aria-label="Previous document page"
               >
                 <ChevronLeft size={18} />
               </button>
 
-              <div className="min-w-[34px] px-1 text-center text-[10px] sm:text-[11px] font-bold text-slate-500 tabular-nums">
+              <div className="min-w-[34px] px-1 text-center text-[10px] sm:text-[11px] font-bold text-[#64748B] tabular-nums">
                 {images.length > 0
                   ? `${selectedIndex + 1}/${images.length}`
                   : "0/0"}
@@ -2734,7 +2734,7 @@ export default function DocumentScanner() {
                   isManualCropping ||
                   isSavingDocument
                 }
-                className="p-1 sm:p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="p-1 sm:p-1.5 text-[#475569] hover:bg-[#E2E8F0] rounded-md transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Next document page"
                 aria-label="Next document page"
               >
@@ -2744,7 +2744,7 @@ export default function DocumentScanner() {
               <button
                 onClick={() => setIsComparing(!isComparing)}
                 disabled={images.length === 0}
-                className={`p-1 sm:p-1.5 rounded-md transition-colors cursor-pointer ${isComparing ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-100"} disabled:opacity-40 disabled:cursor-not-allowed`}
+                className={`p-1 sm:p-1.5 rounded-md transition-colors cursor-pointer ${isComparing ? "bg-[#2563EB] text-white" : "text-[#475569] hover:bg-[#E2E8F0]"} disabled:opacity-40 disabled:cursor-not-allowed`}
                 title="Compare Original & Cleaned"
               >
                 <Columns size={15} />
@@ -2760,7 +2760,7 @@ export default function DocumentScanner() {
                 isManualCropping ||
                 isSavingDocument
               }
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-[#047857] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#A7F3D0] rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Save the current final document to Cloudinary and MongoDB"
             >
               {isSavingDocument ? (
@@ -2784,7 +2784,7 @@ export default function DocumentScanner() {
               disabled={
                 images.length === 0 || isPythonLoading || isSavingDocument
               }
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-[#047857] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#A7F3D0] rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Printer size={14} />
               <span>Print</span>
@@ -2795,7 +2795,7 @@ export default function DocumentScanner() {
               disabled={
                 images.length === 0 || isPythonLoading || isSavingDocument
               }
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileDown size={14} />
               <span>PDF download</span>
@@ -2810,7 +2810,7 @@ export default function DocumentScanner() {
                 link.click();
               }}
               disabled={images.length === 0}
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={14} />
               <span>Download</span>
@@ -2819,11 +2819,11 @@ export default function DocumentScanner() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 items-start">
-          <div className="flex-1 w-full bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[500px] sm:min-h-[600px] lg:min-h-[720px]">
+          <div className="flex-1 w-full bg-white border border-[#E2E8F0] rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[500px] sm:min-h-[600px] lg:min-h-[720px]">
             <div className="flex flex-col md:flex-row gap-3 sm:gap-4 h-full flex-1">
               <div className="flex md:flex-col gap-2.5 shrink-0 overflow-x-auto md:overflow-y-auto max-h-none md:max-h-[600px] pb-2 md:pb-0 scrollbar-thin">
-                <label className="w-14 h-18 sm:w-16 sm:h-20 shrink-0 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center cursor-pointer transition-colors">
-                  <Plus size={20} className="text-slate-600 sm:w-6 sm:h-6" />
+                <label className="w-14 h-18 sm:w-16 sm:h-20 shrink-0 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl flex items-center justify-center cursor-pointer transition-colors">
+                  <Plus size={20} className="text-[#475569] sm:w-6 sm:h-6" />
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -2838,7 +2838,7 @@ export default function DocumentScanner() {
                   <div
                     key={`${imgSrc}-${idx}`}
                     onClick={() => requestPageNavigation(idx)}
-                    className={`w-14 h-18 sm:w-16 sm:h-20 shrink-0 rounded-xl border-2 overflow-hidden relative cursor-pointer shadow-xs transition-all ${selectedIndex === idx ? "border-emerald-600 ring-2 ring-emerald-500/20 scale-102" : "border-slate-200 opacity-80 hover:opacity-100"}`}
+                    className={`w-14 h-18 sm:w-16 sm:h-20 shrink-0 rounded-xl border-2 overflow-hidden relative cursor-pointer shadow-xs transition-all ${selectedIndex === idx ? "border-[#2563EB] ring-2 ring-[#2563EB]/20 scale-102" : "border-[#E2E8F0] opacity-80 hover:opacity-100"}`}
                   >
                     <img
                       src={imgSrc}
@@ -2858,13 +2858,13 @@ export default function DocumentScanner() {
                 ))}
               </div>
 
-              <div className="flex-1 bg-slate-200/60 border border-slate-200 rounded-xl flex items-center justify-center p-2 sm:p-4 relative overflow-hidden min-h-[380px] sm:min-h-[480px] lg:min-h-[620px]">
+              <div className="flex-1 bg-[#E2E8F0]/60 border border-[#E2E8F0] rounded-xl flex items-center justify-center p-2 sm:p-4 relative overflow-hidden min-h-[380px] sm:min-h-[480px] lg:min-h-[620px]">
                 {images.length > 0 && (
-                  <div className="absolute top-3 right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-md border border-slate-200">
+                  <div className="absolute top-3 right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-md border border-[#E2E8F0]">
                     <button
                       onClick={handleReset}
                       disabled={isPythonLoading || isSavingDocument}
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Reset all edits, crops, and adjustments to original state"
                     >
                       <RotateCcw size={15} />
@@ -2874,21 +2874,21 @@ export default function DocumentScanner() {
                     <button
                       onClick={() => replaceFileInputRef.current?.click()}
                       disabled={isPythonLoading || isSavingDocument}
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Replace current image with a new file"
                     >
                       <ImagePlus size={15} />
                       <span className="hidden sm:inline">Replace</span>
                     </button>
 
-                    <div className="w-[1px] h-4 bg-slate-200 mx-0.5" />
+                    <div className="w-[1px] h-4 bg-[#E2E8F0] mx-0.5" />
 
                     <button
                       onClick={handleRotate}
                       disabled={
                         isPythonLoading || isManualCropping || isSavingDocument
                       }
-                      className="p-1.5 sm:p-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
+                      className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title={
                         isManualCropping
                           ? "Finish manual crop first"
@@ -2902,9 +2902,9 @@ export default function DocumentScanner() {
                 )}
 
                 {images.length === 0 ? (
-                  <label className="flex flex-col items-center justify-center gap-3 cursor-pointer text-slate-500 hover:text-slate-700 transition-colors p-6 text-center">
+                  <label className="flex flex-col items-center justify-center gap-3 cursor-pointer text-[#64748B] hover:text-[#334155] transition-colors p-6 text-center">
                     <Upload size={32} className="text-emerald-600" />
-                    <span className="text-xs font-semibold px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-xs cursor-pointer">
+                    <span className="text-xs font-semibold px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg shadow-xs cursor-pointer">
                       Upload Document
                     </span>
                     <input
@@ -2927,13 +2927,13 @@ export default function DocumentScanner() {
                       transform: `scale(${zoom / 100})`,
                       transition: "transform 0.1s ease",
                     }}
-                    className="bg-white w-full max-w-full h-full max-h-[450px] sm:max-h-[580px] lg:max-h-[620px] aspect-[1/1.414] shadow-md border border-slate-300 rounded relative flex items-center justify-center overflow-hidden"
+                    className="bg-white w-full max-w-full h-full max-h-[450px] sm:max-h-[580px] lg:max-h-[620px] aspect-[1/1.414] shadow-md border border-[#CBD5E1] rounded relative flex items-center justify-center overflow-hidden"
                   >
                     {isPythonLoading && (
                       <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-30 flex flex-col items-center justify-center gap-2 p-4 text-center">
                         <Loader2
                           size={32}
-                          className="text-emerald-600 animate-spin"
+                          className="text-[#2563EB] animate-spin"
                         />
                         <span className="text-xs font-bold text-[#0F172A]">
                           {enhanceProgress
@@ -2952,7 +2952,7 @@ export default function DocumentScanner() {
                           <button
                             type="button"
                             onClick={() => enhanceAbortRef.current?.abort()}
-                            className="mt-1 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold rounded-lg cursor-pointer flex items-center gap-1"
+                            className="mt-1 px-3 py-1.5 border border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC] text-[10px] font-bold rounded-lg cursor-pointer flex items-center gap-1"
                           >
                             <X size={12} /> Cancel
                           </button>
@@ -2964,12 +2964,12 @@ export default function DocumentScanner() {
                       <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px] z-40 flex flex-col items-center justify-center gap-2 p-4 text-center pointer-events-none">
                         <Loader2
                           size={30}
-                          className="text-emerald-600 animate-spin"
+                          className="text-[#2563EB] animate-spin"
                         />
                         <span className="text-xs font-bold text-[#0F172A]">
                           Saving document...
                         </span>
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-[10px] text-[#64748B]">
                           Uploading image and saving your record
                         </span>
                       </div>
@@ -3020,7 +3020,7 @@ export default function DocumentScanner() {
                             points={corners
                               .map((point) => `${point.x},${point.y}`)
                               .join(" ")}
-                            className="fill-emerald-500/20 stroke-emerald-500 stroke-2"
+                            className="fill-[#2563EB]/20 stroke-[#2563EB] stroke-2"
                             strokeDasharray="4"
                           />
                         </svg>
@@ -3055,36 +3055,36 @@ export default function DocumentScanner() {
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2 items-center justify-between text-xs text-slate-600">
+            <div className="mt-3 pt-3 border-t border-[#F1F5F9] flex flex-wrap gap-2 items-center justify-between text-xs text-[#475569]">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setZoom((z) => Math.max(50, z - 10))}
-                  className="w-7 h-7 bg-white rounded-md border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  className="w-7 h-7 bg-white rounded-md border border-[#E2E8F0] flex items-center justify-center font-bold text-[#334155] hover:bg-[#F8FAFC] cursor-pointer"
                 >
                   <Minus size={14} />
                 </button>
                 <button
                   onClick={() => setZoom((z) => Math.min(200, z + 10))}
-                  className="w-7 h-7 bg-white rounded-md border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  className="w-7 h-7 bg-white rounded-md border border-[#E2E8F0] flex items-center justify-center font-bold text-[#334155] hover:bg-[#F8FAFC] cursor-pointer"
                 >
                   <Plus size={14} />
                 </button>
                 <button
                   onClick={() => setZoom(100)}
-                  className="px-2.5 py-1 bg-white rounded-md border border-slate-200 font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 bg-white rounded-md border border-[#E2E8F0] font-medium text-[#334155] hover:bg-[#F8FAFC] flex items-center gap-1 cursor-pointer"
                 >
                   <span>Reset view</span>
                 </button>
               </div>
 
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+              <span className="text-[10px] sm:text-[11px] text-[#64748B] font-medium">
                 {(zoom / 100).toFixed(1)}x - use + / − to zoom
               </span>
             </div>
           </div>
 
           <div className="w-full lg:w-[320px] shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Crop
@@ -3096,7 +3096,7 @@ export default function DocumentScanner() {
                   disabled={
                     isPythonLoading || images.length === 0 || isSavingDocument
                   }
-                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed ${autoCrop && !isManualCropping ? "bg-emerald-600 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
+                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed ${autoCrop && !isManualCropping ? "bg-[#2563EB] text-white" : "bg-[#2563EB] hover:bg-[#1D4ED8] text-white"}`}
                 >
                   <Crop size={14} />
                   Auto crop
@@ -3105,7 +3105,7 @@ export default function DocumentScanner() {
                 <button
                   onClick={handleTriggerManualCrop}
                   disabled={images.length === 0 || isSavingDocument}
-                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${isManualCropping ? "bg-slate-800 text-white" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${isManualCropping ? "bg-[#2563EB] text-white" : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#334155] hover:bg-[#E2E8F0]"}`}
                 >
                   <Crop size={14} />
                   Manual crop
@@ -3113,7 +3113,7 @@ export default function DocumentScanner() {
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Magic
@@ -3135,7 +3135,7 @@ export default function DocumentScanner() {
                   isManualCropping ||
                   isSavingDocument
                 }
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold border border-[#E2E8F0] bg-white text-[#475569] hover:bg-[#E2E8F0] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <RotateCcw size={12} />
                 {history.length > 0
@@ -3144,7 +3144,7 @@ export default function DocumentScanner() {
               </button>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                 <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
                 Mode
@@ -3158,7 +3158,7 @@ export default function DocumentScanner() {
                   onTouchStart={() => setIsHoldingOriginal(true)}
                   onTouchEnd={() => setIsHoldingOriginal(false)}
                   disabled={images.length === 0}
-                  className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer select-none active:scale-98 ${isHoldingOriginal ? "bg-slate-800 text-white shadow-xs" : "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer select-none active:scale-98 ${isHoldingOriginal ? "bg-[#2563EB] text-white shadow-xs" : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#334155] hover:bg-[#E2E8F0]"} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <Eye size={14} />
                   <span>
@@ -3170,7 +3170,7 @@ export default function DocumentScanner() {
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] uppercase tracking-wider">
                   <span className="w-1.5 h-3 bg-emerald-600 rounded-xs" />
@@ -3184,7 +3184,7 @@ export default function DocumentScanner() {
                     images.length === 0 ||
                     (blackness === 0 && contrast === 0 && brightness === 0)
                   }
-                  className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-[#0F172A] text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 py-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-[#475569] hover:bg-[#E2E8F0] hover:text-[#0F172A] text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Reset only adjustments"
                 >
                   Reset
@@ -3193,7 +3193,7 @@ export default function DocumentScanner() {
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                  <div className="flex justify-between font-semibold text-[#334155] mb-1">
                     <span>Black</span>
                     <span>{blackness}</span>
                   </div>
@@ -3206,12 +3206,12 @@ export default function DocumentScanner() {
                       setBlackness(Number(e.target.value));
                       setHasUnsavedChanges(true);
                     }}
-                    className="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                    className="w-full accent-[#2563EB] h-1.5 bg-[#E2E8F0] rounded-lg cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                  <div className="flex justify-between font-semibold text-[#334155] mb-1">
                     <span>Color</span>
                     <span>{brightness}</span>
                   </div>
@@ -3224,12 +3224,12 @@ export default function DocumentScanner() {
                       setBrightness(Number(e.target.value));
                       setHasUnsavedChanges(true);
                     }}
-                    className="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                    className="w-full accent-[#2563EB] h-1.5 bg-[#E2E8F0] rounded-lg cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                  <div className="flex justify-between font-semibold text-[#334155] mb-1">
                     <span>Contrast</span>
                     <span>{contrast}</span>
                   </div>
@@ -3242,7 +3242,7 @@ export default function DocumentScanner() {
                       setContrast(Number(e.target.value));
                       setHasUnsavedChanges(true);
                     }}
-                    className="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                    className="w-full accent-[#2563EB] h-1.5 bg-[#E2E8F0] rounded-lg cursor-pointer"
                   />
                 </div>
               </div>
@@ -3253,7 +3253,7 @@ export default function DocumentScanner() {
 
       {previewSavedDocument && (
         <div
-          className="fixed inset-0 z-[95] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
+          className="fixed inset-0 z-[95] bg-[#0F172A]/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
           role="dialog"
           aria-modal="true"
           aria-labelledby="saved-document-preview-title"
@@ -3263,10 +3263,10 @@ export default function DocumentScanner() {
             }
           }}
         >
-          <div className="w-full max-w-6xl h-[min(92vh,900px)] bg-slate-100 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden flex flex-col">
-            <div className="px-3 sm:px-5 py-3 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
+          <div className="w-full max-w-6xl h-[min(92vh,900px)] bg-[#E2E8F0] rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden flex flex-col">
+            <div className="px-3 sm:px-5 py-3 bg-white border-b border-[#E2E8F0] flex items-center justify-between gap-3 shrink-0">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 font-bold">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[#94A3B8] font-bold">
                   Saved document preview
                 </p>
                 <h2
@@ -3280,15 +3280,15 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={() => setPreviewSavedDocument(null)}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer shrink-0"
+                className="w-9 h-9 rounded-xl bg-[#E2E8F0] hover:bg-[#E2E8F0] text-[#475569] flex items-center justify-center cursor-pointer shrink-0"
                 aria-label="Close preview"
               >
                 <X size={17} />
               </button>
             </div>
 
-            <div className="flex-1 min-h-0 p-3 sm:p-5 flex items-center justify-center overflow-auto bg-slate-200/70">
-              <div className="max-w-full max-h-full bg-white rounded-xl shadow-xl border border-slate-300 p-2 sm:p-3 flex items-center justify-center">
+            <div className="flex-1 min-h-0 p-3 sm:p-5 flex items-center justify-center overflow-auto bg-[#E2E8F0]/70">
+              <div className="max-w-full max-h-full bg-white rounded-xl shadow-xl border border-[#CBD5E1] p-2 sm:p-3 flex items-center justify-center">
                 <img
                   src={previewSavedDocument.src}
                   alt={previewSavedDocument.name}
@@ -3297,12 +3297,12 @@ export default function DocumentScanner() {
               </div>
             </div>
 
-            <div className="px-3 sm:px-5 py-3 bg-white border-t border-slate-200 flex flex-wrap items-center justify-end gap-2 shrink-0">
+            <div className="px-3 sm:px-5 py-3 bg-white border-t border-[#E2E8F0] flex flex-wrap items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => handleEditSavedDocument(previewSavedDocument)}
                 disabled={isPythonLoading || isSavingDocument}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Edit size={14} />
                 Modify document
@@ -3312,7 +3312,7 @@ export default function DocumentScanner() {
                 type="button"
                 onClick={() => handlePrintSource(previewSavedDocument.src)}
                 disabled={isPythonLoading || isSavingDocument}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F8FAFC] text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Printer size={14} />
                 Print
@@ -3329,7 +3329,7 @@ export default function DocumentScanner() {
                   )
                 }
                 disabled={isPythonLoading || isSavingDocument}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F8FAFC] text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown size={14} />
                 PDF download
@@ -3341,7 +3341,7 @@ export default function DocumentScanner() {
                   handleDownloadSavedDocument(previewSavedDocument)
                 }
                 disabled={isPythonLoading || isSavingDocument}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={14} />
                 Download image
@@ -3353,12 +3353,12 @@ export default function DocumentScanner() {
 
       {pendingNavigationIndex !== null && hasUnsavedChanges && (
         <div
-          className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-[#0F172A]/40 backdrop-blur-[2px] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="unsaved-document-title"
         >
-          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl p-5">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0">
                 <Save size={19} />
@@ -3371,7 +3371,7 @@ export default function DocumentScanner() {
                 >
                   Save current document?
                 </h2>
-                <p className="text-xs text-slate-500 mt-1.5 leading-5">
+                <p className="text-xs text-[#64748B] mt-1.5 leading-5">
                   You can save your current work before switching to another
                   document.
                 </p>
@@ -3383,7 +3383,7 @@ export default function DocumentScanner() {
                 type="button"
                 onClick={handleConfirmNavigationWithoutSave}
                 disabled={isPythonLoading || isSavingDocument}
-                className="py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#334155] hover:bg-[#E2E8F0] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 No
               </button>
@@ -3391,7 +3391,7 @@ export default function DocumentScanner() {
                 type="button"
                 onClick={handleConfirmNavigationSave}
                 disabled={isPythonLoading || isSavingDocument}
-                className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSavingDocument ? "Saving..." : "Yes, Save"}
               </button>
@@ -3400,39 +3400,39 @@ export default function DocumentScanner() {
         </div>
       )}
 
-      <section className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+      <section className="mt-4 bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
             <h2 className="text-sm font-bold text-[#0F172A]">
               Saved Documents
             </h2>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="text-[10px] text-[#94A3B8] mt-0.5">
               Saved documents are linked to your account.
             </p>
           </div>
 
-          <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2.5 py-1">
+          <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] bg-[#E2E8F0] rounded-full px-2.5 py-1">
             {savedDocuments.length} saved
           </span>
         </div>
 
         {isLoadingSavedDocuments ? (
-          <div className="border border-slate-200 rounded-xl bg-slate-50 p-6 text-center">
+          <div className="border border-[#E2E8F0] rounded-xl bg-[#F8FAFC] p-6 text-center">
             <Loader2
               size={22}
-              className="mx-auto text-emerald-600 animate-spin mb-2"
+              className="mx-auto text-[#2563EB] animate-spin mb-2"
             />
-            <p className="text-xs font-semibold text-slate-600">
+            <p className="text-xs font-semibold text-[#475569]">
               Saved documents load হচ্ছে...
             </p>
           </div>
         ) : savedDocuments.length === 0 ? (
-          <div className="border border-dashed border-slate-200 rounded-xl bg-slate-50 p-6 text-center">
-            <Save size={22} className="mx-auto text-slate-400 mb-2" />
-            <p className="text-xs font-semibold text-slate-600">
+          <div className="border border-dashed border-[#E2E8F0] rounded-xl bg-[#F8FAFC] p-6 text-center">
+            <Save size={22} className="mx-auto text-[#94A3B8] mb-2" />
+            <p className="text-xs font-semibold text-[#475569]">
               এখনো কোনো document save করা হয়নি।
             </p>
-            <p className="text-[10px] text-slate-400 mt-1">
+            <p className="text-[10px] text-[#94A3B8] mt-1">
               Crop, clean এবং adjustment শেষ করে উপরের Save document চাপো।
             </p>
           </div>
@@ -3444,10 +3444,10 @@ export default function DocumentScanner() {
               return (
                 <div
                   key={savedDocument.id}
-                  className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 group"
+                  className="border border-[#E2E8F0] rounded-xl overflow-hidden bg-[#F8FAFC] group"
                 >
                   <div
-                    className="aspect-[1/1.414] bg-white flex items-center justify-center overflow-hidden border-b border-slate-200 relative cursor-pointer"
+                    className="aspect-[1/1.414] bg-white flex items-center justify-center overflow-hidden border-b border-[#E2E8F0] relative cursor-pointer"
                     onClick={() => handleOpenSavedPreview(savedDocument)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -3468,12 +3468,12 @@ export default function DocumentScanner() {
 
                     {isDeleting && (
                       <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-md">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] shadow-md">
                           <Loader2
                             size={15}
-                            className="text-emerald-600 animate-spin"
+                            className="text-[#2563EB] animate-spin"
                           />
-                          <span className="text-[10px] font-semibold text-slate-700">
+                          <span className="text-[10px] font-semibold text-[#334155]">
                             Deleting...
                           </span>
                         </div>
@@ -3487,7 +3487,7 @@ export default function DocumentScanner() {
                         <p className="text-[11px] font-bold text-[#0F172A] truncate">
                           {savedDocument.name}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-[#94A3B8] mt-0.5">
                           Saved{" "}
                           {index === 0
                             ? "just now"
@@ -3500,7 +3500,7 @@ export default function DocumentScanner() {
                         </p>
                       </div>
 
-                      <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 shrink-0">
+                      <span className="text-[9px] font-semibold text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-2 py-0.5 shrink-0">
                         Saved
                       </span>
                     </div>
@@ -3513,7 +3513,7 @@ export default function DocumentScanner() {
                           handleDownloadSavedDocument(savedDocument);
                         }}
                         disabled={isDeleting}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-900 text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Download size={12} />
                         Download
@@ -3526,7 +3526,7 @@ export default function DocumentScanner() {
                           void handleRemoveSavedDocument(savedDocument);
                         }}
                         disabled={isDeleting}
-                        className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[#64748B] hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label={`Remove ${savedDocument.name}`}
                         title="Delete saved document"
                       >
@@ -3545,7 +3545,7 @@ export default function DocumentScanner() {
         )}
       </section>
 
-      <div className="mt-4 pt-2 text-xs text-slate-600 flex items-center gap-2">
+      <div className="mt-4 pt-2 text-xs text-[#475569] flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
         <span>
           Document Clean দিয়ে Document আরও সুন্দর ও Clean করুন A4 Print Ready

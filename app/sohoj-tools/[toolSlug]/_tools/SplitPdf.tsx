@@ -325,7 +325,7 @@ export default function SplitPdf() {
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
+          <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#C7D2FE]">
             <FileCode size={24} />
           </div>
 
@@ -333,7 +333,7 @@ export default function SplitPdf() {
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-[#0F172A]">Split PDF</h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-[#D1FAE5] text-[#047857] text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
             </div>
@@ -365,7 +365,7 @@ export default function SplitPdf() {
                 Files ({selectedFile ? 1 : 0})
               </h2>
 
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#EFF6FF] hover:bg-[#DBEAFE] px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#DBEAFE]">
                 <Plus size={12} />
                 <span>Add</span>
 
@@ -379,8 +379,8 @@ export default function SplitPdf() {
             </div>
 
             {!selectedFile ? (
-              <label className="border-2 border-dashed border-red-200 bg-red-50/30 hover:bg-red-50/60 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
-                <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+              <label className="border-2 border-dashed border-[#BFDBFE] bg-[#EFF6FF]/30 hover:bg-[#EFF6FF]/60 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                <div className="w-10 h-10 bg-[#DBEAFE]/80 text-[#2563EB] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20} />
                 </div>
 
@@ -402,7 +402,7 @@ export default function SplitPdf() {
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#DBEAFE] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
 
@@ -424,7 +424,7 @@ export default function SplitPdf() {
 
                 <button
                   onClick={handleReset}
-                  className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                  className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -435,10 +435,12 @@ export default function SplitPdf() {
           {/* Split Options Card */}
           {selectedFile && pageCount && (
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
-              <h2 className="text-xs font-bold text-[#0F172A]">Split options</h2>
+              <h2 className="text-xs font-bold text-[#0F172A]">
+                Split options
+              </h2>
 
               {/* Toggle Tabs */}
-              <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1">
+              <div className="bg-[#E2E8F0] p-1 rounded-xl flex items-center gap-1">
                 <button
                   onClick={() => setSplitMode("all")}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -478,7 +480,7 @@ export default function SplitPdf() {
                     value={rangesInput}
                     onChange={(e) => setRangesInput(e.target.value)}
                     placeholder="e.g. 1-3, 5"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"
                   />
 
                   <p className="text-[10px] text-gray-400">
@@ -502,11 +504,11 @@ export default function SplitPdf() {
                 errorMessage
                   ? "bg-red-100 text-red-600"
                   : results
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "bg-[#D1FAE5] text-[#047857]"
                     : isProcessing || isLoadingFile
                       ? "bg-[#E2E8F0] text-[#2563EB]"
                       : selectedFile
-                        ? "bg-blue-100 text-blue-600"
+                        ? "bg-[#DBEAFE] text-[#2563EB]"
                         : "bg-gray-100 text-gray-500"
               }`}
             >
@@ -526,7 +528,7 @@ export default function SplitPdf() {
 
           {isProcessing || isLoadingFile ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3" />
 
               <p className="text-xs font-bold text-[#0F172A]">
                 {isProcessing ? "Splitting your PDF…" : "Reading your PDF…"}
@@ -553,7 +555,7 @@ export default function SplitPdf() {
             <div className="my-auto py-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-100">
+                  <div className="w-8 h-8 bg-[#ECFDF5] text-[#10B981] rounded-lg flex items-center justify-center border border-[#A7F3D0]">
                     <CheckCircle2 size={16} />
                   </div>
 
@@ -566,7 +568,7 @@ export default function SplitPdf() {
                 {results.length > 1 && (
                   <button
                     onClick={handleDownloadAll}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-red-600 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-[#1D4ED8] transition-all"
                   >
                     <Download size={12} />
                     Download all
@@ -580,7 +582,7 @@ export default function SplitPdf() {
                     key={`${result.label}-${index}`}
                     className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex flex-col items-center text-center gap-1.5"
                   >
-                    <div className="w-11 h-14 bg-white border border-gray-200 rounded-md shadow-2xs flex items-center justify-center text-red-500">
+                    <div className="w-11 h-14 bg-white border border-gray-200 rounded-md shadow-2xs flex items-center justify-center text-[#2563EB]">
                       <FileText size={18} />
                     </div>
 
@@ -605,7 +607,7 @@ export default function SplitPdf() {
             </div>
           ) : (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
+              <div className="w-10 h-10 bg-[#EFF6FF] text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#DBEAFE]">
                 <FileText size={20} />
               </div>
 
@@ -631,9 +633,9 @@ export default function SplitPdf() {
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               errorMessage
-                ? "bg-red-500"
+                ? "bg-[#2563EB]"
                 : results
-                  ? "bg-emerald-500"
+                  ? "bg-[#10B981]"
                   : isProcessing || isLoadingFile
                     ? "bg-[#2563EB] animate-pulse"
                     : "bg-gray-400"
@@ -660,7 +662,7 @@ export default function SplitPdf() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"
+            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-[#F8FAFC] transition-all"
           >
             Reset
           </button>
@@ -670,8 +672,8 @@ export default function SplitPdf() {
             disabled={!canSplit}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               canSplit
-                ? "bg-red-500 text-white shadow-xs hover:bg-red-600"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#1D4ED8]"
+                : "bg-[#E2E8F0] text-[#64748B] cursor-not-allowed"
             }`}
           >
             {isProcessing ? (
@@ -686,8 +688,8 @@ export default function SplitPdf() {
       </div>
 
       {/* Security Banner */}
-      <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
-        <Lock size={15} className="text-emerald-600 shrink-0" />
+      <div className="bg-[#ECFDF5]/70 border border-[#A7F3D0] p-3 rounded-2xl flex items-center gap-2 text-xs text-[#065F46] font-medium">
+        <Lock size={15} className="text-[#10B981] shrink-0" />
 
         <span>
           Your files are processed in the browser — they are not uploaded to any
@@ -699,7 +701,7 @@ export default function SplitPdf() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC]/50 transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="text-[#2563EB]">?</span>
@@ -726,14 +728,14 @@ export default function SplitPdf() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#BFDBFE] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Compress PDF
               </h4>
 
@@ -746,14 +748,14 @@ export default function SplitPdf() {
 
           <Link
             href="/sohoj-tools/merge-pdfs"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#BFDBFE] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Merge PDFs
               </h4>
 

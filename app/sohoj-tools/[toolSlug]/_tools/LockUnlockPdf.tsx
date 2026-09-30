@@ -387,7 +387,7 @@ export default function LockUnlockPdf() {
       {/* Header Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
+          <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#C7D2FE]">
             <Lock size={24} />
           </div>
 
@@ -430,7 +430,7 @@ export default function LockUnlockPdf() {
                   Files ({selectedFile ? 1 : 0})
                 </h2>
 
-                <label className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-red-100">
+                <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#EFF6FF] hover:bg-[#DBEAFE] px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#DBEAFE]">
                   <Plus size={12} />
 
                   <span>Add</span>
@@ -445,8 +445,8 @@ export default function LockUnlockPdf() {
               </div>
 
               {!selectedFile ? (
-                <label className="border-2 border-dashed border-red-200 bg-red-50/30 hover:bg-red-50/60 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
-                  <div className="w-10 h-10 bg-red-100/80 text-red-500 rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <label className="border-2 border-dashed border-[#BFDBFE] bg-[#EFF6FF]/30 hover:bg-[#EFF6FF]/60 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
+                  <div className="w-10 h-10 bg-[#DBEAFE]/80 text-[#2563EB] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                     <Upload size={20} />
                   </div>
 
@@ -468,7 +468,7 @@ export default function LockUnlockPdf() {
               ) : (
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 overflow-hidden">
-                    <div className="w-8 h-8 bg-red-100 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 bg-[#DBEAFE] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
                       <FileText size={16} />
                     </div>
 
@@ -485,7 +485,7 @@ export default function LockUnlockPdf() {
 
                   <button
                     onClick={handleReset}
-                    className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                    className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors"
                   >
                     <X size={16} />
                   </button>
@@ -502,7 +502,7 @@ export default function LockUnlockPdf() {
               </h2>
 
               {/* Toggle Tabs */}
-              <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1">
+              <div className="bg-[#E2E8F0] p-1 rounded-xl flex items-center gap-1">
                 <button
                   onClick={() => handleModeChange("lock")}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
@@ -541,7 +541,7 @@ export default function LockUnlockPdf() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="At least 4 characters"
-                        className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                        className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"
                       />
 
                       <button
@@ -570,13 +570,13 @@ export default function LockUnlockPdf() {
                       placeholder="Re-enter password"
                       className={`w-full bg-white border rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 ${
                         passwordsMismatch
-                          ? "border-red-300 focus:ring-red-500/20"
-                          : "border-gray-200 focus:ring-red-500/20"
+                          ? "border-[#93C5FD] focus:ring-[#2563EB]/20"
+                          : "border-gray-200 focus:ring-[#2563EB]/20"
                       }`}
                     />
 
                     {passwordsMismatch && (
-                      <p className="text-[10px] text-red-500 font-medium">
+                      <p className="text-[10px] text-[#2563EB] font-medium">
                         Passwords don't match.
                       </p>
                     )}
@@ -599,7 +599,7 @@ export default function LockUnlockPdf() {
                       value={unlockPassword}
                       onChange={(e) => setUnlockPassword(e.target.value)}
                       placeholder="Enter the PDF's password"
-                      className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                      className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"
                     />
 
                     <button
@@ -655,7 +655,7 @@ export default function LockUnlockPdf() {
 
           {isProcessing ? (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
-              <Loader2 size={28} className="text-red-400 animate-spin mb-3" />
+              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3" />
 
               <p className="text-xs font-bold text-[#0F172A]">
                 {mode === "lock"
@@ -669,12 +669,12 @@ export default function LockUnlockPdf() {
               </p>
             </div>
           ) : errorMessage ? (
-            <div className="bg-red-50/60 rounded-2xl border border-dashed border-red-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
+            <div className="bg-[#EFF6FF]/60 rounded-2xl border border-dashed border-[#BFDBFE] p-8 flex flex-col items-center justify-center my-auto text-center py-20">
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20} />
               </div>
 
-              <p className="text-xs font-bold text-red-700">
+              <p className="text-xs font-bold text-[#1E3A8A]">
                 {mode === "lock" ? "Locking failed" : "Unlocking failed"}
               </p>
 
@@ -702,7 +702,7 @@ export default function LockUnlockPdf() {
 
               <button
                 onClick={handleDownload}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-red-600 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#1D4ED8] transition-all"
               >
                 <Download size={14} />
 
@@ -713,7 +713,7 @@ export default function LockUnlockPdf() {
             </div>
           ) : (
             <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
-              <div className="w-10 h-10 bg-red-50 text-red-400 rounded-xl flex items-center justify-center mb-3 border border-red-100">
+              <div className="w-10 h-10 bg-[#EFF6FF] text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#DBEAFE]">
                 <KeyRound size={20} />
               </div>
 
@@ -739,7 +739,7 @@ export default function LockUnlockPdf() {
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
               errorMessage
-                ? "bg-red-500"
+                ? "bg-[#2563EB]"
                 : result
                   ? "bg-emerald-500"
                   : isProcessing
@@ -778,7 +778,7 @@ export default function LockUnlockPdf() {
             disabled={!canSubmit}
             className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               canSubmit
-                ? "bg-red-500 text-white shadow-xs hover:bg-red-600"
+                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#1D4ED8]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -817,7 +817,7 @@ export default function LockUnlockPdf() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button
           onClick={() => setShowHowToUse(!showHowToUse)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC]/70 transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="text-[#2563EB] font-bold">?</span>
@@ -845,14 +845,14 @@ export default function LockUnlockPdf() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/compress-pdf"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#BFDBFE] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#EFF6FF] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Compress PDF
               </h4>
 
@@ -865,14 +865,14 @@ export default function LockUnlockPdf() {
 
           <Link
             href="/sohoj-tools/merge-pdfs"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-red-200 transition-all flex items-start gap-3 group"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#BFDBFE] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#EFF6FF] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16} />
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-red-500 transition-colors">
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Merge PDFs
               </h4>
 

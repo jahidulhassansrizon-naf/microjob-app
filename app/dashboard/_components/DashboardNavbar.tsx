@@ -1,8 +1,8 @@
 // app/dashboard/_components/DashboardNavbar.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Sparkles,
@@ -22,6 +22,7 @@ import {
   CreditCard,
   X,
   Command,
+  type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
 
@@ -31,12 +32,155 @@ interface UserData {
   email?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* Small building blocks                                               */
+/* ------------------------------------------------------------------ */
+
+// "Upcoming" flag: sits in the empty space above the label, never on top of it
+function UpcomingFlag() {
+  return (
+    <span className="pointer-events-none absolute right-0 top-1.5 rounded-full border border-red-200 bg-red-50 px-1.5 text-[10px] font-semibold leading-[14px] text-red-600">
+      Upcoming
+    </span>
+  );
+}
+
+function ActiveBar() {
+  return (
+    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#2563EB]" />
+  );
+}
+
+const itemBase =
+  "flex items-center gap-1.5 rounded-lg px-1.5 2xl:px-2 py-1.5 whitespace-nowrap transition-colors";
+
+interface NavItemProps {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  iconClass: string;
+  active?: boolean;
+  upcoming?: boolean;
+  tag?: { text: string; className: string };
+}
+
+function NavItem({
+  href,
+  label,
+  icon: Icon,
+  iconClass,
+  active,
+  upcoming,
+  tag,
+}: NavItemProps) {
+  return (
+    <div className="relative flex h-full shrink-0 items-center">
+      {upcoming && <UpcomingFlag />}
+      <Link
+        href={href}
+        className={`${itemBase} ${
+          active
+            ? "text-[#2563EB]"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+        }`}
+      >
+        <Icon size={15} className={`${iconClass} shrink-0`} />
+        <span>{label}</span>
+        {tag && (
+          <span
+            className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] text-white ${tag.className}`}
+          >
+            {tag.text}
+          </span>
+        )}
+      </Link>
+      {active && <ActiveBar />}
+    </div>
+  );
+}
+
+interface NavDropdownProps {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  iconClass: string;
+  items: string[];
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  active?: boolean;
+  upcoming?: boolean;
+  panelClass?: string;
+}
+
+function NavDropdown({
+  href,
+  label,
+  icon: Icon,
+  iconClass,
+  items,
+  open,
+  setOpen,
+  active,
+  upcoming,
+  panelClass = "w-52",
+}: NavDropdownProps) {
+  return (
+    <div
+      className="relative flex h-full shrink-0 items-center"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      {upcoming && <UpcomingFlag />}
+      <Link
+        href={href}
+        aria-haspopup="true"
+        aria-expanded={open}
+        className={`${itemBase} ${
+          active
+            ? "text-[#2563EB]"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+        }`}
+      >
+        <Icon size={15} className={`${iconClass} shrink-0`} />
+        <span>{label}</span>
+        <ChevronDown
+          size={13}
+          className={`-ml-0.5 text-slate-400 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </Link>
+      {active && <ActiveBar />}
+
+      {open && (
+        <div
+          className={`absolute left-0 top-full z-[100] rounded-xl border border-slate-200 bg-white p-1.5 text-[13px] shadow-lg ${panelClass}`}
+        >
+          {items.map((item, index) => (
+            <Link
+              key={index}
+              href={href}
+              className="block rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              {item}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Navbar                                                              */
+/* ------------------------------------------------------------------ */
+
 export default function DashboardNavbar() {
-  const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<UserData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // ভাষা পরিবর্তনের স্টেট (EN / BN)
   const [lang, setLang] = useState<"EN" | "BN">("EN");
@@ -91,11 +235,27 @@ export default function DashboardNavbar() {
       }
       if (e.key === "Escape") {
         setIsSearchOpen(false);
+        setDropdownOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // প্রোফাইল ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -120,6 +280,9 @@ export default function DashboardNavbar() {
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
+
+  const isActive = (prefix: string) =>
+    pathname === prefix || !!pathname?.startsWith(prefix + "/");
 
   const aiTemplateItems = [
     "Motivational",
@@ -155,226 +318,140 @@ export default function DashboardNavbar() {
     { key: "doc:", desc: "নথি বা টেমপ্লেট খুঁজুন" },
     { key: "img:", desc: "তৈরি ছবি খুঁজুন" },
     { key: "photo:", desc: "এআই ছবি এডিট" },
-    { key: "manual:", desc: "ম্যানুয়াল ছবি এডিট" },
+    { key: "manual:", desc: "ম্যানুয়াল ছবি এডিট" },
     { key: "ai:", desc: "এআই টেমপ্লেট বানাও" },
     { key: "profile:", desc: "প্রোফাইল ও সেটিংস" },
     { key: "credits:", desc: "ক্রেডিট ব্যালেন্স" },
   ];
 
+  const iconButton =
+    "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800";
+
   return (
     <>
-      <header className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm sticky top-0 z-50 gap-2 w-full">
-        {/* Left Section: Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-[#2563EB] rounded-xl flex items-center justify-center font-black text-white text-base">
-              SK
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-lg font-black text-[#0F172A] tracking-tight">
-                Sohoz<span className="text-[#2563EB]">kaj</span>
-              </span>
-              <span className="text-[8px] tracking-wider text-gray-400 font-bold uppercase">
-                www.sohozkaj.com
-              </span>
-            </div>
-          </Link>
-        </div>
+      <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
+        {/* Left: Logo */}
+        <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white">
+            SK
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-[19px] font-extrabold tracking-tight text-[#0F172A]">
+              Sohoz<span className="text-[#2563EB]">kaj</span>
+            </span>
+            <span className="mt-1 text-[10px] font-medium text-slate-400">
+              www.sohozkaj.com
+            </span>
+          </div>
+        </Link>
 
-        {/* Center Section: Navigation Links Centered (Desktop Only) */}
-        <nav className="hidden xl:flex items-center justify-start 2xl:justify-center flex-1 min-w-0 gap-1 xl:gap-1.5 2xl:gap-2.5 text-[11px] xl:text-[11.5px] 2xl:text-[13px] font-semibold text-[#0F172A] mx-1">
-          {/* My Files */}
-          <Link
+        {/* Center: Navigation (desktop only) */}
+        <nav
+          className="mx-2 hidden h-full min-w-0 flex-1 items-center justify-start text-[12px] font-medium xl:flex 2xl:justify-center 2xl:text-[13px]"
+          aria-label="Main"
+        >
+          <NavItem
             href="/my-files"
-            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
-          >
-            <FileText size={14} className="text-[#2563EB] shrink-0" />
-            <span>My Files</span>
-          </Link>
-
-          {/* AI Editor */}
-          <Link
+            label="My Files"
+            icon={FileText}
+            iconClass="text-[#2563EB]"
+            active={isActive("/my-files")}
+          />
+          <NavItem
             href="/ai-editor"
-            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
-          >
-            <Sparkles size={14} className="text-[#2563EB] shrink-0" />
-            <span>AI Editor</span>
-          </Link>
-
-          {/* Manual Editor */}
-          <Link
+            label="AI Editor"
+            icon={Sparkles}
+            iconClass="text-[#2563EB]"
+            active={isActive("/ai-editor")}
+          />
+          <NavItem
             href="/manual-editor"
-            className="flex items-center gap-1 hover:text-[#2563EB] transition-colors whitespace-nowrap shrink-0"
-          >
-            <FileEdit size={14} className="text-[#2563EB] shrink-0" />
-            <span>Manual Editor</span>
-          </Link>
-
-          {/* Bulk Photo Edit */}
-          <div className="relative flex items-center whitespace-nowrap shrink-0">
-            <span className="absolute -top-2.5 -right-1 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
-              Upcoming
-            </span>
-
-            <Link
-              href="/bulk-photo-edit"
-              className="flex items-center gap-1 hover:text-[#2563EB] transition-colors"
-            >
-              <Copy size={14} className="text-[#10B981] shrink-0" />
-              <span>Bulk Photo Edit</span>
-            </Link>
-          </div>
-
-          {/* AI Template Dropdown */}
-          <div
-            className="relative py-1 whitespace-nowrap shrink-0"
-            onMouseEnter={() => setAiTemplateOpen(true)}
-            onMouseLeave={() => setAiTemplateOpen(false)}
-          >
-            <span className="absolute -top-2.5 -right-1.5 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
-              Upcoming
-            </span>
-
-            <Link
-              href="/ai-template"
-              className="flex items-center gap-0.5 hover:text-[#2563EB] cursor-pointer"
-            >
-              <LayoutGrid size={14} className="text-purple-500 shrink-0" />
-              <span>AI Template</span>
-              <ChevronDown
-                size={13}
-                className={`text-gray-400 transition-transform duration-200 ${
-                  aiTemplateOpen ? "rotate-180" : ""
-                }`}
-              />
-            </Link>
-
-            {aiTemplateOpen && (
-              <div className="absolute top-full left-0 w-52 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl shadow-xl py-2 z-[100] text-xs font-medium">
-                {aiTemplateItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    href="/ai-template"
-                    className="block px-4 py-2 text-[#0F172A] hover:bg-[#E2E8F0] hover:text-[#2563EB] transition-colors"
-                  >
-                    {item}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Question Papers Link (Direct route without dropdown) */}
-          <Link
+            label="Manual Editor"
+            icon={FileEdit}
+            iconClass="text-[#2563EB]"
+            active={isActive("/manual-editor")}
+          />
+          <NavItem
+            href="/bulk-photo-edit"
+            label="Bulk Photo Edit"
+            icon={Copy}
+            iconClass="text-[#10B981]"
+            active={isActive("/bulk-photo-edit")}
+            upcoming
+          />
+          <NavDropdown
+            href="/ai-template"
+            label="AI Template"
+            icon={LayoutGrid}
+            iconClass="text-purple-500"
+            items={aiTemplateItems}
+            open={aiTemplateOpen}
+            setOpen={setAiTemplateOpen}
+            active={isActive("/ai-template")}
+            upcoming
+            panelClass="w-52"
+          />
+          <NavItem
             href="/questions-create/create"
-            className={`flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 ${
-              pathname?.startsWith("/questions-create")
-                ? "text-[#2563EB]"
-                : "hover:text-[#2563EB]"
-            }`}
-          >
-            <FileText size={14} className="text-red-500 shrink-0" />
-            <span>Question Papers</span>
-            <span className="bg-amber-500 text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
-              New
-            </span>
-          </Link>
+            label="Question Papers"
+            icon={FileText}
+            iconClass="text-red-500"
+            active={isActive("/questions-create")}
+            tag={{ text: "New", className: "bg-amber-500" }}
+          />
+          <NavItem
+            href="/jobs"
+            label="Jobs"
+            icon={Briefcase}
+            iconClass="text-amber-500"
+            active={isActive("/jobs")}
+            upcoming
+          />
+          <NavDropdown
+            href="/print-media"
+            label="Print Media"
+            icon={Printer}
+            iconClass="text-[#2563EB]"
+            items={printMediaItems}
+            open={printMediaOpen}
+            setOpen={setPrintMediaOpen}
+            active={isActive("/print-media")}
+            upcoming
+            panelClass="w-52"
+          />
+          <NavItem
+            href="/sohoj-tools"
+            label="SohozTools"
+            icon={ShoppingBag}
+            iconClass="text-rose-500"
+            active={isActive("/sohoj-tools")}
+            tag={{ text: "Free", className: "bg-[#10B981]" }}
+          />
 
-          {/* Jobs Link */}
-          <div className="relative flex items-center whitespace-nowrap shrink-0">
-            <span className="absolute -top-2.5 -right-2 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
-              Upcoming
-            </span>
-
-            <Link
-              href="/jobs"
-              className={`flex items-center gap-1 transition-colors ${
-                pathname === "/jobs" ? "text-[#2563EB]" : "hover:text-[#2563EB]"
-              }`}
+          {/* All Menu */}
+          <div className="flex h-full shrink-0 items-center">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className={`${itemBase} cursor-pointer text-slate-700 hover:bg-slate-100 hover:text-slate-900`}
             >
-              <Briefcase size={14} className="text-amber-500 shrink-0" />
-              <span>Jobs</span>
-            </Link>
+              <Menu size={15} className="shrink-0" />
+              <span>All Menu</span>
+            </button>
           </div>
-
-          {/* Print Media Dropdown */}
-          <div
-            className="relative py-1 whitespace-nowrap shrink-0"
-            onMouseEnter={() => setPrintMediaOpen(true)}
-            onMouseLeave={() => setPrintMediaOpen(false)}
-          >
-            <span className="absolute -top-2.5 -right-1 bg-red-500 text-white text-[7.5px] font-black px-1.5 py-0.2 rounded -rotate-12 shadow-sm border border-white uppercase tracking-wider pointer-events-none z-10">
-              Upcoming
-            </span>
-
-            <Link
-              href="/print-media"
-              className={`flex items-center gap-0.5 transition-colors ${
-                pathname === "/print-media"
-                  ? "text-[#2563EB]"
-                  : "hover:text-[#2563EB] text-[#0F172A]"
-              }`}
-            >
-              <Printer size={14} className="text-[#2563EB] shrink-0" />
-              <span>Print Media</span>
-              <ChevronDown
-                size={13}
-                className={`text-gray-400 transition-transform duration-200 ${
-                  printMediaOpen ? "rotate-180" : ""
-                }`}
-              />
-            </Link>
-
-            {printMediaOpen && (
-              <div className="absolute top-full left-0 w-48 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-xl py-2 z-[100] text-xs font-semibold">
-                {printMediaItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    href="/print-media"
-                    className="block px-4 py-2 text-[#0F172A] hover:bg-[#E2E8F0] hover:text-[#2563EB] transition-colors"
-                  >
-                    {item}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* SohozTools Link */}
-          <div className="relative flex items-center gap-0.5 whitespace-nowrap shrink-0">
-            <Link
-              href="/sohoj-tools"
-              className="flex items-center gap-1 hover:text-[#2563EB] cursor-pointer"
-            >
-              <ShoppingBag size={14} className="text-rose-500 shrink-0" />
-              <span>SohozTools</span>
-            </Link>
-            <span className="bg-[#10B981] text-white text-[8px] font-bold px-1 py-0.2 rounded-full uppercase leading-tight">
-              Free
-            </span>
-          </div>
-
-          {/* All Menu Button */}
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="flex items-center gap-1 text-[#0F172A] hover:text-[#2563EB] cursor-pointer pl-1 whitespace-nowrap bg-transparent border-0 shrink-0"
-          >
-            <Menu size={14} className="shrink-0" />
-            <span>All Menu</span>
-          </button>
         </nav>
 
-        {/* Right Section: Language Switcher + Credit Bonus Badge + Search Button + Profile */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Desktop Language Switcher */}
-          <div className="hidden sm:inline-flex items-center bg-[#E2E8F0] p-0.5 rounded-md text-xs font-semibold shrink-0">
+        {/* Right: language, credit bonus, search, profile, drawer */}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Language switcher */}
+          <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold sm:inline-flex">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
-              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+              className={`cursor-pointer rounded-md px-2 py-1 transition-colors ${
                 lang === "EN"
-                  ? "bg-[#2563EB] text-white shadow-sm"
-                  : "text-[#0F172A] hover:text-black"
+                  ? "bg-[#2563EB] text-white"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               EN
@@ -382,114 +459,118 @@ export default function DashboardNavbar() {
             <button
               type="button"
               onClick={() => changeGoogleLanguage("BN")}
-              className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+              className={`cursor-pointer rounded-md px-2 py-1 transition-colors ${
                 lang === "BN"
-                  ? "bg-[#2563EB] text-white shadow-sm"
-                  : "text-[#0F172A] hover:text-black"
+                  ? "bg-[#2563EB] text-white"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               বাং
             </button>
           </div>
 
-          {/* Credit Bonus Link */}
+          {/* Credit bonus */}
           {showCreditBonus && (
-            <Link
-              href="/profile"
-              className="hidden 2xl:flex items-center gap-1 bg-[#E2E8F0] border border-slate-300 hover:border-slate-400 rounded-full p-0.5 pl-1.5 text-xs transition-all cursor-pointer shrink-0"
-            >
-              <span className="w-4 h-4 rounded-full bg-white text-[#2563EB] text-[10px] font-bold flex items-center justify-center">
-                16
-              </span>
-              <span className="bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] px-2 py-0.5 rounded-full transition-colors whitespace-nowrap">
-                18 Credit Bonus
-              </span>
+            <div className="hidden shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 py-0.5 pl-0.5 pr-1.5 2xl:flex">
+              <Link href="/profile" className="flex items-center gap-1.5">
+                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold text-[#2563EB] ring-1 ring-slate-200">
+                  16
+                </span>
+                <span className="rounded-full bg-[#10B981] px-2.5 py-1 text-[11px] font-semibold leading-none text-white transition-colors hover:bg-[#059669]">
+                  18 Credit Bonus
+                </span>
+              </Link>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowCreditBonus(false);
-                }}
-                className="text-gray-400 hover:text-gray-600 px-0.5"
+                onClick={() => setShowCreditBonus(false)}
+                aria-label="Dismiss credit bonus"
+                className="cursor-pointer rounded-full p-0.5 text-slate-400 transition-colors hover:text-slate-700"
               >
-                <X size={11} />
+                <X size={12} />
               </button>
-            </Link>
+            </div>
           )}
 
-          {/* Search Trigger Button */}
+          {/* Search */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="p-1.5 sm:p-2 rounded-xl border border-[#E2E8F0] text-gray-500 hover:bg-[#E2E8F0] transition-colors cursor-pointer shrink-0"
+            className={iconButton}
             aria-label="Search"
           >
             <Search size={16} />
           </button>
 
-          {/* Profile Dropdown */}
-          <div className="relative z-50 shrink-0">
+          {/* Profile */}
+          <div className="relative z-50 shrink-0" ref={profileRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 border border-[#E2E8F0] rounded-2xl px-1.5 py-1 hover:bg-[#E2E8F0] transition-all text-left"
+              aria-haspopup="true"
+              aria-expanded={dropdownOpen}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-2 text-left transition-colors hover:bg-slate-50"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold uppercase text-white">
                 {getInitials(user?.fullName)}
               </div>
-              <div className="hidden lg:flex flex-col leading-tight">
-                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
+              <div className="hidden flex-col leading-tight lg:flex xl:hidden 2xl:flex">
+                <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
                   {user?.fullName || "User Account"}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium truncate max-w-[80px] xl:max-w-[90px] 2xl:max-w-[110px]">
+                <span className="max-w-[120px] truncate text-[11px] text-slate-400">
                   {user?.phoneNumber || user?.email || "User"}
                 </span>
               </div>
-              <ChevronDown size={14} className="text-gray-400 shrink-0" />
+              <ChevronDown
+                size={14}
+                className={`shrink-0 text-slate-400 transition-transform duration-200 ${
+                  dropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-xl py-2 z-[100] text-xs">
-                <div className="px-4 py-2 border-b border-[#E2E8F0]">
-                  <p className="font-bold text-[#0F172A]">
+              <div className="absolute right-0 z-[100] mt-2 w-60 rounded-xl border border-slate-200 bg-white p-1.5 text-[13px] shadow-lg">
+                <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
+                  <p className="font-semibold text-[#0F172A]">
                     {user?.fullName || "User Account"}
                   </p>
-                  <p className="text-gray-400 truncate">
+                  <p className="truncate text-xs text-slate-400">
                     {user?.phoneNumber || user?.email || "User"}
                   </p>
                 </div>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100"
                 >
-                  <UserIcon size={14} /> My Profile
+                  <UserIcon size={15} className="text-slate-500" /> My Profile
                 </Link>
                 <Link
                   href="/credit-usage"
-                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100"
                 >
-                  <CreditCard size={14} /> Credit Usage
+                  <CreditCard size={15} className="text-slate-500" /> Credit
+                  Usage
                 </Link>
                 <Link
                   href="/settings"
-                  className="flex items-center gap-2 px-4 py-2.5 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100"
                 >
-                  <Settings size={14} /> Settings
+                  <Settings size={15} className="text-slate-500" /> Settings
                 </Link>
-                <div className="border-t border-[#E2E8F0] my-1"></div>
+                <div className="my-1 border-t border-slate-100" />
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-semibold transition-colors cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left font-medium text-red-600 transition-colors hover:bg-red-50"
                 >
-                  <LogOut size={14} /> Logout
+                  <LogOut size={15} /> Logout
                 </button>
               </div>
             )}
           </div>
 
-          {/* Mobile/Tablet Drawer Trigger Button */}
+          {/* Mobile / tablet drawer trigger */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="xl:hidden p-1.5 sm:p-2 rounded-xl border border-[#E2E8F0] text-[#0F172A] hover:bg-[#E2E8F0] transition-colors cursor-pointer bg-[#F8FAFC] shrink-0"
+            className={`${iconButton} xl:hidden`}
             aria-label="Open Menu"
           >
             <Menu size={18} />
@@ -499,53 +580,51 @@ export default function DashboardNavbar() {
 
       {/* Search Modal */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-xs px-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs animate-in fade-in duration-200">
           <div
             className="absolute inset-0"
             onClick={() => setIsSearchOpen(false)}
           ></div>
-          <div className="relative w-full max-w-lg bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl shadow-2xl overflow-hidden z-10">
-            <div className="flex items-center px-4 py-3 border-b border-[#E2E8F0] gap-3">
-              <Search size={18} className="text-gray-400 shrink-0" />
+          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
+              <Search size={18} className="shrink-0 text-slate-400" />
               <input
                 type="text"
                 autoFocus
                 placeholder="পদ এবং ফিচার খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent text-sm text-[#0F172A] placeholder-gray-400 focus:outline-none"
+                className="w-full bg-transparent text-sm text-[#0F172A] placeholder-slate-400 focus:outline-none"
               />
               <button
                 onClick={() => setIsSearchOpen(false)}
-                className="text-[10px] font-bold text-[#0F172A] bg-[#E2E8F0] hover:bg-slate-300 px-2 py-1 rounded-md transition-colors"
+                className="cursor-pointer rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-200"
               >
                 Esc
               </button>
             </div>
 
-            <div className="p-4 max-h-80 overflow-y-auto">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">
-                Search Tips
+            <div className="max-h-80 overflow-y-auto p-3">
+              <p className="mb-1.5 px-2 text-xs font-medium text-slate-400">
+                Search tips
               </p>
-              <div className="space-y-1.5">
+              <div className="space-y-0.5">
                 {searchTips.map((tip, idx) => (
                   <div
                     key={idx}
                     onClick={() => setSearchQuery(tip.key)}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#E2E8F0] hover:text-[#2563EB] text-xs text-[#0F172A] cursor-pointer transition-colors group"
+                    className="group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13px] text-slate-700 transition-colors hover:bg-slate-100"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold bg-[#E2E8F0] group-hover:bg-[#2563EB] group-hover:text-white px-2 py-0.5 rounded text-[#0F172A]">
-                        {tip.key}
-                      </span>
-                      <span>{tip.desc}</span>
-                    </div>
+                    <span className="min-w-[68px] rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 group-hover:bg-[#2563EB] group-hover:text-white">
+                      {tip.key}
+                    </span>
+                    <span>{tip.desc}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="px-4 py-2.5 bg-[#E2E8F0] border-t border-slate-300 flex items-center justify-between text-[11px] text-gray-500">
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-[11px] text-slate-500">
               <span>টুলস এবং ফিচার সার্চ করতে টাইপ করুন</span>
               <span className="flex items-center gap-1 font-mono">
                 <Command size={10} /> K

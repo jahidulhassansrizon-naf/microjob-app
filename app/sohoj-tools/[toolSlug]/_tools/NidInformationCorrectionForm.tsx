@@ -882,17 +882,30 @@ export default function NidInformationCorrectionForm() {
     return clamp(Math.floor(((el.clientWidth - 32) / PAGE_W) * 100), 40, 200);
   }, []);
 
+  // Initial view: fit one complete A4 sheet inside the preview viewport
+  // instead of fitting only to width. This keeps the full first form page
+  // visible immediately without changing the preview layout or controls.
+  const computeInitialPageFit = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return 70;
+
+    const widthFit = (el.clientWidth - 32) / PAGE_W;
+    const heightFit = (el.clientHeight - 32) / PAGE_H;
+
+    return clamp(Math.floor(Math.min(widthFit, heightFit) * 100), 40, 200);
+  }, []);
+
   /* ---- mount: read saved data / counters, fit preview -------------------- */
   useEffect(() => {
     setMounted(true);
     setSavedAt(readSaved()?.savedAt ?? null);
     setUses(Number(readLS(USES_KEY)) || 0);
     setFav(readLS(FAV_KEY) === "1");
-    setZoom(computeFit());
+    setZoom(computeInitialPageFit());
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
-  }, [computeFit]);
+  }, [computeInitialPageFit]);
 
   /* ---- autosave (debounced; never overwrites the last application with an empty form) */
   useEffect(() => {

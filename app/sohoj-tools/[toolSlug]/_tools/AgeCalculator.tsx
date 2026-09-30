@@ -184,7 +184,7 @@ function DatePicker({
   }
 
   const selectClass =
-    "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-purple-500 cursor-pointer";
+    "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#2563EB] cursor-pointer";
 
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -444,7 +444,7 @@ export default function AgeCalculator() {
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Calculator size={18} />
               </div>
               <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
@@ -465,11 +465,11 @@ export default function AgeCalculator() {
               onClick={() => setIsFavorite(!isFavorite)}
               aria-pressed={isFavorite}
               aria-label="Save to favourites"
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-purple-500 hover:border-purple-300 transition-all shadow-2xs cursor-pointer"
+              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#93C5FD] transition-all shadow-2xs cursor-pointer"
             >
               <Star
                 size={16}
-                className={isFavorite ? "fill-purple-400 text-purple-400" : ""}
+                className={isFavorite ? "fill-[#2563EB] text-[#2563EB]" : ""}
               />
             </button>
             <button
@@ -495,7 +495,7 @@ export default function AgeCalculator() {
               {/* Date of Birth */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
-                  <Cake size={13} className="text-purple-500" />
+                  <Cake size={13} className="text-[#4F46E5]" />
                   Date of birth <span className="text-red-500">*</span>
                 </label>
                 <p className="text-[11px] text-gray-400 font-medium">
@@ -515,10 +515,10 @@ export default function AgeCalculator() {
               </div>
 
               {/* Age at date toggle */}
-              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-gray-50/50">
+              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-[#F8FAFC]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold">
+                    <div className="w-7 h-7 bg-[#EFF6FF] text-[#2563EB] rounded-lg flex items-center justify-center font-bold">
                       <Clock3 size={14} />
                     </div>
                     <div>
@@ -537,7 +537,7 @@ export default function AgeCalculator() {
                       onChange={() => setUseCustomTargetDate((v) => !v)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2563EB]" />
                   </label>
                 </div>
                 {useCustomTargetDate && (
@@ -558,10 +558,10 @@ export default function AgeCalculator() {
               </div>
 
               {/* Compare Age Toggle Box */}
-              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-gray-50/50">
+              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-[#F8FAFC]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center font-bold">
+                    <div className="w-7 h-7 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold">
                       <Users size={14} />
                     </div>
                     <div>
@@ -580,7 +580,7 @@ export default function AgeCalculator() {
                       onChange={() => setCompareOn((v) => !v)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600" />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F46E5]" />
                   </label>
                 </div>
                 {compareOn && (
@@ -629,7 +629,7 @@ export default function AgeCalculator() {
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
                   <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span className="w-2 h-2 rounded-full bg-[#4F46E5]" />
                     <span>Your age</span>
                   </span>
                   <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
@@ -640,13 +640,13 @@ export default function AgeCalculator() {
                 {age && birthDate && targetDate ? (
                   <div className="mt-6 space-y-6">
                     {/* Headline result */}
-                    <div className="bg-purple-50 border border-purple-200 rounded-2xl p-6 text-center space-y-2">
-                      <p className="text-xs font-bold text-purple-700 uppercase tracking-widest">
+                    <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-2xl p-6 text-center space-y-2">
+                      <p className="text-xs font-bold text-[#4338CA] uppercase tracking-widest">
                         {useCustomTargetDate
                           ? `Age on ${formatDate(targetDate)}`
                           : "Exact age today"}
                       </p>
-                      <h2 className="text-3xl font-extrabold text-purple-900">
+                      <h2 className="text-3xl font-extrabold text-[#312E81]">
                         {age.years}{" "}
                         <span className="text-base font-normal">Years</span>,{" "}
                         {age.months}{" "}
@@ -654,7 +654,7 @@ export default function AgeCalculator() {
                         {age.days}{" "}
                         <span className="text-base font-normal">Days</span>
                       </h2>
-                      <span className="inline-block bg-white text-purple-700 border border-purple-200 text-[11px] font-bold px-3 py-1 rounded-full">
+                      <span className="inline-block bg-white text-[#4338CA] border border-[#C7D2FE] text-[11px] font-bold px-3 py-1 rounded-full">
                         {lifeStage(age.years)}
                       </span>
                     </div>
@@ -690,8 +690,7 @@ export default function AgeCalculator() {
                     {/* Next birthday */}
                     {nextBirthday && (
                       <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-                        </div>
+                        <div className="w-9 h-9 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0"></div>
                         <p className="text-xs font-semibold text-[#0F172A] leading-relaxed">
                           {nextBirthday.isToday ? (
                             <>
@@ -750,11 +749,11 @@ export default function AgeCalculator() {
 
                     {/* Comparison result */}
                     {compareOn && comparison && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                      <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 bg-[#DBEAFE] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
                           <Users size={17} />
                         </div>
-                        <p className="text-xs font-semibold text-blue-800 leading-relaxed">
+                        <p className="text-xs font-semibold text-[#1E40AF] leading-relaxed">
                           {comparison.isSame ? (
                             "Both people are exactly the same age."
                           ) : (
@@ -773,7 +772,7 @@ export default function AgeCalculator() {
                     <div className="flex items-center gap-2 print:hidden">
                       <button
                         onClick={handleCopy}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
                       >
                         {copied ? (
                           <Check size={14} className="text-emerald-600" />
@@ -786,7 +785,7 @@ export default function AgeCalculator() {
                   </div>
                 ) : (
                   <div className="mt-16 flex flex-col items-center justify-center text-center p-8 space-y-3">
-                    <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-2xs">
+                    <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-2xl flex items-center justify-center shadow-2xs">
                       <Calculator size={22} />
                     </div>
                     <h3 className="text-xs font-bold text-[#0F172A]">
@@ -807,7 +806,7 @@ export default function AgeCalculator() {
         {/* BOTTOM ACTION BAR */}
         <div className="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs print:hidden">
           <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-purple-500" />
+            <span className="w-2 h-2 rounded-full bg-[#4F46E5]" />
             <span>
               Everything is calculated in your browser — nothing is uploaded to
               any server.
@@ -817,14 +816,14 @@ export default function AgeCalculator() {
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <button
               onClick={handleReset}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"
             >
               Reset
             </button>
             <button
               onClick={() => window.print()}
               disabled={!age}
-              className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer"
             >
               <Calculator size={14} />
               <span>Print / Save</span>
@@ -836,10 +835,10 @@ export default function AgeCalculator() {
         <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs print:hidden">
           <button
             onClick={() => setShowHowToUse(!showHowToUse)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors cursor-pointer"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5]" />
               <span>How to use</span>
             </div>
             {showHowToUse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -879,13 +878,13 @@ export default function AgeCalculator() {
                 <Link
                   key={idx}
                   href={tool.href}
-                  className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between group"
+                  className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#93C5FD] transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
+                    <div className="w-9 h-9 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#E0E7FF] transition-colors">
                       <ToolIcon size={18} />
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-[#4F46E5] transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
