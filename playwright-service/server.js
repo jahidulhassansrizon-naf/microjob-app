@@ -332,6 +332,70 @@ app.get("/browser-status", async (req, res) => {
   }
 });
 
+app.get("/session-test", async (req, res) => {
+  let browser = null;
+
+  try {
+    const sessionFile = [
+      "/etc/secrets/gemini-session.json",
+      path.join(__dirname, "gemini-session.json"),
+    ].find((p) => existsSync(p));
+
+    if (!sessionFile) {
+      return res.status(404).json({
+        success: false,
+        error: "Session file not found on server.",
+      });
+    }
+
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+
+    const context = await browser.newContext({
+      storageState: sessionFile,
+      viewport: { width: 1440, height: 900 },
+    });
+
+    const page = await context.newPage();
+
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(5000);
+
+    const bodyText = await page.locator("body").innerText();
+    const hasSignIn = /Sign in/i.test(bodyText);
+    const hasPromptBox =
+      (await page.locator('[data-test-id="textarea-wrapper"]').count()) > 0;
+
+    return res.json({
+      success: true,
+      sessionFileFound: true,
+      url: page.url(),
+      title: await page.title(),
+      hasSignIn,
+      hasPromptBox,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
+});
+
 // --------------------------------------------------
 // Start Node API
 // --------------------------------------------------
