@@ -1,10 +1,9 @@
 const express = require("express");
 const { chromium } = require("playwright");
-const { spawn, execFileSync } = require("node:child_process");
+const { spawn } = require("node:child_process");
 const { promises: fs, existsSync } = require("node:fs");
-const http = require("node:http");
 const crypto = require("node:crypto");
-const httpProxy = require("http-proxy");
+const path = require("node:path");
 
 const app = express();
 
@@ -16,20 +15,19 @@ const WEBSOCKIFY_PORT = 6080;
 
 const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
 
+const VNC_PASSWORD_FILE = "/tmp/vnc-password";
+
 process.env.DISPLAY = DISPLAY;
 
 let browserContext = null;
-let desktopProcesses = [];
+let desktopStarted = false;
+const desktopProcesses = [];
 
-const websockifyProxy = httpProxy.createProxyServer({
-  target: `http://127.0.0.1:${WEBSOCKIFY_PORT}`,
-  ws: true,
-  changeOrigin: true,
-});
+app.use(express.json({ limit: "10mb" }));
 
-websockifyProxy.on("error", (error) => {
-  console.error("websockify proxy error:", error.message);
-});
+// --------------------------------------------------
+// CORS
+// --------------------------------------------------
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -43,7 +41,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: "10mb" }));
+// --------------------------------------------------
+// Helpers
+// --------------------------------------------------
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -70,11 +70,14 @@ function startProcess(command, args, name) {
   });
 
   child.on("error", (error) => {
-    console.error(`${name} failed:`, error);
+    console.error(`${name} error:`, error);
   });
 
   child.on("exit", (code, signal) => {
-    console.log(`${name} exited`, { code, signal });
+    console.log(`${name} exited`, {
+      code,
+      signal,
+    });
   });
 
   desktopProcesses.push(child);
@@ -82,29 +85,40 @@ function startProcess(command, args, name) {
   return child;
 }
 
+// --------------------------------------------------
+// Desktop
+// --------------------------------------------------
+
 async function startDesktop() {
-  if (desktopProcesses.length > 0) {
+  if (desktopStarted) {
     return;
   }
 
+  desktopStarted = true;
+
+  console.log("Starting cloud desktop...");
+
   const xauthFile = "/tmp/gemini-xauth";
-
-  console.log("Creating X11 authentication cookie...");
-
   const cookie = crypto.randomBytes(16).toString("hex");
 
-  try {
-    execFileSync("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
-      stdio: "inherit",
-    });
-  } catch (error) {
-    console.error("Failed to create X11 auth cookie:", error);
-    throw error;
-  }
+  // Create X11 authentication cookie.
+  await fs
+    .rm(xauthFile, {
+      force: true,
+    })
+    .catch(() => {});
+
+  spawn("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
+    stdio: "inherit",
+  });
+
+  await sleep(1000);
 
   process.env.XAUTHORITY = xauthFile;
 
-  console.log("Starting Xvfb...");
+  // ----------------------------------------------
+  // Xvfb
+  // ----------------------------------------------
 
   startProcess(
     "Xvfb",
@@ -125,13 +139,37 @@ async function startDesktop() {
 
   await sleep(1500);
 
-  console.log("Starting Fluxbox...");
+  // ----------------------------------------------
+  // Fluxbox
+  // ----------------------------------------------
 
   startProcess("fluxbox", [], "fluxbox");
 
   await sleep(1500);
 
-  console.log("Starting x11vnc...");
+  // ----------------------------------------------
+  // VNC password
+  // ----------------------------------------------
+
+  const vncPassword = process.env.NO_VNC_PASSWORD;
+
+  if (!vncPassword) {
+    throw new Error("NO_VNC_PASSWORD environment variable is required.");
+  }
+
+  if (vncPassword.length > 8) {
+    throw new Error(
+      "NO_VNC_PASSWORD must be 8 characters or fewer because of the VNC password protocol.",
+    );
+  }
+
+  await fs.writeFile(VNC_PASSWORD_FILE, `${vncPassword}\n`, {
+    mode: 0o600,
+  });
+
+  // ----------------------------------------------
+  // x11vnc
+  // ----------------------------------------------
 
   startProcess(
     "x11vnc",
@@ -140,11 +178,12 @@ async function startDesktop() {
       DISPLAY,
       "-auth",
       xauthFile,
-      "-forever",
-      "-shared",
       "-rfbport",
       String(VNC_PORT),
-      "-nopw",
+      "-passwdfile",
+      VNC_PASSWORD_FILE,
+      "-forever",
+      "-shared",
       "-listen",
       "127.0.0.1",
       "-noxdamage",
@@ -154,18 +193,30 @@ async function startDesktop() {
 
   await sleep(2500);
 
-  console.log("Starting websockify...");
+  // ----------------------------------------------
+  // websockify
+  // ----------------------------------------------
 
   startProcess(
     "websockify",
-    [String(WEBSOCKIFY_PORT), `127.0.0.1:${VNC_PORT}`],
+    [
+      "--verbose",
+      "--web",
+      "/usr/share/novnc",
+      String(WEBSOCKIFY_PORT),
+      `127.0.0.1:${VNC_PORT}`,
+    ],
     "websockify",
   );
 
   await sleep(2500);
 
-  console.log("Virtual desktop and WebSocket VNC proxy are ready.");
+  console.log("Cloud desktop is ready.");
 }
+
+// --------------------------------------------------
+// Chromium
+// --------------------------------------------------
 
 async function getBrowserContext() {
   if (browserContext) {
@@ -219,16 +270,8 @@ async function getGeminiPage() {
 }
 
 // --------------------------------------------------
-// Health
+// API
 // --------------------------------------------------
-
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    service: "microjob-playwright",
-    status: "online",
-  });
-});
 
 app.get("/health", (req, res) => {
   res.json({
@@ -236,10 +279,6 @@ app.get("/health", (req, res) => {
     status: "healthy",
   });
 });
-
-// --------------------------------------------------
-// Start cloud browser
-// --------------------------------------------------
 
 app.get("/login", async (req, res) => {
   try {
@@ -252,9 +291,9 @@ app.get("/login", async (req, res) => {
     return res.json({
       success: true,
       message:
-        "Cloud Chromium is running. Open the noVNC URL and complete Gemini login yourself.",
+        "Cloud Chromium is running. Open /vnc.html and complete Gemini login yourself.",
       geminiUrl: page.url(),
-      novncUrl: "/novnc/vnc.html?autoconnect=true&resize=scale&path=websockify",
+      vncUrl: "/vnc.html?autoconnect=true&resize=scale&path=websockify",
     });
   } catch (error) {
     console.error("Login browser error:", error);
@@ -265,10 +304,6 @@ app.get("/login", async (req, res) => {
     });
   }
 });
-
-// --------------------------------------------------
-// Browser status
-// --------------------------------------------------
 
 app.get("/browser-status", async (req, res) => {
   try {
@@ -298,71 +333,16 @@ app.get("/browser-status", async (req, res) => {
 });
 
 // --------------------------------------------------
-// noVNC
+// Start Node API
 // --------------------------------------------------
 
-const noVncCandidates = ["/usr/share/novnc", "/usr/share/noVNC"];
-
-let noVncDirectory = null;
-
-for (const candidate of noVncCandidates) {
-  if (existsSync(candidate)) {
-    noVncDirectory = candidate;
-    break;
-  }
-}
-
-if (noVncDirectory) {
-  console.log("Using noVNC directory:", noVncDirectory);
-
-  app.use("/novnc", express.static(noVncDirectory));
-
-  app.get("/novnc", (req, res) => {
-    res.redirect(
-      "/novnc/vnc.html?autoconnect=true&resize=scale&path=/websockify",
-    );
-  });
-} else {
-  console.error("noVNC directory was not found.");
-}
-
-// --------------------------------------------------
-// HTTP server
-// --------------------------------------------------
-
-const server = http.createServer(app);
-
-// --------------------------------------------------
-// WebSocket → websockify
-// --------------------------------------------------
-
-server.on("upgrade", (req, socket, head) => {
-  const url = new URL(
-    req.url || "/",
-    `http://${req.headers.host || "localhost"}`,
-  );
-
-  if (url.pathname !== "/websockify") {
-    socket.destroy();
-    return;
-  }
-
-  console.log("WebSocket upgrade received for /websockify");
-
-  websockifyProxy.ws(req, socket, head);
-});
-
-// --------------------------------------------------
-// Start server
-// --------------------------------------------------
-
-server.listen(PORT, "0.0.0.0", async () => {
-  console.log(`Playwright service running on port ${PORT}`);
+const server = app.listen(PORT, "127.0.0.1", async () => {
+  console.log(`Node API running on internal port ${PORT}`);
 
   try {
     await startDesktop();
   } catch (error) {
-    console.error("Desktop startup error:", error);
+    console.error("Desktop startup failed:", error);
   }
 });
 
