@@ -58,6 +58,18 @@ server {
         proxy_read_timeout 120s;
     }
 
+    # Gemini image editing (large uploads + long wait)
+    location = /edit-image {
+        client_max_body_size 20m;
+        proxy_pass http://127.0.0.1:3000/edit-image;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header x-api-key $http_x_api_key;
+        proxy_read_timeout 360s;
+        proxy_send_timeout 360s;
+        proxy_connect_timeout 60s;
+    }
+
     # WebSocket connection from noVNC
     location /websockify {
         proxy_pass http://127.0.0.1:6080;

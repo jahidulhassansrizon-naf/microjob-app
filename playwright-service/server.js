@@ -1,8 +1,10 @@
 const express = require("express");
 const { chromium } = require("playwright");
+const multer = require("multer");
 const { spawn } = require("node:child_process");
 const { promises: fs, existsSync } = require("node:fs");
 const crypto = require("node:crypto");
+const os = require("node:os");
 const path = require("node:path");
 
 const app = express();
@@ -32,7 +34,10 @@ app.use(express.json({ limit: "10mb" }));
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, x-api-key",
+  );
 
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
@@ -270,6 +275,267 @@ async function getGeminiPage() {
 }
 
 // --------------------------------------------------
+// Gemini image editing helpers (used by /edit-image)
+// --------------------------------------------------
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+  },
+});
+
+function parseUpload(req, res, next) {
+  upload.single("image")(req, res, (error) => {
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    next();
+  });
+}
+
+// Optional protection: if ASK_KEY is set in Render's Environment,
+// every /edit-image request must send the same value in the
+// "x-api-key" header. If ASK_KEY is not set, the route is open.
+function requireApiKey(req, res, next) {
+  const requiredKey = process.env.ASK_KEY;
+
+  if (!requiredKey) {
+    return next();
+  }
+
+  if (req.get("x-api-key") !== requiredKey) {
+    return res.status(401).json({
+      success: false,
+      error: "Invalid or missing API key.",
+    });
+  }
+
+  next();
+}
+
+function findSessionFile() {
+  return [
+    "/etc/secrets/gemini-session.json",
+    path.join(__dirname, "gemini-session.json"),
+  ].find((p) => existsSync(p));
+}
+
+function getMimeType(extension) {
+  const normalized = String(extension || "").toLowerCase();
+
+  if (normalized === ".jpg" || normalized === ".jpeg") return "image/jpeg";
+  if (normalized === ".webp") return "image/webp";
+  if (normalized === ".gif") return "image/gif";
+
+  return "image/png";
+}
+
+function getExtension(mimeType) {
+  const normalized = String(mimeType || "").toLowerCase();
+
+  if (normalized.includes("jpeg") || normalized.includes("jpg")) return ".jpg";
+  if (normalized.includes("webp")) return ".webp";
+  if (normalized.includes("gif")) return ".gif";
+
+  return ".png";
+}
+
+// Only one Gemini job runs at a time, because Render Free
+// has very little memory (512 MB).
+let editQueue = Promise.resolve();
+
+function runInEditQueue(job) {
+  const result = editQueue.then(job, job);
+
+  editQueue = result.then(
+    () => {},
+    () => {},
+  );
+
+  return result;
+}
+
+async function generateWithGemini(imagePath, prompt, outputDir) {
+  const sessionFile = findSessionFile();
+
+  if (!sessionFile) {
+    throw new Error("Session file not found on server.");
+  }
+
+  let browser = null;
+  let page = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+
+    const context = await browser.newContext({
+      storageState: sessionFile,
+      viewport: { width: 1440, height: 900 },
+      acceptDownloads: true,
+    });
+
+    page = await context.newPage();
+
+    // 1. Open Gemini
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    // 2. Type the prompt
+    const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
+
+    await promptWrapper.waitFor({
+      state: "visible",
+      timeout: 45000,
+    });
+
+    const promptParagraph = promptWrapper.getByRole("paragraph").first();
+
+    await promptParagraph.waitFor({
+      state: "visible",
+      timeout: 15000,
+    });
+
+    await promptParagraph.click();
+
+    await page.keyboard.insertText(String(prompt).trim());
+
+    // 3. Open Upload & tools
+    const uploadToolsButton = page.getByRole("button", {
+      name: "Upload & tools",
+    });
+
+    await uploadToolsButton.waitFor({
+      state: "visible",
+      timeout: 15000,
+    });
+
+    await uploadToolsButton.click();
+
+    // 4. Click the local uploader and attach the image
+    const uploaderButton = page.locator(
+      '[data-test-id="local-images-files-uploader-button"]',
+    );
+
+    await uploaderButton.waitFor({
+      state: "visible",
+      timeout: 15000,
+    });
+
+    const chooserPromise = page
+      .waitForEvent("filechooser", { timeout: 5000 })
+      .catch(() => null);
+
+    await uploaderButton.click();
+
+    const fileChooser = await chooserPromise;
+
+    if (fileChooser) {
+      await fileChooser.setFiles(imagePath);
+    } else {
+      const fileInput = page.locator('input[name="Filedata"]');
+
+      await fileInput.waitFor({
+        state: "attached",
+        timeout: 15000,
+      });
+
+      await fileInput.setInputFiles(imagePath);
+    }
+
+    // Give Gemini a moment to attach the image
+    await page.waitForTimeout(3000);
+
+    // 5. Send
+    const sendButton = page.getByRole("button", {
+      name: "Send message",
+    });
+
+    await sendButton.waitFor({
+      state: "visible",
+      timeout: 15000,
+    });
+
+    await sendButton.click();
+
+    // 6. Wait for the generated image
+    const downloadButton = page
+      .getByRole("button", {
+        name: "Download full size image",
+      })
+      .last();
+
+    await downloadButton.waitFor({
+      state: "visible",
+      timeout: 180000,
+    });
+
+    // 7. Download it
+    const downloadPromise = page.waitForEvent("download", {
+      timeout: 120000,
+    });
+
+    await downloadButton.click();
+
+    const download = await downloadPromise;
+
+    const suggestedFilename =
+      download.suggestedFilename() || "gemini-generated-image.png";
+
+    const extension = path.extname(suggestedFilename) || ".png";
+
+    const outputPath = path.join(outputDir, `generated${extension}`);
+
+    await download.saveAs(outputPath);
+
+    const buffer = await fs.readFile(outputPath);
+
+    if (!buffer.length) {
+      throw new Error("Gemini returned an empty image.");
+    }
+
+    return {
+      buffer,
+      mimeType: getMimeType(extension),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    let pageInfo = "";
+
+    if (page) {
+      try {
+        const bodyText = await page
+          .locator("body")
+          .innerText({ timeout: 3000 });
+        pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
+      } catch {
+        pageInfo = ` [page: ${page.url()}]`;
+      }
+    }
+
+    throw new Error(`${message}${pageInfo}`);
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
+}
+
+// --------------------------------------------------
 // API
 // --------------------------------------------------
 
@@ -392,6 +658,75 @@ app.get("/session-test", async (req, res) => {
   } finally {
     if (browser) {
       await browser.close().catch(() => {});
+    }
+  }
+});
+
+app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
+  const prompt =
+    typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+
+  if (!prompt) {
+    return res.status(400).json({
+      success: false,
+      error: "No editing prompt was provided.",
+    });
+  }
+
+  if (!req.file || !req.file.buffer || !req.file.buffer.length) {
+    return res.status(400).json({
+      success: false,
+      error: "No source image was provided.",
+    });
+  }
+
+  if (
+    !String(req.file.mimetype || "")
+      .toLowerCase()
+      .startsWith("image/")
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: "Uploaded source file is not an image.",
+    });
+  }
+
+  let tempDir = null;
+
+  try {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-edit-"));
+
+    const sourcePath = path.join(
+      tempDir,
+      `source${getExtension(req.file.mimetype)}`,
+    );
+
+    await fs.writeFile(sourcePath, req.file.buffer);
+
+    const result = await runInEditQueue(() =>
+      generateWithGemini(sourcePath, prompt, tempDir),
+    );
+
+    return res.json({
+      success: true,
+      provider: "gemini-playwright-render",
+      image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
+    });
+  } catch (error) {
+    console.error("edit-image error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    if (tempDir) {
+      await fs
+        .rm(tempDir, {
+          recursive: true,
+          force: true,
+        })
+        .catch(() => {});
     }
   }
 });
