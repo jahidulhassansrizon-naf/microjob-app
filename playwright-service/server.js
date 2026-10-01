@@ -119,6 +119,50 @@ app.get("/gemini-test", async (req, res) => {
   }
 });
 
+app.get("/gemini-login-test", async (req, res) => {
+  let browser = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(3000);
+
+    const bodyText = await page.locator("body").innerText();
+
+    const needsLogin =
+      bodyText.toLowerCase().includes("sign in") ||
+      bodyText.toLowerCase().includes("sign into");
+
+    await browser.close();
+
+    return res.json({
+      success: true,
+      loggedIn: !needsLogin,
+      message: needsLogin
+        ? "Gemini opened, but login is required."
+        : "Gemini appears to be logged in.",
+    });
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Playwright service running on port ${PORT}`);
 });
