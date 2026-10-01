@@ -1,22 +1,18 @@
 const express = require("express");
 const { chromium } = require("playwright");
-const { spawn } = require("node:child_process");
-
-const { execFileSync } = require("node:child_process");
-const crypto = require("node:crypto");
-
-const { promises: fs } = require("node:fs");
+const { spawn, execFileSync } = require("node:child_process");
+const { promises: fs, existsSync } = require("node:fs");
 const http = require("node:http");
-const net = require("node:net");
-const path = require("node:path");
-const { existsSync } = require("node:fs");
-const { WebSocketServer } = require("ws");
+const crypto = require("node:crypto");
+const httpProxy = require("http-proxy");
 
 const app = express();
 
 const PORT = Number(process.env.PORT || 10000);
 const DISPLAY = process.env.DISPLAY || ":99";
+
 const VNC_PORT = 5900;
+const WEBSOCKIFY_PORT = 6080;
 
 const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
 
@@ -24,6 +20,16 @@ process.env.DISPLAY = DISPLAY;
 
 let browserContext = null;
 let desktopProcesses = [];
+
+const websockifyProxy = httpProxy.createProxyServer({
+  target: `http://127.0.0.1:${WEBSOCKIFY_PORT}`,
+  ws: true,
+  changeOrigin: true,
+});
+
+websockifyProxy.on("error", (error) => {
+  console.error("websockify proxy error:", error.message);
+});
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -50,6 +56,7 @@ function startProcess(command, args, name) {
     env: {
       ...process.env,
       DISPLAY,
+      XAUTHORITY: "/tmp/gemini-xauth",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -81,17 +88,23 @@ async function startDesktop() {
   }
 
   const xauthFile = "/tmp/gemini-xauth";
-  const cookie = crypto.randomBytes(16).toString("hex");
 
   console.log("Creating X11 authentication cookie...");
 
-  execFileSync("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
-    stdio: "inherit",
-  });
+  const cookie = crypto.randomBytes(16).toString("hex");
+
+  try {
+    execFileSync("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
+      stdio: "inherit",
+    });
+  } catch (error) {
+    console.error("Failed to create X11 auth cookie:", error);
+    throw error;
+  }
 
   process.env.XAUTHORITY = xauthFile;
 
-  console.log("X11 authentication cookie created.");
+  console.log("Starting Xvfb...");
 
   startProcess(
     "Xvfb",
@@ -100,20 +113,25 @@ async function startDesktop() {
       "-screen",
       "0",
       "1440x900x24",
-      "-ac",
-      "+extension",
-      "RANDR",
       "-auth",
       xauthFile,
+      "-nolisten",
+      "tcp",
+      "+extension",
+      "RANDR",
     ],
     "Xvfb",
   );
 
   await sleep(1500);
 
+  console.log("Starting Fluxbox...");
+
   startProcess("fluxbox", [], "fluxbox");
 
   await sleep(1500);
+
+  console.log("Starting x11vnc...");
 
   startProcess(
     "x11vnc",
@@ -134,9 +152,19 @@ async function startDesktop() {
     "x11vnc",
   );
 
-  await sleep(2000);
+  await sleep(2500);
 
-  console.log("Virtual desktop is ready.");
+  console.log("Starting websockify...");
+
+  startProcess(
+    "websockify",
+    [String(WEBSOCKIFY_PORT), `127.0.0.1:${VNC_PORT}`],
+    "websockify",
+  );
+
+  await sleep(2500);
+
+  console.log("Virtual desktop and WebSocket VNC proxy are ready.");
 }
 
 async function getBrowserContext() {
@@ -152,15 +180,17 @@ async function getBrowserContext() {
 
   browserContext = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
     headless: false,
+
     viewport: {
       width: 1440,
       height: 900,
     },
+
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--start-maximized",
       "--disable-dev-shm-usage",
+      "--start-maximized",
     ],
   });
 
@@ -189,7 +219,7 @@ async function getGeminiPage() {
 }
 
 // --------------------------------------------------
-// Basic routes
+// Health
 // --------------------------------------------------
 
 app.get("/", (req, res) => {
@@ -208,7 +238,7 @@ app.get("/health", (req, res) => {
 });
 
 // --------------------------------------------------
-// Start browser
+// Start cloud browser
 // --------------------------------------------------
 
 app.get("/login", async (req, res) => {
@@ -289,11 +319,11 @@ if (noVncDirectory) {
 
   app.get("/novnc", (req, res) => {
     res.redirect(
-      "/novnc/vnc.html?autoconnect=true&resize=scale&path=websockify",
+      "/novnc/vnc.html?autoconnect=true&resize=scale&path=/websockify",
     );
   });
 } else {
-  console.error("Could not find noVNC directory.");
+  console.error("noVNC directory was not found.");
 }
 
 // --------------------------------------------------
@@ -303,92 +333,23 @@ if (noVncDirectory) {
 const server = http.createServer(app);
 
 // --------------------------------------------------
-// WebSocket → VNC TCP bridge
+// WebSocket → websockify
 // --------------------------------------------------
 
-const wss = new WebSocketServer({
-  noServer: true,
-});
-
 server.on("upgrade", (req, socket, head) => {
-  const requestUrl = new URL(
+  const url = new URL(
     req.url || "/",
     `http://${req.headers.host || "localhost"}`,
   );
 
-  if (requestUrl.pathname !== "/websockify") {
+  if (url.pathname !== "/websockify") {
     socket.destroy();
     return;
   }
 
-  wss.handleUpgrade(req, socket, head, (ws) => {
-    wss.emit("connection", ws, req);
-  });
-});
+  console.log("WebSocket upgrade received for /websockify");
 
-wss.on("connection", (ws) => {
-  console.log("noVNC WebSocket connected.");
-
-  const vncSocket = net.createConnection({
-    host: "127.0.0.1",
-    port: VNC_PORT,
-  });
-
-  let closed = false;
-
-  function closeEverything() {
-    if (closed) return;
-
-    closed = true;
-
-    try {
-      vncSocket.destroy();
-    } catch {}
-
-    try {
-      if (ws.readyState === ws.OPEN) {
-        ws.close();
-      }
-    } catch {}
-  }
-
-  vncSocket.on("connect", () => {
-    console.log("Connected to x11vnc TCP server.");
-  });
-
-  vncSocket.on("data", (data) => {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(data);
-    }
-  });
-
-  vncSocket.on("error", (error) => {
-    console.error("VNC TCP error:", error.message);
-    closeEverything();
-  });
-
-  vncSocket.on("close", () => {
-    console.log("VNC TCP connection closed.");
-    closeEverything();
-  });
-
-  ws.on("message", (message) => {
-    if (!vncSocket.destroyed) {
-      const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message);
-
-      vncSocket.write(buffer);
-    }
-  });
-
-  ws.on("error", (error) => {
-    console.error("noVNC WebSocket error:", error.message);
-    closeEverything();
-  });
-
-  ws.on("close", () => {
-    console.log("noVNC WebSocket closed.");
-    closeEverything();
-  });
+  websockifyProxy.ws(req, socket, head);
 });
 
 // --------------------------------------------------
