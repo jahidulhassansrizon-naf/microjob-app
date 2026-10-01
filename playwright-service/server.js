@@ -1,10 +1,11 @@
 const express = require("express");
 const { chromium } = require("playwright");
 const { spawn } = require("node:child_process");
+const { promises: fs } = require("node:fs");
 const http = require("node:http");
-const fs = require("node:fs");
+const net = require("node:net");
 const path = require("node:path");
-const httpProxy = require("http-proxy");
+const { WebSocketServer } = require("ws");
 
 const app = express();
 
@@ -12,8 +13,6 @@ const PORT = Number(process.env.PORT || 10000);
 const DISPLAY = process.env.DISPLAY || ":99";
 
 const VNC_PORT = 5900;
-const WEBSOCKIFY_PORT = 6080;
-const CDP_PORT = 9222;
 
 const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
 
@@ -106,15 +105,9 @@ async function startDesktop() {
     "x11vnc",
   );
 
-  await sleep(1500);
+  await sleep(2000);
 
-  startProcess(
-    "websockify",
-    [String(WEBSOCKIFY_PORT), `127.0.0.1:${VNC_PORT}`],
-    "websockify",
-  );
-
-  await sleep(1500);
+  console.log("Virtual desktop is ready.");
 }
 
 async function getBrowserContext() {
@@ -122,7 +115,7 @@ async function getBrowserContext() {
     return browserContext;
   }
 
-  await fs.promises.mkdir(BROWSER_DATA_DIR, {
+  await fs.mkdir(BROWSER_DATA_DIR, {
     recursive: true,
   });
 
@@ -139,9 +132,8 @@ async function getBrowserContext() {
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      `--remote-debugging-port=${CDP_PORT}`,
-      "--remote-debugging-address=127.0.0.1",
       "--start-maximized",
+      "--disable-dev-shm-usage",
     ],
   });
 
@@ -170,7 +162,7 @@ async function getGeminiPage() {
 }
 
 // --------------------------------------------------
-// Basic health
+// Basic routes
 // --------------------------------------------------
 
 app.get("/", (req, res) => {
@@ -189,7 +181,7 @@ app.get("/health", (req, res) => {
 });
 
 // --------------------------------------------------
-// Start cloud browser + open Gemini
+// Start cloud browser
 // --------------------------------------------------
 
 app.get("/login", async (req, res) => {
@@ -205,8 +197,7 @@ app.get("/login", async (req, res) => {
       message:
         "Cloud Chromium is running. Open the noVNC URL and complete Gemini login yourself.",
       geminiUrl: page.url(),
-      novncPath:
-        "/novnc/vnc.html?autoconnect=true&resize=scale&path=websockify",
+      novncUrl: "/novnc/vnc.html?autoconnect=true&resize=scale&path=websockify",
     });
   } catch (error) {
     console.error("Login browser error:", error);
@@ -224,16 +215,22 @@ app.get("/login", async (req, res) => {
 
 app.get("/browser-status", async (req, res) => {
   try {
-    const context = await getBrowserContext();
+    if (!browserContext) {
+      return res.json({
+        success: true,
+        browserRunning: false,
+        pageCount: 0,
+        pages: [],
+      });
+    }
 
-    const pages = context.pages();
+    const pages = browserContext.pages();
 
     return res.json({
       success: true,
       browserRunning: true,
       pageCount: pages.length,
       pages: pages.map((page) => page.url()),
-      cdp: `127.0.0.1:${CDP_PORT}`,
     });
   } catch (error) {
     return res.status(500).json({
@@ -252,14 +249,17 @@ const noVncCandidates = ["/usr/share/novnc", "/usr/share/noVNC"];
 let noVncDirectory = null;
 
 for (const candidate of noVncCandidates) {
-  if (fs.existsSync(candidate)) {
+  try {
+    await fs.access(candidate);
     noVncDirectory = candidate;
     break;
+  } catch {
+    // Continue searching.
   }
 }
 
 if (noVncDirectory) {
-  console.log("noVNC directory:", noVncDirectory);
+  console.log("Using noVNC directory:", noVncDirectory);
 
   app.use("/novnc", express.static(noVncDirectory));
 
@@ -269,7 +269,7 @@ if (noVncDirectory) {
     );
   });
 } else {
-  console.error("noVNC directory was not found.");
+  console.error("Could not find noVNC directory.");
 }
 
 // --------------------------------------------------
@@ -279,31 +279,104 @@ if (noVncDirectory) {
 const server = http.createServer(app);
 
 // --------------------------------------------------
-// WebSocket proxy:
-// public /websockify
-//        ↓
-// localhost:6080
-//        ↓
-// x11vnc :5900
+// WebSocket → TCP bridge
+//
+// Browser
+//   ↓ WebSocket /websockify
+// Render
+//   ↓ TCP
+// localhost:5900
+//   ↓
+// x11vnc
 // --------------------------------------------------
 
-const proxy = httpProxy.createProxyServer({
-  target: `http://127.0.0.1:${WEBSOCKIFY_PORT}`,
-  ws: true,
-  changeOrigin: true,
-});
-
-proxy.on("error", (error) => {
-  console.error("WebSocket proxy error:", error.message);
+const wss = new WebSocketServer({
+  noServer: true,
 });
 
 server.on("upgrade", (req, socket, head) => {
-  if (req.url && req.url.startsWith("/websockify")) {
-    proxy.ws(req, socket, head);
+  const requestUrl = new URL(
+    req.url || "/",
+    `http://${req.headers.host || "localhost"}`,
+  );
+
+  if (requestUrl.pathname !== "/websockify") {
+    socket.destroy();
     return;
   }
 
-  socket.destroy();
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit("connection", ws, req);
+  });
+});
+
+wss.on("connection", (ws) => {
+  console.log("noVNC WebSocket connected.");
+
+  const vncSocket = net.createConnection({
+    host: "127.0.0.1",
+    port: VNC_PORT,
+  });
+
+  let closed = false;
+
+  const closeEverything = () => {
+    if (closed) return;
+
+    closed = true;
+
+    try {
+      vncSocket.destroy();
+    } catch {
+      // Ignore.
+    }
+
+    try {
+      if (ws.readyState === ws.OPEN) {
+        ws.close();
+      }
+    } catch {
+      // Ignore.
+    }
+  };
+
+  vncSocket.on("connect", () => {
+    console.log("Connected to x11vnc TCP server.");
+  });
+
+  vncSocket.on("data", (data) => {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(data);
+    }
+  });
+
+  vncSocket.on("error", (error) => {
+    console.error("VNC TCP error:", error.message);
+    closeEverything();
+  });
+
+  vncSocket.on("close", () => {
+    console.log("VNC TCP connection closed.");
+    closeEverything();
+  });
+
+  ws.on("message", (message) => {
+    if (!vncSocket.destroyed) {
+      const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message);
+
+      vncSocket.write(buffer);
+    }
+  });
+
+  ws.on("error", (error) => {
+    console.error("noVNC WebSocket error:", error.message);
+    closeEverything();
+  });
+
+  ws.on("close", () => {
+    console.log("noVNC WebSocket closed.");
+    closeEverything();
+  });
 });
 
 // --------------------------------------------------
