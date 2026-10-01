@@ -210,6 +210,51 @@ app.get("/gemini-ui-test", async (req, res) => {
     });
   }
 });
+
+app.get("/gemini-debug", async (req, res) => {
+  let browser = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(5000);
+
+    const bodyText = await page
+      .locator("body")
+      .innerText()
+      .catch(() => "");
+    const title = await page.title();
+    const url = page.url();
+
+    await browser.close();
+
+    return res.json({
+      success: true,
+      title,
+      url,
+      bodyText: bodyText.slice(0, 5000),
+    });
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Playwright service running on port ${PORT}`);
 });
