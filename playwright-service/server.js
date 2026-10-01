@@ -19,7 +19,10 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: "10mb" }));
 
-// Health check
+// --------------------------------------------------
+// Health
+// --------------------------------------------------
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -35,183 +38,11 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Playwright + Chromium test
-app.get("/playwright-test", async (req, res) => {
-  let browser = null;
+// --------------------------------------------------
+// Gemini cloud browser status
+// --------------------------------------------------
 
-  try {
-    console.log("Starting Playwright...");
-
-    browser = await chromium.launch({
-      headless: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto("https://example.com", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000,
-    });
-
-    const title = await page.title();
-
-    await browser.close();
-
-    return res.json({
-      success: true,
-      playwright: "working",
-      chromium: "working",
-      title,
-    });
-  } catch (error) {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-
-    console.error("Playwright test failed:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/gemini-test", async (req, res) => {
-  let browser = null;
-
-  try {
-    console.log("Opening Gemini...");
-
-    browser = await chromium.launch({
-      headless: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    const title = await page.title();
-    const url = page.url();
-
-    await browser.close();
-
-    return res.json({
-      success: true,
-      gemini: "reachable",
-      title,
-      url,
-    });
-  } catch (error) {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-
-    console.error("Gemini test failed:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/gemini-login-test", async (req, res) => {
-  let browser = null;
-
-  try {
-    browser = await chromium.launch({
-      headless: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    await page.waitForTimeout(3000);
-
-    const bodyText = await page.locator("body").innerText();
-
-    const needsLogin =
-      bodyText.toLowerCase().includes("sign in") ||
-      bodyText.toLowerCase().includes("sign into");
-
-    await browser.close();
-
-    return res.json({
-      success: true,
-      loggedIn: !needsLogin,
-      message: needsLogin
-        ? "Gemini opened, but login is required."
-        : "Gemini appears to be logged in.",
-    });
-  } catch (error) {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/gemini-ui-test", async (req, res) => {
-  let browser = null;
-
-  try {
-    browser = await chromium.launch({
-      headless: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    await page.waitForTimeout(3000);
-
-    const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
-
-    const uploadToolsButton = page.getByRole("button", {
-      name: "Upload & tools",
-    });
-
-    const promptVisible = await promptWrapper.isVisible().catch(() => false);
-    const uploadToolsVisible = await uploadToolsButton
-      .isVisible()
-      .catch(() => false);
-
-    await browser.close();
-
-    return res.json({
-      success: true,
-      geminiPage: "opened",
-      promptEditor: promptVisible,
-      uploadTools: uploadToolsVisible,
-    });
-  } catch (error) {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/gemini-debug", async (req, res) => {
+app.get("/gemini-status", async (req, res) => {
   let browser = null;
 
   try {
@@ -228,102 +59,39 @@ app.get("/gemini-debug", async (req, res) => {
 
     await page.waitForTimeout(5000);
 
-    const bodyText = await page
-      .locator("body")
-      .innerText()
-      .catch(() => "");
-    const title = await page.title();
-    const url = page.url();
-
-    await browser.close();
-
-    return res.json({
-      success: true,
-      title,
-      url,
-      bodyText: bodyText.slice(0, 5000),
-    });
-  } catch (error) {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-app.get("/gemini-elements-debug", async (req, res) => {
-  let browser = null;
-
-  try {
-    browser = await chromium.launch({
-      headless: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    await page.waitForTimeout(5000);
-
-    const buttons = await page.locator("button").evaluateAll((elements) =>
-      elements.map((el) => ({
-        text: (el.textContent || "").trim(),
-        ariaLabel: el.getAttribute("aria-label"),
-        testId: el.getAttribute("data-test-id"),
-      })),
-    );
-
-    const inputs = await page.locator("input").evaluateAll((elements) =>
-      elements.map((el) => ({
-        type: el.getAttribute("type"),
-        name: el.getAttribute("name"),
-        placeholder: el.getAttribute("placeholder"),
-        ariaLabel: el.getAttribute("aria-label"),
-      })),
-    );
-
-    const textareas = await page.locator("textarea").evaluateAll((elements) =>
-      elements.map((el) => ({
-        placeholder: el.getAttribute("placeholder"),
-        ariaLabel: el.getAttribute("aria-label"),
-      })),
-    );
-
-    const contenteditables = await page
-      .locator('[contenteditable="true"]')
-      .evaluateAll((elements) =>
-        elements.map((el) => ({
-          tag: el.tagName,
-          ariaLabel: el.getAttribute("aria-label"),
-          role: el.getAttribute("role"),
-          dataTestId: el.getAttribute("data-test-id"),
-        })),
-      );
-
     const bodyText = await page.locator("body").innerText();
 
+    const promptBox = page.getByRole("textbox", {
+      name: "Enter a prompt for Gemini",
+    });
+
+    const promptBoxVisible = await promptBox.isVisible().catch(() => false);
+
+    const requiresSignIn =
+      bodyText.toLowerCase().includes("sign in") &&
+      bodyText.toLowerCase().includes("sign in to save activity");
+
+    const title = await page.title();
+
     await browser.close();
 
     return res.json({
       success: true,
-      title: await page.title().catch(() => ""),
+      geminiReachable: true,
+      title,
       url: page.url(),
-      buttons,
-      inputs,
-      textareas,
-      contenteditables,
-      bodyText: bodyText.slice(0, 5000),
+      promptBoxVisible,
+      requiresSignIn,
+      message: requiresSignIn
+        ? "Gemini is reachable, but the cloud browser is not authenticated."
+        : "Gemini cloud browser status checked.",
     });
   } catch (error) {
     if (browser) {
       await browser.close().catch(() => {});
     }
+
+    console.error("Gemini status error:", error);
 
     return res.status(500).json({
       success: false,
@@ -331,6 +99,10 @@ app.get("/gemini-elements-debug", async (req, res) => {
     });
   }
 });
+
+// --------------------------------------------------
+// Server
+// --------------------------------------------------
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Playwright service running on port ${PORT}`);
