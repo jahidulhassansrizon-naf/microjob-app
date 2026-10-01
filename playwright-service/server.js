@@ -1,11 +1,10 @@
 const express = require("express");
+const { chromium } = require("playwright");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// Basic CORS for now.
-// Later we can restrict this to your Vercel domain.
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -34,6 +33,48 @@ app.get("/health", (req, res) => {
     success: true,
     status: "healthy",
   });
+});
+
+// Playwright + Chromium test
+app.get("/playwright-test", async (req, res) => {
+  let browser = null;
+
+  try {
+    console.log("Starting Playwright...");
+
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://example.com", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
+    });
+
+    const title = await page.title();
+
+    await browser.close();
+
+    return res.json({
+      success: true,
+      playwright: "working",
+      chromium: "working",
+      title,
+    });
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+
+    console.error("Playwright test failed:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
