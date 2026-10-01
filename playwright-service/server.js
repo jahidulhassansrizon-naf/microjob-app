@@ -254,6 +254,83 @@ app.get("/gemini-debug", async (req, res) => {
     });
   }
 });
+app.get("/gemini-elements-debug", async (req, res) => {
+  let browser = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(5000);
+
+    const buttons = await page.locator("button").evaluateAll((elements) =>
+      elements.map((el) => ({
+        text: (el.textContent || "").trim(),
+        ariaLabel: el.getAttribute("aria-label"),
+        testId: el.getAttribute("data-test-id"),
+      })),
+    );
+
+    const inputs = await page.locator("input").evaluateAll((elements) =>
+      elements.map((el) => ({
+        type: el.getAttribute("type"),
+        name: el.getAttribute("name"),
+        placeholder: el.getAttribute("placeholder"),
+        ariaLabel: el.getAttribute("aria-label"),
+      })),
+    );
+
+    const textareas = await page.locator("textarea").evaluateAll((elements) =>
+      elements.map((el) => ({
+        placeholder: el.getAttribute("placeholder"),
+        ariaLabel: el.getAttribute("aria-label"),
+      })),
+    );
+
+    const contenteditables = await page
+      .locator('[contenteditable="true"]')
+      .evaluateAll((elements) =>
+        elements.map((el) => ({
+          tag: el.tagName,
+          ariaLabel: el.getAttribute("aria-label"),
+          role: el.getAttribute("role"),
+          dataTestId: el.getAttribute("data-test-id"),
+        })),
+      );
+
+    const bodyText = await page.locator("body").innerText();
+
+    await browser.close();
+
+    return res.json({
+      success: true,
+      title: await page.title().catch(() => ""),
+      url: page.url(),
+      buttons,
+      inputs,
+      textareas,
+      contenteditables,
+      bodyText: bodyText.slice(0, 5000),
+    });
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Playwright service running on port ${PORT}`);
