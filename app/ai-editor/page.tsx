@@ -34,9 +34,17 @@ export default function PhotoEditorPage() {
   const [rightImage, setRightImage] = useState<string | null>(null);
   const [activeTarget, setActiveTarget] = useState<string | null>(null);
 
+  // Keep the original cropped source separate from generated previews so
+  // changing settings and generating again always starts from the source photo.
   const [originalImageForDual, setOriginalImageForDual] = useState<
     string | null
   >(null);
+  const [originalLeftImage, setOriginalLeftImage] = useState<string | null>(
+    null,
+  );
+  const [originalRightImage, setOriginalRightImage] = useState<string | null>(
+    null,
+  );
   const [isDualPreviewActive, setIsDualPreviewActive] = useState(false);
 
   const [recentList, setRecentList] = useState<any[]>([]);
@@ -623,12 +631,17 @@ export default function PhotoEditorPage() {
         }
       }
 
-      setOriginalImageForDual(finalImageUrl);
       setIsDualPreviewActive(false);
-
-      if (activeTarget === "left") setLeftImage(finalImageUrl);
-      else if (activeTarget === "right") setRightImage(finalImageUrl);
-      else setUploadedImage(finalImageUrl);
+      if (activeTarget === "left") {
+        setLeftImage(finalImageUrl);
+        setOriginalLeftImage(finalImageUrl);
+      } else if (activeTarget === "right") {
+        setRightImage(finalImageUrl);
+        setOriginalRightImage(finalImageUrl);
+      } else {
+        setUploadedImage(finalImageUrl);
+        setOriginalImageForDual(finalImageUrl);
+      }
 
       if (tempImageForCrop.startsWith("blob:")) {
         URL.revokeObjectURL(tempImageForCrop);
@@ -646,7 +659,7 @@ export default function PhotoEditorPage() {
     }
   };
 
-  const triggerUpload = (target: string | null) => {
+  const triggerUpload = (target: "single" | "left" | "right") => {
     setActiveTarget(target);
     fileInputRef.current?.click();
   };
@@ -661,6 +674,7 @@ export default function PhotoEditorPage() {
     const sourceForLeft = originalImageForDual || uploadedImage;
     if (sourceForLeft && !leftImage) {
       setLeftImage(sourceForLeft);
+      setOriginalLeftImage(sourceForLeft);
     }
   };
 
@@ -669,6 +683,8 @@ export default function PhotoEditorPage() {
     setSelectedSize(nextSize);
     setLeftImage(null);
     setRightImage(null);
+    setOriginalLeftImage(null);
+    setOriginalRightImage(null);
     setActiveTarget(null);
     setIsDualPreviewActive(false);
   };
@@ -693,10 +709,18 @@ export default function PhotoEditorPage() {
     setSelectedSize(sizeId);
   };
 
+  const handleClothingSelectionChange = (clothing: number) => {
+    setSelectedClothing(clothing);
+  };
+
   const handleRegenerateFromModal = (imageItem: any) => {
     const realPhoto = imageItem.originalUrl || imageItem.url;
     setOriginalImageForDual(realPhoto);
+    setOriginalLeftImage(null);
+    setOriginalRightImage(null);
     setUploadedImage(realPhoto);
+    setLeftImage(null);
+    setRightImage(null);
     setIsDualPreviewActive(false);
     setRegeneratingId(imageItem.id);
     setPreviewModalImage(null);
@@ -763,17 +787,67 @@ export default function PhotoEditorPage() {
   };
 
   // =========================================================
-  // LOCAL BACKEND URL CONFIGURATION
+  // GEMINI IMAGE EDITING FLOW
   // =========================================================
-  // এটি সরাসরি লোকাল ব্যাকএন্ড পোর্টে পয়েন্ট করছে।
-  // আপনার main.py যে পোর্টে চলবে (যেমন 8000), এখানে সেটি দেওয়া রয়েছে।
-  const LOCAL_PYTHON_API_URL = "http://127.0.0.1:8000";
+  const CLOTHING_NAMES = [
+    "Shirt",
+    "Polo",
+    "Suit",
+    "Blazer",
+    "Saree",
+    "Hijab",
+    "Panjabi",
+    "Dress",
+    "T-Shirt",
+    "Abaya",
+    "Burqa",
+    "Kameez",
+    "Kurti",
+    "Jacket",
+  ];
+
+  const CLOTHING_COLOR_NAMES: Record<string, string> = {
+    "#FFFFFF": "white",
+    "#1E1E1E": "black",
+    "#EF4444": "red",
+    "#3B82F6": "blue",
+    "#22C55E": "green",
+    "#1E3A8A": "navy blue",
+    "#6B7280": "gray",
+    "#78350F": "brown",
+    "#FACC15": "yellow",
+    "#EC4899": "pink",
+    "#A855F7": "purple",
+    "#F97316": "orange",
+    "#881337": "maroon",
+    "#0D9488": "teal",
+    "#0EA5E9": "sky blue",
+    "#65A30D": "olive",
+    "#E5E7EB": "beige",
+    "#F59E0B": "amber",
+    "#C026D3": "magenta",
+    "#06B6D4": "cyan",
+  };
+
+  const BACKGROUND_COLOR_NAMES: Record<string, string> = {
+    "#FFFFFF": "white",
+    "#3B82F6": "blue",
+    "#38BDF8": "sky blue",
+    "#9CA3AF": "gray",
+    "#2563EB": "royal blue",
+    "#0F766E": "teal",
+    "#FEF3C7": "soft warm cream",
+  };
 
   const dataUrlToFile = async (
     dataUrl: string,
     filename: string,
   ): Promise<File> => {
     const response = await fetch(dataUrl);
+    if (!response.ok) {
+      throw new Error("Could not read the image source.");
+    }
+
     const blob = await response.blob();
 
     return new File([blob], filename, {
@@ -781,140 +855,180 @@ export default function PhotoEditorPage() {
     });
   };
 
-  const applyBackgroundColorToImage = async (
-    imageBlob: Blob,
-    backgroundColor: string,
-  ): Promise<string> => {
-    const objectUrl = URL.createObjectURL(imageBlob);
+  const buildAiEditingPrompt = (payload: Record<string, unknown>) => {
+    const instructions = [
+      "Edit the provided portrait photo for a professional ID/passport-style result.",
+      "Preserve the person's facial identity, facial proportions, skin tone, hair, and natural features as faithfully as possible.",
+      "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
+      "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle.",
+      "Make only the requested edits and avoid unnecessary changes to the person's face.",
+    ];
 
-    try {
-      const image = new Image();
-      image.decoding = "async";
-      image.src = objectUrl;
+    const clothingIndex =
+      typeof payload.clothing === "number" ? payload.clothing : -1;
 
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () =>
-          reject(new Error("Could not load processed photo."));
-      });
+    if (clothingIndex >= 0 && CLOTHING_NAMES[clothingIndex]) {
+      const clothingName = CLOTHING_NAMES[clothingIndex];
+      const colorHex =
+        typeof payload.clothingColor === "string"
+          ? payload.clothingColor.toUpperCase()
+          : "";
+      const colorName =
+        CLOTHING_COLOR_NAMES[colorHex] ||
+        (colorHex ? `the selected color (${colorHex})` : "a natural color");
 
-      const width = image.naturalWidth || image.width;
-      const height = image.naturalHeight || image.height;
-
-      if (!width || !height) {
-        throw new Error("Processed photo has invalid dimensions.");
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        throw new Error("Could not create final image canvas.");
-      }
-
-      if (backgroundColor === "transparent") {
-        context.clearRect(0, 0, width, height);
-      } else {
-        context.fillStyle = backgroundColor;
-        context.fillRect(0, 0, width, height);
-      }
-
-      context.drawImage(image, 0, 0, width, height);
-
-      return backgroundColor === "transparent"
-        ? canvas.toDataURL("image/png")
-        : canvas.toDataURL("image/jpeg", 0.95);
-    } finally {
-      URL.revokeObjectURL(objectUrl);
+      instructions.push(
+        `Change only the visible clothing to a professional ${clothingName.toLowerCase()} in ${colorName}. Keep the face, hair, ears, neck, body proportions, and pose natural. Make the clothing edges realistic and properly fitted to the body.`,
+      );
     }
-  };
 
-  // -----------------------------------------------------
-  // LOCAL BACKEND ONLY GENERATION FLOW
-  // -----------------------------------------------------
-  const callGenerateApi = async (payload: Record<string, unknown>) => {
-    const image = typeof payload.image === "string" ? payload.image : "";
-
+    const transparentBackground = payload.transparentBackground === true;
     const bgColor =
       typeof payload.bgColor === "string"
-        ? payload.bgColor
-        : getSelectedBgColorValue();
+        ? payload.bgColor.toUpperCase()
+        : "#FFFFFF";
+
+    if (transparentBackground) {
+      instructions.push(
+        "Remove the entire background cleanly and isolate the person from head to shoulders/upper torso. Do not leave halos, gray outlines, or background fragments. Keep the subject's edges natural.",
+      );
+    } else {
+      const colorName =
+        BACKGROUND_COLOR_NAMES[bgColor] ||
+        `the exact solid color represented by ${bgColor}`;
+
+      instructions.push(
+        `Replace the background with a clean, uniform studio-style solid ${colorName} background. Target background color: ${bgColor}. Do not add scenery, gradients, patterns, shadows, or objects.`,
+      );
+    }
+
+    const editingGuides = Array.isArray(payload.editingGuides)
+      ? payload.editingGuides.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : [];
+
+    const guideInstructions: Record<string, string> = {
+      "Glow & Makeup":
+        "Add subtle professional grooming and a healthy natural glow. Keep makeup realistic and age-appropriate.",
+      "Smooth Skin":
+        "Reduce temporary blemishes and unevenness while preserving natural skin texture and facial detail. Do not make the skin plastic-looking.",
+      "Brighten Image":
+        "Correct exposure and brighten the portrait gently without washing out skin tones or highlights.",
+      "Studio Lighting":
+        "Use clean, soft professional studio lighting with natural facial shading and no harsh artificial highlights.",
+      "Straighten Head":
+        "Correct the head angle so the face is naturally upright and looking toward the camera while preserving facial proportions.",
+      "Keep Marks":
+        "Preserve natural identifying marks such as freckles, moles, scars, birthmarks, and other stable facial details.",
+      Lipstick:
+        "Apply subtle natural-looking lipstick while preserving the person's original lip shape and facial identity.",
+    };
+
+    for (const guide of editingGuides) {
+      if (guide.startsWith("Custom Instruction:")) {
+        const customInstruction = guide
+          .replace(/^Custom Instruction:\s*/i, "")
+          .trim();
+
+        if (customInstruction) {
+          instructions.push(
+            `Follow this custom edit instruction: ${customInstruction}`,
+          );
+        }
+        continue;
+      }
+
+      const guideInstruction = guideInstructions[guide];
+      if (guideInstruction) instructions.push(guideInstruction);
+    }
+
+    const size =
+      typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
+
+    instructions.push(
+      `Prepare the composition to suit the selected final document/photo size (${size}). The application will handle the exact pixel dimensions after generation, so do not add any text or size labels.`,
+    );
+
+    return instructions.join(" ");
+  };
+
+  const callGenerateApi = async (payload: Record<string, unknown>) => {
+    const image = typeof payload.image === "string" ? payload.image.trim() : "";
 
     if (!image) {
       throw new Error("No source image was provided.");
     }
 
+    const prompt = buildAiEditingPrompt(payload);
     const formData = new FormData();
-    formData.append("file", await dataUrlToFile(image, "person.jpg"));
+
+    if (/^https?:\/\//i.test(image)) {
+      formData.append("imageUrl", image);
+    } else {
+      formData.append(
+        "image",
+        await dataUrlToFile(image, `sohozkaj-ai-source-${Date.now()}.jpg`),
+      );
+    }
+
+    formData.append("prompt", prompt);
 
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 120000);
-
-    let response: Response;
+    const timeoutId = window.setTimeout(() => controller.abort(), 180000);
 
     try {
-      // শুধুমাত্র লোকাল ব্যাকএন্ডে রিকোয়েস্ট পাঠানো হচ্ছে
-      response = await fetch(`${LOCAL_PYTHON_API_URL}/api/remove-background`, {
+      const response = await fetch("/api/image-generate", {
         method: "POST",
         body: formData,
         signal: controller.signal,
         cache: "no-store",
       });
+
+      const result = await response.json().catch(() => null);
+
+      if (
+        !response.ok ||
+        !result?.success ||
+        typeof result.image !== "string"
+      ) {
+        const message =
+          result?.error || `AI image editing failed (${response.status}).`;
+
+        throw new Error(message);
+      }
+
+      const currentSize =
+        typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
+
+      const transparentBackground = payload.transparentBackground === true;
+
+      const normalized = await normalizeImageToExactPhysicalSize(
+        result.image,
+        currentSize,
+        transparentBackground,
+      );
+
+      const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
+
+      if (!cloudUrl) {
+        throw new Error(
+          "Generated photo could not be uploaded to Cloudinary, so it was not saved.",
+        );
+      }
+
+      return cloudUrl;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        throw new Error("Background removal timed out. Please try again.");
+        throw new Error(
+          "AI image editing timed out. Please try again with a smaller photo.",
+        );
       }
-      // লোকাল সার্ভার বন্ধ থাকলে সরাসরি এই এরর দেখাবে, রেন্ডারে কোনোভাবেই যাবে না
-      throw new Error(
-        "Local backend server is not running or unreachable. Please start python backend at http://127.0.0.1:8000",
-      );
+
+      throw error;
     } finally {
       window.clearTimeout(timeoutId);
     }
-
-    if (!response.ok) {
-      const message = await response.text().catch(() => "");
-      throw new Error(
-        message ||
-          `Background removal failed on local server (${response.status}).`,
-      );
-    }
-
-    const processedBlob = await response.blob();
-
-    if (
-      processedBlob.size === 0 ||
-      (processedBlob.type && !processedBlob.type.startsWith("image/"))
-    ) {
-      throw new Error("Background removal returned an invalid image response.");
-    }
-
-    const transparentBackground =
-      payload.transparentBackground === true || bgColor === "transparent";
-
-    const backgroundAppliedDataUrl = await applyBackgroundColorToImage(
-      processedBlob,
-      transparentBackground ? "transparent" : bgColor,
-    );
-
-    const normalized = await normalizeImageToExactPhysicalSize(
-      backgroundAppliedDataUrl,
-      typeof payload.size === "string" ? payload.size : getCurrentSizeLabel(),
-      transparentBackground,
-    );
-
-    const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
-
-    if (!cloudUrl) {
-      throw new Error(
-        "Generated photo could not be uploaded to Cloudinary, so it was not saved. Please try again.",
-      );
-    }
-
-    return cloudUrl;
   };
 
   const handleGeneratePhoto = async () => {
@@ -952,16 +1066,19 @@ export default function PhotoEditorPage() {
       };
 
       if (isDualMode) {
+        const leftSource = originalLeftImage || leftImage!;
+        const rightSource = originalRightImage || rightImage!;
+
         const [leftGenerated, rightGenerated] = await Promise.all([
           callGenerateApi({
             ...basePayload,
-            image: leftImage!,
+            image: leftSource,
             side: "left",
             clothing: leftClothing,
           }),
           callGenerateApi({
             ...basePayload,
-            image: rightImage!,
+            image: rightSource,
             side: "right",
             clothing: rightClothing,
           }),
@@ -969,7 +1086,7 @@ export default function PhotoEditorPage() {
 
         setLeftImage(leftGenerated);
         setRightImage(rightGenerated);
-        setOriginalImageForDual(leftImage);
+        setOriginalImageForDual(originalLeftImage || leftImage);
 
         const docs = [
           {
@@ -1024,7 +1141,7 @@ export default function PhotoEditorPage() {
         return;
       }
 
-      const rawImage = uploadedImage!;
+      const rawImage = originalImageForDual || uploadedImage!;
 
       const generatedUrl = await callGenerateApi({
         ...basePayload,
@@ -1185,6 +1302,8 @@ export default function PhotoEditorPage() {
     setLeftImage(null);
     setRightImage(null);
     setOriginalImageForDual(null);
+    setOriginalLeftImage(null);
+    setOriginalRightImage(null);
     setIsDualPreviewActive(false);
     setShowVisaPopup(false);
     setShowColorPicker(false);
@@ -1383,7 +1502,7 @@ export default function PhotoEditorPage() {
               customBgColor={customBgColor}
               setCustomBgColor={setCustomBgColor}
               selectedClothing={selectedClothing}
-              setSelectedClothing={setSelectedClothing}
+              setSelectedClothing={handleClothingSelectionChange}
               selectedClothingColor={selectedClothingColor}
               setSelectedClothingColor={setSelectedClothingColor}
               onEditingGuidesChange={handleEditingGuidesChange}

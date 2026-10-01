@@ -738,7 +738,7 @@ export default function GenerationSettings({
           )}
         </div>
 
-        {/* CLOTHING STYLE SECTION WITH UPCOMING OVERLAY */}
+        {/* CLOTHING STYLE SECTION */}
         <div className="mb-6 relative" ref={clothingColorPopupRef}>
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>CLOTHING STYLE</span>
@@ -749,14 +749,6 @@ export default function GenerationSettings({
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
-            {/* UPCOMING OVERLAY LAYER */}
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-[#10B981]">
-              <span className="bg-gradient-to-r from-[#2563EB] to-[#10B981] text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={13} />
-                Upcoming
-              </span>
-            </div>
-
             {!isDualMode ? (
               <div className="grid grid-cols-7 gap-1.5">
                 <button
@@ -932,24 +924,16 @@ export default function GenerationSettings({
           )}
         </div>
 
-        {/* EXTRA EDITING GUIDE WITH UPCOMING OVERLAY */}
+        {/* EXTRA EDITING GUIDE */}
         <div className="mb-4 relative">
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>EXTRA EDITING GUIDE</span>
             <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
-              {activeGuides.length}/22
+              {activeGuides.length}/8
             </span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
-            {/* UPCOMING OVERLAY LAYER */}
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-2xl border border-dashed border-[#10B981]">
-              <span className="bg-gradient-to-r from-[#2563EB] to-[#10B981] text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={13} />
-                Upcoming
-              </span>
-            </div>
-
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
               {[
                 "Glow & Makeup",

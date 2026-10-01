@@ -3,27 +3,41 @@ import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 
 export interface BoxInfo {
   text: string;
-  style: { width: string; height: string };
+  style: {
+    width: string;
+    height: string;
+  };
 }
 
 interface PhotoPreviewAreaProps {
   isDualMode: boolean;
+
   uploadedImage: string | null;
   setUploadedImage: React.Dispatch<React.SetStateAction<string | null>>;
+
   leftImage: string | null;
   setLeftImage: React.Dispatch<React.SetStateAction<string | null>>;
+
   rightImage: string | null;
   setRightImage: React.Dispatch<React.SetStateAction<string | null>>;
+
   triggerUpload: (target: "single" | "left" | "right") => void;
+
   enableDualMode: () => void;
   exitDualMode: () => void;
+
   activeBoxInfo: BoxInfo;
   currentBgColorValue: string;
+
   isGenerating: boolean;
   isDeleting: boolean;
+
   originalImageForDual: string | null;
+
   setOriginalImageForDual: React.Dispatch<React.SetStateAction<string | null>>;
+
   isDualPreviewActive: boolean;
+
   setIsDualPreviewActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -55,18 +69,22 @@ function EmptyUploadBox({
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB]">
         <Upload size={18} />
       </div>
+
       <h3 className="mb-1 text-xs font-medium text-[#0F172A]">{title}</h3>
+
       {subtitle && (
         <p className="mb-3 text-[10px] leading-tight text-[#0F172A]/70">
           {subtitle}
         </p>
       )}
+
       <button
         type="button"
         onClick={onUpload}
         className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-[11px] font-medium text-white shadow-md transition hover:bg-[#2563EB]/90 active:scale-95"
       >
-        <Upload size={12} /> Upload Photo
+        <Upload size={12} />
+        Upload Photo
       </button>
     </div>
   );
@@ -92,13 +110,16 @@ function PhotoCard({
       <span className="max-w-full truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
         {label}
       </span>
+
       <div
         className={`relative overflow-hidden rounded-2xl shadow-xl ${
           showBorder ? "border-2 border-[#E2E8F0]" : ""
         }`}
         style={{
           width: "min(100%, 290px)",
-          aspectRatio: `${parseFloat(boxInfo.style.width) || 290} / ${parseFloat(boxInfo.style.height) || 372}`,
+          aspectRatio: `${parseFloat(boxInfo.style.width) || 290} / ${
+            parseFloat(boxInfo.style.height) || 372
+          }`,
           ...getBackgroundStyle(background),
         }}
       >
@@ -109,14 +130,16 @@ function PhotoCard({
               alt={label}
               className="h-full w-full object-contain"
             />
+
             <button
               type="button"
               onClick={onRemove}
               aria-label={`Remove ${label}`}
-              className="absolute right-2 top-2 z-10 rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
+              className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100"
             >
               <X size={14} />
             </button>
+
             <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
               {boxInfo.text}
             </div>
@@ -159,20 +182,23 @@ export default function PhotoPreviewArea({
       setIsDualPreviewActive(false);
       return;
     }
+
     setUploadedImage(null);
     setOriginalImageForDual(null);
     setIsDualPreviewActive(false);
   };
 
-  const cardStyle = {
+  const cardStyle: React.CSSProperties = {
     width: activeBoxInfo.style.width,
     maxWidth: "100%",
-    aspectRatio: `${parseFloat(activeBoxInfo.style.width) || 290} / ${parseFloat(activeBoxInfo.style.height) || 372}`,
+    aspectRatio: `${parseFloat(activeBoxInfo.style.width) || 290} / ${
+      parseFloat(activeBoxInfo.style.height) || 372
+    }`,
     height: "auto",
-  } as React.CSSProperties;
+  };
 
   return (
-    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl bg-[#F8FAFC] p-4 sm:p-6 shadow-lg border border-[#E2E8F0]">
+    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-lg sm:p-6">
       {(isGenerating || isDeleting) && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-[#F8FAFC]/90 p-4 text-center backdrop-blur-md">
           <div
@@ -182,14 +208,17 @@ export default function PhotoPreviewArea({
                 : "border-[#2563EB]/20 border-t-[#2563EB]"
             }`}
           />
+
           <h3 className="mb-1 text-base font-semibold tracking-wide text-[#0F172A]">
             {isDeleting ? "Deleting Photo..." : "Generating Your Photo..."}
           </h3>
+
           <p className="max-w-xs text-xs leading-relaxed text-[#0F172A]/70">
             {isDeleting
               ? "Removing your photo, please wait..."
-              : "Uploading & applying AI edits, please wait a moment."}
+              : "Generating your photo with AI, please wait a moment."}
           </p>
+
           <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-[#E2E8F0] bg-[#E2E8F0]">
             <div
               className={`h-full w-full animate-pulse rounded-full ${
@@ -211,6 +240,7 @@ export default function PhotoPreviewArea({
                 background={currentBgColorValue}
                 onRemove={() => setOriginalImageForDual(null)}
               />
+
               <PhotoCard
                 image={uploadedImage}
                 label="Edited Photo"
@@ -238,14 +268,16 @@ export default function PhotoPreviewArea({
                     alt="Uploaded or generated preview"
                     className="h-full w-full object-contain"
                   />
+
                   <button
                     type="button"
                     onClick={handleRemoveSingle}
-                    className="absolute right-2 top-2 z-10 rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100 cursor-pointer"
+                    className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100"
                     aria-label="Remove current photo"
                   >
                     <X size={14} />
                   </button>
+
                   <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
@@ -266,8 +298,8 @@ export default function PhotoPreviewArea({
               onClick={enableDualMode}
               className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]"
             >
-              <ImageIcon size={14} className="text-[#2563EB]" /> Upload 2
-              separate images
+              <ImageIcon size={14} className="text-[#2563EB]" />
+              Upload 2 separate images
             </button>
           )}
         </div>
@@ -278,6 +310,7 @@ export default function PhotoPreviewArea({
               <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Left Person
               </span>
+
               <div
                 className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
                 style={cardStyle}
@@ -285,17 +318,18 @@ export default function PhotoPreviewArea({
                 {leftImage ? (
                   <div
                     className="group relative h-full w-full"
-                    style={{ backgroundColor: currentBgColorValue }}
+                    style={getBackgroundStyle(currentBgColorValue)}
                   >
                     <img
                       src={leftImage}
                       alt="Left person"
                       className="h-full w-full object-contain"
                     />
+
                     <button
                       type="button"
                       onClick={() => setLeftImage(null)}
-                      className="absolute right-2 top-2 z-10 rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100 cursor-pointer"
+                      className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
                       aria-label="Remove left photo"
                     >
                       <X size={14} />
@@ -314,6 +348,7 @@ export default function PhotoPreviewArea({
               <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Right Person
               </span>
+
               <div
                 className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
                 style={cardStyle}
@@ -321,17 +356,18 @@ export default function PhotoPreviewArea({
                 {rightImage ? (
                   <div
                     className="group relative h-full w-full"
-                    style={{ backgroundColor: currentBgColorValue }}
+                    style={getBackgroundStyle(currentBgColorValue)}
                   >
                     <img
                       src={rightImage}
                       alt="Right person"
                       className="h-full w-full object-contain"
                     />
+
                     <button
                       type="button"
                       onClick={() => setRightImage(null)}
-                      className="absolute right-2 top-2 z-10 rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100 cursor-pointer"
+                      className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100"
                       aria-label="Remove right photo"
                     >
                       <X size={14} />
@@ -360,6 +396,7 @@ export default function PhotoPreviewArea({
             >
               <ArrowLeftRight size={16} />
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -369,7 +406,8 @@ export default function PhotoPreviewArea({
               }}
               className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100"
             >
-              <RefreshCw size={14} /> Exit dual mode
+              <RefreshCw size={14} />
+              Exit dual mode
             </button>
           </div>
         </div>
