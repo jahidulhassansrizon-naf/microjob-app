@@ -1,6 +1,10 @@
 const express = require("express");
 const { chromium } = require("playwright");
 const { spawn } = require("node:child_process");
+
+const { execFileSync } = require("node:child_process");
+const crypto = require("node:crypto");
+
 const { promises: fs } = require("node:fs");
 const http = require("node:http");
 const net = require("node:net");
@@ -76,9 +80,32 @@ async function startDesktop() {
     return;
   }
 
+  const xauthFile = "/tmp/gemini-xauth";
+  const cookie = crypto.randomBytes(16).toString("hex");
+
+  console.log("Creating X11 authentication cookie...");
+
+  execFileSync("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
+    stdio: "inherit",
+  });
+
+  process.env.XAUTHORITY = xauthFile;
+
+  console.log("X11 authentication cookie created.");
+
   startProcess(
     "Xvfb",
-    [DISPLAY, "-screen", "0", "1440x900x24", "-ac", "+extension", "RANDR"],
+    [
+      DISPLAY,
+      "-screen",
+      "0",
+      "1440x900x24",
+      "-ac",
+      "+extension",
+      "RANDR",
+      "-auth",
+      xauthFile,
+    ],
     "Xvfb",
   );
 
@@ -93,6 +120,8 @@ async function startDesktop() {
     [
       "-display",
       DISPLAY,
+      "-auth",
+      xauthFile,
       "-forever",
       "-shared",
       "-rfbport",

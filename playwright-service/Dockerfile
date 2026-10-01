@@ -9,6 +9,7 @@ RUN apt-get update && \
     fluxbox \
     novnc \
     websockify \
+    xauth \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
