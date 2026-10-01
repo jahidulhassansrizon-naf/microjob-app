@@ -104,6 +104,60 @@ app.get("/gemini-status", async (req, res) => {
 // Server
 // --------------------------------------------------
 
+app.get("/gemini-composer-test", async (req, res) => {
+  let browser = null;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://gemini.google.com/app", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(5000);
+
+    const promptBox = page.locator(
+      'div[contenteditable="true"][aria-label="Enter a prompt for Gemini"]',
+    );
+
+    const count = await promptBox.count();
+
+    const visible =
+      count > 0
+        ? await promptBox
+            .first()
+            .isVisible()
+            .catch(() => false)
+        : false;
+
+    const ariaLabel =
+      count > 0 ? await promptBox.first().getAttribute("aria-label") : null;
+
+    await browser.close();
+
+    return res.json({
+      success: true,
+      promptBoxCount: count,
+      promptBoxVisible: visible,
+      ariaLabel,
+    });
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Playwright service running on port ${PORT}`);
 });
