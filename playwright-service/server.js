@@ -8,7 +8,7 @@ const httpProxy = require("http-proxy");
 
 const app = express();
 
-const PORT = Number(process.env.PORT || 10000);
+const PORT = 3000;
 const DISPLAY = process.env.DISPLAY || ":99";
 
 const VNC_PORT = 5900;
