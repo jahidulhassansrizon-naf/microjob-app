@@ -5,13 +5,13 @@ const { promises: fs } = require("node:fs");
 const http = require("node:http");
 const net = require("node:net");
 const path = require("node:path");
+const { existsSync } = require("node:fs");
 const { WebSocketServer } = require("ws");
 
 const app = express();
 
 const PORT = Number(process.env.PORT || 10000);
 const DISPLAY = process.env.DISPLAY || ":99";
-
 const VNC_PORT = 5900;
 
 const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
@@ -123,12 +123,10 @@ async function getBrowserContext() {
 
   browserContext = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
     headless: false,
-
     viewport: {
       width: 1440,
       height: 900,
     },
-
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -181,7 +179,7 @@ app.get("/health", (req, res) => {
 });
 
 // --------------------------------------------------
-// Start cloud browser
+// Start browser
 // --------------------------------------------------
 
 app.get("/login", async (req, res) => {
@@ -241,7 +239,7 @@ app.get("/browser-status", async (req, res) => {
 });
 
 // --------------------------------------------------
-// noVNC static files
+// noVNC
 // --------------------------------------------------
 
 const noVncCandidates = ["/usr/share/novnc", "/usr/share/noVNC"];
@@ -249,12 +247,9 @@ const noVncCandidates = ["/usr/share/novnc", "/usr/share/noVNC"];
 let noVncDirectory = null;
 
 for (const candidate of noVncCandidates) {
-  try {
-    await fs.access(candidate);
+  if (existsSync(candidate)) {
     noVncDirectory = candidate;
     break;
-  } catch {
-    // Continue searching.
   }
 }
 
@@ -279,15 +274,7 @@ if (noVncDirectory) {
 const server = http.createServer(app);
 
 // --------------------------------------------------
-// WebSocket → TCP bridge
-//
-// Browser
-//   ↓ WebSocket /websockify
-// Render
-//   ↓ TCP
-// localhost:5900
-//   ↓
-// x11vnc
+// WebSocket → VNC TCP bridge
 // --------------------------------------------------
 
 const wss = new WebSocketServer({
@@ -320,25 +307,21 @@ wss.on("connection", (ws) => {
 
   let closed = false;
 
-  const closeEverything = () => {
+  function closeEverything() {
     if (closed) return;
 
     closed = true;
 
     try {
       vncSocket.destroy();
-    } catch {
-      // Ignore.
-    }
+    } catch {}
 
     try {
       if (ws.readyState === ws.OPEN) {
         ws.close();
       }
-    } catch {
-      // Ignore.
-    }
-  };
+    } catch {}
+  }
 
   vncSocket.on("connect", () => {
     console.log("Connected to x11vnc TCP server.");
@@ -394,7 +377,7 @@ server.listen(PORT, "0.0.0.0", async () => {
 });
 
 // --------------------------------------------------
-// Graceful shutdown
+// Shutdown
 // --------------------------------------------------
 
 async function shutdown(signal) {
