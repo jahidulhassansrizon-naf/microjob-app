@@ -89,8 +89,7 @@ jobs:
           for i in {1..30}; do
             PUBLIC_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
             if [ -n "$PUBLIC_URL" ]; then
-              printf '%s
-' "$PUBLIC_URL" > public-url.txt
+              printf '%s\n' "$PUBLIC_URL" > public-url.txt
               {
                 echo "## Gemini Bot is online"
                 echo
