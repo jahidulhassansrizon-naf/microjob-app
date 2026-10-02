@@ -127,7 +127,6 @@ const NAV_ITEMS: NavConfig[] = [
     icon: Layers,
     tone: "emerald",
     match: "/bulk-photo-edit",
-    upcoming: true,
   },
   {
     id: "ai-template",
@@ -852,3 +851,8 @@ export default function DashboardNavbar() {
     </>
   );
 }
+
+// git status
+// git add .
+// git commit -m "ja mon chaise tai korsi"
+// git push origin main
