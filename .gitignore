@@ -41,3 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 bot/gemini-profile/
+bot/gemini-session.json
+bot/chrome-profile/
+playwright-service/gemini-session.json
+playwright-service/node_modules/

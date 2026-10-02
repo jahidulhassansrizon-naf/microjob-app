@@ -9,7 +9,7 @@ const path = require("node:path");
 
 const app = express();
 
-const PORT = 3000;
+const PORT = Number(process.env.BOT_PORT) || 3000;
 const DISPLAY = process.env.DISPLAY || ":99";
 
 const VNC_PORT = 5900;
@@ -738,10 +738,12 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
 const server = app.listen(PORT, "127.0.0.1", async () => {
   console.log(`Node API running on internal port ${PORT}`);
 
-  try {
-    await startDesktop();
-  } catch (error) {
-    console.error("Desktop startup failed:", error);
+  if (process.env.SKIP_DESKTOP !== "1") {
+    try {
+      await startDesktop();
+    } catch (error) {
+      console.error("Desktop startup failed:", error);
+    }
   }
 });
 

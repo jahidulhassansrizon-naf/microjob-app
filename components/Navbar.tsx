@@ -213,7 +213,8 @@ export default function Navbar() {
     pathname.startsWith("/print-media") ||
     pathname.startsWith("/sohoj-tools") ||
     pathname.startsWith("/profile") ||
-    pathname.startsWith("/free-tools")
+    pathname.startsWith("/free-tools") ||
+    pathname === "/subscription"
   ) {
     return null;
   }

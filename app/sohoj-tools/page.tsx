@@ -34,7 +34,7 @@ function SohojToolsContent() {
   const searchParams = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState("Free");
+  const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const isInitialLoadDone = useRef(false);
@@ -99,6 +99,14 @@ function SohojToolsContent() {
       .includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
+    const matchesAccess =
+      activeTab === "All"
+        ? true
+        : activeTab === "Paid"
+          ? tool.access === "paid"
+          : tool.access !== "paid";
+    if (!matchesAccess) return false;
+
     switch (selectedCategory) {
       case "PDF Tools":
         return tool.category === "PDF";
@@ -141,17 +149,41 @@ function SohojToolsContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-[#0F172A]">Tools</h1>
-                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  All of these tools are free
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    activeTab === "Paid"
+                      ? "bg-amber-100 text-amber-700"
+                      : activeTab === "All"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {activeTab === "Paid"
+                    ? "Paid tools"
+                    : activeTab === "All"
+                      ? "All tools"
+                      : "Free tools"}
                 </span>
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                {toolsData.length} free tools to speed up daily work.
+                {filteredTools.length}{" "}
+                {activeTab === "All" ? "all" : activeTab.toLowerCase()} tools to
+                speed up daily work.
               </p>
             </div>
           </div>
 
           <div className="bg-white/80 border border-slate-200 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
+            <button
+              onClick={() => setActiveTab("All")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "All"
+                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
+                  : "text-slate-600 hover:text-[#2563EB]"
+              }`}
+            >
+              All Tools •
+            </button>
             <button
               onClick={() => setActiveTab("Free")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${

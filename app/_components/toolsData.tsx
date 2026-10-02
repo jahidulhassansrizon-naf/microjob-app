@@ -853,6 +853,8 @@ export interface ToolItem {
   bgColor: string;
   icon: any;
   badge?: "New" | "Hot";
+  /** Set to "paid" to require paid access. Omit this field to keep the tool free. */
+  access?: "free" | "paid";
 }
 
 export const toolsData: ToolItem[] = [
@@ -875,6 +877,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "11",
     name: "Document Scanner",
+    access: "paid",
     category: "General",
     bgColor: "bg-[#84cc16]",
     icon: DocumentScannerIcon,
@@ -883,6 +886,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "2",
     name: "Govt Job Photo & Sign Resizer",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#7c3aed]",
     icon: PhotoSignIcon,
@@ -890,6 +894,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "10",
     name: "Remove Background",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#16a34a]",
     icon: RemoveBackgroundIcon,
@@ -898,6 +903,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "20",
     name: "Lock / Unlock PDF",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#4338ca]",
     icon: LockUnlockPdfIcon,
@@ -905,6 +911,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "21",
     name: "PDF to Image",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#3b82f6]",
     icon: PdfToImageIcon,
@@ -912,6 +919,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "17",
     name: "Compress PDF",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#1cc2e6]",
     icon: CompressPdfIcon,
@@ -920,6 +928,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "18",
     name: "Merge PDFs",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#0eb2ed]",
     icon: MergePdfsIcon,
@@ -928,6 +937,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "12",
     name: "Image Size Reducer",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#4ade80]",
     icon: ImageSizeReducerIcon,
@@ -936,6 +946,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "27",
     name: "Image Upscaler",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#6366f1]",
     icon: ImageUpscalerIcon,
@@ -944,6 +955,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "25",
     name: "ATS Friendly CV Maker",
+    access: "paid",
     category: "General",
     bgColor: "bg-[#2563eb]",
     icon: AtsCvIcon,
@@ -973,6 +985,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "6",
     name: "Passport Joiner",
+    access: "paid",
     category: "General",
     bgColor: "bg-[#10b981]",
     icon: PassportJoinerIcon,
@@ -995,6 +1008,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "9",
     name: "Reduce Video File Size",
+    access: "paid",
     category: "General",
     bgColor: "bg-[#7c3aed]",
     icon: ReduceVideoIcon,
@@ -1004,6 +1018,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "3",
     name: "Change Speed",
+    access: "paid",
     category: "Video",
     bgColor: "bg-[#10ca7e]",
     icon: ChangeSpeedIcon,
@@ -1011,6 +1026,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "4",
     name: "Add Watermark",
+    access: "paid",
     category: "Video",
     bgColor: "bg-[#06b6d4]",
     icon: AddWatermarkIcon,
@@ -1018,6 +1034,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "14",
     name: "Images to PDF",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#2563eb]",
     icon: ImagesToPdfIcon,
@@ -1025,6 +1042,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "15",
     name: "Image Convert",
+    access: "paid",
     category: "Image",
     bgColor: "bg-[#a855f7]",
     icon: ImageConvertIcon,
@@ -1033,6 +1051,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "16",
     name: "Image to Text",
+    access: "paid",
     category: "Text",
     bgColor: "bg-[#14b8a6]",
     icon: ImageToTextIcon,
@@ -1041,6 +1060,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "19",
     name: "Split PDF",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#2563eb]",
     icon: SplitPdfIcon,
@@ -1048,6 +1068,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "22",
     name: "Edit PDF",
+    access: "paid",
     category: "PDF",
     bgColor: "bg-[#2563EB]",
     icon: EditPdfIcon,
@@ -1056,6 +1077,7 @@ export const toolsData: ToolItem[] = [
   {
     id: "23",
     name: "Bijoy - Unicode",
+    access: "paid",
     category: "Text",
     bgColor: "bg-[#a3e635]",
     icon: BijoyUnicodeIcon,
@@ -1093,6 +1115,158 @@ export const getSlug = (name: string) => {
     .replace(/-+/g, "-");
 };
 
+// NAFIA SUBSCRIPTION ACCESS SWITCH — SEARCH THIS COMMENT TO FIND IT QUICKLY
+// false = paid badges stay visible, but paid tools can be opened directly (temporary admin/testing mode)
+// true  = paid tool clicks go to /subscription
+export const REQUIRE_SUBSCRIPTION = false;
+
+export const isPaidTool = (tool: ToolItem) => tool.access === "paid";
+
+/* ------------------------------------------------------------------ */
+/*  Premium seal — paid টুলের উপরে সোনালি সিলমোহরের মতো ব্যাজ          */
+/* ------------------------------------------------------------------ */
+
+// কিনারা কাটা কাটা (scalloped) গোল আকার
+const SEAL_CLIP =
+  "polygon(50.00% 0.00%,57.04% 5.55%,65.45% 2.45%,70.43% 9.90%,79.39% 9.55%,81.82% 18.18%,90.45% 20.61%,90.10% 29.57%,97.55% 34.55%,94.45% 42.96%,100.00% 50.00%,94.45% 57.04%,97.55% 65.45%,90.10% 70.43%,90.45% 79.39%,81.82% 81.82%,79.39% 90.45%,70.43% 90.10%,65.45% 97.55%,57.04% 94.45%,50.00% 100.00%,42.96% 94.45%,34.55% 97.55%,29.57% 90.10%,20.61% 90.45%,18.18% 81.82%,9.55% 79.39%,9.90% 70.43%,2.45% 65.45%,5.55% 57.04%,0.00% 50.00%,5.55% 42.96%,2.45% 34.55%,9.90% 29.57%,9.55% 20.61%,18.18% 18.18%,20.61% 9.55%,29.57% 9.90%,34.55% 2.45%,42.96% 5.55%)";
+
+const SEAL_INK = "#7A4803";
+
+// চকমক (sparkle) তারা — ৪ কোণা
+function SealSparkle({
+  className,
+  delay,
+  size,
+}: {
+  className: string;
+  delay: string;
+  size: number;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      width={size}
+      height={size}
+      className={`seal-twinkle pointer-events-none absolute ${className}`}
+      style={{ animationDelay: delay }}
+    >
+      <path
+        d="M12 0c.9 6.4 5.6 11.1 12 12-6.4.9-11.1 5.6-12 12-.9-6.4-5.6-11.1-12-12C6.4 11.1 11.1 6.4 12 0z"
+        fill="#FFFBE0"
+      />
+    </svg>
+  );
+}
+
+function PremiumSeal() {
+  return (
+    <span
+      title="Paid tool"
+      className="absolute right-3 top-3 h-9 w-9 sm:h-10 sm:w-10"
+      style={{
+        // হালকা রোটেট + সোনালি গ্লো
+        transform: "rotate(12deg)",
+        filter:
+          "drop-shadow(0 3px 5px rgba(88,50,0,0.45)) drop-shadow(0 0 6px rgba(255,214,90,0.55))",
+      }}
+    >
+      <style>{`
+        @keyframes seal-shine {
+          0%   { transform: translateX(0) skewX(-20deg); }
+          55%, 100% { transform: translateX(300%) skewX(-20deg); }
+        }
+        @keyframes seal-twinkle {
+          0%, 100% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+          50%      { opacity: 1; transform: scale(1) rotate(45deg); }
+        }
+        @keyframes seal-glow {
+          0%, 100% { opacity: 0; }
+          50%      { opacity: 0.9; }
+        }
+        .seal-shine   { animation: seal-shine 2.8s ease-in-out infinite; }
+        .seal-twinkle { animation: seal-twinkle 1.8s ease-in-out infinite; }
+        .seal-glow    { animation: seal-glow 2.2s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .seal-shine, .seal-twinkle, .seal-glow { animation: none; }
+        }
+      `}</style>
+      <span className="sr-only">Paid</span>
+
+      {/* বাইরের কাটা কিনারার সোনালি সিল */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          clipPath: SEAL_CLIP,
+          background:
+            "linear-gradient(140deg, #FFF4BF 0%, #F7C84B 35%, #B97A0B 70%, #F3C550 100%)",
+        }}
+      />
+
+      {/* ভেতরের পাতলা রিং */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-[3.5px] rounded-full"
+        style={{
+          background:
+            "linear-gradient(320deg, #FFF1B0 0%, #E5A92A 50%, #A8680A 100%)",
+        }}
+      />
+
+      {/* সোনালি মুখ (সবসময় আলো চলে যায়) */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-[5.5px] overflow-hidden rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 25%, #FFE79A 0%, #F2BC3E 55%, #D8981A 100%)",
+          boxShadow:
+            "inset 0 1px 1px rgba(255,255,255,0.65), inset 0 -1px 1px rgba(120,70,0,0.35)",
+        }}
+      >
+        <span className="seal-shine absolute inset-y-0 -left-full w-full bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+        <span
+          className="seal-glow absolute inset-0 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), transparent 60%)",
+          }}
+        />
+      </span>
+
+      {/* খোদাই করা মুকুট */}
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 h-[17px] w-[17px] -translate-x-1/2 -translate-y-1/2 sm:h-5 sm:w-5"
+        style={{ filter: "drop-shadow(0 0.75px 0 rgba(255,244,190,0.75))" }}
+      >
+        <path
+          d="M4.2 17.4 3 8.6l5 3.9L12 5.8l4 6.7 5-3.9-1.2 8.8z"
+          fill={SEAL_INK}
+        />
+        <rect
+          x="4.6"
+          y="18.9"
+          width="14.8"
+          height="2.3"
+          rx="1.1"
+          fill={SEAL_INK}
+        />
+        <circle cx="3" cy="8.2" r="1.35" fill={SEAL_INK} />
+        <circle cx="12" cy="5.4" r="1.35" fill={SEAL_INK} />
+        <circle cx="21" cy="8.2" r="1.35" fill={SEAL_INK} />
+      </svg>
+
+      {/* চারপাশে চকমক তারা */}
+      <SealSparkle className="-left-1.5 -top-1.5" size={10} delay="0s" />
+      <SealSparkle className="-bottom-1 -right-1.5" size={9} delay="0.7s" />
+      <SealSparkle className="-bottom-1.5 left-0" size={7} delay="1.3s" />
+    </span>
+  );
+}
+
 // একই টাইল ডিজাইন দুই পেজেই ব্যবহার হবে
 export function ToolTile({ tool }: { tool: ToolItem }) {
   const IconComponent = tool.icon;
@@ -1100,7 +1274,11 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
 
   return (
     <Link
-      href={`/sohoj-tools/${slug}`}
+      href={
+        tool.access === "paid" && REQUIRE_SUBSCRIPTION
+          ? "/subscription"
+          : `/sohoj-tools/${slug}`
+      }
       className="flex flex-col items-center group cursor-pointer"
     >
       <div
@@ -1113,6 +1291,14 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
             }`}
           >
             {tool.badge}
+          </span>
+        )}
+
+        {tool.access === "paid" && <PremiumSeal />}
+
+        {tool.access === "free" && (
+          <span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs bg-emerald-600">
+            free
           </span>
         )}
 
