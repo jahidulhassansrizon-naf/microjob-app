@@ -11,7 +11,6 @@ import {
   Layers,
   LayoutGrid,
   FileText,
-  Briefcase,
   Printer,
   Wrench,
   ChevronDown,
@@ -137,7 +136,6 @@ const NAV_ITEMS: NavConfig[] = [
     icon: LayoutGrid,
     tone: "indigo",
     match: "/ai-template",
-    upcoming: true,
     menu: aiTemplateItems,
   },
   {
@@ -151,15 +149,6 @@ const NAV_ITEMS: NavConfig[] = [
       text: "New",
       className: "bg-blue-50 text-[#1D4ED8] ring-1 ring-inset ring-blue-100",
     },
-  },
-  {
-    id: "jobs",
-    href: "/jobs",
-    label: "Jobs",
-    icon: Briefcase,
-    tone: "amber",
-    match: "/jobs",
-    upcoming: true,
   },
   {
     id: "print-media",
