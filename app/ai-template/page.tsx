@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import { TEMPLATE_IMAGE_URLS } from "./templateImageUrls";
 import {
   Search,
@@ -19,14 +27,444 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
+  Download,
   Image as ImageIcon,
+  Sparkles,
 } from "lucide-react";
 
+/* -------------------------------------------------------------------------- */
+/* AI SCAN ANIMATION - same animation used by the AI Editor                  */
+/* -------------------------------------------------------------------------- */
+
+const SCAN_STYLES = `
+@keyframes pp-scan-sweep {
+  0%,
+  1% {
+    transform: translate3d(0, -120%, 0);
+  }
+
+  82% {
+    transform: translate3d(0, 420%, 0);
+  }
+
+  /* Instantly reset to the top after reaching the bottom.
+     There is no visible bottom-to-top sweep between scans. */
+  82.01%,
+  100% {
+    transform: translate3d(0, -120%, 0);
+  }
+}
+
+@keyframes pp-scan-grid {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+.pp-scan-beam {
+  animation: pp-scan-sweep 1.9s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, -120%, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout paint;
+}
+
+.pp-scan-grid {
+  animation: pp-scan-grid 3s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-scan-beam {
+    animation-duration: 3.8s;
+  }
+
+  .pp-scan-grid {
+    animation-duration: 5s;
+  }
+}
+`;
+
+function ScanOverlay() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pp-scan-overlay pointer-events-none absolute inset-0 z-[5] overflow-hidden"
+    >
+      <div
+        className="pp-scan-grid absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(37,99,235,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.12) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+
+      <div
+        className="pp-scan-beam absolute left-0 right-0 top-0"
+        style={{ height: "22%" }}
+      >
+        <div
+          className="absolute inset-x-[8%] top-1/2 h-[18px] -translate-y-1/2 rounded-full"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(37,99,235,0) 0%, rgba(37,99,235,0.10) 32%, rgba(16,185,129,0.18) 50%, rgba(37,99,235,0.10) 68%, rgba(37,99,235,0) 100%)",
+            boxShadow:
+              "0 0 24px 8px rgba(37,99,235,0.12), 0 0 28px 6px rgba(16,185,129,0.10)",
+          }}
+        />
+
+        <div
+          className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.75) 18%, #10B981 50%, rgba(37,99,235,0.75) 82%, transparent 100%)",
+            boxShadow:
+              "0 0 10px 2px rgba(37,99,235,0.34), 0 0 16px 3px rgba(16,185,129,0.18)",
+          }}
+        />
+
+        <div
+          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 18%, rgba(255,255,255,0.9) 50%, transparent 82%)",
+          }}
+        />
+      </div>
+
+      <div
+        className="absolute inset-0"
+        style={{
+          boxShadow: "inset 0 0 28px rgba(37,99,235,0.16)",
+        }}
+      />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Crop helpers                                                               */
+/* -------------------------------------------------------------------------- */
+
+async function getCroppedImage(
+  pixelCrop: PixelCrop,
+  displayedImage: HTMLImageElement | null,
+): Promise<Blob> {
+  if (!displayedImage || !displayedImage.naturalWidth) {
+    throw new Error("Could not read the photo. Please try again.");
+  }
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("Could not prepare the cropped image.");
+  }
+
+  // ReactCrop works in rendered (CSS) pixels. Use the actual on-screen
+  // bounding box, including sub-pixel dimensions, so the exported image lines
+  // up exactly with the selection the user sees.
+  const renderedRect = displayedImage.getBoundingClientRect();
+  const renderedWidth = renderedRect.width;
+  const renderedHeight = renderedRect.height;
+
+  if (!renderedWidth || !renderedHeight) {
+    throw new Error("Could not determine the crop image size.");
+  }
+
+  const scaleX = displayedImage.naturalWidth / renderedWidth;
+  const scaleY = displayedImage.naturalHeight / renderedHeight;
+
+  const cropX = Math.min(
+    Math.max(0, Math.round(pixelCrop.x * scaleX)),
+    displayedImage.naturalWidth - 1,
+  );
+  const cropY = Math.min(
+    Math.max(0, Math.round(pixelCrop.y * scaleY)),
+    displayedImage.naturalHeight - 1,
+  );
+  const cropWidth = Math.min(
+    Math.max(1, Math.round(pixelCrop.width * scaleX)),
+    displayedImage.naturalWidth - cropX,
+  );
+  const cropHeight = Math.min(
+    Math.max(1, Math.round(pixelCrop.height * scaleY)),
+    displayedImage.naturalHeight - cropY,
+  );
+
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  ctx.drawImage(
+    displayedImage,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    cropWidth,
+    cropHeight,
+  );
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.94),
+  );
+
+  if (!blob) {
+    throw new Error("Could not create the cropped image.");
+  }
+
+  return blob;
+}
+
+type PhotoCropModalProps = {
+  imageSrc: string;
+  onCancel: () => void;
+  onApply: (blob: Blob) => void;
+};
+
+/*
+ * The crop modal keeps its own crop state. Dragging the crop box updates state
+ * on every mouse move, so this must NOT live in the big page component, or the
+ * whole template grid re-renders on each move and the crop feels laggy.
+ */
+const PhotoCropModal = React.memo(function PhotoCropModal({
+  imageSrc,
+  onCancel,
+  onApply,
+}: PhotoCropModalProps) {
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Keep pointer-move updates outside React state until the next animation
+  // frame. This prevents ReactCrop from forcing a render for every tiny mouse
+  // event and makes dragging/resizing feel much smoother on slower machines.
+  const cropRef = useRef<Crop | undefined>(undefined);
+  const cropFrameRef = useRef<number | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const handleImageLoad = useCallback(
+    (event: React.SyntheticEvent<HTMLImageElement>) => {
+      const image = event.currentTarget;
+
+      // Free-form starting box: nearly the whole photo, resizable in any
+      // direction with no aspect-ratio lock.
+      const initialCrop: Crop = {
+        unit: "%",
+        x: 5,
+        y: 5,
+        width: 90,
+        height: 90,
+      };
+
+      cropRef.current = initialCrop;
+      setCrop(initialCrop);
+
+      // The default crop must be usable immediately, even before the first
+      // pointer interaction. Use the exact rendered dimensions at this moment.
+      const rect = image.getBoundingClientRect();
+      const width = rect.width || image.width;
+      const height = rect.height || image.height;
+
+      setCompletedCrop({
+        unit: "px",
+        x: width * 0.05,
+        y: height * 0.05,
+        width: width * 0.9,
+        height: height * 0.9,
+      });
+    },
+    [],
+  );
+
+  const handleApply = useCallback(async () => {
+    if (!completedCrop || completedCrop.width < 1 || completedCrop.height < 1) {
+      setErrorMessage("Please adjust the crop and try again.");
+      return;
+    }
+
+    setIsCropping(true);
+    setErrorMessage("");
+
+    try {
+      const blob = await getCroppedImage(completedCrop, imgRef.current);
+      onApply(blob);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not crop the photo.",
+      );
+      setIsCropping(false);
+    }
+  }, [completedCrop, onApply]);
+
+  const handleCropChange = useCallback((nextCrop: Crop) => {
+    cropRef.current = nextCrop;
+
+    // One React update per animation frame instead of one per pointer event.
+    if (cropFrameRef.current !== null) return;
+
+    cropFrameRef.current = window.requestAnimationFrame(() => {
+      cropFrameRef.current = null;
+      setCrop(cropRef.current);
+    });
+  }, []);
+
+  const handleCropComplete = useCallback(
+    (pixelCrop: PixelCrop, percentCrop: Crop) => {
+      cropRef.current = percentCrop;
+
+      if (cropFrameRef.current !== null) {
+        window.cancelAnimationFrame(cropFrameRef.current);
+        cropFrameRef.current = null;
+      }
+
+      setCrop(percentCrop);
+      setCompletedCrop(pixelCrop);
+    },
+    [],
+  );
+
+  const handleCancel = useCallback(() => {
+    if (isCropping) return;
+    onCancel();
+  }, [isCropping, onCancel]);
+
+  useEffect(() => {
+    return () => {
+      if (cropFrameRef.current !== null) {
+        window.cancelAnimationFrame(cropFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") handleCancel();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleCancel]);
+
+  return (
+    <div className="crop-backdrop">
+      <div
+        className="crop-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Crop your photo"
+      >
+        <div className="crop-header">
+          <div>
+            <strong>Adjust your photo</strong>
+            <span>
+              Move and resize the crop area to select the part of the photo you
+              want to use.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="crop-close"
+            onClick={handleCancel}
+            disabled={isCropping}
+            aria-label="Cancel crop"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="crop-stage">
+          <ReactCrop
+            crop={crop}
+            minWidth={24}
+            minHeight={24}
+            keepSelection
+            ruleOfThirds
+            onChange={(_, percentCrop) => handleCropChange(percentCrop)}
+            onComplete={handleCropComplete}
+            disabled={isCropping}
+          >
+            <img
+              ref={imgRef}
+              src={imageSrc}
+              alt="Crop your uploaded photo"
+              onLoad={handleImageLoad}
+              className="crop-source-image"
+              draggable={false}
+            />
+          </ReactCrop>
+        </div>
+
+        <div className="crop-controls">
+          <span>Crop</span>
+
+          <span className="crop-controls-help">
+            Drag inside the box to move it. Drag any corner or edge to resize
+            freely.
+          </span>
+
+          <span>Free</span>
+        </div>
+
+        {errorMessage && <p className="crop-error">{errorMessage}</p>}
+
+        <div className="crop-actions">
+          <button
+            type="button"
+            className="crop-cancel-btn"
+            onClick={handleCancel}
+            disabled={isCropping}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="crop-apply-btn"
+            onClick={handleApply}
+            disabled={isCropping}
+          >
+            {isCropping ? "Preparing..." : "Use This Photo"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 type Gender = "All" | "Male" | "Female" | "Children" | "Product";
+/** 3 means "3 or more images". */
 type ImageCount = 1 | 2 | 3;
 type Orientation = "Portrait" | "Landscape" | "Square";
-type SortType = "Newest" | "Popular" | "ASC" | "DESC";
+/** "All" = orientation is not known from the source data. */
+type TemplateOrientation = Orientation | "All";
+type ColorKey =
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "purple"
+  | "dark";
+type SortType = "Newest" | "Oldest" | "Popular" | "ASC" | "DESC";
+
+type ImageCountFilter = "All" | ImageCount;
+type OrientationFilter = "All" | Orientation;
+type ColorFilter = "All" | ColorKey;
 
 type Template = {
   id: number;
@@ -34,10 +472,21 @@ type Template = {
   category: string;
   gender: Gender;
   imageCount: ImageCount;
-  orientation: Orientation;
+  orientation: TemplateOrientation;
+  colors: ColorKey[];
   tags: string[];
   image: string;
   created: number;
+};
+
+type FilterCriteria = {
+  search: string;
+  category: string;
+  gender: Gender;
+  imageCount: ImageCountFilter;
+  orientation: OrientationFilter;
+  color: ColorFilter;
+  favoritesOnly: boolean;
 };
 
 const FALLBACK_CATEGORIES = [
@@ -83,10 +532,245 @@ const HASHTAGS = [
   "#bangladesh",
 ];
 
-function humanizeSlug(url: string) {
-  const path = new URL(url).pathname;
-  const slug =
-    path.split("/").filter(Boolean).slice(-2, -1)[0] || "ai-template";
+/* -------------------------------------------------------------------------- */
+/*  Template metadata                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Optional, authoritative metadata keyed by image URL. Anything listed here
+ * wins over the values derived from the file slug. Use this (or replace it
+ * with real data from the backend) when the slug alone is not enough, e.g. for
+ * orientation and color, which cannot be known from a file name.
+ */
+type TemplateMetadataOverride = Partial<
+  Pick<
+    Template,
+    | "title"
+    | "category"
+    | "gender"
+    | "imageCount"
+    | "orientation"
+    | "colors"
+    | "tags"
+  >
+>;
+
+const TEMPLATE_METADATA_OVERRIDES: Record<string, TemplateMetadataOverride> =
+  {};
+
+const DEFAULT_CATEGORY = "Creative Shots";
+
+/** Ordered: the first rule whose words appear as a whole word in the slug wins. */
+const CATEGORY_RULES: ReadonlyArray<{
+  category: string;
+  words: readonly string[];
+}> = [
+  {
+    category: "Product Advertisement",
+    words: [
+      "product",
+      "products",
+      "campaign",
+      "advertisement",
+      "advertising",
+      "ad",
+      "ads",
+    ],
+  },
+  {
+    category: "Wedding Photo",
+    words: ["wedding", "bride", "bridal", "groom", "marriage"],
+  },
+  {
+    category: "Couple Portraits",
+    words: ["couple", "couples", "romantic", "anniversary", "love"],
+  },
+  {
+    category: "Birthday wishes",
+    words: ["birthday", "bday"],
+  },
+  {
+    category: "Father's Day",
+    words: ["father", "fathers", "dad", "daddy"],
+  },
+  {
+    category: "Baby and Kids",
+    words: [
+      "baby",
+      "babies",
+      "kid",
+      "kids",
+      "child",
+      "children",
+      "toddler",
+      "newborn",
+      "infant",
+    ],
+  },
+  {
+    category: "Family photo",
+    words: ["family", "parents", "mother", "mom", "daughter", "siblings"],
+  },
+  {
+    category: "80s Style Vintage",
+    words: ["vintage", "retro", "80s", "90s", "heritage"],
+  },
+  {
+    category: "Motivational",
+    words: [
+      "quote",
+      "quotes",
+      "wisdom",
+      "mindset",
+      "motivational",
+      "motivation",
+      "strength",
+      "inspirational",
+    ],
+  },
+  {
+    category: "Victory Day",
+    words: ["victory", "bangladesh", "flag", "independence"],
+  },
+  {
+    category: "Photo restoration",
+    words: ["restore", "restoration", "repair", "colorize"],
+  },
+  {
+    category: "Greeting card",
+    words: ["greeting", "card", "wishes", "congratulations"],
+  },
+];
+
+const CHILD_WORDS = [
+  "baby",
+  "babies",
+  "kid",
+  "kids",
+  "child",
+  "children",
+  "toddler",
+  "newborn",
+  "infant",
+];
+
+const FEMALE_WORDS = [
+  "woman",
+  "women",
+  "girl",
+  "girls",
+  "lady",
+  "ladies",
+  "female",
+  "saree",
+  "sari",
+  "bridal",
+  "bride",
+  "mother",
+  "mom",
+  "queen",
+  "princess",
+  "wife",
+];
+
+const MALE_WORDS = [
+  "man",
+  "men",
+  "male",
+  "boy",
+  "boys",
+  "gentleman",
+  "guy",
+  "groom",
+  "father",
+  "dad",
+  "king",
+  "husband",
+  "businessman",
+];
+
+const THREE_PLUS_WORDS = ["triptych", "collage", "three", "triple", "trio"];
+
+const TWO_WORDS = [
+  "couple",
+  "couples",
+  "diptych",
+  "double",
+  "duo",
+  "pair",
+  "twins",
+  "family",
+  "parents",
+];
+
+const LANDSCAPE_WORDS = [
+  "landscape",
+  "wide",
+  "widescreen",
+  "banner",
+  "panorama",
+  "panoramic",
+];
+
+const PORTRAIT_WORDS = ["vertical", "tall", "poster"];
+
+const COLOR_WORDS: Record<ColorKey, readonly string[]> = {
+  red: ["red", "crimson", "scarlet", "maroon"],
+  orange: ["orange", "amber"],
+  yellow: ["yellow", "golden", "gold"],
+  green: ["green", "emerald", "olive"],
+  blue: ["blue", "navy", "cyan", "teal", "turquoise"],
+  purple: ["purple", "violet", "lavender", "magenta"],
+  dark: ["black", "dark", "noir", "charcoal"],
+};
+
+const TAG_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "of",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "with",
+  "by",
+  "from",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+function hasAny(tokens: ReadonlySet<string>, words: readonly string[]) {
+  return words.some((word) => tokens.has(word));
+}
+
+function getSlug(url: string): string {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+
+    if (segments.length >= 2) {
+      return segments[segments.length - 2];
+    }
+
+    if (segments.length === 1) {
+      return segments[0].replace(/\.[a-z0-9]+$/i, "");
+    }
+  } catch {
+    /* fall through to default */
+  }
+
+  return "ai-template";
+}
+
+function slugToTitle(slug: string) {
   return slug
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase())
@@ -94,78 +778,355 @@ function humanizeSlug(url: string) {
     .trim();
 }
 
-function inferCategory(slug: string) {
-  const s = slug.toLowerCase();
+function inferCategory(tokens: ReadonlySet<string>): string {
+  const rule = CATEGORY_RULES.find((item) => hasAny(tokens, item.words));
 
-  if (/product|campaign|ad-|advertisement/.test(s))
-    return "Product Advertisement";
-  if (/wedding|couple|anniversary|romantic|love|bride|groom/.test(s))
-    return "Wedding Photo";
-  if (/baby|kid|child|daughter|mother|birthday/.test(s)) return "Baby and Kids";
-  if (/vintage|80s|90s|retro|pub|heritage/.test(s)) return "80s Style Vintage";
-  if (/quote|wisdom|mindset|motivational|strength|journey|dream/.test(s))
-    return "Motivational";
-  if (/victory|bangladesh|flag/.test(s)) return "Victory Day";
-  if (/restore|restoration|repair/.test(s)) return "Photo restoration";
-  if (/family|mother-daughter|father|parents/.test(s)) return "Family photo";
-  return "Creative Shots";
+  return rule ? rule.category : DEFAULT_CATEGORY;
 }
 
-function inferGender(slug: string): Gender {
-  const s = slug.toLowerCase();
+/**
+ * Gender is only assigned when the slug clearly supports it. Mixed or
+ * unspecified templates (couples, groups, abstract art...) stay "All" and are
+ * therefore only listed under the "All" gender filter, never under a wrong one.
+ */
+function inferGender(tokens: ReadonlySet<string>, category: string): Gender {
+  if (category === "Product Advertisement") {
+    return "Product";
+  }
 
-  if (/product|campaign|advertisement|ad-/.test(s)) return "Product";
-  if (/baby|kid|child|daughter/.test(s)) return "Children";
-  if (/woman|girl|saree|bridal|bride|female|lady/.test(s)) return "Female";
-  if (/man|male|gentleman|boy|businessman|guy/.test(s)) return "Male";
+  if (hasAny(tokens, CHILD_WORDS)) {
+    return "Children";
+  }
+
+  const female = hasAny(tokens, FEMALE_WORDS);
+  const male = hasAny(tokens, MALE_WORDS);
+
+  if (female && !male) {
+    return "Female";
+  }
+
+  if (male && !female) {
+    return "Male";
+  }
+
   return "All";
 }
 
-function inferImageCount(slug: string): ImageCount {
-  const s = slug.toLowerCase();
+function inferImageCount(tokens: ReadonlySet<string>): ImageCount {
+  if (hasAny(tokens, THREE_PLUS_WORDS)) {
+    return 3;
+  }
 
-  if (/triptych|collage|contact-sheet|three|triple|3-/.test(s)) return 3;
-  if (/couple|diptych|double|mother-daughter|family/.test(s)) return 2;
+  if (tokens.has("contact") && tokens.has("sheet")) {
+    return 3;
+  }
+
+  if (hasAny(tokens, TWO_WORDS)) {
+    return 2;
+  }
+
   return 1;
 }
 
-function inferOrientation(slug: string): Orientation {
-  const s = slug.toLowerCase();
+/** Orientation is only known when the slug says so; otherwise it is "All". */
+function inferOrientation(tokens: ReadonlySet<string>): TemplateOrientation {
+  if (tokens.has("square")) {
+    return "Square";
+  }
 
-  if (/square/.test(s)) return "Square";
-  if (
-    /landscape|wide|banner|cover|triptych|collage|contact-sheet|diptych/.test(s)
-  ) {
+  if (hasAny(tokens, LANDSCAPE_WORDS)) {
     return "Landscape";
   }
-  return "Portrait";
+
+  if (hasAny(tokens, PORTRAIT_WORDS)) {
+    return "Portrait";
+  }
+
+  return "All";
 }
 
-function slugWords(url: string) {
-  const raw = humanizeSlug(url).toLowerCase();
-  return raw
-    .split(" ")
-    .map((word) => word.trim())
-    .filter((word) => word.length > 2)
-    .slice(0, 5);
+function inferColors(tokens: ReadonlySet<string>): ColorKey[] {
+  return (Object.keys(COLOR_WORDS) as ColorKey[]).filter((key) =>
+    hasAny(tokens, COLOR_WORDS[key]),
+  );
 }
 
-const templates: Template[] = TEMPLATE_IMAGE_URLS.map((image, index) => {
-  const title = humanizeSlug(image);
-  const slug = title.toLowerCase();
+function inferTags(slug: string): string[] {
+  const unique = new Set<string>();
+
+  tokenize(slug).forEach((word) => {
+    if (word.length < 2 || /^\d+$/.test(word) || TAG_STOP_WORDS.has(word)) {
+      return;
+    }
+
+    unique.add(word);
+  });
+
+  return Array.from(unique);
+}
+
+function buildTemplate(image: string, index: number, total: number): Template {
+  const slug = getSlug(image);
+  const tokens = new Set(tokenize(slug));
+  const category = inferCategory(tokens);
+  const override = TEMPLATE_METADATA_OVERRIDES[image] ?? {};
 
   return {
     id: index + 1,
-    title,
-    category: inferCategory(slug),
-    gender: inferGender(slug),
-    imageCount: inferImageCount(slug),
-    orientation: inferOrientation(slug),
-    tags: slugWords(image),
+    title: override.title ?? slugToTitle(slug),
+    category: override.category ?? category,
+    gender: override.gender ?? inferGender(tokens, category),
+    imageCount: override.imageCount ?? inferImageCount(tokens),
+    orientation: override.orientation ?? inferOrientation(tokens),
+    colors: override.colors ?? inferColors(tokens),
+    tags: override.tags ?? inferTags(slug),
     image,
-    created: TEMPLATE_IMAGE_URLS.length - index,
+    created: total - index,
   };
-});
+}
+
+const templates: Template[] = TEMPLATE_IMAGE_URLS.map((image, index) =>
+  buildTemplate(image, index, TEMPLATE_IMAGE_URLS.length),
+);
+
+const TEMPLATES_BY_ID = new Map<number, Template>(
+  templates.map((template) => [template.id, template]),
+);
+
+const TEMPLATE_IDS_BY_IMAGE = new Map<string, number>(
+  templates.map((template) => [template.image, template.id]),
+);
+
+/** Favorites are stored by image URL so they survive changes to the list order. */
+const FAVORITES_STORAGE_KEY = "sohozkaj:template-favorites";
+
+/** Lower-cased search fields, computed once instead of on every keystroke. */
+const SEARCH_INDEX = new Map<number, string[]>(
+  templates.map((template) => [
+    template.id,
+    [
+      template.title.toLowerCase(),
+      template.category.toLowerCase(),
+      ...template.tags.map((tag) => tag.toLowerCase()),
+    ],
+  ]),
+);
+
+/** Real counts from the underlying dataset (independent of active filters). */
+const CATEGORY_COUNTS: Record<string, number> = (() => {
+  const counts: Record<string, number> = {
+    All: templates.length,
+  };
+
+  templates.forEach((template) => {
+    counts[template.category] = (counts[template.category] || 0) + 1;
+  });
+
+  return counts;
+})();
+
+const CATEGORY_OPTIONS: string[] = [
+  ...FALLBACK_CATEGORIES.filter(
+    (item) => item === "All" || CATEGORY_COUNTS[item],
+  ),
+  ...Object.keys(CATEGORY_COUNTS).filter(
+    (item) => !FALLBACK_CATEGORIES.includes(item),
+  ),
+];
+
+/* -------------------------------------------------------------------------- */
+/*  Filtering + sorting pipeline (single source of truth)                     */
+/* -------------------------------------------------------------------------- */
+
+function parseSearchTerms(raw: string): string[] {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/^#+/, "")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function matchesSearch(template: Template, terms: string[]) {
+  if (terms.length === 0) {
+    return true;
+  }
+
+  const fields = SEARCH_INDEX.get(template.id) ?? [];
+
+  // Every typed word must appear in the title, the category or a tag.
+  return terms.every((term) => fields.some((field) => field.includes(term)));
+}
+
+function matchesImageCount(template: Template, filter: ImageCountFilter) {
+  if (filter === "All") {
+    return true;
+  }
+
+  if (filter === 3) {
+    return template.imageCount >= 3;
+  }
+
+  return template.imageCount === filter;
+}
+
+function filterTemplates(
+  source: readonly Template[],
+  criteria: FilterCriteria,
+  favoriteIds: ReadonlySet<number>,
+): Template[] {
+  const terms = parseSearchTerms(criteria.search);
+
+  return source.filter(
+    (template) =>
+      matchesSearch(template, terms) &&
+      (criteria.category === "All" ||
+        template.category === criteria.category) &&
+      (criteria.gender === "All" || template.gender === criteria.gender) &&
+      matchesImageCount(template, criteria.imageCount) &&
+      (criteria.orientation === "All" ||
+        template.orientation === criteria.orientation) &&
+      (criteria.color === "All" || template.colors.includes(criteria.color)) &&
+      (!criteria.favoritesOnly || favoriteIds.has(template.id)),
+  );
+}
+
+/**
+ * The source has no engagement data, so "Popular" keeps the original
+ * deterministic placeholder score. Swap this for real usage counts later.
+ */
+function popularityScore(template: Template) {
+  return Math.min(template.tags.length, 5) * 23 + (template.id % 41);
+}
+
+function sortTemplates(list: readonly Template[], sortType: SortType) {
+  const copy = [...list];
+
+  const byName = (a: Template, b: Template) =>
+    a.title.localeCompare(b.title, undefined, {
+      sensitivity: "base",
+    }) || a.id - b.id;
+
+  switch (sortType) {
+    case "Popular":
+      return copy.sort(
+        (a, b) => popularityScore(b) - popularityScore(a) || a.id - b.id,
+      );
+
+    case "Oldest":
+      return copy.sort((a, b) => a.created - b.created);
+
+    case "ASC":
+      return copy.sort(byName);
+
+    case "DESC":
+      return copy.sort((a, b) => byName(b, a));
+
+    case "Newest":
+    default:
+      return copy.sort((a, b) => b.created - a.created);
+  }
+}
+
+const COLOR_OPTIONS: ReadonlyArray<{
+  value: ColorFilter;
+  label: string;
+  background: string;
+}> = [
+  {
+    value: "All",
+    label: "All colors",
+    background: "linear-gradient(135deg,#ff3e3e,#ffd600,#23c96b,#3c74ff)",
+  },
+  {
+    value: "red",
+    label: "Red",
+    background: "#ff4545",
+  },
+  {
+    value: "orange",
+    label: "Orange",
+    background: "#ff9800",
+  },
+  {
+    value: "yellow",
+    label: "Yellow",
+    background: "#ffd11a",
+  },
+  {
+    value: "green",
+    label: "Green",
+    background: "#1fbc60",
+  },
+  {
+    value: "blue",
+    label: "Blue",
+    background: "#3c74ff",
+  },
+  {
+    value: "purple",
+    label: "Purple",
+    background: "#9b4cff",
+  },
+  {
+    value: "dark",
+    label: "Dark",
+    background: "#4a4a53",
+  },
+];
+
+const IMAGE_COUNT_OPTIONS: ReadonlyArray<{
+  value: ImageCountFilter;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: "All",
+    label: "All",
+    hint: "",
+  },
+  {
+    value: 1,
+    label: "1 image",
+    hint: "Single portrait",
+  },
+  {
+    value: 2,
+    label: "2 images",
+    hint: "Couple / family",
+  },
+  {
+    value: 3,
+    label: "3+ images",
+    hint: "Group / more than 2 people",
+  },
+];
+
+const SIDE_SORT_OPTIONS: ReadonlyArray<{
+  label: string;
+  value: SortType;
+}> = [
+  {
+    label: "Popular",
+    value: "Popular",
+  },
+  {
+    label: "Newest first",
+    value: "Newest",
+  },
+  {
+    label: "Oldest first",
+    value: "Oldest",
+  },
+  {
+    label: "By name",
+    value: "ASC",
+  },
+];
+
+function imageCountLabel(count: ImageCount) {
+  return count === 1 ? "1 image" : count === 2 ? "2 images" : "3+ images";
+}
 
 function IconButton({
   active,
@@ -202,16 +1163,20 @@ function LazyTemplateImage({
 }: {
   src: string;
   alt: string;
-  orientation: Orientation;
+  orientation: TemplateOrientation;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+
   const [shouldLoad, setShouldLoad] = useState(false);
+
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (shouldLoad) return;
 
     const node = containerRef.current;
+
     if (!node) return;
 
     if (!("IntersectionObserver" in window)) {
@@ -251,7 +1216,15 @@ function LazyTemplateImage({
       className={`lazy-image-shell ${className}`}
       style={{ aspectRatio }}
     >
-      {shouldLoad ? (
+      {failed ? (
+        <div
+          className="lazy-image-placeholder lazy-image-failed"
+          role="img"
+          aria-label={alt}
+        >
+          <ImageIcon size={20} />
+        </div>
+      ) : shouldLoad ? (
         <img
           src={src}
           alt={alt}
@@ -259,6 +1232,7 @@ function LazyTemplateImage({
           loading="lazy"
           decoding="async"
           fetchPriority="low"
+          onError={() => setFailed(true)}
         />
       ) : (
         <div className="lazy-image-placeholder" aria-hidden="true">
@@ -271,180 +1245,415 @@ function LazyTemplateImage({
 
 export default function AITemplatePage() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [gender, setGender] = useState<Gender>("All");
-  const [imageCount, setImageCount] = useState("All");
-  const [orientation, setOrientation] = useState<Orientation | "All">("All");
-  const [sortType, setSortType] = useState<SortType>("Newest");
-  const [showFavorites, setShowFavorites] = useState(false);
-  const [favorites, setFavorites] = useState<number[]>([]);
-  const [alertVisible, setAlertVisible] = useState(true);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [selectedColor, setSelectedColor] = useState("All");
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: templates.length };
-    templates.forEach((template) => {
-      counts[template.category] = (counts[template.category] || 0) + 1;
-    });
-    return counts;
+  const [category, setCategory] = useState("All");
+
+  const [gender, setGender] = useState<Gender>("All");
+
+  const [imageCount, setImageCount] = useState<ImageCountFilter>("All");
+
+  const [orientation, setOrientation] = useState<OrientationFilter>("All");
+
+  const [selectedColor, setSelectedColor] = useState<ColorFilter>("All");
+
+  const [sortType, setSortType] = useState<SortType>("Newest");
+
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const [favorites, setFavorites] = useState<number[]>([]);
+
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // AI Template generation state
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [userPhoto, setUserPhoto] = useState<File | null>(null);
+
+  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const [generationError, setGenerationError] = useState("");
+
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+
+  // Crop modal visibility (the crop box state itself lives in PhotoCropModal)
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+
+  const generationAbortRef = useRef<AbortController | null>(null);
+
+  const categoryCounts = CATEGORY_COUNTS;
+
+  const categories = CATEGORY_OPTIONS;
+
+  const favoriteIds = useMemo(() => new Set(favorites), [favorites]);
+
+  // Load saved favorites after mount (keeps server and client HTML identical).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+      const saved: unknown = raw ? JSON.parse(raw) : [];
+
+      if (Array.isArray(saved)) {
+        setFavorites(
+          saved
+            .map((url) =>
+              typeof url === "string"
+                ? TEMPLATE_IDS_BY_IMAGE.get(url)
+                : undefined,
+            )
+            .filter((id): id is number => id !== undefined),
+        );
+      }
+    } catch {
+      /* storage unavailable or corrupted: start with no favorites */
+    }
+
+    setFavoritesLoaded(true);
   }, []);
 
-  const toggleFavorite = (id: number) => {
+  useEffect(() => {
+    if (!favoritesLoaded) return;
+
+    try {
+      window.localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(
+          favorites
+            .map((id) => TEMPLATES_BY_ID.get(id)?.image)
+            .filter((image): image is string => Boolean(image)),
+        ),
+      );
+    } catch {
+      /* storage full or blocked: favorites just won't persist */
+    }
+  }, [favorites, favoritesLoaded]);
+
+  // Blob URLs are released when they are replaced or the page unmounts.
+  useEffect(() => {
+    return () => {
+      if (cropImage) URL.revokeObjectURL(cropImage);
+    };
+  }, [cropImage]);
+
+  useEffect(() => {
+    return () => {
+      if (userPhotoPreview) URL.revokeObjectURL(userPhotoPreview);
+    };
+  }, [userPhotoPreview]);
+
+  useEffect(() => {
+    return () => generationAbortRef.current?.abort();
+  }, []);
+
+  const toggleFavorite = useCallback((id: number) => {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearch("");
     setCategory("All");
     setGender("All");
     setImageCount("All");
     setOrientation("All");
+    setSelectedColor("All");
     setSortType("Newest");
     setShowFavorites(false);
-    setSelectedColor("All");
-  };
+  }, []);
 
+  // Hashtags are quick-search buttons: they only touch the search text.
+  const handleHashtagClick = useCallback((tag: string) => {
+    setSearch(tag.replace(/^#+/, ""));
+  }, []);
+
+  // FILTER FIRST -> THEN SORT -> THEN RENDER.
   const filteredTemplates = useMemo(() => {
-    const text = search.trim().toLowerCase();
+    const filtered = filterTemplates(
+      templates,
+      {
+        search,
+        category,
+        gender,
+        imageCount,
+        orientation,
+        color: selectedColor,
+        favoritesOnly: showFavorites,
+      },
+      favoriteIds,
+    );
 
-    let list = templates.filter((template) => {
-      const matchesSearch =
-        !text ||
-        template.title.toLowerCase().includes(text) ||
-        template.category.toLowerCase().includes(text) ||
-        template.tags.some((tag) => tag.includes(text));
-
-      const matchesCategory =
-        category === "All" || template.category === category;
-
-      const matchesGender =
-        gender === "All" ||
-        template.gender === gender ||
-        template.gender === "All";
-
-      const matchesImageCount =
-        imageCount === "All" || String(template.imageCount) === imageCount;
-
-      const matchesOrientation =
-        orientation === "All" || template.orientation === orientation;
-
-      const matchesFavorite = !showFavorites || favorites.includes(template.id);
-
-      const matchesColor =
-        selectedColor === "All" || template.id % 8 === Number(selectedColor);
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesGender &&
-        matchesImageCount &&
-        matchesOrientation &&
-        matchesFavorite &&
-        matchesColor
-      );
-    });
-
-    if (sortType === "Popular") {
-      list = [...list].sort((a, b) => {
-        const aScore = a.tags.length * 23 + (a.id % 41);
-        const bScore = b.tags.length * 23 + (b.id % 41);
-        return bScore - aScore;
-      });
-    }
-
-    if (sortType === "ASC") {
-      list = [...list].sort((a, b) =>
-        a.title.localeCompare(b.title, undefined, {
-          sensitivity: "base",
-        }),
-      );
-    }
-
-    if (sortType === "DESC") {
-      list = [...list].sort((a, b) =>
-        b.title.localeCompare(a.title, undefined, {
-          sensitivity: "base",
-        }),
-      );
-    }
-
-    if (sortType === "Newest") {
-      list = [...list].sort((a, b) => b.created - a.created);
-    }
-
-    return list;
+    return sortTemplates(filtered, sortType);
   }, [
     search,
     category,
     gender,
     imageCount,
     orientation,
-    sortType,
-    showFavorites,
-    favorites,
     selectedColor,
+    showFavorites,
+    favoriteIds,
+    sortType,
   ]);
 
+  // The modal tracks the template id, so it stays stable even if the list
+  // changes underneath it (e.g. un-favoriting while "My Favorites" is on).
   const selectedTemplate =
-    selectedIndex === null ? null : filteredTemplates[selectedIndex] || null;
+    selectedId === null ? null : (TEMPLATES_BY_ID.get(selectedId) ?? null);
 
-  const openTemplate = (template: Template) => {
-    const index = filteredTemplates.findIndex(
-      (item) => item.id === template.id,
-    );
-    setSelectedIndex(index >= 0 ? index : 0);
-  };
+  const isSelectedFavorite =
+    selectedTemplate !== null && favoriteIds.has(selectedTemplate.id);
 
-  const moveSelected = (direction: number) => {
-    if (selectedIndex === null || filteredTemplates.length === 0) return;
-    const next =
-      (selectedIndex + direction + filteredTemplates.length) %
-      filteredTemplates.length;
-    setSelectedIndex(next);
-  };
+  useEffect(() => {
+    // A running generation belongs to the previous template: cancel it so its
+    // result can never show up on another template.
+    generationAbortRef.current?.abort();
+    generationAbortRef.current = null;
 
-  const categories = [
-    ...FALLBACK_CATEGORIES.filter(
-      (item) => item === "All" || categoryCounts[item],
-    ),
-  ];
+    setIsGenerating(false);
+    setGenerationError("");
+    setGeneratedImage(null);
+    setUserPhoto(null);
+    setIsCropOpen(false);
+    setUserPhotoPreview(null);
+    setCropImage(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [selectedId]);
+
+  const openTemplate = useCallback((template: Template) => {
+    setSelectedId(template.id);
+  }, []);
+
+  const closeModal = useCallback(() => setSelectedId(null), []);
+
+  const handleUserPhotoChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+
+      if (!file) return;
+
+      if (!file.type.toLowerCase().startsWith("image/")) {
+        setGenerationError("Please choose an image file.");
+        event.target.value = "";
+        return;
+      }
+
+      if (file.size > 15 * 1024 * 1024) {
+        setGenerationError("The photo must be 15 MB or smaller.");
+        event.target.value = "";
+        return;
+      }
+
+      setGenerationError("");
+      setGeneratedImage(null);
+
+      setCropImage(URL.createObjectURL(file));
+      setIsCropOpen(true);
+
+      // Allow choosing the same file again later.
+      event.target.value = "";
+    },
+    [],
+  );
+
+  const handleCropCancel = useCallback(() => {
+    setIsCropOpen(false);
+    setCropImage(null);
+  }, []);
+
+  const handleCropApplied = useCallback((blob: Blob) => {
+    const croppedFile = new File([blob], "sohozkaj-cropped-photo.jpg", {
+      type: "image/jpeg",
+    });
+
+    // The cropped photo replaces the original and is what Generate Photo uses.
+    setUserPhoto(croppedFile);
+    setUserPhotoPreview(URL.createObjectURL(blob));
+    setGenerationError("");
+
+    setIsCropOpen(false);
+    setCropImage(null);
+  }, []);
+
+  const handleGeneratePhoto = useCallback(async () => {
+    if (!selectedTemplate) return;
+
+    if (!userPhoto) {
+      setGenerationError("Please upload your photo first.");
+      return;
+    }
+
+    generationAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    generationAbortRef.current = controller;
+
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 180_000);
+
+    setIsGenerating(true);
+    setGenerationError("");
+    setGeneratedImage(null);
+
+    try {
+      const formData = new FormData();
+
+      formData.append("image", userPhoto, userPhoto.name);
+
+      formData.append("templateImage", selectedTemplate.image);
+
+      const templatePrompt = [
+        "Create a new image using the two attached images.",
+        "",
+        "IMAGE 1 is the AI template/reference image.",
+        "IMAGE 2 is the user's own photo and is the identity source.",
+        "",
+        "Recreate the visual design of IMAGE 1 using the person from IMAGE 2.",
+        "Preserve the user's identity and recognizable facial features.",
+        "Do not copy or preserve the identity of the person shown in the template.",
+        "Match the template's composition, pose, camera angle, framing, clothing style,",
+        "background, lighting, shadows, color treatment, mood, depth, and overall visual style.",
+        "Keep important graphic layout and design elements from the template when appropriate.",
+        "Do not add extra people, random objects, logos, watermarks, or unrelated elements.",
+        "Keep the result natural, photorealistic when the template is photorealistic,",
+        "and faithful to the reference template's intended appearance.",
+        "",
+        `Template title: ${selectedTemplate.title}`,
+        `Template category: ${selectedTemplate.category}`,
+        `Template gender classification: ${selectedTemplate.gender}`,
+        `Template image count classification: ${imageCountLabel(
+          selectedTemplate.imageCount,
+        )}`,
+        `Template orientation: ${selectedTemplate.orientation}`,
+        "",
+        "Return only the finished generated image.",
+      ].join("\n");
+
+      formData.append("prompt", templatePrompt);
+
+      const response = await fetch("/api/template-generate", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success || !data.image) {
+        throw new Error(data?.error || "Template image generation failed.");
+      }
+
+      if (generationAbortRef.current !== controller) return;
+
+      setGeneratedImage(data.image);
+    } catch (error) {
+      // Cancelled because another template was opened or the page closed.
+      if (generationAbortRef.current !== controller) return;
+
+      if (timedOut) {
+        setGenerationError(
+          "Generation took too long. Please try again in a moment.",
+        );
+      } else {
+        setGenerationError(
+          error instanceof Error
+            ? error.message
+            : "Template image generation failed.",
+        );
+      }
+    } finally {
+      window.clearTimeout(timeoutId);
+
+      if (generationAbortRef.current === controller) {
+        generationAbortRef.current = null;
+        setIsGenerating(false);
+      }
+    }
+  }, [selectedTemplate, userPhoto]);
+
+  const moveSelected = useCallback(
+    (direction: 1 | -1) => {
+      if (selectedId === null || filteredTemplates.length === 0) {
+        return;
+      }
+
+      const length = filteredTemplates.length;
+
+      const currentIndex = filteredTemplates.findIndex(
+        (item) => item.id === selectedId,
+      );
+
+      const nextIndex =
+        currentIndex === -1
+          ? direction === 1
+            ? 0
+            : length - 1
+          : (currentIndex + direction + length) % length;
+
+      setSelectedId(filteredTemplates[nextIndex].id);
+    },
+    [filteredTemplates, selectedId],
+  );
+
+  const isAnyModalOpen = selectedId !== null || isCropOpen;
+
+  // Lock page scroll behind the modals.
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isAnyModalOpen]);
+
+  // Esc closes the top-most modal; arrow keys browse templates.
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // The crop modal handles its own Escape key.
+        if (!isCropOpen) closeModal();
+
+        return;
+      }
+
+      if (isCropOpen) return;
+
+      if (event.key === "ArrowLeft") {
+        moveSelected(-1);
+      } else if (event.key === "ArrowRight") {
+        moveSelected(1);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isAnyModalOpen, isCropOpen, closeModal, moveSelected]);
 
   return (
     <div className="ai-page">
       <DashboardNavbar />
 
-      {alertVisible && (
-        <div className="credit-alert">
-          <div className="credit-left">
-            <div className="credit-danger-icon">!</div>
-            <div>
-              <div className="credit-title">Your credit is running low!</div>
-              <div className="credit-sub">
-                Currently you have only <b>0</b> credits left.
-              </div>
-            </div>
-          </div>
-
-          <div className="credit-actions">
-            <button className="buy-credit">Click here to buy credit →</button>
-            <button
-              className="close-alert"
-              onClick={() => setAlertVisible(false)}
-              aria-label="Close"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
       <main className="main-content">
         <section className="page-header">
           <div>
             <h1>AI Template</h1>
+
             <p>
               Pick a style you like, upload your photo, and we'll generate the
               same look for you in seconds.
@@ -453,6 +1662,7 @@ export default function AITemplatePage() {
 
           <div className="page-actions">
             <button
+              type="button"
               className={`sort-pill ${sortType === "Newest" ? "selected" : ""}`}
               onClick={() => setSortType("Newest")}
             >
@@ -461,7 +1671,10 @@ export default function AITemplatePage() {
             </button>
 
             <button
-              className={`sort-pill ${sortType === "Popular" ? "selected-light" : ""}`}
+              type="button"
+              className={`sort-pill ${
+                sortType === "Popular" ? "selected-light" : ""
+              }`}
               onClick={() => setSortType("Popular")}
             >
               <TrendingUp size={14} />
@@ -469,7 +1682,12 @@ export default function AITemplatePage() {
             </button>
 
             <button
-              className={`sort-pill ${sortType === "ASC" || sortType === "DESC" ? "selected-light" : ""}`}
+              type="button"
+              className={`sort-pill ${
+                sortType === "ASC" || sortType === "DESC"
+                  ? "selected-light"
+                  : ""
+              }`}
               onClick={() =>
                 setSortType((prev) => (prev === "ASC" ? "DESC" : "ASC"))
               }
@@ -479,7 +1697,10 @@ export default function AITemplatePage() {
             </button>
 
             <button
-              className={`sort-pill favorites-btn ${showFavorites ? "favorite-active" : ""}`}
+              type="button"
+              className={`sort-pill favorites-btn ${
+                showFavorites ? "favorite-active" : ""
+              }`}
               onClick={() => setShowFavorites((prev) => !prev)}
             >
               <Heart size={14} fill={showFavorites ? "currentColor" : "none"} />
@@ -492,7 +1713,8 @@ export default function AITemplatePage() {
           <aside className="sidebar">
             <div className="sidebar-heading">
               <span>Filter</span>
-              <button onClick={resetFilters}>
+
+              <button type="button" onClick={resetFilters}>
                 <RotateCcw size={13} /> Reset
               </button>
             </div>
@@ -505,10 +1727,13 @@ export default function AITemplatePage() {
                   type="button"
                   key={item}
                   onClick={() => setCategory(item)}
-                  className={`category-row ${category === item ? "active" : ""}`}
+                  className={`category-row ${
+                    category === item ? "active" : ""
+                  }`}
                 >
                   <span>{item}</span>
-                  <b>{(categoryCounts[item] || 0).toLocaleString()}</b>
+
+                  <b>{(categoryCounts[item] || 0).toLocaleString("en-US")}</b>
                 </button>
               ))}
             </div>
@@ -517,20 +1742,23 @@ export default function AITemplatePage() {
               <div className="filter-section-title">GENDER</div>
 
               <div className="gender-grid">
-                {[
-                  ["All", <VenusAndMars size={14} />],
-                  ["Male", <UserRound size={14} />],
-                  ["Female", <VenusAndMars size={14} />],
-                  ["Children", <Baby size={14} />],
-                  ["Product", <Package size={14} />],
-                ].map(([item, icon]) => (
+                {(
+                  [
+                    ["All", <VenusAndMars key="all" size={14} />],
+                    ["Male", <UserRound key="male" size={14} />],
+                    ["Female", <VenusAndMars key="female" size={14} />],
+                    ["Children", <Baby key="children" size={14} />],
+                    ["Product", <Package key="product" size={14} />],
+                  ] as Array<[Gender, React.ReactNode]>
+                ).map(([item, icon]) => (
                   <button
                     type="button"
-                    key={String(item)}
+                    key={item}
                     className={`gender-card ${gender === item ? "active" : ""}`}
-                    onClick={() => setGender(item as Gender)}
+                    onClick={() => setGender(item)}
                   >
                     {icon}
+
                     <span>{item}</span>
                   </button>
                 ))}
@@ -541,32 +1769,25 @@ export default function AITemplatePage() {
               <div className="filter-section-title">IMAGE COUNT</div>
 
               <div className="radio-list">
-                {[
-                  ["All", ""],
-                  ["1 image", "1"],
-                  ["2 images", "2"],
-                  ["3+ images", "3"],
-                ].map(([label, value]) => (
+                {IMAGE_COUNT_OPTIONS.map(({ value, label, hint }) => (
                   <button
                     type="button"
                     key={label}
-                    className={`radio-row ${imageCount === (value || "All") ? "active" : ""}`}
-                    onClick={() => setImageCount(value || "All")}
+                    className={`radio-row ${
+                      imageCount === value ? "active" : ""
+                    }`}
+                    onClick={() => setImageCount(value)}
                   >
                     <span
-                      className={`radio-dot ${imageCount === (value || "All") ? "checked" : ""}`}
+                      className={`radio-dot ${
+                        imageCount === value ? "checked" : ""
+                      }`}
                     />
+
                     <span>
                       <strong>{label}</strong>
-                      <small>
-                        {label === "All"
-                          ? ""
-                          : label === "1 image"
-                            ? "Single portrait"
-                            : label === "2 images"
-                              ? "Couple / family"
-                              : "Group / more than 2 people"}
-                      </small>
+
+                      <small>{hint}</small>
                     </span>
                   </button>
                 ))}
@@ -577,16 +1798,26 @@ export default function AITemplatePage() {
               <div className="filter-section-title">ORIENTATION</div>
 
               <div className="orientation-grid">
-                {["All", "Portrait", "Landscape", "Square"].map((item) => (
+                {(
+                  [
+                    "All",
+                    "Portrait",
+                    "Landscape",
+                    "Square",
+                  ] as OrientationFilter[]
+                ).map((item) => (
                   <button
                     type="button"
                     key={item}
-                    className={`orientation-card ${orientation === item ? "active" : ""}`}
-                    onClick={() => setOrientation(item as Orientation | "All")}
+                    className={`orientation-card ${
+                      orientation === item ? "active" : ""
+                    }`}
+                    onClick={() => setOrientation(item)}
                   >
                     <span
                       className={`orientation-icon orientation-${item.toLowerCase()}`}
                     />
+
                     {item}
                   </button>
                 ))}
@@ -597,27 +1828,24 @@ export default function AITemplatePage() {
               <div className="filter-section-title">COLOR</div>
 
               <div className="color-grid">
-                {[
-                  [
-                    "All",
-                    "linear-gradient(135deg,#ff3e3e,#ffd600,#23c96b,#3c74ff)",
-                  ],
-                  ["1", "#ff4545"],
-                  ["2", "#ff9800"],
-                  ["3", "#ffd11a"],
-                  ["4", "#1fbc60"],
-                  ["5", "#ff9400"],
-                  ["6", "#9b4cff"],
-                  ["7", "#4a4a53"],
-                ].map(([value, color]) => (
+                {COLOR_OPTIONS.map(({ value, label, background }) => (
                   <button
                     type="button"
                     key={value}
-                    className={`color-dot-wrap ${selectedColor === value ? "active" : ""}`}
+                    className={`color-dot-wrap ${
+                      selectedColor === value ? "active" : ""
+                    }`}
                     onClick={() => setSelectedColor(value)}
-                    aria-label={`Color ${value}`}
+                    aria-label={`Color: ${label}`}
+                    aria-pressed={selectedColor === value}
+                    title={label}
                   >
-                    <span className="color-dot" style={{ background: color }} />
+                    <span
+                      className="color-dot"
+                      style={{
+                        background,
+                      }}
+                    />
                   </button>
                 ))}
               </div>
@@ -627,27 +1855,23 @@ export default function AITemplatePage() {
               <div className="filter-section-title">SORT</div>
 
               <div className="sort-side-list">
-                {[
-                  ["Popular", "Popular"],
-                  ["Newest first", "Newest"],
-                  ["Oldest first", "Oldest"],
-                  ["By name", "ASC"],
-                ].map(([label, value]) => (
-                  <button
-                    type="button"
-                    key={label}
-                    className={`sort-side-row ${sortType === value ? "active" : ""}`}
-                    onClick={() => {
-                      if (value === "Oldest") {
-                        setSortType("DESC");
-                      } else {
-                        setSortType(value as SortType);
-                      }
-                    }}
-                  >
-                    <span>{label}</span>
-                  </button>
-                ))}
+                {SIDE_SORT_OPTIONS.map(({ label, value }) => {
+                  const isActive =
+                    value === "ASC"
+                      ? sortType === "ASC" || sortType === "DESC"
+                      : sortType === value;
+
+                  return (
+                    <button
+                      type="button"
+                      key={label}
+                      className={`sort-side-row ${isActive ? "active" : ""}`}
+                      onClick={() => setSortType(value)}
+                    >
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </aside>
@@ -656,13 +1880,19 @@ export default function AITemplatePage() {
             <div className="search-row">
               <div className="search-box">
                 <Search size={16} />
+
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name or category..."
                 />
+
                 {search && (
-                  <button onClick={() => setSearch("")} aria-label="Clear">
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    aria-label="Clear"
+                  >
                     <X size={15} />
                   </button>
                 )}
@@ -675,13 +1905,13 @@ export default function AITemplatePage() {
                   type="button"
                   key={tag}
                   className="tag-chip"
-                  onClick={() => setSearch(tag.replace("#", ""))}
+                  onClick={() => handleHashtagClick(tag)}
                 >
                   {tag}
                 </button>
               ))}
 
-              <button className="small-sort">
+              <button type="button" className="small-sort">
                 <SlidersHorizontal size={13} />
                 Sort
                 <span>⌄</span>
@@ -690,12 +1920,8 @@ export default function AITemplatePage() {
 
             <div className="result-row">
               <span>
-                {filteredTemplates.length.toLocaleString()} templates found
-              </span>
-
-              <span>
-                {TEMPLATE_IMAGE_URLS.length.toLocaleString()} source images
-                loaded
+                {filteredTemplates.length.toLocaleString("en-US")} templates
+                found
               </span>
             </div>
 
@@ -711,20 +1937,37 @@ export default function AITemplatePage() {
                     : "No template found for your current filters."}
                 </p>
 
-                <button className="reset-empty" onClick={resetFilters}>
+                <button
+                  type="button"
+                  className="reset-empty"
+                  onClick={resetFilters}
+                >
                   Reset filters
                 </button>
               </div>
             ) : (
               <div className="masonry-grid">
                 {filteredTemplates.map((template) => {
-                  const isFavorite = favorites.includes(template.id);
+                  const isFavorite = favoriteIds.has(template.id);
 
                   return (
                     <article
                       className="template-card"
                       key={template.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => openTemplate(template)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) {
+                          return;
+                        }
+
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+
+                          openTemplate(template);
+                        }
+                      }}
                     >
                       <LazyTemplateImage
                         src={template.image}
@@ -735,20 +1978,24 @@ export default function AITemplatePage() {
                       <div className="image-overlay" />
 
                       <div className="uses-badge">
-                        {template.imageCount === 1
-                          ? "1 image"
-                          : `${template.imageCount}+ images`}
+                        {imageCountLabel(template.imageCount)}
                       </div>
 
                       <button
+                        type="button"
                         className={`card-heart ${
                           isFavorite ? "card-heart-active" : ""
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
+
                           toggleFavorite(template.id);
                         }}
-                        aria-label="Favorite"
+                        aria-label={
+                          isFavorite
+                            ? "Remove from favorites"
+                            : "Add to favorites"
+                        }
                       >
                         <Heart
                           size={16}
@@ -759,6 +2006,7 @@ export default function AITemplatePage() {
                       <div className="template-hover">
                         <div>
                           <strong>{template.title}</strong>
+
                           <span>{template.category}</span>
                         </div>
 
@@ -766,6 +2014,7 @@ export default function AITemplatePage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+
                             openTemplate(template);
                           }}
                         >
@@ -782,24 +2031,35 @@ export default function AITemplatePage() {
       </main>
 
       <div className="floating-tools">
-        <button className="yellow-float">↕</button>
-        <button className="red-float">
+        <button type="button" className="yellow-float">
+          ↕
+        </button>
+
+        <button type="button" className="red-float">
           <span>▶</span>
         </button>
       </div>
 
-      {selectedTemplate && selectedIndex !== null && (
-        <div className="modal-backdrop" onClick={() => setSelectedIndex(null)}>
-          <div className="template-modal" onClick={(e) => e.stopPropagation()}>
+      {selectedTemplate && (
+        <div className="modal-backdrop" onClick={closeModal}>
+          <div
+            className="template-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedTemplate.title}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
+              type="button"
               className="modal-close"
-              onClick={() => setSelectedIndex(null)}
+              onClick={closeModal}
               aria-label="Close preview"
             >
               <X size={19} />
             </button>
 
             <button
+              type="button"
               className="modal-nav modal-prev"
               onClick={() => moveSelected(-1)}
               aria-label="Previous template"
@@ -808,6 +2068,7 @@ export default function AITemplatePage() {
             </button>
 
             <button
+              type="button"
               className="modal-nav modal-next"
               onClick={() => moveSelected(1)}
               aria-label="Next template"
@@ -815,8 +2076,45 @@ export default function AITemplatePage() {
               <ChevronRight size={20} />
             </button>
 
-            <div className="modal-image">
-              <img src={selectedTemplate.image} alt={selectedTemplate.title} />
+            <div
+              className={`modal-image ${
+                generatedImage ? "has-generated-image" : ""
+              }`}
+            >
+              <img
+                src={generatedImage || selectedTemplate.image}
+                alt={
+                  generatedImage
+                    ? `Generated result for ${selectedTemplate.title}`
+                    : selectedTemplate.title
+                }
+                decoding="async"
+                fetchPriority="high"
+              />
+
+              {isGenerating && !generatedImage && (
+                <>
+                  <style>{SCAN_STYLES}</style>
+                  <ScanOverlay />
+                </>
+              )}
+
+              {generatedImage && (
+                <div className="generated-image-overlay">
+                  <span className="generated-image-badge">Generated</span>
+
+                  <a
+                    href={generatedImage}
+                    download={`sohozkaj-template-${selectedTemplate.id}.png`}
+                    className="generated-download-btn"
+                    aria-label="Download generated image"
+                    title="Download generated image"
+                  >
+                    <Download size={17} />
+                    <span>Download</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="modal-details">
@@ -826,82 +2124,128 @@ export default function AITemplatePage() {
 
               <h2>{selectedTemplate.title}</h2>
 
-              <p>
-                Preview this exact template image. Upload your photo to use this
-                visual style in your workflow.
+              <p className="modal-lead">
+                Upload your photo and recreate this template while keeping your
+                own identity.
               </p>
 
-              <div className="modal-meta">
-                <span>{selectedTemplate.orientation}</span>
-                <span>
-                  {selectedTemplate.imageCount === 1
-                    ? "Single image"
-                    : selectedTemplate.imageCount === 2
-                      ? "2 images"
-                      : "3+ images"}
-                </span>
-                <span>{selectedTemplate.gender}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleUserPhotoChange}
+                className="template-file-input"
+                aria-label="Upload your photo"
+              />
+
+              <div
+                className={`template-upload-card ${
+                  userPhoto ? "has-photo" : ""
+                }`}
+              >
+                <div className="template-upload-icon">
+                  <Upload size={18} />
+                </div>
+
+                <div className="template-upload-copy">
+                  <strong>
+                    {userPhoto ? "Photo selected" : "Upload your photo"}
+                  </strong>
+
+                  <span>
+                    {userPhoto
+                      ? userPhoto.name
+                      : "Add the photo you want to use for this template."}
+                  </span>
+                </div>
+
+                {userPhotoPreview && (
+                  <div className="template-user-preview">
+                    <img src={userPhotoPreview} alt="Your uploaded photo" />
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="template-upload-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                >
+                  {userPhoto ? "Change Photo" : "Choose Photo"}
+                </button>
+
+                <small>JPG, PNG or WEBP • Max 15 MB</small>
               </div>
 
-              <div className="modal-tags">
-                {selectedTemplate.tags.map((tag) => (
-                  <span key={tag}>#{tag}</span>
-                ))}
+              {generationError && (
+                <div className="template-generation-error" role="alert">
+                  {generationError}
+                </div>
+              )}
+
+              <div className="template-how-it-works">
+                <div className="template-how-step">
+                  <span>1</span>
+                  <p>Upload your photo</p>
+                </div>
+
+                <div className="template-step-line" />
+
+                <div className="template-how-step">
+                  <span>2</span>
+                  <p>Generate your image</p>
+                </div>
               </div>
 
-              <div className="modal-source">
+              <button
+                type="button"
+                className="template-generate-btn"
+                aria-label="Generate photo from this template"
+                onClick={handleGeneratePhoto}
+                disabled={!userPhoto || isGenerating}
+              >
+                <Sparkles size={17} />
+
+                {isGenerating ? "Generating..." : "Generate Photo"}
+              </button>
+
+              <button
+                type="button"
+                className={`template-favorite-btn ${
+                  isSelectedFavorite ? "active" : ""
+                }`}
+                onClick={() => toggleFavorite(selectedTemplate.id)}
+                aria-pressed={isSelectedFavorite}
+              >
+                <Heart
+                  size={15}
+                  fill={isSelectedFavorite ? "currentColor" : "none"}
+                />
+
+                {isSelectedFavorite ? "Saved to favorites" : "Add to favorites"}
+              </button>
+
+              <div className="template-note">
                 <ImageIcon size={14} />
-                <span>Template image loaded from your supplied URL list</span>
-              </div>
 
-              <div className="modal-actions">
-                <button
-                  className="modal-primary"
-                  onClick={() =>
-                    alert(`Using template: ${selectedTemplate.title}`)
-                  }
-                >
-                  <Upload size={17} />
-                  Upload photo
-                </button>
-
-                <button
-                  className={`modal-secondary ${
-                    favorites.includes(selectedTemplate.id)
-                      ? "modal-favorite-active"
-                      : ""
-                  }`}
-                  onClick={() => toggleFavorite(selectedTemplate.id)}
-                >
-                  <Heart
-                    size={17}
-                    fill={
-                      favorites.includes(selectedTemplate.id)
-                        ? "currentColor"
-                        : "none"
-                    }
-                  />
-                  {favorites.includes(selectedTemplate.id)
-                    ? "Favorited"
-                    : "Favorite"}
-                </button>
-
-                <a
-                  className="modal-external"
-                  href={selectedTemplate.image}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLink size={15} />
-                </a>
+                <span>Use this template style with your own photo.</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {isCropOpen && cropImage && (
+        <PhotoCropModal
+          imageSrc={cropImage}
+          onCancel={handleCropCancel}
+          onApply={handleCropApplied}
+        />
+      )}
+
       <style jsx global>{`
-        * {
+        .ai-page,
+        .ai-page * {
           box-sizing: border-box;
         }
 
@@ -911,71 +2255,11 @@ export default function AITemplatePage() {
           color: #0f172a;
         }
 
-        .credit-alert {
-          margin: 15px 18px 10px;
-          min-height: 50px;
-          border-radius: 10px;
-          border: 1px solid #e2e8f0;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 8px 10px;
-        }
-
-        .credit-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .credit-danger-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
-          display: grid;
-          place-items: center;
-          color: #fff;
-          background: #ef4444;
-          font-weight: 900;
-          font-size: 13px;
-        }
-
-        .credit-title {
-          font-size: 10px;
-          font-weight: 900;
-          color: #0f172a;
-        }
-
-        .credit-sub {
-          margin-top: 2px;
-          font-size: 9px;
-          color: #64748b;
-        }
-
-        .credit-actions {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .buy-credit {
-          height: 28px;
-          padding: 0 11px;
-          border-radius: 7px;
-          background: #10b981;
-          color: #fff;
-          font-size: 9px;
-          font-weight: 900;
-        }
-
-        .close-alert {
-          width: 28px;
-          height: 28px;
-          display: grid;
-          place-items: center;
-          color: #94a3b8;
+        /* Make every genuinely interactive control on this page feel clickable. */
+        .ai-page button,
+        .ai-page a,
+        .ai-page [role="button"] {
+          cursor: pointer;
         }
 
         .main-content {
@@ -1227,14 +2511,17 @@ export default function AITemplatePage() {
           width: 14px;
           height: 14px;
         }
+
         .orientation-portrait {
           width: 10px;
           height: 14px;
         }
+
         .orientation-landscape {
           width: 14px;
           height: 9px;
         }
+
         .orientation-square {
           width: 12px;
           height: 12px;
@@ -1411,6 +2698,11 @@ export default function AITemplatePage() {
           animation: lazy-template-shimmer 1.35s linear infinite;
         }
 
+        .lazy-image-failed {
+          animation: none;
+          color: #94a3b8;
+        }
+
         .lazy-image-spinner {
           width: 20px;
           height: 20px;
@@ -1482,8 +2774,21 @@ export default function AITemplatePage() {
         }
 
         .template-card:hover .card-heart,
+        .template-card:focus-within .card-heart,
         .card-heart-active {
           opacity: 1;
+        }
+
+        .template-card:focus-visible {
+          outline: 2px solid #2563eb;
+          outline-offset: 2px;
+        }
+
+        /* Touch screens have no hover: keep the favorite button reachable. */
+        @media (hover: none) {
+          .card-heart {
+            opacity: 1;
+          }
         }
 
         .card-heart-active {
@@ -1663,11 +2968,14 @@ export default function AITemplatePage() {
         .modal-prev {
           left: 12px;
         }
+
         .modal-next {
           left: calc(100% - 394px);
         }
 
         .modal-image {
+          position: relative;
+          isolation: isolate;
           min-height: 560px;
           max-height: 92vh;
           overflow: hidden;
@@ -1683,11 +2991,16 @@ export default function AITemplatePage() {
           max-height: 92vh;
           display: block;
           object-fit: cover;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         .modal-details {
-          padding: 33px 28px;
+          padding: 36px 30px 30px;
           overflow-y: auto;
+          display: flex;
+          flex-direction: column;
         }
 
         .modal-category {
@@ -1699,96 +3012,577 @@ export default function AITemplatePage() {
           color: #ffffff;
           font-size: 8px;
           font-weight: 900;
+          letter-spacing: 0.02em;
         }
 
         .modal-details h2 {
-          margin: 12px 0 8px;
-          font-size: 23px;
-          line-height: 1.2;
-          letter-spacing: -0.5px;
+          margin: 11px 0 8px;
+          font-size: 24px;
+          line-height: 1.18;
+          letter-spacing: -0.6px;
           color: #0f172a;
         }
 
-        .modal-details p {
+        .modal-lead {
           margin: 0;
           color: #64748b;
           font-size: 11px;
           line-height: 1.7;
         }
 
-        .modal-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          margin: 17px 0 12px;
+        .template-file-input {
+          display: none;
         }
 
-        .modal-meta span,
-        .modal-tags span {
-          padding: 6px 8px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
+        .template-upload-card {
+          margin-top: 20px;
+          padding: 16px;
+          border: 1px dashed #cbd5e1;
+          border-radius: 14px;
+          background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 11px 12px;
+          align-items: center;
+        }
+
+        .template-upload-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 11px;
+          display: grid;
+          place-items: center;
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #dbeafe;
+        }
+
+        .template-upload-copy {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .template-upload-copy strong {
+          color: #0f172a;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .template-upload-copy span {
+          color: #64748b;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .template-upload-card.has-photo {
+          border-color: #bfdbfe;
+          background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+        }
+
+        .template-user-preview {
+          grid-column: 1 / -1;
+          width: 100%;
+          height: 140px;
+          overflow: hidden;
+          border-radius: 10px;
+          background: #e2e8f0;
+          border: 1px solid #dbeafe;
+        }
+
+        .template-user-preview img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: contain;
+          object-position: center;
+          background: #0f172a;
+        }
+
+        .template-upload-btn {
+          grid-column: 1 / -1;
+          height: 38px;
+          border: 1px solid #2563eb;
+          border-radius: 9px;
+          background: #2563eb;
+          color: #ffffff;
+          font-size: 9px;
+          font-weight: 900;
+          cursor: pointer;
+          transition: 0.2s ease;
+        }
+
+        .template-upload-btn:hover {
+          background: #1d4ed8;
+          border-color: #1d4ed8;
+        }
+
+        .template-upload-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+        }
+
+        .template-upload-card small {
+          grid-column: 1 / -1;
+          color: #94a3b8;
+          font-size: 8px;
+          text-align: center;
+        }
+
+        .template-generation-error {
+          margin-top: 10px;
+          padding: 9px 10px;
+          border: 1px solid #fecaca;
+          border-radius: 9px;
+          background: #fef2f2;
+          color: #b91c1c;
+          font-size: 8px;
+          line-height: 1.5;
+        }
+
+        .template-how-it-works {
+          margin-top: 18px;
+          display: grid;
+          grid-template-columns: 1fr 34px 1fr;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .template-how-step {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+        }
+
+        .template-how-step span {
+          width: 21px;
+          height: 21px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          flex: none;
+          background: #eff6ff;
+          color: #2563eb;
+          font-size: 8px;
+          font-weight: 900;
+        }
+
+        .template-how-step p {
+          margin: 0;
           color: #475569;
           font-size: 8px;
+          line-height: 1.4;
           font-weight: 800;
+        }
+
+        .template-step-line {
+          height: 1px;
+          background: #e2e8f0;
+        }
+
+        .template-generate-btn {
+          margin-top: 19px;
+          width: 100%;
+          height: 44px;
+          border: 0;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          background: linear-gradient(135deg, #2563eb, #4f46e5);
+          color: #ffffff;
+          font-size: 10px;
+          font-weight: 900;
+          cursor: pointer;
+          box-shadow: 0 8px 22px rgba(37, 99, 235, 0.18);
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+
+        .template-generate-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 11px 26px rgba(37, 99, 235, 0.24);
+        }
+
+        .template-generate-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .modal-image.has-generated-image {
+          background: #0f172a;
+        }
+
+        .modal-image.has-generated-image img {
+          object-fit: contain;
+        }
+
+        .generated-image-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 14px;
+          background: linear-gradient(
+            180deg,
+            rgba(15, 23, 42, 0.12) 0%,
+            rgba(15, 23, 42, 0) 58%,
+            rgba(15, 23, 42, 0.7) 100%
+          );
+          pointer-events: none;
+        }
+
+        .generated-image-badge {
+          display: inline-flex;
+          align-items: center;
+          min-height: 29px;
+          padding: 0 10px;
+          border-radius: 9999px;
+          background: rgba(16, 185, 129, 0.94);
+          color: #fff;
+          font-size: 9px;
+          font-weight: 900;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+        }
+
+        .generated-download-btn {
+          min-height: 36px;
+          padding: 0 13px;
+          border-radius: 9px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.96);
+          color: #0f172a;
+          font-size: 9px;
+          font-weight: 900;
+          text-decoration: none;
+          box-shadow: 0 7px 20px rgba(15, 23, 42, 0.22);
+          pointer-events: auto;
+          transition:
+            transform 0.2s ease,
+            background 0.2s ease;
+        }
+
+        .generated-download-btn:hover {
+          background: #fff;
+          transform: translateY(-1px);
+        }
+
+        .crop-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 300;
+          background: rgba(15, 23, 42, 0.78);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 18px;
+        }
+
+        .crop-modal {
+          width: min(760px, 96vw);
+          max-height: 94vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          border-radius: 18px;
+          background: #fff;
+          box-shadow: 0 30px 90px rgba(15, 23, 42, 0.35);
+        }
+
+        .crop-header {
+          padding: 16px 18px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 15px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .crop-header > div {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .crop-header strong {
+          color: #0f172a;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .crop-header span {
+          color: #64748b;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .crop-close {
+          width: 32px;
+          height: 32px;
+          flex: none;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          background: #f8fafc;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+        }
+
+        .crop-close:hover {
+          background: #f1f5f9;
+        }
+
+        .crop-close:disabled,
+        .crop-cancel-btn:disabled,
+        .crop-apply-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+        }
+
+        .crop-stage {
+          position: relative;
+          width: 100%;
+          height: min(62vh, 520px);
+          min-height: 330px;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          background: #0f172a;
+          overscroll-behavior: contain;
+        }
+
+        .crop-stage .ReactCrop {
+          position: relative;
+          max-width: 100%;
+          max-height: 100%;
+          margin: 0 auto;
+          background: #0f172a;
+          touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .crop-stage .ReactCrop__crop-selection {
+          cursor: move;
+          touch-action: none;
+          border: 2px solid #ffffff;
+          box-shadow:
+            0 0 0 1px rgba(15, 23, 42, 0.42),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+        }
+
+        .crop-stage .ReactCrop__drag-handle {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #ffffff;
+          border-radius: 3px;
+          background: #2563eb;
+          box-shadow:
+            0 0 0 1px rgba(15, 23, 42, 0.35),
+            0 2px 7px rgba(0, 0, 0, 0.22);
+          z-index: 4;
+          touch-action: none;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-n {
+          top: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          cursor: ns-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-s {
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          cursor: ns-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-e {
+          top: 50%;
+          right: -8px;
+          transform: translateY(-50%);
+          cursor: ew-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-w {
+          top: 50%;
+          left: -8px;
+          transform: translateY(-50%);
+          cursor: ew-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-nw {
+          top: -8px;
+          left: -8px;
+          cursor: nwse-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-ne {
+          top: -8px;
+          right: -8px;
+          cursor: nesw-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-se {
+          right: -8px;
+          bottom: -8px;
+          cursor: nwse-resize;
+        }
+
+        .crop-stage .ReactCrop__drag-handle.ord-sw {
+          bottom: -8px;
+          left: -8px;
+          cursor: nesw-resize;
+        }
+
+        .crop-error {
+          margin: 0;
+          padding: 9px 18px;
+          color: #b91c1c;
+          background: #fef2f2;
+          font-size: 9px;
+          font-weight: 700;
+        }
+
+        .crop-stage .ReactCrop__child-wrapper {
+          max-width: 100%;
+          max-height: calc(min(62vh, 520px) - 28px);
+        }
+
+        .crop-stage .ReactCrop__child-wrapper img,
+        .crop-source-image {
+          display: block;
+          max-width: 100%;
+          max-height: calc(min(62vh, 520px) - 28px);
+          width: auto;
+          height: auto;
+          object-fit: contain;
+          user-select: none;
+          -webkit-user-drag: none;
+        }
+
+        .crop-controls {
+          padding: 11px 18px;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 10px;
+          border-top: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .crop-controls > span {
+          color: #475569;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .crop-controls-help {
+          color: #64748b !important;
+          font-size: 8px !important;
+          font-weight: 600 !important;
+          text-align: center;
+        }
+
+        .crop-actions {
+          padding: 13px 18px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          background: #fff;
+        }
+
+        .crop-cancel-btn,
+        .crop-apply-btn {
+          min-height: 38px;
+          padding: 0 15px;
+          border-radius: 9px;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        .crop-cancel-btn {
+          background: #fff;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+        }
+
+        .crop-cancel-btn:hover {
           background: #f8fafc;
         }
 
-        .modal-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 5px;
+        .crop-apply-btn {
+          background: #2563eb;
+          color: #fff;
+          border: 1px solid #2563eb;
+          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.18);
         }
 
-        .modal-source {
-          display: flex;
+        .crop-apply-btn:hover {
+          background: #1d4ed8;
+          border-color: #1d4ed8;
+        }
+
+        .template-favorite-btn {
+          margin-top: 9px;
+          width: 100%;
+          height: 38px;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          display: inline-flex;
           align-items: center;
-          gap: 6px;
-          margin-top: 16px;
+          justify-content: center;
+          gap: 7px;
+          background: #ffffff;
+          color: #475569;
+          font-size: 10px;
+          font-weight: 800;
+          cursor: pointer;
+          transition:
+            border-color 0.2s ease,
+            color 0.2s ease,
+            background 0.2s ease;
+        }
+
+        .template-favorite-btn:hover {
+          border-color: #cbd5e1;
+          color: #0f172a;
+        }
+
+        .template-favorite-btn.active {
+          border-color: #fecaca;
+          background: #fef2f2;
+          color: #ef4444;
+        }
+
+        .template-note {
+          margin-top: 11px;
           padding: 9px 10px;
           border-radius: 9px;
           background: #f8fafc;
           color: #64748b;
           font-size: 8px;
-        }
-
-        .modal-actions {
-          margin-top: 19px;
-          display: grid;
-          grid-template-columns: 1fr auto auto;
-          gap: 7px;
-        }
-
-        .modal-primary,
-        .modal-secondary,
-        .modal-external {
-          height: 40px;
-          border-radius: 8px;
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: center;
           gap: 6px;
-          padding: 0 12px;
-          font-size: 9px;
-          font-weight: 900;
-        }
-
-        .modal-primary {
-          background: #2563eb;
-          color: #fff;
-        }
-
-        .modal-secondary,
-        .modal-external {
-          border: 1px solid #e2e8f0;
-          background: #f8fafc;
-          color: #475569;
-        }
-
-        .modal-favorite-active {
-          color: #ef4444;
-          border-color: #fecaca;
-          background: #fef2f2;
+          text-align: center;
         }
 
         @media (max-width: 1600px) {
@@ -1801,9 +3595,11 @@ export default function AITemplatePage() {
           .masonry-grid {
             column-count: 5;
           }
+
           .workspace {
             grid-template-columns: 230px minmax(0, 1fr);
           }
+
           .modal-next {
             left: calc(100% - 374px);
           }
@@ -1813,12 +3609,15 @@ export default function AITemplatePage() {
           .masonry-grid {
             column-count: 4;
           }
+
           .workspace {
             grid-template-columns: 215px minmax(0, 1fr);
           }
+
           .template-modal {
             grid-template-columns: 1fr 330px;
           }
+
           .modal-next {
             left: calc(100% - 344px);
           }
@@ -1829,33 +3628,41 @@ export default function AITemplatePage() {
             flex-direction: column;
             align-items: flex-start;
           }
+
           .page-actions {
             width: 100%;
             flex-wrap: wrap;
             justify-content: flex-start;
           }
+
           .workspace {
             grid-template-columns: 1fr;
           }
+
           .sidebar {
             position: static;
             max-height: none;
           }
+
           .category-list {
             max-height: 240px;
           }
+
           .masonry-grid {
             column-count: 3;
           }
+
           .template-modal {
             grid-template-columns: 1fr;
             max-height: 94vh;
             overflow-y: auto;
           }
+
           .modal-image {
             min-height: 390px;
             max-height: 56vh;
           }
+
           .modal-next {
             left: auto;
             right: 12px;
@@ -1863,37 +3670,61 @@ export default function AITemplatePage() {
         }
 
         @media (max-width: 620px) {
+          .crop-backdrop {
+            padding: 10px;
+          }
+
+          .crop-stage {
+            height: 54vh;
+            min-height: 280px;
+            padding: 10px;
+          }
+
+          .crop-stage .ReactCrop__child-wrapper img,
+          .crop-source-image {
+            max-height: calc(54vh - 20px);
+          }
+
+          .crop-controls-help {
+            font-size: 7px !important;
+          }
+
           .main-content {
             padding: 0 11px 14px;
           }
-          .credit-alert {
-            margin: 11px 11px 12px;
-          }
+
           .page-header h1 {
             font-size: 20px;
           }
+
           .masonry-grid {
             column-count: 2;
             column-gap: 8px;
           }
+
           .template-card {
             margin-bottom: 8px;
             border-radius: 9px;
           }
+
           .page-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
             width: 100%;
           }
+
           .favorites-btn {
             grid-column: 1 / -1;
           }
+
           .modal-details {
             padding: 20px;
           }
+
           .modal-actions {
             grid-template-columns: 1fr 1fr;
           }
+
           .modal-primary {
             grid-column: 1 / -1;
           }

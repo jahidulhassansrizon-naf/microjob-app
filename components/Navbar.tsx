@@ -214,7 +214,8 @@ export default function Navbar() {
     pathname.startsWith("/sohoj-tools") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/free-tools") ||
-    pathname === "/subscription"
+    pathname === "/subscription" ||
+    pathname === "/settings"
   ) {
     return null;
   }

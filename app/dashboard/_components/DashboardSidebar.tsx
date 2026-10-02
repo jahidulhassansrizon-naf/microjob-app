@@ -1,31 +1,29 @@
 // app/dashboard/_components/DashboardSidebar.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   X,
-  Zap,
-  CreditCard,
   User as UserIcon,
-  LayoutGrid,
-  Award,
+  LayoutDashboard,
   FileText,
-  Globe,
-  DollarSign,
-  Plus,
+  Languages,
+  Wallet,
   Settings,
-  ShoppingBag,
   MessageCircle,
-  Video,
+  PlayCircle,
   LogOut,
   Sparkles,
-  Edit3,
-  Layers,
+  PenLine,
+  Images,
+  LayoutTemplate,
   Printer,
-  Briefcase,
+  BriefcaseBusiness,
   Wrench,
-  ChevronDown,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 
 interface UserData {
@@ -41,31 +39,233 @@ interface DashboardSidebarProps {
   onLogout: () => void;
 }
 
+type Badge = "New" | "Free";
+
+type Tone = "blue" | "indigo" | "emerald" | "rose" | "slate";
+
+// আইকনের ছোট বক্সের রঙ — ইচ্ছা করেই কম সংখ্যক ও হালকা রাখা হয়েছে
+const TONES: Record<Tone, string> = {
+  blue: "bg-blue-50/70 text-blue-600/90 ring-blue-600/10",
+  indigo: "bg-indigo-50/70 text-indigo-600/90 ring-indigo-600/10",
+  emerald: "bg-emerald-50/70 text-emerald-600/90 ring-emerald-600/10",
+  rose: "bg-rose-50/70 text-rose-500 ring-rose-500/10",
+  slate: "bg-slate-100/80 text-slate-600 ring-slate-500/10",
+};
+
+function IconChip({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
+  return (
+    <span
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${TONES[tone]}`}
+    >
+      <Icon size={15} strokeWidth={1.9} />
+    </span>
+  );
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  tone: Tone;
+  badge?: Badge;
+}
+
+interface NavSection {
+  title?: string;
+  items: NavItem[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Navigation config — add or remove menu items here, not in the JSX   */
+/* ------------------------------------------------------------------ */
+const NAV_SECTIONS: NavSection[] = [
+  {
+    items: [
+      {
+        label: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        tone: "blue",
+      },
+      { label: "My Profile", href: "/profile", icon: UserIcon, tone: "slate" },
+    ],
+  },
+  {
+    title: "Features & Tools",
+    items: [
+      {
+        label: "AI Editor",
+        href: "/ai-editor",
+        icon: Sparkles,
+        tone: "indigo",
+      },
+      {
+        label: "Manual Editor",
+        href: "/manual-editor",
+        icon: PenLine,
+        tone: "indigo",
+      },
+      {
+        label: "Bulk Photo Edit",
+        href: "/bulk-photo-edit",
+        icon: Images,
+        tone: "emerald",
+        badge: "New",
+      },
+      {
+        label: "AI Template",
+        href: "/ai-template",
+        icon: LayoutTemplate,
+        tone: "indigo",
+      },
+      {
+        label: "Question Papers",
+        href: "/questions-create/create",
+        icon: FileText,
+        tone: "rose",
+        badge: "New",
+      },
+      {
+        label: "Print Media",
+        href: "/print-media",
+        icon: Printer,
+        tone: "blue",
+      },
+      {
+        label: "SohozTools",
+        href: "/sohoj-tools",
+        icon: Wrench,
+        tone: "emerald",
+        badge: "Free",
+      },
+      {
+        label: "Jobs",
+        href: "/jobs",
+        icon: BriefcaseBusiness,
+        tone: "slate",
+        badge: "New",
+      },
+    ],
+  },
+  {
+    title: "Accounts & Invoice",
+    items: [
+      { label: "Income & Expenses", href: "#", icon: Wallet, tone: "emerald" },
+      { label: "Customers & Invoices", href: "#", icon: Users, tone: "blue" },
+    ],
+  },
+  {
+    title: "Other",
+    items: [
+      { label: "Settings", href: "/settings", icon: Settings, tone: "slate" },
+      {
+        label: "WhatsApp সাপোর্ট",
+        href: "#",
+        icon: MessageCircle,
+        tone: "emerald",
+      },
+      { label: "Tutorial Video", href: "#", icon: PlayCircle, tone: "rose" },
+    ],
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+function getInitials(name?: string) {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function NavBadge({ type }: { type: Badge }) {
+  const styles =
+    type === "Free"
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+      : "bg-blue-50 text-blue-700 ring-blue-600/20";
+  return (
+    <span
+      className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none ring-1 ring-inset ${styles}`}
+    >
+      {type}
+    </span>
+  );
+}
+
+function NavLink({
+  item,
+  active,
+  onClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[13.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 ${
+        active
+          ? "bg-slate-100 text-slate-900"
+          : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"
+      }`}
+    >
+      {active && (
+        <span
+          aria-hidden
+          className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-600"
+        />
+      )}
+      <IconChip icon={item.icon} tone={item.tone} />
+      <span className="flex-1 truncate">{item.label}</span>
+      {item.badge && <NavBadge type={item.badge} />}
+    </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 export default function DashboardSidebar({
   isOpen,
   onClose,
   user,
   onLogout,
 }: DashboardSidebarProps) {
-  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
+  const pathname = usePathname();
 
   // ভাষা পরিবর্তনের স্টেট (EN / BN)
   const [lang, setLang] = useState<"EN" | "BN">("EN");
 
-  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
+  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
   useEffect(() => {
     const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
     if (match) {
-      if (match[2].includes("bn")) {
-        setLang("BN");
-      } else {
-        setLang("EN");
-      }
+      setLang(match[2].includes("bn") ? "BN" : "EN");
     }
   }, []);
 
+  // Esc চাপলে সাইডবার বন্ধ + খোলা থাকলে পেছনের পেজ স্ক্রল বন্ধ
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, onClose]);
+
   // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
   const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
+    if (targetLang === lang) return;
     setLang(targetLang);
     const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
     document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
@@ -73,438 +273,149 @@ export default function DashboardSidebar({
     window.location.reload();
   };
 
+  const isActive = useMemo(
+    () => (href: string) => {
+      if (href === "#") return false;
+      if (href === "/dashboard") return pathname === "/dashboard";
+      return pathname === href || pathname.startsWith(href + "/");
+    },
+    [pathname],
+  );
+
   if (!isOpen) return null;
 
-  const toggleSubMenu = (menu: string) => {
-    setOpenSubMenu(openSubMenu === menu ? null : menu);
-  };
-
   return (
-    <div className="fixed inset-0 z-[999] flex justify-start">
-      {/* Backdrop Overlay */}
+    <div className="fixed inset-0 z-[999] flex justify-start antialiased">
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 cursor-pointer bg-slate-900/40 backdrop-blur-[1px]"
         onClick={onClose}
-      ></div>
+        aria-hidden
+      />
 
-      {/* Drawer Content - Soft off-white Background (#F8FAFC) */}
-      <div className="relative w-80 bg-[#F8FAFC] h-full shadow-2xl flex flex-col z-10 overflow-y-auto border-r border-[#E2E8F0]">
-        <div className="flex items-center justify-between p-4 border-b border-[#E2E8F0] sticky top-0 bg-[#F8FAFC] z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center font-black text-white text-sm">
+      {/* Drawer */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Main navigation"
+        className="relative z-10 flex h-full w-[300px] max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-xl"
+      >
+        {/* Header */}
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
+          <Link
+            href="/dashboard"
+            onClick={onClose}
+            translate="no"
+            className="flex cursor-pointer items-center gap-2.5"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-[13px] font-bold tracking-tight text-white">
               SK
-            </div>
-            <span className="font-black text-[#0F172A] text-base">
-              Sohoz<span className="text-[#2563EB]">kaj</span>
             </span>
-          </div>
+            <span className="text-[17px] font-bold tracking-tight text-slate-900">
+              Sohoz<span className="text-blue-600">kaj</span>
+            </span>
+          </Link>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+            aria-label="Close menu"
+            className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40"
           >
-            <X size={18} />
+            <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="p-4 space-y-4 text-xs font-semibold text-[#0F172A] flex-1">
-          {/* Primary CTA Button (#2563EB) */}
-          <button className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors">
-            <Zap size={16} /> Buy Credits
-          </button>
+        {/* Scrollable body */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <Link
+            href="/subscription"
+            onClick={onClose}
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold tracking-[0.01em] text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2"
+          >
+            Buy Subscription
+          </Link>
 
-          <div className="space-y-1">
-            <Link
-              href="/credit-usage"
-              onClick={onClose}
-              className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <CreditCard size={16} className="text-gray-500" />
-                <span>Credit Usage</span>
-              </div>
-              {/* Accent Badge (#10B981) */}
-              <span className="bg-[#10B981] text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                2
-              </span>
-            </Link>
-            <Link
-              href="/profile"
-              onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-            >
-              <UserIcon size={16} className="text-gray-500" />
-              <span>My Profile</span>
-            </Link>
-          </div>
-
-          <hr className="border-[#E2E8F0]" />
-
-          <div className="space-y-1">
-            {/* Active Link: Secondary BG (#E2E8F0) & Primary Text (#2563EB) */}
-            <Link
-              href="/dashboard"
-              onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg bg-[#E2E8F0] text-[#2563EB] font-bold"
-            >
-              <LayoutGrid size={16} />
-              <span>Dashboard</span>
-            </Link>
-            <Link
-              href="#"
-              onClick={onClose}
-              className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-            >
-              <Award size={16} className="text-[#2563EB]" />
-              <span>SohozKaj Contest</span>
-            </Link>
-          </div>
-
-          <hr className="border-[#E2E8F0]" />
-
-          {/* Features & Tools */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
-              Features & Tools
-            </p>
-            <div className="space-y-1">
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <FileText size={16} className="text-[#2563EB]" />
-                <span>Document Toiri</span>
-              </Link>
-
-              <Link
-                href="/ai-editor"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Sparkles size={16} className="text-[#2563EB]" />
-                <span>AI Editor</span>
-              </Link>
-
-              <Link
-                href="/manual-editor"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Edit3 size={16} className="text-blue-600" />
-                <span>Manual Editor</span>
-              </Link>
-
-              <Link
-                href="/bulk-photo-edit"
-                onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Layers size={16} className="text-[#10B981]" />
-                  <span>Bulk Photo Edit</span>
-                </div>
-                {/* Accent Badge (#10B981) */}
-                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  New
-                </span>
-              </Link>
-
-              <Link
-                href="/ai-template"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <LayoutGrid size={16} className="text-purple-500" />
-                <span>AI Template</span>
-              </Link>
-
-              {/* Question Papers Submenu */}
-              <div>
-                <button
-                  onClick={() => toggleSubMenu("question-papers")}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 text-left transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <FileText size={16} className="text-red-500" />
-                    <span>Question Papers</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                      New
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`text-gray-400 transition-transform ${
-                        openSubMenu === "question-papers" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </button>
-                {openSubMenu === "question-papers" && (
-                  <div className="ml-7 pl-2 border-l border-[#E2E8F0] space-y-1 my-1">
-                    <Link
-                      href="/questions-create/create"
-                      onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
-                    >
-                      Create Question
-                    </Link>
-                    <Link
-                      href="/questions-create/manual"
-                      onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
-                    >
-                      Manual Question
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <Link
-                href="/print-media"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Printer size={16} className="text-[#2563EB]" />
-                <span>Print Media</span>
-              </Link>
-
-              {/* SohozTools Submenu */}
-              <div>
-                <button
-                  onClick={() => toggleSubMenu("sohoz-tools")}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 text-left transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Wrench size={16} className="text-pink-500" />
-                    <span>SohozTools</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                      FREE
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`text-gray-400 transition-transform ${
-                        openSubMenu === "sohoz-tools" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </button>
-                {openSubMenu === "sohoz-tools" && (
-                  <div className="ml-7 pl-2 border-l border-[#E2E8F0] space-y-1 my-1">
-                    <Link
-                      href="/sohoj-tools"
-                      onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
-                    >
-                      All Free Tools
-                    </Link>
-                    <Link
-                      href="/sohoj-tools?category=pdf"
-                      onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
-                    >
-                      PDF Tools
-                    </Link>
-                    <Link
-                      href="/sohoj-tools?category=image"
-                      onClick={onClose}
-                      className="block p-1.5 rounded-md hover:bg-[#E2E8F0]/60 text-[#0F172A]"
-                    >
-                      Image Tools
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <Link
-                href="/jobs"
-                onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Briefcase size={16} className="text-[#2563EB]" />
-                  <span>Jobs</span>
-                </div>
-                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  New
-                </span>
-              </Link>
-
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Globe size={16} className="text-[#2563EB]" />
-                  <span>Useful Links</span>
-                </div>
-                <span className="bg-[#10B981] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  New
-                </span>
-              </Link>
-            </div>
-          </div>
-
-          <hr className="border-[#E2E8F0]" />
-
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
-              Accounts & Invoice
-            </p>
-            <div className="space-y-1">
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <DollarSign size={16} className="text-[#10B981]" />
-                <span>Income & Expense</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <FileText size={16} className="text-[#2563EB]" />
-                <span>Invoice</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <UserIcon size={16} className="text-purple-500" />
-                <span>Customers</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Plus size={16} className="text-[#2563EB]" />
-                <span>Add Income / Expense</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <FileText size={16} className="text-gray-500" />
-                <span>Income/Expense List</span>
-              </Link>
-            </div>
-          </div>
-
-          <hr className="border-[#E2E8F0]" />
-
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1">
-              Other
-            </p>
-            <div className="space-y-1">
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Settings size={16} className="text-gray-500" />
-                <span>Photo Edit Settings</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Settings size={16} className="text-gray-500" />
-                <span>Settings</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <ShoppingBag size={16} className="text-[#2563EB]" />
-                <span>Manage Shop</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <MessageCircle size={16} className="text-[#10B981]" />
-                <span>WhatsApp সাপোর্ট</span>
-              </Link>
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <MessageCircle size={16} className="text-[#10B981]" />
-                <span>WhatsApp Support Group</span>
-              </Link>
-
-              {/* Language Switcher Interactive Button */}
-              <div
-                onClick={() =>
-                  changeGoogleLanguage(lang === "EN" ? "BN" : "EN")
-                }
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#E2E8F0]/60 cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Globe size={16} className="text-gray-500" />
-                  <span>Language</span>
-                </div>
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
-                    lang === "BN"
-                      ? "bg-[#2563EB] text-white"
-                      : "bg-[#E2E8F0] text-[#0F172A]"
-                  }`}
-                >
-                  EN | বাংলা
-                </span>
-              </div>
-
-              <Link
-                href="#"
-                onClick={onClose}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#E2E8F0]/60 transition-colors"
-              >
-                <Video size={16} className="text-red-500" />
-                <span>Introduce Video</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* User Profile Card - Secondary Accent BG (#E2E8F0) */}
-          <div className="pt-2">
-            <div className="p-3 bg-[#E2E8F0]/70 border border-[#E2E8F0] rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#2563EB]/15 text-[#2563EB] flex items-center justify-center font-bold text-xs uppercase">
-                  {user?.fullName ? user.fullName.slice(0, 2) : "JH"}
-                </div>
-                <div>
-                  <p className="font-bold text-[#0F172A] text-xs truncate max-w-[120px]">
-                    {user?.fullName || "Jahidul Hassan Srizon"}
+          <div className="space-y-6">
+            {NAV_SECTIONS.map((section, i) => (
+              <div key={section.title ?? `section-${i}`}>
+                {section.title && (
+                  <p className="mb-1.5 px-3 text-xs font-bold text-slate-500">
+                    {section.title}
                   </p>
-                  <p className="text-[10px] text-gray-500">
-                    {user?.phoneNumber || "01783666743"}
-                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {section.items.map((item) => (
+                    <NavLink
+                      key={item.label}
+                      item={item}
+                      active={isActive(item.href)}
+                      onClick={onClose}
+                    />
+                  ))}
+
+                  {/* Language switcher — sits at the end of "Other" */}
+                  {section.title === "Other" && (
+                    <div className="flex items-center justify-between rounded-lg px-2.5 py-1.5">
+                      <div className="flex items-center gap-3 text-[13.5px] font-semibold text-slate-800">
+                        <IconChip icon={Languages} tone="blue" />
+                        <span>Language</span>
+                      </div>
+                      <div
+                        role="group"
+                        aria-label="Language"
+                        className="flex rounded-md bg-slate-100 p-0.5 text-[11px] font-bold"
+                        translate="no"
+                      >
+                        {(["EN", "BN"] as const).map((code) => (
+                          <button
+                            key={code}
+                            onClick={() => changeGoogleLanguage(code)}
+                            aria-pressed={lang === code}
+                            className={`cursor-pointer rounded px-2 py-1 transition-colors ${
+                              lang === code
+                                ? "bg-white text-blue-700 shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            {code === "EN" ? "EN" : "বাংলা"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={onLogout}
-                className="text-red-500 hover:text-red-700 p-1 transition-colors"
-              >
-                <LogOut size={16} />
-              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* User footer */}
+        <div className="shrink-0 border-t border-slate-200 p-3">
+          <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/15"
+              translate="no"
+            >
+              {getInitials(user?.fullName)}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {user?.fullName || "Guest"}
+              </p>
+              <p className="truncate text-xs font-medium text-slate-600">
+                {user?.phoneNumber || user?.email || ""}
+              </p>
+            </div>
+            <button
+              onClick={onLogout}
+              aria-label="Log out"
+              title="Log out"
+              className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+            >
+              <LogOut size={17} strokeWidth={1.75} />
+            </button>
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

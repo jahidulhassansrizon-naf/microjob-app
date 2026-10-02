@@ -176,7 +176,7 @@ function SohojToolsContent() {
           <div className="bg-white/80 border border-slate-200 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
             <button
               onClick={() => setActiveTab("All")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "All"
                   ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
                   : "text-slate-600 hover:text-[#2563EB]"
@@ -186,7 +186,7 @@ function SohojToolsContent() {
             </button>
             <button
               onClick={() => setActiveTab("Free")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Free"
                   ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
                   : "text-slate-600 hover:text-[#2563EB]"
@@ -196,7 +196,7 @@ function SohojToolsContent() {
             </button>
             <button
               onClick={() => setActiveTab("Paid")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "Paid"
                   ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
                   : "text-slate-600 hover:text-[#2563EB]"
@@ -231,7 +231,7 @@ function SohojToolsContent() {
               <button
                 key={idx}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                className={`cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
                     ? "bg-[#2563EB] text-white border-[#2563EB] shadow-sm shadow-[#2563EB]/25"
                     : "bg-white text-[#0F172A] border-slate-200 hover:border-[#2563EB]/40 hover:bg-blue-50 hover:text-[#2563EB]"

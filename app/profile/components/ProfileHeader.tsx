@@ -1,72 +1,36 @@
-import { Coins } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 type UserProfile = {
   fullName?: string;
-  phoneNumber?: string;
-  email?: string;
-  country?: string;
 };
 
 function getInitials(name?: string) {
   if (!name?.trim()) return "U";
-
   const parts = name.trim().split(/\s+/);
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-export default function ProfileHeader({
-  user,
-  credits,
-}: {
-  user: UserProfile | null;
-  credits: number;
-}) {
+export default function ProfileHeader({ user }: { user: UserProfile | null }) {
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="w-14 h-14 bg-[#E2E8F0] text-[#2563EB] rounded-2xl flex items-center justify-center text-lg font-bold shrink-0">
-          {getInitials(user?.fullName)}
+    <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+      <div className="flex flex-col items-center justify-center text-center gap-4">
+        <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100 flex items-center justify-center">
+          <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {getInitials(user?.fullName)}
+          </span>
         </div>
 
-        <div className="min-w-0">
-          <h2 className="text-base font-bold text-gray-900 truncate">
-            {user?.fullName || "Guest User"}
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
-            <span>📞 {user?.phoneNumber || "Not provided"}</span>
-
-            <span className="break-all">
-              ✉️ {user?.email || "Not provided"}
-            </span>
-
-            <span className="inline-flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-              🌍 {user?.country || "Bangladesh"}
-            </span>
+        <div>
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-[0.16em]">
+            <UserRound size={13} />
+            Profile
           </div>
+          <h2 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">
+            {user?.fullName || "User Account"}
+          </h2>
         </div>
       </div>
-
-      <div className="bg-[#E2E8F0]/60 border border-[#E2E8F0]/60 rounded-xl p-3 px-4 flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
-        <div className="w-8 h-8 rounded-lg bg-[#E2E8F0] flex items-center justify-center text-[#2563EB]">
-          <Coins size={18} />
-        </div>
-
-        <div className="text-right">
-          <p className="text-[10px] uppercase font-bold text-gray-400">
-            Credit Balance
-          </p>
-
-          <p className="text-sm font-bold text-[#2563EB]">
-            Credits <span className="text-base">{credits}</span>
-          </p>
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
