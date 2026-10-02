@@ -1,0 +1,138 @@
+name: Gemini Playwright Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_minutes:
+        description: "Keep the bot online for this many minutes"
+        required: false
+        default: "45"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      BOT_PORT: "4000"
+      SKIP_DESKTOP: "1"
+      ASK_KEY: ${{ secrets.ASK_KEY }}
+      GEMINI_SESSION_JSON: ${{ secrets.GEMINI_SESSION_JSON }}
+
+    defaults:
+      run:
+        working-directory: playwright-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install bot dependencies
+        run: npm install
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Restore Gemini session
+        shell: bash
+        run: |
+          test -n "$GEMINI_SESSION_JSON" || {
+            echo "GEMINI_SESSION_JSON secret is missing."
+            exit 1
+          }
+          printf '%s' "$GEMINI_SESSION_JSON" > gemini-session.json
+          chmod 600 gemini-session.json
+
+      - name: Start bot server
+        shell: bash
+        run: |
+          nohup npm start > bot.log 2>&1 &
+          echo $! > bot.pid
+
+      - name: Wait for bot health
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:${BOT_PORT}/health" > /tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          cat bot.log || true
+          exit 1
+
+      - name: Download cloudflared
+        shell: bash
+        run: |
+          curl -L --fail --silent --show-error             -o cloudflared             https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+
+      - name: Start temporary public tunnel
+        shell: bash
+        run: |
+          nohup ./cloudflared tunnel --no-autoupdate             --url "http://127.0.0.1:${BOT_PORT}"             > cloudflared.log 2>&1 &
+          echo $! > cloudflared.pid
+
+      - name: Wait for public URL
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            PUBLIC_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+            if [ -n "$PUBLIC_URL" ]; then
+              printf '%s
+' "$PUBLIC_URL" > public-url.txt
+              {
+                echo "## Gemini Bot is online"
+                echo
+                echo "**Temporary backend URL:**"
+                echo
+                echo "$PUBLIC_URL"
+                echo
+                echo "Use this temporarily as Vercel's GEMINI_RENDER_URL."
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "$PUBLIC_URL"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat cloudflared.log || true
+          exit 1
+
+      - name: Keep bot online
+        shell: bash
+        run: |
+          MINUTES="${{ inputs.keep_minutes }}"
+          case "$MINUTES" in
+            ''|*[!0-9]*) echo "keep_minutes must be a whole number."; exit 1 ;;
+          esac
+          if [ "$MINUTES" -lt 1 ] || [ "$MINUTES" -gt 50 ]; then
+            echo "keep_minutes must be between 1 and 50."
+            exit 1
+          fi
+          sleep "${MINUTES}m"
+
+      - name: Show logs
+        if: always()
+        shell: bash
+        run: |
+          echo "----- bot.log -----"
+          cat bot.log || true
+          echo "----- cloudflared.log -----"
+          cat cloudflared.log || true
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
+          if [ -f bot.pid ]; then kill "$(cat bot.pid)" 2>/dev/null || true; fi
