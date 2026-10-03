@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import AIGeneration from "@/models/AIGeneration";
+import Subscription from "@/models/Subscription";
 
 export const runtime = "nodejs";
 
@@ -62,6 +63,23 @@ function getTokenFromRequest(request: Request): string | null {
   const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
 
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function requireActiveSubscription(userId: string) {
+  const subscription = await Subscription.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    paymentStatus: "COMPLETED",
+    accessStatus: "ACTIVE",
+    expiresAt: { $gt: new Date() },
+  })
+    .sort({ expiresAt: -1, startedAt: -1 })
+    .lean();
+
+  if (!subscription) {
+    throw new Error("SUBSCRIPTION_REQUIRED");
+  }
+
+  return subscription;
 }
 
 function getUserIdFromRequest(request: Request): string {
@@ -251,6 +269,10 @@ function buildPayload(body: GenerationBody, requireUrl = true) {
 function throwHttpError(errorCode: string) {
   const map: Record<string, { status: number; message: string }> = {
     AUTH_REQUIRED: { status: 401, message: "Authentication required." },
+    SUBSCRIPTION_REQUIRED: {
+      status: 403,
+      message: "An active subscription is required to use this feature.",
+    },
     INVALID_USER_ID: { status: 401, message: "Invalid user session." },
     IMAGE_URL_REQUIRED: {
       status: 400,
@@ -296,6 +318,7 @@ async function deleteCloudinaryAsset(publicId: string) {
 export async function GET(request: Request) {
   try {
     const userId = getUserIdFromRequest(request);
+    await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const sourceParam = searchParams.get("source")?.trim() || "";
 
@@ -367,6 +390,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const userId = getUserIdFromRequest(request);
+    await requireActiveSubscription(userId);
     const body = (await request.json().catch(() => ({}))) as
       | GenerationBody
       | GenerationBody[];
@@ -428,6 +452,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const userId = getUserIdFromRequest(request);
+    await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
 
@@ -530,6 +555,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const userId = getUserIdFromRequest(request);
+    await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
 

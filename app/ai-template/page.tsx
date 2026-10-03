@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "react-image-crop/dist/ReactCrop.css";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import SubscriptionLock from "./components/SubscriptionLock";
 import {
   FAVORITES_STORAGE_KEY,
   filterTemplates,
@@ -333,6 +334,7 @@ export default function AITemplatePage() {
   return (
     <div className="ai-page">
       <DashboardNavbar />
+      <SubscriptionLock />
       <main className="main-content">
         <TemplateToolbar
           search={search}

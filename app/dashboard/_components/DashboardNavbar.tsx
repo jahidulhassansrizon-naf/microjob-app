@@ -21,7 +21,6 @@ import {
   User as UserIcon,
   Settings,
   CreditCard,
-  X,
   Command,
   type LucideIcon,
 } from "lucide-react";
@@ -390,9 +389,6 @@ export default function DashboardNavbar() {
   // ভাষা পরিবর্তনের স্টেট (EN / BN)
   const [lang, setLang] = useState<"EN" | "BN">("EN");
 
-  // Credit Bonus Visibility State
-  const [showCreditBonus, setShowCreditBonus] = useState<boolean>(true);
-
   // Search Modal State
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -679,28 +675,6 @@ export default function DashboardNavbar() {
               বাং
             </button>
           </div>
-
-          {/* Credit bonus */}
-          {showCreditBonus && (
-            <div className="hidden shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white py-0.5 pl-0.5 pr-1.5 2xl:flex">
-              <Link href="/profile" className="flex items-center gap-1.5">
-                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-50 px-1.5 text-[11px] font-bold text-[#1D4ED8]">
-                  16
-                </span>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold leading-none text-emerald-700 ring-1 ring-inset ring-emerald-100 transition-colors hover:bg-emerald-100">
-                  18 Credit Bonus
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowCreditBonus(false)}
-                aria-label="Dismiss credit bonus"
-                className="cursor-pointer rounded-full p-0.5 text-slate-500 transition-colors hover:text-slate-800"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          )}
 
           {/* Search */}
           <button

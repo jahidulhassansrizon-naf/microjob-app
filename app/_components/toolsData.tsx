@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 // ====================================================================
@@ -1118,7 +1121,7 @@ export const getSlug = (name: string) => {
 // NAFIA SUBSCRIPTION ACCESS SWITCH — SEARCH THIS COMMENT TO FIND IT QUICKLY
 // false = paid badges stay visible, but paid tools can be opened directly (temporary admin/testing mode)
 // true  = paid tool clicks go to /subscription
-export const REQUIRE_SUBSCRIPTION = false;
+export const REQUIRE_SUBSCRIPTION = true;
 
 export const isPaidTool = (tool: ToolItem) => tool.access === "paid";
 
@@ -1268,18 +1271,98 @@ function PremiumSeal() {
 }
 
 // একই টাইল ডিজাইন দুই পেজেই ব্যবহার হবে
+// Subscription access is read once per browser session and cached for all tiles.
+let subscriptionAccessPromise: Promise<boolean> | null = null;
+let subscriptionAccessCache: boolean | null = null;
+
+function loadSubscriptionAccess() {
+  if (subscriptionAccessCache !== null) {
+    return Promise.resolve(subscriptionAccessCache);
+  }
+
+  if (!subscriptionAccessPromise) {
+    subscriptionAccessPromise = fetch("/api/subscription/current", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return false;
+
+        const data = await response.json().catch(() => ({}));
+        const subscription = data?.subscription;
+
+        const expiresAt = subscription?.expiresAt
+          ? new Date(subscription.expiresAt).getTime()
+          : 0;
+
+        const active =
+          subscription?.accessStatus === "ACTIVE" &&
+          subscription?.paymentStatus === "COMPLETED" &&
+          expiresAt > Date.now();
+
+        return Boolean(active);
+      })
+      .catch((error) => {
+        console.error("Failed to load subscription access:", error);
+        return false;
+      })
+      .then((active) => {
+        subscriptionAccessCache = active;
+        return active;
+      });
+  }
+
+  return subscriptionAccessPromise;
+}
+
 export function ToolTile({ tool }: { tool: ToolItem }) {
   const IconComponent = tool.icon;
   const slug = getSlug(tool.name);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState<
+    boolean | null
+  >(subscriptionAccessCache);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadSubscriptionAccess().then((active) => {
+      if (!cancelled) {
+        setHasActiveSubscription(active);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isPaid = tool.access === "paid";
+  const requiresSubscription = isPaid && REQUIRE_SUBSCRIPTION;
+  const canOpenPaidTool = requiresSubscription
+    ? hasActiveSubscription === true
+    : true;
+
+  const toolHref =
+    requiresSubscription && !canOpenPaidTool
+      ? "/subscription"
+      : `/sohoj-tools/${slug}`;
+
+  const showPaidSeal = isPaid && hasActiveSubscription !== true;
 
   return (
     <Link
-      href={
-        tool.access === "paid" && REQUIRE_SUBSCRIPTION
-          ? "/subscription"
-          : `/sohoj-tools/${slug}`
+      href={toolHref}
+      className={`flex flex-col items-center group cursor-pointer ${
+        requiresSubscription && hasActiveSubscription === null
+          ? "cursor-wait"
+          : ""
+      }`}
+      aria-label={
+        requiresSubscription && !canOpenPaidTool
+          ? `${tool.name} requires an active subscription`
+          : `Open ${tool.name}`
       }
-      className="flex flex-col items-center group cursor-pointer"
     >
       <div
         className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
@@ -1294,7 +1377,8 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
           </span>
         )}
 
-        {tool.access === "paid" && <PremiumSeal />}
+        {/* The paid/premium seal disappears after an active subscription is detected. */}
+        {showPaidSeal && <PremiumSeal />}
 
         {tool.access === "free" && (
           <span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs bg-emerald-600">

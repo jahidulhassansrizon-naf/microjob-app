@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -55,7 +55,7 @@ const features = [
   "Access to all available paid tools",
   "Use the same account across supported tools",
   "Manage your subscription status from this page",
-  "Payment and automatic renewal will be added separately",
+  "Payment verification and subscription access are handled automatically",
 ];
 
 const BASE_MONTHLY = plans[0].price / plans[0].months;
@@ -67,19 +67,116 @@ const getSavings = (price: number, months: number) =>
   Math.round((1 - price / (BASE_MONTHLY * months)) * 100);
 
 export default function SubscriptionPage() {
+  type SubscriptionStatus = {
+    id: string;
+    planId: string;
+    planName: string;
+    amount: number;
+    paymentStatus: string;
+    accessStatus: string;
+    startedAt: string | null;
+    expiresAt: string | null;
+  };
+
   const [selectedId, setSelectedId] = useState<string>("6-month");
   const [showNotice, setShowNotice] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [currentSubscription, setCurrentSubscription] =
+    useState<SubscriptionStatus | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   const selected = plans.find((p) => p.id === selectedId) ?? plans[0];
+
+  const formatDate = (value: string | null) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString("en-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const loadCurrentSubscription = async () => {
+    try {
+      setSubscriptionLoading(true);
+
+      const response = await fetch("/api/subscription/current", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setCurrentSubscription(null);
+        return;
+      }
+
+      setCurrentSubscription(data?.subscription ?? null);
+    } catch (error) {
+      console.error("Failed to load current subscription:", error);
+      setCurrentSubscription(null);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCurrentSubscription();
+  }, []);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
     setShowNotice(false);
+    setPaymentError("");
   };
 
-  const handleContinue = () => {
-    // Payment gateway পরে এখানে যুক্ত হবে
-    setShowNotice(true);
+  const handleContinue = async () => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    setShowNotice(false);
+    setPaymentError("");
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: selected.price,
+          metadata: {
+            plan_id: selected.id,
+            plan_name: selected.name,
+            duration: selected.duration,
+            months: selected.months,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.payment_url) {
+        throw new Error(data?.message || "Unable to create payment request.");
+      }
+
+      window.location.href = data.payment_url;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setPaymentError(
+        error instanceof Error
+          ? error.message
+          : "Payment could not be started. Please try again.",
+      );
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -99,6 +196,77 @@ export default function SubscriptionPage() {
             Pick the duration that suits you. The longer the plan, the lower
             your monthly cost.
           </p>
+        </section>
+
+        {/* Current subscription */}
+        <section className="mt-8">
+          {subscriptionLoading ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-500">
+                Checking your subscription...
+              </p>
+            </div>
+          ) : currentSubscription ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                    Current subscription
+                  </p>
+
+                  <h2 className="mt-1 text-xl font-black text-slate-900">
+                    {currentSubscription.planName}
+                  </h2>
+
+                  <p className="mt-1 text-sm font-semibold text-slate-600">
+                    Status:{" "}
+                    <span className="text-emerald-700">
+                      {currentSubscription.accessStatus}
+                    </span>
+                  </p>
+                </div>
+
+                <span className="inline-flex w-fit rounded-full bg-emerald-600 px-3 py-1 text-xs font-black text-white">
+                  {currentSubscription.paymentStatus}
+                </span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl bg-white/80 px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Paid
+                  </p>
+                  <p className="mt-1 text-base font-black text-slate-900">
+                    {formatPrice(currentSubscription.amount)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-white/80 px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Started
+                  </p>
+                  <p className="mt-1 text-base font-black text-slate-900">
+                    {formatDate(currentSubscription.startedAt)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-white/80 px-4 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Expires
+                  </p>
+                  <p className="mt-1 text-base font-black text-slate-900">
+                    {formatDate(currentSubscription.expiresAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-600">
+                You do not have an active subscription yet.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Plans */}
@@ -237,17 +405,25 @@ export default function SubscriptionPage() {
               <button
                 type="button"
                 onClick={handleContinue}
-                className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25"
+                disabled={isProcessing}
+                className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Continue with {selected.name}
+                {isProcessing
+                  ? "Redirecting to payment..."
+                  : `Continue with ${selected.name}`}
               </button>
             </div>
           </div>
 
           {showNotice && (
             <p className="mt-4 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600">
-              Online payment is not available yet. We will let you know as soon
-              as it is ready.
+              Online payment is ready.
+            </p>
+          )}
+
+          {paymentError && (
+            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">
+              {paymentError}
             </p>
           )}
         </section>

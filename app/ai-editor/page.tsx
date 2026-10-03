@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
+import SubscriptionLock from "./_components/SubscriptionLock";
 import GenerationSettings from "./_components/GenerationSettings";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
@@ -1332,6 +1333,7 @@ export default function PhotoEditorPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col relative select-none">
       <DashboardNavbar />
+      <SubscriptionLock />
 
       <input
         type="file"

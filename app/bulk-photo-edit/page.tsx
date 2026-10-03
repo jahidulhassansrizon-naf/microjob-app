@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import SubscriptionLock from "./components/SubscriptionLock";
 import BulkPhotoStage from "./components/BulkPhotoStage";
 import PhotoUploader from "./components/PhotoUploader";
 import PresetPanel from "./components/PresetPanel";
@@ -468,6 +469,7 @@ export default function BulkPhotoEditPage() {
   return (
     <div className="flex min-h-screen select-none flex-col bg-[#F8FAFC] font-sans text-[#0F172A]">
       <DashboardNavbar />
+      <SubscriptionLock />
 
       <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
         <PhotoUploader
