@@ -11,8 +11,6 @@ const SCAN_STYLES = `
     transform: translate3d(0, 420%, 0);
   }
 
-  /* Instantly reset to the top after reaching the bottom.
-     There is no visible bottom-to-top sweep between scans. */
   82.01%,
   100% {
     transform: translate3d(0, -120%, 0);
@@ -35,12 +33,21 @@ const SCAN_STYLES = `
   transform: translate3d(0, -120%, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  contain: layout paint;
 }
 
 .pp-scan-grid {
   animation: pp-scan-grid 3s ease-in-out infinite;
   will-change: opacity;
+}
+
+.pp-scan-overlay.is-inactive .pp-scan-beam {
+  animation: none !important;
+  transform: translate3d(0, -120%, 0) !important;
+}
+
+.pp-scan-overlay.is-inactive .pp-scan-grid {
+  animation: none !important;
+  opacity: 0 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -54,12 +61,16 @@ const SCAN_STYLES = `
 }
 `;
 
-export function ScanOverlay() {
+export function ScanOverlay({ active = true }: { active?: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="pp-scan-overlay pointer-events-none absolute inset-0 z-[5] overflow-hidden"
+      className={`pp-scan-overlay pointer-events-none absolute inset-0 z-[5] overflow-hidden${
+        active ? "" : " is-inactive"
+      }`}
     >
+      <style dangerouslySetInnerHTML={{ __html: SCAN_STYLES }} />
+
       <div
         className="pp-scan-grid absolute inset-0"
         style={{
@@ -111,4 +122,3 @@ export function ScanOverlay() {
     </div>
   );
 }
-

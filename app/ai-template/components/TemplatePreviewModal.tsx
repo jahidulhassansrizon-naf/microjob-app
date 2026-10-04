@@ -41,9 +41,7 @@ export function TemplatePreviewModal({
           />
 
           {isGenerating && !generatedImage && (
-            <>
-              <ScanOverlay />
-            </>
+            <ScanOverlay key="active-scan" active={isGenerating && !generatedImage} />
           )}
 
           {generatedImage && (
