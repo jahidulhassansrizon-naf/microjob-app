@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import { requireActiveSubscription } from "@/api/_lib/requireActiveSubscription";
+import { requireActiveSubscription } from "../_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 

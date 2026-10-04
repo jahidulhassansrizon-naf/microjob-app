@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
-import { requireActiveSubscription } from "@/api/_lib/requireActiveSubscription";
+import { requireActiveSubscription } from "../_lib/requireActiveSubscription";
 import AIGeneration from "@/models/AIGeneration";
 import ScannedDocument from "@/models/ScannedDocument";
 
