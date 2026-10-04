@@ -1,11 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+
+import { AlertCircle, Loader2 } from "lucide-react";
+
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+
 import ProfileHeader from "./components/ProfileHeader";
+
 import SubscriptionCard from "./components/SubscriptionCard";
+
 import { getClientSession } from "@/lib/clientAuth";
 
 interface UserProfile {
@@ -30,6 +36,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const router = useRouter();
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,15 +50,13 @@ export default function ProfilePage() {
   useEffect(() => {
     const handleExternalUserUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<UserProfile>;
+
       if (customEvent.detail) {
         setUser(customEvent.detail);
       }
     };
 
-    window.addEventListener(
-      "sohozkaj:user-updated",
-      handleExternalUserUpdate,
-    );
+    window.addEventListener("sohozkaj:user-updated", handleExternalUserUpdate);
 
     return () =>
       window.removeEventListener(
@@ -76,9 +81,7 @@ export default function ProfilePage() {
         }
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load your profile.",
+          err instanceof Error ? err.message : "Unable to load your profile.",
         );
       } finally {
         setLoading(false);
@@ -106,7 +109,6 @@ export default function ProfilePage() {
       <main className="max-w-[1000px] mx-auto px-4 py-8 sm:py-10 space-y-5">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles size={17} className="text-[#2563EB]" />
             <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
           </div>
 
@@ -118,11 +120,13 @@ export default function ProfilePage() {
         {error && (
           <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
             <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+
             <p className="text-xs text-red-600">{error}</p>
           </div>
         )}
 
         <ProfileHeader user={user} onUserUpdated={handleUserUpdated} />
+
         <SubscriptionCard />
       </main>
     </div>

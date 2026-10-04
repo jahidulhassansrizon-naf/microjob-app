@@ -202,7 +202,11 @@ function HomeScreen({ userName }: { userName: string }) {
 
     const update = () => {
       setFit(mq.matches);
-      if (!mq.matches) return;
+      if (!mq.matches) {
+        document.documentElement.style.removeProperty("--content-w");
+        window.dispatchEvent(new Event("sohozkaj:content-width"));
+        return;
+      }
 
       // নেভবারের নিচ থেকে শুরু — উচ্চতা হাতে ধরে না দিয়ে মেপে নিচ্ছি
       const top = Math.max(
@@ -216,6 +220,13 @@ function HomeScreen({ userName }: { userName: string }) {
       const availH = window.innerHeight - top - FIT_PAD_Y * 2;
       const raw = Math.min(availW / FIT_WIDTH, availH / height);
       const scale = Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, raw));
+
+      // নেভবার যেন কন্টেন্টের চওড়ার সাথে মিলে থাকে, তাই মাপটা জানায়ে দিচ্ছি
+      document.documentElement.style.setProperty(
+        "--content-w",
+        `${FIT_WIDTH * scale}px`,
+      );
+      window.dispatchEvent(new Event("sohozkaj:content-width"));
 
       setView((v) =>
         v.scale === scale && v.height === height && v.top === top
@@ -234,6 +245,8 @@ function HomeScreen({ userName }: { userName: string }) {
       window.removeEventListener("resize", update);
       mq.removeEventListener("change", update);
       ro.disconnect();
+      document.documentElement.style.removeProperty("--content-w");
+      window.dispatchEvent(new Event("sohozkaj:content-width"));
     };
   }, []);
 

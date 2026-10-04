@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarClock, CheckCircle2, Clock3, CreditCard } from "lucide-react";
+import { CalendarClock, CreditCard, Wallet } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 
 type SubscriptionData = {
@@ -17,34 +17,58 @@ type SubscriptionData = {
   expiresAt?: string | null;
 };
 
-function formatCountdown(ms: number) {
-  if (ms <= 0) return "Expired";
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
-  const totalSeconds = Math.floor(ms / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-  return `${minutes}m ${seconds}s`;
+function parseTime(value?: string | null) {
+  if (!value) return null;
+  const t = Date.parse(value);
+  return Number.isFinite(t) ? t : null;
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return null;
-
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return null;
-
+  const t = parseTime(value);
+  if (t === null) return "—";
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp));
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(t));
+}
+
+function formatTime(value?: string | null) {
+  const t = parseTime(value);
+  if (t === null) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(t));
+}
+
+// Returns a big headline value and a smaller supporting line.
+function describeRemaining(ms: number) {
+  const days = Math.floor(ms / DAY);
+  const hours = Math.floor((ms % DAY) / HOUR);
+  const minutes = Math.floor((ms % HOUR) / MINUTE);
+  const seconds = Math.floor((ms % MINUTE) / 1000);
+
+  if (days > 0) {
+    return {
+      main: `${days} ${days === 1 ? "day" : "days"}`,
+      sub: `${hours}h ${minutes}m remaining`,
+    };
+  }
+  if (hours > 0) {
+    return { main: `${hours}h ${minutes}m`, sub: "remaining" };
+  }
+  return { main: `${minutes}m ${seconds}s`, sub: "remaining" };
 }
 
 export default function SubscriptionCard() {
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
@@ -56,9 +80,7 @@ export default function SubscriptionCard() {
       try {
         const response = await fetch("/api/subscription/current", {
           method: "GET",
-          headers: {
-            ...getClientAuthHeaders(),
-          },
+          headers: { ...getClientAuthHeaders() },
           credentials: "include",
           cache: "no-store",
         });
@@ -102,126 +124,221 @@ export default function SubscriptionCard() {
     };
   }, []);
 
+  const startMs = useMemo(
+    () => parseTime(subscription?.startedAt),
+    [subscription?.startedAt],
+  );
+  const expiryMs = useMemo(
+    () => parseTime(subscription?.expiresAt),
+    [subscription?.expiresAt],
+  );
+
+  // Tick every second only during the final hour, otherwise once a minute.
+  const tickEverySecond = expiryMs !== null && expiryMs - now < HOUR;
+
   useEffect(() => {
-    if (!subscription?.expiresAt) return;
-
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
+    if (expiryMs === null) return;
+    const timer = window.setInterval(
+      () => setNow(Date.now()),
+      tickEverySecond ? 1000 : MINUTE,
+    );
     return () => window.clearInterval(timer);
-  }, [subscription?.expiresAt]);
-
-  const expiryMs = useMemo(() => {
-    if (!subscription?.expiresAt) return null;
-    const parsed = Date.parse(subscription.expiresAt);
-    return Number.isFinite(parsed) ? parsed : null;
-  }, [subscription?.expiresAt]);
+  }, [expiryMs, tickEverySecond]);
 
   const remainingMs = expiryMs === null ? null : Math.max(0, expiryMs - now);
   const isExpired = remainingMs !== null && remainingMs <= 0;
   const isActive = Boolean(subscription) && !isExpired;
-  const startedText = formatDate(subscription?.startedAt);
-  const expiresText = formatDate(subscription?.expiresAt);
 
-  return (
-    <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sm:p-7">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[#2563EB]">
-            <CreditCard size={18} />
-            <span className="text-sm font-bold uppercase tracking-[0.14em]">
-              Subscription
-            </span>
-          </div>
+  const progress = useMemo(() => {
+    if (startMs === null || expiryMs === null || expiryMs <= startMs)
+      return null;
+    const used = ((now - startMs) / (expiryMs - startMs)) * 100;
+    return Math.min(100, Math.max(0, used));
+  }, [startMs, expiryMs, now]);
 
-          <h3 className="mt-2 text-xl font-bold text-slate-900">
-            {subscription?.planName || "Your subscription status"}
-          </h3>
+  const remaining =
+    remainingMs !== null && !isExpired ? describeRemaining(remainingMs) : null;
+  const hasAmount = subscription?.amount != null;
 
-          <p className="mt-1 text-sm text-slate-500">
-            {loading
-              ? "Loading your subscription status..."
-              : error
-                ? error
-                : subscription
-                  ? "Your current plan and expiry are synced from your account database."
-                  : "You do not have an active subscription right now."}
-          </p>
-        </div>
+  // ---------- Loading ----------
+  if (loading) {
+    return (
+      <section
+        aria-busy="true"
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <div className="h-4 w-28 animate-pulse rounded bg-slate-100" />
+        <div className="mt-4 h-7 w-40 animate-pulse rounded bg-slate-100" />
+        <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+        <div className="mt-6 h-12 w-full animate-pulse rounded bg-slate-100" />
+      </section>
+    );
+  }
 
-        <div
-          className={`rounded-2xl border px-4 py-3 min-w-[220px] shrink-0 ${
-            isActive
-              ? "border-emerald-100 bg-emerald-50/60"
-              : "border-slate-200 bg-slate-50"
-          }`}
-        >
-          <div
-            className={`flex items-center gap-2 text-xs font-semibold ${
-              isActive ? "text-emerald-700" : "text-slate-500"
-            }`}
-          >
-            {isActive ? <CheckCircle2 size={14} /> : <Clock3 size={14} />}
-            {isActive ? "Active subscription" : "Subscription status"}
-          </div>
-
-          <p className="mt-1 text-lg font-black text-slate-900">
-            {loading
-              ? "Loading..."
-              : !subscription
-                ? "Not subscribed"
-                : remainingMs === null
-                  ? "Expiry unavailable"
-                  : formatCountdown(remainingMs)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Plan
-          </p>
-          <p className="mt-1 text-sm font-bold text-slate-900">
-            {subscription?.planName || "No active plan"}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Started
-          </p>
-          <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-900">
-            <CalendarClock size={14} className="text-[#2563EB]" />
-            {startedText || "—"}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Expires
-          </p>
-          <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-900">
-            <Clock3 size={14} className="text-[#2563EB]" />
-            {expiresText || "—"}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-xs font-medium text-slate-400">
-          {subscription?.amount != null
-            ? `Plan amount: ৳${Number(subscription.amount).toLocaleString()}`
-            : "Choose a plan whenever you are ready."}
+  // ---------- Error ----------
+  if (error) {
+    return (
+      <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-slate-900">Subscription</h3>
+        <p role="alert" className="mt-2 text-sm text-red-600">
+          {error}
         </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+        >
+          Try again
+        </button>
+      </section>
+    );
+  }
 
+  // ---------- No subscription ----------
+  if (!subscription) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+          <CreditCard size={16} />
+          Subscription
+        </div>
+        <h3 className="mt-3 text-xl font-semibold text-slate-900">
+          No active plan
+        </h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Pick a plan to unlock all the editing tools.
+        </p>
         <Link
           href="/subscription"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2563EB] px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
+          className="mt-5 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
-          Manage Subscription
-          <ArrowRight size={13} />
+          View plans
+        </Link>
+      </section>
+    );
+  }
+
+  // ---------- Active / expired ----------
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+            <CreditCard size={16} />
+            Subscription
+          </div>
+
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+              isActive
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
+                : "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isActive ? "bg-emerald-500" : "bg-slate-400"
+              }`}
+            />
+            {isActive ? "Active" : "Expired"}
+          </span>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <h3 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {subscription.planName || "Your plan"}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {isActive
+                ? `Renew before ${formatDate(subscription.expiresAt)} to keep your access.`
+                : `Your plan ended on ${formatDate(subscription.expiresAt)}.`}
+            </p>
+          </div>
+
+          {remaining && (
+            <div className="text-right">
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">
+                {remaining.main}
+              </p>
+              <p className="text-xs tabular-nums text-slate-500">
+                {remaining.sub}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {progress !== null && (
+          <div className="mt-5">
+            <div
+              role="progressbar"
+              aria-label="Subscription time used"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress)}
+              className="h-2 w-full overflow-hidden rounded-full bg-slate-100"
+            >
+              <div
+                className={`h-full rounded-full transition-[width] duration-500 ${
+                  progress > 90 ? "bg-amber-500" : "bg-blue-600"
+                }`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between text-xs text-slate-500">
+              <span>{formatDate(subscription.startedAt)}</span>
+              <span>{formatDate(subscription.expiresAt)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="px-6 py-4">
+          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+            <CalendarClock size={14} />
+            Started
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-slate-900">
+            {formatDate(subscription.startedAt)}
+            <span className="ml-1.5 font-normal text-slate-500">
+              {formatTime(subscription.startedAt)}
+            </span>
+          </dd>
+        </div>
+
+        <div className="px-6 py-4">
+          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+            <CalendarClock size={14} />
+            Expires
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-slate-900">
+            {formatDate(subscription.expiresAt)}
+            <span className="ml-1.5 font-normal text-slate-500">
+              {formatTime(subscription.expiresAt)}
+            </span>
+          </dd>
+        </div>
+
+        <div className="px-6 py-4">
+          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+            <Wallet size={14} />
+            Amount paid
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-slate-900">
+            {hasAmount
+              ? `৳${Number(subscription.amount).toLocaleString()}`
+              : "—"}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="flex justify-end border-t border-slate-100 px-6 py-4">
+        <Link
+          href="/subscription"
+          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+        >
+          {isActive ? "Manage subscription" : "Renew plan"}
         </Link>
       </div>
     </section>

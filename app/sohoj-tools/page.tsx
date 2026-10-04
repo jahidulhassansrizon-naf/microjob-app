@@ -151,7 +151,10 @@ function SohojToolsContent() {
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar />
 
-      <main className="max-w-[1320px] mx-auto px-4 py-6 space-y-5">
+      <main
+        data-nav-content
+        className="max-w-[1200px] mx-auto px-4 py-6 space-y-5"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#2563EB] text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-[#2563EB]/25">

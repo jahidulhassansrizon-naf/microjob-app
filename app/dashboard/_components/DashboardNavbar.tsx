@@ -15,7 +15,7 @@ import {
   Wrench,
   ChevronDown,
   Search,
-  Menu,
+  PanelRightOpen,
   MoreHorizontal,
   LogOut,
   User as UserIcon,
@@ -184,6 +184,9 @@ const NAV_GAP = 2;
 // nav আর দুই পাশের (লোগো / ডান অংশ) মাঝের নিরাপদ ফাঁক (px)
 const NAV_SIDE_GAP = 12;
 
+// item-এর ভেতরের প্যাডিং (px) — আইকন যেন কন্টেন্টের কিনারায় বসে, তাই nav এতটুকু বাইরে বাড়ে
+const NAV_EDGE_PAD = 6;
+
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -211,7 +214,7 @@ function UpcomingFlag() {
 }
 
 const itemBase =
-  "group flex items-center gap-1.5 rounded-lg px-1.5 2xl:px-2 py-1.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
+  "group flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
 
 const itemActive = "bg-blue-50 text-[#1D4ED8]";
 const itemIdle = "text-slate-800 hover:bg-slate-100 hover:text-slate-950";
@@ -422,6 +425,7 @@ export default function DashboardNavbar() {
   const navRef = useRef<HTMLElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
   const [navWidth, setNavWidth] = useState<number>(0);
+  const [navAligned, setNavAligned] = useState<boolean>(false);
   const [visibleCount, setVisibleCount] = useState<number>(NAV_ITEMS.length);
   const [navReady, setNavReady] = useState<boolean>(false);
 
@@ -491,6 +495,34 @@ export default function DashboardNavbar() {
     const ghost = ghostRef.current;
     if (!header || !left || !right || !nav || !ghost) return;
 
+    let observer: ResizeObserver | undefined;
+    let watched: HTMLElement | null = null;
+
+    // কন্টেন্টের চওড়া: আগে পেজের দেওয়া --content-w, না থাকলে
+    // data-nav-content লেখা element-এর (প্যাডিং ছাড়া) চওড়া
+    const readContentW = () => {
+      const fromVar = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--content-w",
+        ),
+      );
+      if (fromVar > 0) return fromVar;
+
+      const target = document.querySelector<HTMLElement>("[data-nav-content]");
+      if (!target) return 0;
+      if (target !== watched) {
+        if (watched) observer?.unobserve(watched);
+        observer?.observe(target);
+        watched = target;
+      }
+      const tcs = getComputedStyle(target);
+      return (
+        target.getBoundingClientRect().width -
+        (parseFloat(tcs.paddingLeft) || 0) -
+        (parseFloat(tcs.paddingRight) || 0)
+      );
+    };
+
     const measure = () => {
       if (getComputedStyle(nav).display === "none") return; // মোবাইল/ট্যাবলেটে nav লুকানো
 
@@ -502,9 +534,21 @@ export default function DashboardNavbar() {
         parseFloat(cs.paddingRight) || 0,
       );
       const side = Math.max(left.offsetWidth, right.offsetWidth);
-      const navW =
+      const symmetricW =
         Math.floor((header.clientWidth - 2 * (pad + side + NAV_SIDE_GAP)) / 2) *
         2;
+
+      // কন্টেন্টের চওড়া জানা গেলে nav ঠিক ওই চওড়ায় বসে
+      const contentW = readContentW();
+      const aligned = contentW > 0;
+      const navW = aligned
+        ? Math.min(
+            Math.round((contentW + 2 * NAV_EDGE_PAD) / 2) * 2,
+            symmetricW,
+          )
+        : symmetricW;
+
+      setNavAligned(aligned);
       setNavWidth(Math.max(navW, 0));
 
       const available = navW - 4;
@@ -513,16 +557,14 @@ export default function DashboardNavbar() {
       const widths = (Array.from(ghost.children) as HTMLElement[]).map(
         (el) => el.offsetWidth,
       );
-      const allMenuW = widths[widths.length - 1];
-      const moreW = widths[widths.length - 2];
+      const moreW = widths[widths.length - 1];
       const itemWidths = widths.slice(0, NAV_ITEMS.length);
 
-      const total =
-        itemWidths.reduce((sum, w) => sum + w + NAV_GAP, 0) + allMenuW;
+      const total = itemWidths.reduce((sum, w) => sum + w + NAV_GAP, 0);
 
       let count = NAV_ITEMS.length;
       if (total > available) {
-        let used = allMenuW + moreW + NAV_GAP;
+        let used = moreW + NAV_GAP;
         count = 0;
         for (const w of itemWidths) {
           if (used + w + NAV_GAP > available) break;
@@ -535,15 +577,28 @@ export default function DashboardNavbar() {
       setNavReady(true);
     };
 
+    observer = new ResizeObserver(measure);
     measure();
-    const observer = new ResizeObserver(measure);
     observer.observe(header);
     observer.observe(left);
     observer.observe(right);
     observer.observe(ghost);
     document.fonts?.ready.then(measure);
+    window.addEventListener("sohozkaj:content-width", measure);
 
-    return () => observer.disconnect();
+    // কন্টেন্ট পরে লোড হলেও (লগইন চেকের পর ইত্যাদি) ধরার জন্য কিছুক্ষণ আবার দেখে
+    let tries = 0;
+    const poll = window.setInterval(() => {
+      tries += 1;
+      measure();
+      if (watched || tries >= 20) window.clearInterval(poll);
+    }, 250);
+
+    return () => {
+      window.clearInterval(poll);
+      observer?.disconnect();
+      window.removeEventListener("sohozkaj:content-width", measure);
+    };
   }, []);
 
   // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
@@ -660,7 +715,9 @@ export default function DashboardNavbar() {
             width: navWidth,
             left: `calc(50% - ${navWidth / 2}px)`,
           }}
-          className={`absolute top-0 hidden h-full items-center justify-center gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
+          className={`absolute top-0 hidden h-full items-center ${
+            navAligned ? "justify-between" : "justify-center"
+          } gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
             navReady ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -682,12 +739,6 @@ export default function DashboardNavbar() {
                   <IconTile icon={MoreHorizontal} tone="slate" />
                   <span>More</span>
                   <ChevronDown size={13} className="-ml-0.5" />
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center">
-                <div className={itemBase}>
-                  <IconTile icon={Menu} tone="slate" />
-                  <span>All Menu</span>
                 </div>
               </div>
             </div>
@@ -720,18 +771,6 @@ export default function DashboardNavbar() {
               isActive={isActive}
             />
           )}
-
-          {/* All Menu */}
-          <div className="flex h-full shrink-0 items-center">
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className={`${itemBase} ${itemIdle} cursor-pointer`}
-            >
-              <IconTile icon={Menu} tone="slate" />
-              <span>All Menu</span>
-            </button>
-          </div>
         </nav>
 
         {/* Right: language, credit bonus, search, profile, drawer */}
@@ -740,7 +779,7 @@ export default function DashboardNavbar() {
           className="flex shrink-0 items-center gap-1.5 sm:gap-2"
         >
           {/* Language switcher */}
-          <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold sm:inline-flex">
+          <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold min-[1900px]:inline-flex">
             <button
               type="button"
               onClick={() => changeGoogleLanguage("EN")}
@@ -802,7 +841,7 @@ export default function DashboardNavbar() {
                   getInitials(user?.fullName)
                 )}
               </div>
-              <div className="hidden flex-col leading-tight 2xl:flex">
+              <div className="hidden flex-col leading-tight min-[2200px]:flex">
                 <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
                   {user?.fullName || "User Account"}
                 </span>
@@ -828,6 +867,33 @@ export default function DashboardNavbar() {
                     {user?.phoneNumber || user?.email || "User"}
                   </p>
                 </div>
+                <div className="mb-1 flex items-center justify-between gap-2 px-3 py-2 min-[1900px]:hidden">
+                  <span className="font-medium text-slate-700">Language</span>
+                  <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => changeGoogleLanguage("EN")}
+                      className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                        lang === "EN"
+                          ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      EN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeGoogleLanguage("BN")}
+                      className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                        lang === "BN"
+                          ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      বাং
+                    </button>
+                  </div>
+                </div>
                 <Link href="/profile" className={profileLinkClass}>
                   <UserIcon size={15} className="text-slate-500" /> My Profile
                 </Link>
@@ -850,14 +916,15 @@ export default function DashboardNavbar() {
             )}
           </div>
 
-          {/* Mobile / tablet drawer trigger */}
+          {/* Menu drawer trigger */}
           <button
             type="button"
             onClick={() => setIsSidebarOpen(true)}
-            className={`${iconButton} lg:hidden`}
+            className={iconButton}
             aria-label="Open Menu"
+            title="Menu"
           >
-            <Menu size={18} />
+            <PanelRightOpen size={18} />
           </button>
         </div>
       </header>

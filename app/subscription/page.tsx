@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarCheck,
+  CalendarClock,
+  Check,
+  Wallet,
+} from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { useNavContentWidth } from "../dashboard/_components/useNavContentWidth";
 
 /**
  * Subscription plans
@@ -66,6 +73,32 @@ const formatPrice = (value: number) =>
 const getSavings = (price: number, months: number) =>
   Math.round((1 - price / (BASE_MONTHLY * months)) * 100);
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getTiming(sub: {
+  startedAt: string | null;
+  expiresAt: string | null;
+}) {
+  const start = sub.startedAt ? Date.parse(sub.startedAt) : NaN;
+  const end = sub.expiresAt ? Date.parse(sub.expiresAt) : NaN;
+  const now = Date.now();
+  const hasEnd = Number.isFinite(end);
+
+  const msLeft = hasEnd ? end - now : null;
+  const expired = msLeft !== null && msLeft <= 0;
+  const daysLeft =
+    msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
+  const progress =
+    Number.isFinite(start) && hasEnd && end > start
+      ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+      : null;
+
+  return { expired, daysLeft, progress };
+}
+
+const capitalize = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
+
 export default function SubscriptionPage() {
   type SubscriptionStatus = {
     id: string;
@@ -86,6 +119,10 @@ export default function SubscriptionPage() {
     useState<SubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
+  // Publishes this content column's width as --content-w for the navbar.
+  const contentRef = useRef<HTMLDivElement>(null);
+  useNavContentWidth(contentRef);
+
   const selected = plans.find((p) => p.id === selectedId) ?? plans[0];
 
   const formatDate = (value: string | null) => {
@@ -95,7 +132,7 @@ export default function SubscriptionPage() {
     if (Number.isNaN(date.getTime())) return "—";
 
     return date.toLocaleDateString("en-BD", {
-      day: "2-digit",
+      day: "numeric",
       month: "short",
       year: "numeric",
     });
@@ -180,285 +217,399 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
+    // On desktop the page is exactly one screen tall: the navbar keeps its own
+    // height and <main> fills the rest. Spacing, ring and type scale with the
+    // viewport height (clamp + vh) so everything fits without scrolling.
+    // <main> only scrolls as a last resort on very short windows.
+    <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-[#0F172A] lg:h-dvh">
       <DashboardNavbar />
 
-      <main className="max-w-[1180px] mx-auto px-4 py-10 sm:py-14">
-        {/* Header */}
-        <section className="text-center max-w-2xl mx-auto">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#2563EB]">
-            Subscription
-          </p>
-          <h1 className="mt-3 text-3xl sm:text-[40px] sm:leading-[1.15] font-black tracking-tight text-[#0F172A]">
-            Choose your subscription plan
-          </h1>
-          <p className="mt-4 text-sm sm:text-base text-slate-500 font-medium leading-6">
-            Pick the duration that suits you. The longer the plan, the lower
-            your monthly cost.
-          </p>
-        </section>
-
-        {/* Current subscription */}
-        <section className="mt-8">
-          {subscriptionLoading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-semibold text-slate-500">
-                Checking your subscription...
-              </p>
-            </div>
-          ) : currentSubscription ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#2563EB]">
-                    Current subscription
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-black text-[#0F172A]">
-                    {currentSubscription.planName}
-                  </h2>
-
-                  <p className="mt-1 text-xs font-semibold text-slate-400">
-                    Status:{" "}
-                    <span className="uppercase text-[#2563EB]">
-                      {currentSubscription.accessStatus}
-                    </span>
-                  </p>
-                </div>
-
-                <span className="inline-flex w-fit items-center gap-1 rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                  <Check size={12} strokeWidth={3.5} />
-                  {currentSubscription.paymentStatus}
-                </span>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    Paid
-                  </p>
-                  <p className="mt-1 text-base font-black text-[#0F172A]">
-                    {formatPrice(currentSubscription.amount)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    Started
-                  </p>
-                  <p className="mt-1 text-base font-black text-[#0F172A]">
-                    {formatDate(currentSubscription.startedAt)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    Expires
-                  </p>
-                  <p className="mt-1 text-base font-black text-[#0F172A]">
-                    {formatDate(currentSubscription.expiresAt)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-semibold text-slate-600">
-                You do not have an active subscription yet.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* Plans */}
-        <section
-          role="radiogroup"
-          aria-label="Subscription plans"
-          className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+      <main className="min-h-0 flex-1 lg:overflow-y-auto">
+        <div
+          ref={contentRef}
+          className="mx-auto flex w-full max-w-[1180px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]"
         >
-          {plans.map((plan) => {
-            const isSelected = plan.id === selectedId;
-            const savings = getSavings(plan.price, plan.months);
-            const perMonth = plan.price / plan.months;
+          {/* Header */}
+          <section className="max-w-2xl">
+            <h1 className="text-[clamp(24px,3.8vh,36px)] font-semibold leading-tight tracking-tight text-[#0F172A]">
+              Choose your subscription plan
+            </h1>
+            <p className="mt-1.5 text-sm leading-6 text-slate-600 sm:text-[15px]">
+              Pick the duration that suits you. The longer the plan, the lower
+              your monthly cost.
+            </p>
+          </section>
 
-            return (
-              <button
-                key={plan.id}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => handleSelect(plan.id)}
-                className={`group relative cursor-pointer text-left rounded-2xl border p-6 transition-all duration-200 outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${
-                  isSelected
-                    ? "bg-white border-[#2563EB] shadow-[0_12px_32px_-12px_rgba(37,99,235,0.35)] ring-4 ring-[#2563EB]/10 -translate-y-1"
-                    : "bg-white border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md"
-                }`}
+          {/* Current subscription */}
+          <section aria-label="Current subscription">
+            {subscriptionLoading ? (
+              <div
+                aria-busy="true"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
-                {plan.badge && (
-                  <span
-                    className={`absolute -top-3 left-6 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                      isSelected
-                        ? "bg-[#2563EB] text-white"
-                        : "bg-slate-800 text-white"
-                    }`}
-                  >
-                    {plan.badge}
-                  </span>
-                )}
+                <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+                <div className="mt-4 h-6 w-36 animate-pulse rounded bg-slate-100" />
+                <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+              </div>
+            ) : currentSubscription ? (
+              (() => {
+                const { expired, daysLeft, progress } =
+                  getTiming(currentSubscription);
+                const statusLabel = expired
+                  ? "Expired"
+                  : capitalize(currentSubscription.accessStatus) || "Active";
+                const isActive = statusLabel === "Active";
 
-                {/* Top row */}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-black text-[#0F172A]">
-                      {plan.name}
-                    </h2>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-400">
-                      {plan.duration}
+                const RING_R = 52;
+                const RING_C = 2 * Math.PI * RING_R;
+                const remainingPct = expired
+                  ? 0
+                  : progress === null
+                    ? null
+                    : 100 - progress;
+                const ringStroke = expired
+                  ? "stroke-slate-300"
+                  : remainingPct !== null && remainingPct < 10
+                    ? "stroke-amber-500"
+                    : "stroke-[#2563EB]";
+                const ringMain = expired
+                  ? "0"
+                  : daysLeft === null
+                    ? "—"
+                    : daysLeft === 0
+                      ? "<1"
+                      : String(daysLeft);
+                const ringLabel =
+                  daysLeft === 1 || (daysLeft === 0 && !expired)
+                    ? "day left"
+                    : "days left";
+
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex flex-col items-center gap-4 p-[clamp(14px,2.6vh,32px)] sm:flex-row sm:gap-6">
+                      <div className="relative h-[clamp(84px,12vh,128px)] w-[clamp(84px,12vh,128px)] shrink-0">
+                        <svg
+                          viewBox="0 0 120 120"
+                          className="h-full w-full -rotate-90"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r={RING_R}
+                            fill="none"
+                            strokeWidth="9"
+                            className="stroke-slate-100"
+                          />
+                          {remainingPct !== null && remainingPct > 0 && (
+                            <circle
+                              cx="60"
+                              cy="60"
+                              r={RING_R}
+                              fill="none"
+                              strokeWidth="9"
+                              strokeLinecap="round"
+                              strokeDasharray={`${(RING_C * remainingPct) / 100} ${RING_C}`}
+                              className={`${ringStroke} transition-[stroke-dasharray] duration-700`}
+                            />
+                          )}
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">
+                            {ringMain}
+                          </span>
+                          <span className="mt-1 text-[11px] text-slate-500">
+                            {ringLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="min-w-0 flex-1 text-center sm:text-left">
+                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
+                          <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]">
+                            {currentSubscription.planName}
+                          </h2>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+                              isActive
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                : "bg-slate-100 text-slate-600 ring-slate-200"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isActive ? "bg-emerald-500" : "bg-slate-400"
+                              }`}
+                            />
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        <p className="mx-auto mt-2.5 max-w-md rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-2 text-left text-[13px] font-medium leading-5 text-red-700 sm:mx-0">
+                          {expired ? (
+                            <>
+                              This plan ended on{" "}
+                              <strong className="font-bold text-red-800">
+                                {formatDate(currentSubscription.expiresAt)}
+                              </strong>
+                              . Choose a plan below to renew.
+                            </>
+                          ) : (
+                            <>
+                              Your access is active until{" "}
+                              <strong className="font-bold text-red-800">
+                                {formatDate(currentSubscription.expiresAt)}
+                              </strong>
+                              . You can renew or switch to a longer plan
+                              anytime.
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <Wallet size={15} />
+                        </span>
+                        <div>
+                          <dt className="text-xs text-slate-500">
+                            Amount paid
+                          </dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">
+                            {formatPrice(currentSubscription.amount)}
+                          </dd>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <CalendarCheck size={15} />
+                        </span>
+                        <div>
+                          <dt className="text-xs text-slate-500">Started</dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">
+                            {formatDate(currentSubscription.startedAt)}
+                          </dd>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <CalendarClock size={15} />
+                        </span>
+                        <div>
+                          <dt className="text-xs text-slate-500">
+                            {expired ? "Ended" : "Expires"}
+                          </dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">
+                            {formatDate(currentSubscription.expiresAt)}
+                          </dd>
+                        </div>
+                      </div>
+                    </dl>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-semibold text-[#0F172A]">
+                  No active plan
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Choose a plan below to unlock all the paid tools.
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* Plans (pt-3 leaves room for the floating badges) */}
+          <section
+            role="radiogroup"
+            aria-label="Subscription plans"
+            className="grid grid-cols-1 gap-[clamp(10px,1.8vh,20px)] pt-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {plans.map((plan) => {
+              const isSelected = plan.id === selectedId;
+              const savings = getSavings(plan.price, plan.months);
+              const perMonth = plan.price / plan.months;
+
+              return (
+                <button
+                  key={plan.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => handleSelect(plan.id)}
+                  className={`group relative cursor-pointer rounded-2xl border p-[clamp(14px,2.4vh,24px)] text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${
+                    isSelected
+                      ? "-translate-y-1 border-[#2563EB] bg-white shadow-[0_12px_32px_-12px_rgba(37,99,235,0.35)] ring-4 ring-[#2563EB]/10"
+                      : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  }`}
+                >
+                  {plan.badge && (
+                    <span
+                      className={`absolute -top-3 left-5 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                        isSelected
+                          ? "bg-[#2563EB] text-white"
+                          : "bg-slate-800 text-white"
+                      }`}
+                    >
+                      {plan.badge}
+                    </span>
+                  )}
+
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-black text-[#0F172A] sm:text-lg">
+                        {plan.name}
+                      </h2>
+                      <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                        {plan.duration}
+                      </p>
+                    </div>
+
+                    {/* Radio indicator */}
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200 ${
+                        isSelected
+                          ? "border-[#2563EB] bg-[#2563EB]"
+                          : "border-slate-300 bg-white group-hover:border-slate-400"
+                      }`}
+                    >
+                      <Check
+                        size={13}
+                        strokeWidth={3.5}
+                        className={`text-white transition-all duration-200 ${
+                          isSelected
+                            ? "scale-100 opacity-100"
+                            : "scale-50 opacity-0"
+                        }`}
+                      />
+                    </span>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mt-[clamp(8px,2.2vh,28px)]">
+                    <span
+                      className={`text-[clamp(26px,4.2vh,34px)] font-black leading-none tracking-tight transition-colors ${
+                        isSelected ? "text-[#2563EB]" : "text-[#0F172A]"
+                      }`}
+                    >
+                      {formatPrice(plan.price)}
+                    </span>
+                    <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                      {plan.months === 1
+                        ? "Billed monthly"
+                        : `${formatPrice(perMonth)} / month`}
                     </p>
                   </div>
 
-                  {/* Radio indicator */}
-                  <span
-                    className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200 ${
-                      isSelected
-                        ? "border-[#2563EB] bg-[#2563EB]"
-                        : "border-slate-300 bg-white group-hover:border-slate-400"
-                    }`}
-                  >
-                    <Check
-                      size={13}
-                      strokeWidth={3.5}
-                      className={`text-white transition-all duration-200 ${
-                        isSelected
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-50"
-                      }`}
-                    />
-                  </span>
-                </div>
+                  {/* Divider */}
+                  <div className="my-[clamp(8px,1.8vh,20px)] h-px bg-slate-100" />
 
-                {/* Price */}
-                <div className="mt-7">
-                  <span
-                    className={`text-[34px] leading-none font-black tracking-tight transition-colors ${
-                      isSelected ? "text-[#2563EB]" : "text-[#0F172A]"
-                    }`}
-                  >
-                    {formatPrice(plan.price)}
-                  </span>
-                  <p className="mt-2 text-xs font-semibold text-slate-500">
-                    {plan.months === 1
-                      ? "Billed monthly"
-                      : `${formatPrice(perMonth)} / month`}
-                  </p>
-                </div>
+                  {/* Bottom row */}
+                  <div className="flex min-h-[24px] items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-slate-400">
+                      {plan.note}
+                    </p>
+                    {savings > 0 && (
+                      <span
+                        className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
+                          isSelected
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        Save {savings}%
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </section>
 
-                {/* Divider */}
-                <div className="my-5 h-px bg-slate-100" />
-
-                {/* Bottom row */}
-                <div className="flex items-center justify-between gap-2 min-h-[24px]">
-                  <p className="text-xs font-medium text-slate-400">
-                    {plan.note}
-                  </p>
-                  {savings > 0 && (
-                    <span
-                      className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
-                        isSelected
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      Save {savings}%
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </section>
-
-        {/* Summary bar */}
-        <section className="mt-8 rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                Your selection
-              </p>
-              <p className="mt-1 text-lg font-black text-[#0F172A]">
-                {selected.name}
-                <span className="ml-2 text-sm font-semibold text-slate-400">
-                  {selected.duration}
-                </span>
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between sm:justify-end gap-6">
-              <div className="sm:text-right">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                  Total
+          {/* Summary bar */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-[clamp(12px,2vh,24px)] shadow-sm">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Your selection
                 </p>
-                <p className="mt-1 text-2xl font-black text-[#0F172A]">
-                  {formatPrice(selected.price)}
+                <p className="mt-0.5 text-lg font-black text-[#0F172A]">
+                  {selected.name}
+                  <span className="ml-2 text-sm font-semibold text-slate-400">
+                    {selected.duration}
+                  </span>
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleContinue}
-                disabled={isProcessing}
-                className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isProcessing
-                  ? "Redirecting to payment..."
-                  : `Continue with ${selected.name}`}
-              </button>
-            </div>
-          </div>
+              <div className="flex items-center justify-between gap-6 sm:justify-end">
+                <div className="sm:text-right">
+                  <p className="text-xs font-medium text-slate-500">Total</p>
+                  <p className="mt-0.5 text-2xl font-black text-[#0F172A]">
+                    {formatPrice(selected.price)}
+                  </p>
+                </div>
 
-          {showNotice && (
-            <p className="mt-4 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600">
-              Online payment is ready.
-            </p>
-          )}
-
-          {paymentError && (
-            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">
-              {paymentError}
-            </p>
-          )}
-        </section>
-
-        {/* Features */}
-        <section className="mt-6 rounded-2xl bg-white border border-slate-200 p-6 sm:p-7">
-          <h2 className="text-base font-black text-[#0F172A]">
-            Included with every plan
-          </h2>
-          <div className="mt-4 grid sm:grid-cols-2 gap-x-8 gap-y-3">
-            {features.map((feature) => (
-              <div
-                key={feature}
-                className="flex items-start gap-2.5 text-sm font-medium text-slate-600"
-              >
-                <Check
-                  size={16}
-                  strokeWidth={3}
-                  className="mt-0.5 shrink-0 text-emerald-600"
-                />
-                <span>{feature}</span>
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={isProcessing}
+                  className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isProcessing
+                    ? "Redirecting to payment..."
+                    : `Continue with ${selected.name}`}
+                </button>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            href="/sohoj-tools"
-            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
-          >
-            <ArrowLeft size={14} />
-            Back to Tools
-          </Link>
+            {showNotice && (
+              <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600">
+                Online payment is ready.
+              </p>
+            )}
+
+            {paymentError && (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">
+                {paymentError}
+              </p>
+            )}
+          </section>
+
+          {/* Features */}
+          <section className="rounded-2xl border border-slate-200 bg-white px-5 py-[clamp(10px,1.8vh,20px)]">
+            <h2 className="text-sm font-black text-[#0F172A]">
+              Included with every plan
+            </h2>
+            <div className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+              {features.map((feature) => (
+                <div
+                  key={feature}
+                  className="flex items-start gap-2 text-xs font-medium text-slate-600 sm:text-[13px]"
+                >
+                  <Check
+                    size={14}
+                    strokeWidth={3}
+                    className="mt-0.5 shrink-0 text-emerald-600"
+                  />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="text-center">
+            <Link
+              href="/sohoj-tools"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
+            >
+              <ArrowLeft size={14} />
+              Back to Tools
+            </Link>
+          </div>
         </div>
       </main>
     </div>
