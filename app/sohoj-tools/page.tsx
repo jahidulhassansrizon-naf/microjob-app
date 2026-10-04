@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { toolsData, ToolTile } from "@/app/_components/toolsData";
+import { getClientSession } from "@/lib/clientAuth";
 
 import {
   Search,
@@ -41,40 +42,50 @@ function SohojToolsContent() {
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
+    let mounted = true;
+    let typingTimer: ReturnType<typeof setInterval> | null = null;
     const searchFromUrl = searchParams.get("search");
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    if (!token) {
-      const targetPath = searchFromUrl
-        ? `/sohoj-tools?search=${encodeURIComponent(searchFromUrl)}`
-        : "/sohoj-tools";
-      router.push(`/login?redirect=${encodeURIComponent(targetPath)}`);
-      return;
-    }
+    void getClientSession().then((session) => {
+      if (!mounted) return;
 
-    setIsAuthenticated(true);
+      if (!session.authenticated) {
+        const targetPath = searchFromUrl
+          ? `/sohoj-tools?search=${encodeURIComponent(searchFromUrl)}`
+          : "/sohoj-tools";
+        router.replace(`/login?redirect=${encodeURIComponent(targetPath)}`);
+        return;
+      }
 
-    // প্রথমবার পেজে আসার পর URL-এ কোনো সার্চ থাকলে অ্যানিমেশন চালাবে
-    if (!isInitialLoadDone.current && searchFromUrl) {
-      isInitialLoadDone.current = true;
-      let currentIndex = 0;
-      setSearchQuery("");
+      setIsAuthenticated(true);
 
-      const timer = setInterval(() => {
-        if (currentIndex < searchFromUrl.length) {
-          setSearchQuery(searchFromUrl.slice(0, currentIndex + 1));
-          currentIndex++;
-        } else {
-          clearInterval(timer);
-        }
-      }, 70);
+      // প্রথমবার পেজে আসার পর URL-এ কোনো সার্চ থাকলে অ্যানিমেশন চালাবে
+      if (!isInitialLoadDone.current && searchFromUrl) {
+        isInitialLoadDone.current = true;
+        let currentIndex = 0;
+        setSearchQuery("");
 
-      return () => clearInterval(timer);
-    } else {
-      isInitialLoadDone.current = true;
-    }
-  }, []);
+        typingTimer = setInterval(() => {
+          if (!mounted) return;
+
+          if (currentIndex < searchFromUrl.length) {
+            setSearchQuery(searchFromUrl.slice(0, currentIndex + 1));
+            currentIndex++;
+          } else if (typingTimer) {
+            clearInterval(typingTimer);
+            typingTimer = null;
+          }
+        }, 70);
+      } else {
+        isInitialLoadDone.current = true;
+      }
+    });
+
+    return () => {
+      mounted = false;
+      if (typingTimer) clearInterval(typingTimer);
+    };
+  }, [router, searchParams]);
 
   // ২. টাইপ করলে কোনো ল্যাগ ছাড়াই স্মুথ সার্চ হ্যান্ডলার
   const handleSearchChange = (value: string) => {

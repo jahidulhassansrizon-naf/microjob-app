@@ -18,6 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { TEMPLATE_IMAGE_URLS } from "./templateImageUrls";
+import { getClientSession } from "@/lib/clientAuth";
 
 export default function PrintMediaPage() {
   const router = useRouter();
@@ -25,14 +26,22 @@ export default function PrintMediaPage() {
 
   // Auth Protection Logic
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    let mounted = true;
 
-    if (!token) {
-      router.push("/login"); // লগইন না থাকলে সরাসরি /login পেজে পাঠিয়ে দেবে
-    } else {
+    void getClientSession().then((session) => {
+      if (!mounted) return;
+
+      if (!session.authenticated) {
+        router.replace("/login?callbackUrl=%2Fprint-media");
+        return;
+      }
+
       setIsAuthenticated(true);
-    }
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   const [searchQuery, setSearchQuery] = useState("");

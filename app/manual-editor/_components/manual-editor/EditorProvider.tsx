@@ -25,6 +25,7 @@ import {
   VISA_PRESETS,
 } from "./constants";
 
+import { getClientSession } from "@/lib/clientAuth";
 import type {
   AiTool,
   ObjectBrushMode,
@@ -1219,30 +1220,23 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   }, [resetTransforms, resetObjectValues]);
 
   useEffect(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="));
+    let mounted = true;
 
-    const token = tokenCookie ? tokenCookie.slice("token=".length) : null;
+    void getClientSession().then((session) => {
+      if (!mounted) return;
 
-    const storedUser = localStorage.getItem("user");
+      if (!session.authenticated) {
+        window.location.replace("/login?callbackUrl=%2Fmanual-editor");
+        return;
+      }
 
-    if (!token || !storedUser) {
-      localStorage.clear();
+      setIsAuthenticated(true);
+      setLoading(false);
+    });
 
-      sessionStorage.clear();
-
-      document.cookie =
-        "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-
-      window.location.href = "/login";
-
-      return;
-    }
-
-    setIsAuthenticated(true);
-
-    setLoading(false);
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const getAuthHeaders = useCallback((): Record<string, string> => {

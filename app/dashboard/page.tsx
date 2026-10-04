@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, CheckCircle2, Heart, X } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
+import { getClientSession } from "@/lib/clientAuth";
 import {
   toolsData,
   ToolTile,
@@ -250,56 +251,61 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState<string>("User");
 
   useEffect(() => {
-    const getCookie = (name: string) => {
-      if (typeof document === "undefined") return null;
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(";").shift();
-      return null;
-    };
+    let mounted = true;
+    let successTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const tokenLocal = localStorage.getItem("token");
-    const tokenCookie = getCookie("token");
-
-    const activeToken = tokenLocal || tokenCookie;
-
-    if (!activeToken) {
-      router.replace("/login");
-    } else {
-      if (tokenCookie && !tokenLocal) {
-        localStorage.setItem("token", tokenCookie);
-      }
-
+    const loadCachedUser = () => {
       try {
         const userStr = localStorage.getItem("user");
-        if (userStr) {
-          const userObj = JSON.parse(userStr);
-          if (userObj.fullName) {
-            setUserName(userObj.fullName);
-          }
-        }
-      } catch (e) {
-        // ignore
+        if (!userStr) return;
+        const userObj = JSON.parse(userStr);
+        if (userObj?.fullName && mounted) setUserName(userObj.fullName);
+      } catch {
+        // Cached user data is optional.
       }
+    };
 
-      const justLoggedIn = sessionStorage.getItem("justLoggedIn");
-      if (justLoggedIn === "true") {
+    const handleLoginSuccess = () => {
+      try {
+        if (sessionStorage.getItem("justLoggedIn") !== "true") return;
         sessionStorage.removeItem("justLoggedIn");
+        if (!mounted) return;
+
         setShowLoginSuccess(true);
-
-        const timer = setTimeout(() => {
+        successTimer = setTimeout(() => {
+          if (!mounted) return;
           setShowLoginSuccess(false);
-          setIsAuthenticated(true);
         }, 1600);
-
-        return () => clearTimeout(timer);
-      } else {
-        setIsAuthenticated(true);
+      } catch {
+        // Session storage is optional.
       }
-    }
+    };
+
+    void getClientSession().then((session) => {
+      if (!mounted) return;
+
+      if (!session.authenticated) {
+        router.replace("/login?callbackUrl=%2Fdashboard");
+        return;
+      }
+
+      if (session.user?.fullName) {
+        setUserName(session.user.fullName);
+      } else {
+        loadCachedUser();
+      }
+
+      setIsAuthenticated(true);
+      handleLoginSuccess();
+    });
+
+    return () => {
+      mounted = false;
+      if (successTimer) clearTimeout(successTimer);
+    };
   }, [router]);
 
-  if (!isAuthenticated && !showLoginSuccess) {
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] font-sans">
         <div className="flex flex-col items-center gap-3">

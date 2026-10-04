@@ -25,12 +25,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
-import { getSlug, toolsData } from "@/app/_components/toolsData";
+import { logoutClientSession } from "@/lib/clientAuth";
 
 interface UserData {
   fullName?: string;
   phoneNumber?: string;
   email?: string;
+  profileImageUrl?: string;
+  profileImagePublicId?: string;
+  updatedAt?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -216,7 +219,6 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
     <>
       <IconTile icon={item.icon} tone={item.tone} />
       <span>{item.label}</span>
-
       {item.tag && (
         <span
           className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
@@ -224,7 +226,6 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
           {item.tag.text}
         </span>
       )}
-
       {item.menu && (
         <ChevronDown
           size={13}
@@ -241,7 +242,6 @@ function NavItem({ item, active }: { item: NavConfig; active: boolean }) {
   return (
     <div className="relative flex h-full shrink-0 items-center">
       {item.upcoming && <UpcomingFlag />}
-
       <Link
         href={item.href}
         className={`${itemBase} ${active ? itemActive : itemIdle}`}
@@ -270,7 +270,6 @@ function NavDropdown({
       onMouseLeave={() => setOpen(false)}
     >
       {item.upcoming && <UpcomingFlag />}
-
       <Link
         href={item.href}
         aria-haspopup="true"
@@ -328,7 +327,6 @@ function MoreMenu({
       >
         <IconTile icon={MoreHorizontal} tone="slate" />
         <span>More</span>
-
         <ChevronDown
           size={13}
           className={`-ml-0.5 transition-transform duration-200 ${
@@ -350,15 +348,12 @@ function MoreMenu({
               }`}
             >
               <IconTile icon={item.icon} tone={item.tone} />
-
               <span className="flex-1">{item.label}</span>
-
               {item.upcoming && (
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-semibold leading-[14px] text-slate-500">
                   Upcoming
                 </span>
               )}
-
               {item.tag && (
                 <span
                   className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
@@ -380,11 +375,9 @@ function MoreMenu({
 
 export default function DashboardNavbar() {
   const pathname = usePathname();
-
   const [user, setUser] = useState<UserData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-
   const profileRef = useRef<HTMLDivElement>(null);
 
   // ভাষা পরিবর্তনের স্টেট (EN / BN)
@@ -401,38 +394,79 @@ export default function DashboardNavbar() {
   // Responsive nav: কয়টা item ধরবে সেটা মেপে ঠিক হয়
   const navRef = useRef<HTMLElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
-
   const [visibleCount, setVisibleCount] = useState<number>(NAV_ITEMS.length);
   const [navReady, setNavReady] = useState<boolean>(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    const applyUser = (nextUser: UserData | null) => {
+      if (!mounted || !nextUser) return;
+      setUser(nextUser);
+      try {
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      } catch (error) {
+        console.error("Failed to cache user data in localStorage", error);
+      }
+    };
+
     try {
       const storedUser = localStorage.getItem("user");
-
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser) as UserData;
+        setUser(parsedUser);
       }
     } catch (error) {
       console.error("Failed to parse user data from localStorage", error);
     }
+
+    const handleUserUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<UserData>;
+      if (customEvent.detail) applyUser(customEvent.detail);
+    };
+
+    window.addEventListener(
+      "sohozkaj:user-updated",
+      handleUserUpdated as EventListener,
+    );
+
+    fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    })
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || !data?.user) return;
+          applyUser(data.user as UserData);
+        })
+        .catch((error) => {
+          console.error("Failed to refresh navbar user data", error);
+        });
+
+    return () => {
+      mounted = false;
+      window.removeEventListener(
+        "sohozkaj:user-updated",
+        handleUserUpdated as EventListener,
+      );
+    };
   }, []);
 
   // স্ক্রিনের মাপ বা zoom বদলালে কয়টা item ধরবে তা নতুন করে হিসাব করে
   useIsoLayoutEffect(() => {
     const nav = navRef.current;
     const ghost = ghostRef.current;
-
     if (!nav || !ghost) return;
 
     const measure = () => {
       const available = nav.clientWidth - 4;
-
       if (available <= 0) return; // এই screen-এ nav লুকানো (মোবাইল/ট্যাবলেট)
 
       const widths = (Array.from(ghost.children) as HTMLElement[]).map(
         (el) => el.offsetWidth,
       );
-
       const allMenuW = widths[widths.length - 1];
       const moreW = widths[widths.length - 2];
       const itemWidths = widths.slice(0, NAV_ITEMS.length);
@@ -441,15 +475,11 @@ export default function DashboardNavbar() {
         itemWidths.reduce((sum, w) => sum + w + NAV_GAP, 0) + allMenuW;
 
       let count = NAV_ITEMS.length;
-
       if (total > available) {
         let used = allMenuW + moreW + NAV_GAP;
-
         count = 0;
-
         for (const w of itemWidths) {
           if (used + w + NAV_GAP > available) break;
-
           used += w + NAV_GAP;
           count += 1;
         }
@@ -460,12 +490,9 @@ export default function DashboardNavbar() {
     };
 
     measure();
-
     const observer = new ResizeObserver(measure);
-
     observer.observe(nav);
     observer.observe(ghost);
-
     document.fonts?.ready.then(measure);
 
     return () => observer.disconnect();
@@ -474,18 +501,14 @@ export default function DashboardNavbar() {
   // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
   const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
     setLang(targetLang);
-
     const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
-
     document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
     document.cookie = `googtrans=${googleLangCode}; path=/`;
-
     window.location.reload();
   };
 
   useEffect(() => {
     const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
-
     if (match) {
       if (match[2].includes("bn")) {
         setLang("BN");
@@ -501,7 +524,6 @@ export default function DashboardNavbar() {
         e.preventDefault();
         setIsSearchOpen((prev) => !prev);
       }
-
       if (e.key === "Escape") {
         setIsSearchOpen(false);
         setDropdownOpen(false);
@@ -509,16 +531,13 @@ export default function DashboardNavbar() {
         setMoreOpen(false);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
-
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // প্রোফাইল ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
   useEffect(() => {
     if (!dropdownOpen) return;
-
     const handleClickOutside = (e: MouseEvent) => {
       if (
         profileRef.current &&
@@ -527,39 +546,21 @@ export default function DashboardNavbar() {
         setDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen]);
 
   const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-
-    document.cookie =
-      "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-
-    document.cookie.split(";").forEach((cookie) => {
-      const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
-
-      document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    void logoutClientSession().finally(() => {
+      setUser(null);
+      window.location.replace("/login");
     });
-
-    setUser(null);
-    window.location.replace("/login");
   };
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
-
     const parts = name.trim().split(" ");
-
-    if (parts.length === 1) {
-      return parts[0].substring(0, 2).toUpperCase();
-    }
-
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
@@ -568,24 +569,6 @@ export default function DashboardNavbar() {
 
   const visibleItems = NAV_ITEMS.slice(0, visibleCount);
   const hiddenItems = NAV_ITEMS.slice(visibleCount);
-
-  /* ---------------------------------------------------------------- */
-  /* Search                                                            */
-  /* ---------------------------------------------------------------- */
-
-  const normalizedSearch = searchQuery.trim().toLowerCase();
-
-  const searchResults = normalizedSearch
-    ? toolsData
-        .filter((tool) => {
-          const haystack = [tool.name, tool.category, tool.badge ?? "", tool.id]
-            .join(" ")
-            .toLowerCase();
-
-          return haystack.includes(normalizedSearch);
-        })
-        .slice(0, 8)
-    : [];
 
   const menuSetter = (id: string) => (v: boolean) =>
     setOpenMenu((cur) => (v ? id : cur === id ? null : cur));
@@ -607,19 +590,17 @@ export default function DashboardNavbar() {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20">
             SK
           </div>
-
           <div className="flex min-w-0 flex-col leading-none">
             <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
               Sohoz<span className="text-[#2563EB]">kaj</span>
             </span>
-
             <span className="mt-1 hidden text-[10px] font-medium text-slate-500 sm:block">
               www.sohozkaj.com
             </span>
           </div>
         </Link>
 
-        {/* Center: Navigation */}
+        {/* Center: Navigation (lg ও তার উপরে) — জায়গা বুঝে নিজে মানিয়ে নেয় */}
         <nav
           ref={navRef}
           aria-label="Main"
@@ -627,7 +608,7 @@ export default function DashboardNavbar() {
             navReady ? "opacity-100" : "opacity-0"
           }`}
         >
-          {/* মাপার জন্য লুকানো কপি */}
+          {/* মাপার জন্য লুকানো কপি (screen-এ দেখা যায় না, কিছুতে click হয় না) */}
           <div
             aria-hidden="true"
             className="pointer-events-none invisible absolute inset-x-0 top-0 h-0 overflow-hidden"
@@ -640,7 +621,6 @@ export default function DashboardNavbar() {
                   </div>
                 </div>
               ))}
-
               <div className="flex shrink-0 items-center">
                 <div className={itemBase}>
                   <IconTile icon={MoreHorizontal} tone="slate" />
@@ -648,7 +628,6 @@ export default function DashboardNavbar() {
                   <ChevronDown size={13} className="-ml-0.5" />
                 </div>
               </div>
-
               <div className="flex shrink-0 items-center">
                 <div className={itemBase}>
                   <IconTile icon={Menu} tone="slate" />
@@ -699,7 +678,7 @@ export default function DashboardNavbar() {
           </div>
         </nav>
 
-        {/* Right */}
+        {/* Right: language, credit bonus, search, profile, drawer */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Language switcher */}
           <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold sm:inline-flex">
@@ -714,7 +693,6 @@ export default function DashboardNavbar() {
             >
               EN
             </button>
-
             <button
               type="button"
               onClick={() => changeGoogleLanguage("BN")}
@@ -747,20 +725,32 @@ export default function DashboardNavbar() {
               aria-expanded={dropdownOpen}
               className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
-                {getInitials(user?.fullName)}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
+                {user?.profileImageUrl ? (
+                  <img
+                    src={`${user.profileImageUrl}${
+                      user.updatedAt
+                        ? `${user.profileImageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(user.updatedAt)}`
+                        : ""
+                    }`}
+                    alt={`${user?.fullName || "User"} profile photo`}
+                    className="h-full w-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  getInitials(user?.fullName)
+                )}
               </div>
-
               <div className="hidden flex-col leading-tight 2xl:flex">
                 <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
                   {user?.fullName || "User Account"}
                 </span>
-
                 <span className="max-w-[120px] truncate text-[11px] text-slate-500">
                   {user?.phoneNumber || user?.email || "User"}
                 </span>
               </div>
-
               <ChevronDown
                 size={14}
                 className={`hidden shrink-0 text-slate-500 transition-transform duration-200 sm:block ${
@@ -775,36 +765,27 @@ export default function DashboardNavbar() {
                   <p className="truncate font-semibold text-[#0F172A]">
                     {user?.fullName || "User Account"}
                   </p>
-
                   <p className="mt-0.5 truncate text-xs text-slate-500">
                     {user?.phoneNumber || user?.email || "User"}
                   </p>
                 </div>
-
                 <Link href="/profile" className={profileLinkClass}>
-                  <UserIcon size={15} className="text-slate-500" />
-                  My Profile
+                  <UserIcon size={15} className="text-slate-500" /> My Profile
                 </Link>
-
                 <Link href="/subscription" className={profileLinkClass}>
-                  <CreditCard size={15} className="text-slate-500" />
+                  <CreditCard size={15} className="text-slate-500" />{" "}
                   Subscription
                 </Link>
-
                 <Link href="/settings" className={profileLinkClass}>
-                  <Settings size={15} className="text-slate-500" />
-                  Settings
+                  <Settings size={15} className="text-slate-500" /> Settings
                 </Link>
-
                 <div className="my-1 border-t border-slate-100" />
-
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left font-semibold text-red-600 transition-colors hover:bg-red-50"
                 >
-                  <LogOut size={15} />
-                  Logout
+                  <LogOut size={15} /> Logout
                 </button>
               </div>
             )}
@@ -827,17 +808,12 @@ export default function DashboardNavbar() {
         <div className="fixed inset-0 z-[200] flex items-start justify-center bg-slate-900/40 px-4 pt-[14vh] backdrop-blur-sm animate-in fade-in duration-200">
           <div
             className="absolute inset-0"
-            onClick={() => {
-              setIsSearchOpen(false);
-              setSearchQuery("");
-            }}
-          />
-
+            onClick={() => setIsSearchOpen(false)}
+          ></div>
           <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-12px_rgba(15,23,42,0.35)]">
             {/* Input row */}
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
               <Search size={18} className="shrink-0 text-[#2563EB]" />
-
               <input
                 type="text"
                 autoFocus
@@ -846,108 +822,33 @@ export default function DashboardNavbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full min-w-0 bg-transparent text-[15px] font-medium text-[#0F172A] placeholder-slate-400 focus:outline-none"
               />
-
               <button
                 type="button"
-                onClick={() => {
-                  setIsSearchOpen(false);
-                  setSearchQuery("");
-                }}
+                onClick={() => setIsSearchOpen(false)}
                 className="cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 Esc
               </button>
             </div>
 
-            {/* Results / Empty state */}
-            <div className="max-h-[55vh] overflow-y-auto p-2">
-              {!normalizedSearch ? (
-                <div className="flex flex-col items-center px-6 py-12 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
-                    <Search size={20} />
-                  </span>
-
-                  <p className="mt-4 text-sm font-black text-[#0F172A]">
-                    Search tools and features
-                  </p>
-
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    Start typing to find what you need.
-                  </p>
-                </div>
-              ) : searchResults.length > 0 ? (
-                <div className="space-y-1">
-                  {searchResults.map((tool) => {
-                    const ToolIcon = tool.icon;
-                    const isPaid = tool.access === "paid";
-
-                    return (
-                      <Link
-                        key={tool.id}
-                        href={`/sohoj-tools/${getSlug(tool.name)}`}
-                        onClick={() => {
-                          setIsSearchOpen(false);
-                          setSearchQuery("");
-                        }}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
-                      >
-                        <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tool.bgColor}`}
-                        >
-                          {ToolIcon && (
-                            <ToolIcon
-                              size={24}
-                              className="text-white stroke-[1.75]"
-                            />
-                          )}
-                        </span>
-
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-bold text-[#0F172A]">
-                            {tool.name}
-                          </span>
-
-                          <span className="mt-0.5 block text-[11px] font-medium text-slate-500">
-                            {tool.category} Tool
-                          </span>
-                        </span>
-
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${
-                            isPaid
-                              ? "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200"
-                              : "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
-                          }`}
-                        >
-                          {isPaid ? "Paid" : "Free"}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center px-6 py-12 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200">
-                    <Search size={20} />
-                  </span>
-
-                  <p className="mt-4 text-sm font-black text-[#0F172A]">
-                    No matching tools
-                  </p>
-
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    Try a different tool name or category.
-                  </p>
-                </div>
-              )}
+            {/* Body */}
+            <div className="flex flex-col items-center px-6 py-12 text-center">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
+                <Search size={20} />
+              </span>
+              <p className="mt-4 text-sm font-black text-[#0F172A]">
+                Search tools and features
+              </p>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                Start typing to find what you need.
+              </p>
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3 text-[11px] font-semibold text-slate-400">
               <span>Press Esc to close</span>
-
               <span className="flex shrink-0 items-center gap-1 font-mono">
-                <Command size={10} />K
+                <Command size={10} /> K
               </span>
             </div>
           </div>

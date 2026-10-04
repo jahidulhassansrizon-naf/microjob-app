@@ -88,14 +88,19 @@ function LoginContent() {
       const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
 
-      // 🟢 ড্যাশবোর্ডে পপআপ দেখানোর জন্য ফ্লাগ সেট করা হলো
-      sessionStorage.setItem("justLoggedIn", "true");
-
-      // Login Successful -> Redirect to target page or /dashboard
+      // 🟢 ড্যাশবোর্ডে success popup দেখানোর জন্য flag সেট করা হলো
       const targetUrl = callbackUrl
         ? decodeURIComponent(callbackUrl)
         : "/dashboard";
-      window.location.href = targetUrl;
+
+      if (targetUrl === "/dashboard" || targetUrl.startsWith("/dashboard/")) {
+        sessionStorage.setItem("justLoggedIn", "true");
+      } else {
+        sessionStorage.removeItem("justLoggedIn");
+      }
+
+      // Login Successful -> Redirect to target page or /dashboard
+      window.location.replace(targetUrl);
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorMessage(error.message);

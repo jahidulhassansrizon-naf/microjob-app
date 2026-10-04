@@ -8,7 +8,16 @@ export const dynamic = "force-dynamic";
 const JWT_SECRET =
   process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
 
-function getTokenFromCookie(cookieHeader: string | null) {
+function getTokenFromRequest(request: Request) {
+  const authHeader = request.headers.get("authorization");
+
+  if (authHeader?.startsWith("Bearer ")) {
+    const bearerToken = authHeader.slice("Bearer ".length).trim();
+    if (bearerToken) return bearerToken;
+  }
+
+  const cookieHeader = request.headers.get("cookie");
+
   if (!cookieHeader) return null;
 
   const pair = cookieHeader
@@ -25,7 +34,7 @@ export async function GET(request: Request) {
   try {
     await connectDB();
 
-    const token = getTokenFromCookie(request.headers.get("cookie"));
+    const token = getTokenFromRequest(request);
 
     if (!token) {
       return NextResponse.json(
@@ -79,6 +88,13 @@ export async function GET(request: Request) {
       });
     }
 
+    const startedAt = subscription.startedAt
+      ? new Date(subscription.startedAt).toISOString()
+      : null;
+    const expiresAt = subscription.expiresAt
+      ? new Date(subscription.expiresAt).toISOString()
+      : null;
+
     return NextResponse.json({
       success: true,
       subscription: {
@@ -86,14 +102,11 @@ export async function GET(request: Request) {
         planId: subscription.planId,
         planName: subscription.planName,
         amount: Number(subscription.amount),
+        months: Number(subscription.months || 0),
         paymentStatus: subscription.paymentStatus,
         accessStatus: subscription.accessStatus,
-        startedAt: subscription.startedAt
-          ? new Date(subscription.startedAt).toISOString()
-          : null,
-        expiresAt: subscription.expiresAt
-          ? new Date(subscription.expiresAt).toISOString()
-          : null,
+        startedAt,
+        expiresAt,
       },
     });
   } catch (error) {

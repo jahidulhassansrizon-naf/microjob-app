@@ -6,25 +6,26 @@ import { AlertCircle, Loader2, Sparkles } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import ProfileHeader from "./components/ProfileHeader";
 import SubscriptionCard from "./components/SubscriptionCard";
+import { getClientSession } from "@/lib/clientAuth";
 
 interface UserProfile {
+  id?: string;
+  _id?: string;
   fullName?: string;
-}
-
-type ApiResponse = {
-  user?: UserProfile;
-  message?: string;
-  error?: string;
-};
-
-async function safeJson(response: Response): Promise<ApiResponse> {
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) return {};
-  try {
-    return (await response.json()) as ApiResponse;
-  } catch {
-    return {};
-  }
+  phoneNumber?: string;
+  email?: string;
+  country?: string;
+  district?: string;
+  profession?: string;
+  gender?: string;
+  dob?: string;
+  address?: string;
+  thana?: string;
+  postcode?: string;
+  about?: string;
+  credits?: number;
+  profileImageUrl?: string;
+  profileImagePublicId?: string;
 }
 
 export default function ProfilePage() {
@@ -33,59 +34,59 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const getToken = useCallback(() => {
-    return typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const handleUserUpdated = useCallback((updatedUser: UserProfile) => {
+    setUser(updatedUser);
+    setError("");
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  }, []);
+
+  useEffect(() => {
+    const handleExternalUserUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<UserProfile>;
+      if (customEvent.detail) {
+        setUser(customEvent.detail);
+      }
+    };
+
+    window.addEventListener(
+      "sohozkaj:user-updated",
+      handleExternalUserUpdate,
+    );
+
+    return () =>
+      window.removeEventListener(
+        "sohozkaj:user-updated",
+        handleExternalUserUpdate,
+      );
   }, []);
 
   useEffect(() => {
     const loadProfile = async () => {
-      const token = getToken();
-      if (!token) {
-        router.replace("/login");
-        return;
-      }
-
       try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) setUser(JSON.parse(storedUser) as UserProfile);
-      } catch {
-        localStorage.removeItem("user");
-      }
+        const session = await getClientSession();
 
-      try {
-        const response = await fetch("/api/auth/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-        });
-
-        const data = await safeJson(response);
-
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+        if (!session.authenticated) {
           router.replace("/login");
           return;
         }
 
-        if (!response.ok || !data.user) {
-          throw new Error(data.error || data.message || "Unable to load your profile.");
+        if (session.user) {
+          setUser(session.user as UserProfile);
+          localStorage.setItem("user", JSON.stringify(session.user));
         }
-
-        setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load your profile.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load your profile.",
+        );
       } finally {
         setLoading(false);
       }
     };
 
     void loadProfile();
-  }, [getToken, router]);
+  }, [router]);
 
   if (loading && !user) {
     return (
@@ -108,6 +109,7 @@ export default function ProfilePage() {
             <Sparkles size={17} className="text-[#2563EB]" />
             <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
           </div>
+
           <p className="text-xs text-gray-400 font-medium mt-1">
             Your profile and subscription overview.
           </p>
@@ -120,7 +122,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <ProfileHeader user={user} />
+        <ProfileHeader user={user} onUserUpdated={handleUserUpdated} />
         <SubscriptionCard />
       </main>
     </div>

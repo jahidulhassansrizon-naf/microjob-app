@@ -37,6 +37,7 @@ import type {
 import { parseRegionTargetId } from "../components/question-canvas/RegionSelectionOverlay";
 
 import { printPaperInIsolatedIframe } from "../components/PrintDuplexLayout";
+import { getClientSession, getClientAuthHeaders } from "@/lib/clientAuth";
 
 class ApiRequestError extends Error {
   status: number;
@@ -621,14 +622,22 @@ export function useQuestionManager() {
   const jointAutoPackConsumedRef = useRef(0);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    let mounted = true;
 
-    if (!token) {
-      router.push("/login");
-    } else {
+    void getClientSession().then((session) => {
+      if (!mounted) return;
+
+      if (!session.authenticated) {
+        router.replace("/login?callbackUrl=%2Fquestions-create/create");
+        return;
+      }
+
       setIsAuthenticated(true);
-    }
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   useEffect(() => {
@@ -2943,18 +2952,13 @@ export function useQuestionManager() {
     setSaveStatus("Saving...");
 
     try {
-      const token = localStorage.getItem("token");
-
       const response = await fetch("/api/question-papers", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {}),
+          ...getClientAuthHeaders(),
         },
+        credentials: "include",
         body: JSON.stringify({
           title: examName.trim() || "Question Paper",
           className: savedClassName,

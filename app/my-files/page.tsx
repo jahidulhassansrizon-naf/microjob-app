@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { getClientSession } from "@/lib/clientAuth";
 
 /* ------------------------------------------------------------------ */
 /* Config                                                              */
@@ -179,27 +180,23 @@ export default function MyFilesPage() {
 
   // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
   useEffect(() => {
-    try {
-      const cookies = document.cookie.split("; ");
-      const tokenCookie = cookies.find((row) => row.startsWith("token="));
-      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+    let mounted = true;
 
-      const storedUser = localStorage.getItem("user");
+    void getClientSession().then((session) => {
+      if (!mounted) return;
 
-      if (!token || !storedUser) {
-        localStorage.clear();
-        sessionStorage.clear();
-        document.cookie =
-          "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-        window.location.href = "/login";
-      } else {
-        setIsAuthenticated(true);
-        setLoading(false);
+      if (!session.authenticated) {
+        window.location.replace("/login?callbackUrl=%2Fmy-files");
+        return;
       }
-    } catch (error) {
-      console.error("Auth check error:", error);
+
+      setIsAuthenticated(true);
       setLoading(false);
-    }
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // লোডিং হওয়ার সময় ক্লিন স্পিনার

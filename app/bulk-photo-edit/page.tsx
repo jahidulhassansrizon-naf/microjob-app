@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { getClientSession } from "@/lib/clientAuth";
 import SubscriptionLock from "./components/SubscriptionLock";
 import BulkPhotoStage from "./components/BulkPhotoStage";
 import PhotoUploader from "./components/PhotoUploader";
@@ -78,27 +79,23 @@ export default function BulkPhotoEditPage() {
   const [processedCount, setProcessedCount] = useState<number>(0);
 
   useEffect(() => {
-    try {
-      const cookies = document.cookie.split("; ");
-      const tokenCookie = cookies.find((row) => row.startsWith("token="));
-      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
-      const storedUser = localStorage.getItem("user");
+    let mounted = true;
 
-      if (!token || !storedUser) {
-        localStorage.clear();
-        sessionStorage.clear();
-        document.cookie =
-          "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-        window.location.href = "/login";
+    void getClientSession().then((session) => {
+      if (!mounted) return;
+
+      if (!session.authenticated) {
+        window.location.replace("/login?callbackUrl=%2Fbulk-photo-edit");
         return;
       }
 
       setIsAuthenticated(true);
       setLoading(false);
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setLoading(false);
-    }
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const photosRef = useRef<PhotoItem[]>([]);

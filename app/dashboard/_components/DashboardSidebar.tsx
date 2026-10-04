@@ -142,8 +142,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "Accounts & Invoice",
     items: [
-      { label: "Income & Expenses", href: "#", icon: Wallet, tone: "emerald" },
-      { label: "Customers & Invoices", href: "#", icon: Users, tone: "blue" },
+      { label: "Income & Expenses", href: "/income-expenses", icon: Wallet, tone: "emerald" },
+      { label: "Customers & Invoices", href: "/customers-invoices", icon: Users, tone: "blue" },
     ],
   },
   {
@@ -152,11 +152,11 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Settings", href: "/settings", icon: Settings, tone: "slate" },
       {
         label: "WhatsApp সাপোর্ট",
-        href: "#",
+        href: "/whatsapp-support",
         icon: MessageCircle,
         tone: "emerald",
       },
-      { label: "Tutorial Video", href: "#", icon: PlayCircle, tone: "rose" },
+      { label: "Tutorial Video", href: "/tutorial-video", icon: PlayCircle, tone: "rose" },
     ],
   },
 ];

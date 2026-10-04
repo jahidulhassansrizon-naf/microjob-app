@@ -9,8 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
 export async function POST(req: Request) {
   try {
     await connectDB();
+
     const { phoneNumber, password } = await req.json();
-    const formattedInput = phoneNumber ? phoneNumber.toLowerCase().trim() : "";
+    const formattedInput = phoneNumber ? String(phoneNumber).toLowerCase().trim() : "";
 
     const user = await User.findOne({
       $or: [{ phoneNumber: phoneNumber }, { email: formattedInput }],
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return NextResponse.json(
         { message: "Invalid password!" },
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
       { expiresIn: "7d" },
     );
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "Login successful!",
         token,
@@ -45,13 +47,27 @@ export async function POST(req: Request) {
           email: user.email,
           district: user.district,
           country: user.country,
+          profileImageUrl: user.profileImageUrl || "",
+          profileImagePublicId: user.profileImagePublicId || "",
         },
       },
       { status: 200 },
     );
+
+    // Keep an HttpOnly session cookie as well, so server-side subscription/payment
+    // endpoints that read the token cookie continue to work alongside localStorage auth.
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error: any) {
     return NextResponse.json(
-      { message: "Server error", error: error.message },
+      { message: "Server error", error: error?.message || "Unknown error" },
       { status: 500 },
     );
   }

@@ -12,6 +12,7 @@ import ImagePreviewModal from "./_components/ImagePreviewModal";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
+import { getClientSession } from "@/lib/clientAuth";
 
 export default function PhotoEditorPage() {
   const router = useRouter();
@@ -105,7 +106,32 @@ export default function PhotoEditorPage() {
           router.replace("/login");
           return;
         }
-        throw new Error(result?.error || "Failed to load recent generations.");
+
+        const message = String(
+          result?.error || result?.message || "",
+        ).toLowerCase();
+
+        // A locked AI Editor is an expected state for users without an active
+        // subscription. Keep the page mounted so SubscriptionLock can show
+        // the normal upgrade UI instead of surfacing a runtime error overlay.
+        const subscriptionRequired =
+          response.status === 402 ||
+          response.status === 403 ||
+          message.includes("active subscription") ||
+          message.includes("subscription is required") ||
+          message.includes("subscription required") ||
+          message.includes("subscribe");
+
+        if (subscriptionRequired) {
+          setRecentList([]);
+          return;
+        }
+
+        throw new Error(
+          result?.error ||
+            result?.message ||
+            "Failed to load recent generations.",
+        );
       }
 
       setRecentList(Array.isArray(result.data) ? result.data : []);
@@ -118,20 +144,23 @@ export default function PhotoEditorPage() {
   };
 
   useEffect(() => {
-    const hasTokenCookie = document.cookie
-      .split("; ")
-      .some((row) => row.startsWith("token="));
-    const hasLocalToken = Boolean(localStorage.getItem("token"));
-    const savedUserStr =
-      localStorage.getItem("user") || localStorage.getItem("userData");
+    let mounted = true;
 
-    if (!hasTokenCookie && !hasLocalToken && !savedUserStr) {
-      router.replace("/login");
-      return;
-    }
+    void getClientSession().then((session) => {
+      if (!mounted) return;
 
-    setAuthChecking(false);
-    void fetchUserGenerationsFromMongo();
+      if (!session.authenticated) {
+        router.replace("/login?callbackUrl=%2Fai-editor");
+        return;
+      }
+
+      setAuthChecking(false);
+      void fetchUserGenerationsFromMongo();
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   const photoSizes = [

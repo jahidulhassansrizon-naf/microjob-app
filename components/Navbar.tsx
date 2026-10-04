@@ -213,9 +213,15 @@ export default function Navbar() {
     pathname.startsWith("/print-media") ||
     pathname.startsWith("/sohoj-tools") ||
     pathname.startsWith("/profile") ||
+    pathname.startsWith("/tutorial-video") ||
+    pathname.startsWith("/whatsapp-support") ||
     pathname.startsWith("/free-tools") ||
     pathname === "/subscription" ||
-    pathname === "/settings"
+    pathname === "/settings" ||
+    pathname === "/income-expenses" ||
+    pathname.startsWith("/income-expenses/") ||
+    pathname === "/customers-invoices" ||
+    pathname.startsWith("/customers-invoices/")
   ) {
     return null;
   }

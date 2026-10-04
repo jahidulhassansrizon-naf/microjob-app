@@ -77,6 +77,19 @@ const UserSchema = new Schema(
       trim: true,
     },
 
+    // Cloudinary-backed profile image for this specific user.
+    profileImageUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    profileImagePublicId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     // Business Information Fields
     businessName: {
       type: String,
