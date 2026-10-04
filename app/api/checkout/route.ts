@@ -17,8 +17,9 @@ const PAYMENTLY_BASE_URL = (
 const PAYMENTLY_API_KEY = process.env.PAYMENTLY_API_KEY?.trim();
 
 const APP_URL = (
-  process.env.APP_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.APP_URL ||
   "http://localhost:3000"
 )
   .trim()
@@ -196,6 +197,7 @@ export async function POST(request: Request) {
       redirect_url: `${APP_URL}/payment/success`,
       return_type: "GET",
       cancel_url: `${APP_URL}/payment/cancel`,
+      webhook_url: `${APP_URL}/api/payment/webhook`,
     };
 
     console.log("[Paymently] Checkout endpoint:", endpoint);

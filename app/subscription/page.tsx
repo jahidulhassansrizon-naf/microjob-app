@@ -207,54 +207,55 @@ export default function SubscriptionPage() {
               </p>
             </div>
           ) : currentSubscription ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#2563EB]">
                     Current subscription
                   </p>
 
-                  <h2 className="mt-1 text-xl font-black text-slate-900">
+                  <h2 className="mt-1 text-xl font-black text-[#0F172A]">
                     {currentSubscription.planName}
                   </h2>
 
-                  <p className="mt-1 text-sm font-semibold text-slate-600">
+                  <p className="mt-1 text-xs font-semibold text-slate-400">
                     Status:{" "}
-                    <span className="text-emerald-700">
+                    <span className="uppercase text-[#2563EB]">
                       {currentSubscription.accessStatus}
                     </span>
                   </p>
                 </div>
 
-                <span className="inline-flex w-fit rounded-full bg-emerald-600 px-3 py-1 text-xs font-black text-white">
+                <span className="inline-flex w-fit items-center gap-1 rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                  <Check size={12} strokeWidth={3.5} />
                   {currentSubscription.paymentStatus}
                 </span>
               </div>
 
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="rounded-xl bg-white/80 px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                     Paid
                   </p>
-                  <p className="mt-1 text-base font-black text-slate-900">
+                  <p className="mt-1 text-base font-black text-[#0F172A]">
                     {formatPrice(currentSubscription.amount)}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/80 px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                     Started
                   </p>
-                  <p className="mt-1 text-base font-black text-slate-900">
+                  <p className="mt-1 text-base font-black text-[#0F172A]">
                     {formatDate(currentSubscription.startedAt)}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/80 px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                     Expires
                   </p>
-                  <p className="mt-1 text-base font-black text-slate-900">
+                  <p className="mt-1 text-base font-black text-[#0F172A]">
                     {formatDate(currentSubscription.expiresAt)}
                   </p>
                 </div>
