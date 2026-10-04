@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Subscription from "@/models/Subscription";
+import { connectDB } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -195,6 +196,8 @@ async function requireActiveSubscription(request: Request) {
   }
 
   try {
+    await connectDB();
+
     const decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
 
     if (!decoded?.userId || !mongoose.isValidObjectId(decoded.userId)) {

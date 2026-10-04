@@ -205,3 +205,99 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    await connectDB();
+    getCloudinaryConfig();
+
+    const token = getToken(request);
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Please log in first." },
+        { status: 401 },
+      );
+    }
+
+    let decoded: { userId?: string };
+
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+    } catch {
+      return NextResponse.json(
+        { success: false, message: "Your login session has expired." },
+        { status: 401 },
+      );
+    }
+
+    if (!decoded?.userId) {
+      return NextResponse.json(
+        { success: false, message: "Invalid login token." },
+        { status: 401 },
+      );
+    }
+
+    const user = await User.findById(decoded.userId).select(
+      "profileImagePublicId profileImageUrl",
+    );
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "User account was not found." },
+        { status: 404 },
+      );
+    }
+
+    if (user.profileImagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.profileImagePublicId, {
+          resource_type: "image",
+          invalidate: true,
+        });
+      } catch (cloudinaryError) {
+        console.error("CLOUDINARY PROFILE IMAGE DELETE ERROR:", cloudinaryError);
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.userId,
+      {
+        $set: {
+          profileImageUrl: "",
+          profileImagePublicId: "",
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { success: false, message: "User account was not found." },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Profile photo deleted successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("PROFILE IMAGE DELETE ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete profile photo.",
+      },
+      { status: 500 },
+    );
+  }
+}
