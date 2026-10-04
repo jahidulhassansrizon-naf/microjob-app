@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "react-image-crop/dist/ReactCrop.css";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { getClientSession } from "@/lib/clientAuth";
 import SubscriptionLock from "./components/SubscriptionLock";
 import {
-  FAVORITES_STORAGE_KEY,
   filterTemplates,
   sortTemplates,
   TEMPLATES_BY_ID,
@@ -38,6 +38,7 @@ export default function AITemplatePage() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -53,31 +54,65 @@ export default function AITemplatePage() {
   const favoriteIds = useMemo(() => new Set(favorites), [favorites]);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
-      const saved: unknown = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(saved)) {
-        setFavorites(
-          saved
-            .map((url) =>
-              typeof url === "string"
-                ? TEMPLATE_IDS_BY_IMAGE.get(url)
-                : undefined,
-            )
-            .filter((id): id is number => id !== undefined),
-        );
+    let mounted = true;
+
+    void getClientSession().then((session) => {
+      if (!mounted) return;
+
+      const userId = session.user?.id || session.user?._id || null;
+      setCurrentUserId(userId);
+
+      if (!userId) {
+        setFavorites([]);
+        setFavoritesLoaded(true);
+        return;
       }
-    } catch {
-      // storage unavailable or corrupted: start with no favorites
-    }
-    setFavoritesLoaded(true);
+
+      const storageKey = `sohozkaj-ai-template-favorites:${userId}`;
+
+      try {
+        const raw = window.localStorage.getItem(storageKey);
+        const saved: unknown = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(saved)) {
+          setFavorites(
+            saved
+              .map((url) =>
+                typeof url === "string"
+                  ? TEMPLATE_IDS_BY_IMAGE.get(url)
+                  : undefined,
+              )
+              .filter((id): id is number => id !== undefined),
+          );
+        } else {
+          setFavorites([]);
+        }
+      } catch {
+        setFavorites([]);
+      }
+
+      // Never reuse the legacy global favorites key because it could belong to
+      // another account on the same browser.
+      try {
+        window.localStorage.removeItem("sohozkaj-ai-template-favorites");
+      } catch {
+        // Ignore storage failures.
+      }
+
+      setFavoritesLoaded(true);
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!favoritesLoaded) return;
+    if (!favoritesLoaded || !currentUserId) return;
+
     try {
+      const storageKey = `sohozkaj-ai-template-favorites:${currentUserId}`;
       window.localStorage.setItem(
-        FAVORITES_STORAGE_KEY,
+        storageKey,
         JSON.stringify(
           favorites
             .map((id) => TEMPLATES_BY_ID.get(id)?.image)
@@ -87,7 +122,7 @@ export default function AITemplatePage() {
     } catch {
       // storage full or blocked: favorites just won't persist
     }
-  }, [favorites, favoritesLoaded]);
+  }, [favorites, favoritesLoaded, currentUserId]);
 
   useEffect(() => () => generationAbortRef.current?.abort(), []);
 

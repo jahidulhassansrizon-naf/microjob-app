@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Subscription from "@/models/Subscription";
 import { v2 as cloudinary } from "cloudinary";
+import { connectDB } from "@/lib/db";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -46,6 +47,8 @@ async function requireActiveSubscription(request: Request) {
       );
     }
 
+    await connectDB();
+
     const subscription = await Subscription.findOne({
       userId: new mongoose.Types.ObjectId(decoded.userId),
       paymentStatus: "COMPLETED",
@@ -66,7 +69,7 @@ async function requireActiveSubscription(request: Request) {
       );
     }
 
-    return null;
+    return decoded.userId;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
@@ -81,7 +84,15 @@ async function requireActiveSubscription(request: Request) {
 
 export async function POST(req: Request) {
   const subscriptionGuard = await requireActiveSubscription(req);
-  if (subscriptionGuard) return subscriptionGuard;
+  if (!subscriptionGuard) {
+    return NextResponse.json(
+      { success: false, error: "Invalid user session." },
+      { status: 401 },
+    );
+  }
+  if (typeof subscriptionGuard !== "string") return subscriptionGuard;
+
+  const userId = subscriptionGuard;
 
   try {
     const formData = await req.formData();
@@ -98,7 +109,7 @@ export async function POST(req: Request) {
       cloudinary.uploader
         .upload_stream(
           {
-            folder: "sohozkaj-ai-photos",
+            folder: `sohozkaj-ai-photos/${userId}`,
             transformation: [{ width: 800, height: 800, crop: "limit" }],
           },
           (error, result) => {

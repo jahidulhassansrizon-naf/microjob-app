@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Subscription from "@/models/Subscription";
+import AIGeneration from "@/models/AIGeneration";
 import { connectDB } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -46,8 +47,72 @@ async function withGeminiQueue<T>(job: () => Promise<T>): Promise<T> {
   }
 }
 
+function extractCloudinaryPublicId(imageUrl: string): string | null {
+  try {
+    const url = new URL(imageUrl);
+    const validHost =
+      url.hostname === "res.cloudinary.com" ||
+      url.hostname.endsWith(".res.cloudinary.com");
+
+    if (!validHost) return null;
+
+    const parts = url.pathname
+      .split("/")
+      .filter(Boolean)
+      .map((part) => decodeURIComponent(part));
+    const uploadIndex = parts.indexOf("upload");
+    if (uploadIndex === -1) return null;
+
+    const afterUpload = parts.slice(uploadIndex + 1);
+    const versionIndex = afterUpload.findIndex((part) => /^v\d+$/.test(part));
+    const publicParts =
+      versionIndex >= 0
+        ? afterUpload.slice(versionIndex + 1)
+        : afterUpload;
+
+    if (!publicParts.length) return null;
+
+    const last = publicParts[publicParts.length - 1];
+    publicParts[publicParts.length - 1] = last.replace(/\.[a-z0-9]+$/i, "");
+    return publicParts.join("/") || null;
+  } catch {
+    return null;
+  }
+}
+
+async function assertOwnedImageUrl(imageUrl: string, userId: string) {
+  const publicId = extractCloudinaryPublicId(imageUrl);
+
+  if (!publicId) {
+    throw new Error(
+      "Source image URL must be an image owned by the current account.",
+    );
+  }
+
+  const ownedFolder = `sohozkaj-ai-photos/${userId}/`;
+  if (publicId.startsWith(ownedFolder)) return;
+
+  await connectDB();
+
+  const ownedGeneration = await AIGeneration.exists({
+    userId: new mongoose.Types.ObjectId(userId),
+    $or: [
+      { url: imageUrl },
+      { originalUrl: imageUrl },
+      { publicId },
+    ],
+  });
+
+  if (!ownedGeneration) {
+    throw new Error(
+      "Source image does not belong to the current account.",
+    );
+  }
+}
+
 async function getSourceImage(
   formData: FormData,
+  userId: string,
 ): Promise<{ blob: Blob; filename: string }> {
   const uploadedImage = formData.get("image");
 
@@ -76,6 +141,8 @@ async function getSourceImage(
   if (!imageUrl) {
     throw new Error("No source image was provided.");
   }
+
+  await assertOwnedImageUrl(imageUrl, userId);
 
   let parsedUrl: URL;
 
@@ -227,7 +294,7 @@ async function requireActiveSubscription(request: Request) {
       );
     }
 
-    return null;
+    return decoded.userId;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
@@ -242,7 +309,15 @@ async function requireActiveSubscription(request: Request) {
 
 export async function POST(req: Request) {
   const subscriptionGuard = await requireActiveSubscription(req);
-  if (subscriptionGuard) return subscriptionGuard;
+  if (!subscriptionGuard) {
+    return NextResponse.json(
+      { success: false, error: "Invalid user session." },
+      { status: 401 },
+    );
+  }
+  if (typeof subscriptionGuard !== "string") return subscriptionGuard;
+
+  const userId = subscriptionGuard;
 
   try {
     const formData = await req.formData();
@@ -260,7 +335,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const source = await getSourceImage(formData);
+    const source = await getSourceImage(formData, userId);
 
     const image = await withGeminiQueue(() =>
       callRenderService(source.blob, source.filename, prompt),

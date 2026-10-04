@@ -60,6 +60,10 @@ function loadImage(url: string) {
   });
 }
 
+function getManualHistoryStorageKey(userId: string | null | undefined) {
+  return userId ? `manual-editor-history:${userId}` : null;
+}
+
 function fileName(name: string) {
   return `${
     name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-_]+/g, "-") ||
@@ -419,6 +423,7 @@ function applyCanvasSharpness(
 
 export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -1230,6 +1235,19 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const userId = session.user?.id || session.user?._id || null;
+      if (!userId) {
+        window.location.replace("/login?callbackUrl=%2Fmanual-editor");
+        return;
+      }
+
+      setCurrentUserId(userId);
+      try {
+        window.localStorage.removeItem("manual-editor-history");
+      } catch {
+        // Ignore storage cleanup failures.
+      }
+
       setIsAuthenticated(true);
       setLoading(false);
     });
@@ -1320,10 +1338,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setGeneratedPhotos(photos);
 
-      localStorage.setItem(
-        "manual-editor-history",
-        JSON.stringify(photos.map((item: GeneratedPhoto) => item.url)),
-      );
+      const storageKey = getManualHistoryStorageKey(currentUserId);
+      if (storageKey) {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify(photos.map((item: GeneratedPhoto) => item.url)),
+        );
+      }
     } catch (error) {
       console.error(
         "Failed to load Manual Editor history from MongoDB:",
@@ -1331,8 +1352,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       );
 
       try {
+        const storageKey = getManualHistoryStorageKey(currentUserId);
         const fallback = JSON.parse(
-          localStorage.getItem("manual-editor-history") || "[]",
+          storageKey ? localStorage.getItem(storageKey) || "[]" : "[]",
         ) as unknown;
 
         setGeneratedPhotos(
@@ -1347,12 +1369,12 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         setGeneratedPhotos([]);
       }
     }
-  }, [getAuthHeaders]);
+  }, [currentUserId, getAuthHeaders]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !currentUserId) return;
     void loadCloudHistory();
-  }, [isAuthenticated, loadCloudHistory]);
+  }, [isAuthenticated, currentUserId, loadCloudHistory]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1776,10 +1798,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
           ),
         ].slice(0, 8);
 
-        localStorage.setItem(
-          "manual-editor-history",
-          JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
-        );
+        const storageKey = getManualHistoryStorageKey(currentUserId);
+        if (storageKey) {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
+          );
+        }
         return next;
       });
 
@@ -1803,6 +1828,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     backgroundRemoved,
     brightness,
     contrast,
+    currentUserId,
     flipX,
     getAuthHeaders,
     isSavingEdited,
@@ -1946,10 +1972,13 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
             (item: GeneratedPhoto) =>
               item.id !== photo.id && item.url !== photo.url,
           );
-          localStorage.setItem(
-            "manual-editor-history",
-            JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
-          );
+          const storageKey = getManualHistoryStorageKey(currentUserId);
+          if (storageKey) {
+            localStorage.setItem(
+              storageKey,
+              JSON.stringify(next.map((item: GeneratedPhoto) => item.url)),
+            );
+          }
           return next;
         });
 
@@ -1966,7 +1995,7 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
         throw error;
       }
     },
-    [getAuthHeaders],
+    [currentUserId, getAuthHeaders],
   );
 
   /*

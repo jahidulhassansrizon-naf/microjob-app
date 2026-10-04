@@ -66,6 +66,8 @@ function getTokenFromRequest(request: Request): string | null {
 }
 
 async function requireActiveSubscription(userId: string) {
+  await connectDB();
+
   const subscription = await Subscription.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     paymentStatus: "COMPLETED",

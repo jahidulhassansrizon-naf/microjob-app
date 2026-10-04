@@ -4,7 +4,9 @@ const SavedFormSchema = new Schema(
   {
     userId: {
       type: String,
-      required: false, // ইউজার আইডি থাকলে সেভ হবে
+      required: true,
+      index: true,
+      trim: true,
     },
     formData: {
       type: Schema.Types.Mixed, // ফর্মের যেকোনো ফিল্ডের ডেটা অবজেক্ট হিসেবে সেভ করার জন্য

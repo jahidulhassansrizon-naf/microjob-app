@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/db";
+import { requireActiveSubscription } from "@/api/_lib/requireActiveSubscription";
+import AIGeneration from "@/models/AIGeneration";
+import ScannedDocument from "@/models/ScannedDocument";
 
 export const runtime = "nodejs";
 
@@ -72,6 +77,9 @@ function publicIdFromCloudinaryUrl(imageUrl: string): string {
 }
 
 export async function POST(req: Request) {
+  const access = await requireActiveSubscription(req);
+  if (!access.ok) return access.response;
+
   try {
     configureCloudinary();
 
@@ -89,6 +97,32 @@ export async function POST(req: Request) {
     }
 
     const publicId = providedPublicId || publicIdFromCloudinaryUrl(imageUrl);
+
+    await connectDB();
+
+    const userObjectId = new mongoose.Types.ObjectId(access.userId);
+    const userOwnedFolder = `sohozkaj-ai-photos/${access.userId}/`;
+
+    const ownsByFolder = publicId.startsWith(userOwnedFolder);
+    const [ownsGeneration, ownsDocument] = ownsByFolder
+      ? [true, true]
+      : await Promise.all([
+          AIGeneration.exists({
+            userId: userObjectId,
+            publicId,
+          }),
+          ScannedDocument.exists({
+            userId: userObjectId,
+            publicId,
+          }),
+        ]);
+
+    if (!ownsByFolder && !ownsGeneration && !ownsDocument) {
+      return NextResponse.json(
+        { success: false, error: "You are not allowed to delete this image." },
+        { status: 403 },
+      );
+    }
 
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: "image",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import { requireActiveSubscription } from "@/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -31,12 +32,12 @@ function getBase64Buffer(dataUrl: string): Buffer {
   return Buffer.from(match[2], "base64");
 }
 
-async function uploadBuffer(buffer: Buffer) {
+async function uploadBuffer(buffer: Buffer, folder: string) {
   return new Promise<any>((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
-          folder: "sohozkaj-ai-photos",
+          folder,
           resource_type: "image",
           use_filename: false,
           unique_filename: true,
@@ -54,9 +55,13 @@ async function uploadBuffer(buffer: Buffer) {
 }
 
 export async function POST(req: Request) {
+  const access = await requireActiveSubscription(req);
+  if (!access.ok) return access.response;
+
   try {
     getCloudinaryConfig();
 
+    const userFolder = `sohozkaj-ai-photos/${access.userId}`;
     const contentType = req.headers.get("content-type") || "";
     let buffer: Buffer | null = null;
 
@@ -75,7 +80,7 @@ export async function POST(req: Request) {
         buffer = getBase64Buffer(image);
       } else if (/^https?:\/\//i.test(image)) {
         const uploadResult = await cloudinary.uploader.upload(image, {
-          folder: "sohozkaj-ai-photos",
+          folder: userFolder,
           resource_type: "image",
         });
 
@@ -125,7 +130,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const uploadResult = await uploadBuffer(buffer);
+    const uploadResult = await uploadBuffer(buffer, userFolder);
     const imageUrl = uploadResult?.secure_url;
 
     if (!imageUrl) {

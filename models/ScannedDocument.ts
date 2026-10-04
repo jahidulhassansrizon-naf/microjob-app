@@ -20,7 +20,8 @@ const ScannedDocumentSchema: Schema = new Schema<IScannedDocument>(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      required: true,
+      index: true,
     },
     title: {
       type: String,
