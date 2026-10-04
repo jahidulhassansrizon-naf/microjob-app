@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, CheckCircle2, Heart, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
 import {
@@ -19,35 +19,42 @@ const HOME_TOOLS_COUNT = 12;
 /* Popular tools                                                       */
 /* ------------------------------------------------------------------ */
 
-function PopularToolsSection() {
+function PopularToolsSection({ fit }: { fit: boolean }) {
   const homeTools = toolsData.slice(0, HOME_TOOLS_COUNT);
 
   return (
     <section className="py-4">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#0F172A] sm:text-2xl">
+          <h2
+            className={`font-semibold text-slate-900 ${fit ? "text-2xl" : "text-xl sm:text-2xl"}`}
+          >
             Popular Tools
           </h2>
-          <p className="mt-1 text-[13px] font-medium text-slate-500">
+          <p className="mt-1 text-sm text-slate-500">
             Free tools to speed up your daily work.
           </p>
         </div>
 
         <Link
           href="/sohoj-tools"
-          className="group inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#1D4ED8] shadow-sm outline-none transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
         >
           View all
-          <span className="hidden sm:inline">{toolsData.length} tools</span>
-          <ArrowRight
-            size={13}
-            className="transition-transform duration-200 group-hover:translate-x-0.5"
-          />
+          <span className={fit ? "inline" : "hidden sm:inline"}>
+            {toolsData.length} tools
+          </span>
+          <ArrowRight size={14} />
         </Link>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div
+        className={`mt-6 grid gap-x-5 gap-y-8 ${
+          fit
+            ? "grid-cols-6"
+            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        }`}
+      >
         {homeTools.map((tool) => (
           <ToolTile key={tool.id} tool={tool} />
         ))}
@@ -62,8 +69,20 @@ function PopularToolsSection() {
 
 // ফুটারের নিচের ক্রেডিট লাইনে যে নাম দেখাবে
 const CREATOR_NAME = "Jahidul Hassan";
+const INSPIRED_BY_NAME = "Robiul Karim Robi";
+// চাইলে নিচে Facebook/LinkedIn/ওয়েবসাইটের লিংক বসাও — ফাঁকা থাকলে শুধু নাম দেখাবে
+const CREATOR_URL = "";
+const INSPIRED_BY_URL = "";
 
-function WelcomeBanner({ userName }: { userName: string }) {
+// my-nafia:start
+const CONTACT_NAME = "Jahidul Hasan Sreezon";
+const CONTACT_FACEBOOK_URL =
+  "https://www.facebook.com/profile.php?id=61593666395329";
+const CONTACT_PHOTO_URL =
+  "https://scontent.fcgp39-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=78S-n7gNgUkQ7kNvwELG9hI&_nc_oc=AdrffUkQs1QZx-eWlE2MaeHUzUutp6VXDqkWDAloY_Ex1w8PqGIKk_hhfsIa_8Kp4Ds&_nc_zt=23&_nc_ht=scontent.fcgp39-1.fna&_nc_gid=3CzP5deqZC_4jVabR_0z0g&_nc_ss=7b2a8&oh=00_AQPg9M9F1zQmZUX9-4CT171qGc3lQAICV49bxxx1C-9xBQ&oe=6AC876AF";
+// my-nafia:end
+
+function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
   const hour = new Date().getHours();
   const greeting =
     hour >= 5 && hour < 12
@@ -75,113 +94,192 @@ function WelcomeBanner({ userName }: { userName: string }) {
           : "Good night";
   const firstName = userName.trim().split(" ")[0] || "there";
 
-  // ব্যানারের ডানে সাজানো তিনটা টুল কার্ড (একই আইকন, একই রঙ)
+  // ডানে সাজানো তিনটা টুল (শুধু দেখানোর জন্য)
   const showcase = ["Nid Joiner", "Compress PDF", "Image Upscaler"]
     .map((name) => toolsData.find((t) => t.name === name))
     .filter((t): t is ToolItem => Boolean(t));
-  const stagger = ["translate-y-4", "-translate-y-3", "translate-y-6"];
 
   return (
     <section
-      className="relative isolate mt-14 overflow-hidden rounded-3xl border border-white/10 px-6 py-10 text-white shadow-[0_24px_60px_-24px_rgba(37,99,235,0.6)] sm:px-10 sm:py-12 lg:px-14"
-      style={{
-        // Website-এর brand নীল (#2563EB) থেকে সামান্য গাঢ় নীল পর্যন্ত
-        backgroundImage:
-          "linear-gradient(135deg, #2563EB 0%, #2563EB 45%, #1D4ED8 100%)",
-      }}
+      className={`mt-12 rounded-xl bg-[#2563EB] text-white ${
+        fit ? "px-10 py-10" : "px-6 py-8 sm:px-10 sm:py-10"
+      }`}
     >
-      {/* হালকা বিন্দুর জাল */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-70"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-          maskImage: "linear-gradient(to right, black, transparent 75%)",
-          WebkitMaskImage: "linear-gradient(to right, black, transparent 75%)",
-        }}
-      />
-      {/* নরম আলোর আভা */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-white/15 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-32 left-1/4 -z-10 h-72 w-72 rounded-full bg-[#1E3A8A]/40 blur-3xl"
-      />
-
-      <div className="relative flex flex-col items-center justify-between gap-10 md:flex-row">
-        <div className="max-w-xl text-center md:text-left">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-            {greeting}
-          </span>
-
-          <h2 className="mt-4 text-3xl font-extrabold leading-[1.15] tracking-tight sm:text-4xl">
-            Welcome back, {firstName}!
+        className={`flex gap-8 ${
+          fit
+            ? "flex-row items-center justify-between"
+            : "flex-col md:flex-row md:items-center md:justify-between"
+        }`}
+      >
+        <div className="max-w-xl">
+          <p className="text-sm text-blue-100">{greeting}</p>
+          <h2
+            className={`mt-1 font-semibold ${fit ? "text-3xl" : "text-2xl sm:text-3xl"}`}
+          >
+            Welcome back, {firstName}
           </h2>
 
-          <p className="mt-4 text-sm font-medium leading-7 text-blue-50/90 sm:text-[15px]">
+          <p className="mt-3 text-[15px] leading-7 text-blue-50">
             NID, PDF, ছবি, ভিডিও — আপনার দৈনন্দিন ডিজিটাল কাজগুলো এখন এক
             জায়গায়। যে টুলটা দরকার বেছে নিন, কাজ শেষ হবে মিনিটেই।
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
               href="/sohoj-tools"
-              className="group inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-[13px] font-semibold text-[#2563EB] shadow-sm outline-none transition-colors hover:bg-blue-50 focus-visible:ring-4 focus-visible:ring-white/30"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-[#2563EB] outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/50"
             >
               Explore all tools
-              <ArrowRight
-                size={15}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
+              <ArrowRight size={14} />
             </Link>
             <Link
               href="/my-files"
-              className="inline-flex cursor-pointer items-center rounded-xl border border-white/30 px-5 py-2.5 text-[13px] font-semibold text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-4 focus-visible:ring-white/30"
+              className="inline-flex cursor-pointer items-center rounded-md border border-white/40 px-4 py-2 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"
             >
               My Files
             </Link>
           </div>
 
-          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-blue-50/90 md:justify-start">
-            <li className="flex items-center gap-1.5">
-              <Check size={13} strokeWidth={3} className="text-emerald-300" />
-              {toolsData.length} free tools
-            </li>
-            <li className="flex items-center gap-1.5">
-              <Check size={13} strokeWidth={3} className="text-emerald-300" />
-              No installation
-            </li>
-          </ul>
+          <p className="mt-4 text-sm text-blue-100">
+            {toolsData.length} free tools · no installation needed
+          </p>
         </div>
 
-        {/* ডানের টুল কার্ড (শুধু সাজানোর জন্য) */}
-        <div
+        <ul
           aria-hidden="true"
-          className="hidden shrink-0 items-center gap-4 md:flex"
+          className={`shrink-0 gap-5 ${fit ? "flex" : "hidden md:flex"}`}
         >
-          {showcase.map((tool, i) => {
+          {showcase.map((tool) => {
             const Icon = tool.icon;
             return (
-              <div
-                key={tool.id}
-                className={`w-28 rounded-2xl border border-white/20 bg-white/10 p-2.5 shadow-xl shadow-[#1E3A8A]/30 backdrop-blur-sm lg:w-32 ${stagger[i % 3]}`}
-              >
+              <li key={tool.id} className="w-24 text-center">
                 <div
-                  className={`flex aspect-square items-center justify-center rounded-xl ${tool.bgColor}`}
+                  className={`mx-auto flex h-16 w-16 items-center justify-center rounded-lg ${tool.bgColor}`}
                 >
-                  {Icon && <Icon size={38} className="text-white" />}
+                  {Icon && <Icon size={30} className="text-white" />}
                 </div>
-                <p className="mt-2 truncate text-center text-[11px] font-semibold text-white/95">
+                <p className="mt-2 truncate text-xs text-blue-50">
                   {tool.name}
                 </p>
-              </div>
+              </li>
             );
           })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Home screen: Popular tools + banner, always one screen              */
+/* ------------------------------------------------------------------ */
+
+// ব্রাউজার জুম যাই হোক, টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে আঁটবে; ফুটার একটু স্ক্রল করলে আসবে
+const FIT_WIDTH = 1232; // px — লেআউটের মূল চওড়া (আগের max-w-7xl − পাশের প্যাডিং)
+const FIT_MAX_SCALE = 1; // বড় স্ক্রিনেও এর চেয়ে বড় হবে না (১ = হুবহু আগের মাপ)
+const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্ন কতটা ছোট হবে
+const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
+const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
+
+function HomeScreen({ userName }: { userName: string }) {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে fit মোড; টাচ ডিভাইসে আগের মতো রেসপন্সিভ লেআউট
+  const [fit, setFit] = useState<boolean>(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: fine)").matches,
+  );
+  const [view, setView] = useState({ scale: 1, height: 0, top: 64 });
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const content = contentRef.current;
+    if (!section || !content) return;
+    const mq = window.matchMedia("(pointer: fine)");
+
+    const update = () => {
+      setFit(mq.matches);
+      if (!mq.matches) return;
+
+      // নেভবারের নিচ থেকে শুরু — উচ্চতা হাতে ধরে না দিয়ে মেপে নিচ্ছি
+      const top = Math.max(
+        section.getBoundingClientRect().top + window.scrollY,
+        0,
+      );
+      const height = content.offsetHeight;
+      if (!height) return;
+
+      const availW = document.documentElement.clientWidth - FIT_PAD_X * 2;
+      const availH = window.innerHeight - top - FIT_PAD_Y * 2;
+      const raw = Math.min(availW / FIT_WIDTH, availH / height);
+      const scale = Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, raw));
+
+      setView((v) =>
+        v.scale === scale && v.height === height && v.top === top
+          ? v
+          : { scale, height, top },
+      );
+    };
+
+    update();
+    // জুম করলে viewport-এর মাপ বদলায়, তাই resize শুনছি
+    window.addEventListener("resize", update);
+    mq.addEventListener("change", update);
+    const ro = new ResizeObserver(update);
+    ro.observe(content);
+    return () => {
+      window.removeEventListener("resize", update);
+      mq.removeEventListener("change", update);
+      ro.disconnect();
+    };
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className={
+        fit
+          ? "flex items-center justify-center"
+          : "mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6"
+      }
+      style={
+        fit
+          ? {
+              minHeight: `calc(100svh - ${view.top}px)`,
+              padding: `${FIT_PAD_Y}px ${FIT_PAD_X}px`,
+            }
+          : undefined
+      }
+    >
+      <div
+        className={fit ? "relative shrink-0" : undefined}
+        style={
+          fit
+            ? {
+                width: FIT_WIDTH * view.scale,
+                height: view.height * view.scale,
+              }
+            : undefined
+        }
+      >
+        <div
+          ref={contentRef}
+          className={fit ? "absolute left-0 top-0" : undefined}
+          style={
+            fit
+              ? {
+                  width: FIT_WIDTH,
+                  transform: `scale(${view.scale})`,
+                  transformOrigin: "top left",
+                }
+              : undefined
+          }
+        >
+          <PopularToolsSection fit={fit} />
+          <WelcomeBanner userName={userName} fit={fit} />
         </div>
       </div>
     </section>
@@ -192,30 +290,116 @@ function WelcomeBanner({ userName }: { userName: string }) {
 /* Footer credit                                                       */
 /* ------------------------------------------------------------------ */
 
+function PersonName({
+  name,
+  href,
+  className,
+}: {
+  name: string;
+  href?: string;
+  className: string;
+}) {
+  if (!href) return <span className={className}>{name}</span>;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${className} underline-offset-4 hover:underline`}
+    >
+      {name}
+    </a>
+  );
+}
+
+// my-nafia:start
 function CreditLine() {
   return (
-    <div
-      className="border-t border-slate-200/70 py-4 text-center text-xs font-medium text-slate-600"
+    <footer
+      className="border-t border-slate-200 bg-white/60"
       style={{
         fontFamily:
           '"Trebuchet MS", "Noto Sans Bengali", "Segoe UI", sans-serif',
       }}
     >
-      <span className="font-semibold text-slate-700">srizon</span>
-      <span className="mx-1.5 text-slate-300">·</span>
-      Crafted with{" "}
-      <Heart
-        size={12}
-        className="-mt-0.5 inline fill-red-500 text-red-500"
-        aria-label="love"
-      />{" "}
-      by <span className="font-bold text-[#2563EB]">{CREATOR_NAME}</span>
-      <span className="mx-1.5 text-slate-300">·</span>
-      Inspired by{" "}
-      <span className="font-semibold text-slate-700">Robiul Karim Robi</span>
-    </div>
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-5 text-sm text-slate-500 sm:px-6 md:flex-row md:justify-between">
+        <p>
+          <span className="font-semibold text-slate-800">srizon</span>
+          <span className="ml-2 text-slate-400">
+            © {new Date().getFullYear()}
+          </span>
+        </p>
+
+        <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-5">
+          <div className="flex flex-col items-center sm:items-start">
+            <p>
+              Crafted with{" "}
+              <Heart
+                size={13}
+                className="-mt-0.5 inline fill-red-500 text-red-500 transition-transform duration-200 hover:scale-125"
+                aria-label="love"
+              />{" "}
+              by{" "}
+              <PersonName
+                name={CREATOR_NAME}
+                href={CREATOR_URL}
+                className="font-semibold text-[#2563EB]"
+              />
+            </p>
+            <a
+              href="tel:01783666743"
+              className="text-xs text-slate-500 hover:text-slate-700 hover:underline"
+            >
+              01783666743
+            </a>
+          </div>
+          <span
+            aria-hidden="true"
+            className="hidden h-4 w-px bg-slate-300 sm:block"
+          />
+          <p>
+            Inspired by{" "}
+            <PersonName
+              name={INSPIRED_BY_NAME}
+              href={INSPIRED_BY_URL}
+              className="font-semibold text-slate-800"
+            />
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 }
+// my-nafia:end
+
+// my-nafia:start
+function ContactCard() {
+  return (
+    <section className="border-t border-slate-200 bg-white/60">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-6 text-center sm:flex-row sm:gap-5 sm:px-6 sm:text-left">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={CONTACT_PHOTO_URL}
+          alt={CONTACT_NAME}
+          referrerPolicy="no-referrer"
+          className="h-16 w-16 rounded-full border border-slate-200 object-cover shadow-sm"
+        />
+        <div>
+          <p className="text-xs text-slate-500">Contact</p>
+          <PersonName
+            name={CONTACT_NAME}
+            href={CONTACT_FACEBOOK_URL}
+            className="text-base font-semibold text-[#2563EB]"
+          />
+          {CONTACT_FACEBOOK_URL && (
+            <p className="text-xs text-slate-500">Facebook</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+// my-nafia:end
 
 /* ------------------------------------------------------------------ */
 /* Login success progress bar                                          */
@@ -231,7 +415,7 @@ function LoginProgress() {
   }, []);
 
   return (
-    <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+    <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
       <div
         className="h-full rounded-full bg-[#2563EB] transition-[width] ease-out"
         style={{ width: go ? "100%" : "0%", transitionDuration: "1500ms" }}
@@ -249,6 +433,45 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("User");
+  // my-nafia:start
+  const [shownA, setShownA] = useState<boolean>(false);
+  const [shownB, setShownB] = useState<boolean>(false);
+  // my-nafia:end
+
+  // my-nafia:start
+  useEffect(() => {
+    const GAP = 2000;
+    const SEQ = [10, 5, 5, 10];
+    let step = 0;
+    let count = 0;
+    let tmr: ReturnType<typeof setTimeout> | null = null;
+
+    const onDoc = () => {
+      count += 1;
+      if (tmr) clearTimeout(tmr);
+
+      if (count >= SEQ[step]) {
+        count = 0;
+        if (step === 0) setShownA(true);
+        else if (step === 1) setShownB(true);
+        else if (step === 2) setShownB(false);
+        else setShownA(false);
+        step = (step + 1) % SEQ.length;
+        return;
+      }
+
+      tmr = setTimeout(() => {
+        count = 0;
+      }, GAP);
+    };
+
+    document.addEventListener("click", onDoc);
+    return () => {
+      document.removeEventListener("click", onDoc);
+      if (tmr) clearTimeout(tmr);
+    };
+  }, []);
+  // my-nafia:end
 
   useEffect(() => {
     let mounted = true;
@@ -323,14 +546,15 @@ export default function DashboardPage() {
       <div>
         <DashboardNavbar />
 
-        <main className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6">
-          <PopularToolsSection />
-          <WelcomeBanner userName={userName} />
-        </main>
+        {/* টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
+        <HomeScreen userName={userName} />
       </div>
 
       <div>
-        <CreditLine />
+        {/* my-nafia:start */}
+        {shownA && <CreditLine />}
+        {shownB && <ContactCard />}
+        {/* my-nafia:end */}
       </div>
 
       {showLoginSuccess && (
@@ -339,7 +563,7 @@ export default function DashboardPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="login-success-title"
-            className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_24px_60px_-12px_rgba(15,23,42,0.35)] animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl animate-in zoom-in-95 duration-300"
           >
             {/* লাল রঙের ক্লোজ বাটন */}
             <button
@@ -348,15 +572,15 @@ export default function DashboardPage() {
                 setShowLoginSuccess(false);
                 setIsAuthenticated(true);
               }}
-              className="absolute right-4 top-4 z-10 cursor-pointer rounded-full bg-red-50 p-1.5 text-red-500 transition-colors hover:bg-red-100 hover:text-red-600"
+              className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               aria-label="Close modal"
             >
               <X size={16} />
             </button>
 
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
               <CheckCircle2
-                size={34}
+                size={26}
                 strokeWidth={2}
                 className="animate-in zoom-in-50 duration-500"
               />
@@ -364,13 +588,13 @@ export default function DashboardPage() {
 
             <h3
               id="login-success-title"
-              className="text-xl font-black tracking-tight text-[#0F172A]"
+              className="text-lg font-semibold text-slate-900"
             >
               Login Successful!
             </h3>
-            <p className="mt-1 text-sm font-medium text-slate-500">
+            <p className="mt-1 text-sm text-slate-500">
               Welcome back,{" "}
-              <span className="font-bold text-[#0F172A]">{userName}</span>!
+              <span className="font-medium text-slate-900">{userName}</span>!
             </p>
 
             <LoginProgress />

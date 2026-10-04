@@ -1,19 +1,27 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ImageIcon,
   Printer,
-  FileText,
   ClipboardList,
-  Search,
+  Sparkles,
+  SlidersHorizontal,
+  LayoutTemplate,
+  Layers,
   LayoutGrid,
-  List,
-  ChevronDown,
-  Clock,
+  Search,
   X,
   ArrowRight,
+  Download,
+  Wrench,
+  FileText,
+  Type,
+  Video,
+  GraduationCap,
+  PanelRightClose,
+  PanelRightOpen,
   type LucideIcon,
 } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -23,28 +31,58 @@ import { getClientSession } from "@/lib/clientAuth";
 /* Config                                                              */
 /* ------------------------------------------------------------------ */
 
-// Navbar-এর সাথে মেলানো icon টাইলের রং
-const TONES = {
-  violet: "bg-violet-50 text-violet-600 ring-violet-100",
-  cyan: "bg-cyan-50 text-cyan-600 ring-cyan-100",
-  blue: "bg-blue-50 text-blue-600 ring-blue-100",
-  red: "bg-red-50 text-red-600 ring-red-100",
-  slate: "bg-slate-100 text-slate-500 ring-slate-200",
-} as const;
-
-type Tone = keyof typeof TONES;
 type CategoryId =
   | "generated-images"
+  | "ai-photo-edit"
+  | "manually-edited"
+  | "ai-template-generated"
+  | "bulk-photo-edit"
   | "print-media"
-  | "regular-documents"
   | "question-papers";
-type ViewMode = "grid" | "list";
+type SortOrder = "newest" | "oldest";
+
+// মাঝখানের My Files-এর একটা সেভ করা ফাইল। category = কোন টুল থেকে এসেছে।
+interface FileItem {
+  id: string;
+  name: string;
+  category: Exclude<CategoryId, "generated-images">;
+  createdAt: string; // ISO date string
+  url?: string; // ছবি/ফাইলের লিংক (ডাউনলোডের জন্যও)
+}
+
+type ToolGroupId =
+  | "all"
+  | "pdf"
+  | "image"
+  | "text"
+  | "video"
+  | "general"
+  | "educational";
+
+// SohozTools-এ সেভ হওয়া একটা ফাইল (যেমন Document Scanner থেকে স্ক্যান করা ডকুমেন্ট)
+interface ToolFile {
+  id: string;
+  name: string;
+  toolName: string; // যেমন "Document Scanner"
+  group: Exclude<ToolGroupId, "all">;
+  createdAt: string;
+  url?: string;
+}
+
+const TOOL_GROUPS: { id: ToolGroupId; label: string; icon: LucideIcon }[] = [
+  { id: "all", label: "All types", icon: LayoutGrid },
+  { id: "pdf", label: "PDF", icon: FileText },
+  { id: "image", label: "Image", icon: ImageIcon },
+  { id: "text", label: "Text", icon: Type },
+  { id: "video", label: "Video", icon: Video },
+  { id: "general", label: "General", icon: Wrench },
+  { id: "educational", label: "Educational", icon: GraduationCap },
+];
 
 interface CategoryTab {
   id: CategoryId;
   label: string;
   icon: LucideIcon;
-  tone: Tone;
   searchPlaceholder: string;
   emptyTitle: string;
   emptyText: string;
@@ -57,16 +95,56 @@ const CATEGORY_TABS: CategoryTab[] = [
     id: "generated-images",
     label: "Generated Images",
     icon: ImageIcon,
-    tone: "violet",
     searchPlaceholder: "Search images by filename",
     emptyTitle: "No images yet",
     emptyText: "Your edited and generated images will appear here.",
   },
   {
+    id: "ai-photo-edit",
+    label: "AI Photo Edit",
+    icon: Sparkles,
+    searchPlaceholder: "Search images by filename",
+    emptyTitle: "No images yet",
+    emptyText:
+      "Images from AI Photo Edit will appear here once you create them.",
+    ctaLabel: "Open AI Editor",
+    ctaHref: "/ai-editor",
+  },
+  {
+    id: "manually-edited",
+    label: "Manually Edited",
+    icon: SlidersHorizontal,
+    searchPlaceholder: "Search images by filename",
+    emptyTitle: "No images yet",
+    emptyText:
+      "Images from the Manual Editor will appear here once you create them.",
+    ctaLabel: "Open Manual Editor",
+    ctaHref: "/manual-editor",
+  },
+  {
+    id: "ai-template-generated",
+    label: "AI Template Generated",
+    icon: LayoutTemplate,
+    searchPlaceholder: "Search images by filename",
+    emptyTitle: "No images yet",
+    emptyText:
+      "Images made from AI templates will appear here once you create them.",
+    ctaLabel: "Browse AI Templates",
+    ctaHref: "/ai-template",
+  },
+  {
+    id: "bulk-photo-edit",
+    label: "Bulk Photo Edit",
+    icon: Layers,
+    searchPlaceholder: "Search images by filename",
+    emptyTitle: "No images yet",
+    emptyText:
+      "Images from Bulk Photo Edit will appear here once you create them.",
+  },
+  {
     id: "print-media",
     label: "Print Media",
     icon: Printer,
-    tone: "cyan",
     searchPlaceholder: "Search print media by name",
     emptyTitle: "No print media yet",
     emptyText:
@@ -75,19 +153,9 @@ const CATEGORY_TABS: CategoryTab[] = [
     ctaHref: "/print-media",
   },
   {
-    id: "regular-documents",
-    label: "Regular Documents",
-    icon: FileText,
-    tone: "blue",
-    searchPlaceholder: "Search documents by name",
-    emptyTitle: "No documents yet",
-    emptyText: "Documents you create will be saved here.",
-  },
-  {
     id: "question-papers",
     label: "Question Papers",
     icon: ClipboardList,
-    tone: "red",
     searchPlaceholder: "Search question papers by name",
     emptyTitle: "No question papers yet",
     emptyText: "Question papers you create will be saved here.",
@@ -96,68 +164,116 @@ const CATEGORY_TABS: CategoryTab[] = [
   },
 ];
 
-const SUB_TABS = [
-  {
-    id: "ai-photo-edit",
-    label: "AI Photo Edit",
-    ctaLabel: "Open AI Editor",
-    ctaHref: "/ai-editor",
-  },
-  {
-    id: "manually-edited",
-    label: "Manually Edited",
-    ctaLabel: "Open Manual Editor",
-    ctaHref: "/manual-editor",
-  },
-  {
-    id: "ai-template-generated",
-    label: "AI Template Generated",
-    ctaLabel: "Browse AI Templates",
-    ctaHref: "/ai-template",
-  },
-  {
-    id: "bulk-photo-edit",
-    label: "Bulk Photo Edit",
-    ctaLabel: undefined,
-    ctaHref: undefined,
-  },
+// "Generated Images" ট্যাবে এই চারটা টুলের সব ছবি একসাথে দেখাবে
+const IMAGE_CATEGORY_IDS: CategoryId[] = [
+  "ai-photo-edit",
+  "manually-edited",
+  "ai-template-generated",
+  "bulk-photo-edit",
 ];
 
+function belongsToTab(item: FileItem, tabId: CategoryId): boolean {
+  if (tabId === "generated-images")
+    return IMAGE_CATEGORY_IDS.includes(item.category);
+  return item.category === tabId;
+}
+
+function matchesQuery(name: string, query: string): boolean {
+  return name.toLowerCase().includes(query);
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function sortByDate<T extends { createdAt: string }>(
+  list: T[],
+  order: SortOrder,
+): T[] {
+  const dir = order === "newest" ? -1 : 1;
+  return [...list].sort(
+    (a, b) =>
+      dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+  );
+}
+
 /* ------------------------------------------------------------------ */
-/* Small building blocks                                               */
+/* Shared styles & small pieces                                        */
 /* ------------------------------------------------------------------ */
 
 const fieldBase =
-  "h-10 w-full rounded-xl border border-slate-200 bg-white text-[13px] font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-500 hover:border-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10";
+  "h-9 rounded-md border border-slate-300 bg-white text-sm text-slate-800 outline-none transition-colors hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20";
 
-function SelectField({
-  label,
+const primaryBtn =
+  "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-blue-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40";
+
+const secondaryBtn =
+  "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30";
+
+function SearchBox({
   value,
   onChange,
-  className = "",
-  children,
+  onClear,
+  placeholder,
+  label,
 }: {
-  label: string;
   value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  children: ReactNode;
+  onChange: (v: string) => void;
+  onClear: () => void;
+  placeholder: string;
+  label: string;
 }) {
   return (
-    <div className={`relative ${className}`}>
-      <select
+    <div className="relative min-w-0 flex-1">
+      <Search
+        size={15}
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+      />
+      <input
+        type="text"
         aria-label={label}
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${fieldBase} cursor-pointer appearance-none pl-3 pr-9`}
-      >
-        {children}
-      </select>
-      <ChevronDown
-        size={15}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+        className={`${fieldBase} w-full pl-9 pr-8 placeholder:text-slate-400`}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear search"
+          className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-slate-400 hover:text-slate-700"
+        >
+          <X size={14} />
+        </button>
+      )}
     </div>
+  );
+}
+
+function SortSelect({
+  value,
+  onChange,
+}: {
+  value: SortOrder;
+  onChange: (v: SortOrder) => void;
+}) {
+  return (
+    <select
+      aria-label="Sort files"
+      value={value}
+      onChange={(e) => onChange(e.target.value as SortOrder)}
+      className={`${fieldBase} cursor-pointer px-2.5`}
+    >
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
   );
 }
 
@@ -169,364 +285,484 @@ export default function MyFilesPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // মাঝখান: My Files
   const [activeTab, setActiveTab] = useState<CategoryId>("generated-images");
-  const [subTab, setSubTab] = useState<string>("ai-photo-edit");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [dateQuery, setDateQuery] = useState<string>("");
-  const [background, setBackground] = useState<string>("all");
-  const [dress, setDress] = useState<string>("all");
-  const [sort, setSort] = useState<string>("newest");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sort, setSort] = useState<SortOrder>("newest");
+  const [switchNotice, setSwitchNotice] = useState<string>("");
 
-  // 🟢 সিকিউরিটি ও অথেনটিকেশন চেক
+  // ডান সাইডবার: SohozTools
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [toolGroup, setToolGroup] = useState<ToolGroupId>("all");
+  const [toolSearch, setToolSearch] = useState<string>("");
+  const [toolSort, setToolSort] = useState<SortOrder>("newest");
+
+  // TODO: এখানে আপনার API/ডাটাবেস থেকে ফাইল লোড করে set করতে হবে।
+  const [files] = useState<FileItem[]>([]);
+  const [toolFiles] = useState<ToolFile[]>([]);
+
+  // সিকিউরিটি ও অথেনটিকেশন চেক
   useEffect(() => {
     let mounted = true;
-
     void getClientSession().then((session) => {
       if (!mounted) return;
-
       if (!session.authenticated) {
         window.location.replace("/login?callbackUrl=%2Fmy-files");
         return;
       }
-
       setIsAuthenticated(true);
       setLoading(false);
     });
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // লোডিং হওয়ার সময় ক্লিন স্পিনার
+  // সার্চ করলে: বর্তমান ট্যাবে না পেলে, যে ট্যাবে ফাইলটা আছে সেখানে অটো চলে যাবে
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return;
+
+    const hasMatch = (tabId: CategoryId) =>
+      files.some((f) => belongsToTab(f, tabId) && matchesQuery(f.name, q));
+
+    if (hasMatch(activeTab)) return;
+
+    const target = CATEGORY_TABS.find(
+      (t) => t.id !== "generated-images" && hasMatch(t.id),
+    );
+    if (target) {
+      setActiveTab(target.id);
+      setSwitchNotice(`Showing results from ${target.label}`);
+    }
+    // শুধু সার্চ লেখা বদলালেই চালাতে চাই, ট্যাব বদলালে না
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  const currentTab =
+    CATEGORY_TABS.find((t) => t.id === activeTab) ?? CATEGORY_TABS[0];
+  const hasSearch = searchQuery.trim() !== "";
+  const hasToolSearch = toolSearch.trim() !== "";
+
+  // প্রতিটা ট্যাবে কয়টা ফাইল আছে (ট্যাবের পাশে ছোট করে দেখাবে)
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    CATEGORY_TABS.forEach((t) => {
+      counts[t.id] = files.filter((f) => belongsToTab(f, t.id)).length;
+    });
+    return counts;
+  }, [files]);
+
+  const visibleFiles = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return sortByDate(
+      files.filter(
+        (f) => belongsToTab(f, activeTab) && (!q || matchesQuery(f.name, q)),
+      ),
+      sort,
+    );
+  }, [files, activeTab, searchQuery, sort]);
+
+  const visibleToolFiles = useMemo(() => {
+    const q = toolSearch.trim().toLowerCase();
+    return sortByDate(
+      toolFiles.filter(
+        (f) =>
+          (toolGroup === "all" || f.group === toolGroup) &&
+          (!q || matchesQuery(f.name, q) || matchesQuery(f.toolName, q)),
+      ),
+      toolSort,
+    );
+  }, [toolFiles, toolGroup, toolSearch, toolSort]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent"></div>
-          <p className="text-xs font-semibold text-slate-600">
-            যাচাই করা হচ্ছে...
-          </p>
+          <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
+          <p className="text-sm text-slate-600">যাচাই করা হচ্ছে...</p>
         </div>
       </div>
     );
   }
 
-  // অথেন্টিকেটেড না হলে পেজ রেন্ডার হবে না
   if (!isAuthenticated) return null;
 
-  const currentTab =
-    CATEGORY_TABS.find((tab) => tab.id === activeTab) ?? CATEGORY_TABS[0];
-  const currentSub = SUB_TABS.find((tab) => tab.id === subTab) ?? SUB_TABS[0];
-  const isImages = activeTab === "generated-images";
-
-  const hasFilters =
-    searchQuery.trim() !== "" ||
-    dateQuery !== "" ||
-    (isImages && (background !== "all" || dress !== "all"));
-
-  const resetFilters = () => {
+  const resetSearch = () => {
     setSearchQuery("");
-    setDateQuery("");
-    setBackground("all");
-    setDress("all");
+    setSwitchNotice("");
   };
 
   const handleCategoryChange = (id: CategoryId) => {
     setActiveTab(id);
-    resetFilters();
+    resetSearch();
   };
 
-  // Empty state-এর লেখা (filter থাকলে এক রকম, না থাকলে আরেক রকম)
-  let emptyTitle = currentTab.emptyTitle;
-  let emptyText = currentTab.emptyText;
-  let ctaLabel = currentTab.ctaLabel;
-  let ctaHref = currentTab.ctaHref;
+  // মাঝখানের empty state-এর লেখা
+  const EmptyIcon = hasSearch ? Search : currentTab.icon;
+  const emptyTitle = hasSearch ? "No matching results" : currentTab.emptyTitle;
+  const emptyText = hasSearch
+    ? "We couldn't find any file with that name. Try a different word."
+    : currentTab.emptyText;
 
-  if (isImages) {
-    emptyText = `Images from ${currentSub.label} will appear here once you create them.`;
-    ctaLabel = currentSub.ctaLabel;
-    ctaHref = currentSub.ctaHref;
+  // সাইডবারের empty state-এর লেখা
+  const currentGroup =
+    TOOL_GROUPS.find((g) => g.id === toolGroup) ?? TOOL_GROUPS[0];
+  const ToolEmptyIcon = hasToolSearch ? Search : currentGroup.icon;
+  let toolEmptyTitle = "No tool files yet";
+  let toolEmptyText =
+    "Use any SohozTools tool and press Save. Your file will show up here.";
+  if (hasToolSearch) {
+    toolEmptyTitle = "No matching results";
+    toolEmptyText = "We couldn't find any file with that name.";
+  } else if (toolGroup !== "all") {
+    toolEmptyTitle = `No ${currentGroup.label} files yet`;
+    toolEmptyText = `Files you save from ${currentGroup.label} tools will appear here.`;
   }
-  if (hasFilters) {
-    emptyTitle = "No matching results";
-    emptyText = "Try changing or clearing your filters to see more files.";
-  }
-
-  const EmptyIcon = hasFilters ? Search : currentTab.icon;
-  const emptyTone: Tone = hasFilters ? "slate" : currentTab.tone;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
-      {/* Navbar */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
       <DashboardNavbar />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
         {/* Page header */}
-        <header>
-          <h1 className="text-2xl font-black tracking-tight text-[#0F172A] sm:text-[28px]">
-            My Files
-          </h1>
-          <p className="mt-1.5 text-sm font-medium text-slate-500">
-            All your creations from across Sohozkaj, saved in one place.
-          </p>
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold text-slate-900">My Files</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Everything you make with Sohozkaj — edited photos, templates,
+              print designs and question papers — is saved here.
+            </p>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Files are deleted automatically after 30 days, so download what
+              you need before then.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            aria-expanded={sidebarOpen}
+            aria-controls="sohoztools-sidebar"
+            className={`${secondaryBtn} ${sidebarOpen ? "bg-slate-100" : ""}`}
+          >
+            <Wrench size={15} className="text-slate-500" />
+            SohozTools Files
+            {sidebarOpen ? (
+              <PanelRightClose size={15} className="text-slate-400" />
+            ) : (
+              <PanelRightOpen size={15} className="text-slate-400" />
+            )}
+          </button>
         </header>
 
-        {/* Category tabs */}
-        <div className="relative mt-6">
-          <div
-            role="tablist"
-            aria-label="File categories"
-            className="flex items-center gap-2.5 overflow-x-auto pb-3 pr-8"
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#E2E8F0 transparent",
-            }}
-          >
-            {CATEGORY_TABS.map((tab) => {
-              const active = tab.id === activeTab;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => handleCategoryChange(tab.id)}
-                  className={`flex shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl border py-1.5 pl-1.5 pr-4 text-[13px] font-semibold outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/20 ${
-                    active
-                      ? "border-[#2563EB] bg-[#2563EB] text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.6)]"
-                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:shadow-sm"
-                  }`}
-                >
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg ring-1 ring-inset transition-colors ${
-                      active
-                        ? "bg-white/15 text-white ring-white/25"
-                        : TONES[tab.tone]
-                    }`}
-                  >
-                    <Icon size={16} strokeWidth={2} />
-                  </span>
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Right fade (mobile) */}
-          <div className="pointer-events-none absolute bottom-3 right-0 top-0 w-10 bg-gradient-to-l from-[#F8FAFC] to-transparent sm:hidden"></div>
-        </div>
-
-        {/* Sub-tabs (শুধু Generated Images-এর জন্য) */}
-        {isImages && (
-          <div
-            role="tablist"
-            aria-label="Image types"
-            className="mt-1 flex w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden"
-          >
-            {SUB_TABS.map((tab) => {
-              const active = tab.id === subTab;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setSubTab(tab.id)}
-                  className={`shrink-0 cursor-pointer whitespace-nowrap rounded-lg px-3.5 py-1.5 text-[13px] font-semibold outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 ${
-                    active
-                      ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Filters */}
-        <section
-          aria-label="Filters"
-          className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+        <div
+          className={`grid items-start gap-6 ${
+            sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "grid-cols-1"
+          }`}
         >
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search */}
-            <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-[260px]">
-              <Search
-                size={16}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
-              />
-              <input
-                type="text"
-                aria-label="Search files"
-                placeholder={currentTab.searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`${fieldBase} pl-10 pr-9`}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                  className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-
-            {/* Date */}
-            <input
-              type="date"
-              aria-label="Filter by date"
-              value={dateQuery}
-              onChange={(e) => setDateQuery(e.target.value)}
-              className={`${fieldBase} cursor-pointer px-3 sm:w-[160px]`}
-            />
-
-            {/* শুধু ছবির ট্যাবে এই দুটো filter দরকার */}
-            {isImages && (
-              <>
-                <SelectField
-                  label="Filter by background"
-                  value={background}
-                  onChange={setBackground}
-                  className="w-full sm:w-[170px]"
-                >
-                  <option value="all">All backgrounds</option>
-                  <option value="white">White Background</option>
-                  <option value="transparent">Transparent</option>
-                </SelectField>
-
-                <SelectField
-                  label="Filter by dress"
-                  value={dress}
-                  onChange={setDress}
-                  className="w-full sm:w-[140px]"
-                >
-                  <option value="all">All dress</option>
-                  <option value="formal">Formal</option>
-                  <option value="casual">Casual</option>
-                </SelectField>
-              </>
-            )}
-
-            {/* Sort */}
-            <SelectField
-              label="Sort files"
-              value={sort}
-              onChange={setSort}
-              className="w-full sm:w-[150px]"
-            >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </SelectField>
-
-            {/* View toggle */}
+          {/* ======================= My Files ======================= */}
+          <section
+            aria-label="My files"
+            className="flex min-h-[560px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white"
+          >
+            {/* Tabs */}
             <div
-              role="group"
-              aria-label="View mode"
-              className="flex h-10 shrink-0 items-center gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-1"
+              role="tablist"
+              aria-label="File categories"
+              className="flex gap-6 overflow-x-auto border-b border-slate-200 px-5"
             >
-              {(
-                [
-                  ["grid", LayoutGrid, "Grid view"],
-                  ["list", List, "List view"],
-                ] as const
-              ).map(([mode, Icon, label]) => {
-                const active = viewMode === mode;
+              {CATEGORY_TABS.map((tab) => {
+                const active = tab.id === activeTab;
+                const count = tabCounts[tab.id];
                 return (
                   <button
-                    key={mode}
+                    key={tab.id}
                     type="button"
-                    aria-label={label}
-                    aria-pressed={active}
-                    onClick={() => setViewMode(mode)}
-                    className={`flex h-full w-8 cursor-pointer items-center justify-center rounded-lg transition-all duration-150 ${
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => handleCategoryChange(tab.id)}
+                    className={`-mb-px shrink-0 cursor-pointer whitespace-nowrap border-b-2 py-3 text-sm font-medium outline-none transition-colors focus-visible:text-blue-700 ${
                       active
-                        ? "bg-white text-[#2563EB] shadow-sm ring-1 ring-slate-200/70"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "border-blue-600 text-blue-700"
+                        : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
                     }`}
                   >
-                    <Icon size={15} />
+                    {tab.label}
+                    {count > 0 && (
+                      <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Clear filters */}
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold text-[#2563EB] transition-colors hover:bg-blue-50"
-              >
-                <X size={14} />
-                Clear filters
-              </button>
-            )}
-          </div>
-        </section>
+            {/* Search + sort */}
+            <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row">
+              <SearchBox
+                value={searchQuery}
+                onChange={(v) => {
+                  setSearchQuery(v);
+                  setSwitchNotice("");
+                }}
+                onClear={resetSearch}
+                placeholder={currentTab.searchPlaceholder}
+                label="Search files"
+              />
+              <SortSelect value={sort} onChange={setSort} />
+            </div>
 
-        {/* Results */}
-        {/* TODO: ফাইলের তালিকা এলে এখানে viewMode অনুযায়ী grid/list দেখাতে হবে। */}
-        <section
-          aria-live="polite"
-          className="mt-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center sm:py-20"
-        >
-          <span
-            className={`flex h-14 w-14 items-center justify-center rounded-2xl ring-1 ring-inset ${TONES[emptyTone]}`}
-          >
-            <EmptyIcon size={26} strokeWidth={1.8} />
-          </span>
-          <h2 className="mt-5 text-base font-bold text-slate-900">
-            {emptyTitle}
-          </h2>
-          <p className="mt-1.5 max-w-sm text-[13px] font-medium leading-5 text-slate-500">
-            {emptyText}
-          </p>
+            {/* Results */}
+            <div className="flex flex-1 flex-col px-5 pb-5">
+              {switchNotice && (
+                <p role="status" className="mb-3 text-sm text-blue-700">
+                  {switchNotice}
+                </p>
+              )}
 
-          {hasFilters ? (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              {visibleFiles.length > 0 ? (
+                <div
+                  aria-live="polite"
+                  className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
+                >
+                  {visibleFiles.map((file) => {
+                    const isImage =
+                      Boolean(file.url) &&
+                      IMAGE_CATEGORY_IDS.includes(file.category);
+                    const PlaceholderIcon =
+                      CATEGORY_TABS.find((t) => t.id === file.category)?.icon ??
+                      ImageIcon;
+                    return (
+                      <article
+                        key={file.id}
+                        className="overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
+                      >
+                        <div className="flex aspect-[4/3] items-center justify-center bg-slate-100">
+                          {isImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={file.url}
+                              alt={file.name}
+                              className="h-full w-full object-contain"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <PlaceholderIcon
+                              size={28}
+                              strokeWidth={1.5}
+                              className="text-slate-400"
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="truncate text-sm font-medium text-slate-900"
+                              title={file.name}
+                            >
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {formatDate(file.createdAt)}
+                            </p>
+                          </div>
+                          {file.url && (
+                            <a
+                              href={file.url}
+                              download={file.name}
+                              aria-label={`Download ${file.name}`}
+                              title="Download"
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                            >
+                              <Download size={16} />
+                            </a>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  aria-live="polite"
+                  className="flex flex-1 items-center justify-center py-6"
+                >
+                  <div className="w-full max-w-md rounded-lg border border-dashed border-slate-300 px-6 py-12 text-center">
+                    <EmptyIcon
+                      size={28}
+                      strokeWidth={1.5}
+                      className="mx-auto text-slate-400"
+                    />
+                    <h3 className="mt-3 text-sm font-semibold text-slate-900">
+                      {emptyTitle}
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-xs text-sm text-slate-500">
+                      {emptyText}
+                    </p>
+
+                    {hasSearch ? (
+                      <button
+                        type="button"
+                        onClick={resetSearch}
+                        className={`${secondaryBtn} mt-5`}
+                      >
+                        Clear search
+                      </button>
+                    ) : (
+                      currentTab.ctaLabel &&
+                      currentTab.ctaHref && (
+                        <Link
+                          href={currentTab.ctaHref}
+                          className={`${primaryBtn} mt-5`}
+                        >
+                          {currentTab.ctaLabel}
+                          <ArrowRight size={14} />
+                        </Link>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ===================== SohozTools sidebar ===================== */}
+          {sidebarOpen && (
+            <aside
+              id="sohoztools-sidebar"
+              aria-label="SohozTools files"
+              className="rounded-lg border border-slate-200 bg-white lg:sticky lg:top-6"
             >
-              <X size={14} />
-              Clear filters
-            </button>
-          ) : (
-            ctaLabel &&
-            ctaHref && (
-              <Link
-                href={ctaHref}
-                className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25"
-              >
-                {ctaLabel}
-                <ArrowRight size={15} />
-              </Link>
-            )
-          )}
-        </section>
+              <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-slate-900">
+                    SohozTools Files
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    {toolFiles.length}{" "}
+                    {toolFiles.length === 1 ? "file" : "files"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-label="Close SohozTools sidebar"
+                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <X size={16} />
+                </button>
+              </div>
 
-        {/* Storage note */}
-        <div className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-          <span
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${TONES.blue}`}
-          >
-            <Clock size={14} strokeWidth={2.1} />
-          </span>
-          <p className="text-[13px] font-medium leading-5 text-slate-600">
-            <span className="font-semibold text-slate-900">
-              Saved for a limited time.
-            </span>{" "}
-            Everything you create across Sohozkaj appears here. Download
-            anything you want to keep.
-          </p>
+              <div className="space-y-2.5 px-4 pt-3">
+                <p className="text-xs leading-5 text-slate-500">
+                  Anything you save from a SohozTools tool — a scanned document,
+                  a compressed PDF, a resized photo — is stored here.
+                </p>
+                <SearchBox
+                  value={toolSearch}
+                  onChange={setToolSearch}
+                  onClear={() => setToolSearch("")}
+                  placeholder="Search by file or tool name"
+                  label="Search tool files"
+                />
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Filter by file type"
+                    value={toolGroup}
+                    onChange={(e) =>
+                      setToolGroup(e.target.value as ToolGroupId)
+                    }
+                    className={`${fieldBase} min-w-0 flex-1 cursor-pointer px-2.5`}
+                  >
+                    {TOOL_GROUPS.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.label}
+                      </option>
+                    ))}
+                  </select>
+                  <SortSelect value={toolSort} onChange={setToolSort} />
+                </div>
+              </div>
+
+              <div className="mt-3 max-h-[440px] min-h-[220px] overflow-y-auto border-t border-slate-200">
+                {visibleToolFiles.length > 0 ? (
+                  <ul className="divide-y divide-slate-100" aria-live="polite">
+                    {visibleToolFiles.map((file) => {
+                      const GroupIcon = (
+                        TOOL_GROUPS.find((g) => g.id === file.group) ??
+                        TOOL_GROUPS[0]
+                      ).icon;
+                      return (
+                        <li
+                          key={file.id}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                            <GroupIcon size={16} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="truncate text-sm font-medium text-slate-900"
+                              title={file.name}
+                            >
+                              {file.name}
+                            </p>
+                            <p className="truncate text-xs text-slate-500">
+                              {file.toolName} · {formatDate(file.createdAt)}
+                            </p>
+                          </div>
+                          {file.url && (
+                            <a
+                              href={file.url}
+                              download={file.name}
+                              aria-label={`Download ${file.name}`}
+                              title="Download"
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                            >
+                              <Download size={16} />
+                            </a>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div aria-live="polite" className="px-6 py-10 text-center">
+                    <ToolEmptyIcon
+                      size={26}
+                      strokeWidth={1.5}
+                      className="mx-auto text-slate-400"
+                    />
+                    <h3 className="mt-3 text-sm font-semibold text-slate-900">
+                      {toolEmptyTitle}
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-[240px] text-sm text-slate-500">
+                      {toolEmptyText}
+                    </p>
+                    {hasToolSearch ? (
+                      <button
+                        type="button"
+                        onClick={() => setToolSearch("")}
+                        className={`${secondaryBtn} mt-4`}
+                      >
+                        Clear search
+                      </button>
+                    ) : (
+                      <Link
+                        href="/sohoj-tools"
+                        className={`${primaryBtn} mt-4`}
+                      >
+                        Browse SohozTools
+                        <ArrowRight size={14} />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+            </aside>
+          )}
         </div>
       </main>
     </div>

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
 import { logoutClientSession } from "@/lib/clientAuth";
+import { getSlug, toolsData } from "@/app/_components/toolsData";
 
 interface UserData {
   fullName?: string;
@@ -179,6 +180,9 @@ const NAV_ITEMS: NavConfig[] = [
 
 // nav item-এর মাঝের ফাঁক (px) — gap-0.5 = 2px
 const NAV_GAP = 2;
+
+// nav আর দুই পাশের (লোগো / ডান অংশ) মাঝের নিরাপদ ফাঁক (px)
+const NAV_SIDE_GAP = 12;
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -387,13 +391,37 @@ export default function DashboardNavbar() {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+
+  const searchResults = normalizedSearchQuery
+    ? toolsData
+        .filter((tool) => {
+          const haystack = [
+            tool.name,
+            tool.category,
+            tool.badge || "",
+            tool.access || "free",
+            tool.id,
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          return haystack.includes(normalizedSearchQuery);
+        })
+        .slice(0, 8)
+    : [];
+
   // Nav dropdown states
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
 
   // Responsive nav: কয়টা item ধরবে সেটা মেপে ঠিক হয়
+  const headerRef = useRef<HTMLElement>(null);
+  const leftRef = useRef<HTMLAnchorElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
+  const [navWidth, setNavWidth] = useState<number>(0);
   const [visibleCount, setVisibleCount] = useState<number>(NAV_ITEMS.length);
   const [navReady, setNavReady] = useState<boolean>(false);
 
@@ -435,15 +463,15 @@ export default function DashboardNavbar() {
       credentials: "include",
       cache: "no-store",
     })
-        .then(async (response) => {
-          const data = await response.json().catch(() => ({}));
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
 
-          if (!response.ok || !data?.user) return;
-          applyUser(data.user as UserData);
-        })
-        .catch((error) => {
-          console.error("Failed to refresh navbar user data", error);
-        });
+        if (!response.ok || !data?.user) return;
+        applyUser(data.user as UserData);
+      })
+      .catch((error) => {
+        console.error("Failed to refresh navbar user data", error);
+      });
 
     return () => {
       mounted = false;
@@ -456,13 +484,31 @@ export default function DashboardNavbar() {
 
   // স্ক্রিনের মাপ বা zoom বদলালে কয়টা item ধরবে তা নতুন করে হিসাব করে
   useIsoLayoutEffect(() => {
+    const header = headerRef.current;
+    const left = leftRef.current;
+    const right = rightRef.current;
     const nav = navRef.current;
     const ghost = ghostRef.current;
-    if (!nav || !ghost) return;
+    if (!header || !left || !right || !nav || !ghost) return;
 
     const measure = () => {
-      const available = nav.clientWidth - 4;
-      if (available <= 0) return; // এই screen-এ nav লুকানো (মোবাইল/ট্যাবলেট)
+      if (getComputedStyle(nav).display === "none") return; // মোবাইল/ট্যাবলেটে nav লুকানো
+
+      // nav সবসময় header-এর ঠিক মাঝখানে বসে। দুই পাশে সমান জায়গা রাখতে
+      // লোগো আর ডান অংশের যেটা বড়, সেটার মাপ দুই দিকেই ধরা হয়।
+      const cs = getComputedStyle(header);
+      const pad = Math.max(
+        parseFloat(cs.paddingLeft) || 0,
+        parseFloat(cs.paddingRight) || 0,
+      );
+      const side = Math.max(left.offsetWidth, right.offsetWidth);
+      const navW =
+        Math.floor((header.clientWidth - 2 * (pad + side + NAV_SIDE_GAP)) / 2) *
+        2;
+      setNavWidth(Math.max(navW, 0));
+
+      const available = navW - 4;
+      if (available <= 0) return;
 
       const widths = (Array.from(ghost.children) as HTMLElement[]).map(
         (el) => el.offsetWidth,
@@ -491,7 +537,9 @@ export default function DashboardNavbar() {
 
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(nav);
+    observer.observe(header);
+    observer.observe(left);
+    observer.observe(right);
     observer.observe(ghost);
     document.fonts?.ready.then(measure);
 
@@ -581,9 +629,13 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6"
+      >
         {/* Left: Logo */}
         <Link
+          ref={leftRef}
           href="/dashboard"
           className="flex min-w-0 shrink items-center gap-2.5"
         >
@@ -604,7 +656,11 @@ export default function DashboardNavbar() {
         <nav
           ref={navRef}
           aria-label="Main"
-          className={`relative mx-1 hidden h-full min-w-0 flex-1 items-center justify-center gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
+          style={{
+            width: navWidth,
+            left: `calc(50% - ${navWidth / 2}px)`,
+          }}
+          className={`absolute top-0 hidden h-full items-center justify-center gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
             navReady ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -679,7 +735,10 @@ export default function DashboardNavbar() {
         </nav>
 
         {/* Right: language, credit bonus, search, profile, drawer */}
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div
+          ref={rightRef}
+          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
+        >
           {/* Language switcher */}
           <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold sm:inline-flex">
             <button
@@ -832,17 +891,73 @@ export default function DashboardNavbar() {
             </div>
 
             {/* Body */}
-            <div className="flex flex-col items-center px-6 py-12 text-center">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
-                <Search size={20} />
-              </span>
-              <p className="mt-4 text-sm font-black text-[#0F172A]">
-                Search tools and features
-              </p>
-              <p className="mt-1 text-xs font-medium text-slate-500">
-                Start typing to find what you need.
-              </p>
-            </div>
+            {normalizedSearchQuery ? (
+              <div className="max-h-[min(420px,55vh)] overflow-y-auto p-2">
+                {searchResults.length > 0 ? (
+                  <div className="space-y-1">
+                    {searchResults.map((tool) => {
+                      const ToolIcon = tool.icon;
+                      return (
+                        <Link
+                          key={tool.id}
+                          href={`/sohoj-tools/${getSlug(tool.name)}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tool.bgColor}`}
+                          >
+                            <ToolIcon size={24} />
+                          </span>
+
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-[#0F172A]">
+                              {tool.name}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500">
+                              {tool.category}
+                              {tool.access === "paid" ? " • Paid" : " • Free"}
+                              {tool.badge ? ` • ${tool.badge}` : ""}
+                            </span>
+                          </span>
+
+                          <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
+                            Open
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center px-6 py-12 text-center">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                      <Search size={20} />
+                    </span>
+                    <p className="mt-4 text-sm font-black text-[#0F172A]">
+                      No matching tools found
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      Try another tool name, category, or keyword.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center px-6 py-12 text-center">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
+                  <Search size={20} />
+                </span>
+                <p className="mt-4 text-sm font-black text-[#0F172A]">
+                  Search tools and features
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Start typing to find what you need.
+                </p>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3 text-[11px] font-semibold text-slate-400">
