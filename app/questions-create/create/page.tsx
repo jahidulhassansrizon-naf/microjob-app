@@ -8,21 +8,11 @@ import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 
 import SavedQuestionPapers from "@/components/questionPapers/SavedQuestionPapers";
 
-import { ArrowLeft, Download, Loader2, Printer, Save } from "lucide-react";
+import { ArrowLeft, Download, Printer, Save } from "lucide-react";
 
 export default function CreateQuestionPage() {
   const manager = useQuestionManager();
 
-  if (manager.isAuthenticated === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-3 text-xs font-semibold text-[#0F172A] shadow-sm">
-          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
-          Checking authentication...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div

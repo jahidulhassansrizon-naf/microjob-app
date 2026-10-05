@@ -282,8 +282,8 @@ function SortSelect({
 /* ------------------------------------------------------------------ */
 
 export default function MyFilesPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // মাঝখান: My Files
   const [activeTab, setActiveTab] = useState<CategoryId>("generated-images");
@@ -297,25 +297,45 @@ export default function MyFilesPage() {
   const [toolSearch, setToolSearch] = useState<string>("");
   const [toolSort, setToolSort] = useState<SortOrder>("newest");
 
-  // TODO: এখানে আপনার API/ডাটাবেস থেকে ফাইল লোড করে set করতে হবে।
-  const [files] = useState<FileItem[]>([]);
-  const [toolFiles] = useState<ToolFile[]>([]);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [toolFiles, setToolFiles] = useState<ToolFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState<boolean>(true);
 
-  // সিকিউরিটি ও অথেনটিকেশন চেক
+  // Authentication and saved-file hydration run in the background so the
+  // My Files shell never blocks navigation.
   useEffect(() => {
     let mounted = true;
-    void getClientSession().then((session) => {
+
+    void getClientSession().then(async (session) => {
       if (!mounted) return;
       if (!session.authenticated) {
         window.location.replace("/login?callbackUrl=%2Fmy-files");
         return;
       }
+
       setIsAuthenticated(true);
-      setLoading(false);
+      try {
+        const response = await fetch("/api/my-files", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const result = await response.json().catch(() => null);
+        if (!mounted || !response.ok || !result?.success) return;
+
+        const data = result.data || {};
+        setFiles(Array.isArray(data.files) ? data.files : []);
+        setToolFiles(Array.isArray(data.toolFiles) ? data.toolFiles : []);
+      } catch (error) {
+        console.error("Failed to load My Files:", error);
+      } finally {
+        if (mounted) setFilesLoading(false);
+      }
+    }).catch((error) => {
+      console.error("My Files authentication error:", error);
+      if (mounted) setFilesLoading(false);
     });
-    return () => {
-      mounted = false;
-    };
+
+    return () => { mounted = false; };
   }, []);
 
   // সার্চ করলে: বর্তমান ট্যাবে না পেলে, যে ট্যাবে ফাইলটা আছে সেখানে অটো চলে যাবে
@@ -374,19 +394,6 @@ export default function MyFilesPage() {
       toolSort,
     );
   }, [toolFiles, toolGroup, toolSearch, toolSort]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent" />
-          <p className="text-sm text-slate-600">যাচাই করা হচ্ছে...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
 
   const resetSearch = () => {
     setSearchQuery("");
@@ -516,6 +523,9 @@ export default function MyFilesPage() {
 
             {/* Results */}
             <div className="flex flex-1 flex-col px-5 pb-5 lg:min-h-0 lg:overflow-y-auto">
+              {filesLoading && (
+                <p className="mb-3 text-xs text-slate-400">Updating your files…</p>
+              )}
               {switchNotice && (
                 <p role="status" className="mb-3 text-sm text-blue-700">
                   {switchNotice}

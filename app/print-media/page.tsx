@@ -15,15 +15,12 @@ import {
   Check,
   Heart,
   SlidersHorizontal,
-  Loader2,
 } from "lucide-react";
 import { TEMPLATE_IMAGE_URLS } from "./templateImageUrls";
 import { getClientSession } from "@/lib/clientAuth";
 
 export default function PrintMediaPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
   // Auth Protection Logic
   useEffect(() => {
     let mounted = true;
@@ -36,7 +33,6 @@ export default function PrintMediaPage() {
         return;
       }
 
-      setIsAuthenticated(true);
     });
 
     return () => {
@@ -73,20 +69,6 @@ export default function PrintMediaPage() {
     setSelectedDateFilter("All time");
   };
 
-  // অথেনটিকেশন চেক না হওয়া পর্যন্ত লোডিং স্ক্রিন
-  if (isAuthenticated === null) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "#F8FAFC" }}
-      >
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#475569] bg-white px-5 py-3 rounded-2xl border border-[#E2E8F0] shadow-xs">
-          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
-          Checking authentication...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">

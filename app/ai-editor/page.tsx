@@ -16,7 +16,7 @@ import { getClientSession } from "@/lib/clientAuth";
 
 export default function PhotoEditorPage() {
   const router = useRouter();
-  const [authChecking, setAuthChecking] = useState(true);
+  const [authChecking, setAuthChecking] = useState(false);
 
   const [selectedSize, setSelectedSize] = useState("Passport");
   const [selectedBg, setSelectedBg] = useState(1);
@@ -1350,14 +1350,6 @@ export default function PhotoEditorPage() {
         URL.revokeObjectURL(tempImageForCrop);
     };
   }, [tempImageForCrop]);
-
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-[#F8FAFC] flex flex-col relative select-none">

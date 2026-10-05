@@ -14,5 +14,14 @@ export async function POST() {
     expires: new Date(0),
   });
 
+  response.cookies.set("subscription_access", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+
   return response;
 }

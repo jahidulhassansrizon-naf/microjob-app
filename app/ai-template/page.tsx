@@ -27,6 +27,46 @@ import { PhotoCropModal } from "./components/PhotoCropModal";
 import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
 
+async function persistGeneratedFile(
+  image: string,
+  name: string,
+  category: "ai-template-generated",
+) {
+  try {
+    let url = image;
+    let publicId = "";
+
+    if (image.startsWith("data:")) {
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ image }),
+      });
+      const upload = await uploadResponse.json().catch(() => null);
+      if (!uploadResponse.ok || !upload?.success || !upload?.url) return;
+      url = upload.url;
+      publicId = upload.publicId || "";
+    }
+
+    await fetch("/api/my-files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name,
+        category,
+        toolName: "AI Template",
+        group: "image",
+        url,
+        publicId,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to save AI Template result to My Files:", error);
+  }
+}
+
 export default function AITemplatePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -302,6 +342,11 @@ export default function AITemplatePage() {
         throw new Error(data?.error || "Template image generation failed.");
       if (generationAbortRef.current !== controller) return;
       setGeneratedImage(data.image);
+      void persistGeneratedFile(
+        data.image,
+        `${selectedTemplate.title || "AI Template"} · ${new Date().toISOString().slice(0, 10)}`,
+        "ai-template-generated",
+      );
     } catch (error) {
       if (generationAbortRef.current !== controller) return;
       if (timedOut)

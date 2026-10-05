@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   FolderOpen,
@@ -246,12 +246,17 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
 }
 
 function NavItem({ item, active }: { item: NavConfig; active: boolean }) {
+  const router = useRouter();
+
   return (
     <div className="relative flex h-full shrink-0 items-center">
       {item.upcoming && <UpcomingFlag />}
 
       <Link
         href={item.href}
+        prefetch
+        onMouseEnter={() => router.prefetch(item.href)}
+        onFocus={() => router.prefetch(item.href)}
         className={`${itemBase} ${active ? itemActive : itemIdle}`}
       >
         <NavLabel item={item} />
@@ -271,16 +276,23 @@ function NavDropdown({
   setOpen: (v: boolean) => void;
   active: boolean;
 }) {
+  const router = useRouter();
+
   return (
     <div
       className="relative flex h-full shrink-0 items-center"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => {
+        setOpen(true);
+        router.prefetch(item.href);
+      }}
       onMouseLeave={() => setOpen(false)}
     >
       {item.upcoming && <UpcomingFlag />}
 
       <Link
         href={item.href}
+        prefetch
+        onFocus={() => router.prefetch(item.href)}
         aria-haspopup="true"
         aria-expanded={open}
         className={`${itemBase} ${active || open ? itemActive : itemIdle}`}
@@ -318,6 +330,8 @@ function MoreMenu({
   active: boolean;
   isActive: (prefix: string) => boolean;
 }) {
+  const router = useRouter();
+
   return (
     <div
       className="relative flex h-full shrink-0 items-center"
@@ -350,6 +364,9 @@ function MoreMenu({
             <Link
               key={item.id}
               href={item.href}
+              prefetch
+              onMouseEnter={() => router.prefetch(item.href)}
+              onFocus={() => router.prefetch(item.href)}
               className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
                 isActive(item.match)
                   ? "bg-blue-50 text-[#1D4ED8]"

@@ -24,6 +24,95 @@ type AuthFailure = {
 
 export type SubscriptionAuthResult = AuthSuccess | AuthFailure;
 
+const SUBSCRIPTION_ACCESS_COOKIE = "subscription_access";
+const SUBSCRIPTION_ACCESS_TTL_SECONDS = 60 * 5;
+
+export function createSubscriptionAccessToken(
+  userId: string,
+  subscriptionExpiresAt: Date | string | number,
+): string {
+  const expiresAtMs = new Date(subscriptionExpiresAt).getTime();
+  const maxLifetimeMs = SUBSCRIPTION_ACCESS_TTL_SECONDS * 1000;
+  const tokenExpiryMs = Math.min(expiresAtMs, Date.now() + maxLifetimeMs);
+
+  return jwt.sign(
+    {
+      userId,
+      subscriptionExpiresAt: expiresAtMs,
+      type: "subscription-access",
+    },
+    JWT_SECRET,
+    {
+      expiresIn: Math.max(1, Math.floor((tokenExpiryMs - Date.now()) / 1000)),
+    },
+  );
+}
+
+export function getUserIdFromSubscriptionAccessToken(
+  token: string | null,
+): string | null {
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload & {
+      subscriptionExpiresAt?: number;
+      type?: string;
+    };
+
+    if (
+      decoded.type !== "subscription-access" ||
+      typeof decoded.userId !== "string" ||
+      !decoded.subscriptionExpiresAt ||
+      decoded.subscriptionExpiresAt <= Date.now()
+    ) {
+      return null;
+    }
+
+    return decoded.userId;
+  } catch {
+    return null;
+  }
+}
+
+export function setSubscriptionAccessCookie(
+  response: NextResponse,
+  userId: string,
+  subscriptionExpiresAt: Date | string | number,
+) {
+  const expiresAtMs = new Date(subscriptionExpiresAt).getTime();
+  const maxAge = Math.max(
+    1,
+    Math.min(
+      SUBSCRIPTION_ACCESS_TTL_SECONDS,
+      Math.floor((expiresAtMs - Date.now()) / 1000),
+    ),
+  );
+
+  response.cookies.set(SUBSCRIPTION_ACCESS_COOKIE, createSubscriptionAccessToken(userId, expiresAtMs), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
+}
+
+export function clearSubscriptionAccessCookie(response: NextResponse) {
+  response.cookies.set(SUBSCRIPTION_ACCESS_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
+
+export function getSubscriptionAccessCookieName() {
+  return SUBSCRIPTION_ACCESS_COOKIE;
+}
+
+
 function getTokenFromRequest(request: Request): string | null {
   const authorization = request.headers.get("authorization");
 

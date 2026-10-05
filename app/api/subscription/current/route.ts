@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
+import {
+  clearSubscriptionAccessCookie,
+  setSubscriptionAccessCookie,
+} from "@/app/api/_lib/requireActiveSubscription";
 
 export const dynamic = "force-dynamic";
 
@@ -82,10 +86,12 @@ export async function GET(request: Request) {
       .lean();
 
     if (!subscription) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         subscription: null,
       });
+      clearSubscriptionAccessCookie(response);
+      return response;
     }
 
     const startedAt = subscription.startedAt
@@ -95,7 +101,7 @@ export async function GET(request: Request) {
       ? new Date(subscription.expiresAt).toISOString()
       : null;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       subscription: {
         id: String(subscription._id),
@@ -109,6 +115,12 @@ export async function GET(request: Request) {
         expiresAt,
       },
     });
+
+    if (expiresAt) {
+      setSubscriptionAccessCookie(response, String(decoded.userId), expiresAt);
+    }
+
+    return response;
   } catch (error) {
     console.error("Current subscription lookup error:", error);
 

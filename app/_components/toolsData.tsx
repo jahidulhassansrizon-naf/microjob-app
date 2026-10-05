@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // ====================================================================
@@ -1317,6 +1318,7 @@ function loadSubscriptionAccess() {
 }
 
 export function ToolTile({ tool }: { tool: ToolItem }) {
+  const router = useRouter();
   const IconComponent = tool.icon;
   const slug = getSlug(tool.name);
   const [hasActiveSubscription, setHasActiveSubscription] = useState<
@@ -1339,12 +1341,11 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
 
   const isPaid = tool.access === "paid";
   const requiresSubscription = isPaid && REQUIRE_SUBSCRIPTION;
-  const canOpenPaidTool = requiresSubscription
-    ? hasActiveSubscription === true
-    : true;
-
+  // While subscription status is still being resolved, keep the real tool URL.
+  // This lets the App Router prefetch/navigate immediately; the server-side paid
+  // guard remains authoritative if access is actually unavailable.
   const toolHref =
-    requiresSubscription && !canOpenPaidTool
+    requiresSubscription && hasActiveSubscription === false
       ? "/subscription"
       : `/sohoj-tools/${slug}`;
 
@@ -1353,13 +1354,12 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
   return (
     <Link
       href={toolHref}
-      className={`flex flex-col items-center group cursor-pointer ${
-        requiresSubscription && hasActiveSubscription === null
-          ? "cursor-wait"
-          : ""
-      }`}
+      prefetch
+      onMouseEnter={() => router.prefetch(`/sohoj-tools/${slug}`)}
+      onFocus={() => router.prefetch(`/sohoj-tools/${slug}`)}
+      className="flex flex-col items-center group cursor-pointer"
       aria-label={
-        requiresSubscription && !canOpenPaidTool
+        requiresSubscription && hasActiveSubscription === false
           ? `${tool.name} requires an active subscription`
           : `Open ${tool.name}`
       }

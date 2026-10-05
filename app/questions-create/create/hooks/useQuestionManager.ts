@@ -449,7 +449,7 @@ function solveBalancedJointPrintPagination(
 export function useQuestionManager() {
   const router = useRouter();
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
 
   const [selectedTab, setSelectedTab] = useState<"browse" | "auto">("browse");
 

@@ -418,10 +418,10 @@ function applyCanvasSharpness(
 }
 
 export function ManualEditorProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [photoMode, setPhotoMode] = useState<PhotoMode>("passport");
 

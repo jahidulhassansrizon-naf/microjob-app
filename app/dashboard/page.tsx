@@ -193,11 +193,11 @@ function HomeScreen({ userName }: { userName: string }) {
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   // মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে fit মোড; টাচ ডিভাইসে আগের মতো রেসপন্সিভ লেআউট
-  const [fit, setFit] = useState<boolean>(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(pointer: fine)").matches,
-  );
+  // Keep the first render identical on the server and client. The real
+  // pointer/viewport state is applied immediately after hydration below.
+  // This avoids a hydration mismatch on the dashboard while preserving the
+  // existing responsive fit behavior.
+  const [fit, setFit] = useState<boolean>(false);
   const [view, setView] = useState({
     scale: 1,
     width: FIT_MIN_WIDTH,
@@ -319,6 +319,7 @@ function HomeScreen({ userName }: { userName: string }) {
           <WelcomeBanner userName={userName} fit={fit} />
         </div>
       </div>
+
     </section>
   );
 }
@@ -467,7 +468,9 @@ function LoginProgress() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  // Render the dashboard immediately. Authentication is verified in the background so
+  // a valid session never sees a full-screen "Checking authentication..." blocker.
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [showLoginSuccess, setShowLoginSuccess] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("User");
   // my-nafia:start

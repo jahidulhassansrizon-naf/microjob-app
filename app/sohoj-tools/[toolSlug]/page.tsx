@@ -3,40 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import {
   getUserIdFromToken,
+  getUserIdFromSubscriptionAccessToken,
   hasActiveSubscription,
+  getSubscriptionAccessCookieName,
 } from "../../api/_lib/requireActiveSubscription";
 import nextDynamic from "next/dynamic";
 import DashboardNavbar from "../../dashboard/_components/DashboardNavbar";
-
-function ToolChunkLoading() {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex min-h-[420px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white/80 p-8"
-    >
-      <div className="w-full max-w-xl space-y-4">
-        <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
-        <div className="h-4 w-80 max-w-full animate-pulse rounded bg-slate-100" />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-          <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-          <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-          <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type ToolComponentModule = { default: React.ComponentType };
-
-function dynamicTool(loader: () => Promise<ToolComponentModule>) {
-  return nextDynamic(loader, {
-    loading: ToolChunkLoading,
-  });
-}
-
 
 export const dynamic = "force-dynamic";
 
@@ -64,49 +36,49 @@ const PAID_TOOL_SLUGS = new Set([
 ]);
 
 const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
-  "nid-joiner": dynamicTool(() => import("./_tools/NidToPdf")),
-  "govt-job-photo-sign-resizer": dynamicTool(
+  "nid-joiner": nextDynamic(() => import("./_tools/NidToPdf")),
+  "govt-job-photo-sign-resizer": nextDynamic(
     () => import("./_tools/GovtJobPhotoSignResizer"),
   ),
-  "change-speed": dynamicTool(() => import("./_tools/ChangeSpeed")),
-  "national-university-result": dynamicTool(
+  "change-speed": nextDynamic(() => import("./_tools/ChangeSpeed")),
+  "national-university-result": nextDynamic(
     () => import("./_tools/NationalUniversityResult"),
   ),
-  "add-watermark": dynamicTool(() => import("./_tools/NationalUniversityResult")),
-  "age-calculator": dynamicTool(() => import("./_tools/AgeCalculator")),
-  "passport-joiner": dynamicTool(() => import("./_tools/PassportToPdf")),
-  "voter-migration-form": dynamicTool(() => import("./_tools/VoterMigrationForm")),
-  "voter-registration-form": dynamicTool(
+  "add-watermark": nextDynamic(() => import("./_tools/NationalUniversityResult")),
+  "age-calculator": nextDynamic(() => import("./_tools/AgeCalculator")),
+  "passport-joiner": nextDynamic(() => import("./_tools/PassportToPdf")),
+  "voter-migration-form": nextDynamic(() => import("./_tools/VoterMigrationForm")),
+  "voter-registration-form": nextDynamic(
     () => import("./_tools/VoterRegistrationForm"),
   ),
-  "family-card-form": dynamicTool(() => import("./_tools/FamilyCardForm")),
-  "nid-information-correction-form": dynamicTool(
+  "family-card-form": nextDynamic(() => import("./_tools/FamilyCardForm")),
+  "nid-information-correction-form": nextDynamic(
     () => import("./_tools/NidInformationCorrectionForm"),
   ),
-  "reduce-video-file-size": dynamicTool(
+  "reduce-video-file-size": nextDynamic(
     () => import("./_tools/AllowanceApplicationTracking"),
   ),
-  "remove-background": dynamicTool(() => import("./_tools/RemoveBackground")),
-  "document-scanner": dynamicTool(() => import("./_tools/DocumentScanner")),
-  "image-size-reducer": dynamicTool(() => import("./_tools/ImageSizeReducer")),
-  "image-upscaler": dynamicTool(() => import("./_tools/ImageUpscaler")),
-  "crop-image": dynamicTool(() => import("./_tools/CropImage")),
-  "images-to-pdf": dynamicTool(() => import("./_tools/ImagesToPdf")),
-  "image-convert": dynamicTool(() => import("./_tools/ImageConvert")),
-  "image-to-text": dynamicTool(() => import("./_tools/ImageToText")),
-  "compress-pdf": dynamicTool(() => import("./_tools/CompressPdf")),
-  "merge-pdfs": dynamicTool(() => import("./_tools/MergePdf")),
-  "split-pdf": dynamicTool(() => import("./_tools/SplitPdf")),
-  "lock-unlock-pdf": dynamicTool(() => import("./_tools/LockUnlockPdf")),
-  "pdf-to-image": dynamicTool(() => import("./_tools/PdfToImage")),
-  "edit-pdf": dynamicTool(() => import("./_tools/EditPdf")),
-  "bijoy-unicode": dynamicTool(() => import("./_tools/BijoyToUnicode")),
-  "banglish-typing": dynamicTool(() => import("./_tools/BanglishTyping")),
-  "ats-friendly-cv-maker": dynamicTool(() => import("./_tools/AtsCvMaker")),
-  "special-information-form": dynamicTool(
+  "remove-background": nextDynamic(() => import("./_tools/RemoveBackground")),
+  "document-scanner": nextDynamic(() => import("./_tools/DocumentScanner")),
+  "image-size-reducer": nextDynamic(() => import("./_tools/ImageSizeReducer")),
+  "image-upscaler": nextDynamic(() => import("./_tools/ImageUpscaler")),
+  "crop-image": nextDynamic(() => import("./_tools/CropImage")),
+  "images-to-pdf": nextDynamic(() => import("./_tools/ImagesToPdf")),
+  "image-convert": nextDynamic(() => import("./_tools/ImageConvert")),
+  "image-to-text": nextDynamic(() => import("./_tools/ImageToText")),
+  "compress-pdf": nextDynamic(() => import("./_tools/CompressPdf")),
+  "merge-pdfs": nextDynamic(() => import("./_tools/MergePdf")),
+  "split-pdf": nextDynamic(() => import("./_tools/SplitPdf")),
+  "lock-unlock-pdf": nextDynamic(() => import("./_tools/LockUnlockPdf")),
+  "pdf-to-image": nextDynamic(() => import("./_tools/PdfToImage")),
+  "edit-pdf": nextDynamic(() => import("./_tools/EditPdf")),
+  "bijoy-unicode": nextDynamic(() => import("./_tools/BijoyToUnicode")),
+  "banglish-typing": nextDynamic(() => import("./_tools/BanglishTyping")),
+  "ats-friendly-cv-maker": nextDynamic(() => import("./_tools/AtsCvMaker")),
+  "special-information-form": nextDynamic(
     () => import("./_tools/SpecialInformationForm"),
   ),
-  "fuel-card-form": dynamicTool(() => import("./_tools/FuelCardForm")),
+  "fuel-card-form": nextDynamic(() => import("./_tools/FuelCardForm")),
 };
 
 export default async function DynamicToolPage({
@@ -130,9 +102,17 @@ export default async function DynamicToolPage({
       redirect(`/login?next=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
     }
 
-    const activeSubscription = await hasActiveSubscription(userId);
-    if (!activeSubscription) {
-      redirect("/subscription");
+    // The short-lived signed access cookie is refreshed by the auth/subscription
+    // endpoints. It avoids a MongoDB round-trip on every paid-tool navigation
+    // while keeping the server-side access decision cryptographically verified.
+    const accessCookie = cookieStore.get(getSubscriptionAccessCookieName())?.value ?? null;
+    const cachedUserId = getUserIdFromSubscriptionAccessToken(accessCookie);
+
+    if (cachedUserId !== userId) {
+      const activeSubscription = await hasActiveSubscription(userId);
+      if (!activeSubscription) {
+        redirect("/subscription");
+      }
     }
   }
 

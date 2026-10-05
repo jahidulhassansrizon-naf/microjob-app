@@ -64,9 +64,45 @@ const getDataUrlExtension = (dataUrl: string) => {
 const getBaseName = (fileName: string) =>
   fileName.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-") || "photo";
 
+async function persistBulkResult(image: string, name: string) {
+  try {
+    let url = image;
+    let publicId = "";
+
+    if (image.startsWith("data:")) {
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ image }),
+      });
+      const upload = await uploadResponse.json().catch(() => null);
+      if (!uploadResponse.ok || !upload?.success || !upload?.url) return;
+      url = upload.url;
+      publicId = upload.publicId || "";
+    }
+
+    await fetch("/api/my-files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name,
+        category: "bulk-photo-edit",
+        toolName: "Bulk Photo Edit",
+        group: "image",
+        url,
+        publicId,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to save Bulk Photo Edit result to My Files:", error);
+  }
+}
+
 export default function BulkPhotoEditPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [expandedPreset, setExpandedPreset] = useState<string | null>(
     "face-enhance",
@@ -322,6 +358,10 @@ export default function BulkPhotoEditPage() {
           resultUrl: data.image,
           error: null,
         });
+        void persistBulkResult(
+          data.image,
+          `${getBaseName(photo.file.name)}-ai-edited`,
+        );
 
         successCount += 1;
       } catch (error) {
@@ -418,6 +458,10 @@ export default function BulkPhotoEditPage() {
           resultUrl: data.image,
           error: null,
         });
+        void persistBulkResult(
+          data.image,
+          `${getBaseName(photo.file.name)}-ai-edited`,
+        );
         setMessage(`${photo.file.name} was edited successfully.`);
       } catch (error) {
         const errorMessage =
@@ -437,21 +481,6 @@ export default function BulkPhotoEditPage() {
     },
     [isProcessing, photos, selectedTools, selectedTotal, updatePhoto],
   );
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent" />
-          <p className="text-xs font-semibold text-[#0F172A]/60">
-            যাচাই করা হচ্ছে...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
 
   const completedCount = photos.filter(
     (photo) => photo.status === "success",

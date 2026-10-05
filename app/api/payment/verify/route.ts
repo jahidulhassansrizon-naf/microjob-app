@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { verifyAndActivateSubscription } from "../_lib/paymently";
+import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       expectedUserId: String(decoded.userId),
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: result.ok,
         alreadyCompleted: Boolean(result.alreadyCompleted),
@@ -96,6 +97,16 @@ export async function POST(request: Request) {
       },
       { status: result.ok ? 200 : result.httpStatus },
     );
+
+    if (result.ok && result.subscription?.expiresAt) {
+      setSubscriptionAccessCookie(
+        response,
+        String(decoded.userId),
+        result.subscription.expiresAt,
+      );
+    }
+
+    return response;
   } catch (error) {
     console.error("Payment verification error:", error);
 

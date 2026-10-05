@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 
@@ -66,6 +66,13 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem("user");
+      if (cached) setUser(JSON.parse(cached) as UserProfile);
+    } catch {
+      localStorage.removeItem("user");
+    }
+
     const loadProfile = async () => {
       try {
         const session = await getClientSession();
@@ -90,17 +97,6 @@ export default function ProfilePage() {
 
     void loadProfile();
   }, [router]);
-
-  if (loading && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-5 py-3 text-xs font-semibold text-gray-600 shadow-sm">
-          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
-          Loading profile...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-gray-800 font-sans pb-12">

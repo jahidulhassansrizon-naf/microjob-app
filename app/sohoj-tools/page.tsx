@@ -40,11 +40,13 @@ function SohojToolsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  // Keep the tools UI immediately visible; auth is verified in the background.
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const isInitialLoadDone = useRef(false);
+  const gridRef = useRef<HTMLDivElement | null>(null);
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
@@ -141,17 +143,6 @@ function SohojToolsContent() {
         return true;
     }
   });
-
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-          <Loader2 size={16} className="animate-spin text-[#2563EB]" />
-          Checking authentication...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
@@ -277,6 +268,7 @@ function SohojToolsContent() {
         {/* Tools Grid Section */}
         {filteredTools.length > 0 ? (
           <div
+            ref={gridRef}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7 pt-3"
           >
             {filteredTools.map((tool) => (
