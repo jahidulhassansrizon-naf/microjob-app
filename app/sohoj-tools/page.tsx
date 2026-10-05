@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -37,40 +36,6 @@ const categories = [
   { name: "Educational Tools", icon: GraduationCap },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Page loading overlay (টুলে ক্লিক করার পর নতুন পেজ আসা পর্যন্ত)        */
-/* ------------------------------------------------------------------ */
-
-function PageLoadingOverlay() {
-  const [go, setGo] = useState<boolean>(false);
-
-  useEffect(() => {
-    const id = setTimeout(() => setGo(true), 30);
-    return () => clearTimeout(id);
-  }, []);
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 z-[998] flex items-center justify-center bg-white/70 backdrop-blur-sm animate-in fade-in duration-150"
-    >
-      {/* উপরের প্রগ্রেস বার */}
-      <div className="fixed inset-x-0 top-0 h-1 bg-blue-100">
-        <div
-          className="h-full bg-[#2563EB] transition-[width] ease-out"
-          style={{ width: go ? "90%" : "0%", transitionDuration: "8000ms" }}
-        />
-      </div>
-
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent" />
-        <p className="text-sm font-semibold text-slate-700">Loading...</p>
-      </div>
-    </div>
-  );
-}
-
 function SohojToolsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -80,8 +45,6 @@ function SohojToolsContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const isInitialLoadDone = useRef(false);
-  const gridRef = useRef<HTMLDivElement | null>(null);
-  const [navigating, setNavigating] = useState<boolean>(false);
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
@@ -146,64 +109,6 @@ function SohojToolsContent() {
     const newPath = newQuery ? `/sohoj-tools?${newQuery}` : "/sohoj-tools";
     window.history.replaceState(null, "", newPath);
   };
-
-  // দ্রুত লোডের জন্য: টুলগুলোর পেজ আগেই prefetch করে রাখছি
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const id = setTimeout(() => {
-      const grid = gridRef.current;
-      if (!grid) return;
-      const hrefs = new Set<string>();
-      grid.querySelectorAll<HTMLAnchorElement>('a[href^="/"]').forEach((a) => {
-        const href = a.getAttribute("href");
-        if (href) hrefs.add(href);
-      });
-      hrefs.forEach((href) => {
-        try {
-          router.prefetch(href);
-        } catch {
-          // Prefetch is optional.
-        }
-      });
-    }, 300);
-    return () => clearTimeout(id);
-  }, [router, isAuthenticated]);
-
-  // টুলে ক্লিক করলেই লোডিং দেখাও; নতুন পেজ এলে এই পেজ আনমাউন্ট হয়, তাই লোডিং নিজে থেকেই চলে যায়
-  const handleToolClick = (e: ReactMouseEvent<HTMLElement>) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-      return;
-    }
-    const el = (e.target as HTMLElement).closest<HTMLElement>(
-      "a, button, [role='link'], [role='button']",
-    );
-    if (!el || !e.currentTarget.contains(el)) return;
-
-    if (el instanceof HTMLAnchorElement) {
-      if (el.target === "_blank" || el.hasAttribute("download")) return;
-      const url = new URL(el.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      if (
-        url.pathname === window.location.pathname &&
-        url.search === window.location.search
-      ) {
-        return;
-      }
-    }
-    setNavigating(true);
-  };
-
-  // সেফটি: কোনো কারণে নেভিগেশন না হলে ২০ সেকেন্ড পর লোডিং বন্ধ; Back চাপলেও বন্ধ
-  useEffect(() => {
-    if (!navigating) return;
-    const stop = () => setNavigating(false);
-    const id = setTimeout(stop, 20000);
-    window.addEventListener("pageshow", stop);
-    return () => {
-      clearTimeout(id);
-      window.removeEventListener("pageshow", stop);
-    };
-  }, [navigating]);
 
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
@@ -372,8 +277,6 @@ function SohojToolsContent() {
         {/* Tools Grid Section */}
         {filteredTools.length > 0 ? (
           <div
-            ref={gridRef}
-            onClick={handleToolClick}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7 pt-3"
           >
             {filteredTools.map((tool) => (
@@ -395,7 +298,6 @@ function SohojToolsContent() {
         )}
       </main>
 
-      {navigating && <PageLoadingOverlay />}
     </div>
   );
 }
