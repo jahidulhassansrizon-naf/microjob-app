@@ -1360,7 +1360,7 @@ export default function PhotoEditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col relative select-none">
+    <div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-[#F8FAFC] flex flex-col relative select-none">
       <DashboardNavbar />
       <SubscriptionLock />
 
@@ -1510,9 +1510,9 @@ export default function PhotoEditorPage() {
         onSaveImage={handleSaveEditedImage}
       />
 
-      <div className="flex-1 flex flex-col items-center p-2 sm:p-4">
-        <div className="flex flex-col xl:flex-row w-full max-w-[1400px] gap-4 items-center xl:items-stretch">
-          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1">
+      <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
+        <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
+          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <GenerationSettings
               photoSizes={photoSizes}
               selectedSize={selectedSize}
@@ -1549,7 +1549,7 @@ export default function PhotoEditorPage() {
             />
           </div>
 
-          <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1">
+          <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <PhotoPreviewArea
               isDualMode={isDualMode}
               uploadedImage={uploadedImage}
@@ -1572,7 +1572,7 @@ export default function PhotoEditorPage() {
             />
           </div>
 
-          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1">
+          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <QrCodeSidebar
               uploadUrl={
                 typeof window !== "undefined"

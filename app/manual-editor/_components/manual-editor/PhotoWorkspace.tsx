@@ -34,8 +34,8 @@ function getResponsiveCanvasStyle(ratio: number) {
   // calculated from the same ratio, so the visible frame always matches
   // the selected print size.
   return {
-    width: `min(72vw, 420px, calc(400px * ${safeRatio}))`,
-    height: `min(400px, calc(72vw * ${inverseRatio}), calc(420px * ${inverseRatio}))`,
+    width: `min(72vw, 420px, calc(var(--canvas-max, 400px) * ${safeRatio}))`,
+    height: `min(var(--canvas-max, 400px), calc(72vw * ${inverseRatio}), calc(420px * ${inverseRatio}))`,
     boxSizing: "border-box" as const,
     transition: "width 180ms ease, height 180ms ease",
   };
@@ -518,7 +518,7 @@ export default function PhotoWorkspace() {
 
   return (
     <>
-      <main className="lg:col-span-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 md:p-6 flex flex-col items-center justify-center relative min-h-[520px] shadow-lg text-[#0F172A]">
+      <main className="lg:col-span-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 md:p-6 lg:p-4 flex flex-col items-center justify-center relative min-h-[520px] lg:min-h-0 lg:h-full lg:overflow-y-auto [--canvas-max:400px] lg:[--canvas-max:min(440px,46vh)] shadow-lg text-[#0F172A]">
         <input
           ref={fileInputRef}
           type="file"

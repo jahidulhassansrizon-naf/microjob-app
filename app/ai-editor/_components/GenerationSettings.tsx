@@ -500,9 +500,9 @@ export default function GenerationSettings({
   }, []);
 
   return (
-    <div className="w-full max-w-full lg:w-[320px] bg-[#F8FAFC] rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] flex flex-col justify-between relative shrink-0 text-[#0F172A]">
+    <div className="w-full max-w-full lg:w-[320px] bg-[#F8FAFC] rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#0F172A]">
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-sm text-[#0F172A] flex items-center gap-2">
             <span className="w-1 h-4 bg-[#2563EB] rounded-full" />
             Generation settings
@@ -510,7 +510,7 @@ export default function GenerationSettings({
         </div>
 
         {/* PHOTO SIZE SECTION */}
-        <div className="mb-6 relative" ref={visaPopupRef}>
+        <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={visaPopupRef}>
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>PHOTO SIZE</span>
             <button
@@ -538,7 +538,7 @@ export default function GenerationSettings({
                   onClick={() => handleSizeClick(size.id)}
                   title={size.tooltip}
                   type="button"
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[10px] relative transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[10px] relative transition-all cursor-pointer ${
                     isActive
                       ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
                       : "border-[#E2E8F0] text-[#0F172A] hover:border-slate-300"
@@ -596,7 +596,7 @@ export default function GenerationSettings({
         </div>
 
         {/* BACKGROUND SECTION */}
-        <div className="mb-6 relative" ref={colorPickerRef}>
+        <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={colorPickerRef}>
           <div className="text-xs text-slate-500 mb-2">BACKGROUND</div>
 
           <div className="grid grid-cols-4 gap-2">
@@ -614,7 +614,7 @@ export default function GenerationSettings({
                     }}
                     title="Transparent background"
                     aria-label="Transparent background"
-                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${
+                    className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${
                       isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""
                     }`}
                     style={{
@@ -647,7 +647,7 @@ export default function GenerationSettings({
                       setShowColorPicker((prev) => !prev);
                     }}
                     style={{ backgroundColor: customBgColor }}
-                    className={`h-9 rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
+                    className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
                       isSelected
                         ? "ring-2 ring-[#2563EB] ring-offset-2"
                         : "border border-slate-200"
@@ -672,7 +672,7 @@ export default function GenerationSettings({
                     setSelectedBg(idx);
                     setShowColorPicker(false);
                   }}
-                  className={`h-9 rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${
+                  className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${
                     isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""
                   }`}
                 >
@@ -739,7 +739,7 @@ export default function GenerationSettings({
         </div>
 
         {/* CLOTHING STYLE SECTION */}
-        <div className="mb-6 relative" ref={clothingColorPopupRef}>
+        <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={clothingColorPopupRef}>
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>CLOTHING STYLE</span>
 
@@ -757,7 +757,7 @@ export default function GenerationSettings({
                     setSelectedClothing(-1);
                     setShowClothingColorPicker(false);
                   }}
-                  className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
+                  className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
                     selectedClothing === -1
                       ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                       : "border-[#E2E8F0]"
@@ -775,7 +775,7 @@ export default function GenerationSettings({
                       key={idx}
                       type="button"
                       onClick={() => handleClothingClick(idx)}
-                      className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                      className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                         isSelected
                           ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                           : "border-[#E2E8F0]"
@@ -811,7 +811,7 @@ export default function GenerationSettings({
                         key={`left-${idx}`}
                         type="button"
                         onClick={() => setLeftClothing(idx)}
-                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           leftClothing === idx
                             ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                             : "border-[#E2E8F0]"
@@ -844,7 +844,7 @@ export default function GenerationSettings({
                         key={`right-${idx}`}
                         type="button"
                         onClick={() => setRightClothing(idx)}
-                        className={`h-11 rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           rightClothing === idx
                             ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                             : "border-[#E2E8F0]"
@@ -925,7 +925,7 @@ export default function GenerationSettings({
         </div>
 
         {/* EXTRA EDITING GUIDE */}
-        <div className="mb-4 relative">
+        <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative">
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
             <span>EXTRA EDITING GUIDE</span>
             <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
@@ -984,7 +984,7 @@ export default function GenerationSettings({
 
                       toggleGuide(item);
                     }}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
+                    className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.6vh,8px)] rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
                       active
                         ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
                         : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
@@ -1012,7 +1012,7 @@ export default function GenerationSettings({
           type="button"
           onClick={onGenerate}
           disabled={isGenerating}
-          className={`w-full font-medium py-3 rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${
+          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${
             isGenerating
               ? "bg-[#10B981]/70 text-white cursor-not-allowed opacity-90"
               : "bg-[#10B981] hover:bg-[#059669] text-white cursor-pointer active:scale-[0.98]"

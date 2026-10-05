@@ -1,4 +1,5 @@
 // app/dashboard/_components/DashboardNavbar.tsx
+
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -22,6 +23,7 @@ import {
   Settings,
   CreditCard,
   Command,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
@@ -38,10 +40,9 @@ interface UserData {
 }
 
 /* ------------------------------------------------------------------ */
-/* Config                                                              */
+/* Config                                                             */
 /* ------------------------------------------------------------------ */
 
-// প্রতিটা icon-এর জন্য একই ঘরানার (হালকা background + গাঢ় icon) রঙের জোড়া
 const TONES = {
   blue: "bg-blue-50 text-blue-600 ring-blue-100",
   violet: "bg-violet-50 text-violet-600 ring-violet-100",
@@ -63,9 +64,12 @@ interface NavConfig {
   label: string;
   icon: LucideIcon;
   tone: Tone;
-  match: string; // active অবস্থা চেনার path prefix
+  match: string;
   upcoming?: boolean;
-  tag?: { text: string; className: string };
+  tag?: {
+    text: string;
+    className: string;
+  };
   menu?: string[];
 }
 
@@ -178,20 +182,15 @@ const NAV_ITEMS: NavConfig[] = [
   },
 ];
 
-// nav item-এর মাঝের ফাঁক (px) — gap-0.5 = 2px
 const NAV_GAP = 2;
-
-// nav আর দুই পাশের (লোগো / ডান অংশ) মাঝের নিরাপদ ফাঁক (px)
 const NAV_SIDE_GAP = 12;
-
-// item-এর ভেতরের প্যাডিং (px) — আইকন যেন কন্টেন্টের কিনারায় বসে, তাই nav এতটুকু বাইরে বাড়ে
 const NAV_EDGE_PAD = 6;
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /* ------------------------------------------------------------------ */
-/* Small building blocks                                               */
+/* Small building blocks                                              */
 /* ------------------------------------------------------------------ */
 
 function IconTile({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
@@ -204,7 +203,6 @@ function IconTile({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
   );
 }
 
-// "Upcoming" flag: label-এর উপরের খালি জায়গায় বসে, লেখার উপর নয়
 function UpcomingFlag() {
   return (
     <span className="pointer-events-none absolute right-0 top-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-semibold leading-[14px] text-slate-600">
@@ -217,15 +215,16 @@ const itemBase =
   "group flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
 
 const itemActive = "bg-blue-50 text-[#1D4ED8]";
+
 const itemIdle = "text-slate-800 hover:bg-slate-100 hover:text-slate-950";
 
-// Item-এর ভেতরের অংশ (icon + লেখা + ট্যাগ + তীর)। আসল item আর মাপার জন্য
-// লুকানো কপি দুটোতেই একই জিনিস ব্যবহার হয়, তাই মাপ সবসময় মিলে যায়।
 function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
   return (
     <>
       <IconTile icon={item.icon} tone={item.tone} />
+
       <span>{item.label}</span>
+
       {item.tag && (
         <span
           className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
@@ -233,6 +232,7 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
           {item.tag.text}
         </span>
       )}
+
       {item.menu && (
         <ChevronDown
           size={13}
@@ -249,6 +249,7 @@ function NavItem({ item, active }: { item: NavConfig; active: boolean }) {
   return (
     <div className="relative flex h-full shrink-0 items-center">
       {item.upcoming && <UpcomingFlag />}
+
       <Link
         href={item.href}
         className={`${itemBase} ${active ? itemActive : itemIdle}`}
@@ -277,6 +278,7 @@ function NavDropdown({
       onMouseLeave={() => setOpen(false)}
     >
       {item.upcoming && <UpcomingFlag />}
+
       <Link
         href={item.href}
         aria-haspopup="true"
@@ -303,7 +305,6 @@ function NavDropdown({
   );
 }
 
-// জায়গা কম হলে যে item গুলো navbar-এ ধরে না, সেগুলো এখানে জমা হয়
 function MoreMenu({
   items,
   open,
@@ -334,6 +335,7 @@ function MoreMenu({
       >
         <IconTile icon={MoreHorizontal} tone="slate" />
         <span>More</span>
+
         <ChevronDown
           size={13}
           className={`-ml-0.5 transition-transform duration-200 ${
@@ -355,12 +357,15 @@ function MoreMenu({
               }`}
             >
               <IconTile icon={item.icon} tone={item.tone} />
+
               <span className="flex-1">{item.label}</span>
+
               {item.upcoming && (
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-semibold leading-[14px] text-slate-500">
                   Upcoming
                 </span>
               )}
+
               {item.tag && (
                 <span
                   className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
@@ -377,20 +382,22 @@ function MoreMenu({
 }
 
 /* ------------------------------------------------------------------ */
-/* Navbar                                                              */
+/* Navbar                                                             */
 /* ------------------------------------------------------------------ */
 
 export default function DashboardNavbar() {
   const pathname = usePathname();
+
   const [user, setUser] = useState<UserData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // ভাষা পরিবর্তনের স্টেট (EN / BN)
+  /* Language */
   const [lang, setLang] = useState<"EN" | "BN">("EN");
 
-  // Search Modal State
+  /* Search */
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -414,27 +421,34 @@ export default function DashboardNavbar() {
         .slice(0, 8)
     : [];
 
-  // Nav dropdown states
+  /* Nav dropdown states */
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
 
-  // Responsive nav: কয়টা item ধরবে সেটা মেপে ঠিক হয়
+  /* Responsive nav */
   const headerRef = useRef<HTMLElement>(null);
   const leftRef = useRef<HTMLAnchorElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
+
   const [navWidth, setNavWidth] = useState<number>(0);
   const [navAligned, setNavAligned] = useState<boolean>(false);
   const [visibleCount, setVisibleCount] = useState<number>(NAV_ITEMS.length);
   const [navReady, setNavReady] = useState<boolean>(false);
+
+  /* ------------------------------------------------------------------ */
+  /* User data                                                          */
+  /* ------------------------------------------------------------------ */
 
   useEffect(() => {
     let mounted = true;
 
     const applyUser = (nextUser: UserData | null) => {
       if (!mounted || !nextUser) return;
+
       setUser(nextUser);
+
       try {
         localStorage.setItem("user", JSON.stringify(nextUser));
       } catch (error) {
@@ -444,6 +458,7 @@ export default function DashboardNavbar() {
 
     try {
       const storedUser = localStorage.getItem("user");
+
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as UserData;
         setUser(parsedUser);
@@ -454,7 +469,10 @@ export default function DashboardNavbar() {
 
     const handleUserUpdated = (event: Event) => {
       const customEvent = event as CustomEvent<UserData>;
-      if (customEvent.detail) applyUser(customEvent.detail);
+
+      if (customEvent.detail) {
+        applyUser(customEvent.detail);
+      }
     };
 
     window.addEventListener(
@@ -471,6 +489,7 @@ export default function DashboardNavbar() {
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok || !data?.user) return;
+
         applyUser(data.user as UserData);
       })
       .catch((error) => {
@@ -479,6 +498,7 @@ export default function DashboardNavbar() {
 
     return () => {
       mounted = false;
+
       window.removeEventListener(
         "sohozkaj:user-updated",
         handleUserUpdated as EventListener,
@@ -486,36 +506,48 @@ export default function DashboardNavbar() {
     };
   }, []);
 
-  // স্ক্রিনের মাপ বা zoom বদলালে কয়টা item ধরবে তা নতুন করে হিসাব করে
+  /* ------------------------------------------------------------------ */
+  /* Responsive nav measurement                                         */
+  /* ------------------------------------------------------------------ */
+
   useIsoLayoutEffect(() => {
     const header = headerRef.current;
     const left = leftRef.current;
     const right = rightRef.current;
     const nav = navRef.current;
     const ghost = ghostRef.current;
-    if (!header || !left || !right || !nav || !ghost) return;
+
+    if (!header || !left || !right || !nav || !ghost) {
+      return;
+    }
 
     let observer: ResizeObserver | undefined;
     let watched: HTMLElement | null = null;
 
-    // কন্টেন্টের চওড়া: আগে পেজের দেওয়া --content-w, না থাকলে
-    // data-nav-content লেখা element-এর (প্যাডিং ছাড়া) চওড়া
     const readContentW = () => {
       const fromVar = parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue(
           "--content-w",
         ),
       );
+
       if (fromVar > 0) return fromVar;
 
       const target = document.querySelector<HTMLElement>("[data-nav-content]");
+
       if (!target) return 0;
+
       if (target !== watched) {
-        if (watched) observer?.unobserve(watched);
+        if (watched) {
+          observer?.unobserve(watched);
+        }
+
         observer?.observe(target);
         watched = target;
       }
+
       const tcs = getComputedStyle(target);
+
       return (
         target.getBoundingClientRect().width -
         (parseFloat(tcs.paddingLeft) || 0) -
@@ -524,23 +556,26 @@ export default function DashboardNavbar() {
     };
 
     const measure = () => {
-      if (getComputedStyle(nav).display === "none") return; // মোবাইল/ট্যাবলেটে nav লুকানো
+      if (getComputedStyle(nav).display === "none") {
+        return;
+      }
 
-      // nav সবসময় header-এর ঠিক মাঝখানে বসে। দুই পাশে সমান জায়গা রাখতে
-      // লোগো আর ডান অংশের যেটা বড়, সেটার মাপ দুই দিকেই ধরা হয়।
       const cs = getComputedStyle(header);
+
       const pad = Math.max(
         parseFloat(cs.paddingLeft) || 0,
         parseFloat(cs.paddingRight) || 0,
       );
+
       const side = Math.max(left.offsetWidth, right.offsetWidth);
+
       const symmetricW =
         Math.floor((header.clientWidth - 2 * (pad + side + NAV_SIDE_GAP)) / 2) *
         2;
 
-      // কন্টেন্টের চওড়া জানা গেলে nav ঠিক ওই চওড়ায় বসে
       const contentW = readContentW();
       const aligned = contentW > 0;
+
       const navW = aligned
         ? Math.min(
             Math.round((contentW + 2 * NAV_EDGE_PAD) / 2) * 2,
@@ -552,22 +587,30 @@ export default function DashboardNavbar() {
       setNavWidth(Math.max(navW, 0));
 
       const available = navW - 4;
+
       if (available <= 0) return;
 
       const widths = (Array.from(ghost.children) as HTMLElement[]).map(
         (el) => el.offsetWidth,
       );
+
       const moreW = widths[widths.length - 1];
+
       const itemWidths = widths.slice(0, NAV_ITEMS.length);
 
       const total = itemWidths.reduce((sum, w) => sum + w + NAV_GAP, 0);
 
       let count = NAV_ITEMS.length;
+
       if (total > available) {
         let used = moreW + NAV_GAP;
         count = 0;
+
         for (const w of itemWidths) {
-          if (used + w + NAV_GAP > available) break;
+          if (used + w + NAV_GAP > available) {
+            break;
+          }
+
           used += w + NAV_GAP;
           count += 1;
         }
@@ -578,40 +621,56 @@ export default function DashboardNavbar() {
     };
 
     observer = new ResizeObserver(measure);
+
     measure();
+
     observer.observe(header);
     observer.observe(left);
     observer.observe(right);
     observer.observe(ghost);
+
     document.fonts?.ready.then(measure);
+
     window.addEventListener("sohozkaj:content-width", measure);
 
-    // কন্টেন্ট পরে লোড হলেও (লগইন চেকের পর ইত্যাদি) ধরার জন্য কিছুক্ষণ আবার দেখে
     let tries = 0;
+
     const poll = window.setInterval(() => {
       tries += 1;
+
       measure();
-      if (watched || tries >= 20) window.clearInterval(poll);
+
+      if (watched || tries >= 20) {
+        window.clearInterval(poll);
+      }
     }, 250);
 
     return () => {
       window.clearInterval(poll);
       observer?.disconnect();
+
       window.removeEventListener("sohozkaj:content-width", measure);
     };
   }, []);
 
-  // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
+  /* ------------------------------------------------------------------ */
+  /* Google language                                                    */
+  /* ------------------------------------------------------------------ */
+
   const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
     setLang(targetLang);
+
     const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
+
     document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
     document.cookie = `googtrans=${googleLangCode}; path=/`;
+
     window.location.reload();
   };
 
   useEffect(() => {
     const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
+
     if (match) {
       if (match[2].includes("bn")) {
         setLang("BN");
@@ -621,12 +680,17 @@ export default function DashboardNavbar() {
     }
   }, []);
 
+  /* ------------------------------------------------------------------ */
+  /* Keyboard                                                           */
+  /* ------------------------------------------------------------------ */
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setIsSearchOpen((prev) => !prev);
       }
+
       if (e.key === "Escape") {
         setIsSearchOpen(false);
         setDropdownOpen(false);
@@ -634,13 +698,21 @@ export default function DashboardNavbar() {
         setMoreOpen(false);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
-  // প্রোফাইল ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
+  /* ------------------------------------------------------------------ */
+  /* Profile dropdown outside click                                     */
+  /* ------------------------------------------------------------------ */
+
   useEffect(() => {
     if (!dropdownOpen) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       if (
         profileRef.current &&
@@ -649,9 +721,17 @@ export default function DashboardNavbar() {
         setDropdownOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [dropdownOpen]);
+
+  /* ------------------------------------------------------------------ */
+  /* Actions                                                            */
+  /* ------------------------------------------------------------------ */
 
   const handleLogout = () => {
     void logoutClientSession().finally(() => {
@@ -662,15 +742,21 @@ export default function DashboardNavbar() {
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
+
     const parts = name.trim().split(" ");
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+
+    if (parts.length === 1) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   const isActive = (prefix: string) =>
-    pathname === prefix || !!pathname?.startsWith(prefix + "/");
+    pathname === prefix || !!pathname?.startsWith(`${prefix}/`);
 
   const visibleItems = NAV_ITEMS.slice(0, visibleCount);
+
   const hiddenItems = NAV_ITEMS.slice(visibleCount);
 
   const menuSetter = (id: string) => (v: boolean) =>
@@ -688,7 +774,10 @@ export default function DashboardNavbar() {
         ref={headerRef}
         className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6"
       >
-        {/* Left: Logo */}
+        {/* ------------------------------------------------------------ */}
+        {/* Left: Logo                                                   */}
+        {/* ------------------------------------------------------------ */}
+
         <Link
           ref={leftRef}
           href="/dashboard"
@@ -697,17 +786,22 @@ export default function DashboardNavbar() {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20">
             SK
           </div>
+
           <div className="flex min-w-0 flex-col leading-none">
             <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
               Sohoz<span className="text-[#2563EB]">kaj</span>
             </span>
+
             <span className="mt-1 hidden text-[10px] font-medium text-slate-500 sm:block">
               www.sohozkaj.com
             </span>
           </div>
         </Link>
 
-        {/* Center: Navigation (lg ও তার উপরে) — জায়গা বুঝে নিজে মানিয়ে নেয় */}
+        {/* ------------------------------------------------------------ */}
+        {/* Center: Navigation                                           */}
+        {/* ------------------------------------------------------------ */}
+
         <nav
           ref={navRef}
           aria-label="Main"
@@ -721,7 +815,7 @@ export default function DashboardNavbar() {
             navReady ? "opacity-100" : "opacity-0"
           }`}
         >
-          {/* মাপার জন্য লুকানো কপি (screen-এ দেখা যায় না, কিছুতে click হয় না) */}
+          {/* Hidden measuring copy */}
           <div
             aria-hidden="true"
             className="pointer-events-none invisible absolute inset-x-0 top-0 h-0 overflow-hidden"
@@ -734,10 +828,13 @@ export default function DashboardNavbar() {
                   </div>
                 </div>
               ))}
+
               <div className="flex shrink-0 items-center">
                 <div className={itemBase}>
                   <IconTile icon={MoreHorizontal} tone="slate" />
+
                   <span>More</span>
+
                   <ChevronDown size={13} className="-ml-0.5" />
                 </div>
               </div>
@@ -773,7 +870,10 @@ export default function DashboardNavbar() {
           )}
         </nav>
 
-        {/* Right: language, credit bonus, search, profile, drawer */}
+        {/* ------------------------------------------------------------ */}
+        {/* Right                                                        */}
+        {/* ------------------------------------------------------------ */}
+
         <div
           ref={rightRef}
           className="flex shrink-0 items-center gap-1.5 sm:gap-2"
@@ -791,6 +891,7 @@ export default function DashboardNavbar() {
             >
               EN
             </button>
+
             <button
               type="button"
               onClick={() => changeGoogleLanguage("BN")}
@@ -828,7 +929,9 @@ export default function DashboardNavbar() {
                   <img
                     src={`${user.profileImageUrl}${
                       user.updatedAt
-                        ? `${user.profileImageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(user.updatedAt)}`
+                        ? `${
+                            user.profileImageUrl.includes("?") ? "&" : "?"
+                          }v=${encodeURIComponent(user.updatedAt)}`
                         : ""
                     }`}
                     alt={`${user?.fullName || "User"} profile photo`}
@@ -841,14 +944,17 @@ export default function DashboardNavbar() {
                   getInitials(user?.fullName)
                 )}
               </div>
+
               <div className="hidden flex-col leading-tight min-[2200px]:flex">
                 <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
                   {user?.fullName || "User Account"}
                 </span>
+
                 <span className="max-w-[120px] truncate text-[11px] text-slate-500">
                   {user?.phoneNumber || user?.email || "User"}
                 </span>
               </div>
+
               <ChevronDown
                 size={14}
                 className={`hidden shrink-0 text-slate-500 transition-transform duration-200 sm:block ${
@@ -857,18 +963,27 @@ export default function DashboardNavbar() {
               />
             </button>
 
+            {/* -------------------------------------------------------- */}
+            {/* Profile Dropdown                                         */}
+            {/* -------------------------------------------------------- */}
+
             {dropdownOpen && (
               <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
+                {/* User info */}
                 <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
                   <p className="truncate font-semibold text-[#0F172A]">
                     {user?.fullName || "User Account"}
                   </p>
+
                   <p className="mt-0.5 truncate text-xs text-slate-500">
                     {user?.phoneNumber || user?.email || "User"}
                   </p>
                 </div>
+
+                {/* Language */}
                 <div className="mb-1 flex items-center justify-between gap-2 px-3 py-2 min-[1900px]:hidden">
                   <span className="font-medium text-slate-700">Language</span>
+
                   <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
                     <button
                       type="button"
@@ -881,6 +996,7 @@ export default function DashboardNavbar() {
                     >
                       EN
                     </button>
+
                     <button
                       type="button"
                       onClick={() => changeGoogleLanguage("BN")}
@@ -894,23 +1010,67 @@ export default function DashboardNavbar() {
                     </button>
                   </div>
                 </div>
-                <Link href="/profile" className={profileLinkClass}>
-                  <UserIcon size={15} className="text-slate-500" /> My Profile
+
+                {/* Dashboard */}
+                <Link
+                  href="/dashboard"
+                  onClick={() => setDropdownOpen(false)}
+                  className={`${profileLinkClass} ${
+                    isActive("/dashboard") ? "bg-blue-50 text-[#1D4ED8]" : ""
+                  }`}
+                >
+                  <LayoutDashboard
+                    size={15}
+                    className={
+                      isActive("/dashboard")
+                        ? "text-[#2563EB]"
+                        : "text-slate-500"
+                    }
+                  />
+                  Dashboard
                 </Link>
-                <Link href="/subscription" className={profileLinkClass}>
-                  <CreditCard size={15} className="text-slate-500" />{" "}
+
+                {/* My Profile */}
+                <Link
+                  href="/profile"
+                  onClick={() => setDropdownOpen(false)}
+                  className={profileLinkClass}
+                >
+                  <UserIcon size={15} className="text-slate-500" />
+                  My Profile
+                </Link>
+
+                {/* Subscription */}
+                <Link
+                  href="/subscription"
+                  onClick={() => setDropdownOpen(false)}
+                  className={profileLinkClass}
+                >
+                  <CreditCard size={15} className="text-slate-500" />
                   Subscription
                 </Link>
-                <Link href="/settings" className={profileLinkClass}>
-                  <Settings size={15} className="text-slate-500" /> Settings
+
+                {/* Settings */}
+                <Link
+                  href="/settings"
+                  onClick={() => setDropdownOpen(false)}
+                  className={profileLinkClass}
+                >
+                  <Settings size={15} className="text-slate-500" />
+                  Settings
                 </Link>
+
+                {/* Divider */}
                 <div className="my-1 border-t border-slate-100" />
+
+                {/* Logout */}
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left font-semibold text-red-600 transition-colors hover:bg-red-50"
                 >
-                  <LogOut size={15} /> Logout
+                  <LogOut size={15} />
+                  Logout
                 </button>
               </div>
             )}
@@ -929,17 +1089,22 @@ export default function DashboardNavbar() {
         </div>
       </header>
 
-      {/* Search Modal */}
+      {/* -------------------------------------------------------------- */}
+      {/* Search Modal                                                   */}
+      {/* -------------------------------------------------------------- */}
+
       {isSearchOpen && (
         <div className="fixed inset-0 z-[200] flex items-start justify-center bg-slate-900/40 px-4 pt-[14vh] backdrop-blur-sm animate-in fade-in duration-200">
           <div
             className="absolute inset-0"
             onClick={() => setIsSearchOpen(false)}
-          ></div>
+          />
+
           <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-12px_rgba(15,23,42,0.35)]">
             {/* Input row */}
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
               <Search size={18} className="shrink-0 text-[#2563EB]" />
+
               <input
                 type="text"
                 autoFocus
@@ -948,6 +1113,7 @@ export default function DashboardNavbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full min-w-0 bg-transparent text-[15px] font-medium text-[#0F172A] placeholder-slate-400 focus:outline-none"
               />
+
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(false)}
@@ -964,6 +1130,7 @@ export default function DashboardNavbar() {
                   <div className="space-y-1">
                     {searchResults.map((tool) => {
                       const ToolIcon = tool.icon;
+
                       return (
                         <Link
                           key={tool.id}
@@ -984,6 +1151,7 @@ export default function DashboardNavbar() {
                             <span className="block truncate text-sm font-bold text-[#0F172A]">
                               {tool.name}
                             </span>
+
                             <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500">
                               {tool.category}
                               {tool.access === "paid" ? " • Paid" : " • Free"}
@@ -1003,9 +1171,11 @@ export default function DashboardNavbar() {
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                       <Search size={20} />
                     </span>
+
                     <p className="mt-4 text-sm font-black text-[#0F172A]">
                       No matching tools found
                     </p>
+
                     <p className="mt-1 text-xs font-medium text-slate-500">
                       Try another tool name, category, or keyword.
                     </p>
@@ -1017,9 +1187,11 @@ export default function DashboardNavbar() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
                   <Search size={20} />
                 </span>
+
                 <p className="mt-4 text-sm font-black text-[#0F172A]">
                   Search tools and features
                 </p>
+
                 <p className="mt-1 text-xs font-medium text-slate-500">
                   Start typing to find what you need.
                 </p>
@@ -1029,6 +1201,7 @@ export default function DashboardNavbar() {
             {/* Footer */}
             <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3 text-[11px] font-semibold text-slate-400">
               <span>Press Esc to close</span>
+
               <span className="flex shrink-0 items-center gap-1 font-mono">
                 <Command size={10} /> K
               </span>
@@ -1037,7 +1210,10 @@ export default function DashboardNavbar() {
         </div>
       )}
 
-      {/* Sidebar Drawer */}
+      {/* -------------------------------------------------------------- */}
+      {/* Sidebar Drawer                                                 */}
+      {/* -------------------------------------------------------------- */}
+
       <DashboardSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -1047,8 +1223,3 @@ export default function DashboardNavbar() {
     </>
   );
 }
-
-// git status
-// git add .
-// git commit -m "ja mon chaise tai korsi"
-// git push origin main

@@ -111,10 +111,6 @@ export type ManualEditorContextValue = {
 
   loading: boolean;
 
-  showCreditBanner: boolean;
-
-  setShowCreditBanner: (value: boolean) => void;
-
   photoMode: PhotoMode;
 
   setPhotoMode: (value: PhotoMode) => void;
@@ -426,8 +422,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
-
-  const [showCreditBanner, setShowCreditBanner] = useState(true);
 
   const [photoMode, setPhotoMode] = useState<PhotoMode>("passport");
 
@@ -2009,10 +2003,6 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
     isAuthenticated,
 
     loading,
-
-    showCreditBanner,
-
-    setShowCreditBanner,
 
     photoMode,
 

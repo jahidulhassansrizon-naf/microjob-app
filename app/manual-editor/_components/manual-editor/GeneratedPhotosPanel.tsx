@@ -224,8 +224,8 @@ export default function GeneratedPhotosPanel() {
   const [previewPhoto, setPreviewPhoto] = useState<GeneratedPhoto | null>(null);
 
   return (
-    <section className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 flex flex-col gap-4 shadow-lg w-full">
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+    <section className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 lg:px-4 lg:py-3 flex flex-col gap-4 lg:gap-2 shadow-lg w-full shrink-0">
+      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 lg:pb-2">
         <div className="flex items-center gap-2">
           <div className="w-1 h-3.5 bg-[#2563EB] rounded-full" />
           <h4 className="text-[#0F172A] text-xs font-bold tracking-wider uppercase">
@@ -237,14 +237,14 @@ export default function GeneratedPhotosPanel() {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 lg:flex lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden lg:pb-1">
         {generatedPhotos.length
           ? generatedPhotos.map((photo, idx) => (
               <button
                 type="button"
                 key={`${photo.id || photo.url.slice(0, 18)}-${idx}`}
                 onClick={() => setPreviewPhoto(photo)}
-                className="aspect-[3/4] bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group"
+                className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group"
                 title="Click to preview"
               >
                 <img
@@ -261,7 +261,7 @@ export default function GeneratedPhotosPanel() {
           : Array.from({ length: 8 }).map((_, idx) => (
               <div
                 key={idx}
-                className="aspect-[3/4] bg-[#E2E8F0]/50 border border-dashed border-[#E2E8F0] rounded-xl flex flex-col items-center justify-center text-slate-400 text-[10px] gap-1"
+                className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0]/50 border border-dashed border-[#E2E8F0] rounded-xl flex flex-col items-center justify-center text-slate-400 text-[10px] gap-1"
               >
                 <ImageIcon size={16} />
                 <span>Empty slot</span>

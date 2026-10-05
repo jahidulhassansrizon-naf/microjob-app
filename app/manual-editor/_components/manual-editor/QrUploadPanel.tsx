@@ -5,8 +5,8 @@ import { useManualEditor } from "./EditorProvider";
 export default function QrUploadPanel() {
   const { activePhoto, setScanOpen } = useManualEditor();
   return (
-    <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4">
-      <div className="bg-[#1F242D] text-white p-4 rounded-2xl flex items-center justify-between border border-gray-700/50">
+    <div className="bg-white border border-gray-200/80 rounded-2xl p-4 lg:p-3 shadow-sm flex flex-col gap-4 lg:gap-3 shrink-0">
+      <div className="bg-[#1F242D] text-white p-4 lg:p-3 rounded-2xl flex items-center justify-between border border-gray-700/50">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-gray-800/90 rounded-xl text-blue-400 border border-gray-700">
             <QrCode size={20} />

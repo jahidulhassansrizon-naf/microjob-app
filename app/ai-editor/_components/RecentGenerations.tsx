@@ -68,8 +68,8 @@ export default function RecentGenerations({
 
   return (
     <>
-      <section className="mt-4 w-full max-w-[1400px] rounded-2xl bg-[#F8FAFC] p-4 shadow-sm sm:p-6 text-[#0F172A]">
-        <div className="mb-4 flex flex-col justify-between gap-3 border-b border-[#E2E8F0] pb-3 sm:flex-row sm:items-center">
+      <section className="mt-4 w-full max-w-[1400px] xl:max-w-none shrink-0 rounded-2xl bg-[#F8FAFC] p-4 shadow-sm sm:p-6 text-[#0F172A] xl:mt-3 xl:px-4 xl:py-2.5">
+        <div className="mb-4 flex flex-col justify-between gap-3 border-b border-[#E2E8F0] pb-3 sm:flex-row sm:items-center xl:mb-2 xl:pb-2">
           <div className="flex items-center gap-2">
             <span className="h-5 w-1.5 rounded-full bg-[#2563EB]" />
             <h3 className="text-sm font-semibold text-[#0F172A]">
@@ -120,17 +120,17 @@ export default function RecentGenerations({
 
         <div
           ref={scrollRef}
-          className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin"
+          className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1"
         >
           {isLoading ? (
             Array.from({ length: 5 }).map((_, index) => (
               <div
                 key={index}
-                className="h-36 w-28 shrink-0 animate-pulse rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]"
+                className="h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 animate-pulse rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]"
               />
             ))
           ) : generations.length === 0 ? (
-            <div className="flex min-h-[150px] w-full items-center justify-center">
+            <div className="flex min-h-[150px] w-full items-center justify-center xl:min-h-[clamp(72px,10.5vh,112px)]">
               <p className="text-xs italic text-[#0F172A]/60">
                 No recent generations yet. Click “Generate Photo” to add images
                 here.
@@ -142,7 +142,7 @@ export default function RecentGenerations({
                 type="button"
                 key={item.id ?? index}
                 onClick={() => onImageClick(item)}
-                className="group relative flex h-36 w-28 shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-left transition hover:border-[#2563EB] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                className="group relative flex h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-left transition hover:border-[#2563EB] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 style={
                   item.bgColor === "transparent"
                     ? TRANSPARENT_THUMBNAIL_STYLE

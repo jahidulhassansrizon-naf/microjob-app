@@ -81,7 +81,7 @@ export default function AiToolsPanel() {
             key={tool.id}
             type="button"
             onClick={() => showUnsupportedAiMessage(tool.id)}
-            className={`flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition cursor-pointer ${
+            className={`flex h-20 lg:h-16 flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition cursor-pointer ${
               activeAiTool === tool.id
                 ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
                 : "border-[#E2E8F0] bg-white hover:border-gray-300"
@@ -99,7 +99,7 @@ export default function AiToolsPanel() {
         <button
           type="button"
           onClick={() => showUnsupportedAiMessage("cutout")}
-          className={`flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border bg-white p-2 text-center transition cursor-pointer ${
+          className={`flex h-20 lg:h-16 flex-col items-center justify-center gap-1 rounded-2xl border bg-white p-2 text-center transition cursor-pointer ${
             activeAiTool === "cutout"
               ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
               : "border-[#E2E8F0] hover:border-gray-300"

@@ -50,7 +50,7 @@ export default function BackgroundPanel() {
               disabled={isRemovingBackground}
               aria-label={`Select ${bg.id} background`}
               onClick={() => handlePresetBackground(bg.id)}
-              className={`group relative h-11 rounded-2xl border transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`group relative h-11 lg:h-9 rounded-2xl border transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
                 selected
                   ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
                   : "border-[#E2E8F0] hover:border-slate-300"
@@ -82,7 +82,7 @@ export default function BackgroundPanel() {
           disabled={isRemovingBackground}
           aria-label="Use custom background color"
           onClick={handleCustomBackground}
-          className={`relative h-11 rounded-2xl border flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`relative h-11 lg:h-9 rounded-2xl border flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
             !backgroundRemoved && selectedBg === "custom"
               ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
               : "border-[#E2E8F0] hover:border-slate-300"
@@ -107,7 +107,7 @@ export default function BackgroundPanel() {
         {/* Native color picker                                             */}
         {/* -------------------------------------------------------------- */}
         <label
-          className={`h-11 rounded-2xl border border-dashed border-[#E2E8F0] text-slate-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-[#0F172A] ${
+          className={`h-11 lg:h-9 rounded-2xl border border-dashed border-[#E2E8F0] text-slate-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-[#0F172A] ${
             isRemovingBackground ? "pointer-events-none opacity-50" : ""
           }`}
           title="Choose custom color"
@@ -139,7 +139,7 @@ export default function BackgroundPanel() {
               ? "Removing background..."
               : "Remove background"
           }
-          className={`col-span-2 h-11 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[10px] font-black transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${
+          className={`col-span-2 h-11 lg:h-9 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[10px] font-black transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${
             backgroundRemoved
               ? "border-[#10B981] bg-[#10B981] text-white hover:bg-emerald-600"
               : "border-emerald-200 bg-emerald-50 text-[#10B981] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md"

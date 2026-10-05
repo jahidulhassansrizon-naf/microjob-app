@@ -146,6 +146,44 @@ function getBackgroundStyle(background: string): React.CSSProperties {
     : { backgroundColor: background };
 }
 
+/* Sizes a photo frame so it never gets taller or wider than the space left
+   for it. On xl screens the holder becomes a size container, and the frame
+   is capped by both the holder width and the holder height (keeping the
+   photo aspect ratio). Below xl the original fixed-width behaviour is kept. */
+function FitFrame({
+  info,
+  className = "",
+  style,
+  children,
+}: {
+  info: BoxInfo;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const w = parseFloat(info.style.width) || 290;
+  const h = parseFloat(info.style.height) || 372;
+
+  return (
+    <div className="flex min-h-0 w-full flex-1 items-center justify-center xl:[container-type:size]">
+      <div
+        className={`relative w-[min(var(--cw),100%)] xl:w-[min(var(--cw),100cqw,calc(100cqh*var(--cr)))] ${className}`}
+        style={
+          {
+            "--cw": `${w}px`,
+            "--cr": String(w / h),
+            aspectRatio: `${w} / ${h}`,
+            height: "auto",
+            ...style,
+          } as React.CSSProperties
+        }
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function EmptyUploadBox({
   title,
   subtitle,
@@ -156,7 +194,7 @@ function EmptyUploadBox({
   onUpload: () => void;
 }) {
   return (
-    <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E2E8F0] p-4 text-center">
+    <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E2E8F0] p-4 text-center xl:min-h-0 xl:p-2">
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB]">
         <Upload size={18} />
       </div>
@@ -199,22 +237,17 @@ function PhotoCard({
   isScanning?: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1.5">
-      <span className="max-w-full truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+    <div className="flex min-w-0 flex-col items-center gap-1.5 xl:min-h-0">
+      <span className="max-w-full shrink-0 truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
         {label}
       </span>
 
-      <div
-        className={`relative overflow-hidden rounded-2xl shadow-xl ${
+      <FitFrame
+        info={boxInfo}
+        className={`overflow-hidden rounded-2xl shadow-xl ${
           showBorder ? "border-2 border-[#E2E8F0]" : ""
         }`}
-        style={{
-          width: "min(100%, 290px)",
-          aspectRatio: `${parseFloat(boxInfo.style.width) || 290} / ${
-            parseFloat(boxInfo.style.height) || 372
-          }`,
-          ...getBackgroundStyle(background),
-        }}
+        style={getBackgroundStyle(background)}
       >
         {image ? (
           <div className="group relative h-full w-full">
@@ -245,7 +278,7 @@ function PhotoCard({
         )}
 
         {isScanning && image && <ScanOverlay />}
-      </div>
+      </FitFrame>
     </div>
   );
 }
@@ -283,17 +316,8 @@ export default function PhotoPreviewArea({
     setIsDualPreviewActive(false);
   };
 
-  const cardStyle: React.CSSProperties = {
-    width: activeBoxInfo.style.width,
-    maxWidth: "100%",
-    aspectRatio: `${parseFloat(activeBoxInfo.style.width) || 290} / ${
-      parseFloat(activeBoxInfo.style.height) || 372
-    }`,
-    height: "auto",
-  };
-
   return (
-    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-lg sm:p-6">
+    <div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-lg sm:p-6 xl:max-h-none xl:min-h-0 xl:overflow-hidden xl:p-4">
       {/* Scan keyframes: only mounted while generating */}
       {isGenerating && <style>{SCAN_STYLES}</style>}
 
@@ -317,9 +341,9 @@ export default function PhotoPreviewArea({
       )}
 
       {!isDualMode ? (
-        <div className="flex w-full flex-col items-center justify-center gap-4">
+        <div className="flex w-full flex-col items-center justify-center gap-4 xl:min-h-0 xl:flex-1 xl:gap-3">
           {isDualPreviewActive && originalImageForDual ? (
-            <div className="grid w-full max-w-[760px] grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid w-full max-w-[760px] grid-cols-1 gap-6 md:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)] xl:gap-4">
               <PhotoCard
                 image={originalImageForDual}
                 label="Real Photo"
@@ -339,13 +363,13 @@ export default function PhotoPreviewArea({
               />
             </div>
           ) : (
-            <div
-              className={`relative overflow-hidden rounded-2xl shadow-xl ${
+            <FitFrame
+              info={activeBoxInfo}
+              className={`overflow-hidden rounded-2xl shadow-xl ${
                 uploadedImage
                   ? "border-2 border-transparent"
                   : "border-2 border-dashed border-[#2563EB]/40"
               }`}
-              style={cardStyle}
             >
               {uploadedImage ? (
                 <div
@@ -380,14 +404,14 @@ export default function PhotoPreviewArea({
               )}
 
               {isGenerating && <ScanOverlay />}
-            </div>
+            </FitFrame>
           )}
 
           {!isDualPreviewActive && (
             <button
               type="button"
               onClick={enableDualMode}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]"
+              className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]"
             >
               <ImageIcon size={14} className="text-[#2563EB]" />
               Upload 2 separate images
@@ -395,16 +419,16 @@ export default function PhotoPreviewArea({
           )}
         </div>
       ) : (
-        <div className="flex w-full max-w-[760px] flex-col items-center gap-5">
-          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+        <div className="flex w-full max-w-[760px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
+            <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
+              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Left Person
               </span>
 
-              <div
-                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
-                style={cardStyle}
+              <FitFrame
+                info={activeBoxInfo}
+                className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
               >
                 {leftImage ? (
                   <div
@@ -434,17 +458,17 @@ export default function PhotoPreviewArea({
                 )}
 
                 {isGenerating && leftImage && <ScanOverlay />}
-              </div>
+              </FitFrame>
             </div>
 
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+            <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
+              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
                 Right Person
               </span>
 
-              <div
-                className="relative mx-auto w-full max-w-[290px] overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
-                style={cardStyle}
+              <FitFrame
+                info={activeBoxInfo}
+                className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl"
               >
                 {rightImage ? (
                   <div
@@ -474,11 +498,11 @@ export default function PhotoPreviewArea({
                 )}
 
                 {isGenerating && rightImage && <ScanOverlay />}
-              </div>
+              </FitFrame>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
               onClick={() => {

@@ -139,7 +139,7 @@ export default function PhotoSizePanel() {
 
                   setFreeSizeOpen(false);
                 }}
-                className={`relative flex w-full min-w-0 flex-col items-center justify-center p-2 rounded-2xl border text-[10px] font-bold transition h-16 cursor-pointer ${
+                className={`relative flex w-full min-w-0 flex-col items-center justify-center p-2 rounded-2xl border text-[10px] font-bold transition h-16 lg:h-14 cursor-pointer ${
                   isActive
                     ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
                     : "border-[#E2E8F0] bg-white hover:border-[#2563EB]/40"

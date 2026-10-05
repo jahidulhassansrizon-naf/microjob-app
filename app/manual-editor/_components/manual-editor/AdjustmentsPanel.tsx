@@ -35,8 +35,8 @@ export default function AdjustmentsPanel() {
   ];
 
   return (
-    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 shadow-sm text-[#0F172A]">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 lg:p-3 shadow-sm text-[#0F172A] shrink-0">
+      <div className="flex items-center gap-2 mb-4 lg:mb-2">
         <div className="w-1 h-3.5 bg-[#2563EB] rounded-full" />
         <SlidersHorizontal size={15} className="text-[#0F172A]/70" />
         <span className="text-xs font-black tracking-wider uppercase text-[#0F172A]">
@@ -45,7 +45,7 @@ export default function AdjustmentsPanel() {
       </div>
 
       {rows.map(([label, value, setter]) => (
-        <div key={label} className="mb-4">
+        <div key={label} className="mb-4 lg:mb-2">
           <div className="flex items-center justify-between text-[9px] font-bold text-[#0F172A]/70 uppercase">
             <span>{label}</span>
             <span className="text-[#2563EB]">{value}</span>

@@ -6,8 +6,8 @@ export default function CreditBanner() {
   const { showCreditBanner, setShowCreditBanner } = useManualEditor();
   if (!showCreditBanner) return null;
   return (
-    <div className="max-w-[1700px] w-full mx-auto px-4 pt-4">
-      <div className="bg-[#E2E8F0] border border-[#2563EB]/20 text-[#0F172A] px-4 py-3 rounded-xl flex items-center justify-between shadow-sm">
+    <div className="max-w-[1700px] w-full mx-auto px-4 pt-4 lg:pt-2">
+      <div className="bg-[#E2E8F0] border border-[#2563EB]/20 text-[#0F172A] px-4 py-3 lg:py-2 rounded-xl flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-6 h-6 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-xs shrink-0">
             !

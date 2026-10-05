@@ -2,7 +2,6 @@
 
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 
-import CreditBanner from "./_components/manual-editor/CreditBanner";
 import PhotoSizePanel from "./_components/manual-editor/PhotoSizePanel";
 import BackgroundPanel from "./_components/manual-editor/BackgroundPanel";
 import AiToolsPanel from "./_components/manual-editor/AiToolsPanel";
@@ -36,13 +35,11 @@ function ManualEditorScreen() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col font-sans select-none text-gray-900">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#F9FAFB] flex flex-col font-sans select-none text-gray-900">
       <DashboardNavbar />
-      <CreditBanner />
-
-      <div className="max-w-[1700px] w-full mx-auto p-4 md:p-6 flex flex-col gap-6 flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="lg:col-span-3 bg-white border border-gray-200/80 rounded-3xl p-4 md:p-5 flex flex-col gap-5 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh]">
+      <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
+          <aside className="lg:col-span-3 bg-white border border-gray-200/80 rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
             <PhotoSizePanel />
             <BackgroundPanel />
             <AiToolsPanel />
@@ -50,7 +47,7 @@ function ManualEditorScreen() {
 
           <PhotoWorkspace />
 
-          <aside className="lg:col-span-3 flex flex-col gap-5">
+          <aside className="lg:col-span-3 flex flex-col gap-5 lg:gap-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
             <QrUploadPanel />
             <AdjustmentsPanel />
           </aside>
@@ -59,8 +56,8 @@ function ManualEditorScreen() {
         <GeneratedPhotosPanel />
       </div>
 
-      <footer className="mt-auto border-t border-gray-200 bg-white px-5 py-3 text-[10px] text-gray-400">
-        <div className="mx-auto flex max-w-[1700px] items-center justify-between gap-3">
+      <footer className="mt-auto shrink-0 border-t border-gray-200 bg-white px-5 py-3 lg:py-1.5 text-[10px] text-gray-400">
+        <div className="w-full flex items-center justify-between gap-3">
           <span>Manual Editor</span>
           <span>
             Browser editing is local; AI services will be connected separately.
