@@ -1391,7 +1391,7 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
         )}
       </div>
 
-      <span className="mt-2.5 text-xs font-bold text-[#0F172A] text-center line-clamp-1 group-hover:text-[#2563EB] transition-colors">
+      <span className="mt-2.5 text-[15px] font-bold text-[#0F172A] text-center line-clamp-1 group-hover:text-[#2563EB] transition-colors">
         {tool.name}
       </span>
     </Link>

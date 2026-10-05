@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
@@ -13,7 +19,7 @@ import {
 } from "@/app/_components/toolsData";
 
 // হোমে প্রথম কয়টা টুল দেখাবে (সব দেখাতে চাইলে toolsData.length দাও)
-const HOME_TOOLS_COUNT = 12;
+const HOME_TOOLS_COUNT = 16;
 
 /* ------------------------------------------------------------------ */
 /* Popular tools                                                       */
@@ -49,10 +55,10 @@ function PopularToolsSection({ fit }: { fit: boolean }) {
       </div>
 
       <div
-        className={`mt-6 grid gap-x-5 gap-y-8 ${
+        className={`mt-5 grid gap-x-5 gap-y-7 ${
           fit
-            ? "grid-cols-6"
-            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+            ? "grid-cols-8"
+            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
         }`}
       >
         {homeTools.map((tool) => (
@@ -101,7 +107,7 @@ function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
 
   return (
     <section
-      className={`mt-12 rounded-xl bg-[#2563EB] text-white ${
+      className={`mt-8 rounded-xl bg-[#2563EB] text-white ${
         fit ? "px-10 py-10" : "px-6 py-8 sm:px-10 sm:py-10"
       }`}
     >
@@ -175,16 +181,53 @@ function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
 /* Home screen: Popular tools + banner, always one screen              */
 /* ------------------------------------------------------------------ */
 
-// ব্রাউজার জুম যাই হোক, টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে আঁটবে; ফুটার একটু স্ক্রল করলে আসবে
-const FIT_WIDTH = 1232; // px — লেআউটের মূল চওড়া (আগের max-w-7xl − পাশের প্যাডিং)
-const FIT_MAX_SCALE = 1; // বড় স্ক্রিনেও এর চেয়ে বড় হবে না (১ = হুবহু আগের মাপ)
+// ব্রাউজার জুম যাই হোক, টুলস + ব্যানার একসাথে পুরো স্ক্রিন জুড়ে আঁটবে; ফুটার একটু স্ক্রল করলে আসবে
+const FIT_MIN_WIDTH = 1232; // px — লেআউটের সবচেয়ে ছোট চওড়া (আগের মাপ)
+const FIT_MAX_WIDTH = 1800; // px — বড় স্ক্রিনে লেআউট এত চওড়া পর্যন্ত বাড়বে (কমালে লেখা বড় হবে কিন্তু দুই পাশে ফাঁকা বাড়বে; বাড়ালে উল্টো)
+const FIT_MAX_SCALE = 1.5; // খুব বড় স্ক্রিনে সর্বোচ্চ কতটা বড় হবে
 const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্ন কতটা ছোট হবে
 const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
 const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
 
+/* ------------------------------------------------------------------ */
+/* Page loading overlay (টুলে ক্লিক করার পর নতুন পেজ আসা পর্যন্ত)        */
+/* ------------------------------------------------------------------ */
+
+function PageLoadingOverlay() {
+  const [go, setGo] = useState<boolean>(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setGo(true), 30);
+    return () => clearTimeout(id);
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-[998] flex items-center justify-center bg-white/70 backdrop-blur-sm animate-in fade-in duration-150"
+    >
+      {/* উপরের প্রগ্রেস বার */}
+      <div className="fixed inset-x-0 top-0 h-1 bg-blue-100">
+        <div
+          className="h-full bg-[#2563EB] transition-[width] ease-out"
+          style={{ width: go ? "90%" : "0%", transitionDuration: "8000ms" }}
+        />
+      </div>
+
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent" />
+        <p className="text-sm font-semibold text-slate-700">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({ userName }: { userName: string }) {
+  const router = useRouter();
   const sectionRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const [navigating, setNavigating] = useState<boolean>(false);
 
   // মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে fit মোড; টাচ ডিভাইসে আগের মতো রেসপন্সিভ লেআউট
   const [fit, setFit] = useState<boolean>(
@@ -192,7 +235,12 @@ function HomeScreen({ userName }: { userName: string }) {
       typeof window !== "undefined" &&
       window.matchMedia("(pointer: fine)").matches,
   );
-  const [view, setView] = useState({ scale: 1, height: 0, top: 64 });
+  const [view, setView] = useState({
+    scale: 1,
+    width: FIT_MIN_WIDTH,
+    height: 0,
+    top: 64,
+  });
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -203,8 +251,7 @@ function HomeScreen({ userName }: { userName: string }) {
     const update = () => {
       setFit(mq.matches);
       if (!mq.matches) {
-        document.documentElement.style.removeProperty("--content-w");
-        window.dispatchEvent(new Event("sohozkaj:content-width"));
+        content.style.width = "";
         return;
       }
 
@@ -213,25 +260,41 @@ function HomeScreen({ userName }: { userName: string }) {
         section.getBoundingClientRect().top + window.scrollY,
         0,
       );
-      const height = content.offsetHeight;
-      if (!height) return;
-
       const availW = document.documentElement.clientWidth - FIT_PAD_X * 2;
       const availH = window.innerHeight - top - FIT_PAD_Y * 2;
-      const raw = Math.min(availW / FIT_WIDTH, availH / height);
+      if (availW <= 0 || availH <= 0) return;
+
+      // দুই চওড়ায় কন্টেন্টের উচ্চতা মেপে বের করছি স্ক্রিনের মাপে ঠিক কত চওড়া লেআউট আঁটবে
+      const measure = (w: number) => {
+        content.style.width = `${w}px`;
+        return content.offsetHeight;
+      };
+      const h1 = measure(FIT_MIN_WIDTH);
+      const h2 = measure(FIT_MAX_WIDTH);
+      if (!h1 || !h2) return;
+
+      const slope = (h2 - h1) / (FIT_MAX_WIDTH - FIT_MIN_WIDTH);
+      const base = h1 - slope * FIT_MIN_WIDTH;
+      const denom = availH - slope * availW;
+      const ideal =
+        denom > 0 && base > 0 ? (base * availW) / denom : FIT_MAX_WIDTH;
+      const width = Math.round(
+        Math.min(FIT_MAX_WIDTH, Math.max(FIT_MIN_WIDTH, ideal)),
+      );
+
+      const height = measure(width);
+      if (!height) return;
+
+      const raw = Math.min(availW / width, availH / height);
       const scale = Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, raw));
 
-      // নেভবার যেন কন্টেন্টের চওড়ার সাথে মিলে থাকে, তাই মাপটা জানায়ে দিচ্ছি
-      document.documentElement.style.setProperty(
-        "--content-w",
-        `${FIT_WIDTH * scale}px`,
-      );
-      window.dispatchEvent(new Event("sohozkaj:content-width"));
-
       setView((v) =>
-        v.scale === scale && v.height === height && v.top === top
+        v.scale === scale &&
+        v.width === width &&
+        v.height === height &&
+        v.top === top
           ? v
-          : { scale, height, top },
+          : { scale, width, height, top },
       );
     };
 
@@ -245,18 +308,78 @@ function HomeScreen({ userName }: { userName: string }) {
       window.removeEventListener("resize", update);
       mq.removeEventListener("change", update);
       ro.disconnect();
-      document.documentElement.style.removeProperty("--content-w");
-      window.dispatchEvent(new Event("sohozkaj:content-width"));
     };
   }, []);
+
+  // দ্রুত লোডের জন্য: এই পেজের সব লিংকের (টুলের) পেজ আগেই prefetch করে রাখছি
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const id = setTimeout(() => {
+      const hrefs = new Set<string>();
+      section
+        .querySelectorAll<HTMLAnchorElement>('a[href^="/"]')
+        .forEach((a) => {
+          const href = a.getAttribute("href");
+          if (href) hrefs.add(href);
+        });
+      hrefs.forEach((href) => {
+        try {
+          router.prefetch(href);
+        } catch {
+          // Prefetch is optional.
+        }
+      });
+    }, 300);
+
+    return () => clearTimeout(id);
+  }, [router]);
+
+  // টুল/লিংকে ক্লিক করলেই লোডিং দেখাও; নতুন পেজ এলে এই পেজ আনমাউন্ট হয়, তাই লোডিং নিজে থেকেই চলে যায়
+  const handleClick = (e: ReactMouseEvent<HTMLElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    const el = (e.target as HTMLElement).closest<HTMLElement>(
+      "a, button, [role='link'], [role='button']",
+    );
+    if (!el || !e.currentTarget.contains(el)) return;
+
+    if (el instanceof HTMLAnchorElement) {
+      if (el.target === "_blank" || el.hasAttribute("download")) return;
+      const url = new URL(el.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (
+        url.pathname === window.location.pathname &&
+        url.search === window.location.search
+      ) {
+        return;
+      }
+    }
+    setNavigating(true);
+  };
+
+  // সেফটি: কোনো কারণে নেভিগেশন না হলে ২০ সেকেন্ড পর লোডিং বন্ধ; Back চাপলেও বন্ধ
+  useEffect(() => {
+    if (!navigating) return;
+    const stop = () => setNavigating(false);
+    const id = setTimeout(stop, 20000);
+    window.addEventListener("pageshow", stop);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("pageshow", stop);
+    };
+  }, [navigating]);
 
   return (
     <section
       ref={sectionRef}
+      onClick={handleClick}
       className={
         fit
           ? "flex items-center justify-center"
-          : "mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6"
+          : "mx-auto max-w-[1800px] px-4 pb-12 pt-6 sm:px-6"
       }
       style={
         fit
@@ -272,7 +395,7 @@ function HomeScreen({ userName }: { userName: string }) {
         style={
           fit
             ? {
-                width: FIT_WIDTH * view.scale,
+                width: view.width * view.scale,
                 height: view.height * view.scale,
               }
             : undefined
@@ -284,7 +407,7 @@ function HomeScreen({ userName }: { userName: string }) {
           style={
             fit
               ? {
-                  width: FIT_WIDTH,
+                  width: view.width,
                   transform: `scale(${view.scale})`,
                   transformOrigin: "top left",
                 }
@@ -295,6 +418,8 @@ function HomeScreen({ userName }: { userName: string }) {
           <WelcomeBanner userName={userName} fit={fit} />
         </div>
       </div>
+
+      {navigating && <PageLoadingOverlay />}
     </section>
   );
 }

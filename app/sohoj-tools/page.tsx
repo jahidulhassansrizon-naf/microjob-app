@@ -1,6 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { toolsData, ToolTile } from "@/app/_components/toolsData";
@@ -17,6 +23,7 @@ import {
   GraduationCap,
   Video,
   Loader2,
+  X,
 } from "lucide-react";
 
 const categories = [
@@ -30,6 +37,40 @@ const categories = [
   { name: "Educational Tools", icon: GraduationCap },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Page loading overlay (টুলে ক্লিক করার পর নতুন পেজ আসা পর্যন্ত)        */
+/* ------------------------------------------------------------------ */
+
+function PageLoadingOverlay() {
+  const [go, setGo] = useState<boolean>(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setGo(true), 30);
+    return () => clearTimeout(id);
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-[998] flex items-center justify-center bg-white/70 backdrop-blur-sm animate-in fade-in duration-150"
+    >
+      {/* উপরের প্রগ্রেস বার */}
+      <div className="fixed inset-x-0 top-0 h-1 bg-blue-100">
+        <div
+          className="h-full bg-[#2563EB] transition-[width] ease-out"
+          style={{ width: go ? "90%" : "0%", transitionDuration: "8000ms" }}
+        />
+      </div>
+
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent" />
+        <p className="text-sm font-semibold text-slate-700">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 function SohojToolsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,6 +80,8 @@ function SohojToolsContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const isInitialLoadDone = useRef(false);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [navigating, setNavigating] = useState<boolean>(false);
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
@@ -104,6 +147,64 @@ function SohojToolsContent() {
     window.history.replaceState(null, "", newPath);
   };
 
+  // দ্রুত লোডের জন্য: টুলগুলোর পেজ আগেই prefetch করে রাখছি
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const id = setTimeout(() => {
+      const grid = gridRef.current;
+      if (!grid) return;
+      const hrefs = new Set<string>();
+      grid.querySelectorAll<HTMLAnchorElement>('a[href^="/"]').forEach((a) => {
+        const href = a.getAttribute("href");
+        if (href) hrefs.add(href);
+      });
+      hrefs.forEach((href) => {
+        try {
+          router.prefetch(href);
+        } catch {
+          // Prefetch is optional.
+        }
+      });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [router, isAuthenticated]);
+
+  // টুলে ক্লিক করলেই লোডিং দেখাও; নতুন পেজ এলে এই পেজ আনমাউন্ট হয়, তাই লোডিং নিজে থেকেই চলে যায়
+  const handleToolClick = (e: ReactMouseEvent<HTMLElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    const el = (e.target as HTMLElement).closest<HTMLElement>(
+      "a, button, [role='link'], [role='button']",
+    );
+    if (!el || !e.currentTarget.contains(el)) return;
+
+    if (el instanceof HTMLAnchorElement) {
+      if (el.target === "_blank" || el.hasAttribute("download")) return;
+      const url = new URL(el.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (
+        url.pathname === window.location.pathname &&
+        url.search === window.location.search
+      ) {
+        return;
+      }
+    }
+    setNavigating(true);
+  };
+
+  // সেফটি: কোনো কারণে নেভিগেশন না হলে ২০ সেকেন্ড পর লোডিং বন্ধ; Back চাপলেও বন্ধ
+  useEffect(() => {
+    if (!navigating) return;
+    const stop = () => setNavigating(false);
+    const id = setTimeout(stop, 20000);
+    window.addEventListener("pageshow", stop);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("pageshow", stop);
+    };
+  }, [navigating]);
+
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -151,119 +252,130 @@ function SohojToolsContent() {
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar />
 
-      <main
-        data-nav-content
-        className="max-w-[1200px] mx-auto px-4 py-6 space-y-5"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#2563EB] text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-[#2563EB]/25">
-              <LayoutGrid size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-[#0F172A]">Tools</h1>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    activeTab === "Paid"
-                      ? "bg-amber-100 text-amber-700"
-                      : activeTab === "All"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-emerald-100 text-emerald-700"
-                  }`}
-                >
-                  {activeTab === "Paid"
-                    ? "Paid tools"
-                    : activeTab === "All"
-                      ? "All tools"
-                      : "Free tools"}
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 font-medium">
-                {filteredTools.length}{" "}
-                {activeTab === "All" ? "all" : activeTab.toLowerCase()} tools to
-                speed up daily work.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white/80 border border-slate-200 p-1 rounded-xl flex items-center gap-1 self-start sm:self-auto">
-            <button
-              onClick={() => setActiveTab("All")}
-              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "All"
-                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
-                  : "text-slate-600 hover:text-[#2563EB]"
-              }`}
-            >
-              All Tools •
-            </button>
-            <button
-              onClick={() => setActiveTab("Free")}
-              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "Free"
-                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
-                  : "text-slate-600 hover:text-[#2563EB]"
-              }`}
-            >
-              Free Tools •
-            </button>
-            <button
-              onClick={() => setActiveTab("Paid")}
-              className={`cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === "Paid"
-                  ? "bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/30"
-                  : "text-slate-600 hover:text-[#2563EB]"
-              }`}
-            >
-              Paid Tools •
-            </button>
-          </div>
-        </div>
-
-        {/* Search Bar With Typing Effect */}
-        <div className="relative">
-          <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            type="text"
-            placeholder="Search tools... e.g. PDF, image, video"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-xs font-medium focus:outline-none focus:border-[#2563EB]/50 focus:ring-2 focus:ring-[#2563EB]/20 shadow-xs placeholder:text-gray-400 transition-all"
-          />
-        </div>
-
-        {/* Category Pills Header */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {categories.map((cat, idx) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.name;
-            return (
-              <button
-                key={idx}
-                onClick={() => setSelectedCategory(cat.name)}
-                className={`cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
-                  isSelected
-                    ? "bg-[#2563EB] text-white border-[#2563EB] shadow-sm shadow-[#2563EB]/25"
-                    : "bg-white text-[#0F172A] border-slate-200 hover:border-[#2563EB]/40 hover:bg-blue-50 hover:text-[#2563EB]"
-                }`}
+      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5">
+        {/* Unified header card: title + access tabs, search, categories */}
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Row 1: Title + Free/Paid segmented control */}
+          <div className="flex flex-col gap-3 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                aria-hidden="true"
+                className="grid h-9 w-9 shrink-0 grid-cols-2 gap-[3px] rounded-xl border border-slate-200 bg-white p-[5px] shadow-sm"
               >
-                <Icon
-                  size={14}
-                  className={isSelected ? "text-white" : "text-gray-500"}
-                />
-                <span>{cat.name}</span>
-              </button>
-            );
-          })}
-        </div>
+                <span className="rounded-[5px] bg-[#2563EB]" />
+                <span className="rounded-[5px] bg-[#F59E0B]" />
+                <span className="rounded-[5px] bg-[#10B981]" />
+                <span className="rounded-[5px] bg-[#F43F5E]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-lg font-bold tracking-tight text-[#0F172A] sm:text-xl">
+                    Tools
+                  </h1>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+                    {filteredTools.length} available
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs font-medium text-slate-500">
+                  Powerful tools to speed up your daily work.
+                </p>
+              </div>
+            </div>
+
+            <div
+              role="tablist"
+              aria-label="Filter tools by access"
+              className="inline-flex self-start rounded-xl bg-slate-100 p-1 md:self-auto"
+            >
+              {(
+                [
+                  { key: "All", label: "All Tools" },
+                  { key: "Free", label: "Free" },
+                  { key: "Paid", label: "Paid" },
+                ] as const
+              ).map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`cursor-pointer rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-white text-[#2563EB] shadow-sm ring-1 ring-slate-200"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 2: Search */}
+          <div className="border-t border-slate-100 px-4 py-2.5 sm:px-5">
+            <div className="relative">
+              <Search
+                size={18}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                placeholder="Search tools... e.g. PDF, image, video"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-11 pr-11 text-sm font-medium text-[#0F172A] transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB]/60 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#2563EB]/10"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Row 3: Category pills */}
+          <div className="rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-4 py-2 sm:px-5">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              {categories.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = selectedCategory === cat.name;
+                return (
+                  <button
+                    key={cat.name}
+                    onClick={() => setSelectedCategory(cat.name)}
+                    className={`flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/25"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-[#2563EB]/40 hover:bg-blue-50 hover:text-[#2563EB]"
+                    }`}
+                  >
+                    <Icon
+                      size={14}
+                      className={isSelected ? "text-white" : "text-slate-400"}
+                    />
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
 
         {/* Tools Grid Section */}
         {filteredTools.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-7 pt-3">
+          <div
+            ref={gridRef}
+            onClick={handleToolClick}
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7 pt-3"
+          >
             {filteredTools.map((tool) => (
               <ToolTile key={tool.id} tool={tool} />
             ))}
@@ -282,6 +394,8 @@ function SohojToolsContent() {
           </div>
         )}
       </main>
+
+      {navigating && <PageLoadingOverlay />}
     </div>
   );
 }

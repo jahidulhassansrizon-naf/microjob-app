@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -10,7 +10,6 @@ import {
   Wallet,
 } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
-import { useNavContentWidth } from "../dashboard/_components/useNavContentWidth";
 
 /**
  * Subscription plans
@@ -86,8 +85,10 @@ function getTiming(sub: {
 
   const msLeft = hasEnd ? end - now : null;
   const expired = msLeft !== null && msLeft <= 0;
+
   const daysLeft =
     msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
+
   const progress =
     Number.isFinite(start) && hasEnd && end > start
       ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
@@ -119,16 +120,13 @@ export default function SubscriptionPage() {
     useState<SubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
-  // Publishes this content column's width as --content-w for the navbar.
-  const contentRef = useRef<HTMLDivElement>(null);
-  useNavContentWidth(contentRef);
-
   const selected = plans.find((p) => p.id === selectedId) ?? plans[0];
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
 
     const date = new Date(value);
+
     if (Number.isNaN(date.getTime())) return "—";
 
     return date.toLocaleDateString("en-BD", {
@@ -207,33 +205,32 @@ export default function SubscriptionPage() {
       window.location.href = data.payment_url;
     } catch (error) {
       console.error("Checkout error:", error);
+
       setPaymentError(
         error instanceof Error
           ? error.message
           : "Payment could not be started. Please try again.",
       );
+
       setIsProcessing(false);
     }
   };
 
   return (
-    // On desktop the page is exactly one screen tall: the navbar keeps its own
-    // height and <main> fills the rest. Spacing, ring and type scale with the
-    // viewport height (clamp + vh) so everything fits without scrolling.
-    // <main> only scrolls as a last resort on very short windows.
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-[#0F172A] lg:h-dvh">
       <DashboardNavbar />
 
-      <main className="min-h-0 flex-1 lg:overflow-y-auto">
+      <main className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto">
         <div
-          ref={contentRef}
-          className="mx-auto flex w-full max-w-[1180px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]"
+          data-nav-content
+          className="mx-auto my-auto flex w-full max-w-[1112px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]"
         >
           {/* Header */}
           <section className="max-w-2xl">
             <h1 className="text-[clamp(24px,3.8vh,36px)] font-semibold leading-tight tracking-tight text-[#0F172A]">
               Choose your subscription plan
             </h1>
+
             <p className="mt-1.5 text-sm leading-6 text-slate-600 sm:text-[15px]">
               Pick the duration that suits you. The longer the plan, the lower
               your monthly cost.
@@ -255,23 +252,28 @@ export default function SubscriptionPage() {
               (() => {
                 const { expired, daysLeft, progress } =
                   getTiming(currentSubscription);
+
                 const statusLabel = expired
                   ? "Expired"
                   : capitalize(currentSubscription.accessStatus) || "Active";
+
                 const isActive = statusLabel === "Active";
 
                 const RING_R = 52;
                 const RING_C = 2 * Math.PI * RING_R;
+
                 const remainingPct = expired
                   ? 0
                   : progress === null
                     ? null
                     : 100 - progress;
+
                 const ringStroke = expired
                   ? "stroke-slate-300"
                   : remainingPct !== null && remainingPct < 10
                     ? "stroke-amber-500"
                     : "stroke-[#2563EB]";
+
                 const ringMain = expired
                   ? "0"
                   : daysLeft === null
@@ -279,6 +281,7 @@ export default function SubscriptionPage() {
                     : daysLeft === 0
                       ? "<1"
                       : String(daysLeft);
+
                 const ringLabel =
                   daysLeft === 1 || (daysLeft === 0 && !expired)
                     ? "day left"
@@ -301,6 +304,7 @@ export default function SubscriptionPage() {
                             strokeWidth="9"
                             className="stroke-slate-100"
                           />
+
                           {remainingPct !== null && remainingPct > 0 && (
                             <circle
                               cx="60"
@@ -314,10 +318,12 @@ export default function SubscriptionPage() {
                             />
                           )}
                         </svg>
+
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">
                             {ringMain}
                           </span>
+
                           <span className="mt-1 text-[11px] text-slate-500">
                             {ringLabel}
                           </span>
@@ -329,6 +335,7 @@ export default function SubscriptionPage() {
                           <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]">
                             {currentSubscription.planName}
                           </h2>
+
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
                               isActive
@@ -341,6 +348,7 @@ export default function SubscriptionPage() {
                                 isActive ? "bg-emerald-500" : "bg-slate-400"
                               }`}
                             />
+
                             {statusLabel}
                           </span>
                         </div>
@@ -373,34 +381,42 @@ export default function SubscriptionPage() {
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
                           <Wallet size={15} />
                         </span>
+
                         <div>
                           <dt className="text-xs text-slate-500">
                             Amount paid
                           </dt>
+
                           <dd className="text-sm font-semibold text-[#0F172A]">
                             {formatPrice(currentSubscription.amount)}
                           </dd>
                         </div>
                       </div>
+
                       <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
                           <CalendarCheck size={15} />
                         </span>
+
                         <div>
                           <dt className="text-xs text-slate-500">Started</dt>
+
                           <dd className="text-sm font-semibold text-[#0F172A]">
                             {formatDate(currentSubscription.startedAt)}
                           </dd>
                         </div>
                       </div>
+
                       <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
                           <CalendarClock size={15} />
                         </span>
+
                         <div>
                           <dt className="text-xs text-slate-500">
                             {expired ? "Ended" : "Expires"}
                           </dt>
+
                           <dd className="text-sm font-semibold text-[#0F172A]">
                             {formatDate(currentSubscription.expiresAt)}
                           </dd>
@@ -415,6 +431,7 @@ export default function SubscriptionPage() {
                 <h2 className="text-lg font-semibold text-[#0F172A]">
                   No active plan
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-600">
                   Choose a plan below to unlock all the paid tools.
                 </p>
@@ -422,7 +439,7 @@ export default function SubscriptionPage() {
             )}
           </section>
 
-          {/* Plans (pt-3 leaves room for the floating badges) */}
+          {/* Plans */}
           <section
             role="radiogroup"
             aria-label="Subscription plans"
@@ -458,18 +475,17 @@ export default function SubscriptionPage() {
                     </span>
                   )}
 
-                  {/* Top row */}
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-base font-black text-[#0F172A] sm:text-lg">
                         {plan.name}
                       </h2>
+
                       <p className="mt-0.5 text-xs font-semibold text-slate-400">
                         {plan.duration}
                       </p>
                     </div>
 
-                    {/* Radio indicator */}
                     <span
                       className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200 ${
                         isSelected
@@ -489,7 +505,6 @@ export default function SubscriptionPage() {
                     </span>
                   </div>
 
-                  {/* Price */}
                   <div className="mt-[clamp(8px,2.2vh,28px)]">
                     <span
                       className={`text-[clamp(26px,4.2vh,34px)] font-black leading-none tracking-tight transition-colors ${
@@ -498,6 +513,7 @@ export default function SubscriptionPage() {
                     >
                       {formatPrice(plan.price)}
                     </span>
+
                     <p className="mt-1.5 text-xs font-semibold text-slate-500">
                       {plan.months === 1
                         ? "Billed monthly"
@@ -505,14 +521,13 @@ export default function SubscriptionPage() {
                     </p>
                   </div>
 
-                  {/* Divider */}
                   <div className="my-[clamp(8px,1.8vh,20px)] h-px bg-slate-100" />
 
-                  {/* Bottom row */}
                   <div className="flex min-h-[24px] items-center justify-between gap-2">
                     <p className="text-xs font-medium text-slate-400">
                       {plan.note}
                     </p>
+
                     {savings > 0 && (
                       <span
                         className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
@@ -537,8 +552,10 @@ export default function SubscriptionPage() {
                 <p className="text-xs font-medium text-slate-500">
                   Your selection
                 </p>
+
                 <p className="mt-0.5 text-lg font-black text-[#0F172A]">
                   {selected.name}
+
                   <span className="ml-2 text-sm font-semibold text-slate-400">
                     {selected.duration}
                   </span>
@@ -548,6 +565,7 @@ export default function SubscriptionPage() {
               <div className="flex items-center justify-between gap-6 sm:justify-end">
                 <div className="sm:text-right">
                   <p className="text-xs font-medium text-slate-500">Total</p>
+
                   <p className="mt-0.5 text-2xl font-black text-[#0F172A]">
                     {formatPrice(selected.price)}
                   </p>
@@ -584,6 +602,7 @@ export default function SubscriptionPage() {
             <h2 className="text-sm font-black text-[#0F172A]">
               Included with every plan
             </h2>
+
             <div className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
               {features.map((feature) => (
                 <div
@@ -595,6 +614,7 @@ export default function SubscriptionPage() {
                     strokeWidth={3}
                     className="mt-0.5 shrink-0 text-emerald-600"
                   />
+
                   <span>{feature}</span>
                 </div>
               ))}

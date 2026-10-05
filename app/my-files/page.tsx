@@ -421,12 +421,12 @@ export default function MyFilesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
+    <div className="flex min-h-screen flex-col bg-[#F8FAFC] text-slate-900 lg:h-dvh">
       <DashboardNavbar />
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+      <main className="flex w-full flex-1 flex-col px-4 py-6 sm:px-6 lg:min-h-0 lg:px-8 2xl:px-12">
         {/* Page header */}
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <header className="mb-6 flex shrink-0 flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-slate-900">My Files</h1>
             <p className="mt-1 text-sm text-slate-600">
@@ -457,20 +457,20 @@ export default function MyFilesPage() {
         </header>
 
         <div
-          className={`grid items-start gap-6 ${
+          className={`grid items-start gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${
             sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "grid-cols-1"
           }`}
         >
           {/* ======================= My Files ======================= */}
           <section
             aria-label="My files"
-            className="flex min-h-[560px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white"
+            className="flex min-h-[560px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden"
           >
             {/* Tabs */}
             <div
               role="tablist"
               aria-label="File categories"
-              className="flex gap-6 overflow-x-auto border-b border-slate-200 px-5"
+              className="flex shrink-0 gap-6 overflow-x-auto border-b border-slate-200 px-5"
             >
               {CATEGORY_TABS.map((tab) => {
                 const active = tab.id === activeTab;
@@ -500,7 +500,7 @@ export default function MyFilesPage() {
             </div>
 
             {/* Search + sort */}
-            <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row">
+            <div className="flex shrink-0 flex-col gap-3 px-5 py-4 sm:flex-row">
               <SearchBox
                 value={searchQuery}
                 onChange={(v) => {
@@ -515,7 +515,7 @@ export default function MyFilesPage() {
             </div>
 
             {/* Results */}
-            <div className="flex flex-1 flex-col px-5 pb-5">
+            <div className="flex flex-1 flex-col px-5 pb-5 lg:min-h-0 lg:overflow-y-auto">
               {switchNotice && (
                 <p role="status" className="mb-3 text-sm text-blue-700">
                   {switchNotice}
@@ -633,9 +633,9 @@ export default function MyFilesPage() {
             <aside
               id="sohoztools-sidebar"
               aria-label="SohozTools files"
-              className="rounded-lg border border-slate-200 bg-white lg:sticky lg:top-6"
+              className="flex flex-col rounded-lg border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden"
             >
-              <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
                 <div className="min-w-0">
                   <h2 className="text-sm font-semibold text-slate-900">
                     SohozTools Files
@@ -655,7 +655,7 @@ export default function MyFilesPage() {
                 </button>
               </div>
 
-              <div className="space-y-2.5 px-4 pt-3">
+              <div className="shrink-0 space-y-2.5 px-4 pt-3">
                 <p className="text-xs leading-5 text-slate-500">
                   Anything you save from a SohozTools tool — a scanned document,
                   a compressed PDF, a resized photo — is stored here.
@@ -686,7 +686,7 @@ export default function MyFilesPage() {
                 </div>
               </div>
 
-              <div className="mt-3 max-h-[440px] min-h-[220px] overflow-y-auto border-t border-slate-200">
+              <div className="mt-3 max-h-[440px] min-h-[220px] overflow-y-auto border-t border-slate-200 lg:max-h-none lg:min-h-0 lg:flex-1">
                 {visibleToolFiles.length > 0 ? (
                   <ul className="divide-y divide-slate-100" aria-live="polite">
                     {visibleToolFiles.map((file) => {
