@@ -512,7 +512,7 @@ export default function DashboardPage() {
     window.setTimeout(() => {
       setOverlayDone(true);
       document.documentElement.removeAttribute("data-just-logged-in");
-    }, 1600);
+    }, 2000);
   }, []);
 
   useEffect(() => {
@@ -616,7 +616,7 @@ export default function DashboardPage() {
             </p>
 
             <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-full origin-left rounded-full bg-[#2563EB] animate-[loginProgress_1.6s_linear_forwards]" />
+              <div className="h-full w-full origin-left rounded-full bg-[#2563EB] animate-[loginProgress_2s_linear_forwards]" />
             </div>
           </div>
         </div>
