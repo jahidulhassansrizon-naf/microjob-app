@@ -226,7 +226,30 @@ export default function CropImage() {
   };
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div
+      id="crop-image-tool"
+      className="w-full space-y-5 text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#crop-image-tool) a[href],
+        :where(#crop-image-tool) button:not(:disabled),
+        :where(#crop-image-tool) label:has(input[type="file"]),
+        :where(#crop-image-tool) summary,
+        :where(#crop-image-tool) select,
+        :where(#crop-image-tool) input[type="color"],
+        :where(#crop-image-tool) input[type="range"],
+        :where(#crop-image-tool) input[type="checkbox"],
+        :where(#crop-image-tool) input[type="radio"],
+        :where(#crop-image-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#crop-image-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       <input
         type="file"
         ref={fileInputRef}
@@ -476,8 +499,7 @@ export default function CropImage() {
             href="/sohoj-tools/remove-background"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-sky-200 transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0">
-            </div>
+            <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0"></div>
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors">
                 Remove Background

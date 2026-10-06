@@ -564,7 +564,30 @@ export default function AddWatermarkTool() {
   /* -------------------------------------------------------------------------- */
 
   return (
-    <div className="min-h-[calc(100vh-74px)] w-full bg-[#F8FAFC] px-4 py-6 text-[#0F172A] md:px-8 md:py-8">
+    <div
+      id="add-watermark-tool"
+      className="min-h-[calc(100vh-74px)] w-full bg-[#F8FAFC] px-4 py-6 text-[#0F172A] md:px-8 md:py-8"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#add-watermark-tool) a[href],
+        :where(#add-watermark-tool) button:not(:disabled),
+        :where(#add-watermark-tool) label:has(input[type="file"]),
+        :where(#add-watermark-tool) summary,
+        :where(#add-watermark-tool) select,
+        :where(#add-watermark-tool) input[type="color"],
+        :where(#add-watermark-tool) input[type="range"],
+        :where(#add-watermark-tool) input[type="checkbox"],
+        :where(#add-watermark-tool) input[type="radio"],
+        :where(#add-watermark-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#add-watermark-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       <div className="mx-auto w-full max-w-6xl space-y-5">
         {/* Header */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

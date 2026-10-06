@@ -459,7 +459,30 @@ export default function ReduceVideoFileSize() {
   /* --------------------------------- Render --------------------------------- */
 
   return (
-    <div className="w-full bg-[#F8FAFC] min-h-screen text-[#0F172A] font-sans pb-16">
+    <div
+      id="reduce-video-tool"
+      className="w-full bg-[#F8FAFC] min-h-screen text-[#0F172A] font-sans pb-16"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#reduce-video-tool) a[href],
+        :where(#reduce-video-tool) button:not(:disabled),
+        :where(#reduce-video-tool) label:has(input[type="file"]:not(:disabled)),
+        :where(#reduce-video-tool) summary,
+        :where(#reduce-video-tool) select,
+        :where(#reduce-video-tool) input[type="color"],
+        :where(#reduce-video-tool) input[type="range"],
+        :where(#reduce-video-tool) input[type="checkbox"],
+        :where(#reduce-video-tool) input[type="radio"],
+        :where(#reduce-video-tool) input[type="file"]:not(:disabled) {
+          cursor: pointer;
+        }
+
+        :where(#reduce-video-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       <div className="w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

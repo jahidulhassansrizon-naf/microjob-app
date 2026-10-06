@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ChangeEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
   Check,
@@ -390,6 +391,12 @@ export default function GovtJobPhotoSignResizer() {
   const [printSignatureSrc, setPrintSignatureSrc] = useState<string | null>(
     null,
   );
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
@@ -857,29 +864,50 @@ export default function GovtJobPhotoSignResizer() {
           margin: 10mm;
         }
 
+        /* Pointer cursor on every clickable element of this tool */
+        #govt-job-tool a[href],
+        #govt-job-tool button:not(:disabled),
+        #govt-job-tool label[for],
+        #govt-job-tool summary,
+        #govt-job-tool [role="button"],
+        #govt-job-tool select,
+        #govt-job-tool input[type="range"],
+        #govt-job-tool input[type="checkbox"],
+        #govt-job-tool input[type="radio"],
+        #govt-job-tool input[type="file"] {
+          cursor: pointer;
+        }
+
+        #govt-job-tool button:disabled {
+          cursor: not-allowed;
+        }
+
+        #govt-job-tool canvas {
+          cursor: crosshair;
+        }
+
         @media print {
           html,
           body {
-            width: 210mm !important;
-            min-height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
             background: #ffffff !important;
           }
 
-          body * {
-            visibility: hidden !important;
-          }
-
-          #govt-job-print-sheet,
-          #govt-job-print-sheet * {
-            visibility: visible !important;
+          /* Remove the whole website from the print layout so it cannot
+             create extra blank pages. Only the print sheet stays. */
+          body > *:not(#govt-job-print-sheet) {
+            display: none !important;
           }
 
           #govt-job-print-sheet {
-            position: absolute !important;
-            inset: 0 auto auto 0 !important;
             display: block !important;
+            position: static !important;
             width: 190mm !important;
-            min-height: 277mm !important;
+            height: 270mm !important;
+            overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
@@ -888,55 +916,66 @@ export default function GovtJobPhotoSignResizer() {
         }
       `}</style>
 
-      <div id="govt-job-print-sheet" className="hidden">
-        <div className="flex min-h-[277mm] w-[190mm] flex-col p-[4mm] font-sans text-[#0F172A]">
-          <div className="border-b border-gray-300 pb-3">
-            <h2 className="text-lg font-bold">Govt Job Photo & Sign Resizer</h2>
-            <p className="mt-1 text-xs text-gray-500">
-              Print and cut using the dashed borders.
-            </p>
-          </div>
-
-          <div className="mt-8 flex flex-col items-start gap-12">
-            {printPhotoSrc ? (
-              <div>
-                <div className="mb-2 text-xs font-semibold">
-                  Photo — 300×300 px / 3cm × 3cm
+      {isMounted
+        ? createPortal(
+            <div id="govt-job-print-sheet" className="hidden">
+              <div className="flex h-[270mm] w-[190mm] flex-col overflow-hidden p-[4mm] font-sans text-[#0F172A]">
+                <div className="border-b border-gray-300 pb-3">
+                  <h2 className="text-lg font-bold">
+                    Govt Job Photo & Sign Resizer
+                  </h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Print and cut using the dashed borders.
+                  </p>
                 </div>
-                <div className="flex h-[3cm] w-[3cm] items-center justify-center border-[0.25mm] border-dashed border-gray-500 bg-white p-0">
-                  <img
-                    src={printPhotoSrc}
-                    alt="Printable photo"
-                    className="block h-[3cm] w-[3cm] object-cover"
-                  />
+
+                <div className="mt-8 flex flex-col items-start gap-12">
+                  {printPhotoSrc ? (
+                    <div>
+                      <div className="mb-2 text-xs font-semibold">
+                        Photo — 300×300 px / 3cm × 3cm
+                      </div>
+                      <div className="flex h-[3cm] w-[3cm] items-center justify-center border-[0.25mm] border-dashed border-gray-500 bg-white p-0">
+                        <img
+                          src={printPhotoSrc}
+                          alt="Printable photo"
+                          className="block h-[3cm] w-[3cm] object-cover"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {printSignatureSrc ? (
+                    <div>
+                      <div className="mb-2 text-xs font-semibold">
+                        Signature — 300×80 px / 3cm × 0.8cm
+                      </div>
+                      <div className="flex h-[0.8cm] w-[3cm] items-center justify-center border-[0.25mm] border-dashed border-gray-500 bg-white p-0">
+                        <img
+                          src={printSignatureSrc}
+                          alt="Printable signature"
+                          className="block h-[0.8cm] w-[3cm] object-contain"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="mt-auto border-t border-gray-200 pt-3 text-[9px] leading-relaxed text-gray-500">
+                  For accurate physical size, print at 100% / Actual Size.
+                  Disable “Fit to page” or similar scaling in the printer
+                  dialog.
                 </div>
               </div>
-            ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
 
-            {printSignatureSrc ? (
-              <div>
-                <div className="mb-2 text-xs font-semibold">
-                  Signature — 300×80 px / 3cm × 0.8cm
-                </div>
-                <div className="flex h-[0.8cm] w-[3cm] items-center justify-center border-[0.25mm] border-dashed border-gray-500 bg-white p-0">
-                  <img
-                    src={printSignatureSrc}
-                    alt="Printable signature"
-                    className="block h-[0.8cm] w-[3cm] object-contain"
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-auto border-t border-gray-200 pt-3 text-[9px] leading-relaxed text-gray-500">
-            For accurate physical size, print at 100% / Actual Size. Disable
-            “Fit to page” or similar scaling in the printer dialog.
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full space-y-6 pb-16 font-sans text-[#0F172A]">
+      <div
+        id="govt-job-tool"
+        className="w-full space-y-6 pb-16 font-sans text-[#0F172A]"
+      >
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <nav className="mb-2 flex items-center gap-1.5 text-xs text-gray-500">

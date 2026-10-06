@@ -561,7 +561,31 @@ export default function PdfToImage() {
   const canConvert = !!selectedFile && !isProcessing;
 
   return (
-    <div className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
+    <div
+      id="pdf-to-image-tool"
+      className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        #pdf-to-image-tool a[href],
+        #pdf-to-image-tool button:not(:disabled),
+        #pdf-to-image-tool label,
+        #pdf-to-image-tool summary,
+        #pdf-to-image-tool [role="button"],
+        #pdf-to-image-tool select,
+        #pdf-to-image-tool input[type="color"],
+        #pdf-to-image-tool input[type="range"],
+        #pdf-to-image-tool input[type="checkbox"],
+        #pdf-to-image-tool input[type="radio"],
+        #pdf-to-image-tool input[type="file"] {
+          cursor: pointer;
+        }
+
+        #pdf-to-image-tool button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-[#0F172A]">
         <Link

@@ -85,3 +85,11 @@ def process_document_image(image_bytes: bytes) -> bytes:
         raise ValueError("Failed to encode processed image")
 
     return encoded_img.tobytes()
+
+
+
+# git status
+# git add .
+# git commit -m "ja mon chaise tai korsi"
+# git push origin main
+

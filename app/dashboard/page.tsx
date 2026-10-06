@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
@@ -319,7 +314,6 @@ function HomeScreen({ userName }: { userName: string }) {
           <WelcomeBanner userName={userName} fit={fit} />
         </div>
       </div>
-
     </section>
   );
 }

@@ -2403,7 +2403,31 @@ export default function PassportToPdf() {
     "hover:text-[#0F172A] disabled:opacity-40 transition-colors";
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div
+      id="passport-to-pdf-tool"
+      className="w-full space-y-5 text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#passport-to-pdf-tool) a[href],
+        :where(#passport-to-pdf-tool) button:not(:disabled),
+        :where(#passport-to-pdf-tool) label:has(input[type="file"]),
+        :where(#passport-to-pdf-tool) summary,
+        :where(#passport-to-pdf-tool) [role="button"],
+        :where(#passport-to-pdf-tool) select,
+        :where(#passport-to-pdf-tool) input[type="color"],
+        :where(#passport-to-pdf-tool) input[type="range"],
+        :where(#passport-to-pdf-tool) input[type="checkbox"],
+        :where(#passport-to-pdf-tool) input[type="radio"],
+        :where(#passport-to-pdf-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#passport-to-pdf-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       {notice ? (
         <div
           className={`fixed right-5 top-5 z-[120] max-w-sm rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${

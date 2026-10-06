@@ -248,7 +248,31 @@ export default function RemoveBackground() {
   };
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div
+      id="remove-bg-tool"
+      className="w-full space-y-5 text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        #remove-bg-tool a[href],
+        #remove-bg-tool button:not(:disabled),
+        #remove-bg-tool label,
+        #remove-bg-tool summary,
+        #remove-bg-tool [role="button"],
+        #remove-bg-tool select,
+        #remove-bg-tool input[type="color"],
+        #remove-bg-tool input[type="range"],
+        #remove-bg-tool input[type="checkbox"],
+        #remove-bg-tool input[type="radio"],
+        #remove-bg-tool input[type="file"] {
+          cursor: pointer;
+        }
+
+        #remove-bg-tool button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link

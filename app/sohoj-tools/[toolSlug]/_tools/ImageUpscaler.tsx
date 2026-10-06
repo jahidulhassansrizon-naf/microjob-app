@@ -1018,7 +1018,31 @@ export default function ImageUpscaler() {
   /* ---------------------------------- Render -------------------------------- */
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div
+      id="image-upscaler-tool"
+      className="w-full space-y-5 text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        #image-upscaler-tool a[href],
+        #image-upscaler-tool button:not(:disabled),
+        #image-upscaler-tool label:has(input[type="file"]),
+        #image-upscaler-tool summary,
+        #image-upscaler-tool [role="button"],
+        #image-upscaler-tool select,
+        #image-upscaler-tool input[type="color"],
+        #image-upscaler-tool input[type="range"],
+        #image-upscaler-tool input[type="checkbox"],
+        #image-upscaler-tool input[type="radio"],
+        #image-upscaler-tool input[type="file"] {
+          cursor: pointer;
+        }
+
+        #image-upscaler-tool button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       <input
         ref={fileInputRef}
         type="file"

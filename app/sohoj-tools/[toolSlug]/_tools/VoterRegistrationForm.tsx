@@ -2678,8 +2678,30 @@ export default function VoterRegistrationForm() {
 
   /* ---- render ---- */
   return (
-    <div className="relative -mx-4 -mt-6 min-h-[calc(100vh-72px)] bg-[#F8FAFC] px-4 pb-28 pt-5 text-[#0F172A] shadow-[0_0_0_100vmax_#F8FAFC] [clip-path:inset(0_-100vmax)] print:bg-white print:shadow-none">
+    <div
+      id="voter-registration-tool"
+      className="relative -mx-4 -mt-6 min-h-[calc(100vh-72px)] bg-[#F8FAFC] px-4 pb-28 pt-5 text-[#0F172A] shadow-[0_0_0_100vmax_#F8FAFC] [clip-path:inset(0_-100vmax)] print:bg-white print:shadow-none"
+    >
       <style>{PRINT_CSS}</style>
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#voter-registration-tool) a[href],
+        :where(#voter-registration-tool) button:not(:disabled),
+        :where(#voter-registration-tool) summary,
+        :where(#voter-registration-tool) [role="button"],
+        :where(#voter-registration-tool) select,
+        :where(#voter-registration-tool) input[type="color"],
+        :where(#voter-registration-tool) input[type="range"],
+        :where(#voter-registration-tool) input[type="checkbox"],
+        :where(#voter-registration-tool) input[type="radio"],
+        :where(#voter-registration-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#voter-registration-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
       <datalist id="voter-district-list">
         {DISTRICTS.map(([bn, en]) => (
           <option key={en} value={bn} label={en} />

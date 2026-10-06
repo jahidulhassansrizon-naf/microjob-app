@@ -536,7 +536,31 @@ export default function ImagesToPdf() {
   ];
 
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div
+      id="images-to-pdf-tool"
+      className="w-full space-y-5 text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#images-to-pdf-tool) a[href],
+        :where(#images-to-pdf-tool) button:not(:disabled),
+        :where(#images-to-pdf-tool) label:has(input[type="file"]),
+        :where(#images-to-pdf-tool) summary,
+        :where(#images-to-pdf-tool) [role="button"],
+        :where(#images-to-pdf-tool) select,
+        :where(#images-to-pdf-tool) input[type="color"],
+        :where(#images-to-pdf-tool) input[type="range"],
+        :where(#images-to-pdf-tool) input[type="checkbox"],
+        :where(#images-to-pdf-tool) input[type="radio"],
+        :where(#images-to-pdf-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#images-to-pdf-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       {/* Hidden File Input */}
       <input
         type="file"
@@ -576,7 +600,9 @@ export default function ImagesToPdf() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]">Images to PDF</h1>
+              <h1 className="text-lg font-bold text-[#0F172A]">
+                Images to PDF
+              </h1>
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Free
               </span>
@@ -672,7 +698,9 @@ export default function ImagesToPdf() {
                 {/* Orientation Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-[#0F172A]">Orientation</span>
+                    <span className="font-bold text-[#0F172A]">
+                      Orientation
+                    </span>
                     <span className="text-[9px] font-bold text-gray-400 tracking-wider">
                       ORIENTATION
                     </span>
@@ -906,7 +934,9 @@ export default function ImagesToPdf() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[460px] flex flex-col justify-between">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-[#0F172A]">PDF preview</h2>
+                <h2 className="text-xs font-bold text-[#0F172A]">
+                  PDF preview
+                </h2>
                 {images.length > 0 && (
                   <span className="text-[10px] bg-[#E2E8F0] text-[#2563EB] font-bold px-2 py-0.5 rounded-full">
                     {images.length} {images.length === 1 ? "page" : "pages"}
@@ -1156,8 +1186,7 @@ export default function ImagesToPdf() {
             href="/sohoj-tools/remove-background"
             className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-            </div>
+            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0"></div>
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
                 Remove Background

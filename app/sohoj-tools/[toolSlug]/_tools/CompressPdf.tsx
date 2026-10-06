@@ -542,7 +542,31 @@ export default function CompressPdf() {
     : 0;
 
   return (
-    <div className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
+    <div
+      id="compress-pdf-tool"
+      className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        #compress-pdf-tool a[href],
+        #compress-pdf-tool button:not(:disabled),
+        #compress-pdf-tool label:has(input[type="file"]),
+        #compress-pdf-tool summary,
+        #compress-pdf-tool [role="button"],
+        #compress-pdf-tool select,
+        #compress-pdf-tool input[type="color"],
+        #compress-pdf-tool input[type="range"],
+        #compress-pdf-tool input[type="checkbox"],
+        #compress-pdf-tool input[type="radio"],
+        #compress-pdf-tool input[type="file"] {
+          cursor: pointer;
+        }
+
+        #compress-pdf-tool button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-[#0F172A]">
         <Link

@@ -139,7 +139,30 @@ export default function ChangeSpeed() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] w-full bg-white text-[#1F2937] font-sans">
+    <div
+      id="change-speed-tool"
+      className="min-h-[calc(100vh-64px)] w-full bg-white text-[#1F2937] font-sans"
+    >
+      {/* Pointer cursor on every clickable element of this tool */}
+      <style>{`
+        :where(#change-speed-tool) a[href],
+        :where(#change-speed-tool) button:not(:disabled),
+        :where(#change-speed-tool) label:has(input[type="file"]),
+        :where(#change-speed-tool) summary,
+        :where(#change-speed-tool) select,
+        :where(#change-speed-tool) input[type="color"],
+        :where(#change-speed-tool) input[type="range"],
+        :where(#change-speed-tool) input[type="checkbox"],
+        :where(#change-speed-tool) input[type="radio"],
+        :where(#change-speed-tool) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(#change-speed-tool) button:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
+
       <main className="mx-auto w-full max-w-[1320px] px-4 py-3.5 sm:px-6 lg:px-0 lg:py-4">
         <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
           <Link

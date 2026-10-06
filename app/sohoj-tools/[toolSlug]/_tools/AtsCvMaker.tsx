@@ -20,7 +20,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  GraduationCap,
   ImagePlus,
   LayoutTemplate,
   Link2,
@@ -1904,9 +1903,7 @@ export default function AtsCvMaker() {
 
                 <span
                   className={`text-[7px] font-semibold ${
-                    step.id === currentStep
-                      ? "text-[#2563EB]"
-                      : "text-gray-400"
+                    step.id === currentStep ? "text-[#2563EB]" : "text-gray-400"
                   }`}
                 >
                   {step.label}
@@ -3375,46 +3372,6 @@ export default function AtsCvMaker() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Link
-            href="/sohoj-tools/education-board-result"
-            className="group flex items-start gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:border-teal-300"
-          >
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-              <GraduationCap size={19} />
-            </div>
-
-            <div>
-              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600">
-                Education Board Result
-              </h4>
-
-              <p className="mt-0.5 line-clamp-2 text-[9px] text-gray-400">
-                Check JSC, SSC, HSC and equivalent results from
-                Bangladesh&apos;s official education board system.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/sohoj-tools/national-university-result"
-            className="group flex items-start gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:border-teal-300"
-          >
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-              <GraduationCap size={19} />
-            </div>
-
-            <div>
-              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600">
-                National University Result
-              </h4>
-
-              <p className="mt-0.5 line-clamp-2 text-[9px] text-gray-400">
-                Check Honours, Degree Pass, Master&apos;s and Professional
-                results from Bangladesh National University.
-              </p>
-            </div>
-          </Link>
-
-          <Link
             href="/sohoj-tools"
             className="group flex items-start gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:border-teal-300"
           >
@@ -3437,9 +3394,30 @@ export default function AtsCvMaker() {
       </div>
 
       <style jsx global>{`
+        /* Pointer cursor on every clickable element of this tool */
+        :where(.ats-cv-maker) a[href],
+        :where(.ats-cv-maker) button:not(:disabled):not([aria-disabled="true"]),
+        :where(.ats-cv-maker) label:has(input[type="checkbox"]),
+        :where(.ats-cv-maker) label:has(input[type="radio"]),
+        :where(.ats-cv-maker) label:has(input[type="file"]),
+        :where(.ats-cv-maker) summary,
+        :where(.ats-cv-maker) [role="button"],
+        :where(.ats-cv-maker) select,
+        :where(.ats-cv-maker) input[type="color"],
+        :where(.ats-cv-maker) input[type="range"],
+        :where(.ats-cv-maker) input[type="checkbox"],
+        :where(.ats-cv-maker) input[type="radio"],
+        :where(.ats-cv-maker) input[type="file"] {
+          cursor: pointer;
+        }
+
+        :where(.ats-cv-maker) button:disabled {
+          cursor: not-allowed;
+        }
+
         .ats-cv-maker {
-          --ats-bg: #F8FAFC;
-          --ats-paper: #FFFFFF;
+          --ats-bg: #f8fafc;
+          --ats-paper: #ffffff;
         }
 
         .ats-cv-maker .cv-print-root {
@@ -3477,8 +3455,8 @@ export default function AtsCvMaker() {
           width: 28mm;
           height: 28mm;
           overflow: hidden;
-          background: #E2E8F0;
-          border: 1px solid #E2E8F0;
+          background: #e2e8f0;
+          border: 1px solid #e2e8f0;
           display: flex;
           align-items: center;
           justify-content: center;
