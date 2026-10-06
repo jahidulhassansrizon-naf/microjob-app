@@ -37,7 +37,7 @@ export default function RootLayout({
             Using next/script avoids the App Router error caused by a raw <script>
             inside a nested React layout. */}
         <Script id="login-success-flag" strategy="beforeInteractive">
-          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){document.documentElement.setAttribute("data-just-logged-in","1")}}catch(e){}`}
+          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){sessionStorage.removeItem("justLoggedIn");document.documentElement.setAttribute("data-just-logged-in","1");window.setTimeout(function(){document.documentElement.removeAttribute("data-just-logged-in")},2000)}}catch(e){}`}
         </Script>
         {/* Dynamic page background */}
         <PageBackgroundInitializer />

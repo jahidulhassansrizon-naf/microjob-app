@@ -86,6 +86,15 @@ body > .skiptranslate {
 .login-success-overlay { display: none; }
 html[data-just-logged-in] .login-success-overlay { display: flex; }
 
+.login-success-progress {
+  transform: scaleX(0);
+  animation: none;
+}
+
+html[data-just-logged-in] .login-success-progress {
+  animation: loginProgress 2s linear forwards;
+}
+
 @keyframes loginProgress {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }

@@ -492,15 +492,17 @@ export default function DashboardPage() {
     if (loginSuccessHandledRef.current) return;
     loginSuccessHandledRef.current = true;
 
-    let justLoggedIn = false;
-    try {
-      justLoggedIn = sessionStorage.getItem("justLoggedIn") === "true";
-      sessionStorage.removeItem("justLoggedIn");
-    } catch {}
+    // The beforeInteractive script in app/layout.tsx is the single source of
+    // truth for the login-success timing. It consumes sessionStorage and
+    // toggles data-just-logged-in before the first paint, so React must not
+    // create a second timer during hydration.
+    const justLoggedIn = document.documentElement.hasAttribute(
+      "data-just-logged-in"
+    );
 
     if (!justLoggedIn) {
       setJustLoggedInArrival(false);
-      setOverlayDone(true); // popup লাগবে না, সরিয়ে দাও
+      setOverlayDone(true);
       return;
     }
 
@@ -508,11 +510,6 @@ export default function DashboardPage() {
     // arrival. This prevents the desktop "fit-to-screen" calculation from
     // visibly pulling the dashboard inward behind the success modal.
     setJustLoggedInArrival(true);
-
-    window.setTimeout(() => {
-      setOverlayDone(true);
-      document.documentElement.removeAttribute("data-just-logged-in");
-    }, 2000);
   }, []);
 
   useEffect(() => {
@@ -616,7 +613,7 @@ export default function DashboardPage() {
             </p>
 
             <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-full origin-left rounded-full bg-[#2563EB] animate-[loginProgress_2s_linear_forwards]" />
+              <div className="login-success-progress h-full w-full origin-left rounded-full bg-[#2563EB]" />
             </div>
           </div>
         </div>
