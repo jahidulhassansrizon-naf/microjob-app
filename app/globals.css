@@ -84,14 +84,13 @@ body > .skiptranslate {
 }
 
 .login-success-overlay { display: none; }
-html[data-just-logged-in] .login-success-overlay { display: flex; }
+html[data-login-success] .login-success-overlay { display: flex; }
 
 .login-success-progress {
   transform: scaleX(0);
-  animation: none;
 }
 
-.login-success-progress-running {
+html[data-login-success] .login-success-progress {
   animation: loginProgress 2s linear forwards;
 }
 

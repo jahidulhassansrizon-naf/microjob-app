@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
 import {
@@ -183,7 +183,7 @@ const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্
 const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
 const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
 
-function HomeScreen({ userName, freezeFit = false }: { userName: string; freezeFit?: boolean }) {
+function HomeScreen({ userName }: { userName: string }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -201,11 +201,6 @@ function HomeScreen({ userName, freezeFit = false }: { userName: string; freezeF
   });
 
   useLayoutEffect(() => {
-    // During the login-success overlay, keep the server-rendered dashboard
-    // layout completely still. Otherwise the client-side fit calculation
-    // changes the scale/position underneath the overlay on first hydration.
-    if (freezeFit) return;
-
     const section = sectionRef.current;
     const content = contentRef.current;
     if (!section || !content) return;
@@ -269,7 +264,7 @@ function HomeScreen({ userName, freezeFit = false }: { userName: string; freezeF
       window.removeEventListener("resize", update);
       mq.removeEventListener("change", update);
     };
-  }, [freezeFit]);
+  }, []);
 
   return (
     <section
@@ -444,9 +439,6 @@ export default function DashboardPage() {
   // Render the dashboard immediately. Authentication is verified in the background so
   // a valid session never sees a full-screen "Checking authentication..." blocker.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [overlayDone, setOverlayDone] = useState<boolean>(false);
-  const [justLoggedInArrival, setJustLoggedInArrival] = useState<boolean>(false);
-  const [loginProgressStarted, setLoginProgressStarted] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("User");
   // my-nafia:start
   const [shownA, setShownA] = useState<boolean>(false);
@@ -487,36 +479,6 @@ export default function DashboardPage() {
     };
   }, []);
   // my-nafia:end
-
-  useLayoutEffect(() => {
-    // The beforeInteractive script only marks this dashboard arrival before
-    // the first paint. Start the actual 2-second timer here, after the success
-    // overlay exists in the React tree. Keep the effect idempotent so React
-    // Strict Mode cleanup never leaves the popup without its auto-close timer.
-    const justLoggedIn = document.documentElement.hasAttribute(
-      "data-just-logged-in"
-    );
-
-    if (!justLoggedIn) {
-      setJustLoggedInArrival(false);
-      setOverlayDone(true);
-      return;
-    }
-
-    // Keep the dashboard's initial responsive layout fixed for this login
-    // arrival. This prevents the desktop "fit-to-screen" calculation from
-    // visibly pulling the dashboard inward behind the success modal.
-    setJustLoggedInArrival(true);
-    setLoginProgressStarted(true);
-
-    const timer = window.setTimeout(() => {
-      setOverlayDone(true);
-      setJustLoggedInArrival(false);
-      document.documentElement.removeAttribute("data-just-logged-in");
-    }, 2000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -573,7 +535,7 @@ export default function DashboardPage() {
         <DashboardNavbar />
 
         {/* টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
-        <HomeScreen userName={userName} freezeFit={justLoggedInArrival} />
+        <HomeScreen userName={userName} />
       </div>
 
       <div>
@@ -582,52 +544,6 @@ export default function DashboardPage() {
         {shownB && <ContactCard />}
         {/* my-nafia:end */}
       </div>
-
-      {!overlayDone && (
-        <div className="login-success-overlay fixed inset-0 z-[999] items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="login-success-title"
-            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setOverlayDone(true);
-                document.documentElement.removeAttribute("data-just-logged-in");
-              }}
-              className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              aria-label="Close modal"
-            >
-              <X size={16} />
-            </button>
-
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              <CheckCircle2 size={26} strokeWidth={2} />
-            </div>
-
-            <h3 id="login-success-title" className="text-lg font-semibold text-slate-900">
-              Login Successful!
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Welcome back
-              {userName !== "User" && (
-                <>, <span className="font-medium text-slate-900">{userName}</span></>
-              )}
-              !
-            </p>
-
-            <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className={`login-success-progress h-full w-full origin-left rounded-full bg-[#2563EB] ${
-                  loginProgressStarted ? "login-success-progress-running" : ""
-                }`}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

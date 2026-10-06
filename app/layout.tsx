@@ -4,6 +4,7 @@ import Script from "next/script";
 
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
+import LoginSuccessOverlay from "@/app/_components/LoginSuccessOverlay";
 
 import "./globals.css";
 
@@ -33,12 +34,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning
       >
-        {/* Mark a login arrival before the dashboard paint. The dashboard itself
-            starts and ends the timer only after the overlay is mounted, so fast
-            production loads cannot consume part of the success-message time. */}
+        {/* Login success is global and independent of the dashboard/page lifecycle. */}
         <Script id="login-success-flag" strategy="beforeInteractive">
-          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){sessionStorage.removeItem("justLoggedIn");document.documentElement.setAttribute("data-just-logged-in","1")}}catch(e){}`}
+          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){sessionStorage.removeItem("justLoggedIn");document.documentElement.setAttribute("data-login-success","1");document.addEventListener("animationend",function(e){if(e.animationName==="loginProgress"){document.documentElement.removeAttribute("data-login-success")}},true)}}catch(e){}`}
         </Script>
+
+        {/* Global login-success overlay. It is rendered once at the root, not by Dashboard. */}
+        <LoginSuccessOverlay />
+
         {/* Dynamic page background */}
         <PageBackgroundInitializer />
 
