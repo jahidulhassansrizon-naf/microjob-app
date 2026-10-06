@@ -183,7 +183,7 @@ const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্
 const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
 const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
 
-function HomeScreen({ userName }: { userName: string }) {
+function HomeScreen({ userName, freezeFit = false }: { userName: string; freezeFit?: boolean }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -201,6 +201,11 @@ function HomeScreen({ userName }: { userName: string }) {
   });
 
   useLayoutEffect(() => {
+    // During the login-success overlay, keep the server-rendered dashboard
+    // layout completely still. Otherwise the client-side fit calculation
+    // changes the scale/position underneath the overlay on first hydration.
+    if (freezeFit) return;
+
     const section = sectionRef.current;
     const content = contentRef.current;
     if (!section || !content) return;
@@ -260,14 +265,11 @@ function HomeScreen({ userName }: { userName: string }) {
     // জুম করলে viewport-এর মাপ বদলায়, তাই resize শুনছি
     window.addEventListener("resize", update);
     mq.addEventListener("change", update);
-    const ro = new ResizeObserver(update);
-    ro.observe(content);
     return () => {
       window.removeEventListener("resize", update);
       mq.removeEventListener("change", update);
-      ro.disconnect();
     };
-  }, []);
+  }, [freezeFit]);
 
   return (
     <section
@@ -434,29 +436,6 @@ function ContactCard() {
 // my-nafia:end
 
 /* ------------------------------------------------------------------ */
-/* Login success progress bar                                          */
-/* ------------------------------------------------------------------ */
-
-// ১.৬ সেকেন্ডে ধীরে ধীরে ভরে ওঠে (modal বন্ধ হওয়ার সময়ের সাথে মিলিয়ে)
-function LoginProgress() {
-  const [go, setGo] = useState<boolean>(false);
-
-  useEffect(() => {
-    const id = setTimeout(() => setGo(true), 30);
-    return () => clearTimeout(id);
-  }, []);
-
-  return (
-    <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-      <div
-        className="h-full rounded-full bg-[#2563EB] transition-[width] ease-out"
-        style={{ width: go ? "100%" : "0%", transitionDuration: "1500ms" }}
-      />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -465,7 +444,9 @@ export default function DashboardPage() {
   // Render the dashboard immediately. Authentication is verified in the background so
   // a valid session never sees a full-screen "Checking authentication..." blocker.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [showLoginSuccess, setShowLoginSuccess] = useState<boolean>(false);
+  const [overlayDone, setOverlayDone] = useState<boolean>(false);
+  const [justLoggedInArrival, setJustLoggedInArrival] = useState<boolean>(false);
+  const loginSuccessHandledRef = useRef<boolean>(false);
   const [userName, setUserName] = useState<string>("User");
   // my-nafia:start
   const [shownA, setShownA] = useState<boolean>(false);
@@ -507,9 +488,35 @@ export default function DashboardPage() {
   }, []);
   // my-nafia:end
 
+  useLayoutEffect(() => {
+    if (loginSuccessHandledRef.current) return;
+    loginSuccessHandledRef.current = true;
+
+    let justLoggedIn = false;
+    try {
+      justLoggedIn = sessionStorage.getItem("justLoggedIn") === "true";
+      sessionStorage.removeItem("justLoggedIn");
+    } catch {}
+
+    if (!justLoggedIn) {
+      setJustLoggedInArrival(false);
+      setOverlayDone(true); // popup লাগবে না, সরিয়ে দাও
+      return;
+    }
+
+    // Keep the dashboard's initial responsive layout fixed for this login
+    // arrival. This prevents the desktop "fit-to-screen" calculation from
+    // visibly pulling the dashboard inward behind the success modal.
+    setJustLoggedInArrival(true);
+
+    window.setTimeout(() => {
+      setOverlayDone(true);
+      document.documentElement.removeAttribute("data-just-logged-in");
+    }, 1600);
+  }, []);
+
   useEffect(() => {
     let mounted = true;
-    let successTimer: ReturnType<typeof setTimeout> | null = null;
 
     const loadCachedUser = () => {
       try {
@@ -519,22 +526,6 @@ export default function DashboardPage() {
         if (userObj?.fullName && mounted) setUserName(userObj.fullName);
       } catch {
         // Cached user data is optional.
-      }
-    };
-
-    const handleLoginSuccess = () => {
-      try {
-        if (sessionStorage.getItem("justLoggedIn") !== "true") return;
-        sessionStorage.removeItem("justLoggedIn");
-        if (!mounted) return;
-
-        setShowLoginSuccess(true);
-        successTimer = setTimeout(() => {
-          if (!mounted) return;
-          setShowLoginSuccess(false);
-        }, 1600);
-      } catch {
-        // Session storage is optional.
       }
     };
 
@@ -553,12 +544,10 @@ export default function DashboardPage() {
       }
 
       setIsAuthenticated(true);
-      handleLoginSuccess();
     });
 
     return () => {
       mounted = false;
-      if (successTimer) clearTimeout(successTimer);
     };
   }, [router]);
 
@@ -581,7 +570,7 @@ export default function DashboardPage() {
         <DashboardNavbar />
 
         {/* টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
-        <HomeScreen userName={userName} />
+        <HomeScreen userName={userName} freezeFit={justLoggedInArrival} />
       </div>
 
       <div>
@@ -591,20 +580,19 @@ export default function DashboardPage() {
         {/* my-nafia:end */}
       </div>
 
-      {showLoginSuccess && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm animate-in fade-in duration-300">
+      {!overlayDone && (
+        <div className="login-success-overlay fixed inset-0 z-[999] items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="login-success-title"
-            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl"
           >
-            {/* লাল রঙের ক্লোজ বাটন */}
             <button
               type="button"
               onClick={() => {
-                setShowLoginSuccess(false);
-                setIsAuthenticated(true);
+                setOverlayDone(true);
+                document.documentElement.removeAttribute("data-just-logged-in");
               }}
               className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               aria-label="Close modal"
@@ -613,28 +601,27 @@ export default function DashboardPage() {
             </button>
 
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              <CheckCircle2
-                size={26}
-                strokeWidth={2}
-                className="animate-in zoom-in-50 duration-500"
-              />
+              <CheckCircle2 size={26} strokeWidth={2} />
             </div>
 
-            <h3
-              id="login-success-title"
-              className="text-lg font-semibold text-slate-900"
-            >
+            <h3 id="login-success-title" className="text-lg font-semibold text-slate-900">
               Login Successful!
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              Welcome back,{" "}
-              <span className="font-medium text-slate-900">{userName}</span>!
+              Welcome back
+              {userName !== "User" && (
+                <>, <span className="font-medium text-slate-900">{userName}</span></>
+              )}
+              !
             </p>
 
-            <LoginProgress />
+            <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full w-full origin-left rounded-full bg-[#2563EB] animate-[loginProgress_1.6s_linear_forwards]" />
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

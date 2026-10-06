@@ -82,3 +82,11 @@ body > .skiptranslate {
 .goog-te-spinner-pos {
   display: none !important;
 }
+
+.login-success-overlay { display: none; }
+html[data-just-logged-in] .login-success-overlay { display: flex; }
+
+@keyframes loginProgress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
