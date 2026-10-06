@@ -33,11 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning
       >
-        {/* Set the login-success flag before the first dashboard paint.
-            Using next/script avoids the App Router error caused by a raw <script>
-            inside a nested React layout. */}
+        {/* Mark a login arrival before the dashboard paint. The dashboard itself
+            starts and ends the timer only after the overlay is mounted, so fast
+            production loads cannot consume part of the success-message time. */}
         <Script id="login-success-flag" strategy="beforeInteractive">
-          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){sessionStorage.removeItem("justLoggedIn");document.documentElement.setAttribute("data-just-logged-in","1");window.setTimeout(function(){document.documentElement.removeAttribute("data-just-logged-in")},2000)}}catch(e){}`}
+          {`try{if(sessionStorage.getItem("justLoggedIn")==="true"){sessionStorage.removeItem("justLoggedIn");document.documentElement.setAttribute("data-just-logged-in","1")}}catch(e){}`}
         </Script>
         {/* Dynamic page background */}
         <PageBackgroundInitializer />

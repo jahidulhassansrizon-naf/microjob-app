@@ -91,7 +91,7 @@ html[data-just-logged-in] .login-success-overlay { display: flex; }
   animation: none;
 }
 
-html[data-just-logged-in] .login-success-progress {
+.login-success-progress-running {
   animation: loginProgress 2s linear forwards;
 }
 

@@ -446,7 +446,7 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [overlayDone, setOverlayDone] = useState<boolean>(false);
   const [justLoggedInArrival, setJustLoggedInArrival] = useState<boolean>(false);
-  const loginSuccessHandledRef = useRef<boolean>(false);
+  const [loginProgressStarted, setLoginProgressStarted] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("User");
   // my-nafia:start
   const [shownA, setShownA] = useState<boolean>(false);
@@ -489,13 +489,10 @@ export default function DashboardPage() {
   // my-nafia:end
 
   useLayoutEffect(() => {
-    if (loginSuccessHandledRef.current) return;
-    loginSuccessHandledRef.current = true;
-
-    // The beforeInteractive script in app/layout.tsx is the single source of
-    // truth for the login-success timing. It consumes sessionStorage and
-    // toggles data-just-logged-in before the first paint, so React must not
-    // create a second timer during hydration.
+    // The beforeInteractive script only marks this dashboard arrival before
+    // the first paint. Start the actual 2-second timer here, after the success
+    // overlay exists in the React tree. Keep the effect idempotent so React
+    // Strict Mode cleanup never leaves the popup without its auto-close timer.
     const justLoggedIn = document.documentElement.hasAttribute(
       "data-just-logged-in"
     );
@@ -510,6 +507,15 @@ export default function DashboardPage() {
     // arrival. This prevents the desktop "fit-to-screen" calculation from
     // visibly pulling the dashboard inward behind the success modal.
     setJustLoggedInArrival(true);
+    setLoginProgressStarted(true);
+
+    const timer = window.setTimeout(() => {
+      setOverlayDone(true);
+      setJustLoggedInArrival(false);
+      document.documentElement.removeAttribute("data-just-logged-in");
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -613,7 +619,11 @@ export default function DashboardPage() {
             </p>
 
             <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="login-success-progress h-full w-full origin-left rounded-full bg-[#2563EB]" />
+              <div
+                className={`login-success-progress h-full w-full origin-left rounded-full bg-[#2563EB] ${
+                  loginProgressStarted ? "login-success-progress-running" : ""
+                }`}
+              />
             </div>
           </div>
         </div>
