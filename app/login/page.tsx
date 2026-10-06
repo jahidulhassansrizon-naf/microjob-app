@@ -88,19 +88,33 @@ function LoginContent() {
       const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
 
-      // 🟢 ড্যাশবোর্ডে success popup দেখানোর জন্য flag সেট করা হলো
+      // Keep the existing Dashboard + Login Successful overlay flow.
+      // The dashboard receives a one-time query flag so the overlay is already
+      // present on its very first render, preventing a visible dashboard flash.
       const targetUrl = callbackUrl
         ? decodeURIComponent(callbackUrl)
         : "/dashboard";
 
-      if (targetUrl === "/dashboard" || targetUrl.startsWith("/dashboard/")) {
-        sessionStorage.setItem("justLoggedIn", "true");
-      } else {
-        sessionStorage.removeItem("justLoggedIn");
-      }
+      const safeTargetUrl =
+        targetUrl.startsWith("/") && !targetUrl.startsWith("//")
+          ? targetUrl
+          : "/dashboard";
 
-      // Login Successful -> Redirect to target page or /dashboard
-      window.location.replace(targetUrl);
+      if (
+        safeTargetUrl === "/dashboard" ||
+        safeTargetUrl.startsWith("/dashboard?") ||
+        safeTargetUrl.startsWith("/dashboard/")
+      ) {
+        const separator = safeTargetUrl.includes("?") ? "&" : "?";
+        window.location.replace(
+          `${safeTargetUrl}${separator}loginSuccess=1`,
+        );
+      } else {
+        // Preserve the previous success route for non-dashboard callback URLs.
+        window.location.replace(
+          `/login-success?next=${encodeURIComponent(safeTargetUrl)}`,
+        );
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
