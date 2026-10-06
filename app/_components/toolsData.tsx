@@ -1349,7 +1349,12 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
       ? "/subscription"
       : `/sohoj-tools/${slug}`;
 
-  const showPaidSeal = isPaid && hasActiveSubscription !== true;
+  // Do not render the paid seal while subscription access is still being
+  // resolved. This prevents a premium-user flash on a hard reload: the
+  // subscription API is async, so the previous logic treated `null` (loading)
+  // as "not subscribed" for the first paint.
+  const showPaidSeal =
+    isPaid && hasActiveSubscription !== null && hasActiveSubscription !== true;
 
   return (
     <Link
