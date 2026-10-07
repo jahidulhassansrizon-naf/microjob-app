@@ -139,13 +139,20 @@ function ScanProcessingOverlay({
   progress,
   style,
   onCancel,
+  firstRunMessage,
 }: {
-  mode: "upscale" | "face";
+  mode: "upscale" | "face" | "background";
   progress: number;
   style?: CSSProperties;
-  onCancel: () => void;
+  onCancel?: () => void;
+  firstRunMessage?: string;
 }) {
-  const label = mode === "upscale" ? "Upscaling Image..." : "Enhancing Face...";
+  const label =
+    mode === "upscale"
+      ? "Upscaling Image..."
+      : mode === "face"
+        ? "Enhancing Face..."
+        : "Removing Background...";
   const progressPercent = Math.max(
     8,
     Math.min(100, Math.round(progress * 100)),
@@ -200,15 +207,17 @@ function ScanProcessingOverlay({
         }
       `}</style>
 
-      <button
-        type="button"
-        onClick={onCancel}
-        className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70"
-        title="Cancel processing"
-        aria-label="Cancel processing"
-      >
-        <X className="h-3.5 w-3.5" strokeWidth={2.2} />
-      </button>
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70"
+          title="Cancel processing"
+          aria-label="Cancel processing"
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.2} />
+        </button>
+      )}
 
       <div className="absolute inset-0 bg-gradient-to-b from-cyan-300/5 via-cyan-200/10 to-blue-500/5" />
 
@@ -249,14 +258,33 @@ function ScanProcessingOverlay({
         <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70">
           AI scan in progress
         </span>
+
+        {firstRunMessage && (
+          <span className="mt-1.5 max-w-[230px] text-center text-[8px] font-semibold leading-tight text-white/85">
+            {firstRunMessage}
+          </span>
+        )}
       </div>
 
-      <div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 transition-[width] duration-300 ease-out"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+      {mode === "background" ? (
+        <div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15
+          ">
+          <div
+            className="h-full w-2/5 rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400"
+            style={{
+              animation:
+                "manual-editor-photo-scan-sweep 1.35s cubic-bezier(.4,0,.2,1) infinite alternate",
+            }}
+          />
+        </div>
+      ) : (
+        <div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 transition-[width] duration-300 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -290,6 +318,8 @@ export default function PhotoWorkspace() {
     aiProcessing,
     aiProgress,
     cancelAiProcessing,
+    isRemovingBackground,
+    aiNotice,
     objectMaskDataUrl,
     objectBrightness,
     objectContrast,
@@ -365,17 +395,26 @@ export default function PhotoWorkspace() {
 
   const handleComparePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!compareOpen) return;
+
+    // Compare owns the pointer gesture. Prevent it from bubbling into the
+    // photo pan handler so the comparison divider never gets "stuck" while
+    // the zoom/pan canvas is also listening for pointer events.
+    event.stopPropagation();
     compareDraggingRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
     updateComparePosition(event.clientX);
   };
 
   const handleComparePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (!compareDraggingRef.current) return;
     updateComparePosition(event.clientX);
   };
 
   const handleComparePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     compareDraggingRef.current = false;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -384,7 +423,7 @@ export default function PhotoWorkspace() {
 
   const getPanBounds = () => {
     const host = previewHostRef.current;
-    if (!host || !sourceImage || zoom <= 100) {
+    if (!host || !sourceImage) {
       return { maxX: 0, maxY: 0 };
     }
 
@@ -398,12 +437,18 @@ export default function PhotoWorkspace() {
     );
 
     const isQuarterTurn = Math.abs(Math.round(rotation / 90)) % 2 === 1;
-    const displayedWidth = (isQuarterTurn ? baseRect.height : baseRect.width) * (zoom / 100);
-    const displayedHeight = (isQuarterTurn ? baseRect.width : baseRect.height) * (zoom / 100);
+    const displayedWidth =
+      (isQuarterTurn ? baseRect.height : baseRect.width) * (zoom / 100);
+    const displayedHeight =
+      (isQuarterTurn ? baseRect.width : baseRect.height) * (zoom / 100);
 
+    // Allow deliberate positioning at every zoom level. At zoom < 100%,
+    // the image can be moved anywhere inside the card until an edge reaches
+    // the card edge. At zoom > 100%, keep the movement constrained so the
+    // image cannot be dragged completely out of the viewport.
     return {
-      maxX: Math.max(0, (displayedWidth - hostWidth) / 2),
-      maxY: Math.max(0, (displayedHeight - hostHeight) / 2),
+      maxX: Math.max(0, Math.abs(displayedWidth - hostWidth) / 2),
+      maxY: Math.max(0, Math.abs(displayedHeight - hostHeight) / 2),
     };
   };
 
@@ -417,8 +462,8 @@ export default function PhotoWorkspace() {
 
   const handlePanPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (
-      zoom <= 100 ||
       aiProcessing ||
+      isRemovingBackground ||
       compareOpen ||
       activeAiTool === "object" ||
       !sourceImage
@@ -459,11 +504,6 @@ export default function PhotoWorkspace() {
   };
 
   useEffect(() => {
-    if (zoom <= 100) {
-      setPan({ x: 0, y: 0 });
-      return;
-    }
-
     setPan((current) => clampPan(current.x, current.y));
   }, [zoom, rotation, sourceImage]);
 
@@ -668,9 +708,20 @@ export default function PhotoWorkspace() {
     currentPreset.heightMm,
   ]);
 
+  const scanMode = aiProcessing ?? (isRemovingBackground ? "background" : null);
+  const isFirstBackgroundRun =
+    isRemovingBackground &&
+    aiNotice ===
+      "First-time setup may take a little longer while the AI model loads.";
+
   const transform = `rotate(${rotation}deg) scaleX(${flipX ? -1 : 1}) scale(${zoom / 100})`;
   const photoTransform = `translate3d(${pan.x}px, ${pan.y}px, 0) ${transform}`;
-  const canPan = zoom > 100 && !aiProcessing && !compareOpen && activeAiTool !== "object";
+  const canPan =
+    Boolean(sourceImage) &&
+    !aiProcessing &&
+    !isRemovingBackground &&
+    !compareOpen &&
+    activeAiTool !== "object";
   const presetRatio =
     currentPreset.heightMm > 0
       ? currentPreset.widthMm / currentPreset.heightMm
@@ -861,36 +912,42 @@ export default function PhotoWorkspace() {
 
                 <div
                   ref={previewHostRef}
-                  className="relative overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-xl flex items-center justify-center"
+                  className={`relative overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-xl flex items-center justify-center ${
+                    canPan ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""
+                  }`}
+                  onPointerDown={handlePanPointerDown}
+                  onPointerMove={handlePanPointerMove}
+                  onPointerUp={finishPan}
+                  onPointerCancel={finishPan}
                   style={{
                     ...getResponsiveCanvasStyle(presetRatio),
                     backgroundColor: activeBackground,
+                    touchAction: canPan ? "none" : undefined,
                   }}
                 >
                   <div
-                    className={`absolute inset-0 select-none ${
-                      canPan ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""
-                    }`}
-                    onPointerDown={handlePanPointerDown}
-                    onPointerMove={handlePanPointerMove}
-                    onPointerUp={finishPan}
-                    onPointerCancel={finishPan}
+                    className="absolute inset-0 select-none pointer-events-none"
                     style={{
                       transform: photoTransform,
                       transformOrigin: "center",
                       willChange: canPan ? "transform" : undefined,
-                      touchAction: canPan ? "none" : undefined,
                     }}
                   >
                     {compareOpen && compareOriginalUrl ? (
                       <div
                         ref={compareHostRef}
-                        className="absolute inset-0 z-30 overflow-hidden select-none touch-none cursor-col-resize"
-                        onPointerDown={handleComparePointerDown}
+                        className="absolute inset-0 z-50 overflow-hidden select-none touch-none cursor-col-resize pointer-events-auto"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          handleComparePointerDown(event);
+                        }}
                         onPointerMove={handleComparePointerMove}
                         onPointerUp={handleComparePointerUp}
                         onPointerCancel={handleComparePointerUp}
-                        onDoubleClick={() => setComparePosition(50)}
+                        onDoubleClick={(event) => {
+                          event.stopPropagation();
+                          setComparePosition(50);
+                        }}
                         role="group"
                         aria-label="Before and after image comparison"
                       >
@@ -951,14 +1008,20 @@ export default function PhotoWorkspace() {
                       />
                     )}
 
-                    {aiProcessing && (
+                    {scanMode && (
                       <ScanProcessingOverlay
-                        mode={aiProcessing}
+                        mode={scanMode}
                         progress={aiProgress}
-                        onCancel={cancelAiProcessing}
+                        onCancel={scanMode === "background" ? undefined : cancelAiProcessing}
+                        firstRunMessage={
+                          isFirstBackgroundRun
+                            ? "First-time setup may take a little longer while the AI model loads."
+                            : undefined
+                        }
                         style={getScanOverlayStyle(
                           sourceImage
-                            ? sourceImage.naturalWidth / Math.max(1, sourceImage.naturalHeight)
+                            ? sourceImage.naturalWidth /
+                                Math.max(1, sourceImage.naturalHeight)
                             : presetRatio,
                           presetRatio,
                         )}

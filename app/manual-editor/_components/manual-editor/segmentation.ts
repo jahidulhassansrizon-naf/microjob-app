@@ -480,49 +480,20 @@ export async function detectTargetMask(
  * Cuts the person out of the photo and returns a transparent PNG.
  */
 export async function removeBackgroundFromImage(
-  image: HTMLImageElement,
-  key: string,
+  imageFile: Blob,
 ): Promise<Blob> {
-  const masks = await getClassMasks(image, key);
+  /*
+   * Keep Object Adjust / Face / Skin / Hair segmentation on the existing
+   * MediaPipe pipeline above. Background removal intentionally mirrors the
+   * dedicated Remove Background tool and uses the same @imgly/background-removal
+   * implementation supplied by that production-ready screen.
+   *
+   * Dynamic import keeps this browser-only package out of SSR and avoids
+   * loading its model assets until the user actually requests BG removal.
+   */
+  const { removeBackground } = await import("@imgly/background-removal");
 
-  const { width: maskWidth, height: maskHeight, classes } = masks;
-
-  const person = new Float32Array(maskWidth * maskHeight);
-
-  for (let index = 0; index < person.length; index += 1) {
-    person[index] = 1 - classes[CLASS_BACKGROUND][index];
-  }
-
-  const size = fitSize(image.naturalWidth, image.naturalHeight, CUTOUT_MAX_SIDE);
-
-  const alpha = resizePlane(
-    person,
-    maskWidth,
-    maskHeight,
-    size.width,
-    size.height,
-  );
-
-  const canvas = createCanvas(size.width, size.height);
-  const ctx = get2d(canvas);
-
-  ctx.drawImage(image, 0, 0, size.width, size.height);
-
-  const frame = ctx.getImageData(0, 0, size.width, size.height);
-
-  for (let index = 0; index < alpha.length; index += 1) {
-    const offset = index * 4 + 3;
-
-    frame.data[offset] = Math.round(
-      frame.data[offset] * smoothstep(0.35, 0.65, alpha[index]),
-    );
-  }
-
-  ctx.putImageData(frame, 0, 0);
-
-  const blob = await canvasToBlob(canvas, "image/png");
-
-  releaseCanvas(canvas);
-
-  return blob;
+  return removeBackground(imageFile, {
+    output: { format: "image/png" },
+  });
 }

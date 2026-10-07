@@ -1173,16 +1173,24 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     }
 
     setActiveAiTool("transparent");
-
     setIsRemovingBackground(true);
 
-    setAiNotice("Removing background…");
+    const firstRunKey = "manual-editor-bg-removal-first-run-complete";
+    const isFirstRun =
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(firstRunKey) !== "1";
+
+    setAiNotice(
+      isFirstRun
+        ? "First-time setup may take a little longer while the AI model loads."
+        : "Removing background…",
+    );
 
     try {
-      const image = await loadImage(activePhoto.url);
-
-      // MediaPipe person segmentation, entirely in the browser.
-      const blob = await removeBackgroundFromImage(image, activePhoto.url);
+      // Use the exact client-side background-removal implementation used by
+      // the dedicated Remove Background tool. The File avoids an unnecessary
+      // re-fetch/re-encode of the current photo.
+      const blob = await removeBackgroundFromImage(activePhoto.file);
 
       const resultFile = new File(
         [blob],
@@ -1195,8 +1203,11 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       const resultAsset = await createPhotoAsset(resultFile);
 
       replaceActivePhoto(resultAsset);
-
       setBackgroundRemoved(true);
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(firstRunKey, "1");
+      }
 
       setAiNotice("Background removed successfully.");
     } catch (error) {
