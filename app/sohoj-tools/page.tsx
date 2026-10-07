@@ -90,6 +90,9 @@ function SohojToolsContent() {
   const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  // নেভবারের সার্চ আইকন দিয়ে এই সার্চ বক্স খোলা/বন্ধ হয়
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const isInitialLoadDone = useRef(false);
   const gridRef = useRef<HTMLDivElement | null>(null);
 
@@ -125,7 +128,6 @@ function SohojToolsContent() {
 
   const selectedCategoryItem =
     categories.find((c) => c.name === selectedCategory) ?? categories[0];
-  const SelectedCategoryIcon = selectedCategoryItem.icon;
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
@@ -149,6 +151,7 @@ function SohojToolsContent() {
       // প্রথমবার পেজে আসার পর URL-এ কোনো সার্চ থাকলে অ্যানিমেশন চালাবে
       if (!isInitialLoadDone.current && searchFromUrl) {
         isInitialLoadDone.current = true;
+        setIsSearchOpen(true);
         let currentIndex = 0;
         setSearchQuery("");
 
@@ -191,6 +194,36 @@ function SohojToolsContent() {
     window.history.replaceState(null, "", newPath);
   };
 
+  // নেভবারের সার্চ আইকন / Ctrl+K থেকে সার্চ বক্স টগল; Esc দিলে বন্ধ
+  useEffect(() => {
+    const onToggle = () => setIsSearchOpen((v) => !v);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSearchOpen(false);
+    };
+
+    window.addEventListener("sohoj-tools:toggle-search", onToggle);
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("sohoj-tools:toggle-search", onToggle);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  // বক্স খুললে ইনপুটে ফোকাস
+  useEffect(() => {
+    if (isSearchOpen) searchInputRef.current?.focus();
+  }, [isSearchOpen]);
+
+  // নেভবারকে অবস্থা জানায় (আইকনের সক্রিয় চিহ্ন ও ডটের জন্য)
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("sohoj-tools:search-state", {
+        detail: { open: isSearchOpen, query: searchQuery },
+      }),
+    );
+  }, [isSearchOpen, searchQuery]);
+
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -231,39 +264,13 @@ function SohojToolsContent() {
         className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5"
         style={zoomScale > 1.001 ? { zoom: zoomScale } : undefined}
       >
-        {/* Unified header card: title + access tabs, search, categories */}
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          {/* Row 1: Title + Free/Paid segmented control */}
-          <div className="flex flex-col gap-3 px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="grid h-9 w-9 shrink-0 grid-cols-2 gap-[3px] rounded-xl border border-slate-200 bg-white p-[5px] shadow-sm"
-              >
-                <span className="rounded-[5px] bg-[#2563EB]" />
-                <span className="rounded-[5px] bg-[#F59E0B]" />
-                <span className="rounded-[5px] bg-[#10B981]" />
-                <span className="rounded-[5px] bg-[#F43F5E]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-lg font-bold tracking-tight text-[#0F172A] sm:text-xl">
-                    Tools
-                  </h1>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
-                    {filteredTools.length} available
-                  </span>
-                </div>
-                <p className="mt-0.5 text-[11.5px] font-medium leading-snug text-slate-500 sm:text-xs">
-                  Powerful tools to speed up your daily work.
-                </p>
-              </div>
-            </div>
-
+        {/* Simple filter bar: access tabs + category dropdown, side by side on the left */}
+        <section className="flex flex-wrap items-stretch gap-2.5">
+          <div className="inline-flex max-w-full items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
             <div
               role="tablist"
               aria-label="Filter tools by access"
-              className="flex w-full rounded-xl bg-slate-100 p-1 md:inline-flex md:w-auto md:self-auto"
+              className="inline-flex shrink-0 items-center gap-0.5"
             >
               {(
                 [
@@ -279,10 +286,10 @@ function SohojToolsContent() {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex-1 cursor-pointer rounded-lg px-4 py-1.5 text-center text-xs font-semibold transition-all md:flex-none ${
+                    className={`cursor-pointer rounded-md px-3.5 py-1.5 text-center text-[13px] font-medium transition-colors ${
                       isActive
-                        ? "bg-white text-[#2563EB] shadow-sm ring-1 ring-slate-200"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-[#2563EB] text-white"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     {tab.label}
@@ -290,115 +297,119 @@ function SohojToolsContent() {
                 );
               })}
             </div>
-          </div>
 
-          {/* Row 2: Search + Category dropdown */}
-          <div className="rounded-b-2xl border-t border-slate-100 px-4 py-3 sm:px-5">
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
-              {/* Search */}
-              <div className="relative min-w-0 flex-1">
-                <Search
-                  size={18}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Search tools... e.g. PDF, image, video"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-11 text-sm font-medium text-[#0F172A] transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB]/60 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#2563EB]/10"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    onClick={() => handleSearchChange("")}
-                    className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
+            {/* Divider between access tabs and category */}
+            <span
+              aria-hidden="true"
+              className="mx-1 h-4 w-px shrink-0 bg-slate-200"
+            />
 
-              {/* Category dropdown */}
-              <div
-                ref={categoryRef}
-                className="relative w-full md:w-64 md:shrink-0"
+            {/* Category dropdown (part of the same group) */}
+            <div ref={categoryRef} className="relative shrink-0">
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={categoryOpen}
+                onClick={() => setCategoryOpen((v) => !v)}
+                className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 ${
+                  selectedCategory !== "All"
+                    ? "bg-blue-50 text-[#2563EB]"
+                    : categoryOpen
+                      ? "bg-slate-100 text-slate-900"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
               >
-                <button
-                  type="button"
-                  aria-haspopup="listbox"
-                  aria-expanded={categoryOpen}
-                  onClick={() => setCategoryOpen((v) => !v)}
-                  className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm font-semibold text-slate-800 shadow-sm outline-none transition-all hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-[#2563EB]/10 ${
-                    categoryOpen
-                      ? "border-[#2563EB]/60 ring-4 ring-[#2563EB]/10"
-                      : "border-slate-200"
+                <span className="max-w-[9rem] truncate">
+                  {selectedCategory === "All"
+                    ? "Category"
+                    : selectedCategoryItem.name}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`shrink-0 transition-transform duration-200 ${
+                    categoryOpen ? "rotate-180" : ""
                   }`}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#2563EB]">
-                    <SelectedCategoryIcon size={15} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {selectedCategoryItem.name}
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    className={`shrink-0 text-slate-400 transition-transform duration-200 ${
-                      categoryOpen ? "rotate-180 text-[#2563EB]" : ""
-                    }`}
-                  />
-                </button>
+                />
+              </button>
 
-                {categoryOpen && (
-                  <div
-                    role="listbox"
-                    aria-label="Filter tools by category"
-                    className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200/80 bg-white p-1.5 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150"
-                  >
-                    {categories.map((cat) => {
-                      const Icon = cat.icon;
-                      const isSelected = selectedCategory === cat.name;
-                      return (
-                        <button
-                          key={cat.name}
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => {
-                            setSelectedCategory(cat.name);
-                            setCategoryOpen(false);
-                          }}
-                          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors ${
-                            isSelected
-                              ? "bg-blue-50 text-[#1D4ED8]"
-                              : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+              {categoryOpen && (
+                <div
+                  role="listbox"
+                  aria-label="Filter tools by category"
+                  className="absolute right-0 top-full z-40 mt-2 w-52 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] animate-in fade-in duration-150"
+                >
+                  {categories.map((cat) => {
+                    const Icon = cat.icon;
+                    const isSelected = selectedCategory === cat.name;
+                    return (
+                      <button
+                        key={cat.name}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          setSelectedCategory(cat.name);
+                          setCategoryOpen(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] font-medium transition-colors ${
+                          isSelected
+                            ? "bg-slate-100 text-slate-900"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <Icon
+                          size={15}
+                          className={`shrink-0 ${
+                            isSelected ? "text-[#2563EB]" : "text-slate-400"
                           }`}
-                        >
-                          <span
-                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                              isSelected
-                                ? "bg-white text-[#2563EB] ring-1 ring-blue-100"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            <Icon size={15} />
-                          </span>
-                          <span className="flex-1 truncate">{cat.name}</span>
-                          {isSelected && (
-                            <Check
-                              size={16}
-                              className="shrink-0 text-[#2563EB]"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                        />
+                        <span className="flex-1 truncate">
+                          {cat.name === "All" ? "All Categories" : cat.name}
+                        </span>
+                        {isSelected && (
+                          <Check
+                            size={15}
+                            className="shrink-0 text-[#2563EB]"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Search box (নেভবারের সার্চ আইকন দিয়ে খোলে) — ফিল্টার সারির একদম ডানে */}
+          {isSearchOpen && (
+            <div className="relative min-h-[38px] w-full animate-in fade-in duration-150 sm:ml-auto sm:w-80">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2563EB]"
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search tools..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="h-full min-h-[38px] w-full rounded-lg border border-slate-200 bg-white pl-10 pr-9 text-[13px] font-medium text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB]/60 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    handleSearchChange("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Tools Grid Section */}

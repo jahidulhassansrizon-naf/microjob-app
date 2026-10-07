@@ -1414,7 +1414,7 @@ export function ToolTile({
         className={`text-center group-hover:text-[#2563EB] transition-colors ${
           compact
             ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2"
-            : "mt-2.5 text-[15px] font-bold text-[#0F172A] line-clamp-1"
+            : "mt-2.5 text-[15px] font-medium text-[#0F172A] line-clamp-1"
         }`}
       >
         {tool.name}
