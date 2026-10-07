@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ImageIcon,
@@ -260,21 +260,160 @@ function SearchBox({
 function SortSelect({
   value,
   onChange,
+  className = "",
 }: {
   value: SortOrder;
   onChange: (v: SortOrder) => void;
+  className?: string;
 }) {
   return (
     <select
       aria-label="Sort files"
       value={value}
       onChange={(e) => onChange(e.target.value as SortOrder)}
-      className={`${fieldBase} cursor-pointer px-2.5`}
+      className={`${fieldBase} cursor-pointer px-2.5 ${className}`}
     >
       <option value="newest">Newest first</option>
       <option value="oldest">Oldest first</option>
     </select>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Scan animation (লোডিং-এর সময়) + zoom scale                          */
+/* ------------------------------------------------------------------ */
+
+const MIN_SCAN_MS = 1000; // ডাটা দ্রুত এলেও স্ক্যান অ্যানিমেশনটা কমপক্ষে এতক্ষণ দেখাবে
+
+const SCAN_CSS = `
+@keyframes mf-scan { 0% { left: -200px; } 100% { left: 100%; } }
+@keyframes mf-wipe {
+  from { clip-path: inset(0 100% 0 0); opacity: 0.35; }
+  to { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+@keyframes mf-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  .mf-scan-bar { animation: none !important; opacity: 0; }
+  .mf-wipe { animation: none !important; }
+}
+`;
+
+function ScanOverlay() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg"
+    >
+      <div
+        className="mf-scan-bar absolute inset-y-0 w-[200px]"
+        style={{
+          left: -200,
+          background:
+            "linear-gradient(to right, rgba(37,99,235,0) 0%, rgba(37,99,235,0.08) 65%, rgba(37,99,235,0.22) 100%)",
+          borderRight: "2px solid rgba(37,99,235,0.8)",
+          boxShadow: "6px 0 20px rgba(37,99,235,0.25)",
+          animation: "mf-scan 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite",
+        }}
+      />
+    </div>
+  );
+}
+
+function ScanSkeletonGrid({ count = 12 }: { count?: number }) {
+  return (
+    <div role="status" aria-label="Loading your files" className="relative">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4">
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white"
+          >
+            <div
+              className="flex aspect-[4/3] items-center justify-center bg-slate-100"
+              style={{ animation: "mf-pulse 1.8s ease-in-out infinite" }}
+            >
+              <ImageIcon
+                size={26}
+                strokeWidth={1.4}
+                className="text-slate-300"
+              />
+            </div>
+            <div className="space-y-1.5 px-3 py-3">
+              <div className="h-3 w-3/4 rounded bg-slate-100" />
+              <div className="h-2.5 w-1/3 rounded bg-slate-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <ScanOverlay />
+    </div>
+  );
+}
+
+function ScanSkeletonList({ count = 6 }: { count?: number }) {
+  return (
+    <div role="status" aria-label="Loading tool files" className="relative">
+      <ul className="divide-y divide-slate-100">
+        {Array.from({ length: count }).map((_, i) => (
+          <li key={i} className="flex items-center gap-3 px-4 py-3">
+            <span className="h-9 w-9 shrink-0 rounded-md bg-slate-100" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="h-3 w-2/3 rounded bg-slate-100" />
+              <div className="h-2.5 w-1/2 rounded bg-slate-100" />
+            </div>
+            <span className="h-6 w-6 shrink-0 rounded bg-slate-100" />
+          </li>
+        ))}
+      </ul>
+      <ScanOverlay />
+    </div>
+  );
+}
+
+// জুম-আউট / বড় স্ক্রিনে ন্যাভবারের সাথে মিলিয়ে কন্টেন্ট আনুপাতিক বড় হবে
+// DashboardNavbar-এর NAV_BASE_WIDTH / NAV_MAX_SCALE / NAV_BASE_HEIGHT-এর সাথে একই মান
+const ZOOM_BASE_WIDTH = 1920;
+const ZOOM_MAX_SCALE = 5;
+const NAV_BASE_HEIGHT = 64;
+
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+function useZoomScale(): { scale: number; viewH: number } {
+  const [state, setState] = useState<{ scale: number; viewH: number }>({
+    scale: 1,
+    viewH: 0,
+  });
+
+  useIsoLayoutEffect(() => {
+    // শুধু মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে; টাচ ডিভাইসে আগের মতো রেসপন্সিভ
+    const mq = window.matchMedia("(pointer: fine)");
+
+    const update = () => {
+      const w = document.documentElement.clientWidth;
+      const h = window.innerHeight;
+      const scale = mq.matches
+        ? Math.min(ZOOM_MAX_SCALE, Math.max(1, w / ZOOM_BASE_WIDTH))
+        : 1;
+
+      setState((prev) =>
+        Math.abs(prev.scale - scale) < 0.001 && prev.viewH === h
+          ? prev
+          : { scale, viewH: h },
+      );
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    mq.addEventListener("change", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      mq.removeEventListener("change", update);
+    };
+  }, []);
+
+  return state;
 }
 
 /* ------------------------------------------------------------------ */
@@ -292,7 +431,9 @@ export default function MyFilesPage() {
   const [switchNotice, setSwitchNotice] = useState<string>("");
 
   // ডান সাইডবার: SohozTools
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true); // ডেস্কটপে ডান পাশের প্যানেল
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false); // মোবাইলে ড্রয়ার
+  const { scale: zoomScale, viewH } = useZoomScale();
   const [toolGroup, setToolGroup] = useState<ToolGroupId>("all");
   const [toolSearch, setToolSearch] = useState<string>("");
   const [toolSort, setToolSort] = useState<SortOrder>("newest");
@@ -305,37 +446,52 @@ export default function MyFilesPage() {
   // My Files shell never blocks navigation.
   useEffect(() => {
     let mounted = true;
+    let finishTimer: ReturnType<typeof setTimeout> | null = null;
+    const startedAt = Date.now();
 
-    void getClientSession().then(async (session) => {
-      if (!mounted) return;
-      if (!session.authenticated) {
-        window.location.replace("/login?callbackUrl=%2Fmy-files");
-        return;
-      }
-
-      setIsAuthenticated(true);
-      try {
-        const response = await fetch("/api/my-files", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        const result = await response.json().catch(() => null);
-        if (!mounted || !response.ok || !result?.success) return;
-
-        const data = result.data || {};
-        setFiles(Array.isArray(data.files) ? data.files : []);
-        setToolFiles(Array.isArray(data.toolFiles) ? data.toolFiles : []);
-      } catch (error) {
-        console.error("Failed to load My Files:", error);
-      } finally {
+    // স্ক্যান অ্যানিমেশন যেন অন্তত একবার পুরোটা দেখা যায়
+    const finishLoading = () => {
+      const wait = Math.max(0, MIN_SCAN_MS - (Date.now() - startedAt));
+      finishTimer = setTimeout(() => {
         if (mounted) setFilesLoading(false);
-      }
-    }).catch((error) => {
-      console.error("My Files authentication error:", error);
-      if (mounted) setFilesLoading(false);
-    });
+      }, wait);
+    };
 
-    return () => { mounted = false; };
+    void getClientSession()
+      .then(async (session) => {
+        if (!mounted) return;
+        if (!session.authenticated) {
+          window.location.replace("/login?callbackUrl=%2Fmy-files");
+          return;
+        }
+
+        setIsAuthenticated(true);
+        try {
+          const response = await fetch("/api/my-files", {
+            credentials: "include",
+            cache: "no-store",
+          });
+          const result = await response.json().catch(() => null);
+          if (!mounted || !response.ok || !result?.success) return;
+
+          const data = result.data || {};
+          setFiles(Array.isArray(data.files) ? data.files : []);
+          setToolFiles(Array.isArray(data.toolFiles) ? data.toolFiles : []);
+        } catch (error) {
+          console.error("Failed to load My Files:", error);
+        } finally {
+          finishLoading();
+        }
+      })
+      .catch((error) => {
+        console.error("My Files authentication error:", error);
+        finishLoading();
+      });
+
+    return () => {
+      mounted = false;
+      if (finishTimer) clearTimeout(finishTimer);
+    };
   }, []);
 
   // সার্চ করলে: বর্তমান ট্যাবে না পেলে, যে ট্যাবে ফাইলটা আছে সেখানে অটো চলে যাবে
@@ -427,20 +583,46 @@ export default function MyFilesPage() {
     toolEmptyText = `Files you save from ${currentGroup.label} tools will appear here.`;
   }
 
+  const toggleSidebar = () => {
+    if (window.innerWidth >= 1024) setSidebarOpen((v) => !v);
+    else setMobileSidebarOpen((v) => !v);
+  };
+
+  const closeSidebar = () => {
+    setMobileSidebarOpen(false);
+    if (window.innerWidth >= 1024) setSidebarOpen(false);
+  };
+
+  // জুম-আউটে main অংশ আনুপাতিক বড় হবে; উচ্চতা হাতে হিসাব করে দিচ্ছি যাতে ভিতরের স্ক্রল ঠিক থাকে
+  const isZoomed = zoomScale > 1.001 && viewH > 0;
+  const mainStyle = isZoomed
+    ? {
+        zoom: zoomScale,
+        flex: "none",
+        height: Math.max(0, (viewH - NAV_BASE_HEIGHT * zoomScale) / zoomScale),
+      }
+    : undefined;
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] text-slate-900 lg:h-dvh">
-      <DashboardNavbar />
+      <style>{SCAN_CSS}</style>
+      <DashboardNavbar scaleWithZoom />
 
-      <main className="flex w-full flex-1 flex-col px-4 py-6 sm:px-6 lg:min-h-0 lg:px-8 2xl:px-12">
+      <main
+        style={mainStyle}
+        className="flex w-full flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:min-h-0 lg:px-8 2xl:px-12"
+      >
         {/* Page header */}
-        <header className="mb-6 flex shrink-0 flex-wrap items-start justify-between gap-4">
+        <header className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3 sm:mb-6 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-slate-900">My Files</h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">
+              My Files
+            </h1>
+            <p className="mt-1 text-[13px] leading-5 text-slate-600 sm:text-sm">
               Everything you make with Sohozkaj — edited photos, templates,
               print designs and question papers — is saved here.
             </p>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="mt-0.5 text-[13px] leading-5 text-slate-500 sm:text-sm">
               Files are deleted automatically after 30 days, so download what
               you need before then.
             </p>
@@ -448,36 +630,45 @@ export default function MyFilesPage() {
 
           <button
             type="button"
-            onClick={() => setSidebarOpen((v) => !v)}
-            aria-expanded={sidebarOpen}
+            onClick={toggleSidebar}
+            aria-expanded={sidebarOpen || mobileSidebarOpen}
             aria-controls="sohoztools-sidebar"
-            className={`${secondaryBtn} ${sidebarOpen ? "bg-slate-100" : ""}`}
+            className={`${secondaryBtn} w-full justify-center sm:w-auto ${
+              sidebarOpen ? "lg:bg-slate-100" : ""
+            } ${mobileSidebarOpen ? "bg-slate-100" : ""}`}
           >
             <Wrench size={15} className="text-slate-500" />
             SohozTools Files
             {sidebarOpen ? (
-              <PanelRightClose size={15} className="text-slate-400" />
+              <PanelRightClose
+                size={15}
+                className="hidden text-slate-400 lg:block"
+              />
             ) : (
-              <PanelRightOpen size={15} className="text-slate-400" />
+              <PanelRightOpen
+                size={15}
+                className="hidden text-slate-400 lg:block"
+              />
             )}
+            <PanelRightOpen size={15} className="text-slate-400 lg:hidden" />
           </button>
         </header>
 
         <div
-          className={`grid items-start gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${
+          className={`grid items-start gap-4 sm:gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${
             sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "grid-cols-1"
           }`}
         >
           {/* ======================= My Files ======================= */}
           <section
             aria-label="My files"
-            className="flex min-h-[560px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden"
+            className="flex min-h-[480px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white sm:min-h-[560px] lg:min-h-0 lg:overflow-hidden"
           >
             {/* Tabs */}
             <div
               role="tablist"
               aria-label="File categories"
-              className="flex shrink-0 gap-6 overflow-x-auto border-b border-slate-200 px-5"
+              className="flex shrink-0 gap-5 overflow-x-auto border-b border-slate-200 px-4 [scrollbar-width:none] sm:gap-6 sm:px-5 [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORY_TABS.map((tab) => {
                 const active = tab.id === activeTab;
@@ -488,7 +679,14 @@ export default function MyFilesPage() {
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    onClick={() => handleCategoryChange(tab.id)}
+                    onClick={(e) => {
+                      handleCategoryChange(tab.id);
+                      e.currentTarget.scrollIntoView({
+                        inline: "center",
+                        block: "nearest",
+                        behavior: "smooth",
+                      });
+                    }}
                     className={`-mb-px shrink-0 cursor-pointer whitespace-nowrap border-b-2 py-3 text-sm font-medium outline-none transition-colors focus-visible:text-blue-700 ${
                       active
                         ? "border-blue-600 text-blue-700"
@@ -507,7 +705,7 @@ export default function MyFilesPage() {
             </div>
 
             {/* Search + sort */}
-            <div className="flex shrink-0 flex-col gap-3 px-5 py-4 sm:flex-row">
+            <div className="flex shrink-0 gap-2 px-4 py-3 sm:gap-3 sm:px-5 sm:py-4">
               <SearchBox
                 value={searchQuery}
                 onChange={(v) => {
@@ -518,26 +716,29 @@ export default function MyFilesPage() {
                 placeholder={currentTab.searchPlaceholder}
                 label="Search files"
               />
-              <SortSelect value={sort} onChange={setSort} />
+              <SortSelect
+                value={sort}
+                onChange={setSort}
+                className="shrink-0"
+              />
             </div>
 
             {/* Results */}
-            <div className="flex flex-1 flex-col px-5 pb-5 lg:min-h-0 lg:overflow-y-auto">
-              {filesLoading && (
-                <p className="mb-3 text-xs text-slate-400">Updating your files…</p>
-              )}
-              {switchNotice && (
+            <div className="flex flex-1 flex-col px-4 pb-4 sm:px-5 sm:pb-5 lg:min-h-0 lg:overflow-y-auto">
+              {!filesLoading && switchNotice && (
                 <p role="status" className="mb-3 text-sm text-blue-700">
                   {switchNotice}
                 </p>
               )}
 
-              {visibleFiles.length > 0 ? (
+              {filesLoading ? (
+                <ScanSkeletonGrid />
+              ) : visibleFiles.length > 0 ? (
                 <div
                   aria-live="polite"
-                  className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4"
                 >
-                  {visibleFiles.map((file) => {
+                  {visibleFiles.map((file, index) => {
                     const isImage =
                       Boolean(file.url) &&
                       IMAGE_CATEGORY_IDS.includes(file.category);
@@ -547,7 +748,11 @@ export default function MyFilesPage() {
                     return (
                       <article
                         key={file.id}
-                        className="overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
+                        className="mf-wipe overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
+                        style={{
+                          animation: "mf-wipe 0.65s ease-out both",
+                          animationDelay: `${Math.min(index, 14) * 45}ms`,
+                        }}
                       >
                         <div className="flex aspect-[4/3] items-center justify-center bg-slate-100">
                           {isImage ? (
@@ -566,10 +771,10 @@ export default function MyFilesPage() {
                             />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-2.5">
+                        <div className="flex items-center gap-1.5 px-2.5 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
                           <div className="min-w-0 flex-1">
                             <p
-                              className="truncate text-sm font-medium text-slate-900"
+                              className="truncate text-[13px] font-medium text-slate-900 sm:text-sm"
                               title={file.name}
                             >
                               {file.name}
@@ -639,11 +844,27 @@ export default function MyFilesPage() {
           </section>
 
           {/* ===================== SohozTools sidebar ===================== */}
-          {sidebarOpen && (
+          {mobileSidebarOpen && (
+            <div
+              aria-hidden="true"
+              onClick={() => setMobileSidebarOpen(false)}
+              className="fixed inset-0 z-[55] bg-slate-900/40 lg:hidden"
+            />
+          )}
+
+          {(sidebarOpen || mobileSidebarOpen) && (
             <aside
               id="sohoztools-sidebar"
               aria-label="SohozTools files"
-              className="flex flex-col rounded-lg border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden"
+              className={`flex-col border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden lg:rounded-lg ${
+                mobileSidebarOpen
+                  ? "fixed inset-y-0 right-0 z-[60] flex w-[90vw] max-w-sm overflow-hidden rounded-l-xl shadow-2xl"
+                  : "hidden"
+              } ${
+                sidebarOpen
+                  ? "lg:static lg:z-auto lg:flex lg:w-auto lg:max-w-none lg:shadow-none"
+                  : "lg:hidden"
+              }`}
             >
               <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
                 <div className="min-w-0">
@@ -651,13 +872,16 @@ export default function MyFilesPage() {
                     SohozTools Files
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {toolFiles.length}{" "}
-                    {toolFiles.length === 1 ? "file" : "files"}
+                    {filesLoading
+                      ? "Loading…"
+                      : `${toolFiles.length} ${
+                          toolFiles.length === 1 ? "file" : "files"
+                        }`}
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={closeSidebar}
                   aria-label="Close SohozTools sidebar"
                   className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 >
@@ -696,8 +920,10 @@ export default function MyFilesPage() {
                 </div>
               </div>
 
-              <div className="mt-3 max-h-[440px] min-h-[220px] overflow-y-auto border-t border-slate-200 lg:max-h-none lg:min-h-0 lg:flex-1">
-                {visibleToolFiles.length > 0 ? (
+              <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-slate-200">
+                {filesLoading ? (
+                  <ScanSkeletonList />
+                ) : visibleToolFiles.length > 0 ? (
                   <ul className="divide-y divide-slate-100" aria-live="polite">
                     {visibleToolFiles.map((file) => {
                       const GroupIcon = (

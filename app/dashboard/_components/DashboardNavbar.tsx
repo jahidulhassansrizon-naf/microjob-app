@@ -186,6 +186,11 @@ const NAV_GAP = 2;
 const NAV_SIDE_GAP = 12;
 const NAV_EDGE_PAD = 6;
 
+// জুম-আউট / বড় স্ক্রিনে ন্যাভবার ঠিক একই দেখানোর জন্য (scaleWithZoom চালু থাকলে)
+const NAV_BASE_WIDTH = 1920; // px — এর চেয়ে চওড়া ভিউপোর্টে ন্যাভবার আনুপাতিক বড় হবে
+const NAV_MAX_SCALE = 5; // সর্বোচ্চ কতগুণ বড় হবে
+const NAV_BASE_HEIGHT = 64; // px — h-16
+
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -402,8 +407,48 @@ function MoreMenu({
 /* Navbar                                                             */
 /* ------------------------------------------------------------------ */
 
-export default function DashboardNavbar() {
+export default function DashboardNavbar({
+  scaleWithZoom = false,
+}: {
+  scaleWithZoom?: boolean;
+} = {}) {
   const pathname = usePathname();
+
+  /* Zoom-out scale (শুধু ডেস্কটপ/মাউস ডিভাইসে, scaleWithZoom চালু থাকলে) */
+  const [navScale, setNavScale] = useState<number>(1);
+
+  useIsoLayoutEffect(() => {
+    if (!scaleWithZoom) {
+      setNavScale(1);
+      return;
+    }
+
+    const mq = window.matchMedia("(pointer: fine)");
+
+    const update = () => {
+      if (!mq.matches) {
+        setNavScale(1);
+        return;
+      }
+
+      const w = document.documentElement.clientWidth;
+      const next = Math.min(NAV_MAX_SCALE, Math.max(1, w / NAV_BASE_WIDTH));
+
+      setNavScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    };
+
+    update();
+
+    window.addEventListener("resize", update);
+    mq.addEventListener("change", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      mq.removeEventListener("change", update);
+    };
+  }, [scaleWithZoom]);
+
+  const isScaled = scaleWithZoom && navScale > 1.001;
 
   const [user, setUser] = useState<UserData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -787,324 +832,339 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <header
-        ref={headerRef}
-        className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6"
+      {/* স্কেল চালু থাকলে এই র‍্যাপার স্কেল-করা উচ্চতা ধরে রাখে ও sticky থাকে */}
+      <div
+        className={scaleWithZoom ? "sticky top-0 z-50" : "contents"}
+        style={isScaled ? { height: NAV_BASE_HEIGHT * navScale } : undefined}
       >
-        {/* ------------------------------------------------------------ */}
-        {/* Left: Logo                                                   */}
-        {/* ------------------------------------------------------------ */}
-
-        <Link
-          ref={leftRef}
-          href="/dashboard"
-          className="flex min-w-0 shrink items-center gap-2.5"
+        <header
+          ref={headerRef}
+          style={
+            isScaled
+              ? {
+                  width: `${100 / navScale}%`,
+                  transform: `scale(${navScale})`,
+                  transformOrigin: "top left",
+                }
+              : undefined
+          }
+          className="sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20">
-            SK
-          </div>
+          {/* ------------------------------------------------------------ */}
+          {/* Left: Logo                                                   */}
+          {/* ------------------------------------------------------------ */}
 
-          <div className="flex min-w-0 flex-col leading-none">
-            <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
-              Sohoz<span className="text-[#2563EB]">kaj</span>
-            </span>
-
-            <span className="mt-1 hidden text-[10px] font-medium text-slate-500 sm:block">
-              www.sohozkaj.com
-            </span>
-          </div>
-        </Link>
-
-        {/* ------------------------------------------------------------ */}
-        {/* Center: Navigation                                           */}
-        {/* ------------------------------------------------------------ */}
-
-        <nav
-          ref={navRef}
-          aria-label="Main"
-          style={{
-            width: navWidth,
-            left: `calc(50% - ${navWidth / 2}px)`,
-          }}
-          className={`absolute top-0 hidden h-full items-center ${
-            navAligned ? "justify-between" : "justify-center"
-          } gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
-            navReady ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {/* Hidden measuring copy */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none invisible absolute inset-x-0 top-0 h-0 overflow-hidden"
+          <Link
+            ref={leftRef}
+            href="/dashboard"
+            className="flex min-w-0 shrink items-center gap-2.5"
           >
-            <div ref={ghostRef} className="flex w-max items-center gap-0.5">
-              {NAV_ITEMS.map((item) => (
-                <div key={item.id} className="flex shrink-0 items-center">
-                  <div className={itemBase}>
-                    <NavLabel item={item} />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20">
+              SK
+            </div>
+
+            <div className="flex min-w-0 flex-col leading-none">
+              <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
+                Sohoz<span className="text-[#2563EB]">kaj</span>
+              </span>
+
+              <span className="mt-1 hidden text-[10px] font-medium text-slate-500 sm:block">
+                www.sohozkaj.com
+              </span>
+            </div>
+          </Link>
+
+          {/* ------------------------------------------------------------ */}
+          {/* Center: Navigation                                           */}
+          {/* ------------------------------------------------------------ */}
+
+          <nav
+            ref={navRef}
+            aria-label="Main"
+            style={{
+              width: navWidth,
+              left: `calc(50% - ${navWidth / 2}px)`,
+            }}
+            className={`absolute top-0 hidden h-full items-center ${
+              navAligned ? "justify-between" : "justify-center"
+            } gap-0.5 text-[13px] font-medium transition-opacity duration-150 lg:flex 2xl:text-[13.5px] 2xl:font-semibold ${
+              navReady ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {/* Hidden measuring copy */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none invisible absolute inset-x-0 top-0 h-0 overflow-hidden"
+            >
+              <div ref={ghostRef} className="flex w-max items-center gap-0.5">
+                {NAV_ITEMS.map((item) => (
+                  <div key={item.id} className="flex shrink-0 items-center">
+                    <div className={itemBase}>
+                      <NavLabel item={item} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              <div className="flex shrink-0 items-center">
-                <div className={itemBase}>
-                  <IconTile icon={MoreHorizontal} tone="slate" />
+                <div className="flex shrink-0 items-center">
+                  <div className={itemBase}>
+                    <IconTile icon={MoreHorizontal} tone="slate" />
 
-                  <span>More</span>
+                    <span>More</span>
 
-                  <ChevronDown size={13} className="-ml-0.5" />
+                    <ChevronDown size={13} className="-ml-0.5" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {visibleItems.map((item) =>
-            item.menu ? (
-              <NavDropdown
-                key={item.id}
-                item={item}
-                open={openMenu === item.id}
-                setOpen={menuSetter(item.id)}
-                active={isActive(item.match)}
-              />
-            ) : (
-              <NavItem
-                key={item.id}
-                item={item}
-                active={isActive(item.match)}
-              />
-            ),
-          )}
-
-          {hiddenItems.length > 0 && (
-            <MoreMenu
-              items={hiddenItems}
-              open={moreOpen}
-              setOpen={setMoreOpen}
-              active={hiddenItems.some((item) => isActive(item.match))}
-              isActive={isActive}
-            />
-          )}
-        </nav>
-
-        {/* ------------------------------------------------------------ */}
-        {/* Right                                                        */}
-        {/* ------------------------------------------------------------ */}
-
-        <div
-          ref={rightRef}
-          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
-        >
-          {/* Language switcher */}
-          <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold min-[1900px]:inline-flex">
-            <button
-              type="button"
-              onClick={() => changeGoogleLanguage("EN")}
-              className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
-                lang === "EN"
-                  ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              EN
-            </button>
-
-            <button
-              type="button"
-              onClick={() => changeGoogleLanguage("BN")}
-              className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
-                lang === "BN"
-                  ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              বাং
-            </button>
-          </div>
-
-          {/* Search */}
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className={iconButton}
-            aria-label="Search"
-          >
-            <Search size={16} />
-          </button>
-
-          {/* Profile */}
-          <div className="relative z-50 shrink-0" ref={profileRef}>
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-haspopup="true"
-              aria-expanded={dropdownOpen}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
-                {user?.profileImageUrl ? (
-                  <img
-                    src={`${user.profileImageUrl}${
-                      user.updatedAt
-                        ? `${
-                            user.profileImageUrl.includes("?") ? "&" : "?"
-                          }v=${encodeURIComponent(user.updatedAt)}`
-                        : ""
-                    }`}
-                    alt={`${user?.fullName || "User"} profile photo`}
-                    className="h-full w-full object-cover"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  getInitials(user?.fullName)
-                )}
-              </div>
-
-              <div className="hidden flex-col leading-tight min-[2200px]:flex">
-                <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
-                  {user?.fullName || "User Account"}
-                </span>
-
-                <span className="max-w-[120px] truncate text-[11px] text-slate-500">
-                  {user?.phoneNumber || user?.email || "User"}
-                </span>
-              </div>
-
-              <ChevronDown
-                size={14}
-                className={`hidden shrink-0 text-slate-500 transition-transform duration-200 sm:block ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {/* -------------------------------------------------------- */}
-            {/* Profile Dropdown                                         */}
-            {/* -------------------------------------------------------- */}
-
-            {dropdownOpen && (
-              <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
-                {/* User info */}
-                <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
-                  <p className="truncate font-semibold text-[#0F172A]">
-                    {user?.fullName || "User Account"}
-                  </p>
-
-                  <p className="mt-0.5 truncate text-xs text-slate-500">
-                    {user?.phoneNumber || user?.email || "User"}
-                  </p>
-                </div>
-
-                {/* Language */}
-                <div className="mb-1 flex items-center justify-between gap-2 px-3 py-2 min-[1900px]:hidden">
-                  <span className="font-medium text-slate-700">Language</span>
-
-                  <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => changeGoogleLanguage("EN")}
-                      className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
-                        lang === "EN"
-                          ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      EN
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => changeGoogleLanguage("BN")}
-                      className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
-                        lang === "BN"
-                          ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      বাং
-                    </button>
-                  </div>
-                </div>
-
-                {/* Dashboard */}
-                <Link
-                  href="/dashboard"
-                  onClick={() => setDropdownOpen(false)}
-                  className={`${profileLinkClass} ${
-                    isActive("/dashboard") ? "bg-blue-50 text-[#1D4ED8]" : ""
-                  }`}
-                >
-                  <LayoutDashboard
-                    size={15}
-                    className={
-                      isActive("/dashboard")
-                        ? "text-[#2563EB]"
-                        : "text-slate-500"
-                    }
-                  />
-                  Dashboard
-                </Link>
-
-                {/* My Profile */}
-                <Link
-                  href="/profile"
-                  onClick={() => setDropdownOpen(false)}
-                  className={profileLinkClass}
-                >
-                  <UserIcon size={15} className="text-slate-500" />
-                  My Profile
-                </Link>
-
-                {/* Subscription */}
-                <Link
-                  href="/subscription"
-                  onClick={() => setDropdownOpen(false)}
-                  className={profileLinkClass}
-                >
-                  <CreditCard size={15} className="text-slate-500" />
-                  Subscription
-                </Link>
-
-                {/* Settings */}
-                <Link
-                  href="/settings"
-                  onClick={() => setDropdownOpen(false)}
-                  className={profileLinkClass}
-                >
-                  <Settings size={15} className="text-slate-500" />
-                  Settings
-                </Link>
-
-                {/* Divider */}
-                <div className="my-1 border-t border-slate-100" />
-
-                {/* Logout */}
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left font-semibold text-red-600 transition-colors hover:bg-red-50"
-                >
-                  <LogOut size={15} />
-                  Logout
-                </button>
-              </div>
+            {visibleItems.map((item) =>
+              item.menu ? (
+                <NavDropdown
+                  key={item.id}
+                  item={item}
+                  open={openMenu === item.id}
+                  setOpen={menuSetter(item.id)}
+                  active={isActive(item.match)}
+                />
+              ) : (
+                <NavItem
+                  key={item.id}
+                  item={item}
+                  active={isActive(item.match)}
+                />
+              ),
             )}
-          </div>
 
-          {/* Menu drawer trigger */}
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(true)}
-            className={iconButton}
-            aria-label="Open Menu"
-            title="Menu"
+            {hiddenItems.length > 0 && (
+              <MoreMenu
+                items={hiddenItems}
+                open={moreOpen}
+                setOpen={setMoreOpen}
+                active={hiddenItems.some((item) => isActive(item.match))}
+                isActive={isActive}
+              />
+            )}
+          </nav>
+
+          {/* ------------------------------------------------------------ */}
+          {/* Right                                                        */}
+          {/* ------------------------------------------------------------ */}
+
+          <div
+            ref={rightRef}
+            className="flex shrink-0 items-center gap-1.5 sm:gap-2"
           >
-            <PanelRightOpen size={18} />
-          </button>
-        </div>
-      </header>
+            {/* Language switcher */}
+            <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold min-[1900px]:inline-flex">
+              <button
+                type="button"
+                onClick={() => changeGoogleLanguage("EN")}
+                className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                  lang === "EN"
+                    ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                EN
+              </button>
+
+              <button
+                type="button"
+                onClick={() => changeGoogleLanguage("BN")}
+                className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                  lang === "BN"
+                    ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                বাং
+              </button>
+            </div>
+
+            {/* Search */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className={iconButton}
+              aria-label="Search"
+            >
+              <Search size={16} />
+            </button>
+
+            {/* Profile */}
+            <div className="relative z-50 shrink-0" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                aria-haspopup="true"
+                aria-expanded={dropdownOpen}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={`${user.profileImageUrl}${
+                        user.updatedAt
+                          ? `${
+                              user.profileImageUrl.includes("?") ? "&" : "?"
+                            }v=${encodeURIComponent(user.updatedAt)}`
+                          : ""
+                      }`}
+                      alt={`${user?.fullName || "User"} profile photo`}
+                      className="h-full w-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    getInitials(user?.fullName)
+                  )}
+                </div>
+
+                <div className="hidden flex-col leading-tight min-[2200px]:flex">
+                  <span className="max-w-[120px] truncate text-xs font-semibold text-[#0F172A]">
+                    {user?.fullName || "User Account"}
+                  </span>
+
+                  <span className="max-w-[120px] truncate text-[11px] text-slate-500">
+                    {user?.phoneNumber || user?.email || "User"}
+                  </span>
+                </div>
+
+                <ChevronDown
+                  size={14}
+                  className={`hidden shrink-0 text-slate-500 transition-transform duration-200 sm:block ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* -------------------------------------------------------- */}
+              {/* Profile Dropdown                                         */}
+              {/* -------------------------------------------------------- */}
+
+              {dropdownOpen && (
+                <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
+                  {/* User info */}
+                  <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
+                    <p className="truncate font-semibold text-[#0F172A]">
+                      {user?.fullName || "User Account"}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {user?.phoneNumber || user?.email || "User"}
+                    </p>
+                  </div>
+
+                  {/* Language */}
+                  <div className="mb-1 flex items-center justify-between gap-2 px-3 py-2 min-[1900px]:hidden">
+                    <span className="font-medium text-slate-700">Language</span>
+
+                    <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => changeGoogleLanguage("EN")}
+                        className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                          lang === "EN"
+                            ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        EN
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => changeGoogleLanguage("BN")}
+                        className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
+                          lang === "BN"
+                            ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        বাং
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dashboard */}
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    className={`${profileLinkClass} ${
+                      isActive("/dashboard") ? "bg-blue-50 text-[#1D4ED8]" : ""
+                    }`}
+                  >
+                    <LayoutDashboard
+                      size={15}
+                      className={
+                        isActive("/dashboard")
+                          ? "text-[#2563EB]"
+                          : "text-slate-500"
+                      }
+                    />
+                    Dashboard
+                  </Link>
+
+                  {/* My Profile */}
+                  <Link
+                    href="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className={profileLinkClass}
+                  >
+                    <UserIcon size={15} className="text-slate-500" />
+                    My Profile
+                  </Link>
+
+                  {/* Subscription */}
+                  <Link
+                    href="/subscription"
+                    onClick={() => setDropdownOpen(false)}
+                    className={profileLinkClass}
+                  >
+                    <CreditCard size={15} className="text-slate-500" />
+                    Subscription
+                  </Link>
+
+                  {/* Settings */}
+                  <Link
+                    href="/settings"
+                    onClick={() => setDropdownOpen(false)}
+                    className={profileLinkClass}
+                  >
+                    <Settings size={15} className="text-slate-500" />
+                    Settings
+                  </Link>
+
+                  {/* Divider */}
+                  <div className="my-1 border-t border-slate-100" />
+
+                  {/* Logout */}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left font-semibold text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <LogOut size={15} />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Menu drawer trigger */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className={iconButton}
+              aria-label="Open Menu"
+              title="Menu"
+            >
+              <PanelRightOpen size={18} />
+            </button>
+          </div>
+        </header>
+      </div>
 
       {/* -------------------------------------------------------------- */}
       {/* Search Modal                                                   */}

@@ -1317,7 +1317,15 @@ function loadSubscriptionAccess() {
   return subscriptionAccessPromise;
 }
 
-export function ToolTile({ tool }: { tool: ToolItem }) {
+export function ToolTile({
+  tool,
+  boxPercent,
+}: {
+  tool: ToolItem;
+  // দিলে শুধু রঙিন বক্স (আইকন) এই % এ ছোট হবে; নাম পুরো ঘরের চওড়া পাবে ও ছোট লেখায় দেখাবে
+  boxPercent?: number;
+}) {
+  const compact = typeof boxPercent === "number";
   const router = useRouter();
   const IconComponent = tool.icon;
   const slug = getSlug(tool.name);
@@ -1362,7 +1370,7 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
       prefetch
       onMouseEnter={() => router.prefetch(`/sohoj-tools/${slug}`)}
       onFocus={() => router.prefetch(`/sohoj-tools/${slug}`)}
-      className="flex flex-col items-center group cursor-pointer"
+      className="flex w-full flex-col items-center group cursor-pointer"
       aria-label={
         requiresSubscription && hasActiveSubscription === false
           ? `${tool.name} requires an active subscription`
@@ -1370,7 +1378,10 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
       }
     >
       <div
-        className={`relative w-full aspect-square rounded-[28px] ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
+        className={`relative aspect-square ${
+          compact ? "rounded-[22px]" : "w-full rounded-[28px]"
+        } ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`}
+        style={compact ? { width: `${boxPercent}%` } : undefined}
       >
         {tool.badge && (
           <span
@@ -1392,11 +1403,20 @@ export function ToolTile({ tool }: { tool: ToolItem }) {
         )}
 
         {IconComponent && (
-          <IconComponent size={42} className="text-[#ffffff] stroke-[1.75]" />
+          <IconComponent
+            size={compact ? 34 : 42}
+            className="text-[#ffffff] stroke-[1.75]"
+          />
         )}
       </div>
 
-      <span className="mt-2.5 text-[15px] font-bold text-[#0F172A] text-center line-clamp-1 group-hover:text-[#2563EB] transition-colors">
+      <span
+        className={`text-center group-hover:text-[#2563EB] transition-colors ${
+          compact
+            ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2"
+            : "mt-2.5 text-[15px] font-bold text-[#0F172A] line-clamp-1"
+        }`}
+      >
         {tool.name}
       </span>
     </Link>

@@ -15,6 +15,18 @@ import {
 // হোমে প্রথম কয়টা টুল দেখাবে (সব দেখাতে চাইলে toolsData.length দাও)
 const HOME_TOOLS_COUNT = 16;
 
+// রঙিন আইকন বক্স কত ছোট হবে (প্রতিটা ঘরের কত %); নামের লেখা আলাদা, পুরো ঘরের চওড়া পায়
+// ১০০ = আগের মতো বড়, ৭৫ = হালকা ছোট, ৬৫ = আরও ছোট
+const TOOL_TILE_SIZE_PERCENT = 65;
+// মোবাইল/ট্যাবলেটে (টাচ ডিভাইস) আইকন বক্স ঘরের কত % নেবে
+const TOOL_TILE_SIZE_PERCENT_TOUCH = 88;
+
+// "Popular Tools" হেডিং, সাবটাইটেল ও "View all" বাটনের ফন্ট (Inter থাকলে Inter, না থাকলে Segoe UI/সিস্টেম ফন্ট)
+const HEADING_FONT = {
+  fontFamily:
+    'Inter, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans Bengali", system-ui, sans-serif',
+} as const;
+
 /* ------------------------------------------------------------------ */
 /* Popular tools                                                       */
 /* ------------------------------------------------------------------ */
@@ -25,38 +37,63 @@ function PopularToolsSection({ fit }: { fit: boolean }) {
   return (
     <section className="py-4">
       <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2
-            className={`font-semibold text-slate-900 ${fit ? "text-2xl" : "text-xl sm:text-2xl"}`}
-          >
-            Popular Tools
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Free tools to speed up your daily work.
-          </p>
+        <div className="flex items-center gap-3">
+          {/* ছোট নীল আকসেন্ট বার */}
+          <span
+            aria-hidden="true"
+            className="h-9 w-1 shrink-0 rounded-full bg-[#2563EB]"
+          />
+          <div>
+            <h2
+              style={HEADING_FONT}
+              className={`font-semibold leading-tight tracking-[-0.01em] text-slate-900 ${
+                fit ? "text-xl" : "text-lg sm:text-xl"
+              }`}
+            >
+              Popular Tools
+            </h2>
+            <p
+              style={HEADING_FONT}
+              className="mt-0.5 text-[13px] font-normal leading-snug text-slate-500"
+            >
+              Free tools to speed up your daily work.
+            </p>
+          </div>
         </div>
 
         <Link
           href="/sohoj-tools"
-          className="inline-flex shrink-0 cursor-pointer items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          style={HEADING_FONT}
+          className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white py-1 pl-3 pr-1 text-[12.5px] font-medium text-slate-700 shadow-sm outline-none transition-all hover:border-[#2563EB] hover:text-[#2563EB] hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-300"
         >
-          View all
-          <span className={fit ? "inline" : "hidden sm:inline"}>
-            {toolsData.length} tools
+          <span>
+            View all
+            <span className={fit ? "inline" : "hidden sm:inline"}>
+              {" "}
+              {toolsData.length} tools
+            </span>
           </span>
-          <ArrowRight size={14} />
+          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#2563EB] text-white transition-transform duration-200 group-hover:translate-x-0.5">
+            <ArrowRight size={12} />
+          </span>
         </Link>
       </div>
 
       <div
-        className={`mt-5 grid gap-x-5 gap-y-7 ${
+        className={`mt-5 grid ${
           fit
-            ? "grid-cols-8"
-            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
+            ? "grid-cols-8 gap-x-5 gap-y-6"
+            : "grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8"
         }`}
       >
         {homeTools.map((tool) => (
-          <ToolTile key={tool.id} tool={tool} />
+          <ToolTile
+            key={tool.id}
+            tool={tool}
+            boxPercent={
+              fit ? TOOL_TILE_SIZE_PERCENT : TOOL_TILE_SIZE_PERCENT_TOUCH
+            }
+          />
         ))}
       </div>
     </section>
@@ -101,31 +138,31 @@ function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
 
   return (
     <section
-      className={`mt-8 rounded-xl bg-[#2563EB] text-white ${
-        fit ? "px-10 py-10" : "px-6 py-8 sm:px-10 sm:py-10"
+      className={`mt-6 rounded-xl bg-[#2563EB] text-white ${
+        fit ? "px-10 py-6" : "px-5 py-5 sm:px-10 sm:py-7"
       }`}
     >
       <div
-        className={`flex gap-8 ${
+        className={`flex ${
           fit
-            ? "flex-row items-center justify-between"
-            : "flex-col md:flex-row md:items-center md:justify-between"
+            ? "flex-row items-center justify-between gap-8"
+            : "flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8"
         }`}
       >
         <div className="max-w-xl">
           <p className="text-sm text-blue-100">{greeting}</p>
           <h2
-            className={`mt-1 font-semibold ${fit ? "text-3xl" : "text-2xl sm:text-3xl"}`}
+            className={`mt-0.5 font-semibold ${fit ? "text-3xl" : "text-2xl sm:text-3xl"}`}
           >
             Welcome back, {firstName}
           </h2>
 
-          <p className="mt-3 text-[15px] leading-7 text-blue-50">
+          <p className="mt-2 text-[15px] leading-6 text-blue-50">
             NID, PDF, ছবি, ভিডিও — আপনার দৈনন্দিন ডিজিটাল কাজগুলো এখন এক
             জায়গায়। যে টুলটা দরকার বেছে নিন, কাজ শেষ হবে মিনিটেই।
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
               href="/sohoj-tools"
               className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-[#2563EB] outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/50"
@@ -141,21 +178,26 @@ function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
             </Link>
           </div>
 
-          <p className="mt-4 text-sm text-blue-100">
+          <p className="mt-3 text-sm text-blue-100">
             {toolsData.length} free tools · no installation needed
           </p>
         </div>
 
         <ul
           aria-hidden="true"
-          className={`shrink-0 gap-5 ${fit ? "flex" : "hidden md:flex"}`}
+          className={`flex shrink-0 ${fit ? "gap-5" : "gap-3 md:gap-5"}`}
         >
           {showcase.map((tool) => {
             const Icon = tool.icon;
             return (
-              <li key={tool.id} className="w-24 text-center">
+              <li
+                key={tool.id}
+                className={`text-center ${fit ? "w-24" : "w-[88px] md:w-24"}`}
+              >
                 <div
-                  className={`mx-auto flex h-16 w-16 items-center justify-center rounded-lg ${tool.bgColor}`}
+                  className={`mx-auto flex items-center justify-center rounded-lg ${
+                    fit ? "h-16 w-16" : "h-14 w-14 md:h-16 md:w-16"
+                  } ${tool.bgColor}`}
                 >
                   {Icon && <Icon size={30} className="text-white" />}
                 </div>
@@ -178,7 +220,7 @@ function WelcomeBanner({ userName, fit }: { userName: string; fit: boolean }) {
 // ব্রাউজার জুম যাই হোক, টুলস + ব্যানার একসাথে পুরো স্ক্রিন জুড়ে আঁটবে; ফুটার একটু স্ক্রল করলে আসবে
 const FIT_MIN_WIDTH = 1232; // px — লেআউটের সবচেয়ে ছোট চওড়া (আগের মাপ)
 const FIT_MAX_WIDTH = 1800; // px — বড় স্ক্রিনে লেআউট এত চওড়া পর্যন্ত বাড়বে (কমালে লেখা বড় হবে কিন্তু দুই পাশে ফাঁকা বাড়বে; বাড়ালে উল্টো)
-const FIT_MAX_SCALE = 1.5; // খুব বড় স্ক্রিনে সর্বোচ্চ কতটা বড় হবে
+const FIT_MAX_SCALE = 6; // জুম-আউটে/বড় স্ক্রিনে সর্বোচ্চ কতটা বড় হবে (বাড়ালে জুম-আউটেও পুরো স্ক্রিন জুড়ে থাকবে)
 const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্ন কতটা ছোট হবে
 const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
 const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
@@ -258,12 +300,17 @@ function HomeScreen({ userName }: { userName: string }) {
 
     update();
     // জুম করলে viewport-এর মাপ বদলায়, তাই resize শুনছি
-    window.addEventListener("resize", update);
+    // নেভবারও জুমের সাথে স্কেল হয়, তাই তার উচ্চতা বদলানোর পরে আরেকবার মাপি
+    const onResize = () => {
+      update();
+      requestAnimationFrame(update);
+    };
+    window.addEventListener("resize", onResize);
     mq.addEventListener("change", update);
     const ro = new ResizeObserver(update);
     ro.observe(content);
     return () => {
-      window.removeEventListener("resize", update);
+      window.removeEventListener("resize", onResize);
       mq.removeEventListener("change", update);
       ro.disconnect();
     };
@@ -275,7 +322,7 @@ function HomeScreen({ userName }: { userName: string }) {
       className={
         fit
           ? "flex items-center justify-center"
-          : "mx-auto max-w-[1800px] px-4 pb-12 pt-6 sm:px-6"
+          : "mx-auto max-w-[1800px] px-4 pb-8 pt-4 sm:px-6 sm:pt-6"
       }
       style={
         fit
@@ -470,7 +517,8 @@ export default function DashboardClient({
   // Render the dashboard immediately. Authentication is verified in the background so
   // a valid session never sees a full-screen "Checking authentication..." blocker.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [showLoginSuccess, setShowLoginSuccess] = useState<boolean>(initialLoginSuccess);
+  const [showLoginSuccess, setShowLoginSuccess] =
+    useState<boolean>(initialLoginSuccess);
   const [userName, setUserName] = useState<string>("User");
   // my-nafia:start
   const [shownA, setShownA] = useState<boolean>(false);
@@ -584,7 +632,7 @@ export default function DashboardClient({
   return (
     <div className="relative flex min-h-screen flex-col justify-between bg-[#F8FAFC] font-sans antialiased">
       <div>
-        <DashboardNavbar />
+        <DashboardNavbar scaleWithZoom />
 
         {/* টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
         <HomeScreen userName={userName} />

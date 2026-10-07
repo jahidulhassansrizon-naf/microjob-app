@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { toolsData, ToolTile } from "@/app/_components/toolsData";
@@ -23,6 +18,8 @@ import {
   Video,
   Loader2,
   X,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 
 const categories = [
@@ -36,9 +33,57 @@ const categories = [
   { name: "Educational Tools", icon: GraduationCap },
 ];
 
+// জুম-আউট / বড় স্ক্রিনে কন্টেন্ট ও ন্যাভবার একই অনুপাতে বড় হবে (ড্যাশবোর্ডের মতো)
+// DashboardNavbar-এর NAV_BASE_WIDTH / NAV_MAX_SCALE-এর সাথে একই মান রাখো
+const ZOOM_BASE_WIDTH = 1920; // px — এর চেয়ে চওড়া ভিউপোর্টে কন্টেন্ট আনুপাতিক বড় হবে
+const ZOOM_MAX_SCALE = 5; // সর্বোচ্চ কতগুণ বড় হবে
+
+// মোবাইল/ট্যাবলেটে আইকন বক্স ঘরের কত % নেবে (ড্যাশবোর্ডের সাথে একই)
+const TOUCH_TILE_SIZE_PERCENT = 88;
+
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+function useZoomScale(): { scale: number; touch: boolean } {
+  const [scale, setScale] = useState<number>(1);
+  // মোবাইল/ট্যাবলেট (টাচ ডিভাইস) হলে true — তখন ড্যাশবোর্ডের মতো ছোট কার্ড ও ৩ কলাম
+  const [touch, setTouch] = useState<boolean>(false);
+
+  useIsoLayoutEffect(() => {
+    // শুধু মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে; টাচ ডিভাইসে আগের মতো রেসপন্সিভ
+    const mq = window.matchMedia("(pointer: fine)");
+
+    const update = () => {
+      setTouch(!mq.matches);
+
+      if (!mq.matches) {
+        setScale(1);
+        return;
+      }
+
+      const w = document.documentElement.clientWidth;
+      const next = Math.min(ZOOM_MAX_SCALE, Math.max(1, w / ZOOM_BASE_WIDTH));
+
+      setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    mq.addEventListener("change", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      mq.removeEventListener("change", update);
+    };
+  }, []);
+
+  return { scale, touch };
+}
+
 function SohojToolsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { scale: zoomScale, touch: isTouch } = useZoomScale();
 
   // Keep the tools UI immediately visible; auth is verified in the background.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
@@ -47,6 +92,40 @@ function SohojToolsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const isInitialLoadDone = useRef(false);
   const gridRef = useRef<HTMLDivElement | null>(null);
+
+  // ক্যাটাগরি ড্রপডাউন
+  const [categoryOpen, setCategoryOpen] = useState<boolean>(false);
+  const categoryRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!categoryOpen) return;
+
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (
+        categoryRef.current &&
+        !categoryRef.current.contains(e.target as Node)
+      ) {
+        setCategoryOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCategoryOpen(false);
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [categoryOpen]);
+
+  const selectedCategoryItem =
+    categories.find((c) => c.name === selectedCategory) ?? categories[0];
+  const SelectedCategoryIcon = selectedCategoryItem.icon;
 
   // ১. ইনিশিয়াল লোড ও টাইপিং অ্যানিমেশন (শুধু প্রথমবার চলার জন্য)
   useEffect(() => {
@@ -146,9 +225,12 @@ function SohojToolsContent() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
-      <DashboardNavbar />
+      <DashboardNavbar scaleWithZoom />
 
-      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <main
+        className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5"
+        style={zoomScale > 1.001 ? { zoom: zoomScale } : undefined}
+      >
         {/* Unified header card: title + access tabs, search, categories */}
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* Row 1: Title + Free/Paid segmented control */}
@@ -172,7 +254,7 @@ function SohojToolsContent() {
                     {filteredTools.length} available
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs font-medium text-slate-500">
+                <p className="mt-0.5 text-[11.5px] font-medium leading-snug text-slate-500 sm:text-xs">
                   Powerful tools to speed up your daily work.
                 </p>
               </div>
@@ -181,7 +263,7 @@ function SohojToolsContent() {
             <div
               role="tablist"
               aria-label="Filter tools by access"
-              className="inline-flex self-start rounded-xl bg-slate-100 p-1 md:self-auto"
+              className="flex w-full rounded-xl bg-slate-100 p-1 md:inline-flex md:w-auto md:self-auto"
             >
               {(
                 [
@@ -197,7 +279,7 @@ function SohojToolsContent() {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`cursor-pointer rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex-1 cursor-pointer rounded-lg px-4 py-1.5 text-center text-xs font-semibold transition-all md:flex-none ${
                       isActive
                         ? "bg-white text-[#2563EB] shadow-sm ring-1 ring-slate-200"
                         : "text-slate-500 hover:text-slate-800"
@@ -210,57 +292,111 @@ function SohojToolsContent() {
             </div>
           </div>
 
-          {/* Row 2: Search */}
-          <div className="border-t border-slate-100 px-4 py-2.5 sm:px-5">
-            <div className="relative">
-              <Search
-                size={18}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="text"
-                placeholder="Search tools... e.g. PDF, image, video"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-11 pr-11 text-sm font-medium text-[#0F172A] transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB]/60 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#2563EB]/10"
-              />
-              {searchQuery && (
+          {/* Row 2: Search + Category dropdown */}
+          <div className="rounded-b-2xl border-t border-slate-100 px-4 py-3 sm:px-5">
+            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
+              {/* Search */}
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  size={18}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Search tools... e.g. PDF, image, video"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-11 text-sm font-medium text-[#0F172A] transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB]/60 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#2563EB]/10"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => handleSearchChange("")}
+                    className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Category dropdown */}
+              <div
+                ref={categoryRef}
+                className="relative w-full md:w-64 md:shrink-0"
+              >
                 <button
                   type="button"
-                  aria-label="Clear search"
-                  onClick={() => handleSearchChange("")}
-                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                  aria-haspopup="listbox"
+                  aria-expanded={categoryOpen}
+                  onClick={() => setCategoryOpen((v) => !v)}
+                  className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm font-semibold text-slate-800 shadow-sm outline-none transition-all hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-[#2563EB]/10 ${
+                    categoryOpen
+                      ? "border-[#2563EB]/60 ring-4 ring-[#2563EB]/10"
+                      : "border-slate-200"
+                  }`}
                 >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Row 3: Category pills */}
-          <div className="rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-4 py-2 sm:px-5">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              {categories.map((cat) => {
-                const Icon = cat.icon;
-                const isSelected = selectedCategory === cat.name;
-                return (
-                  <button
-                    key={cat.name}
-                    onClick={() => setSelectedCategory(cat.name)}
-                    className={`flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                      isSelected
-                        ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm shadow-[#2563EB]/25"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-[#2563EB]/40 hover:bg-blue-50 hover:text-[#2563EB]"
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#2563EB]">
+                    <SelectedCategoryIcon size={15} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {selectedCategoryItem.name}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-slate-400 transition-transform duration-200 ${
+                      categoryOpen ? "rotate-180 text-[#2563EB]" : ""
                     }`}
+                  />
+                </button>
+
+                {categoryOpen && (
+                  <div
+                    role="listbox"
+                    aria-label="Filter tools by category"
+                    className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200/80 bg-white p-1.5 shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150"
                   >
-                    <Icon
-                      size={14}
-                      className={isSelected ? "text-white" : "text-slate-400"}
-                    />
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
+                    {categories.map((cat) => {
+                      const Icon = cat.icon;
+                      const isSelected = selectedCategory === cat.name;
+                      return (
+                        <button
+                          key={cat.name}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            setSelectedCategory(cat.name);
+                            setCategoryOpen(false);
+                          }}
+                          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors ${
+                            isSelected
+                              ? "bg-blue-50 text-[#1D4ED8]"
+                              : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                          }`}
+                        >
+                          <span
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                              isSelected
+                                ? "bg-white text-[#2563EB] ring-1 ring-blue-100"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            <Icon size={15} />
+                          </span>
+                          <span className="flex-1 truncate">{cat.name}</span>
+                          {isSelected && (
+                            <Check
+                              size={16}
+                              className="shrink-0 text-[#2563EB]"
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -269,10 +405,18 @@ function SohojToolsContent() {
         {filteredTools.length > 0 ? (
           <div
             ref={gridRef}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7 pt-3"
+            className={`grid pt-3 ${
+              isTouch
+                ? "grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8"
+                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7"
+            }`}
           >
             {filteredTools.map((tool) => (
-              <ToolTile key={tool.id} tool={tool} />
+              <ToolTile
+                key={tool.id}
+                tool={tool}
+                boxPercent={isTouch ? TOUCH_TILE_SIZE_PERCENT : undefined}
+              />
             ))}
           </div>
         ) : (
@@ -289,7 +433,6 @@ function SohojToolsContent() {
           </div>
         )}
       </main>
-
     </div>
   );
 }
