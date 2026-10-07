@@ -27,6 +27,11 @@ import {
 
 import { getClientSession } from "@/lib/clientAuth";
 import { canvasToBlob, fitSize, releaseCanvas } from "./canvasUtils";
+import {
+  cancelCurrentAiOperation,
+  enhanceFacesWithTransformers,
+  upscaleImageWithEsrgan,
+} from "./aiEnhancement";
 import { renderObjectAdjust } from "./objectAdjust";
 import {
   MIN_SELECTION_COVERAGE,
@@ -235,6 +240,16 @@ export type ManualEditorContextValue = {
 
   showUnsupportedAiMessage: (tool: AiTool) => void;
 
+  aiProcessing: "upscale" | "face" | null;
+
+  aiProgress: number;
+
+  cancelAiProcessing: () => void;
+
+  runUpscale: () => Promise<void>;
+
+  runFaceEnhance: () => Promise<void>;
+
   singlePhoto: PhotoAsset | null;
 
   dualPhotos: [PhotoAsset | null, PhotoAsset | null];
@@ -242,6 +257,8 @@ export type ManualEditorContextValue = {
   activeDualSlot: 0 | 1;
 
   activePhoto: PhotoAsset | null;
+
+  comparisonOriginalFile: File | null;
 
   setActiveDualSlot: (slot: 0 | 1) => void;
 
@@ -455,6 +472,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [aiNotice, setAiNotice] = useState("");
 
+  const [aiProcessing, setAiProcessing] = useState<"upscale" | "face" | null>(null);
+
+  const [aiProgress, setAiProgress] = useState(0);
+
   const [objectTab, setObjectTabState] = useState<ObjectTab>("face");
 
   const [objectBrightness, setObjectBrightness] = useState(100);
@@ -480,8 +501,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [singlePhoto, setSinglePhoto] = useState<PhotoAsset | null>(null);
 
+  const [singleOriginalFile, setSingleOriginalFile] = useState<File | null>(null);
+
   const [dualPhotos, setDualPhotos] = useState<
     [PhotoAsset | null, PhotoAsset | null]
+  >([null, null]);
+
+  const [dualOriginalFiles, setDualOriginalFiles] = useState<
+    [File | null, File | null]
   >([null, null]);
 
   const [activeDualSlot, setActiveDualSlot] = useState<0 | 1>(0);
@@ -532,6 +559,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const activePhoto =
     photoMode === "dual" ? dualPhotos[activeDualSlot] : singlePhoto;
+
+  const comparisonOriginalFile =
+    photoMode === "dual" ? dualOriginalFiles[activeDualSlot] : singleOriginalFile;
 
   const objectMaskDataUrl = objectMaskHistory[objectMaskHistoryIndex] ?? null;
 
@@ -633,6 +663,30 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     [activeDualSlot, photoMode],
   );
 
+  const replacePhotoAtTarget = useCallback(
+    (
+      asset: PhotoAsset,
+      targetMode: PhotoMode,
+      targetSlot: 0 | 1,
+    ) => {
+      if (targetMode === "dual") {
+        setDualPhotos((current) => {
+          const next = [...current] as [PhotoAsset | null, PhotoAsset | null];
+          revokeAsset(next[targetSlot]);
+          next[targetSlot] = asset;
+          return next;
+        });
+        return;
+      }
+
+      setSinglePhoto((current) => {
+        revokeAsset(current);
+        return asset;
+      });
+    },
+    [],
+  );
+
   const setSelectedBg = useCallback((value: string) => {
     setSelectedBgState(value);
 
@@ -682,6 +736,16 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         replaceActivePhoto(asset);
 
+        if (photoMode === "dual") {
+          setDualOriginalFiles((current) => {
+            const next = [...current] as [File | null, File | null];
+            next[activeDualSlot] = file;
+            return next;
+          });
+        } else {
+          setSingleOriginalFile(file);
+        }
+
         resetTransforms();
 
         resetObjectValues();
@@ -705,7 +769,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [createPhotoAsset, replaceActivePhoto, resetTransforms, resetObjectValues],
+    [
+      activeDualSlot,
+      createPhotoAsset,
+      photoMode,
+      replaceActivePhoto,
+      resetTransforms,
+      resetObjectValues,
+    ],
   );
 
   const applyCroppedDataUrl = useCallback(
@@ -715,6 +786,16 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       const asset = await createPhotoAsset(file);
 
       replaceActivePhoto(asset);
+
+      if (photoMode === "dual") {
+        setDualOriginalFiles((current) => {
+          const next = [...current] as [File | null, File | null];
+          next[activeDualSlot] = file;
+          return next;
+        });
+      } else {
+        setSingleOriginalFile(file);
+      }
 
       resetTransforms();
 
@@ -733,7 +814,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       return asset.url;
     },
-    [createPhotoAsset, replaceActivePhoto, resetTransforms, resetObjectValues],
+    [
+      activeDualSlot,
+      createPhotoAsset,
+      photoMode,
+      replaceActivePhoto,
+      resetTransforms,
+      resetObjectValues,
+    ],
   );
 
   const handleFileInput = useCallback(
@@ -825,11 +913,17 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         return next;
       });
+      setDualOriginalFiles((current) => {
+        const next = [...current] as [File | null, File | null];
+        next[activeDualSlot] = null;
+        return next;
+      });
     } else {
       setSinglePhoto((current) => {
         revokeAsset(current);
         return null;
       });
+      setSingleOriginalFile(null);
     }
 
     setBackgroundRemoved(false);
@@ -847,6 +941,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const swapDualPhotos = useCallback(() => {
     setDualPhotos(([a, b]) => [b, a]);
+    setDualOriginalFiles(([a, b]) => [b, a]);
   }, []);
 
   const objectMaskRequest = useCallback(
@@ -975,6 +1070,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setObjectPreview(false);
 
     setActiveAiTool(null);
+
+    setAiProcessing(null);
+
+    setAiProgress(0);
 
     setAiNotice("");
   }, []);
@@ -1111,12 +1210,160 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     }
   }, [activePhoto, createPhotoAsset, replaceActivePhoto]);
 
+  const cancelAiProcessing = useCallback(() => {
+    if (!aiProcessing) return;
+
+    cancelCurrentAiOperation();
+    setAiNotice("AI processing cancelled.");
+  }, [aiProcessing]);
+
+  const runUpscale = useCallback(async () => {
+    if (!activePhoto) {
+      setAiNotice("Upload a photo first.");
+      return;
+    }
+
+    if (aiProcessing) {
+      return;
+    }
+
+    const sourceUrl = activePhoto.url;
+    const sourceName = activePhoto.file.name;
+    const targetMode = photoMode;
+    const targetSlot = activeDualSlot;
+
+    setActiveAiTool("upscale");
+    setAiProcessing("upscale");
+    setAiProgress(0);
+    setAiNotice("Upscaling Image...");
+
+    try {
+      const image = await loadImage(sourceUrl);
+      const blob = await upscaleImageWithEsrgan(image, setAiProgress);
+      image.src = "";
+
+      const resultFile = new File(
+        [blob],
+        `${sourceName.replace(/\.[^/.]+$/, "")}-upscaled.png`,
+        {
+          type: "image/png",
+        },
+      );
+
+      const resultAsset = await createPhotoAsset(resultFile);
+
+      replacePhotoAtTarget(resultAsset, targetMode, targetSlot);
+
+      setObjectMaskHistory([null]);
+      setObjectMaskHistoryIndex(0);
+      setObjectPreview(false);
+      setCropAvailable(false);
+      setActiveAiTool("upscale");
+      setAiProgress(1);
+      setAiNotice("Upscale complete. The canvas has been updated.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setAiNotice(
+        message === "AI operation cancelled."
+          ? "AI processing cancelled."
+          : message || "Upscaling failed.",
+      );
+    } finally {
+      setAiProcessing(null);
+      setAiProgress(0);
+    }
+  }, [
+    activePhoto,
+    activeDualSlot,
+    aiProcessing,
+    createPhotoAsset,
+    photoMode,
+    replacePhotoAtTarget,
+  ]);
+
+  const runFaceEnhance = useCallback(async () => {
+    if (!activePhoto) {
+      setAiNotice("Upload a photo first.");
+      return;
+    }
+
+    if (aiProcessing) {
+      return;
+    }
+
+    const sourceUrl = activePhoto.url;
+    const sourceName = activePhoto.file.name;
+    const targetMode = photoMode;
+    const targetSlot = activeDualSlot;
+
+    setActiveAiTool("face");
+    setAiProcessing("face");
+    setAiProgress(0);
+    setAiNotice("Enhancing Face...");
+
+    try {
+      const image = await loadImage(sourceUrl);
+      const result = await enhanceFacesWithTransformers(image, setAiProgress);
+
+      const resultFile = new File(
+        [result.blob],
+        `${sourceName.replace(/\.[^/.]+$/, "")}-face-enhanced.png`,
+        {
+          type: "image/png",
+        },
+      );
+
+      const resultAsset = await createPhotoAsset(resultFile);
+
+      replacePhotoAtTarget(resultAsset, targetMode, targetSlot);
+
+      setObjectMaskHistory([null]);
+      setObjectMaskHistoryIndex(0);
+      setObjectPreview(false);
+      setCropAvailable(false);
+      setActiveAiTool("face");
+      setAiProgress(1);
+      setAiNotice(
+        `Face enhancement applied to ${result.faceCount} ${
+          result.faceCount === 1 ? "face" : "faces"
+        }. The canvas has been updated.`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setAiNotice(
+        message === "AI operation cancelled."
+          ? "AI processing cancelled."
+          : message || "Face enhancement failed.",
+      );
+    } finally {
+      setAiProcessing(null);
+      setAiProgress(0);
+    }
+  }, [
+    activePhoto,
+    activeDualSlot,
+    aiProcessing,
+    createPhotoAsset,
+    photoMode,
+    replacePhotoAtTarget,
+  ]);
+
   const showUnsupportedAiMessage = useCallback(
     (tool: AiTool) => {
       setActiveAiTool(tool);
 
       if (tool === "transparent") {
         void handleRemoveBackground();
+        return;
+      }
+
+      if (tool === "face") {
+        void runFaceEnhance();
+        return;
+      }
+
+      if (tool === "upscale") {
+        void runUpscale();
         return;
       }
 
@@ -1144,7 +1391,12 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setAiNotice(`${names[tool]} is not connected yet.`);
     },
-    [handleRemoveBackground, resetObjectValues],
+    [
+      handleRemoveBackground,
+      resetObjectValues,
+      runFaceEnhance,
+      runUpscale,
+    ],
   );
 
   const resetEditor = useCallback(() => {
@@ -1802,6 +2054,17 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         const asset = await createPhotoAsset(file);
 
         replaceActivePhoto(asset);
+
+        if (photoMode === "dual") {
+          setDualOriginalFiles((current) => {
+            const next = [...current] as [File | null, File | null];
+            next[activeDualSlot] = file;
+            return next;
+          });
+        } else {
+          setSingleOriginalFile(file);
+        }
+
         setBackgroundRemoved(false);
         setObjectMaskHistory([null]);
         setObjectMaskHistoryIndex(0);
@@ -1810,7 +2073,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         setUploadError("Could not load this saved photo.");
       }
     },
-    [createPhotoAsset, replaceActivePhoto],
+    [activeDualSlot, createPhotoAsset, photoMode, replaceActivePhoto],
   );
 
   const downloadHistoryImage = useCallback(async (photo: GeneratedPhoto) => {
@@ -2080,6 +2343,12 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
 
     showUnsupportedAiMessage,
 
+    aiProcessing,
+    aiProgress,
+    cancelAiProcessing,
+    runUpscale,
+    runFaceEnhance,
+
     singlePhoto,
 
     dualPhotos,
@@ -2087,6 +2356,8 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
     activeDualSlot,
 
     activePhoto,
+
+    comparisonOriginalFile,
 
     setActiveDualSlot,
 

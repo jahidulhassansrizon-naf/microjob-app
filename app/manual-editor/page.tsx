@@ -35,7 +35,7 @@ function ManualEditorScreen() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#F9FAFB] flex flex-col font-sans select-none text-gray-900">
+    <div className="manual-editor-root min-h-screen lg:h-screen lg:overflow-hidden bg-[#F9FAFB] flex flex-col font-sans select-none text-gray-900">
       <DashboardNavbar />
       <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
@@ -60,13 +60,29 @@ function ManualEditorScreen() {
         <div className="w-full flex items-center justify-between gap-3">
           <span>Manual Editor</span>
           <span>
-            Browser editing is local; AI services will be connected separately.
+            Browser editing is local; AI processing runs in your browser.
           </span>
         </div>
       </footer>
 
       <ScanModal />
       <PrintStudioModal />
+
+      <style jsx global>{`
+        .manual-editor-root button:not(:disabled),
+        .manual-editor-root [role="button"],
+        .manual-editor-root input[type="range"],
+        .manual-editor-root select,
+        .manual-editor-root summary {
+          cursor: pointer;
+        }
+
+        .manual-editor-root button:disabled,
+        .manual-editor-root select:disabled,
+        .manual-editor-root input:disabled {
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }

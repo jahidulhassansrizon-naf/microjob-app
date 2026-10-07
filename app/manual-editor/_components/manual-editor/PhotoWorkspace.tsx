@@ -7,12 +7,19 @@ import {
   Maximize2,
   RotateCcw,
   RotateCw,
+  ScanLine,
   Upload,
   X,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useManualEditor } from "./EditorProvider";
 import CropEditor from "./CropEditor";
 import ObjectMaskCanvas from "./ObjectMaskCanvas";
@@ -43,6 +50,46 @@ function getResponsiveCanvasStyle(ratio: number) {
     height: `min(var(--canvas-max, 400px), calc(72vw * ${inverseRatio}), calc(420px * ${inverseRatio}))`,
     boxSizing: "border-box" as const,
     transition: "width 180ms ease, height 180ms ease",
+  };
+}
+
+function getScanOverlayStyle(
+  sourceRatio: number,
+  containerRatio: number,
+): CSSProperties {
+  const safeSourceRatio =
+    Number.isFinite(sourceRatio) && sourceRatio > 0 ? sourceRatio : 1;
+  const safeContainerRatio =
+    Number.isFinite(containerRatio) && containerRatio > 0
+      ? containerRatio
+      : 1;
+
+  if (safeSourceRatio >= safeContainerRatio) {
+    const heightPercent = Math.min(
+      100,
+      Math.max(1, (safeContainerRatio / safeSourceRatio) * 100),
+    );
+    const topPercent = (100 - heightPercent) / 2;
+
+    return {
+      left: 0,
+      right: 0,
+      top: `${topPercent}%`,
+      height: `${heightPercent}%`,
+    };
+  }
+
+  const widthPercent = Math.min(
+    100,
+    Math.max(1, (safeSourceRatio / safeContainerRatio) * 100),
+  );
+  const leftPercent = (100 - widthPercent) / 2;
+
+  return {
+    left: `${leftPercent}%`,
+    width: `${widthPercent}%`,
+    top: 0,
+    bottom: 0,
   };
 }
 
@@ -86,9 +133,138 @@ function waitForImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+
+function ScanProcessingOverlay({
+  mode,
+  progress,
+  style,
+  onCancel,
+}: {
+  mode: "upscale" | "face";
+  progress: number;
+  style?: CSSProperties;
+  onCancel: () => void;
+}) {
+  const label = mode === "upscale" ? "Upscaling Image..." : "Enhancing Face...";
+  const progressPercent = Math.max(
+    8,
+    Math.min(100, Math.round(progress * 100)),
+  );
+
+  return (
+    <div
+      className="absolute z-40 overflow-hidden rounded-2xl border border-cyan-200/30 bg-slate-950/18 backdrop-blur-[1.5px] pointer-events-auto"
+      style={style}
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <style>{`
+        @keyframes manual-editor-photo-scan-sweep {
+          0% {
+            top: -16%;
+            opacity: 0.05;
+          }
+          8% {
+            opacity: 0.55;
+          }
+          50% {
+            opacity: 1;
+          }
+          92% {
+            opacity: 0.55;
+          }
+          100% {
+            top: 102%;
+            opacity: 0.08;
+          }
+        }
+
+        @keyframes manual-editor-photo-scan-pulse {
+          0%, 100% {
+            opacity: 0.35;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes manual-editor-photo-scan-corners {
+          0%, 100% {
+            opacity: 0.45;
+            transform: scale(0.985);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
+
+      <button
+        type="button"
+        onClick={onCancel}
+        className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70"
+        title="Cancel processing"
+        aria-label="Cancel processing"
+      >
+        <X className="h-3.5 w-3.5" strokeWidth={2.2} />
+      </button>
+
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-300/5 via-cyan-200/10 to-blue-500/5" />
+
+      <div
+        className="absolute inset-x-0 top-[-16%] h-[14%] bg-gradient-to-b from-transparent via-cyan-200/85 to-transparent"
+        style={{
+          animation:
+            "manual-editor-photo-scan-sweep 1.55s cubic-bezier(.4,0,.2,1) infinite alternate",
+          boxShadow: "0 0 18px rgba(103,232,249,0.65), 0 0 42px rgba(59,130,246,0.28)",
+        }}
+      />
+
+      <div
+        className="absolute inset-3 rounded-xl border border-cyan-200/25"
+        style={{ animation: "manual-editor-photo-scan-pulse 1.6s ease-in-out infinite" }}
+      />
+
+      <div
+        className="absolute inset-4 rounded-lg"
+        style={{
+          animation:
+            "manual-editor-photo-scan-corners 1.35s ease-in-out infinite",
+        }}
+      >
+        <div className="absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2 border-cyan-200/95" />
+        <div className="absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2 border-cyan-200/95" />
+        <div className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2 border-cyan-200/95" />
+        <div className="absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2 border-cyan-200/95" />
+      </div>
+
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-xl border border-white/15 bg-slate-950/45 px-4 py-2.5 text-white shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <ScanLine className="h-4 w-4 text-cyan-200" strokeWidth={1.8} />
+          <span className="text-[11px] font-black tracking-wide whitespace-nowrap">
+            {label}
+          </span>
+        </div>
+        <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70">
+          AI scan in progress
+        </span>
+      </div>
+
+      <div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 transition-[width] duration-300 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function PhotoWorkspace() {
   const {
     activePhoto,
+    comparisonOriginalFile,
     dualPhotos,
     activeDualSlot,
     setActiveDualSlot,
@@ -111,6 +287,9 @@ export default function PhotoWorkspace() {
     setFlipX,
     removeActivePhoto,
     activeAiTool,
+    aiProcessing,
+    aiProgress,
+    cancelAiProcessing,
     objectMaskDataUrl,
     objectBrightness,
     objectContrast,
@@ -131,6 +310,176 @@ export default function PhotoWorkspace() {
     null,
   );
   const [maskImage, setMaskImage] = useState<HTMLImageElement | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [comparePosition, setComparePosition] = useState(50);
+  const [compareOriginalUrl, setCompareOriginalUrl] = useState<string | null>(null);
+  const compareHostRef = useRef<HTMLDivElement | null>(null);
+  const compareDraggingRef = useRef(false);
+
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panDragRef = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  });
+
+  useEffect(() => {
+    setCompareOpen(false);
+    setComparePosition(50);
+  }, [activePhoto?.url]);
+
+  useEffect(() => {
+    setPan({ x: 0, y: 0 });
+    setIsPanning(false);
+    panDragRef.current.active = false;
+  }, [activePhoto?.url]);
+
+  useEffect(() => {
+    if (!compareOpen || !comparisonOriginalFile) {
+      setCompareOriginalUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(comparisonOriginalFile);
+    setCompareOriginalUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+      setCompareOriginalUrl(null);
+    };
+  }, [compareOpen, comparisonOriginalFile]);
+
+  const updateComparePosition = (clientX: number) => {
+    const host = compareHostRef.current;
+    if (!host) return;
+
+    const rect = host.getBoundingClientRect();
+    if (rect.width <= 0) return;
+
+    const next = ((clientX - rect.left) / rect.width) * 100;
+    setComparePosition(clamp(next, 0, 100));
+  };
+
+  const handleComparePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!compareOpen) return;
+    compareDraggingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateComparePosition(event.clientX);
+  };
+
+  const handleComparePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!compareDraggingRef.current) return;
+    updateComparePosition(event.clientX);
+  };
+
+  const handleComparePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    compareDraggingRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const getPanBounds = () => {
+    const host = previewHostRef.current;
+    if (!host || !sourceImage || zoom <= 100) {
+      return { maxX: 0, maxY: 0 };
+    }
+
+    const hostWidth = Math.max(1, host.clientWidth);
+    const hostHeight = Math.max(1, host.clientHeight);
+    const baseRect = getContainedRect(
+      sourceImage.naturalWidth,
+      sourceImage.naturalHeight,
+      hostWidth,
+      hostHeight,
+    );
+
+    const isQuarterTurn = Math.abs(Math.round(rotation / 90)) % 2 === 1;
+    const displayedWidth = (isQuarterTurn ? baseRect.height : baseRect.width) * (zoom / 100);
+    const displayedHeight = (isQuarterTurn ? baseRect.width : baseRect.height) * (zoom / 100);
+
+    return {
+      maxX: Math.max(0, (displayedWidth - hostWidth) / 2),
+      maxY: Math.max(0, (displayedHeight - hostHeight) / 2),
+    };
+  };
+
+  const clampPan = (x: number, y: number) => {
+    const { maxX, maxY } = getPanBounds();
+    return {
+      x: clamp(x, -maxX, maxX),
+      y: clamp(y, -maxY, maxY),
+    };
+  };
+
+  const handlePanPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (
+      zoom <= 100 ||
+      aiProcessing ||
+      compareOpen ||
+      activeAiTool === "object" ||
+      !sourceImage
+    ) {
+      return;
+    }
+
+    const current = pan;
+    panDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPanX: current.x,
+      startPanY: current.y,
+    };
+    setIsPanning(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePanPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!panDragRef.current.active) return;
+
+    const deltaX = event.clientX - panDragRef.current.startX;
+    const deltaY = event.clientY - panDragRef.current.startY;
+    const next = clampPan(
+      panDragRef.current.startPanX + deltaX,
+      panDragRef.current.startPanY + deltaY,
+    );
+    setPan(next);
+  };
+
+  const finishPan = (event: ReactPointerEvent<HTMLDivElement>) => {
+    panDragRef.current.active = false;
+    setIsPanning(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  useEffect(() => {
+    if (zoom <= 100) {
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    setPan((current) => clampPan(current.x, current.y));
+  }, [zoom, rotation, sourceImage]);
+
+  useEffect(() => {
+    const host = previewHostRef.current;
+    if (!host) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      setPan((current) => clampPan(current.x, current.y));
+    });
+
+    resizeObserver.observe(host);
+    return () => resizeObserver.disconnect();
+  }, [sourceImage, zoom, rotation]);
+
+  const hasComparison = Boolean(activePhoto && comparisonOriginalFile);
 
   /* Photo -> image element + a downscaled copy used for fast previews. */
   useEffect(() => {
@@ -320,6 +669,8 @@ export default function PhotoWorkspace() {
   ]);
 
   const transform = `rotate(${rotation}deg) scaleX(${flipX ? -1 : 1}) scale(${zoom / 100})`;
+  const photoTransform = `translate3d(${pan.x}px, ${pan.y}px, 0) ${transform}`;
+  const canPan = zoom > 100 && !aiProcessing && !compareOpen && activeAiTool !== "object";
   const presetRatio =
     currentPreset.heightMm > 0
       ? currentPreset.widthMm / currentPreset.heightMm
@@ -517,22 +868,80 @@ export default function PhotoWorkspace() {
                   }}
                 >
                   <div
-                    className="absolute inset-0"
+                    className={`absolute inset-0 select-none ${
+                      canPan ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""
+                    }`}
+                    onPointerDown={handlePanPointerDown}
+                    onPointerMove={handlePanPointerMove}
+                    onPointerUp={finishPan}
+                    onPointerCancel={finishPan}
                     style={{
-                      transform,
+                      transform: photoTransform,
                       transformOrigin: "center",
+                      willChange: canPan ? "transform" : undefined,
+                      touchAction: canPan ? "none" : undefined,
                     }}
                   >
-                    <img
-                      src={activePhoto!.url}
-                      alt="Uploaded"
-                      className="absolute inset-0 block w-full h-full object-contain"
-                      style={{
-                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
-                      }}
-                    />
+                    {compareOpen && compareOriginalUrl ? (
+                      <div
+                        ref={compareHostRef}
+                        className="absolute inset-0 z-30 overflow-hidden select-none touch-none cursor-col-resize"
+                        onPointerDown={handleComparePointerDown}
+                        onPointerMove={handleComparePointerMove}
+                        onPointerUp={handleComparePointerUp}
+                        onPointerCancel={handleComparePointerUp}
+                        onDoubleClick={() => setComparePosition(50)}
+                        role="group"
+                        aria-label="Before and after image comparison"
+                      >
+                        <img
+                          src={compareOriginalUrl}
+                          alt="Original photo"
+                          className="absolute inset-0 block h-full w-full object-contain"
+                          draggable={false}
+                        />
 
-                    {activeAiTool === "object" && objectMaskDataUrl && (
+                        <img
+                          src={activePhoto!.url}
+                          alt="Edited photo"
+                          className="absolute inset-0 block h-full w-full object-contain"
+                          style={{
+                            clipPath: `inset(0 ${100 - comparePosition}% 0 0)`,
+                            filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                          }}
+                          draggable={false}
+                        />
+
+                        <div
+                          className="pointer-events-none absolute inset-y-0 w-[2px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.18),0_0_18px_rgba(34,211,238,0.65)]"
+                          style={{ left: `calc(${comparePosition}% - 1px)` }}
+                        >
+                          <div className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-slate-950/80 text-white shadow-xl backdrop-blur-sm">
+                            <ArrowLeftRight className="h-4 w-4" strokeWidth={2.4} />
+                          </div>
+                        </div>
+
+                        <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-slate-950/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm">
+                          Edited
+                        </div>
+                        <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-slate-950/65 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm">
+                          Original
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={activePhoto!.url}
+                        alt="Uploaded"
+                        className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none"
+                        draggable={false}
+                        onDragStart={(event) => event.preventDefault()}
+                        style={{
+                          filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                        }}
+                      />
+                    )}
+
+                    {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (
                       <canvas
                         ref={previewCanvasRef}
                         className="absolute inset-0 pointer-events-none"
@@ -541,20 +950,37 @@ export default function PhotoWorkspace() {
                         }}
                       />
                     )}
+
+                    {aiProcessing && (
+                      <ScanProcessingOverlay
+                        mode={aiProcessing}
+                        progress={aiProgress}
+                        onCancel={cancelAiProcessing}
+                        style={getScanOverlayStyle(
+                          sourceImage
+                            ? sourceImage.naturalWidth / Math.max(1, sourceImage.naturalHeight)
+                            : presetRatio,
+                          presetRatio,
+                        )}
+                      />
+                    )}
                   </div>
 
-                  {activeAiTool === "object" && objectMaskDataUrl && (
+                  {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (
                     <ObjectMaskCanvas />
                   )}
 
-                  <button
-                    type="button"
-                    onClick={removeActivePhoto}
-                    className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition"
-                    title="Remove photo"
-                  >
-                    <X size={14} />
-                  </button>
+                  {!aiProcessing && !compareOpen && (
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={removeActivePhoto}
+                      className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition"
+                      title="Remove photo"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -605,6 +1031,23 @@ export default function PhotoWorkspace() {
                     <FlipHorizontal2 size={13} />
                     Mirror
                   </button>
+                  {hasComparison && (
+                    <button
+                      type="button"
+                      disabled={Boolean(aiProcessing)}
+                      onClick={() => setCompareOpen((current) => !current)}
+                      className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 transition ${
+                        compareOpen
+                          ? "bg-[#2563EB] text-white shadow-md"
+                          : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                      title="Compare edited and original"
+                      aria-pressed={compareOpen}
+                    >
+                      <ArrowLeftRight size={13} />
+                      Compare
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

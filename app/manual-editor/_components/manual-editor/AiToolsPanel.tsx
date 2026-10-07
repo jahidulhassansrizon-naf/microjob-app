@@ -10,17 +10,22 @@ import {
   Plus,
   Redo2,
   RefreshCcw,
+  ScanLine,
   Sparkles,
   Undo2,
   UserCheck,
 } from "lucide-react";
 import type { ObjectTab } from "./types";
 import { useManualEditor } from "./EditorProvider";
+import { preloadFaceDetector, preloadUpscaler } from "./aiEnhancement";
 
 export default function AiToolsPanel() {
   const {
     activeAiTool,
     showUnsupportedAiMessage,
+    runUpscale,
+    runFaceEnhance,
+    aiProcessing,
     aiNotice,
     objectTab,
     setObjectTab,
@@ -50,6 +55,23 @@ export default function AiToolsPanel() {
   } = useManualEditor();
 
   return (
+    <>
+      <style>{`
+        @keyframes manual-editor-button-scan {
+          0% {
+            transform: translateY(-7px);
+            opacity: 0.25;
+          }
+          50% {
+            transform: translateY(7px);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-7px);
+            opacity: 0.25;
+          }
+        }
+      `}</style>
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <div className="h-3.5 w-1 rounded-full bg-[#2563EB]" />
@@ -84,16 +106,50 @@ export default function AiToolsPanel() {
           <button
             key={tool.id}
             type="button"
-            onClick={() => showUnsupportedAiMessage(tool.id)}
+            onClick={() => {
+              if (tool.id === "face") {
+                void runFaceEnhance();
+                return;
+              }
+
+              if (tool.id === "upscale") {
+                void runUpscale();
+                return;
+              }
+
+              showUnsupportedAiMessage(tool.id);
+            }}
+            onPointerEnter={() => {
+              if (tool.id === "face") preloadFaceDetector();
+              if (tool.id === "upscale") preloadUpscaler();
+            }}
+            disabled={Boolean(aiProcessing)}
+            aria-busy={aiProcessing === tool.id}
             className={`flex h-20 lg:h-16 flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition cursor-pointer ${
               activeAiTool === tool.id
                 ? "border-[#2563EB] bg-[#2563EB]/10 ring-1 ring-[#2563EB]"
                 : "border-[#E2E8F0] bg-white hover:border-gray-300"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            <span>{tool.icon}</span>
+            <span>
+              {aiProcessing === tool.id ? (
+                <span className="relative flex h-5 w-5 items-center justify-center overflow-hidden rounded-md text-[#2563EB]">
+                  <ScanLine className="h-5 w-5" />
+                  <span
+                    className="absolute left-0 right-0 top-1/2 h-px bg-[#2563EB] shadow-[0_0_6px_rgba(37,99,235,0.9)]"
+                    style={{ animation: "manual-editor-button-scan 1.2s ease-in-out infinite" }}
+                  />
+                </span>
+              ) : (
+                tool.icon
+              )}
+            </span>
             <span className="text-[8px] font-bold leading-tight text-[#0F172A]">
-              {tool.label}
+              {aiProcessing === tool.id
+                ? tool.id === "upscale"
+                  ? "Upscaling…"
+                  : "Enhancing…"
+                : tool.label}
             </span>
           </button>
         ))}
@@ -375,5 +431,6 @@ export default function AiToolsPanel() {
         </div>
       )}
     </section>
+    </>
   );
 }

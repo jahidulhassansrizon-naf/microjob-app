@@ -33,16 +33,69 @@ import {
 import jsPDF from "jspdf";
 import { createPortal } from "react-dom";
 import NidSettingsPanel from "@/components/nidToPdfComponent/NidSettingsPanel";
-
-const PYTHON_API_BASE_URL = (
-  process.env.NEXT_PUBLIC_PYTHON_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+// Same client-side card/document corner detection (OpenCV.js) that the
+// Document Scanner page uses. If this file lives in another folder, change the
+// path below (or copy documentCorners.ts next to this file).
+import { detectDocumentCornersCv } from "./documentCorners";
 
 const AUTO_CROP_ERROR =
-  "Auto crop is temporarily unavailable. You can turn Auto crop off and use manual Crop instead.";
+  "Auto crop could not find the NID card edges. You can turn Auto crop off and use manual Crop instead.";
+
+// Auto crop runs fully in the browser with OpenCV.js (no backend request).
+// Same script id / URL as the Document Scanner page, so it is shared.
+const OPENCV_SCRIPT_ID = "opencv-js";
+const OPENCV_SCRIPT_URL = "https://docs.opencv.org/4.8.0/opencv.js";
+const OPENCV_WAIT_TIMEOUT_MS = 80000;
+// Auto crop gives up after this long (covers a slow first OpenCV download).
+const AUTO_CROP_TIMEOUT_MS = 90000;
+
+let openCvScriptFailed = false;
+
+const getOpenCv = () => (window as unknown as { cv?: { Mat?: unknown } }).cv;
+
+const isOpenCvReady = () => Boolean(getOpenCv()?.Mat);
+
+function injectOpenCvScript() {
+  openCvScriptFailed = false;
+
+  const script = document.createElement("script");
+  script.id = OPENCV_SCRIPT_ID;
+  script.src = OPENCV_SCRIPT_URL;
+  script.async = true;
+  script.onerror = () => {
+    openCvScriptFailed = true;
+  };
+  document.body.appendChild(script);
+}
+
+/** Loads OpenCV.js if needed and waits until it is ready to use. */
+async function waitForOpenCv(signal?: AbortSignal): Promise<void> {
+  if (isOpenCvReady()) return;
+
+  const existing = document.getElementById(OPENCV_SCRIPT_ID);
+
+  if (!existing) {
+    injectOpenCvScript();
+  } else if (openCvScriptFailed) {
+    // The first download failed: try once more.
+    existing.remove();
+    injectOpenCvScript();
+  }
+
+  const startedAt = Date.now();
+
+  while (!isOpenCvReady()) {
+    if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+
+    if (openCvScriptFailed || Date.now() - startedAt > OPENCV_WAIT_TIMEOUT_MS) {
+      throw new Error(
+        "OpenCV could not be loaded. Check your internet connection or use manual Crop.",
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
 
 const NID_CROP_WIDTH = 856;
 const NID_CROP_HEIGHT = 540;
@@ -640,7 +693,7 @@ function normalizeCropResultToCardRatio(
         ctx.imageSmoothingQuality = "high";
 
         // The NID card frame is fixed to CR80 (85.6 × 54 mm).
-        // Normalizing the backend result here keeps Auto Crop visually
+        // Normalizing the auto-crop result here keeps Auto Crop visually
         // identical to Manual Crop and makes the whole card fill the frame.
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
@@ -750,57 +803,65 @@ function createRotatedCanvas(
   return canvas;
 }
 
+/**
+ * Puts four detected corners in top-left, top-right, bottom-right,
+ * bottom-left order. The NID frame is landscape (CR80), so if the card is
+ * lying upright in the photo the order is turned by 90 degrees (clockwise) to
+ * get a landscape result instead of a stretched one.
+ */
+function orderCardCorners(points: CropPoint[]): CropPoint[] {
+  const bySum = [...points].sort((a, b) => a.x + a.y - (b.x + b.y));
+  const byDiff = [...points].sort((a, b) => a.x - a.y - (b.x - b.y));
+
+  const tl = bySum[0];
+  const br = bySum[bySum.length - 1];
+  const bl = byDiff[0];
+  const tr = byDiff[byDiff.length - 1];
+
+  const width =
+    (Math.hypot(tr.x - tl.x, tr.y - tl.y) +
+      Math.hypot(br.x - bl.x, br.y - bl.y)) /
+    2;
+  const height =
+    (Math.hypot(bl.x - tl.x, bl.y - tl.y) +
+      Math.hypot(br.x - tr.x, br.y - tr.y)) /
+    2;
+
+  return width >= height ? [tl, tr, br, bl] : [bl, tl, tr, br];
+}
+
+/**
+ * Auto crop, 100% client-side: finds the card corners with OpenCV.js
+ * (documentCorners.ts) and straightens the card to the fixed NID frame.
+ * Returns the cropped PNG, like the old backend call did.
+ */
 async function autoCropCanvas(
   canvas: HTMLCanvasElement,
-  filename = "crop.png",
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((value) => resolve(value), "image/png"),
+  await waitForOpenCv(signal);
+
+  if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+
+  // Let the processing indicator paint before the heavy work starts.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const detected = detectDocumentCornersCv(getOpenCv(), canvas);
+
+  if (!detected) throw new Error(AUTO_CROP_ERROR);
+
+  const corners = orderCardCorners(
+    detected.map((point) => ({
+      x: point.x * canvas.width,
+      y: point.y * canvas.height,
+    })),
   );
 
-  if (!blob) {
-    throw new Error("Canvas blob conversion failed.");
-  }
-
-  const formData = new FormData();
-  formData.append("file", blob, filename);
-
-  let response: Response;
-
   try {
-    response = await fetch(`${PYTHON_API_BASE_URL}/api/auto-crop`, {
-      method: "POST",
-      body: formData,
-      signal,
-      cache: "no-store",
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
-    }
-
-    const detail =
-      error instanceof Error && error.message ? ` (${error.message})` : "";
-
-    throw new Error(`${AUTO_CROP_ERROR}${detail}`);
+    return await warpPerspective(canvas, corners);
+  } catch {
+    throw new Error(AUTO_CROP_ERROR);
   }
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-
-    throw new Error(
-      message.trim() ? `Auto crop failed: ${message.trim()}` : AUTO_CROP_ERROR,
-    );
-  }
-
-  const responseBlob = await response.blob();
-
-  if (!responseBlob.size) {
-    throw new Error("Auto crop returned an empty image.");
-  }
-
-  return responseBlob;
 }
 
 // --- PERSPECTIVE WARP HELPER FUNCTIONS ---
@@ -953,14 +1014,15 @@ function validateCropPoints(
 }
 
 function warpPerspective(
-  img: HTMLImageElement,
+  img: HTMLImageElement | HTMLCanvasElement,
   corners: CropPoint[],
   outWidth = 856,
   outHeight = 540,
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const naturalWidth = img.naturalWidth;
-    const naturalHeight = img.naturalHeight;
+    const isCanvas = img instanceof HTMLCanvasElement;
+    const naturalWidth = isCanvas ? img.width : img.naturalWidth;
+    const naturalHeight = isCanvas ? img.height : img.naturalHeight;
 
     try {
       validateCropPoints(corners, naturalWidth, naturalHeight);
@@ -1762,6 +1824,17 @@ export default function NidToPdf() {
     };
   }, []);
 
+  // Start downloading OpenCV.js as soon as Auto crop is switched on, so the
+  // first crop does not have to wait for it.
+  useEffect(() => {
+    if (!autoCrop) return;
+
+    const controller = new AbortController();
+    void waitForOpenCv(controller.signal).catch(() => undefined);
+
+    return () => controller.abort();
+  }, [autoCrop]);
+
   const processAutoCropSides = useCallback(
     async (
       sides: Array<"front" | "back">,
@@ -1777,7 +1850,10 @@ export default function NidToPdf() {
 
       const controller = new AbortController();
       autoCropAbortRef.current = controller;
-      const timeoutId = window.setTimeout(() => controller.abort(), 30000);
+      const timeoutId = window.setTimeout(
+        () => controller.abort(),
+        AUTO_CROP_TIMEOUT_MS,
+      );
 
       setProcessingError(null);
       setProcessingBoth(sides.length === 2);
@@ -1816,7 +1892,7 @@ export default function NidToPdf() {
               side === "front" ? frontRotation : backRotation;
 
             // Match the Document Editor pipeline exactly:
-            // File -> Image -> baked rotation canvas -> PNG -> /api/auto-crop.
+            // File -> Image -> baked rotation canvas -> OpenCV corners -> warp.
             const workingCanvas = createRotatedCanvas(img, sideRotation);
             const rotatedSourceFile = await canvasToPngFile(
               workingCanvas,
@@ -1824,7 +1900,6 @@ export default function NidToPdf() {
             );
             const responseBlob = await autoCropCanvas(
               workingCanvas,
-              `${side}-crop.png`,
               controller.signal,
             );
             const croppedFile = await normalizeCropResultToCardRatio(
@@ -1844,14 +1919,14 @@ export default function NidToPdf() {
               setFrontCropSource(rotatedSourceFile);
               setFrontAutoCropped(true);
               setFrontCropReviewReady(true);
-              // Rotation was baked into the image before the request.
+              // Rotation was baked into the image before auto crop.
               setFrontRotation(0);
             } else {
               setBackImage(croppedFile);
               setBackCropSource(rotatedSourceFile);
               setBackAutoCropped(true);
               setBackCropReviewReady(true);
-              // Rotation was baked into the image before the request.
+              // Rotation was baked into the image before auto crop.
               setBackRotation(0);
             }
           } finally {
