@@ -53,27 +53,14 @@ async function getDetector(): Promise<Detector> {
         wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
       }
 
-      const useWebGpu = "gpu" in navigator;
-      const options = {
-        quantized: true,
-        ...(useWebGpu ? { device: "webgpu" as const } : { device: "wasm" as const }),
-      };
-
-      try {
-        return (await pipeline(
-          "object-detection",
-          "Xenova/yolos-tiny",
-          options,
-        )) as unknown as Detector;
-      } catch (error) {
-        if (!useWebGpu) throw error;
-
-        return (await pipeline(
-          "object-detection",
-          "Xenova/yolos-tiny",
-          { quantized: true, device: "wasm" as const },
-        )) as unknown as Detector;
-      }
+      // The installed @xenova/transformers version uses a PretrainedOptions
+      // type that does not expose a `device` field. Let the runtime choose the
+      // available backend instead of passing a version-incompatible option.
+      return (await pipeline(
+        "object-detection",
+        "Xenova/yolos-tiny",
+        { quantized: true },
+      )) as unknown as Detector;
     })().catch((error) => {
       detectorPromise = null;
       throw error;

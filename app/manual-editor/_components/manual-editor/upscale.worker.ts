@@ -166,15 +166,28 @@ workerScope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 
     const input = new Float32Array(message.input);
     const result = await runTile(input, message.width, message.height);
+    // `TypedArray.buffer` is typed as ArrayBufferLike in newer TypeScript
+    // versions, while the worker response contract intentionally requires a
+    // concrete ArrayBuffer for transferable postMessage data. Create a compact
+    // ArrayBuffer copy so SharedArrayBuffer is never possible here.
+    const transferableBuffer = new ArrayBuffer(result.data.byteLength);
+    new Uint8Array(transferableBuffer).set(
+      new Uint8Array(
+        result.data.buffer,
+        result.data.byteOffset,
+        result.data.byteLength,
+      ),
+    );
+
     const response: WorkerResponse = {
       type: "tile-result",
       id: message.id,
-      data: result.data.buffer,
+      data: transferableBuffer,
       width: result.width,
       height: result.height,
     };
 
-    workerScope.postMessage(response, [result.data.buffer]);
+    workerScope.postMessage(response, [transferableBuffer]);
   } catch (error) {
     const response: WorkerResponse = {
       type: "error",
