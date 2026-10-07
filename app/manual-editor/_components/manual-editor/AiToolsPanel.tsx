@@ -26,10 +26,14 @@ export default function AiToolsPanel() {
     setObjectTab,
     objectBrightness,
     objectContrast,
+    objectSaturation,
+    objectHue,
     shadowStrength,
     brushSize,
     setObjectBrightness,
     setObjectContrast,
+    setObjectSaturation,
+    setObjectHue,
     setShadowStrength,
     setBrushSize,
     objectPreview,
@@ -180,6 +184,44 @@ export default function AiToolsPanel() {
                   onChange={(event) =>
                     setObjectContrast(Number(event.target.value))
                   }
+                  className="w-full accent-[#2563EB] cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-gray-500">
+                  Saturation
+                  <span className="float-right text-[#2563EB]">
+                    {objectSaturation}%
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={200}
+                  step={1}
+                  value={objectSaturation}
+                  onChange={(event) =>
+                    setObjectSaturation(Number(event.target.value))
+                  }
+                  className="w-full accent-[#2563EB] cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-gray-500">
+                  Hue
+                  <span className="float-right text-[#2563EB]">
+                    {objectHue}°
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={objectHue}
+                  onChange={(event) => setObjectHue(Number(event.target.value))}
                   className="w-full accent-[#2563EB] cursor-pointer"
                 />
               </div>

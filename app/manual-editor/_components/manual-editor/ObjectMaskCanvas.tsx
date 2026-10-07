@@ -65,9 +65,9 @@ function normalizeMaskToAlpha(
     maxAlpha = Math.max(maxAlpha, sourceData[index]);
   }
 
-  // The backend normally returns a white RGB mask whose alpha carries
-  // selection strength. For legacy grayscale masks that arrive with
-  // alpha=255 everywhere, use the red channel instead.
+  // Masks are white RGB images whose alpha carries the selection strength.
+  // For grayscale masks that arrive with alpha=255 everywhere, use the red
+  // channel instead.
   const useAlphaChannel = minAlpha < 250 || maxAlpha < 250;
 
   for (let index = 0; index < sourceData.length; index += 4) {

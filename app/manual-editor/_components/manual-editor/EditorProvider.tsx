@@ -26,6 +26,13 @@ import {
 } from "./constants";
 
 import { getClientSession } from "@/lib/clientAuth";
+import { canvasToBlob, fitSize, releaseCanvas } from "./canvasUtils";
+import { renderObjectAdjust } from "./objectAdjust";
+import {
+  MIN_SELECTION_COVERAGE,
+  detectTargetMask,
+  removeBackgroundFromImage,
+} from "./segmentation";
 import type {
   AiTool,
   ObjectBrushMode,
@@ -35,8 +42,11 @@ import type {
   SizePreset,
 } from "./types";
 
-const PYTHON_API_URL =
-  process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000";
+/*
+ * Longest side of the image produced by "Apply" in Object Adjust.
+ * Keeps memory use sane on very large uploads.
+ */
+const MAX_ADJUST_SIDE = 3200;
 
 function mmToPx(mm: number) {
   return Math.round((mm / 25.4) * DPI);
@@ -78,18 +88,6 @@ async function dataUrlToFile(dataUrl: string, name: string) {
 
   return new File([blob], name, {
     type: blob.type || "image/png",
-  });
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => resolve(String(reader.result || ""));
-
-    reader.onerror = () => reject(new Error("Could not read image."));
-
-    reader.readAsDataURL(blob);
   });
 }
 
@@ -185,6 +183,10 @@ export type ManualEditorContextValue = {
 
   objectContrast: number;
 
+  objectSaturation: number;
+
+  objectHue: number;
+
   shadowStrength: number;
 
   brushSize: number;
@@ -192,6 +194,10 @@ export type ManualEditorContextValue = {
   setObjectBrightness: (value: number) => void;
 
   setObjectContrast: (value: number) => void;
+
+  setObjectSaturation: (value: number) => void;
+
+  setObjectHue: (value: number) => void;
 
   setShadowStrength: (value: number) => void;
 
@@ -455,6 +461,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [objectContrast, setObjectContrast] = useState(100);
 
+  const [objectSaturation, setObjectSaturation] = useState(100);
+
+  const [objectHue, setObjectHue] = useState(0);
+
   const [shadowStrength, setShadowStrength] = useState(100);
 
   const [brushSize, setBrushSize] = useState(20);
@@ -593,6 +603,8 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const resetObjectValues = useCallback(() => {
     setObjectBrightness(100);
     setObjectContrast(100);
+    setObjectSaturation(100);
+    setObjectHue(0);
     setShadowStrength(100);
     setBrushSize(20);
     setObjectBrushMode("brush");
@@ -850,65 +862,41 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setObjectMaskBusy(true);
 
+      const label = `${target.charAt(0).toUpperCase()}${target.slice(1)}`;
+
       try {
-        const formData = new FormData();
+        const image = await loadImage(activePhoto.url);
 
-        formData.append("file", activePhoto.file, activePhoto.file.name);
-
-        formData.append("target", target);
-
-        const controller = new AbortController();
-
-        const timeout = window.setTimeout(() => controller.abort(), 120000);
-
-        const response = await fetch(`${PYTHON_API_URL}/api/object-mask`, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-        });
-
-        window.clearTimeout(timeout);
-
-        if (!response.ok) {
-          const text = await response.text();
-
-          throw new Error(text || "Automatic selection failed.");
-        }
-
-        const blob = await response.blob();
-
-        if (!blob.type.startsWith("image/")) {
-          throw new Error("Backend did not return a valid mask image.");
-        }
-
-        const dataUrl = await blobToDataUrl(blob);
+        // Runs fully in the browser with MediaPipe (model is cached after
+        // the first download).
+        const { maskDataUrl, coverage } = await detectTargetMask(
+          image,
+          activePhoto.url,
+          target,
+        );
 
         if (requestId !== objectRequestId.current) {
           return;
         }
 
-        resetObjectMaskHistory(dataUrl);
+        resetObjectMaskHistory(maskDataUrl);
 
         setObjectPreview(false);
 
         setAiNotice(
-          `${target.charAt(0).toUpperCase()}${target.slice(1)} selection ready. ` +
-            "Use Brush or Erase to refine it.",
+          coverage < MIN_SELECTION_COVERAGE
+            ? `No ${target} area was detected. Use Brush to paint the area manually.`
+            : `${label} selection ready. Use Brush or Erase to refine it.`,
         );
       } catch (error) {
         if (requestId !== objectRequestId.current) {
           return;
         }
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Automatic selection failed.";
-
         setAiNotice(
-          message.includes("Failed to fetch")
-            ? "Python backend is not reachable. Start the backend on port 8000."
-            : message,
+          error instanceof Error && error.message
+            ? error.message
+            : "Automatic selection failed.",
         );
 
         resetObjectMaskHistory(null);
@@ -1005,54 +993,42 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setObjectApplyBusy(true);
 
     try {
-      const maskFile = await dataUrlToFile(
-        objectMaskDataUrl,
-        "object-mask.png",
+      const [image, maskImage] = await Promise.all([
+        loadImage(activePhoto.url),
+        loadImage(objectMaskDataUrl),
+      ]);
+
+      const size = fitSize(
+        image.naturalWidth,
+        image.naturalHeight,
+        MAX_ADJUST_SIDE,
       );
 
-      const formData = new FormData();
-
-      formData.append("file", activePhoto.file, activePhoto.file.name);
-
-      formData.append("mask", maskFile, "object-mask.png");
-
-      formData.append("target", objectTab);
-
-      formData.append("brightness", String(objectBrightness));
-
-      formData.append("contrast", String(objectContrast));
-
-      formData.append("shadow_strength", String(shadowStrength));
-
-      const controller = new AbortController();
-
-      const timeout = window.setTimeout(() => controller.abort(), 120000);
-
-      const response = await fetch(`${PYTHON_API_URL}/api/object-adjust`, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
+      // fabric.js applies brightness / contrast / colour only inside the mask.
+      const canvas = await renderObjectAdjust({
+        source: image,
+        mask: maskImage,
+        width: size.width,
+        height: size.height,
+        params: {
+          target: objectTab,
+          brightness: objectBrightness,
+          contrast: objectContrast,
+          saturation: objectSaturation,
+          hue: objectHue,
+          shadowStrength,
+        },
       });
 
-      window.clearTimeout(timeout);
+      const blob = await canvasToBlob(canvas, "image/png");
 
-      if (!response.ok) {
-        const text = await response.text();
-
-        throw new Error(text || "Object adjustment failed.");
-      }
-
-      const blob = await response.blob();
-
-      if (!blob.type.startsWith("image/")) {
-        throw new Error("Backend did not return an image.");
-      }
+      releaseCanvas(canvas);
 
       const resultFile = new File(
         [blob],
         `${activePhoto.file.name.replace(/\.[^/.]+$/, "")}-object-adjusted.png`,
         {
-          type: blob.type || "image/png",
+          type: "image/png",
         },
       );
 
@@ -1070,13 +1046,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setObjectPreview(false);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Object adjustment failed.";
-
       setAiNotice(
-        message.includes("Failed to fetch")
-          ? "Python backend is not reachable. Start the backend on port 8000."
-          : message,
+        error instanceof Error && error.message
+          ? error.message
+          : "Object adjustment failed.",
       );
     } finally {
       setObjectApplyBusy(false);
@@ -1087,6 +1060,8 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     objectTab,
     objectBrightness,
     objectContrast,
+    objectSaturation,
+    objectHue,
     shadowStrength,
     createPhotoAsset,
     replaceActivePhoto,
@@ -1105,39 +1080,16 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setAiNotice("Removing background…");
 
     try {
-      const formData = new FormData();
+      const image = await loadImage(activePhoto.url);
 
-      formData.append("file", activePhoto.file, activePhoto.file.name);
-
-      const controller = new AbortController();
-
-      const timeout = window.setTimeout(() => controller.abort(), 120000);
-
-      const response = await fetch(`${PYTHON_API_URL}/api/remove-background`, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-
-      window.clearTimeout(timeout);
-
-      if (!response.ok) {
-        const text = await response.text();
-
-        throw new Error(text || "Background removal failed.");
-      }
-
-      const blob = await response.blob();
-
-      if (!blob.type.startsWith("image/")) {
-        throw new Error("Background remover did not return an image.");
-      }
+      // MediaPipe person segmentation, entirely in the browser.
+      const blob = await removeBackgroundFromImage(image, activePhoto.url);
 
       const resultFile = new File(
         [blob],
         `${activePhoto.file.name.replace(/\.[^/.]+$/, "")}-bg-removed.png`,
         {
-          type: blob.type || "image/png",
+          type: "image/png",
         },
       );
 
@@ -1149,13 +1101,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setAiNotice("Background removed successfully.");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Background removal failed.";
-
       setAiNotice(
-        message.includes("Failed to fetch")
-          ? "Python backend is not reachable. Start the backend on port 8000."
-          : message,
+        error instanceof Error && error.message
+          ? error.message
+          : "Background removal failed.",
       );
     } finally {
       setIsRemovingBackground(false);
@@ -2079,6 +2028,10 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
 
     objectContrast,
 
+    objectSaturation,
+
+    objectHue,
+
     shadowStrength,
 
     brushSize,
@@ -2086,6 +2039,10 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
     setObjectBrightness,
 
     setObjectContrast,
+
+    setObjectSaturation,
+
+    setObjectHue,
 
     setShadowStrength,
 

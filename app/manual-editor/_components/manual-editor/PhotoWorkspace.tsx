@@ -12,10 +12,15 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useManualEditor } from "./EditorProvider";
 import CropEditor from "./CropEditor";
 import ObjectMaskCanvas from "./ObjectMaskCanvas";
+import { createCanvas, fitSize, get2d, releaseCanvas } from "./canvasUtils";
+import { renderObjectAdjust } from "./objectAdjust";
+
+/* Longest side used for the live Object Adjust preview. */
+const PREVIEW_MAX_SIDE = 800;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -81,128 +86,6 @@ function waitForImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-function maskAlphaFromImageData(data: Uint8ClampedArray) {
-  let minAlpha = 255;
-  let maxAlpha = 0;
-
-  for (let index = 3; index < data.length; index += 4) {
-    const alpha = data[index];
-    if (alpha < minAlpha) minAlpha = alpha;
-    if (alpha > maxAlpha) maxAlpha = alpha;
-  }
-
-  // New backend masks use alpha. Older masks were grayscale PNGs with
-  // alpha=255 everywhere, so fall back to the red/gray channel in that case.
-  const useAlpha = minAlpha < 250 || maxAlpha < 250;
-
-  return (index: number) => (useAlpha ? data[index + 3] : data[index]);
-}
-
-function adjustObjectTone(
-  r: number,
-  g: number,
-  b: number,
-  brightness: number,
-  contrast: number,
-  target: "face" | "skin" | "hair",
-) {
-  let scale = 0.95;
-  if (target === "hair") scale = 1.1;
-  if (target === "skin") scale = 0.9;
-
-  const blue = b;
-  const green = g;
-  const red = r;
-  const luma = 0.0722 * blue + 0.7152 * green + 0.2126 * red;
-
-  const contrastFactor = 1 + ((contrast - 100) / 100) * 0.45;
-  const brightnessDelta = (brightness - 100) * 0.8 * scale;
-  const newLuma = clamp(
-    (luma - 128) * contrastFactor + 128 + brightnessDelta,
-    0,
-    255,
-  );
-
-  const gain = clamp(newLuma / Math.max(luma, 20), 0.15, 3);
-
-  return {
-    r: clamp(red * gain, 0, 255),
-    g: clamp(green * gain, 0, 255),
-    b: clamp(blue * gain, 0, 255),
-  };
-}
-
-function applyGlobalTone(
-  r: number,
-  g: number,
-  b: number,
-  brightness: number,
-  contrast: number,
-  saturation: number,
-) {
-  const brightnessFactor = clamp((100 + brightness) / 100, 0, 3);
-  const contrastFactor = clamp((100 + contrast) / 100, 0, 3);
-  const saturationFactor = clamp((100 + saturation) / 100, 0, 3);
-
-  let nextR = (r * brightnessFactor - 128) * contrastFactor + 128;
-  let nextG = (g * brightnessFactor - 128) * contrastFactor + 128;
-  let nextB = (b * brightnessFactor - 128) * contrastFactor + 128;
-
-  const luma = 0.2126 * nextR + 0.7152 * nextG + 0.0722 * nextB;
-  nextR = luma + (nextR - luma) * saturationFactor;
-  nextG = luma + (nextG - luma) * saturationFactor;
-  nextB = luma + (nextB - luma) * saturationFactor;
-
-  return {
-    r: clamp(nextR, 0, 255),
-    g: clamp(nextG, 0, 255),
-    b: clamp(nextB, 0, 255),
-  };
-}
-
-function buildLumaCanvas(sourceData: ImageData, width: number, height: number) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return null;
-
-  const output = ctx.createImageData(width, height);
-  const source = sourceData.data;
-  const target = output.data;
-
-  for (let index = 0; index < source.length; index += 4) {
-    const r = source[index];
-    const g = source[index + 1];
-    const b = source[index + 2];
-    const luma = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
-
-    target[index] = luma;
-    target[index + 1] = luma;
-    target[index + 2] = luma;
-    target[index + 3] = 255;
-  }
-
-  ctx.putImageData(output, 0, 0);
-  return canvas;
-}
-
-function getBlurredLumaData(lumaCanvas: HTMLCanvasElement) {
-  const width = lumaCanvas.width;
-  const height = lumaCanvas.height;
-  const blurSource = document.createElement("canvas");
-  blurSource.width = width;
-  blurSource.height = height;
-  const blurCtx = blurSource.getContext("2d", { willReadFrequently: true });
-  if (!blurCtx) return null;
-
-  blurCtx.filter = "blur(21px)";
-  blurCtx.drawImage(lumaCanvas, 0, 0);
-  blurCtx.filter = "none";
-
-  return blurCtx.getImageData(0, 0, width, height).data;
-}
-
 export default function PhotoWorkspace() {
   const {
     activePhoto,
@@ -231,6 +114,8 @@ export default function PhotoWorkspace() {
     objectMaskDataUrl,
     objectBrightness,
     objectContrast,
+    objectSaturation,
+    objectHue,
     shadowStrength,
     objectTab,
     brightness,
@@ -240,64 +125,69 @@ export default function PhotoWorkspace() {
 
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const previewHostRef = useRef<HTMLDivElement | null>(null);
-  const sourceImageRef = useRef<HTMLImageElement | null>(null);
-  const maskImageRef = useRef<HTMLImageElement | null>(null);
-  const sourceUrlRef = useRef<string | null>(null);
-  const maskUrlRef = useRef<string | null>(null);
 
+  const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null);
+  const [previewSource, setPreviewSource] = useState<HTMLCanvasElement | null>(
+    null,
+  );
+  const [maskImage, setMaskImage] = useState<HTMLImageElement | null>(null);
+
+  /* Photo -> image element + a downscaled copy used for fast previews. */
   useEffect(() => {
     let cancelled = false;
+    let createdCanvas: HTMLCanvasElement | null = null;
+
+    setSourceImage(null);
+    setPreviewSource(null);
 
     if (!activePhoto?.url) {
-      sourceImageRef.current = null;
-      sourceUrlRef.current = null;
-      return;
-    }
-
-    if (sourceUrlRef.current === activePhoto.url && sourceImageRef.current) {
       return;
     }
 
     void waitForImage(activePhoto.url)
       .then((image) => {
         if (cancelled) return;
-        sourceImageRef.current = image;
-        sourceUrlRef.current = activePhoto.url;
+
+        const size = fitSize(
+          image.naturalWidth,
+          image.naturalHeight,
+          PREVIEW_MAX_SIDE,
+        );
+
+        createdCanvas = createCanvas(size.width, size.height);
+        get2d(createdCanvas).drawImage(image, 0, 0, size.width, size.height);
+
+        setSourceImage(image);
+        setPreviewSource(createdCanvas);
       })
       .catch(() => {
-        if (cancelled) return;
-        sourceImageRef.current = null;
-        sourceUrlRef.current = activePhoto.url;
+        // Preview simply stays hidden if the photo cannot be decoded.
       });
 
     return () => {
       cancelled = true;
+      releaseCanvas(createdCanvas);
     };
   }, [activePhoto?.url]);
 
+  /* Selection mask -> image element. */
   useEffect(() => {
     let cancelled = false;
 
     if (!objectMaskDataUrl) {
-      maskImageRef.current = null;
-      maskUrlRef.current = null;
+      setMaskImage(null);
       return;
     }
 
-    if (maskUrlRef.current === objectMaskDataUrl && maskImageRef.current) {
-      return;
-    }
+    // The previous mask stays until the new one has decoded, so brush
+    // strokes do not make the preview flicker.
 
     void waitForImage(objectMaskDataUrl)
       .then((image) => {
-        if (cancelled) return;
-        maskImageRef.current = image;
-        maskUrlRef.current = objectMaskDataUrl;
+        if (!cancelled) setMaskImage(image);
       })
       .catch(() => {
-        if (cancelled) return;
-        maskImageRef.current = null;
-        maskUrlRef.current = objectMaskDataUrl;
+        // Without a readable mask there is nothing to preview.
       });
 
     return () => {
@@ -305,46 +195,40 @@ export default function PhotoWorkspace() {
     };
   }, [objectMaskDataUrl]);
 
+  /*
+   * Live Object Adjust preview, rendered with fabric.js. Global
+   * brightness/contrast/saturation is applied by a CSS filter on the
+   * canvas, exactly like the plain <img> underneath it.
+   */
   useEffect(() => {
     const canvas = previewCanvasRef.current;
     const host = previewHostRef.current;
 
-    if (!canvas || !host || !activePhoto || activeAiTool !== "object") {
+    if (
+      !canvas ||
+      !host ||
+      !activePhoto ||
+      activeAiTool !== "object" ||
+      !sourceImage ||
+      !previewSource ||
+      !maskImage
+    ) {
       if (canvas) {
-        const ctx = canvas.getContext("2d");
-        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
       }
       return;
     }
 
     let cancelled = false;
     let frameId = 0;
+    let renderToken = 0;
 
-    const render = () => {
-      if (cancelled) return;
-
-      const sourceImage = sourceImageRef.current;
-      const maskImage = maskImageRef.current;
-
-      if (!sourceImage || !maskImage) {
-        frameId = window.requestAnimationFrame(render);
-        return;
-      }
+    const draw = async () => {
+      const token = ++renderToken;
 
       const cssWidth = Math.max(1, Math.round(host.clientWidth));
       const cssHeight = Math.max(1, Math.round(host.clientHeight));
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-
-      canvas.width = Math.round(cssWidth * dpr);
-      canvas.height = Math.round(cssHeight * dpr);
-      canvas.style.width = `${cssWidth}px`;
-      canvas.style.height = `${cssHeight}px`;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssWidth, cssHeight);
 
       const imageRect = getContainedRect(
         sourceImage.naturalWidth,
@@ -357,129 +241,56 @@ export default function PhotoWorkspace() {
         return;
       }
 
-      const previewWidth = Math.max(1, Math.round(imageRect.width));
-      const previewHeight = Math.max(1, Math.round(imageRect.height));
+      try {
+        const adjusted = await renderObjectAdjust({
+          source: previewSource,
+          mask: maskImage,
+          width: previewSource.width,
+          height: previewSource.height,
+          params: {
+            target: objectTab,
+            brightness: objectBrightness,
+            contrast: objectContrast,
+            saturation: objectSaturation,
+            hue: objectHue,
+            shadowStrength,
+          },
+        });
 
-      const sourceCanvas = document.createElement("canvas");
-      sourceCanvas.width = previewWidth;
-      sourceCanvas.height = previewHeight;
-      const sourceCtx = sourceCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      if (!sourceCtx) return;
-
-      sourceCtx.drawImage(sourceImage, 0, 0, previewWidth, previewHeight);
-
-      const sourceData = sourceCtx.getImageData(
-        0,
-        0,
-        previewWidth,
-        previewHeight,
-      );
-
-      const maskCanvas = document.createElement("canvas");
-      maskCanvas.width = previewWidth;
-      maskCanvas.height = previewHeight;
-      const maskCtx = maskCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      if (!maskCtx) return;
-
-      maskCtx.drawImage(maskImage, 0, 0, previewWidth, previewHeight);
-
-      const maskData = maskCtx.getImageData(0, 0, previewWidth, previewHeight);
-
-      const getMaskAlpha = maskAlphaFromImageData(maskData.data);
-      const pixels = sourceData.data;
-
-      let blurredLumaData: Uint8ClampedArray | null = null;
-      if (objectTab === "shadow") {
-        const lumaCanvas = buildLumaCanvas(
-          sourceData,
-          previewWidth,
-          previewHeight,
-        );
-        if (lumaCanvas) {
-          blurredLumaData = getBlurredLumaData(lumaCanvas);
-        }
-      }
-
-      for (let index = 0; index < pixels.length; index += 4) {
-        const maskAlpha = getMaskAlpha(index);
-        const blend = maskAlpha / 255;
-
-        const originalR = pixels[index];
-        const originalG = pixels[index + 1];
-        const originalB = pixels[index + 2];
-
-        let objectBlendedR = originalR;
-        let objectBlendedG = originalG;
-        let objectBlendedB = originalB;
-
-        if (maskAlpha >= 2) {
-          let localR = originalR;
-          let localG = originalG;
-          let localB = originalB;
-
-          if (objectTab === "shadow") {
-            const lumaIndex = index;
-            const luma =
-              0.2126 * originalR + 0.7152 * originalG + 0.0722 * originalB;
-            const local = blurredLumaData ? blurredLumaData[lumaIndex] : luma;
-            const darkness = Math.max(local - luma, 0);
-            const lift = Math.min(darkness * (shadowStrength / 100) * 0.82, 44);
-            const newLuma = clamp(luma + lift, 0, 255);
-            const gain = newLuma / Math.max(luma, 20);
-
-            localR = clamp(originalR * gain, 0, 255);
-            localG = clamp(originalG * gain, 0, 255);
-            localB = clamp(originalB * gain, 0, 255);
-          } else {
-            const adjusted = adjustObjectTone(
-              originalR,
-              originalG,
-              originalB,
-              objectBrightness,
-              objectContrast,
-              objectTab,
-            );
-            localR = adjusted.r;
-            localG = adjusted.g;
-            localB = adjusted.b;
-          }
-
-          objectBlendedR = originalR * (1 - blend) + localR * blend;
-          objectBlendedG = originalG * (1 - blend) + localG * blend;
-          objectBlendedB = originalB * (1 - blend) + localB * blend;
+        if (cancelled || token !== renderToken) {
+          releaseCanvas(adjusted);
+          return;
         }
 
-        const globalAdjusted = applyGlobalTone(
-          objectBlendedR,
-          objectBlendedG,
-          objectBlendedB,
-          brightness,
-          contrast,
-          saturation,
-        );
+        canvas.width = Math.round(cssWidth * dpr);
+        canvas.height = Math.round(cssHeight * dpr);
+        canvas.style.width = `${cssWidth}px`;
+        canvas.style.height = `${cssHeight}px`;
 
-        pixels[index] = globalAdjusted.r;
-        pixels[index + 1] = globalAdjusted.g;
-        pixels[index + 2] = globalAdjusted.b;
+        const ctx = canvas.getContext("2d");
+
+        if (ctx) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, cssWidth, cssHeight);
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(
+            adjusted,
+            imageRect.x,
+            imageRect.y,
+            imageRect.width,
+            imageRect.height,
+          );
+        }
+
+        releaseCanvas(adjusted);
+      } catch {
+        // Keep the last good frame if a single render fails.
       }
-      sourceCtx.putImageData(sourceData, 0, 0);
-
-      ctx.drawImage(
-        sourceCanvas,
-        imageRect.x,
-        imageRect.y,
-        imageRect.width,
-        imageRect.height,
-      );
     };
 
     const scheduleRender = () => {
       if (frameId) window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(render);
+      frameId = window.requestAnimationFrame(() => void draw());
     };
 
     scheduleRender();
@@ -493,18 +304,17 @@ export default function PhotoWorkspace() {
       resizeObserver.disconnect();
     };
   }, [
-    activePhoto?.url,
-    activePhoto?.width,
-    activePhoto?.height,
+    activePhoto,
     activeAiTool,
-    objectMaskDataUrl,
+    sourceImage,
+    previewSource,
+    maskImage,
     objectBrightness,
     objectContrast,
+    objectSaturation,
+    objectHue,
     shadowStrength,
     objectTab,
-    brightness,
-    contrast,
-    saturation,
     currentPreset.widthMm,
     currentPreset.heightMm,
   ]);
@@ -726,6 +536,9 @@ export default function PhotoWorkspace() {
                       <canvas
                         ref={previewCanvasRef}
                         className="absolute inset-0 pointer-events-none"
+                        style={{
+                          filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                        }}
                       />
                     )}
                   </div>

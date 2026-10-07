@@ -35,6 +35,9 @@ import {
   isEnhanceAbort,
   type EnhanceProgress,
 } from "./realEsrganEngine";
+import { cleanDocumentCanvas, isCleanAbort } from "./documentClean";
+import { colorDocumentCanvas, isColorAbort } from "./colorDocument";
+import { detectDocumentCornersCv } from "./documentCorners";
 
 declare global {
   interface Window {
@@ -63,10 +66,20 @@ const DEFAULT_CORNERS: Point[] = [
   { x: 10, y: 90 },
 ];
 
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://microjob-backend-6mxg.onrender.com"
-).replace(/\/+$/, "");
+const OPENCV_SCRIPT_ID = "opencv-js";
+const OPENCV_SCRIPT_URL = "https://docs.opencv.org/4.8.0/opencv.js";
+// How long Auto crop waits for OpenCV.js (a few MB) before giving up.
+const OPENCV_WAIT_TIMEOUT_MS = 60000;
+
+function injectOpenCvScript(onLoad: () => void, onError: () => void) {
+  const script = document.createElement("script");
+  script.id = OPENCV_SCRIPT_ID;
+  script.src = OPENCV_SCRIPT_URL;
+  script.async = true;
+  script.onload = onLoad;
+  script.onerror = onError;
+  document.body.appendChild(script);
+}
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -86,8 +99,8 @@ const normalizeAngle = (angle: number): number => ((angle % 360) + 360) % 360;
 // screen right now, exactly once. Nothing is re-processed just because a later
 // step happened (e.g. cropping after Magic Clean does NOT run Magic Clean
 // again). Each step remembers the state before it, so it can be undone.
-// Document Clean is only available after Magic Clean, so the backend always
-// receives the Magic Clean image.
+// Document Clean is only available after Magic Clean, so it always works on
+// the Magic Clean image. It runs fully in the browser (see documentClean.ts).
 // `enhance` (Magic Clean) is a pass counter: 0 = off, 1 = applied once,
 // 2 = "Again Magic Clean" pressed once more on top of the previous result...
 type EffectKey = "color" | "clean" | "enhance";
@@ -114,10 +127,8 @@ const STEP_LABELS: Record<StepKind, string> = {
 };
 
 const NO_EFFECTS: Effects = { color: false, clean: false, enhance: 0 };
-const EFFECT_ENDPOINTS: Record<"color" | "clean", string> = {
-  color: "/api/color-document",
-  clean: "/api/clean-document",
-};
+// Every effect (Color Document, Magic Clean, Document Clean) and both crops run
+// in the browser. No image is ever sent to a server for processing.
 const ENHANCE_LABEL = "Magic Clean";
 // How many times Magic Clean can be stacked with "Again Magic Clean".
 const MAX_ENHANCE_PASSES = 3;
@@ -205,11 +216,13 @@ export default function DocumentScanner() {
     number | null
   >(null);
 
-  const [isCvLoaded, setCvLoaded] = useState<boolean>(false);
   const [cropReady, setCropReady] = useState<boolean>(false);
-  const [isPythonLoading, setIsPythonLoading] = useState<boolean>(false);
-  // AI Enhance reuses `isPythonLoading` as its "busy" flag (disables all buttons,
-  // shows the overlay); this only carries the progress text / percent.
+  // "Busy" flag for every canvas job (Color Document, Magic Clean, Document
+  // Clean, Auto crop): disables the buttons and shows the overlay.
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isWaitingForOpenCv, setIsWaitingForOpenCv] = useState<boolean>(false);
+  const [isAutoCropping, setIsAutoCropping] = useState<boolean>(false);
+  // Only carries the Magic Clean progress text / percent.
   const [enhanceProgress, setEnhanceProgress] =
     useState<EnhanceProgress | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -219,7 +232,7 @@ export default function DocumentScanner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const processingIdRef = useRef<number>(0);
-  const activeServerRequestRef = useRef<AbortController | null>(null);
+  const openCvFailedRef = useRef<boolean>(false);
   const enhanceAbortRef = useRef<AbortController | null>(null);
   const cloudinarySaveRequestRef = useRef<AbortController | null>(null);
   const createdBlobUrlsRef = useRef<Set<string>>(new Set());
@@ -239,12 +252,9 @@ export default function DocumentScanner() {
     }
   }, []);
 
-  const cancelActiveServerRequest = useCallback(() => {
-    const controller = activeServerRequestRef.current;
-    if (controller) {
-      controller.abort();
-      activeServerRequestRef.current = null;
-    }
+  // Stops the running canvas job (if any).
+  const cancelActiveProcessing = useCallback(() => {
+    enhanceAbortRef.current?.abort();
   }, []);
 
   const cancelCloudinarySaveRequest = useCallback(() => {
@@ -380,8 +390,6 @@ export default function DocumentScanner() {
 
   useEffect(() => {
     return () => {
-      activeServerRequestRef.current?.abort();
-      activeServerRequestRef.current = null;
       cloudinarySaveRequestRef.current?.abort();
       cloudinarySaveRequestRef.current = null;
       createdBlobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -392,11 +400,11 @@ export default function DocumentScanner() {
   useEffect(() => {
     let active = true;
     processingIdRef.current += 1;
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     enhanceAbortRef.current?.abort();
 
-    setIsPythonLoading(false);
+    setIsProcessing(false);
     setErrorMessage(null);
     setRotation(0);
     setBakedRotation(0);
@@ -453,7 +461,7 @@ export default function DocumentScanner() {
     selectedImageSrc,
     loadImage,
     createRotatedCanvas,
-    cancelActiveServerRequest,
+    cancelActiveProcessing,
     cancelCloudinarySaveRequest,
     resetCorners,
   ]);
@@ -572,52 +580,61 @@ export default function DocumentScanner() {
     [],
   );
 
+  // Starts downloading OpenCV.js as soon as the page opens, so it is usually
+  // ready by the time Auto crop / Manual crop is used.
   useEffect(() => {
-    let mounted = true;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+    if (window.cv && window.cv.Mat) return;
+    if (document.getElementById(OPENCV_SCRIPT_ID)) return;
 
-    const waitForOpenCV = () => {
-      intervalId = setInterval(() => {
-        if (window.cv && window.cv.Mat && mounted) {
-          if (intervalId) clearInterval(intervalId);
-          setCvLoaded(true);
-        }
-      }, 100);
-    };
-
-    if (window.cv && window.cv.Mat) {
-      setCvLoaded(true);
-      return () => {
-        mounted = false;
-      };
-    }
-
-    const existingScript = document.getElementById(
-      "opencv-js",
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      waitForOpenCV();
-      return () => {
-        mounted = false;
-        if (intervalId) clearInterval(intervalId);
-      };
-    }
-
-    const script = document.createElement("script");
-    script.id = "opencv-js";
-    script.src = "https://docs.opencv.org/4.8.0/opencv.js";
-    script.async = true;
-    script.onload = () => waitForOpenCV();
-    script.onerror = () =>
-      setErrorMessage("OpenCV স্ক্রিপ্ট লোড করতে সমস্যা হয়েছে।");
-    document.body.appendChild(script);
-
-    return () => {
-      mounted = false;
-      if (intervalId) clearInterval(intervalId);
-    };
+    openCvFailedRef.current = false;
+    injectOpenCvScript(
+      () => undefined,
+      () => {
+        openCvFailedRef.current = true;
+        setErrorMessage("OpenCV স্ক্রিপ্ট লোড করতে সমস্যা হয়েছে।");
+      },
+    );
   }, []);
+
+  // Auto crop never falls back to a server: if OpenCV.js is still loading, we
+  // show the loading state and continue as soon as it is ready.
+  const ensureOpenCvReady = useCallback(
+    async (signal: AbortSignal): Promise<boolean> => {
+      const isReady = () => !!(window.cv && window.cv.Mat);
+      if (isReady()) return true;
+
+      setIsWaitingForOpenCv(true);
+      try {
+        if (openCvFailedRef.current) {
+          // The first download failed: try once more.
+          document.getElementById(OPENCV_SCRIPT_ID)?.remove();
+          openCvFailedRef.current = false;
+          injectOpenCvScript(
+            () => undefined,
+            () => {
+              openCvFailedRef.current = true;
+            },
+          );
+        }
+
+        const startedAt = Date.now();
+        while (!isReady()) {
+          if (signal.aborted) return false;
+          if (
+            openCvFailedRef.current ||
+            Date.now() - startedAt > OPENCV_WAIT_TIMEOUT_MS
+          ) {
+            return false;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        return true;
+      } finally {
+        setIsWaitingForOpenCv(false);
+      }
+    },
+    [],
+  );
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -653,7 +670,7 @@ export default function DocumentScanner() {
   };
 
   const handleRemoveImage = (index: number) => {
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     processingIdRef.current += 1;
 
@@ -690,7 +707,7 @@ export default function DocumentScanner() {
       setIsComparing(false);
       setIsManualCropping(false);
       setIsHoldingOriginal(false);
-      setIsPythonLoading(false);
+      setIsProcessing(false);
       setHasUnsavedChanges(false);
     }
   };
@@ -702,7 +719,7 @@ export default function DocumentScanner() {
       imagePoints: Point[],
       maxOutputSize: number = 2500,
     ): HTMLCanvasElement | null => {
-      if (!isCvLoaded || !window.cv || imagePoints.length !== 4) return null;
+      if (!window.cv || !window.cv.Mat || imagePoints.length !== 4) return null;
 
       const cv = window.cv;
       let src: any = null;
@@ -790,7 +807,7 @@ export default function DocumentScanner() {
         if (warped) warped.delete();
       }
     },
-    [isCvLoaded, orderPoints],
+    [orderPoints],
   );
 
   // Warp using corner handles that live in UI (container %) coordinates.
@@ -812,211 +829,14 @@ export default function DocumentScanner() {
   );
 
   /**
-   * Finds the document corners in the browser (same idea as the Python
-   * auto-crop: blur -> Canny -> biggest 4-corner contour, with a
-   * minAreaRect fallback). It works on a small copy, so it is fast, and it
-   * returns corners as 0..1 fractions of the image so they can be applied to
-   * an image of ANY size (e.g. the 2x Magic Clean image).
+   * Finds the document corners in the browser with OpenCV.js (see
+   * documentCorners.ts). Returns 0..1 fractions of the image so the corners
+   * fit an image of ANY size (e.g. the 2x Magic Clean image).
    */
   const detectDocumentCorners = useCallback(
-    (source: HTMLCanvasElement): Point[] | null => {
-      if (!isCvLoaded || !window.cv) return null;
-
-      const cv = window.cv;
-      const scale = Math.min(1, 1000 / Math.max(source.width, source.height));
-      const small = document.createElement("canvas");
-      small.width = Math.max(1, Math.round(source.width * scale));
-      small.height = Math.max(1, Math.round(source.height * scale));
-      const smallCtx = small.getContext("2d");
-      if (!smallCtx) return null;
-      smallCtx.imageSmoothingEnabled = true;
-      smallCtx.imageSmoothingQuality = "high";
-      smallCtx.drawImage(source, 0, 0, small.width, small.height);
-
-      const minArea = small.width * small.height * 0.15;
-      const quadArea = (q: Point[]) => {
-        let sum = 0;
-        for (let i = 0; i < 4; i++) {
-          const a = q[i];
-          const b = q[(i + 1) % 4];
-          sum += a.x * b.y - b.x * a.y;
-        }
-        return Math.abs(sum) / 2;
-      };
-      const normalize = (q: Point[]): Point[] =>
-        q.map((pt) => ({
-          x: Math.min(1, Math.max(0, pt.x / small.width)),
-          y: Math.min(1, Math.max(0, pt.y / small.height)),
-        }));
-
-      let src: any = null;
-      let gray: any = null;
-      let blurred: any = null;
-      let edged: any = null;
-      let contours: any = null;
-      let hierarchy: any = null;
-
-      try {
-        src = cv.imread(small);
-        gray = new cv.Mat();
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-        blurred = new cv.Mat();
-        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-        edged = new cv.Mat();
-        cv.Canny(blurred, edged, 50, 200);
-
-        contours = new cv.MatVector();
-        hierarchy = new cv.Mat();
-        cv.findContours(
-          edged,
-          contours,
-          hierarchy,
-          cv.RETR_LIST,
-          cv.CHAIN_APPROX_SIMPLE,
-        );
-
-        const ranked: { index: number; area: number }[] = [];
-        for (let i = 0; i < contours.size(); i++) {
-          const c = contours.get(i);
-          ranked.push({ index: i, area: cv.contourArea(c) });
-          c.delete();
-        }
-        ranked.sort((a, b) => b.area - a.area);
-        const top = ranked.slice(0, 5);
-
-        for (const { index } of top) {
-          const c = contours.get(index);
-          const approx = new cv.Mat();
-          try {
-            const peri = cv.arcLength(c, true);
-            cv.approxPolyDP(c, approx, 0.02 * peri, true);
-
-            if (approx.rows === 4) {
-              const d = approx.data32S;
-              const quad: Point[] = [
-                { x: d[0], y: d[1] },
-                { x: d[2], y: d[3] },
-                { x: d[4], y: d[5] },
-                { x: d[6], y: d[7] },
-              ];
-              // Ignore small 4-corner blobs (a word, a stamp, a box).
-              if (quadArea(quad) >= minArea) return normalize(quad);
-            }
-          } finally {
-            approx.delete();
-            c.delete();
-          }
-        }
-
-        // Fallback: tilted bounding box of the biggest shape.
-        if (top.length > 0) {
-          const c = contours.get(top[0].index);
-          try {
-            const rect = cv.minAreaRect(c);
-            const box: Point[] = cv.RotatedRect.points(rect).map(
-              (pt: Point) => ({ x: pt.x, y: pt.y }),
-            );
-            if (box.length === 4 && quadArea(box) >= minArea) {
-              return normalize(box);
-            }
-          } finally {
-            c.delete();
-          }
-        }
-
-        return null;
-      } catch (error) {
-        console.error("Document corner detection failed:", error);
-        return null;
-      } finally {
-        if (src) src.delete();
-        if (gray) gray.delete();
-        if (blurred) blurred.delete();
-        if (edged) edged.delete();
-        if (contours) contours.delete();
-        if (hierarchy) hierarchy.delete();
-      }
-    },
-    [isCvLoaded],
-  );
-
-  const processCanvasWithServer = useCallback(
-    async (
-      canvas: HTMLCanvasElement,
-      endpoint: string,
-      filename: string,
-    ): Promise<string | null> => {
-      cancelActiveServerRequest();
-
-      const controller = new AbortController();
-      activeServerRequestRef.current = controller;
-      const timeoutId = window.setTimeout(() => controller.abort(), 30000);
-
-      try {
-        setErrorMessage(null);
-        setIsPythonLoading(true);
-
-        const blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob((value) => resolve(value), "image/png"),
-        );
-
-        if (!blob) throw new Error("Canvas blob conversion failed");
-
-        const formData = new FormData();
-        formData.append("file", blob, filename);
-
-        const cleanEndpoint = endpoint.startsWith("/")
-          ? endpoint
-          : `/${endpoint}`;
-
-        const response = await fetch(`${API_BASE_URL}${cleanEndpoint}`, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Python API error: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const responseBlob = await response.blob();
-        if (!responseBlob.size)
-          throw new Error("Server returned an empty image");
-
-        return createTrackedObjectURL(responseBlob);
-      } catch (error: any) {
-        if (error?.name !== "AbortError") {
-          console.error("Python Backend Integration Error:", error);
-          setErrorMessage(
-            "পাইথন সার্ভারে কাজটি সম্পন্ন করা যায়নি। কয়েক সেকেন্ড পর আবার চেষ্টা করুন।",
-          );
-        }
-        return null;
-      } finally {
-        window.clearTimeout(timeoutId);
-
-        if (activeServerRequestRef.current === controller) {
-          activeServerRequestRef.current = null;
-          setIsPythonLoading(false);
-        }
-      }
-    },
-    [cancelActiveServerRequest, createTrackedObjectURL],
-  );
-
-  const processWithPythonAutoCrop = useCallback(
-    (canvas: HTMLCanvasElement) =>
-      processCanvasWithServer(canvas, "/api/auto-crop", "crop.png"),
-    [processCanvasWithServer],
-  );
-
-  const processWithPythonBackend = useCallback(
-    (canvas: HTMLCanvasElement, endpoint: string) =>
-      processCanvasWithServer(canvas, endpoint, "document.png"),
-    [processCanvasWithServer],
+    (source: HTMLCanvasElement): Point[] | null =>
+      detectDocumentCornersCv(window.cv, source),
+    [],
   );
 
   useEffect(() => {
@@ -1278,13 +1098,13 @@ export default function DocumentScanner() {
   const handleRotate = () => {
     if (
       !selectedImageSrc ||
-      isPythonLoading ||
+      isProcessing ||
       isManualCropping ||
       isSavingDocument
     )
       return;
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     processingIdRef.current += 1;
     setErrorMessage(null);
@@ -1296,7 +1116,7 @@ export default function DocumentScanner() {
     (index: number) => {
       if (
         images.length === 0 ||
-        isPythonLoading ||
+        isProcessing ||
         isManualCropping ||
         isSavingDocument ||
         index < 0 ||
@@ -1306,7 +1126,7 @@ export default function DocumentScanner() {
         return;
       }
 
-      cancelActiveServerRequest();
+      cancelActiveProcessing();
       cancelCloudinarySaveRequest();
       processingIdRef.current += 1;
       setDraggingCorner(null);
@@ -1316,11 +1136,11 @@ export default function DocumentScanner() {
     },
     [
       images.length,
-      isPythonLoading,
+      isProcessing,
       isManualCropping,
       isSavingDocument,
       selectedIndex,
-      cancelActiveServerRequest,
+      cancelActiveProcessing,
       cancelCloudinarySaveRequest,
     ],
   );
@@ -1329,7 +1149,7 @@ export default function DocumentScanner() {
     (index: number) => {
       if (
         images.length === 0 ||
-        isPythonLoading ||
+        isProcessing ||
         isManualCropping ||
         isSavingDocument ||
         index < 0 ||
@@ -1348,7 +1168,7 @@ export default function DocumentScanner() {
     },
     [
       images.length,
-      isPythonLoading,
+      isProcessing,
       isManualCropping,
       isSavingDocument,
       selectedIndex,
@@ -1433,7 +1253,7 @@ export default function DocumentScanner() {
   const handleSaveDocument = async (): Promise<boolean> => {
     if (
       !selectedImageSrc ||
-      isPythonLoading ||
+      isProcessing ||
       isManualCropping ||
       isSavingDocument
     ) {
@@ -1743,7 +1563,7 @@ export default function DocumentScanner() {
     imageSrc: string,
     fileName = "scanned-document.pdf",
   ) => {
-    if (!imageSrc || isPythonLoading || isSavingDocument) {
+    if (!imageSrc || isProcessing || isSavingDocument) {
       return;
     }
 
@@ -1799,7 +1619,7 @@ export default function DocumentScanner() {
   };
 
   const handlePrintSource = (imageSrc: string) => {
-    if (!imageSrc || isPythonLoading || isSavingDocument) {
+    if (!imageSrc || isProcessing || isSavingDocument) {
       return;
     }
 
@@ -1930,7 +1750,7 @@ export default function DocumentScanner() {
   };
 
   const handleEditSavedDocument = async (savedDocument: SavedDocument) => {
-    if (isPythonLoading || isSavingDocument || deletingSavedDocumentId) {
+    if (isProcessing || isSavingDocument || deletingSavedDocumentId) {
       return;
     }
 
@@ -1942,7 +1762,7 @@ export default function DocumentScanner() {
       if (!proceed) return;
     }
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
 
     processingIdRef.current += 1;
@@ -1957,7 +1777,7 @@ export default function DocumentScanner() {
     setImages([savedDocument.src]);
     setSelectedIndex(0);
 
-    setIsPythonLoading(false);
+    setIsProcessing(false);
     setErrorMessage(null);
     setRotation(0);
     setBakedRotation(0);
@@ -2077,7 +1897,7 @@ export default function DocumentScanner() {
   };
 
   const handleReset = () => {
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     processingIdRef.current += 1;
 
@@ -2121,28 +1941,10 @@ export default function DocumentScanner() {
         : "Document processing সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।";
   };
 
-  // Turns a blob/object URL coming back from the server into a PNG data URL.
-  const serverUrlToDataUrl = async (url: string): Promise<string> => {
-    try {
-      const img = await loadImage(url);
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas context unavailable");
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, 0, 0);
-      return canvas.toDataURL("image/png");
-    } finally {
-      revokeTrackedObjectURL(url);
-    }
-  };
-
   const canChangeImage = (): boolean =>
     !!selectedImageSrc &&
     !!cleanBaseSrc &&
-    !isPythonLoading &&
+    !isProcessing &&
     !isManualCropping &&
     !isSavingDocument;
 
@@ -2177,7 +1979,7 @@ export default function DocumentScanner() {
     const entry = history[index];
     if (!entry || !canChangeImage()) return;
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     processingIdRef.current += 1;
 
@@ -2208,7 +2010,7 @@ export default function DocumentScanner() {
   const applyEffectStep = async (stage: EffectKey) => {
     if (!canChangeImage()) return;
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     enhanceAbortRef.current?.abort();
 
@@ -2224,7 +2026,7 @@ export default function DocumentScanner() {
     try {
       setErrorMessage(null);
       setActiveStage(stage);
-      setIsPythonLoading(true);
+      setIsProcessing(true);
 
       // Input = what the person sees now (all earlier steps included).
       const inputImg = await loadImage(cleanBaseSrc);
@@ -2249,20 +2051,22 @@ export default function DocumentScanner() {
         stageSrc = capCanvasSize(enhanced, MAX_ENHANCE_SIDE).toDataURL(
           "image/png",
         );
-      } else {
-        const url = await processWithPythonBackend(
-          input,
-          EFFECT_ENDPOINTS[stage],
-        );
+      } else if (stage === "clean") {
+        // Client-side shadow / background clean + text sharpening.
+        const cleaned = await cleanDocumentCanvas(input, {
+          signal: controller.signal,
+        });
 
-        if (!url || isStale()) {
-          if (url) revokeTrackedObjectURL(url);
-          return;
-        }
-
-        setIsPythonLoading(true);
-        stageSrc = await serverUrlToDataUrl(url);
         if (isStale()) return;
+        stageSrc = cleaned.toDataURL("image/png");
+      } else {
+        // Color Document: client-side shadow removal + colour boost.
+        const colored = await colorDocumentCanvas(input, {
+          signal: controller.signal,
+        });
+
+        if (isStale()) return;
+        stageSrc = colored.toDataURL("image/png");
       }
 
       // The effect-free twin only gets the pending rotation baked in.
@@ -2294,6 +2098,8 @@ export default function DocumentScanner() {
     } catch (error) {
       if (
         isEnhanceAbort(error) ||
+        isCleanAbort(error) ||
+        isColorAbort(error) ||
         currentProcessingId !== processingIdRef.current
       )
         return;
@@ -2303,7 +2109,7 @@ export default function DocumentScanner() {
     } finally {
       if (enhanceAbortRef.current === controller) {
         enhanceAbortRef.current = null;
-        setIsPythonLoading(false);
+        setIsProcessing(false);
         setEnhanceProgress(null);
         setActiveStage(null);
       }
@@ -2332,7 +2138,7 @@ export default function DocumentScanner() {
     // there is nothing left to crop.
     if (autoCrop && history[history.length - 1]?.step === "autoCrop") return;
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     enhanceAbortRef.current?.abort();
 
@@ -2353,6 +2159,24 @@ export default function DocumentScanner() {
     setActiveStage(null);
 
     try {
+      setIsProcessing(true);
+      setIsAutoCropping(true);
+
+      // OpenCV.js can take a moment on the first visit: show the loading
+      // state and carry on as soon as it is ready (never a server call).
+      const cvReady = await ensureOpenCvReady(controller.signal);
+      if (isStale()) return;
+      if (!cvReady) {
+        setErrorMessage(
+          "OpenCV লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন, অথবা Manual crop ব্যবহার করুন।",
+        );
+        return;
+      }
+
+      // Let the loading overlay paint before the heavy work starts.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (isStale()) return;
+
       // Crop exactly what is on screen (Magic Clean etc. stay as they are).
       const processedImg = await loadImage(cleanBaseSrc);
       if (isStale()) return;
@@ -2362,102 +2186,58 @@ export default function DocumentScanner() {
         pendingRotation,
       );
 
-      let croppedProcessed = "";
-      let croppedOriginal = "";
+      let originalCanvas: HTMLCanvasElement | null = null;
+      let sameShape = false;
 
-      if (hasEffects && isCvLoaded) {
-        // Effects are on the image: never send the big Magic Clean image to
-        // the server. Find the corners on the small effect-free twin (a plain
-        // photo, which auto-crop handles well) and cut BOTH images with them.
-        setIsPythonLoading(true);
-
+      if (hasEffects) {
         const originalImg = await loadImage(
           croppedOriginalSrc || selectedImageSrc,
         );
         if (isStale()) return;
-        const originalCanvas = createRotatedCanvas(
-          originalImg,
-          pendingRotation,
-        );
-
-        const sameShape =
+        originalCanvas = createRotatedCanvas(originalImg, pendingRotation);
+        sameShape =
           Math.abs(
             originalCanvas.width / originalCanvas.height -
               processedCanvas.width / processedCanvas.height,
           ) < 0.02;
+      }
 
-        const corners = detectDocumentCorners(
-          sameShape ? originalCanvas : processedCanvas,
+      // With effects on, the corners are found on the effect-free twin (a
+      // plain photo) and applied to BOTH images.
+      const corners = detectDocumentCorners(
+        originalCanvas && sameShape ? originalCanvas : processedCanvas,
+      );
+      if (!corners) {
+        setErrorMessage(
+          "ডকুমেন্টের কিনারা খুঁজে পাওয়া যায়নি। Manual crop ব্যবহার করুন।",
         );
-        if (!corners) {
-          setErrorMessage(
-            "ডকুমেন্টের কিনারা খুঁজে পাওয়া যায়নি। Manual crop ব্যবহার করুন।",
-          );
-          return;
-        }
+        return;
+      }
 
-        const toPixels = (c: HTMLCanvasElement): Point[] =>
-          corners.map((pt) => ({ x: pt.x * c.width, y: pt.y * c.height }));
+      const toPixels = (c: HTMLCanvasElement): Point[] =>
+        corners.map((pt) => ({ x: pt.x * c.width, y: pt.y * c.height }));
 
-        const processedCrop = warpByImagePoints(
-          processedCanvas,
-          toPixels(processedCanvas),
-          MAX_ENHANCE_SIDE,
+      const processedCrop = warpByImagePoints(
+        processedCanvas,
+        toPixels(processedCanvas),
+        MAX_ENHANCE_SIDE,
+      );
+      if (!processedCrop) throw new Error("Crop warp failed");
+
+      const croppedProcessed = processedCrop.toDataURL("image/png");
+      let croppedOriginal = croppedProcessed;
+
+      if (originalCanvas && sameShape) {
+        const originalCrop = warpByImagePoints(
+          originalCanvas,
+          toPixels(originalCanvas),
         );
-        if (!processedCrop) throw new Error("Crop warp failed");
-
-        croppedProcessed = processedCrop.toDataURL("image/png");
-        croppedOriginal = croppedProcessed;
-
-        if (sameShape) {
-          const originalCrop = warpByImagePoints(
-            originalCanvas,
-            toPixels(originalCanvas),
-          );
-          if (originalCrop) {
-            croppedOriginal = originalCrop.toDataURL("image/png");
-          }
-        }
-
-        if (isStale()) return;
-      } else {
-        // No effects yet (or OpenCV not ready): the normal server auto-crop.
-        const resultUrl = await processWithPythonAutoCrop(processedCanvas);
-
-        if (!resultUrl || isStale()) {
-          if (resultUrl) revokeTrackedObjectURL(resultUrl);
-          return;
-        }
-
-        croppedProcessed = await serverUrlToDataUrl(resultUrl);
-        if (isStale()) return;
-        croppedOriginal = croppedProcessed;
-
-        if (hasEffects) {
-          // OpenCV not ready: keep the "Normal" twin cropped (best effort).
-          const originalImg = await loadImage(
-            croppedOriginalSrc || selectedImageSrc,
-          );
-          const originalCanvas = createRotatedCanvas(
-            originalImg,
-            pendingRotation,
-          );
-          croppedOriginal = originalCanvas.toDataURL("image/png");
-
-          setIsPythonLoading(true);
-          const originalResultUrl =
-            await processWithPythonAutoCrop(originalCanvas);
-          if (isStale()) {
-            if (originalResultUrl) revokeTrackedObjectURL(originalResultUrl);
-            return;
-          }
-          if (originalResultUrl) {
-            croppedOriginal = await serverUrlToDataUrl(originalResultUrl);
-          }
-          setErrorMessage(null);
-          if (isStale()) return;
+        if (originalCrop) {
+          croppedOriginal = originalCrop.toDataURL("image/png");
         }
       }
+
+      if (isStale()) return;
 
       pushHistory("autoCrop");
       setHasUnsavedChanges(true);
@@ -2473,9 +2253,10 @@ export default function DocumentScanner() {
       console.error("Auto crop failed:", error);
       setErrorMessage("Auto crop সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
     } finally {
+      setIsAutoCropping(false);
       if (enhanceAbortRef.current === controller) {
         enhanceAbortRef.current = null;
-        setIsPythonLoading(false);
+        setIsProcessing(false);
         setEnhanceProgress(null);
         setActiveStage(null);
       }
@@ -2483,15 +2264,10 @@ export default function DocumentScanner() {
   };
 
   const handleTriggerManualCrop = () => {
-    if (
-      !selectedImageSrc ||
-      !cleanBaseSrc ||
-      isPythonLoading ||
-      isSavingDocument
-    )
+    if (!selectedImageSrc || !cleanBaseSrc || isProcessing || isSavingDocument)
       return;
 
-    cancelActiveServerRequest();
+    cancelActiveProcessing();
     cancelCloudinarySaveRequest();
     processingIdRef.current += 1;
 
@@ -2526,7 +2302,7 @@ export default function DocumentScanner() {
   ) => {
     const active = effects[key];
     const busy =
-      isPythonLoading ||
+      isProcessing ||
       images.length === 0 ||
       !cleanBaseSrc ||
       isSavingDocument ||
@@ -2581,7 +2357,7 @@ export default function DocumentScanner() {
     const atMax = passes >= MAX_ENHANCE_PASSES;
     const canRemove = findEffectUndoIndex("enhance") >= 0;
     const busy =
-      isPythonLoading ||
+      isProcessing ||
       images.length === 0 ||
       !cleanBaseSrc ||
       isSavingDocument ||
@@ -2708,7 +2484,7 @@ export default function DocumentScanner() {
                 disabled={
                   images.length === 0 ||
                   selectedIndex === 0 ||
-                  isPythonLoading ||
+                  isProcessing ||
                   isManualCropping ||
                   isSavingDocument
                 }
@@ -2730,7 +2506,7 @@ export default function DocumentScanner() {
                 disabled={
                   images.length === 0 ||
                   selectedIndex >= images.length - 1 ||
-                  isPythonLoading ||
+                  isProcessing ||
                   isManualCropping ||
                   isSavingDocument
                 }
@@ -2756,7 +2532,7 @@ export default function DocumentScanner() {
               disabled={
                 images.length === 0 ||
                 !cleanBaseSrc ||
-                isPythonLoading ||
+                isProcessing ||
                 isManualCropping ||
                 isSavingDocument
               }
@@ -2781,9 +2557,7 @@ export default function DocumentScanner() {
 
             <button
               onClick={handlePrint}
-              disabled={
-                images.length === 0 || isPythonLoading || isSavingDocument
-              }
+              disabled={images.length === 0 || isProcessing || isSavingDocument}
               className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-[#047857] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#A7F3D0] rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Printer size={14} />
@@ -2792,9 +2566,7 @@ export default function DocumentScanner() {
 
             <button
               onClick={handleDownloadPDF}
-              disabled={
-                images.length === 0 || isPythonLoading || isSavingDocument
-              }
+              disabled={images.length === 0 || isProcessing || isSavingDocument}
               className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileDown size={14} />
@@ -2863,7 +2635,7 @@ export default function DocumentScanner() {
                   <div className="absolute top-3 right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-md border border-[#E2E8F0]">
                     <button
                       onClick={handleReset}
-                      disabled={isPythonLoading || isSavingDocument}
+                      disabled={isProcessing || isSavingDocument}
                       className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Reset all edits, crops, and adjustments to original state"
                     >
@@ -2873,7 +2645,7 @@ export default function DocumentScanner() {
 
                     <button
                       onClick={() => replaceFileInputRef.current?.click()}
-                      disabled={isPythonLoading || isSavingDocument}
+                      disabled={isProcessing || isSavingDocument}
                       className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title="Replace current image with a new file"
                     >
@@ -2886,7 +2658,7 @@ export default function DocumentScanner() {
                     <button
                       onClick={handleRotate}
                       disabled={
-                        isPythonLoading || isManualCropping || isSavingDocument
+                        isProcessing || isManualCropping || isSavingDocument
                       }
                       className="p-1.5 sm:p-2 bg-white hover:bg-[#E2E8F0] text-[#334155] hover:text-[#0F172A] rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-semibold"
                       title={
@@ -2929,7 +2701,7 @@ export default function DocumentScanner() {
                     }}
                     className="bg-white w-full max-w-full h-full max-h-[450px] sm:max-h-[580px] lg:max-h-[620px] aspect-[1/1.414] shadow-md border border-[#CBD5E1] rounded relative flex items-center justify-center overflow-hidden"
                   >
-                    {isPythonLoading && (
+                    {isProcessing && (
                       <div className="absolute inset-0 bg-white/80 backdrop-blur-xs z-30 flex flex-col items-center justify-center gap-2 p-4 text-center">
                         <Loader2
                           size={32}
@@ -2942,13 +2714,17 @@ export default function DocumentScanner() {
                               : enhanceProgress.stage === "load"
                                 ? "AI ইঞ্জিন চালু হচ্ছে…"
                                 : `${ENHANCE_LABEL} হচ্ছে… ${enhanceProgress.percent}%`
-                            : activeStage === "clean"
-                              ? "Document Clean হচ্ছে…"
-                              : activeStage === "color"
-                                ? "Color Document হচ্ছে…"
-                                : "Processing Image..."}
+                            : isWaitingForOpenCv
+                              ? "OpenCV লোড হচ্ছে… লোড হওয়া মাত্র Auto crop শুরু হবে"
+                              : isAutoCropping
+                                ? "Auto crop হচ্ছে…"
+                                : activeStage === "clean"
+                                  ? "Document Clean হচ্ছে…"
+                                  : activeStage === "color"
+                                    ? "Color Document হচ্ছে…"
+                                    : "Processing Image..."}
                         </span>
-                        {enhanceProgress && (
+                        {(enhanceProgress || isWaitingForOpenCv) && (
                           <button
                             type="button"
                             onClick={() => enhanceAbortRef.current?.abort()}
@@ -3094,7 +2870,7 @@ export default function DocumentScanner() {
                 <button
                   onClick={handleTriggerAutoCrop}
                   disabled={
-                    isPythonLoading || images.length === 0 || isSavingDocument
+                    isProcessing || images.length === 0 || isSavingDocument
                   }
                   className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer disabled:cursor-not-allowed ${autoCrop && !isManualCropping ? "bg-[#2563EB] text-white" : "bg-[#2563EB] hover:bg-[#1D4ED8] text-white"}`}
                 >
@@ -3131,7 +2907,7 @@ export default function DocumentScanner() {
                 onClick={handleUndoLast}
                 disabled={
                   history.length === 0 ||
-                  isPythonLoading ||
+                  isProcessing ||
                   isManualCropping ||
                   isSavingDocument
                 }
@@ -3301,7 +3077,7 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={() => handleEditSavedDocument(previewSavedDocument)}
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Edit size={14} />
@@ -3311,7 +3087,7 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={() => handlePrintSource(previewSavedDocument.src)}
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F8FAFC] text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Printer size={14} />
@@ -3328,7 +3104,7 @@ export default function DocumentScanner() {
                       .replace(/\s+/g, "-")}.pdf`,
                   )
                 }
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F8FAFC] text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown size={14} />
@@ -3340,7 +3116,7 @@ export default function DocumentScanner() {
                 onClick={() =>
                   handleDownloadSavedDocument(previewSavedDocument)
                 }
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={14} />
@@ -3382,7 +3158,7 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={handleConfirmNavigationWithoutSave}
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#334155] hover:bg-[#E2E8F0] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 No
@@ -3390,7 +3166,7 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={handleConfirmNavigationSave}
-                disabled={isPythonLoading || isSavingDocument}
+                disabled={isProcessing || isSavingDocument}
                 className="py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSavingDocument ? "Saving..." : "Yes, Save"}

@@ -43,7 +43,13 @@ const MODEL_SCALE = 4;
 
 /** Images up to this size (longest side) run in one piece: no tile seams. */
 const WHOLE_IMAGE_MAX_SIDE = 256;
+/** CPU (WASM) tiles. */
 const TILE_SIZE = 128;
+/**
+ * WebGPU tiles. Bigger tiles mean far fewer GPU round trips and less repeated
+ * overlap work (a 1600x1130 page: ~35 tiles instead of ~117).
+ */
+const TILE_SIZE_WEBGPU = 256;
 /** The network sees ~17 px around a pixel, 20 px of context hides the joints. */
 const TILE_OVERLAP = 20;
 
@@ -328,13 +334,18 @@ export const enhanceCanvas = async (
 
   // 4) Enhance: whole image if small, otherwise tile by tile with context.
   const whole = Math.max(inW, inH) <= WHOLE_IMAGE_MAX_SIDE;
-  const tileSize = whole ? Math.max(inW, inH) : TILE_SIZE;
+  // `device` is already known here: the model was loaded in step 2.
+  const baseTile = device === "webgpu" ? TILE_SIZE_WEBGPU : TILE_SIZE;
+  const tileSize = whole ? Math.max(inW, inH) : baseTile;
   const overlap = whole ? 0 : TILE_OVERLAP;
   const cols = Math.ceil(inW / tileSize);
   const rows = Math.ceil(inH / tileSize);
   const totalTiles = cols * rows;
   let doneTiles = 0;
   let lastPercent = -1;
+
+  const startedAt = performance.now();
+  let lastYield = startedAt;
 
   onProgress?.({ stage: "enhance", percent: 0 });
 
@@ -397,11 +408,18 @@ export const enhanceCanvas = async (
         onProgress?.({ stage: "enhance", percent });
       }
 
-      await nextTick(); // let the browser paint the progress
+      // Let the browser paint the progress, but not after every single tile.
+      if (performance.now() - lastYield >= 40) {
+        await nextTick();
+        lastYield = performance.now();
+      }
     }
   }
 
   onProgress?.({ stage: "enhance", percent: 100 });
+  console.info(
+    `[Magic Clean] ${device ?? "unknown"}: ${totalTiles} tiles (${tileSize}px), ${Math.round(performance.now() - startedAt)} ms`,
+  );
   return outCanvas;
 };
 
