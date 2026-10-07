@@ -511,6 +511,22 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     [File | null, File | null]
   >([null, null]);
 
+  /*
+   * Exact before-state captured immediately before the most recent
+   * Background Remove operation. Compare uses this snapshot so that
+   * after background removal it can show:
+   *   BEFORE = the image just before removal
+   *   AFTER  = the current cutout image
+   *
+   * Keeping the File itself avoids an extra base64/blob conversion and
+   * survives replacement of the active PhotoAsset.
+   */
+  const [singleBackgroundRemovalBeforeFile, setSingleBackgroundRemovalBeforeFile] =
+    useState<File | null>(null);
+
+  const [dualBackgroundRemovalBeforeFiles, setDualBackgroundRemovalBeforeFiles] =
+    useState<[File | null, File | null]>([null, null]);
+
   const [activeDualSlot, setActiveDualSlot] = useState<0 | 1>(0);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -561,7 +577,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     photoMode === "dual" ? dualPhotos[activeDualSlot] : singlePhoto;
 
   const comparisonOriginalFile =
-    photoMode === "dual" ? dualOriginalFiles[activeDualSlot] : singleOriginalFile;
+    photoMode === "dual"
+      ? (backgroundRemoved
+          ? dualBackgroundRemovalBeforeFiles[activeDualSlot] ||
+            dualOriginalFiles[activeDualSlot]
+          : dualOriginalFiles[activeDualSlot])
+      : (backgroundRemoved
+          ? singleBackgroundRemovalBeforeFile || singleOriginalFile
+          : singleOriginalFile);
 
   const objectMaskDataUrl = objectMaskHistory[objectMaskHistoryIndex] ?? null;
 
@@ -752,6 +775,16 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         setBackgroundRemoved(false);
 
+        if (photoMode === "dual") {
+          setDualBackgroundRemovalBeforeFiles((current) => {
+            const next = [...current] as [File | null, File | null];
+            next[activeDualSlot] = null;
+            return next;
+          });
+        } else {
+          setSingleBackgroundRemovalBeforeFile(null);
+        }
+
         setUploadError("");
 
         setObjectMaskHistory([null]);
@@ -793,9 +826,17 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
           next[activeDualSlot] = file;
           return next;
         });
+        setDualBackgroundRemovalBeforeFiles((current) => {
+          const next = [...current] as [File | null, File | null];
+          next[activeDualSlot] = null;
+          return next;
+        });
       } else {
         setSingleOriginalFile(file);
+        setSingleBackgroundRemovalBeforeFile(null);
       }
+
+      setBackgroundRemoved(false);
 
       resetTransforms();
 
@@ -918,12 +959,18 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         next[activeDualSlot] = null;
         return next;
       });
+      setDualBackgroundRemovalBeforeFiles((current) => {
+        const next = [...current] as [File | null, File | null];
+        next[activeDualSlot] = null;
+        return next;
+      });
     } else {
       setSinglePhoto((current) => {
         revokeAsset(current);
         return null;
       });
       setSingleOriginalFile(null);
+      setSingleBackgroundRemovalBeforeFile(null);
     }
 
     setBackgroundRemoved(false);
@@ -942,6 +989,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const swapDualPhotos = useCallback(() => {
     setDualPhotos(([a, b]) => [b, a]);
     setDualOriginalFiles(([a, b]) => [b, a]);
+    setDualBackgroundRemovalBeforeFiles(([a, b]) => [b, a]);
   }, []);
 
   const objectMaskRequest = useCallback(
@@ -1186,6 +1234,20 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         : "Removing background…",
     );
 
+    /*
+     * Snapshot the exact image the user sees immediately before background
+     * removal. This is the dedicated BEFORE frame for Compare.
+     */
+    if (photoMode === "dual") {
+      setDualBackgroundRemovalBeforeFiles((current) => {
+        const next = [...current] as [File | null, File | null];
+        next[activeDualSlot] = activePhoto.file;
+        return next;
+      });
+    } else {
+      setSingleBackgroundRemovalBeforeFile(activePhoto.file);
+    }
+
     try {
       // Use the exact client-side background-removal implementation used by
       // the dedicated Remove Background tool. The File avoids an unnecessary
@@ -1219,7 +1281,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsRemovingBackground(false);
     }
-  }, [activePhoto, createPhotoAsset, replaceActivePhoto]);
+  }, [
+    activeDualSlot,
+    activePhoto,
+    createPhotoAsset,
+    photoMode,
+    replaceActivePhoto,
+  ]);
 
   const cancelAiProcessing = useCallback(() => {
     if (!aiProcessing) return;
@@ -2077,6 +2145,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         }
 
         setBackgroundRemoved(false);
+        if (photoMode === "dual") {
+          setDualBackgroundRemovalBeforeFiles((current) => {
+            const next = [...current] as [File | null, File | null];
+            next[activeDualSlot] = null;
+            return next;
+          });
+        } else {
+          setSingleBackgroundRemovalBeforeFile(null);
+        }
         setObjectMaskHistory([null]);
         setObjectMaskHistoryIndex(0);
         setCropAvailable(false);

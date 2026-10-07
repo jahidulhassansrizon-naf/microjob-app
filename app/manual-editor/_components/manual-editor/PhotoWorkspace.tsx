@@ -168,7 +168,7 @@ function ScanProcessingOverlay({
       <style>{`
         @keyframes manual-editor-photo-scan-sweep {
           0% {
-            top: -16%;
+            transform: translate3d(0, -115%, 0);
             opacity: 0.05;
           }
           8% {
@@ -181,7 +181,7 @@ function ScanProcessingOverlay({
             opacity: 0.55;
           }
           100% {
-            top: 102%;
+            transform: translate3d(0, 815%, 0);
             opacity: 0.08;
           }
         }
@@ -222,11 +222,12 @@ function ScanProcessingOverlay({
       <div className="absolute inset-0 bg-gradient-to-b from-cyan-300/5 via-cyan-200/10 to-blue-500/5" />
 
       <div
-        className="absolute inset-x-0 top-[-16%] h-[14%] bg-gradient-to-b from-transparent via-cyan-200/85 to-transparent"
+        className="absolute inset-x-0 top-0 h-[14%] bg-gradient-to-b from-transparent via-cyan-200/85 to-transparent"
         style={{
           animation:
             "manual-editor-photo-scan-sweep 1.55s cubic-bezier(.4,0,.2,1) infinite alternate",
           boxShadow: "0 0 18px rgba(103,232,249,0.65), 0 0 42px rgba(59,130,246,0.28)",
+          willChange: "transform",
         }}
       />
 
