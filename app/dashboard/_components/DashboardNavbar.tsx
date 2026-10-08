@@ -460,46 +460,10 @@ export default function DashboardNavbar({
   const [lang, setLang] = useState<"EN" | "BN">("EN");
 
   /* Search */
-  const isToolsPageRef = useRef<boolean>(false);
-  isToolsPageRef.current = pathname === "/sohoj-tools";
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-
-  /* সহজ টুলস পেজে থাকলে নেভবার সার্চ মোডাল খোলে না; পেজের ফিল্টার সারির সার্চ বক্স টগল করে */
-  const isToolsPage = pathname === "/sohoj-tools";
-  const [isPageSearchOpen, setIsPageSearchOpen] = useState<boolean>(false);
-  const [pageQuery, setPageQuery] = useState<string>("");
-
-  const toggleToolsPageSearch = () => {
-    window.dispatchEvent(new Event("sohoj-tools:toggle-search"));
-  };
-
-  // টুলস পেজ থেকে সার্চ বক্সের অবস্থা (খোলা/বন্ধ ও কোয়েরি) জানায়, আইকনের চিহ্নের জন্য
-  useEffect(() => {
-    if (!isToolsPage) {
-      setIsPageSearchOpen(false);
-      setPageQuery("");
-      return;
-    }
-
-    const fromUrl = new URLSearchParams(window.location.search).get("search");
-    setPageQuery(fromUrl ?? "");
-
-    const onState = (e: Event) => {
-      const detail = (e as CustomEvent<{ open: boolean; query: string }>)
-        .detail;
-      setIsPageSearchOpen(Boolean(detail?.open));
-      setPageQuery(detail?.query ?? "");
-    };
-
-    window.addEventListener("sohoj-tools:search-state", onState);
-
-    return () => {
-      window.removeEventListener("sohoj-tools:search-state", onState);
-    };
-  }, [isToolsPage]);
 
   const searchResults = normalizedSearchQuery
     ? toolsData
@@ -786,11 +750,7 @@ export default function DashboardNavbar({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        if (isToolsPageRef.current) {
-          window.dispatchEvent(new Event("sohoj-tools:toggle-search"));
-        } else {
-          setIsSearchOpen((prev) => !prev);
-        }
+        setIsSearchOpen((prev) => !prev);
       }
 
       if (e.key === "Escape") {
@@ -1025,24 +985,14 @@ export default function DashboardNavbar({
             <div className="relative shrink-0">
               <button
                 type="button"
-                onClick={() =>
-                  isToolsPage ? toggleToolsPageSearch() : setIsSearchOpen(true)
-                }
-                className={`${iconButton} ${
-                  isToolsPage && isPageSearchOpen
-                    ? "!border-[#2563EB]/50 !bg-blue-50 !text-[#2563EB]"
-                    : ""
-                }`}
+                onClick={() => setIsSearchOpen(true)}
+                className={iconButton}
                 aria-label="Search"
-                aria-expanded={isToolsPage ? isPageSearchOpen : undefined}
+                aria-expanded={isSearchOpen}
               >
                 <Search size={16} />
               </button>
 
-              {/* টুলস পেজে সার্চ চালু থাকলে ছোট ডট */}
-              {isToolsPage && pageQuery.trim() && !isPageSearchOpen && (
-                <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#2563EB]" />
-              )}
             </div>
 
             {/* Profile */}
@@ -1224,7 +1174,7 @@ export default function DashboardNavbar({
       {/* Search Modal                                                   */}
       {/* -------------------------------------------------------------- */}
 
-      {isSearchOpen && !isToolsPage && (
+      {isSearchOpen && (
         <div className="fixed inset-0 z-[200] flex items-start justify-center bg-slate-900/40 px-4 pt-[14vh] backdrop-blur-sm animate-in fade-in duration-200">
           <div
             className="absolute inset-0"

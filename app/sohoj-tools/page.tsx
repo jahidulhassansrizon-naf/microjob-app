@@ -90,8 +90,7 @@ function SohojToolsContent() {
   const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  // নেভবারের সার্চ আইকন দিয়ে এই সার্চ বক্স খোলা/বন্ধ হয়
-  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  // SohozTools পেজের নিজস্ব সার্চ বার সবসময় দৃশ্যমান থাকে
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const isInitialLoadDone = useRef(false);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -151,7 +150,6 @@ function SohojToolsContent() {
       // প্রথমবার পেজে আসার পর URL-এ কোনো সার্চ থাকলে অ্যানিমেশন চালাবে
       if (!isInitialLoadDone.current && searchFromUrl) {
         isInitialLoadDone.current = true;
-        setIsSearchOpen(true);
         let currentIndex = 0;
         setSearchQuery("");
 
@@ -194,36 +192,6 @@ function SohojToolsContent() {
     window.history.replaceState(null, "", newPath);
   };
 
-  // নেভবারের সার্চ আইকন / Ctrl+K থেকে সার্চ বক্স টগল; Esc দিলে বন্ধ
-  useEffect(() => {
-    const onToggle = () => setIsSearchOpen((v) => !v);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsSearchOpen(false);
-    };
-
-    window.addEventListener("sohoj-tools:toggle-search", onToggle);
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      window.removeEventListener("sohoj-tools:toggle-search", onToggle);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  // বক্স খুললে ইনপুটে ফোকাস
-  useEffect(() => {
-    if (isSearchOpen) searchInputRef.current?.focus();
-  }, [isSearchOpen]);
-
-  // নেভবারকে অবস্থা জানায় (আইকনের সক্রিয় চিহ্ন ও ডটের জন্য)
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("sohoj-tools:search-state", {
-        detail: { open: isSearchOpen, query: searchQuery },
-      }),
-    );
-  }, [isSearchOpen, searchQuery]);
-
   const filteredTools = toolsData.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -264,8 +232,37 @@ function SohojToolsContent() {
         className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5"
         style={zoomScale > 1.001 ? { zoom: zoomScale } : undefined}
       >
-        {/* Simple filter bar: access tabs + category dropdown, side by side on the left */}
-        <section className="flex flex-wrap items-stretch gap-2.5">
+        {/* SohozTools search + filters */}
+        <section className="flex flex-wrap items-stretch justify-between gap-2.5">
+          {/* SohozTools-এর নিজস্ব সার্চ বার — ফিল্টার সারির একদম বামে সবসময় দৃশ্যমান */}
+          <div className="relative min-h-[38px] w-full animate-in fade-in duration-150 sm:w-80">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2563EB]"
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search tools..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="h-full min-h-[38px] w-full rounded-lg border border-slate-200 bg-white pl-10 pr-9 text-[13px] font-medium text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB]/60 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    handleSearchChange("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+        
           <div className="inline-flex max-w-full items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
             <div
               role="tablist"
@@ -380,36 +377,6 @@ function SohojToolsContent() {
             </div>
           </div>
 
-          {/* Search box (নেভবারের সার্চ আইকন দিয়ে খোলে) — ফিল্টার সারির একদম ডানে */}
-          {isSearchOpen && (
-            <div className="relative min-h-[38px] w-full animate-in fade-in duration-150 sm:ml-auto sm:w-80">
-              <Search
-                size={15}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2563EB]"
-              />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search tools..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="h-full min-h-[38px] w-full rounded-lg border border-slate-200 bg-white pl-10 pr-9 text-[13px] font-medium text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB]/60 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => {
-                    handleSearchChange("");
-                    searchInputRef.current?.focus();
-                  }}
-                  className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          )}
         </section>
 
         {/* Tools Grid Section */}
