@@ -156,15 +156,18 @@ export async function renderObjectAdjust({
   height,
   params,
 }: RenderObjectAdjustOptions): Promise<HTMLCanvasElement> {
+  // Object Adjust opens with neutral values. Avoid loading Fabric at all for
+  // that first render; the previous implementation paid the full Fabric
+  // bundle/init cost even though no filter was active yet.
+  if (isObjectAdjustNeutral(params)) {
+    return drawScaled(source, width, height);
+  }
+
   const fabric = await loadFabric();
-
   const { FabricImage } = fabric;
-
   const output = drawScaled(source, width, height);
-
   const filterList = buildFilters(fabric, params);
 
-  // Nothing to change: return the plain photo.
   if (filterList.length === 0) {
     return output;
   }

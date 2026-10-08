@@ -35,7 +35,10 @@ import {
 import { renderObjectAdjust } from "./objectAdjust";
 import {
   MIN_SELECTION_COVERAGE,
+  clearSegmenterImageCache,
   detectTargetMask,
+  disposeSegmenter,
+  preloadSegmenter,
   removeBackgroundFromImage,
 } from "./segmentation";
 import type {
@@ -501,31 +504,23 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [singlePhoto, setSinglePhoto] = useState<PhotoAsset | null>(null);
 
-  const [singleOriginalFile, setSingleOriginalFile] = useState<File | null>(null);
-
   const [dualPhotos, setDualPhotos] = useState<
     [PhotoAsset | null, PhotoAsset | null]
   >([null, null]);
 
-  const [dualOriginalFiles, setDualOriginalFiles] = useState<
-    [File | null, File | null]
-  >([null, null]);
-
   /*
-   * Exact before-state captured immediately before the most recent
-   * Background Remove operation. Compare uses this snapshot so that
-   * after background removal it can show:
-   *   BEFORE = the image just before removal
-   *   AFTER  = the current cutout image
-   *
-   * Keeping the File itself avoids an extra base64/blob conversion and
-   * survives replacement of the active PhotoAsset.
+   * Immutable Compare baseline for the current editing session.
+   * A fresh upload is the temporary baseline until the one-time crop stage
+   * completes. Once cropping is applied, the cropped image becomes the
+   * session's true Original and is never overwritten by downstream edits
+   * such as Object Adjust, AI Enhance, Upscale, or Background Remove.
    */
-  const [singleBackgroundRemovalBeforeFile, setSingleBackgroundRemovalBeforeFile] =
+  const [singleCompareOriginalFile, setSingleCompareOriginalFile] =
     useState<File | null>(null);
 
-  const [dualBackgroundRemovalBeforeFiles, setDualBackgroundRemovalBeforeFiles] =
-    useState<[File | null, File | null]>([null, null]);
+  const [dualCompareOriginalFiles, setDualCompareOriginalFiles] = useState<
+    [File | null, File | null]
+  >([null, null]);
 
   const [activeDualSlot, setActiveDualSlot] = useState<0 | 1>(0);
 
@@ -576,17 +571,59 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const activePhoto =
     photoMode === "dual" ? dualPhotos[activeDualSlot] : singlePhoto;
 
+  const liveAssetsRef = useRef<{
+    singlePhoto: PhotoAsset | null;
+    dualPhotos: [PhotoAsset | null, PhotoAsset | null];
+  }>({
+    singlePhoto: null,
+    dualPhotos: [null, null],
+  });
+
+  useEffect(() => {
+    liveAssetsRef.current = { singlePhoto, dualPhotos };
+  }, [singlePhoto, dualPhotos]);
+
   const comparisonOriginalFile =
     photoMode === "dual"
-      ? (backgroundRemoved
-          ? dualBackgroundRemovalBeforeFiles[activeDualSlot] ||
-            dualOriginalFiles[activeDualSlot]
-          : dualOriginalFiles[activeDualSlot])
-      : (backgroundRemoved
-          ? singleBackgroundRemovalBeforeFile || singleOriginalFile
-          : singleOriginalFile);
+      ? dualCompareOriginalFiles[activeDualSlot]
+      : singleCompareOriginalFile;
 
   const objectMaskDataUrl = objectMaskHistory[objectMaskHistoryIndex] ?? null;
+
+  /*
+   * Warm the Object Adjust segmentation worker shortly after an image is
+   * available. The model load happens off the main thread, so the editor
+   * remains interactive while the first-use assets are cached.
+   */
+  useEffect(() => {
+    // Drop masks belonging to the previous image as soon as the active photo
+    // changes. The MediaPipe model itself stays warm in the worker so the next
+    // Object Adjust action remains fast without retaining large Float32Array
+    // results for old images.
+    clearSegmenterImageCache();
+
+    if (!activePhoto?.url) return;
+
+    const timer = window.setTimeout(() => {
+      void preloadSegmenter().catch(() => undefined);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [activePhoto?.url]);
+
+  useEffect(() => {
+    return () => {
+      cancelCurrentAiOperation();
+      disposeSegmenter();
+
+      const { singlePhoto: liveSingle, dualPhotos: liveDual } =
+        liveAssetsRef.current;
+
+      revokeAsset(liveSingle);
+      revokeAsset(liveDual[0]);
+      revokeAsset(liveDual[1]);
+    };
+  }, []);
 
   const currentPreset = useMemo<SizePreset>(() => {
     if (photoMode === "passport" || photoMode === "dual") {
@@ -760,13 +797,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         replaceActivePhoto(asset);
 
         if (photoMode === "dual") {
-          setDualOriginalFiles((current) => {
+          setDualCompareOriginalFiles((current) => {
             const next = [...current] as [File | null, File | null];
             next[activeDualSlot] = file;
             return next;
           });
         } else {
-          setSingleOriginalFile(file);
+          setSingleCompareOriginalFile(file);
         }
 
         resetTransforms();
@@ -774,16 +811,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         resetObjectValues();
 
         setBackgroundRemoved(false);
-
-        if (photoMode === "dual") {
-          setDualBackgroundRemovalBeforeFiles((current) => {
-            const next = [...current] as [File | null, File | null];
-            next[activeDualSlot] = null;
-            return next;
-          });
-        } else {
-          setSingleBackgroundRemovalBeforeFile(null);
-        }
 
         setUploadError("");
 
@@ -820,20 +847,21 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       replaceActivePhoto(asset);
 
+      /*
+       * Cropping establishes the user-visible starting image for the editing
+       * session. From this point onward Compare must treat the cropped result
+       * as the immutable Original, not the pre-crop upload. This also keeps
+       * the two Compare sides at the same dimensions/aspect ratio, preventing
+       * later edits from leaking into the Original side.
+       */
       if (photoMode === "dual") {
-        setDualOriginalFiles((current) => {
+        setDualCompareOriginalFiles((current) => {
           const next = [...current] as [File | null, File | null];
           next[activeDualSlot] = file;
           return next;
         });
-        setDualBackgroundRemovalBeforeFiles((current) => {
-          const next = [...current] as [File | null, File | null];
-          next[activeDualSlot] = null;
-          return next;
-        });
       } else {
-        setSingleOriginalFile(file);
-        setSingleBackgroundRemovalBeforeFile(null);
+        setSingleCompareOriginalFile(file);
       }
 
       setBackgroundRemoved(false);
@@ -954,12 +982,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
         return next;
       });
-      setDualOriginalFiles((current) => {
-        const next = [...current] as [File | null, File | null];
-        next[activeDualSlot] = null;
-        return next;
-      });
-      setDualBackgroundRemovalBeforeFiles((current) => {
+      setDualCompareOriginalFiles((current) => {
         const next = [...current] as [File | null, File | null];
         next[activeDualSlot] = null;
         return next;
@@ -969,8 +992,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         revokeAsset(current);
         return null;
       });
-      setSingleOriginalFile(null);
-      setSingleBackgroundRemovalBeforeFile(null);
+      setSingleCompareOriginalFile(null);
     }
 
     setBackgroundRemoved(false);
@@ -988,8 +1010,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const swapDualPhotos = useCallback(() => {
     setDualPhotos(([a, b]) => [b, a]);
-    setDualOriginalFiles(([a, b]) => [b, a]);
-    setDualBackgroundRemovalBeforeFiles(([a, b]) => [b, a]);
+    setDualCompareOriginalFiles(([a, b]) => [b, a]);
   }, []);
 
   const objectMaskRequest = useCallback(
@@ -1233,20 +1254,6 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         ? "First-time setup may take a little longer while the AI model loads."
         : "Removing background…",
     );
-
-    /*
-     * Snapshot the exact image the user sees immediately before background
-     * removal. This is the dedicated BEFORE frame for Compare.
-     */
-    if (photoMode === "dual") {
-      setDualBackgroundRemovalBeforeFiles((current) => {
-        const next = [...current] as [File | null, File | null];
-        next[activeDualSlot] = activePhoto.file;
-        return next;
-      });
-    } else {
-      setSingleBackgroundRemovalBeforeFile(activePhoto.file);
-    }
 
     try {
       // Use the exact client-side background-removal implementation used by
@@ -2135,25 +2142,16 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         replaceActivePhoto(asset);
 
         if (photoMode === "dual") {
-          setDualOriginalFiles((current) => {
+          setDualCompareOriginalFiles((current) => {
             const next = [...current] as [File | null, File | null];
             next[activeDualSlot] = file;
             return next;
           });
         } else {
-          setSingleOriginalFile(file);
+          setSingleCompareOriginalFile(file);
         }
 
         setBackgroundRemoved(false);
-        if (photoMode === "dual") {
-          setDualBackgroundRemovalBeforeFiles((current) => {
-            const next = [...current] as [File | null, File | null];
-            next[activeDualSlot] = null;
-            return next;
-          });
-        } else {
-          setSingleBackgroundRemovalBeforeFile(null);
-        }
         setObjectMaskHistory([null]);
         setObjectMaskHistoryIndex(0);
         setCropAvailable(false);

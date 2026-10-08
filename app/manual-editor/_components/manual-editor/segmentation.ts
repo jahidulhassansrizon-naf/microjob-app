@@ -17,7 +17,6 @@
  * selection strength, which is the format ObjectMaskCanvas expects.
  */
 
-import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 import type { ObjectTab } from "./types";
 import {
   canvasToBlob,
@@ -29,45 +28,15 @@ import {
 } from "./canvasUtils";
 
 /*
- * The wasm runtime version must match the installed npm package:
- *   npm i @mediapipe/tasks-vision@0.10.21
- * Both URLs can be overridden to self-host the files (recommended for
- * production: copy node_modules/@mediapipe/tasks-vision/wasm to /public).
+ * The MediaPipe model is kept out of the browser main thread. Object Adjust
+ * used to call ImageSegmenter.segment() directly from React, which is a
+ * synchronous CPU inference and can freeze Chrome long enough to trigger
+ * the browser's "Page Unresponsive" dialog on the first/cold run.
+ *
+ * The worker owns the MediaPipe runtime and returns only the small 256x256
+ * confidence planes to the UI thread.
  */
-const WASM_URL =
-  process.env.NEXT_PUBLIC_MEDIAPIPE_WASM_URL ||
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm";
 
-const MODEL_URL =
-  process.env.NEXT_PUBLIC_MEDIAPIPE_MODEL_URL ||
-  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite";
-
-/*
- * MediaPipe's wasm runtime prints harmless status lines such as
- * "INFO: Created TensorFlow Lite XNNPACK delegate for CPU." through
- * console.error. Next.js dev overlay shows every console.error as a crash,
- * so INFO lines are re-routed to console.info.
- */
-if (typeof window !== "undefined") {
-  const flagged = console as Console & { __mpInfoPatched?: boolean };
-
-  if (!flagged.__mpInfoPatched) {
-    flagged.__mpInfoPatched = true;
-
-    const originalError = console.error.bind(console);
-
-    console.error = (...args: unknown[]) => {
-      if (typeof args[0] === "string" && args[0].startsWith("INFO:")) {
-        console.info(...args);
-        return;
-      }
-
-      originalError(...args);
-    };
-  }
-}
-
-/* Category order of selfie_multiclass_256x256. */
 const CLASS_BACKGROUND = 0;
 const CLASS_HAIR = 1;
 const CLASS_BODY_SKIN = 2;
@@ -89,49 +58,103 @@ type ClassMasks = {
   classes: Float32Array[];
 };
 
-/* ------------------------------------------------------------------ */
-/* Model loading                                                       */
-/* ------------------------------------------------------------------ */
+type WorkerResponse =
+  | { type: "ready"; id: number }
+  | {
+      type: "result";
+      id: number;
+      width: number;
+      height: number;
+      classes: ArrayBuffer[];
+    }
+  | { type: "error"; id: number; message: string };
 
-let segmenterPromise: Promise<ImageSegmenter> | null = null;
+type PendingRequest = {
+  resolve: (value: WorkerResponse) => void;
+  reject: (error: Error) => void;
+};
 
-function getSegmenter(): Promise<ImageSegmenter> {
-  if (!segmenterPromise) {
-    segmenterPromise = (async () => {
-      const { FilesetResolver, ImageSegmenter: Segmenter } = await import(
-        "@mediapipe/tasks-vision"
-      );
+let segmentationWorker: Worker | null = null;
+let segmentationRequestId = 0;
+const segmentationPending = new Map<number, PendingRequest>();
 
-      const fileset = await FilesetResolver.forVisionTasks(WASM_URL);
-
-      return Segmenter.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath: MODEL_URL,
-          delegate: "CPU",
-        },
-        runningMode: "IMAGE",
-        outputCategoryMask: false,
-        outputConfidenceMasks: true,
-      });
-    })().catch((error: unknown) => {
-      // Allow a retry on the next call (e.g. after the network is back).
-      segmenterPromise = null;
-
-      console.error("MediaPipe segmenter failed to load", error);
-
-      throw new Error(
-        "Could not load the segmentation model. Check your internet " +
-          "connection and try again.",
-      );
-    });
+function rejectAllPending(error: Error) {
+  for (const pending of segmentationPending.values()) {
+    pending.reject(error);
   }
 
-  return segmenterPromise;
+  segmentationPending.clear();
 }
 
-/** Optional: call early (e.g. when the AI panel opens) to hide load time. */
-export function preloadSegmenter() {
-  void getSegmenter().catch(() => undefined);
+function getSegmentationWorker() {
+  if (typeof window === "undefined") {
+    throw new Error("Image segmentation is only available in the browser.");
+  }
+
+  if (!segmentationWorker) {
+    const worker = new Worker(
+      new URL("./segmentation.worker.ts", import.meta.url),
+      { type: "module" },
+    );
+
+    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const message = event.data;
+      const pending = segmentationPending.get(message.id);
+      if (!pending) return;
+
+      segmentationPending.delete(message.id);
+      pending.resolve(message);
+    };
+
+    worker.onerror = (event) => {
+      const error = new Error(
+        event.message || "Image segmentation worker failed.",
+      );
+
+      rejectAllPending(error);
+      segmentationWorker = null;
+      worker.terminate();
+    };
+
+    segmentationWorker = worker;
+  }
+
+  return segmentationWorker;
+}
+
+function requestWorker(
+  message:
+    | { type: "warmup"; id: number }
+    | { type: "segment"; id: number; bitmap: ImageBitmap },
+  transfer?: Transferable[],
+) {
+  const worker = getSegmentationWorker();
+
+  return new Promise<WorkerResponse>((resolve, reject) => {
+    segmentationPending.set(message.id, { resolve, reject });
+
+    try {
+      worker.postMessage(message, transfer ?? []);
+    } catch (error) {
+      segmentationPending.delete(message.id);
+      reject(
+        error instanceof Error
+          ? error
+          : new Error("Unable to start image segmentation."),
+      );
+    }
+  });
+}
+
+/** Starts the worker/model in the background without blocking the page. */
+export function preloadSegmenter(): Promise<void> {
+  const id = ++segmentationRequestId;
+
+  return requestWorker({ type: "warmup", id }).then((response) => {
+    if (response.type === "error") {
+      throw new Error(response.message);
+    }
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -141,29 +164,54 @@ export function preloadSegmenter() {
 const classMaskCache = new Map<string, Promise<ClassMasks>>();
 const CACHE_LIMIT = 3;
 
+/** Clears image-specific segmentation results while keeping the model warm. */
+export function clearSegmenterImageCache() {
+  classMaskCache.clear();
+}
+
+/** Releases the worker/cache when the editor itself is unmounted. */
+export function disposeSegmenter() {
+  const worker = segmentationWorker;
+  segmentationWorker = null;
+
+  const error = new Error("Image segmentation worker disposed.");
+  rejectAllPending(error);
+  classMaskCache.clear();
+
+  worker?.terminate();
+}
+
 async function runSegmentation(image: HTMLImageElement): Promise<ClassMasks> {
-  const segmenter = await getSegmenter();
-
-  const result = segmenter.segment(image);
-
-  const masks = result.confidenceMasks ?? [];
+  const bitmap = await createImageBitmap(image);
+  const id = ++segmentationRequestId;
 
   try {
-    if (masks.length < CLASS_COUNT) {
-      throw new Error("The segmentation model returned an unexpected result.");
+    const response = await requestWorker(
+      { type: "segment", id, bitmap },
+      [bitmap],
+    );
+
+    if (response.type === "error") {
+      throw new Error(response.message);
     }
 
-    const width = masks[0].width;
-    const height = masks[0].height;
+    if (response.type !== "result") {
+      throw new Error("Image segmentation worker returned an invalid result.");
+    }
 
     return {
-      width,
-      height,
-      // slice() copies the data: the original buffer dies on close().
-      classes: masks.map((mask) => mask.getAsFloat32Array().slice()),
+      width: response.width,
+      height: response.height,
+      classes: response.classes.map((buffer) => new Float32Array(buffer)),
     };
-  } finally {
-    masks.forEach((mask) => mask.close());
+  } catch (error) {
+    try {
+      bitmap.close();
+    } catch {
+      // A transferred ImageBitmap is already detached from the main thread.
+    }
+
+    throw error;
   }
 }
 

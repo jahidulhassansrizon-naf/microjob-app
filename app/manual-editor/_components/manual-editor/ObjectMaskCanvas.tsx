@@ -8,6 +8,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useManualEditor } from "./EditorProvider";
+import { releaseCanvas } from "./canvasUtils";
 
 type Point = {
   x: number;
@@ -203,7 +204,15 @@ export default function ObjectMaskCanvas() {
 
   const rebuildMaskBuffer = useCallback(async () => {
     const host = hostRef.current;
-    if (!host || !activePhoto || !objectMaskDataUrl) return;
+
+    if (!host || !activePhoto || !objectMaskDataUrl) {
+      renderVersionRef.current += 1;
+      const previous = bufferRef.current;
+      bufferRef.current = null;
+      if (previous) releaseCanvas(previous);
+      renderOverlay();
+      return;
+    }
 
     const currentVersion = ++renderVersionRef.current;
     const cssWidth = Math.max(1, Math.round(host.clientWidth));
@@ -225,11 +234,17 @@ export default function ObjectMaskCanvas() {
     buffer.height = Math.max(1, Math.round(rect.height * dpr));
 
     const ctx = buffer.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+    if (!ctx) {
+      releaseCanvas(buffer);
+      return;
+    }
 
     try {
       const maskImage = await waitForImage(objectMaskDataUrl);
-      if (currentVersion !== renderVersionRef.current) return;
+      if (currentVersion !== renderVersionRef.current) {
+        releaseCanvas(buffer);
+        return;
+      }
 
       ctx.clearRect(0, 0, buffer.width, buffer.height);
       ctx.drawImage(maskImage, 0, 0, buffer.width, buffer.height);
@@ -239,12 +254,20 @@ export default function ObjectMaskCanvas() {
       normalizeMaskToAlpha(imageData.data, normalized.data);
       ctx.putImageData(normalized, 0, 0);
 
+      const previous = bufferRef.current;
       bufferRef.current = buffer;
+      if (previous && previous !== buffer) releaseCanvas(previous);
+
       lastImagePointRef.current = null;
       renderOverlay();
     } catch {
+      releaseCanvas(buffer);
+
       if (currentVersion !== renderVersionRef.current) return;
+
+      const previous = bufferRef.current;
       bufferRef.current = null;
+      if (previous) releaseCanvas(previous);
       renderOverlay();
     }
   }, [activePhoto, objectMaskDataUrl, renderOverlay]);
@@ -286,6 +309,12 @@ export default function ObjectMaskCanvas() {
       if (feedbackFadeTimerRef.current !== null) {
         window.clearTimeout(feedbackFadeTimerRef.current);
       }
+
+      renderVersionRef.current += 1;
+
+      const buffer = bufferRef.current;
+      bufferRef.current = null;
+      if (buffer) releaseCanvas(buffer);
     };
   }, []);
 

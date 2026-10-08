@@ -306,6 +306,7 @@ export default function PhotoWorkspace() {
     uploadError,
     isDragging,
     activeBackground,
+    backgroundRemoved,
     currentPreset,
     photoMode,
     zoom,
@@ -959,16 +960,25 @@ export default function PhotoWorkspace() {
                           draggable={false}
                         />
 
-                        <img
-                          src={activePhoto!.url}
-                          alt="Edited photo"
-                          className="absolute inset-0 block h-full w-full object-contain"
+                        <div
+                          className="absolute inset-0 overflow-hidden"
                           style={{
                             clipPath: `inset(0 ${100 - comparePosition}% 0 0)`,
-                            filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                            backgroundColor: backgroundRemoved
+                              ? activeBackground
+                              : "transparent",
                           }}
-                          draggable={false}
-                        />
+                        >
+                          <img
+                            src={activePhoto!.url}
+                            alt="Edited photo"
+                            className="absolute inset-0 block h-full w-full object-contain"
+                            style={{
+                              filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                            }}
+                            draggable={false}
+                          />
+                        </div>
 
                         <div
                           className="pointer-events-none absolute inset-y-0 w-[2px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.18),0_0_18px_rgba(34,211,238,0.65)]"
