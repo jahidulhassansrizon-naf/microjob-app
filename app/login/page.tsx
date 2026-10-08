@@ -1,150 +1,99 @@
 // app/login/page.tsx
 "use client";
-
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  MessageCircle,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
-
+import { Mail, Lock, Eye, EyeOff, MessageCircle, ArrowLeft, Loader2, } from "lucide-react";
+import { useI18n, T } from "@/components/i18n/I18nProvider";
 function LoginContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // URL parameters detection
-  const callbackUrl =
-    searchParams.get("callbackUrl") || searchParams.get("redirect") || "";
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [lang, setLang] = useState<"EN" | "BN">("EN");
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [formData, setFormData] = useState({
-    identifier: "",
-    password: "",
-    rememberMe: true,
-  });
-
-  // গুগল ট্রান্সলেটের কুকি পরিবর্তন করে ভাষা বদলানোর ফাংশন
-  const changeGoogleLanguage = (targetLang: "EN" | "BN") => {
-    setLang(targetLang);
-    const googleLangCode = targetLang === "BN" ? "/en/bn" : "/en/en";
-    document.cookie = `googtrans=${googleLangCode}; path=/; domain=${window.location.hostname}`;
-    document.cookie = `googtrans=${googleLangCode}; path=/`;
-    window.location.reload();
-  };
-
-  // পেজ লোড হওয়ার সময় বর্তমান ভাষা কুকি থেকে চেক করা
-  useEffect(() => {
-    const match = document.cookie.match(/(^|;) ?googtrans=([^;]*)(;|$)/);
-    if (match) {
-      if (match[2].includes("bn")) {
-        setLang("BN");
-      } else {
-        setLang("EN");
-      }
-    }
-  }, []);
-
-  const handleBack = () => {
-    router.replace("/");
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phoneNumber: formData.identifier,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid credentials!");
-      }
-
-      if (data.token) localStorage.setItem("token", data.token);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
-
-      const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
-      const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
-      document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
-
-      // Keep the existing Dashboard + Login Successful overlay flow.
-      // The dashboard receives a one-time query flag so the overlay is already
-      // present on its very first render, preventing a visible dashboard flash.
-      const targetUrl = callbackUrl
-        ? decodeURIComponent(callbackUrl)
-        : "/dashboard";
-
-      const safeTargetUrl =
-        targetUrl.startsWith("/") && !targetUrl.startsWith("//")
-          ? targetUrl
-          : "/dashboard";
-
-      if (
-        safeTargetUrl === "/dashboard" ||
-        safeTargetUrl.startsWith("/dashboard?") ||
-        safeTargetUrl.startsWith("/dashboard/")
-      ) {
-        const separator = safeTargetUrl.includes("?") ? "&" : "?";
-        window.location.replace(
-          `${safeTargetUrl}${separator}loginSuccess=1`,
-        );
-      } else {
-        // Preserve the previous success route for non-dashboard callback URLs.
-        window.location.replace(
-          `/login-success?next=${encodeURIComponent(safeTargetUrl)}`,
-        );
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("An unexpected error occurred.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-slate-50 font-sans overflow-x-hidden relative">
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    // URL parameters detection
+    const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "";
+    const [showPassword, setShowPassword] = useState(false);
+    const { locale, setLocale } = useI18n();
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [formData, setFormData] = useState({
+        identifier: "",
+        password: "",
+        rememberMe: true,
+    });
+    const changeLanguage = (targetLang: "EN" | "BN") => {
+        setLocale(targetLang === "BN" ? "bn" : "en");
+    };
+    const handleBack = () => {
+        router.replace("/");
+    };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMessage("");
+        setLoading(true);
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    phoneNumber: formData.identifier,
+                    password: formData.password,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || "Invalid credentials!");
+            }
+            if (data.token)
+                localStorage.setItem("token", data.token);
+            if (data.user)
+                localStorage.setItem("user", JSON.stringify(data.user));
+            const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
+            const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
+            // Keep the existing Dashboard + Login Successful overlay flow.
+            // The dashboard receives a one-time query flag so the overlay is already
+            // present on its very first render, preventing a visible dashboard flash.
+            const targetUrl = callbackUrl
+                ? decodeURIComponent(callbackUrl)
+                : "/dashboard";
+            const safeTargetUrl = targetUrl.startsWith("/") && !targetUrl.startsWith("//")
+                ? targetUrl
+                : "/dashboard";
+            if (safeTargetUrl === "/dashboard" ||
+                safeTargetUrl.startsWith("/dashboard?") ||
+                safeTargetUrl.startsWith("/dashboard/")) {
+                const separator = safeTargetUrl.includes("?") ? "&" : "?";
+                window.location.replace(`${safeTargetUrl}${separator}loginSuccess=1`);
+            }
+            else {
+                // Preserve the previous success route for non-dashboard callback URLs.
+                window.location.replace(`/login-success?next=${encodeURIComponent(safeTargetUrl)}`);
+            }
+        }
+        catch (error: unknown) {
+            if (error instanceof Error) {
+                setErrorMessage(error.message);
+            }
+            else {
+                setErrorMessage("An unexpected error occurred.");
+            }
+        }
+        finally {
+            setLoading(false);
+        }
+    };
+    return (<div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-slate-50 font-sans overflow-x-hidden relative">
       {/* Left Visual Banner */}
       <div className="lg:w-1/2 bg-slate-900 py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
         <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
-          <img
-            src="https://app.sohozkaj.com/images/authImage.svg"
-            alt="SohozKaj Workflow Illustration"
-            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-100 lg:scale-105"
-          />
+          <img src="https://app.sohozkaj.com/images/authImage.svg" alt="SohozKaj Workflow Illustration" className="w-full h-full object-contain z-10 drop-shadow-2xl scale-100 lg:scale-105"/>
         </div>
 
         <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
           <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block">
-              Create documents, designs, and print media with photo editing, AI
-              photo editing, manual editing, and bulk editing -
-            </span>
-            <span className="block mt-1">easy to use.</span>
+            <span className="block"><T>{"Create documents, designs, and print media with photo editing, AI\n              photo editing, manual editing, and bulk editing -\n            "}</T></span>
+            <span className="block mt-1"><T>{"easy to use."}</T></span>
           </p>
         </div>
       </div>
@@ -153,38 +102,18 @@ function LoginContent() {
       <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
         {/* Navigation & Language Selector */}
         <div className="flex justify-between items-center w-full">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={16} />
-            <span>Back</span>
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer">
+            <ArrowLeft size={16}/>
+            <span><T>{"Back"}</T></span>
           </button>
 
           <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-md text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => changeGoogleLanguage("EN")}
-              className={`px-3 py-1 rounded transition-all cursor-pointer ${
-                lang === "EN"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => changeGoogleLanguage("BN")}
-              className={`px-3 py-1 rounded transition-all cursor-pointer ${
-                lang === "BN"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              বাং
-            </button>
+            <button type="button" onClick={() => changeLanguage("EN")} className={`px-3 py-1 rounded transition-all cursor-pointer ${locale === "en"
+            ? "bg-blue-600 text-white shadow-xs"
+            : "text-slate-600 hover:text-slate-900"}`}><T>{"EN\n            "}</T></button>
+            <button type="button" onClick={() => changeLanguage("BN")} className={`px-3 py-1 rounded transition-all cursor-pointer ${locale === "bn"
+            ? "bg-blue-600 text-white shadow-xs"
+            : "text-slate-600 hover:text-slate-900"}`}><T>{"\u09AC\u09BE\u0982\n            "}</T></button>
           </div>
         </div>
 
@@ -192,164 +121,88 @@ function LoginContent() {
         <div className="w-full max-w-md mx-auto my-auto py-6">
           <div className="flex flex-col items-center mb-6">
             <Link href="/" className="flex items-center gap-2 mb-1.5 group">
-              <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                SK
-              </div>
+              <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform"><T>{"SK\n              "}</T></div>
               <div className="flex flex-col leading-none">
-                <span className="text-2xl font-black tracking-tight text-slate-900">
-                  Sohoz<span className="text-blue-600">kaj</span>
+                <span className="text-2xl font-black tracking-tight text-slate-900"><T>{"Sohoz"}</T><span className="text-blue-600"><T>{"kaj"}</T></span>
                 </span>
-                <span className="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5">
-                  WWW.SOHOZKAJ.COM
-                </span>
+                <span className="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5"><T>{"WWW.SOHOZKAJ.COM\n                "}</T></span>
               </div>
             </Link>
-            <p className="text-xs text-slate-500 font-medium">
-              Login to your account
-            </p>
+            <p className="text-xs text-slate-500 font-medium"><T>{"Login to your account\n            "}</T></p>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/80 p-5 sm:p-8">
-            {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
+            {errorMessage && (<div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
                 {errorMessage}
-              </div>
-            )}
+              </div>)}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">
-                  Phone or Email <span className="text-red-500">*</span>
+                <label className="text-xs font-semibold text-slate-700"><T>{"Phone or Email "}</T><span className="text-red-500"><T>{"*"}</T></span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-slate-400">
-                    <Mail size={16} />
+                    <Mail size={16}/>
                   </div>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="username"
-                    placeholder="Enter phone or email"
-                    value={formData.identifier}
-                    onChange={(e) =>
-                      setFormData({ ...formData, identifier: e.target.value })
-                    }
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
-                  />
+                  <input type="text" required autoComplete="username" placeholder="Enter phone or email" value={formData.identifier} onChange={(e) => setFormData({ ...formData, identifier: e.target.value })} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"/>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">
-                  Password <span className="text-red-500">*</span>
+                <label className="text-xs font-semibold text-slate-700"><T>{"Password "}</T><span className="text-red-500"><T>{"*"}</T></span>
                 </label>
                 <div className="relative flex items-center">
                   <div className="absolute left-3.5 text-slate-400">
-                    <Lock size={16} />
+                    <Lock size={16}/>
                   </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <input type={showPassword ? "text" : "password"} required autoComplete="current-password" placeholder="Enter your password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"/>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer" aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs pt-1">
                 <label className="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
-                  <input
-                    type="checkbox"
-                    checked={formData.rememberMe}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        rememberMe: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                  />
-                  <span>Remember me</span>
+                  <input type="checkbox" checked={formData.rememberMe} onChange={(e) => setFormData({
+            ...formData,
+            rememberMe: e.target.checked,
+        })} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"/>
+                  <span><T>{"Remember me"}</T></span>
                 </label>
 
-                <Link
-                  href="/forgot-password"
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  Forgot password?
-                </Link>
+                <Link href="/forgot-password" className="text-blue-600 hover:underline font-semibold"><T>{"Forgot password?\n                "}</T></Link>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span>Sign in</span>
-                )}
+              <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2">
+                {loading ? (<>
+                    <Loader2 size={16} className="animate-spin"/>
+                    <span><T>{"Signing in..."}</T></span>
+                  </>) : (<span><T>{"Sign in"}</T></span>)}
               </button>
             </form>
           </div>
 
           <div className="text-center mt-6">
-            <p className="text-xs text-slate-600">
-              Don't have an account?{" "}
-              <Link
-                href={
-                  callbackUrl
-                    ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
-                    : "/register"
-                }
-                className="text-blue-600 font-bold hover:underline ml-0.5"
-              >
-                Sign up
-              </Link>
+            <p className="text-xs text-slate-600"><T>{"Don't have an account?"}</T>{<T>{" "}</T>}
+              <Link href={callbackUrl
+            ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
+            : "/register"} className="text-blue-600 font-bold hover:underline ml-0.5"><T>{"Sign up\n              "}</T></Link>
             </p>
           </div>
         </div>
 
         {/* WhatsApp Support Button */}
         <div className="fixed bottom-5 right-5 z-50">
-          <a
-            href="https://wa.me/8801700559595"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all"
-            title="Chat with Support"
-          >
-            <MessageCircle size={26} className="fill-current" />
+          <a href="https://wa.me/8801700559595" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all" title="Chat with Support">
+            <MessageCircle size={26} className="fill-current"/>
           </a>
         </div>
       </div>
-    </div>
-  );
+    </div>);
 }
-
 export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+    return (<Suspense fallback={<div className="min-h-screen bg-slate-50"/>}>
       <LoginContent />
-    </Suspense>
-  );
+    </Suspense>);
 }

@@ -1,172 +1,141 @@
 "use client";
-
+import { T } from "@/components/i18n/I18nProvider";
 import { useState } from "react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import FaqSection from "@/components/FaqSection";
-import {
-  Search,
-  FileText,
-  Image as ImageIcon,
-  Type,
-  Video,
-  LayoutGrid,
-} from "lucide-react";
-
+import { Search, FileText, Image as ImageIcon, Type, Video, LayoutGrid, } from "lucide-react";
 // টুলসের নাম অনুযায়ী ডাইনামিক রিডাইরেক্ট লিংক তৈরি করার ফাংশন
 const getLoginRedirectUrl = (toolTitle?: string) => {
-  const targetPath = toolTitle
-    ? `/sohoj-tools?search=${encodeURIComponent(toolTitle)}`
-    : "/sohoj-tools";
-  return `/login?redirect=${encodeURIComponent(targetPath)}`;
+    const targetPath = toolTitle
+        ? `/sohoj-tools?search=${encodeURIComponent(toolTitle)}`
+        : "/sohoj-tools";
+    return `/login?redirect=${encodeURIComponent(targetPath)}`;
 };
-
 const categoriesData = [
-  {
-    name: "PDF Tools",
-    description: "Merge, split, compress, and secure your PDF files",
-    icon: FileText,
-    tools: [
-      { title: "Compress PDF", subtitle: "Compress PDF" },
-      { title: "Merge PDFs", subtitle: "Merge PDFs" },
-      { title: "Create PDF", subtitle: "Create PDF" },
-      { title: "Split PDF", subtitle: "Split PDF" },
-      { title: "PDF to Image", subtitle: "PDF to Image" },
-      { title: "Lock / Unlock PDF", subtitle: "Lock / Unlock PDF" },
-      { title: "Rotate PDF", subtitle: "Rotate PDF" },
-      { title: "Remove Pages", subtitle: "Remove Pages" },
-      { title: "PDF Watermark", subtitle: "PDF Watermark" },
-      { title: "Extract Images", subtitle: "Extract Images" },
-      { title: "PDF Permissions", subtitle: "PDF Permissions" },
-      { title: "Reduce PDF", subtitle: "Reduce PDF" },
-    ],
-  },
-  {
-    name: "Image Tools",
-    description: "Compress, convert, and edit your images",
-    icon: ImageIcon,
-    tools: [
-      { title: "Image Size Reducer", subtitle: "Image Size Reducer" },
-      { title: "NID to PDF", subtitle: "NID to PDF" },
-      { title: "Remove Background", subtitle: "Remove Background" },
-      {
-        title: "Govt Job Photo & Sign",
-        subtitle: "Govt Job Photo & Sign Resizer",
-      },
-      { title: "Passport to PDF", subtitle: "Passport to PDF" },
-      { title: "Image Convert", subtitle: "Image Convert" },
-      { title: "QR Code Generator", subtitle: "QR Code Generator" },
-      { title: "Image Resize", subtitle: "Image Resize" },
-      { title: "Crop Image", subtitle: "Crop Image" },
-      { title: "Images to PDF", subtitle: "Images to PDF" },
-      { title: "Add Watermark", subtitle: "Add Watermark" },
-      { title: "Flatten Image", subtitle: "Flatten Image" },
-    ],
-  },
-  {
-    name: "Text Tools",
-    description: "Convert, analyze, and extract your text",
-    icon: Type,
-    tools: [
-      { title: "Bijoy - Unicode", subtitle: "Bijoy ⇄ Unicode" },
-      { title: "Banglish Typing", subtitle: "Banglish Typing" },
-      { title: "Number to Words", subtitle: "Number to Words" },
-      { title: "Image to Text", subtitle: "Image to Text" },
-      { title: "Text Analyzer", subtitle: "Text Analyzer" },
-      {
-        title: "Date Format Converter",
-        subtitle: "Date Format Converter",
-      },
-    ],
-  },
-  {
-    name: "Video Tools",
-    description: "Compress, convert, and edit your videos",
-    icon: Video,
-    tools: [
-      { title: "Compress Video", subtitle: "Compress Video" },
-      { title: "Trim/Cut Video", subtitle: "Trim/Cut Video" },
-      { title: "Merge Videos", subtitle: "Merge Videos" },
-      { title: "Video to Audio", subtitle: "Video to Audio" },
-      { title: "Add Watermark", subtitle: "Add Watermark" },
-      {
-        title: "Audio Volume Booster",
-        subtitle: "Audio Volume Booster/Reducer",
-      },
-      { title: "Change Speed", subtitle: "Change Speed" },
-      { title: "Video to GIF", subtitle: "Video to GIF" },
-      { title: "Rotate / Flip", subtitle: "Rotate / Flip" },
-      { title: "Remove Audio", subtitle: "Remove Audio" },
-    ],
-  },
-  {
-    name: "General Tools",
-    description: "Everyday forms and utilities for Bangladesh",
-    icon: LayoutGrid,
-    tools: [
-      { title: "Family Card Form", subtitle: "Family Card Form" },
-      { title: "Fuel Card Form", subtitle: "Fuel Card Form" },
-      {
-        title: "ATS Friendly CV Maker",
-        subtitle: "ATS Friendly CV Maker",
-      },
-      { title: "Age Calculator", subtitle: "Age Calculator" },
-      { title: "EMI Calculator", subtitle: "EMI Calculator" },
-    ],
-  },
+    {
+        name: "PDF Tools",
+        description: "Merge, split, compress, and secure your PDF files",
+        icon: FileText,
+        tools: [
+            { title: "Compress PDF", subtitle: "Compress PDF" },
+            { title: "Merge PDFs", subtitle: "Merge PDFs" },
+            { title: "Create PDF", subtitle: "Create PDF" },
+            { title: "Split PDF", subtitle: "Split PDF" },
+            { title: "PDF to Image", subtitle: "PDF to Image" },
+            { title: "Lock / Unlock PDF", subtitle: "Lock / Unlock PDF" },
+            { title: "Rotate PDF", subtitle: "Rotate PDF" },
+            { title: "Remove Pages", subtitle: "Remove Pages" },
+            { title: "PDF Watermark", subtitle: "PDF Watermark" },
+            { title: "Extract Images", subtitle: "Extract Images" },
+            { title: "PDF Permissions", subtitle: "PDF Permissions" },
+            { title: "Reduce PDF", subtitle: "Reduce PDF" },
+        ],
+    },
+    {
+        name: "Image Tools",
+        description: "Compress, convert, and edit your images",
+        icon: ImageIcon,
+        tools: [
+            { title: "Image Size Reducer", subtitle: "Image Size Reducer" },
+            { title: "NID to PDF", subtitle: "NID to PDF" },
+            { title: "Remove Background", subtitle: "Remove Background" },
+            {
+                title: "Govt Job Photo & Sign",
+                subtitle: "Govt Job Photo & Sign Resizer",
+            },
+            { title: "Passport to PDF", subtitle: "Passport to PDF" },
+            { title: "Image Convert", subtitle: "Image Convert" },
+            { title: "QR Code Generator", subtitle: "QR Code Generator" },
+            { title: "Image Resize", subtitle: "Image Resize" },
+            { title: "Crop Image", subtitle: "Crop Image" },
+            { title: "Images to PDF", subtitle: "Images to PDF" },
+            { title: "Add Watermark", subtitle: "Add Watermark" },
+            { title: "Flatten Image", subtitle: "Flatten Image" },
+        ],
+    },
+    {
+        name: "Text Tools",
+        description: "Convert, analyze, and extract your text",
+        icon: Type,
+        tools: [
+            { title: "Bijoy - Unicode", subtitle: "Bijoy ⇄ Unicode" },
+            { title: "Banglish Typing", subtitle: "Banglish Typing" },
+            { title: "Number to Words", subtitle: "Number to Words" },
+            { title: "Image to Text", subtitle: "Image to Text" },
+            { title: "Text Analyzer", subtitle: "Text Analyzer" },
+            {
+                title: "Date Format Converter",
+                subtitle: "Date Format Converter",
+            },
+        ],
+    },
+    {
+        name: "Video Tools",
+        description: "Compress, convert, and edit your videos",
+        icon: Video,
+        tools: [
+            { title: "Compress Video", subtitle: "Compress Video" },
+            { title: "Trim/Cut Video", subtitle: "Trim/Cut Video" },
+            { title: "Merge Videos", subtitle: "Merge Videos" },
+            { title: "Video to Audio", subtitle: "Video to Audio" },
+            { title: "Add Watermark", subtitle: "Add Watermark" },
+            {
+                title: "Audio Volume Booster",
+                subtitle: "Audio Volume Booster/Reducer",
+            },
+            { title: "Change Speed", subtitle: "Change Speed" },
+            { title: "Video to GIF", subtitle: "Video to GIF" },
+            { title: "Rotate / Flip", subtitle: "Rotate / Flip" },
+            { title: "Remove Audio", subtitle: "Remove Audio" },
+        ],
+    },
+    {
+        name: "General Tools",
+        description: "Everyday forms and utilities for Bangladesh",
+        icon: LayoutGrid,
+        tools: [
+            { title: "Family Card Form", subtitle: "Family Card Form" },
+            { title: "Fuel Card Form", subtitle: "Fuel Card Form" },
+            {
+                title: "ATS Friendly CV Maker",
+                subtitle: "ATS Friendly CV Maker",
+            },
+            { title: "Age Calculator", subtitle: "Age Calculator" },
+            { title: "EMI Calculator", subtitle: "EMI Calculator" },
+        ],
+    },
 ];
-
 export default function ToolsPage() {
-  const [activeTab, setActiveTab] = useState("All Tools");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // ফিল্টারিং লজিক
-  const filteredCategories = categoriesData
-    .map((cat) => ({
-      ...cat,
-      tools: cat.tools.filter(
-        (tool) =>
-          (activeTab === "All Tools" || cat.name === activeTab) &&
-          (tool.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tool.subtitle.toLowerCase().includes(searchQuery.toLowerCase())),
-      ),
+    const [activeTab, setActiveTab] = useState("All Tools");
+    const [searchQuery, setSearchQuery] = useState("");
+    // ফিল্টারিং লজিক
+    const filteredCategories = categoriesData
+        .map((cat) => ({
+        ...cat,
+        tools: cat.tools.filter((tool) => (activeTab === "All Tools" || cat.name === activeTab) &&
+            (tool.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                tool.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))),
     }))
-    .filter((cat) => cat.tools.length > 0);
-
-  return (
-    <div className="min-h-screen bg-slate-50/50 text-gray-950 flex flex-col">
+        .filter((cat) => cat.tools.length > 0);
+    return (<div className="min-h-screen bg-slate-50/50 text-gray-950 flex flex-col">
       {/* Hero / Header Section */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-10 w-full flex flex-col items-center text-center">
-        <div className="bg-blue-50 border border-blue-200/60 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4 sm:mb-6 shadow-2xs">
-          50+ Easy Tools
-        </div>
+        <div className="bg-blue-50 border border-blue-200/60 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4 sm:mb-6 shadow-2xs"><T>{"50+ Easy Tools\r\n        "}</T></div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 max-w-4xl leading-tight sm:leading-[1.15] mb-4 sm:mb-6">
-          All your conversion work,{" "}
-          <span className="text-blue-600">in one place—</span> simple & fast
-        </h1>
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 max-w-4xl leading-tight sm:leading-[1.15] mb-4 sm:mb-6"><T>{"All your conversion work,"}</T>{<T>{" "}</T>}
+          <span className="text-blue-600"><T>{"in one place\u2014"}</T></span><T>{"simple & fast\r\n        "}</T></h1>
 
-        <p className="text-xs sm:text-sm md:text-base text-gray-500 font-medium max-w-xl mb-8 sm:mb-10 leading-relaxed">
-          Easily convert and compress files right from your browser. Everything
-          is fast, secure, and your files never leave your device.
-        </p>
+        <p className="text-xs sm:text-sm md:text-base text-gray-500 font-medium max-w-xl mb-8 sm:mb-10 leading-relaxed"><T>{"Easily convert and compress files right from your browser. Everything\r\n          is fast, secure, and your files never leave your device.\r\n        "}</T></p>
 
         {/* Search Bar */}
         <div className="relative w-full max-w-xl mb-6 sm:mb-8">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
-            <Search size={18} />
+            <Search size={18}/>
           </div>
-          <input
-            type="text"
-            placeholder="Search tools... (e.g. compress, image, pdf, qr)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200/80 rounded-full pl-12 pr-16 sm:pr-20 py-3 sm:py-3.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:border-blue-600 transition"
-          />
+          <input type="text" placeholder="Search tools... (e.g. compress, image, pdf, qr)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white border border-gray-200/80 rounded-full pl-12 pr-16 sm:pr-20 py-3 sm:py-3.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:border-blue-600 transition"/>
           <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-            <span className="text-[10px] font-bold bg-gray-100 border border-gray-200 text-gray-500 px-1.5 sm:px-2 py-1 rounded-md">
-              Ctrl K
-            </span>
+            <span className="text-[10px] font-bold bg-gray-100 border border-gray-200 text-gray-500 px-1.5 sm:px-2 py-1 rounded-md"><T>{"Ctrl K\r\n            "}</T></span>
           </div>
         </div>
 
@@ -179,80 +148,58 @@ export default function ToolsPage() {
             "Text Tools",
             "Video Tools",
             "General Tools",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3.5 sm:px-5 py-2 rounded-xl sm:rounded-full text-xs font-bold transition cursor-pointer ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
+        ].map((tab) => (<button key={tab} onClick={() => setActiveTab(tab)} className={`px-3.5 sm:px-5 py-2 rounded-xl sm:rounded-full text-xs font-bold transition cursor-pointer ${activeTab === tab
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-gray-600 hover:bg-gray-100"}`}>
               {tab}
-            </button>
-          ))}
+            </button>))}
         </div>
       </div>
 
       {/* Main Categories & Tools Section */}
       <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 pb-16 sm:pb-24 w-full flex flex-col gap-10 sm:gap-12">
         {filteredCategories.map((category, catIdx) => {
-          const CategoryIcon = category.icon;
-          return (
-            <section key={catIdx} className="flex flex-col gap-4">
+            const CategoryIcon = category.icon;
+            return (<section key={catIdx} className="flex flex-col gap-4">
               {/* Category Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200/60 pb-3 gap-2 sm:gap-0">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <CategoryIcon size={18} />
+                    <CategoryIcon size={18}/>
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-black text-gray-900">
-                      {category.name}
+                      {<T>{category.name}</T>}
                     </h2>
                     <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
-                      {category.description}
+                      {<T>{category.description}</T>}
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={getLoginRedirectUrl()}
-                  className="text-xs font-bold text-gray-500 hover:text-blue-600 transition self-end sm:self-auto"
-                >
-                  See all tools &gt;
-                </Link>
+                <Link href={getLoginRedirectUrl()} className="text-xs font-bold text-gray-500 hover:text-blue-600 transition self-end sm:self-auto"><T>{"See all tools &gt;\r\n                "}</T></Link>
               </div>
 
               {/* Tools Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                {category.tools.map((tool, tIdx) => (
-                  <Link
-                    key={tIdx}
-                    href={getLoginRedirectUrl(tool.title)}
-                    className="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-blue-200 transition flex items-start gap-3.5 group"
-                  >
+                {category.tools.map((tool, tIdx) => (<Link key={tIdx} href={getLoginRedirectUrl(tool.title)} className="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-blue-200 transition flex items-start gap-3.5 group">
                     <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
-                      <FileText size={16} />
+                      <FileText size={16}/>
                     </div>
                     <div className="flex flex-col overflow-hidden">
                       <h3 className="text-xs font-bold text-gray-900 group-hover:text-blue-600 transition truncate">
-                        {tool.title}
+                        {<T>{tool.title}</T>}
                       </h3>
                       <p className="text-[11px] text-gray-400 font-medium truncate">
-                        {tool.subtitle}
+                        {<T>{tool.subtitle}</T>}
                       </p>
                     </div>
-                  </Link>
-                ))}
+                  </Link>))}
               </div>
-            </section>
-          );
+            </section>);
         })}
       </main>
 
       <FaqSection />
       <Footer />
-    </div>
-  );
+    </div>);
 }

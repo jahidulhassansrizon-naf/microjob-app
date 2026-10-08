@@ -1,316 +1,145 @@
 "use client";
-
-import {
-  FileText,
-  Image as ImageIcon,
-  Minus,
-  Plus,
-  Settings2,
-  Shuffle,
-  X,
-} from "lucide-react";
+import { T } from "@/components/i18n/I18nProvider";
+import { FileText, Image as ImageIcon, Minus, Plus, Settings2, Shuffle, X, } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
-
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: () => void;
+function Toggle({ checked, onChange, }: {
+    checked: boolean;
+    onChange: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={checked}
-      onClick={onChange}
-      className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${checked ? "bg-[#2563EB]" : "bg-[#E2E8F0]"}`}
-    >
-      <span
-        className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-4" : "translate-x-0"}`}
-      />
-    </button>
-  );
+    return (<button type="button" aria-pressed={checked} onClick={onChange} className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition ${checked ? "bg-[#2563EB]" : "bg-[#E2E8F0]"}`}>
+      <span className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-4" : "translate-x-0"}`}/>
+    </button>);
 }
-
-export default function PaperToolbar({
-  manager,
-  demoMode,
-  loadDemo,
-}: {
-  manager: QuestionManager;
-  demoMode: boolean;
-  loadDemo: () => void;
+export default function PaperToolbar({ manager, demoMode, loadDemo, }: {
+    manager: QuestionManager;
+    demoMode: boolean;
+    loadDemo: () => void;
 }) {
-  const {
-    logoInputRef,
-    handleLogoChange,
-    logoUrl,
-    removeLogo,
-    fontScale,
-    setFontScale,
-    handlePageSizeChange,
-    pageSize,
-    setNoEnabled,
-    toggleSetNoEnabled,
-    setNo,
-    setSetNo,
-    shuffleSelected,
-    layoutRef,
-    layoutOpen,
-    setLayoutOpen,
-    layoutColumns,
-    setLayoutColumns,
-    compactSpacing,
-    setCompactSpacing,
-    selectAnswerEnabled,
-    setSelectAnswerEnabled,
-    headerNoteEnabled,
-    setHeaderNoteEnabled,
-    headerNote,
-    setHeaderNote,
-    footerText,
-    setFooterText,
-  } = manager;
-
-  return (
-    <div className="screen-only rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm xl:p-4">
+    const { logoInputRef, handleLogoChange, logoUrl, removeLogo, fontScale, setFontScale, handlePageSizeChange, pageSize, setNoEnabled, toggleSetNoEnabled, setNo, setSetNo, shuffleSelected, layoutRef, layoutOpen, setLayoutOpen, layoutColumns, setLayoutColumns, compactSpacing, setCompactSpacing, selectAnswerEnabled, setSelectAnswerEnabled, headerNoteEnabled, setHeaderNoteEnabled, headerNote, setHeaderNote, footerText, setFooterText, } = manager;
+    return (<div className="screen-only rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm xl:p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[85px_110px_minmax(270px,1fr)_115px_140px] xl:items-start">
         <div>
-          <span className="field-label">LOGO</span>
+          <span className="field-label"><T>{"LOGO"}</T></span>
 
-          <input
-            ref={logoInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleLogoChange}
-          />
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange}/>
 
-          <button
-            type="button"
-            onClick={() => logoInputRef.current?.click()}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#E2E8F0] bg-white px-2 text-[10px] font-semibold text-[#0F172A]/70 hover:border-[#0F172A]/25"
-          >
-            <ImageIcon size={11} />
+          <button type="button" onClick={() => logoInputRef.current?.click()} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#E2E8F0] bg-white px-2 text-[10px] font-semibold text-[#0F172A]/70 hover:border-[#0F172A]/25">
+            <ImageIcon size={11}/>
 
-            {logoUrl ? "Change" : "Add logo"}
+            {logoUrl ? <T>{"Change"}</T> : <T>{"Add logo"}</T>}
           </button>
 
-          {logoUrl ? (
-            <button
-              type="button"
-              onClick={removeLogo}
-              className="mt-1 flex w-full items-center justify-center gap-1 text-[8px] font-semibold text-red-400"
-            >
-              <X size={9} />
-              remove
-            </button>
-          ) : null}
+          {logoUrl ? (<button type="button" onClick={removeLogo} className="mt-1 flex w-full items-center justify-center gap-1 text-[8px] font-semibold text-red-400">
+              <X size={9}/><T>{"remove\n            "}</T></button>) : null}
         </div>
 
         <div>
-          <span className="field-label">FONT</span>
+          <span className="field-label"><T>{"FONT"}</T></span>
 
           <div className="flex h-8 items-center justify-between rounded-lg border border-[#E2E8F0] bg-white px-2">
-            <button
-              type="button"
-              onClick={() => setFontScale((value) => Math.max(70, value - 5))}
-              className="text-[#0F172A]/55 hover:text-[#0F172A]"
-            >
-              <Minus size={11} />
+            <button type="button" onClick={() => setFontScale((value) => Math.max(70, value - 5))} className="text-[#0F172A]/55 hover:text-[#0F172A]">
+              <Minus size={11}/>
             </button>
 
             <span className="text-[10px] font-bold text-[#0F172A]">
-              {fontScale}%
-            </span>
+              {fontScale}<T>{"%\n            "}</T></span>
 
-            <button
-              type="button"
-              onClick={() => setFontScale((value) => Math.min(140, value + 5))}
-              className="text-[#0F172A]/55 hover:text-[#0F172A]"
-            >
-              <Plus size={11} />
+            <button type="button" onClick={() => setFontScale((value) => Math.min(140, value + 5))} className="text-[#0F172A]/55 hover:text-[#0F172A]">
+              <Plus size={11}/>
             </button>
           </div>
         </div>
 
         <div className="col-span-2 md:col-span-2 xl:col-span-1">
-          <span className="field-label">PAGE</span>
+          <span className="field-label"><T>{"PAGE"}</T></span>
 
           <div className="flex h-8 overflow-hidden rounded-lg border border-[#E2E8F0] bg-[#E2E8F0] p-0.5">
-            {(["A4", "A5", "Joint"] as const).map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => handlePageSizeChange(size)}
-                className={`flex-1 rounded-md px-2 text-[9px] font-bold transition ${
-                  pageSize === size
-                    ? "bg-[#2563EB] text-white shadow-sm"
-                    : "text-[#0F172A] hover:bg-white"
-                }`}
-              >
+            {(["A4", "A5", "Joint"] as const).map((size) => (<button key={size} type="button" onClick={() => handlePageSizeChange(size)} className={`flex-1 rounded-md px-2 text-[9px] font-bold transition ${pageSize === size
+                ? "bg-[#2563EB] text-white shadow-sm"
+                : "text-[#0F172A] hover:bg-white"}`}>
                 {size === "A5"
-                  ? "A5 (small)"
-                  : size === "Joint"
-                    ? "Joint (2-in-1)"
-                    : "A4"}
-              </button>
-            ))}
+            ? <T>{"A5 (small)"}</T> : size === "Joint"
+            ? "Joint (2-in-1)"
+            : "A4"}
+              </button>))}
           </div>
         </div>
 
         <div>
-          <span className="field-label">SET NO</span>
+          <span className="field-label"><T>{"SET NO"}</T></span>
 
           <div className="flex h-8 items-center gap-2">
-            <Toggle
-              checked={setNoEnabled}
-              onChange={toggleSetNoEnabled}
-            />
+            <Toggle checked={setNoEnabled} onChange={toggleSetNoEnabled}/>
 
-            {setNoEnabled ? (
-              <input
-                value={setNo}
-                onChange={(event) => setSetNo(event.target.value)}
-                placeholder="e.g. A"
-                className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-semibold outline-none focus:border-[#2563EB]"
-              />
-            ) : (
-              <span className="text-[9px] font-semibold text-[#0F172A]/55">
-                Off
-              </span>
-            )}
+            {setNoEnabled ? (<input value={setNo} onChange={(event) => setSetNo(event.target.value)} placeholder="e.g. A" className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-semibold outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
 
-            {setNoEnabled ? (
-              <button
-                type="button"
-                onClick={shuffleSelected}
-                title="Shuffle selected questions"
-                className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
-              >
-                <Shuffle size={10} />
-                Shuffle
-              </button>
-            ) : null}
+            {setNoEnabled ? (<button type="button" onClick={shuffleSelected} title="Shuffle selected questions" className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]">
+                <Shuffle size={10}/><T>{"Shuffle\n              "}</T></button>) : null}
           </div>
         </div>
 
         <div className="relative" ref={layoutRef}>
-          <span className="field-label">LAYOUT</span>
+          <span className="field-label"><T>{"LAYOUT"}</T></span>
 
-          <button
-            type="button"
-            onClick={() => setLayoutOpen((value) => !value)}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
-          >
-            <Settings2 size={10} className="text-[#0F172A]/55" />
-            Options
-          </button>
+          <button type="button" onClick={() => setLayoutOpen((value) => !value)} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]">
+            <Settings2 size={10} className="text-[#0F172A]/55"/><T>{"Options\n          "}</T></button>
 
-          {layoutOpen ? (
-            <div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/55">
-                Columns
-              </p>
+          {layoutOpen ? (<div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-[0_16px_35px_rgba(17,24,39,0.12)]">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/55"><T>{"Columns\n              "}</T></p>
 
               <div className="mt-2 grid grid-cols-2 gap-2">
-                {[1, 2].map((columns) => (
-                  <button
-                    key={columns}
-                    type="button"
-                    onClick={() => setLayoutColumns(columns as 1 | 2)}
-                    className={`rounded-lg border px-2 py-2 text-[9px] font-bold ${
-                      layoutColumns === columns
-                        ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
-                        : "border-[#E2E8F0] text-[#0F172A]/70"
-                    }`}
-                  >
-                    {columns} column
-                    {columns > 1 ? "s" : ""}
-                  </button>
-                ))}
+                {[1, 2].map((columns) => (<button key={columns} type="button" onClick={() => setLayoutColumns(columns as 1 | 2)} className={`rounded-lg border px-2 py-2 text-[9px] font-bold ${layoutColumns === columns
+                    ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
+                    : "border-[#E2E8F0] text-[#0F172A]/70"}`}>
+                    {columns}<T>{"column\n                    "}</T>{columns > 1 ? <T>{"s"}</T> : <T>{""}</T>}
+                  </button>))}
               </div>
 
-              <label className="mt-3 flex items-center justify-between gap-2 text-[9px] font-semibold text-[#0F172A]/70">
-                Compact spacing
-                <Toggle
-                  checked={compactSpacing}
-                  onChange={() => setCompactSpacing((value) => !value)}
-                />
+              <label className="mt-3 flex items-center justify-between gap-2 text-[9px] font-semibold text-[#0F172A]/70"><T>{"Compact spacing\n                "}</T><Toggle checked={compactSpacing} onChange={() => setCompactSpacing((value) => !value)}/>
               </label>
-            </div>
-          ) : null}
+            </div>) : null}
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#E2E8F0] pt-3 md:grid-cols-4 xl:grid-cols-[1fr_1fr_1fr_2fr]">
         <div>
-          <span className="field-label">SELECT ANSWER</span>
+          <span className="field-label"><T>{"SELECT ANSWER"}</T></span>
 
           <div className="flex h-8 items-center gap-2">
-            <Toggle
-              checked={selectAnswerEnabled}
-              onChange={() => setSelectAnswerEnabled((value) => !value)}
-            />
+            <Toggle checked={selectAnswerEnabled} onChange={() => setSelectAnswerEnabled((value) => !value)}/>
 
             <span className="text-[9px] font-semibold text-[#0F172A]/55">
-              {selectAnswerEnabled ? "On" : "Off"}
+              {selectAnswerEnabled ? <T>{"On"}</T> : <T>{"Off"}</T>}
             </span>
           </div>
         </div>
 
         <div>
-          <span className="field-label">HEADER NOTE</span>
+          <span className="field-label"><T>{"HEADER NOTE"}</T></span>
 
           <div className="flex min-h-8 items-center gap-2">
-            <Toggle
-              checked={headerNoteEnabled}
-              onChange={() => setHeaderNoteEnabled((value) => !value)}
-            />
+            <Toggle checked={headerNoteEnabled} onChange={() => setHeaderNoteEnabled((value) => !value)}/>
 
-            {headerNoteEnabled ? (
-              <input
-                value={headerNote}
-                onChange={(event) => setHeaderNote(event.target.value)}
-                placeholder="Enter a note"
-                className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] outline-none focus:border-[#2563EB]"
-              />
-            ) : (
-              <span className="text-[9px] font-semibold text-[#0F172A]/55">
-                Off
-              </span>
-            )}
+            {headerNoteEnabled ? (<input value={headerNote} onChange={(event) => setHeaderNote(event.target.value)} placeholder="Enter a note" className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
           </div>
         </div>
 
         <div>
-          <span className="field-label">FOOTER</span>
+          <span className="field-label"><T>{"FOOTER"}</T></span>
 
-          <input
-            value={footerText}
-            onChange={(event) => setFooterText(event.target.value)}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2.5 text-[9px] font-semibold text-[#0F172A] outline-none focus:border-[#2563EB]"
-          />
+          <input value={footerText} onChange={(event) => setFooterText(event.target.value)} className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2.5 text-[9px] font-semibold text-[#0F172A] outline-none focus:border-[#2563EB]"/>
         </div>
 
         <div>
-          <span className="field-label">DEMO</span>
+          <span className="field-label"><T>{"DEMO"}</T></span>
 
-          <button
-            type="button"
-            onClick={loadDemo}
-            className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-[9px] font-extrabold transition ${
-              demoMode
-                ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
-                : "border-[#2563EB]/40 bg-white text-[#2563EB] hover:border-[#2563EB] hover:bg-[#E2E8F0]/60"
-            }`}
-            title="Load a complete demo question paper for UI testing"
-          >
-            <FileText size={10} />
-            {demoMode ? "Demo Loaded" : "Load Demo"}
+          <button type="button" onClick={loadDemo} className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-[9px] font-extrabold transition ${demoMode
+            ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
+            : "border-[#2563EB]/40 bg-white text-[#2563EB] hover:border-[#2563EB] hover:bg-[#E2E8F0]/60"}`} title="Load a complete demo question paper for UI testing">
+            <FileText size={10}/>
+            {demoMode ? <T>{"Demo Loaded"}</T> : <T>{"Load Demo"}</T>}
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>);
 }

@@ -1,245 +1,183 @@
 "use client";
-
+import { T } from "@/components/i18n/I18nProvider";
 import { useMemo, useState } from "react";
 import Footer from "@/components/Footer";
-
 type TeamItem = {
-  id: number;
-  name: string;
-  role: string;
-  category:
-    | "Leadership"
-    | "Development"
-    | "Customer Team"
-    | "Support"
-    | "Group photos";
-  wide?: boolean;
+    id: number;
+    name: string;
+    role: string;
+    category: "Leadership" | "Development" | "Customer Team" | "Support" | "Group photos";
+    wide?: boolean;
 };
-
 const filters = [
-  "All",
-  "Leadership",
-  "Development",
-  "Customer Team",
-  "Support",
-  "Group photos",
+    "All",
+    "Leadership",
+    "Development",
+    "Customer Team",
+    "Support",
+    "Group photos",
 ] as const;
-
 type Filter = (typeof filters)[number];
-
 const team: TeamItem[] = [
-  {
-    id: 1,
-    name: "Name will be updated soon...",
-    role: "Group photos",
-    category: "Group photos",
-    wide: true,
-  },
-  {
-    id: 2,
-    name: "Name will be updated soon...",
-    role: "Founder and CEO",
-    category: "Leadership",
-  },
-  {
-    id: 3,
-    name: "Name will be updated soon...",
-    role: "CTO",
-    category: "Leadership",
-  },
-  {
-    id: 4,
-    name: "Name will be updated soon...",
-    role: "Lead Developer",
-    category: "Development",
-  },
-  {
-    id: 5,
-    name: "Name will be updated soon...",
-    role: "Developer",
-    category: "Development",
-  },
-  {
-    id: 6,
-    name: "Name will be updated soon...",
-    role: "Development",
-    category: "Development",
-    wide: true,
-  },
-  {
-    id: 7,
-    name: "Name will be updated soon...",
-    role: "Group photos",
-    category: "Group photos",
-    wide: true,
-  },
-  {
-    id: 8,
-    name: "Name will be updated soon...",
-    role: "Developer",
-    category: "Development",
-  },
-  {
-    id: 9,
-    name: "Name will be updated soon...",
-    role: "Customer Support",
-    category: "Customer Team",
-  },
-  {
-    id: 10,
-    name: "Name will be updated soon...",
-    role: "Developer",
-    category: "Development",
-  },
-  {
-    id: 11,
-    name: "Name will be updated soon...",
-    role: "Customer Support",
-    category: "Customer Team",
-  },
-  {
-    id: 12,
-    name: "Name will be updated soon...",
-    role: "Video editing",
-    category: "Support",
-  },
-  {
-    id: 13,
-    name: "Name will be updated soon...",
-    role: "Customer Support",
-    category: "Customer Team",
-  },
-  {
-    id: 14,
-    name: "Name will be updated soon...",
-    role: "Group photos",
-    category: "Group photos",
-    wide: true,
-  },
-  {
-    id: 15,
-    name: "Name will be updated soon...",
-    role: "Content",
-    category: "Support",
-  },
-  {
-    id: 16,
-    name: "Name will be updated soon...",
-    role: "Customer Team",
-    category: "Customer Team",
-  },
-  {
-    id: 17,
-    name: "Name will be updated soon...",
-    role: "Customer Team",
-    category: "Customer Team",
-  },
-  {
-    id: 18,
-    name: "Name will be updated soon...",
-    role: "Marketing",
-    category: "Support",
-  },
-  {
-    id: 19,
-    name: "Name will be updated soon...",
-    role: "Group photos",
-    category: "Group photos",
-    wide: true,
-  },
-  {
-    id: 20,
-    name: "Name will be updated soon...",
-    role: "Group photos",
-    category: "Group photos",
-  },
+    {
+        id: 1,
+        name: "Name will be updated soon...",
+        role: "Group photos",
+        category: "Group photos",
+        wide: true,
+    },
+    {
+        id: 2,
+        name: "Name will be updated soon...",
+        role: "Founder and CEO",
+        category: "Leadership",
+    },
+    {
+        id: 3,
+        name: "Name will be updated soon...",
+        role: "CTO",
+        category: "Leadership",
+    },
+    {
+        id: 4,
+        name: "Name will be updated soon...",
+        role: "Lead Developer",
+        category: "Development",
+    },
+    {
+        id: 5,
+        name: "Name will be updated soon...",
+        role: "Developer",
+        category: "Development",
+    },
+    {
+        id: 6,
+        name: "Name will be updated soon...",
+        role: "Development",
+        category: "Development",
+        wide: true,
+    },
+    {
+        id: 7,
+        name: "Name will be updated soon...",
+        role: "Group photos",
+        category: "Group photos",
+        wide: true,
+    },
+    {
+        id: 8,
+        name: "Name will be updated soon...",
+        role: "Developer",
+        category: "Development",
+    },
+    {
+        id: 9,
+        name: "Name will be updated soon...",
+        role: "Customer Support",
+        category: "Customer Team",
+    },
+    {
+        id: 10,
+        name: "Name will be updated soon...",
+        role: "Developer",
+        category: "Development",
+    },
+    {
+        id: 11,
+        name: "Name will be updated soon...",
+        role: "Customer Support",
+        category: "Customer Team",
+    },
+    {
+        id: 12,
+        name: "Name will be updated soon...",
+        role: "Video editing",
+        category: "Support",
+    },
+    {
+        id: 13,
+        name: "Name will be updated soon...",
+        role: "Customer Support",
+        category: "Customer Team",
+    },
+    {
+        id: 14,
+        name: "Name will be updated soon...",
+        role: "Group photos",
+        category: "Group photos",
+        wide: true,
+    },
+    {
+        id: 15,
+        name: "Name will be updated soon...",
+        role: "Content",
+        category: "Support",
+    },
+    {
+        id: 16,
+        name: "Name will be updated soon...",
+        role: "Customer Team",
+        category: "Customer Team",
+    },
+    {
+        id: 17,
+        name: "Name will be updated soon...",
+        role: "Customer Team",
+        category: "Customer Team",
+    },
+    {
+        id: 18,
+        name: "Name will be updated soon...",
+        role: "Marketing",
+        category: "Support",
+    },
+    {
+        id: 19,
+        name: "Name will be updated soon...",
+        role: "Group photos",
+        category: "Group photos",
+        wide: true,
+    },
+    {
+        id: 20,
+        name: "Name will be updated soon...",
+        role: "Group photos",
+        category: "Group photos",
+    },
 ];
-
 function ArrowIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M8 16 16 8M10 8h6v6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+    return (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M8 16 16 8M10 8h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>);
 }
-
 function HomeIcon() {
-  return (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+    return (<svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+    </svg>);
 }
-
 function PhotoBadge() {
-  return (
-    <span className="photo-badge" aria-hidden="true">
+    return (<span className="photo-badge" aria-hidden="true">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M8 7h8l1.3 2H20a1 1 0 0 1 1 1v9H3v-9a1 1 0 0 1 1-1h2.7L8 7Z"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-        />
-        <circle cx="12" cy="14" r="3" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 7h8l1.3 2H20a1 1 0 0 1 1 1v9H3v-9a1 1 0 0 1 1-1h2.7L8 7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+        <circle cx="12" cy="14" r="3" stroke="currentColor" strokeWidth="1.8"/>
       </svg>
-    </span>
-  );
+    </span>);
 }
-
 function PhotoPlaceholderIcon() {
-  return (
-    <svg
-      width="28"
-      height="28"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-      <circle cx="9" cy="9" r="2" />
-      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-    </svg>
-  );
+    return (<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+      <circle cx="9" cy="9" r="2"/>
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </svg>);
 }
-
 export default function OurTeamPage() {
-  const [activeFilter, setActiveFilter] = useState<Filter>("All");
-
-  const visibleTeam = useMemo(() => {
-    if (activeFilter === "All") return team;
-    return team.filter((member) => member.category === activeFilter);
-  }, [activeFilter]);
-
-  return (
-    <>
+    const [activeFilter, setActiveFilter] = useState<Filter>("All");
+    const visibleTeam = useMemo(() => {
+        if (activeFilter === "All")
+            return team;
+        return team.filter((member) => member.category === activeFilter);
+    }, [activeFilter]);
+    return (<>
       <main className="team-page">
         <section className="team-shell">
           <header className="page-header">
@@ -248,14 +186,14 @@ export default function OurTeamPage() {
                 <span className="crumb-home">
                   <HomeIcon />
                 </span>
-                <span>Bay City</span>
-                <span className="crumb-separator">›</span>
-                <strong>Our Team</strong>
+                <span><T>{"Bay City"}</T></span>
+                <span className="crumb-separator"><T>{"\u203A"}</T></span>
+                <strong><T>{"Our Team"}</T></strong>
               </div>
 
               <a className="back-link" href="/">
                 <ArrowIcon />
-                <span>Return to homepage</span>
+                <span><T>{"Return to homepage"}</T></span>
               </a>
             </div>
 
@@ -265,46 +203,31 @@ export default function OurTeamPage() {
                   <span />
                 </div>
                 <div>
-                  <h1>Our Team</h1>
-                  <p>
-                    The people behind every pixel — product &amp; passion and
-                    team moments.
-                  </p>
+                  <h1><T>{"Our Team"}</T></h1>
+                  <p><T>{"The people behind every pixel \u2014 product &amp; passion and\r\n                    team moments.\r\n                  "}</T></p>
                 </div>
               </div>
 
               <span className="picture-count">
-                <span className="count-dot" /> {team.length} members
-              </span>
+                <span className="count-dot"/> {team.length}<T>{"members\r\n              "}</T></span>
             </div>
           </header>
 
           <div className="filter-bar">
             <div className="filter-row">
-              {filters.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  className={`filter-pill ${activeFilter === filter ? "active" : ""}`}
-                  onClick={() => setActiveFilter(filter)}
-                >
+              {filters.map((filter) => (<button key={filter} type="button" className={`filter-pill ${activeFilter === filter ? "active" : ""}`} onClick={() => setActiveFilter(filter)}>
                   {filter}
-                </button>
-              ))}
+                </button>))}
             </div>
-            <span className="result-count">{visibleTeam.length} members</span>
+            <span className="result-count">{visibleTeam.length}<T>{"members"}</T></span>
           </div>
 
           <section className="gallery" aria-label="Our team members">
-            {visibleTeam.map((member) => (
-              <article
-                key={member.id}
-                className={`team-card ${member.wide ? "wide" : ""}`}
-              >
+            {visibleTeam.map((member) => (<article key={member.id} className={`team-card ${member.wide ? "wide" : ""}`}>
                 <div className="photo-wrap">
                   <div className="photo-placeholder">
                     <PhotoPlaceholderIcon />
-                    <span>Photo will be added soon...</span>
+                    <span><T>{"Photo will be added soon..."}</T></span>
                   </div>
                   <PhotoBadge />
                 </div>
@@ -314,12 +237,11 @@ export default function OurTeamPage() {
                     {member.name}
                   </h2>
                   <p>
-                    <span className="role-bullet" />
+                    <span className="role-bullet"/>
                     {member.role}
                   </p>
                 </div>
-              </article>
-            ))}
+              </article>))}
           </section>
         </section>
 
@@ -720,6 +642,5 @@ export default function OurTeamPage() {
         `}</style>
       </main>
       <Footer />
-    </>
-  );
+    </>);
 }

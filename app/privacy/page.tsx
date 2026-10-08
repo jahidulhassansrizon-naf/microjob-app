@@ -1,36 +1,15 @@
 "use client";
-
+import { T } from "@/components/i18n/I18nProvider";
 import Footer from "@/components/Footer";
-
 function WhatsAppIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="whatsapp-icon">
-      <circle
-        cx="12"
-        cy="12"
-        r="8.7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-      <path
-        d="M8.4 18.6 7.4 21l2.4-1.1A8.7 8.7 0 1 0 8.4 18.6Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.1 9.2c.15-.34.32-.35.6-.35h.45c.2 0 .34.1.42.32l.62 1.45c.08.2.04.38-.08.54l-.4.5c-.11.13-.12.25-.04.4.33.6 1.2 1.54 2.36 1.98.19.08.3.05.41-.07l.55-.67c.13-.16.3-.2.49-.1l1.39.65c.2.1.27.23.24.45-.05.39-.33 1.04-.91 1.34-.48.25-1.24.22-2.1-.13-.73-.3-1.61-.88-2.54-1.75-.77-.73-1.56-1.77-1.91-2.48-.32-.64-.38-1.2-.18-1.64Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
+    return (<svg viewBox="0 0 24 24" aria-hidden="true" className="whatsapp-icon">
+      <circle cx="12" cy="12" r="8.7" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+      <path d="M8.4 18.6 7.4 21l2.4-1.1A8.7 8.7 0 1 0 8.4 18.6Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M9.1 9.2c.15-.34.32-.35.6-.35h.45c.2 0 .34.1.42.32l.62 1.45c.08.2.04.38-.08.54l-.4.5c-.11.13-.12.25-.04.4.33.6 1.2 1.54 2.36 1.98.19.08.3.05.41-.07l.55-.67c.13-.16.3-.2.49-.1l1.39.65c.2.1.27.23.24.45-.05.39-.33 1.04-.91 1.34-.48.25-1.24.22-2.1-.13-.73-.3-1.61-.88-2.54-1.75-.77-.73-1.56-1.77-1.91-2.48-.32-.64-.38-1.2-.18-1.64Z" fill="currentColor"/>
+    </svg>);
 }
-
 export default function PrivacyPolicyPage() {
-  return (
-    <main className="privacy-page">
+    return (<main className="privacy-page">
       <style>{`
         .privacy-page {
           min-height: 100vh;
@@ -284,282 +263,191 @@ export default function PrivacyPolicyPage() {
 
       <div className="privacy-shell">
         <article className="privacy-paper">
-          <h1 className="privacy-title">Privacy Policy</h1>
+          <h1 className="privacy-title"><T>{"Privacy Policy"}</T></h1>
 
           <div className="privacy-intro">
-            <p>
-              Easy Work (&quot;we&quot;, &quot;us&quot;, &quot;website&quot;) is
-              committed to ensuring the privacy of your personal information.
-              This Privacy Policy explains how we collect, use and protect your
-              information.
-            </p>
-            <p>By using our website, you agree to this policy.</p>
+            <p><T>{"Easy Work (&quot;we&quot;, &quot;us&quot;, &quot;website&quot;) is\r\n              committed to ensuring the privacy of your personal information.\r\n              This Privacy Policy explains how we collect, use and protect your\r\n              information.\r\n            "}</T></p>
+            <p><T>{"By using our website, you agree to this policy."}</T></p>
           </div>
 
           <section className="privacy-section">
-            <h2>1. What information do we collect?</h2>
+            <h2><T>{"1. What information do we collect?"}</T></h2>
 
             <div className="privacy-subsection">
-              <h3>1.1 Information you provide directly</h3>
+              <h3><T>{"1.1 Information you provide directly"}</T></h3>
               <ul className="privacy-list">
-                <li>Name</li>
-                <li>Email address</li>
-                <li>Phone number (if applicable)</li>
-                <li>Account registration information</li>
-                <li>
-                  Payment information (but we never store card numbers or CVVs)
-                </li>
+                <li><T>{"Name"}</T></li>
+                <li><T>{"Email address"}</T></li>
+                <li><T>{"Phone number (if applicable)"}</T></li>
+                <li><T>{"Account registration information"}</T></li>
+                <li><T>{"Payment information (but we never store card numbers or CVVs)\r\n                "}</T></li>
               </ul>
             </div>
 
             <div className="privacy-subsection">
-              <h3>1.2 Automatically collected information</h3>
+              <h3><T>{"1.2 Automatically collected information"}</T></h3>
               <ul className="privacy-list">
-                <li>Browser type</li>
-                <li>Device information</li>
-                <li>IP address</li>
-                <li>Website usage analytics</li>
-                <li>Page views, number of downloads, click patterns, etc.</li>
+                <li><T>{"Browser type"}</T></li>
+                <li><T>{"Device information"}</T></li>
+                <li><T>{"IP address"}</T></li>
+                <li><T>{"Website usage analytics"}</T></li>
+                <li><T>{"Page views, number of downloads, click patterns, etc."}</T></li>
               </ul>
             </div>
 
             <div className="privacy-subsection">
-              <h3>1.3 Cookies</h3>
-              <p>
-                We use cookies to improve user experience. They are governed by
-                our Cookie Policy.
-              </p>
+              <h3><T>{"1.3 Cookies"}</T></h3>
+              <p><T>{"We use cookies to improve user experience. They are governed by\r\n                our Cookie Policy.\r\n              "}</T></p>
             </div>
           </section>
 
           <section className="privacy-section">
-            <h2>2. How do we use this information?</h2>
-            <p>Your information is used:</p>
+            <h2><T>{"2. How do we use this information?"}</T></h2>
+            <p><T>{"Your information is used:"}</T></p>
             <ul className="privacy-list">
-              <li>To create and manage your account</li>
-              <li>
-                For purchasing credit packages and providing AI services
-                (images, documents, prints, templates and tools)
-              </li>
-              <li>To send order confirmation or receipt by email</li>
-              <li>To notify about new templates, updates or offers</li>
-              <li>For website development and analysis</li>
-              <li>To prevent fraud and ensure security</li>
-              <li>To provide support as requested.</li>
+              <li><T>{"To create and manage your account"}</T></li>
+              <li><T>{"For purchasing credit packages and providing AI services\r\n                (images, documents, prints, templates and tools)\r\n              "}</T></li>
+              <li><T>{"To send order confirmation or receipt by email"}</T></li>
+              <li><T>{"To notify about new templates, updates or offers"}</T></li>
+              <li><T>{"For website development and analysis"}</T></li>
+              <li><T>{"To prevent fraud and ensure security"}</T></li>
+              <li><T>{"To provide support as requested."}</T></li>
             </ul>
-            <p style={{ marginTop: 12 }}>
-              We never unnecessarily collect or misuse your personal
-              information.
-            </p>
+            <p style={{ marginTop: 12 }}><T>{"We never unnecessarily collect or misuse your personal\r\n              information.\r\n            "}</T></p>
           </section>
 
           <section className="privacy-section">
-            <h2>3. Is your information shared with anyone else?</h2>
-            <p>
-              Easy Work does not sell or rent your personal information.
-              However, information may be shared in the following circumstances:
-            </p>
+            <h2><T>{"3. Is your information shared with anyone else?"}</T></h2>
+            <p><T>{"Easy Work does not sell or rent your personal information.\r\n              However, information may be shared in the following circumstances:\r\n            "}</T></p>
 
             <div className="privacy-subsection">
-              <h3>3.1 Trusted third parties (Third-party services)</h3>
+              <h3><T>{"3.1 Trusted third parties (Third-party services)"}</T></h3>
               <ul className="privacy-list">
-                <li>Payment gateway (e.g. SSLCommerz, Stripe)</li>
-                <li>Analytics tools (e.g. Google Analytics)</li>
-                <li>Email service (e.g. MailerLite / SendGrid)</li>
+                <li><T>{"Payment gateway (e.g. SSLCommerz, Stripe)"}</T></li>
+                <li><T>{"Analytics tools (e.g. Google Analytics)"}</T></li>
+                <li><T>{"Email service (e.g. MailerLite / SendGrid)"}</T></li>
               </ul>
-              <p style={{ marginTop: 7 }}>
-                They only see the information necessary to provide the service.
-              </p>
+              <p style={{ marginTop: 7 }}><T>{"They only see the information necessary to provide the service.\r\n              "}</T></p>
             </div>
 
             <div className="privacy-subsection">
-              <h3>3.2 As required by law</h3>
-              <p>
-                Information may need to be provided upon legal request from
-                government agencies or courts.
-              </p>
+              <h3><T>{"3.2 As required by law"}</T></h3>
+              <p><T>{"Information may need to be provided upon legal request from\r\n                government agencies or courts.\r\n              "}</T></p>
             </div>
           </section>
 
           <section className="privacy-section">
-            <h2>4. How do we protect your information?</h2>
-            <p>We take the following measures to protect information:</p>
+            <h2><T>{"4. How do we protect your information?"}</T></h2>
+            <p><T>{"We take the following measures to protect information:"}</T></p>
             <ul className="privacy-list">
-              <li>SSL encryption</li>
-              <li>Secure server</li>
-              <li>Regular security updates</li>
-              <li>Limited access control</li>
-              <li>Firewall preventing unauthorized access</li>
+              <li><T>{"SSL encryption"}</T></li>
+              <li><T>{"Secure server"}</T></li>
+              <li><T>{"Regular security updates"}</T></li>
+              <li><T>{"Limited access control"}</T></li>
+              <li><T>{"Firewall preventing unauthorized access"}</T></li>
             </ul>
 
-            <p style={{ marginTop: 19 }}>
-              Additionally, as much of the work as possible, such as background
-              removal, image compression, HEIC conversion, and PDF/Excel
-              creation, is done in your browser—so files aren&apos;t always sent
-              to the server. We take the necessary security measures to keep
-              user input and content safe, and use secure one-time connections
-              to fetch images from mobile. Access to each account is limited
-              based on user role.
-            </p>
+            <p style={{ marginTop: 19 }}><T>{"Additionally, as much of the work as possible, such as background\r\n              removal, image compression, HEIC conversion, and PDF/Excel\r\n              creation, is done in your browser\u2014so files aren&apos;t always sent\r\n              to the server. We take the necessary security measures to keep\r\n              user input and content safe, and use secure one-time connections\r\n              to fetch images from mobile. Access to each account is limited\r\n              based on user role.\r\n            "}</T></p>
 
-            <p>
-              However, it is not possible to ensure 100% security of the
-              Internet, and this risk is accepted by any Internet user.
-            </p>
+            <p><T>{"However, it is not possible to ensure 100% security of the\r\n              Internet, and this risk is accepted by any Internet user.\r\n            "}</T></p>
           </section>
 
           <section className="privacy-section">
-            <h2>5. Children&apos;s privacy</h2>
-            <p>
-              Easy Work does not collect information from anyone under the age
-              of 18. If any information is collected in error, we will promptly
-              delete it.
-            </p>
+            <h2><T>{"5. Children&apos;s privacy"}</T></h2>
+            <p><T>{"Easy Work does not collect information from anyone under the age\r\n              of 18. If any information is collected in error, we will promptly\r\n              delete it.\r\n            "}</T></p>
           </section>
 
           <section className="privacy-section">
-            <h2>6. User rights</h2>
-            <p>You can at any time:</p>
+            <h2><T>{"6. User rights"}</T></h2>
+            <p><T>{"You can at any time:"}</T></p>
             <ul className="privacy-list">
-              <li>To view your personal information</li>
-              <li>To correct</li>
-              <li>To request deletion</li>
-              <li>To unsubscribe from marketing emails</li>
-              <li>To disable cookies</li>
+              <li><T>{"To view your personal information"}</T></li>
+              <li><T>{"To correct"}</T></li>
+              <li><T>{"To request deletion"}</T></li>
+              <li><T>{"To unsubscribe from marketing emails"}</T></li>
+              <li><T>{"To disable cookies"}</T></li>
             </ul>
-            <p style={{ marginTop: 7 }}>You can.</p>
+            <p style={{ marginTop: 7 }}><T>{"You can."}</T></p>
           </section>
 
           <section className="privacy-section">
-            <h2>7. Data Retention</h2>
+            <h2><T>{"7. Data Retention"}</T></h2>
             <ul className="privacy-list">
-              <li>
-                Personal information is stored as long as the account exists.
-              </li>
-              <li>
-                Information that must be kept for legal reasons is kept for a
-                specific period of time.
-              </li>
-              <li>Unnecessary information is automatically deleted.</li>
+              <li><T>{"Personal information is stored as long as the account exists.\r\n              "}</T></li>
+              <li><T>{"Information that must be kept for legal reasons is kept for a\r\n                specific period of time.\r\n              "}</T></li>
+              <li><T>{"Unnecessary information is automatically deleted."}</T></li>
             </ul>
           </section>
 
           <section className="privacy-section">
-            <h2>8. Policy change</h2>
-            <p>
-              We may update the Privacy Policy at any time. Your continued use
-              of the Website after the change will be deemed to indicate your
-              agreement to the new policy.
-            </p>
+            <h2><T>{"8. Policy change"}</T></h2>
+            <p><T>{"We may update the Privacy Policy at any time. Your continued use\r\n              of the Website after the change will be deemed to indicate your\r\n              agreement to the new policy.\r\n            "}</T></p>
           </section>
 
           <section className="privacy-section">
-            <h2>9. Easy Task Autofill Browser Extension</h2>
-            <p>
-              SohozKaj Autofill is our browser extension that helps you fill
-              government and private job forms with a single tap. Once the
-              browser is connected to your SohozKaj account, you can autofill
-              job forms on any site.
-            </p>
+            <h2><T>{"9. Easy Task Autofill Browser Extension"}</T></h2>
+            <p><T>{"SohozKaj Autofill is our browser extension that helps you fill\r\n              government and private job forms with a single tap. Once the\r\n              browser is connected to your SohozKaj account, you can autofill\r\n              job forms on any site.\r\n            "}</T></p>
 
             <div className="privacy-subsection">
-              <h3>9.1 How it works</h3>
+              <h3><T>{"9.1 How it works"}</T></h3>
               <ul className="privacy-list">
-                <li>Login to your Sahajkaj account in the browser.</li>
-                <li>
-                  Return to the extension and press &quot;Connect this
-                  device&quot;
-                </li>
-                <li>Fill out the form with your mobile number.</li>
+                <li><T>{"Login to your Sahajkaj account in the browser."}</T></li>
+                <li><T>{"Return to the extension and press &quot;Connect this\r\n                  device&quot;\r\n                "}</T></li>
+                <li><T>{"Fill out the form with your mobile number."}</T></li>
               </ul>
             </div>
 
             <div className="privacy-subsection">
-              <h3>9.2 Data collection</h3>
-              <p>
-                This extension does not collect any of your personal
-                information. The information used to fill out the form comes
-                from your Sahajkaj account and is used within your browser.
-                Specifically, the extension does not collect any of the
-                following types of data:
-              </p>
+              <h3><T>{"9.2 Data collection"}</T></h3>
+              <p><T>{"This extension does not collect any of your personal\r\n                information. The information used to fill out the form comes\r\n                from your Sahajkaj account and is used within your browser.\r\n                Specifically, the extension does not collect any of the\r\n                following types of data:\r\n              "}</T></p>
               <ul className="privacy-list">
-                <li>
-                  Personally identifiable information (name, address, email, age
-                  or identification number)
-                </li>
-                <li>Health information</li>
-                <li>Financial and payment information</li>
-                <li>Authentication information (password, PIN, etc.)</li>
-                <li>Personal communication (email, text or chat)</li>
-                <li>Location information</li>
-                <li>Web History</li>
-                <li>
-                  User activity (clicks, mouse movements, keystrokes, etc.)
-                </li>
-                <li>Website content</li>
+                <li><T>{"Personally identifiable information (name, address, email, age\r\n                  or identification number)\r\n                "}</T></li>
+                <li><T>{"Health information"}</T></li>
+                <li><T>{"Financial and payment information"}</T></li>
+                <li><T>{"Authentication information (password, PIN, etc.)"}</T></li>
+                <li><T>{"Personal communication (email, text or chat)"}</T></li>
+                <li><T>{"Location information"}</T></li>
+                <li><T>{"Web History"}</T></li>
+                <li><T>{"User activity (clicks, mouse movements, keystrokes, etc.)\r\n                "}</T></li>
+                <li><T>{"Website content"}</T></li>
               </ul>
             </div>
 
             <div className="privacy-subsection">
-              <h3>9.3 Our Commitment</h3>
+              <h3><T>{"9.3 Our Commitment"}</T></h3>
               <ul className="privacy-list">
-                <li>
-                  We do not sell or transfer user data to third parties except
-                  for approved use cases.
-                </li>
-                <li>
-                  We do not use or transfer user data for any purpose unrelated
-                  to the extension&apos;s sole purpose.
-                </li>
-                <li>
-                  We do not use or transfer user data for the purpose of
-                  determining creditworthiness or granting loans.
-                </li>
+                <li><T>{"We do not sell or transfer user data to third parties except\r\n                  for approved use cases.\r\n                "}</T></li>
+                <li><T>{"We do not use or transfer user data for any purpose unrelated\r\n                  to the extension&apos;s sole purpose.\r\n                "}</T></li>
+                <li><T>{"We do not use or transfer user data for the purpose of\r\n                  determining creditworthiness or granting loans.\r\n                "}</T></li>
               </ul>
             </div>
           </section>
 
           <section className="privacy-section" style={{ marginBottom: 25 }}>
-            <h2>10. Contact us.</h2>
-            <p>For any privacy questions or complaints, please contact:</p>
+            <h2><T>{"10. Contact us."}</T></h2>
+            <p><T>{"For any privacy questions or complaints, please contact:"}</T></p>
             <p>
-              <strong>Email:</strong>{" "}
-              <a href="mailto:hello@sohozkaj.com">hello@sohozkaj.com</a>
+              <strong><T>{"Email:"}</T></strong>{<T>{" "}</T>}
+              <a href="mailto:hello@sohozkaj.com"><T>{"hello@sohozkaj.com"}</T></a>
               <br />
-              <strong>Phone:</strong> +88 01700-559595
-              <br />
-              <strong>Website:</strong>{" "}
-              <a
-                href="https://www.sohozkaj.com"
-                target="_blank"
-                rel="noreferrer"
-              >
-                www.sohozkaj.com
-              </a>
+              <strong><T>{"Phone:"}</T></strong><T>{"+88 01700-559595\r\n              "}</T><br />
+              <strong><T>{"Website:"}</T></strong>{<T>{" "}</T>}
+              <a href="https://www.sohozkaj.com" target="_blank" rel="noreferrer"><T>{"www.sohozkaj.com\r\n              "}</T></a>
             </p>
           </section>
 
-          <div className="privacy-divider" />
+          <div className="privacy-divider"/>
 
           <div className="privacy-closing">
-            <p>
-              By using Simple Tasks, you will be deemed to have accepted all the
-              terms of this Privacy Policy.
-            </p>
+            <p><T>{"By using Simple Tasks, you will be deemed to have accepted all the\r\n              terms of this Privacy Policy.\r\n            "}</T></p>
           </div>
         </article>
       </div>
 
       <Footer />
 
-      <a
-        className="whatsapp"
-        href="https://wa.me/8801700559595"
-        aria-label="WhatsApp"
-      >
+      <a className="whatsapp" href="https://wa.me/8801700559595" aria-label="WhatsApp">
         <WhatsAppIcon />
       </a>
-    </main>
-  );
+    </main>);
 }

@@ -1,39 +1,27 @@
 "use client";
-
+import { T } from "@/components/i18n/I18nProvider";
 import Footer from "@/components/Footer";
-
-function CopyrightSection({
-  number,
-  title,
-  children,
-}: {
-  number: string;
-  title: string;
-  children: React.ReactNode;
+function CopyrightSection({ number, title, children, }: {
+    number: string;
+    title: string;
+    children: React.ReactNode;
 }) {
-  return (
-    <section className="copyright-section">
+    return (<section className="copyright-section">
       <h2>
-        {number}. {title}
+        {number}<T>{". "}</T>{title}
       </h2>
       {children}
-    </section>
-  );
+    </section>);
 }
-
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul className="copyright-list">
-      {items.map((item, index) => (
-        <li key={index}>{item}</li>
-      ))}
-    </ul>
-  );
+function BulletList({ items }: {
+    items: string[];
+}) {
+    return (<ul className="copyright-list">
+      {items.map((item, index) => (<li key={index}>{item}</li>))}
+    </ul>);
 }
-
 export default function CopyrightPolicyPage() {
-  return (
-    <>
+    return (<>
       <main className="copyright-page">
         <style>{`
           .copyright-page {
@@ -253,141 +241,106 @@ export default function CopyrightPolicyPage() {
 
         <div className="copyright-shell">
           <article className="copyright-paper">
-            <h1 className="copyright-title">Copyright Policy</h1>
+            <h1 className="copyright-title"><T>{"Copyright Policy"}</T></h1>
 
             <div className="copyright-intro">
-              <p>
-                Shohada Kaj (&quot;we&quot;, &quot;us&quot;,
-                &quot;website&quot;) values the protection of copyright and
-                digital copyrights. Our goal is to ensure the protection of
-                digital products and templates and comply with copyright laws.
-              </p>
-              <p>
-                In accordance with this policy, we follow the DMCA (Digital
-                Millennium Copyright Act) and international copyright law.
-              </p>
+              <p><T>{"Shohada Kaj (&quot;we&quot;, &quot;us&quot;,\r\n                &quot;website&quot;) values the protection of copyright and\r\n                digital copyrights. Our goal is to ensure the protection of\r\n                digital products and templates and comply with copyright laws.\r\n              "}</T></p>
+              <p><T>{"In accordance with this policy, we follow the DMCA (Digital\r\n                Millennium Copyright Act) and international copyright law.\r\n              "}</T></p>
             </div>
 
             <CopyrightSection number="1" title="Copyright ownership">
-              <BulletList
-                items={[
-                  "All digital templates, images, graphics, files, and content contained on Shohada Kaj are the copyrighted property of Shohada Kaj.",
-                  "The layout, design, logos, fonts, and other elements of free or paid templates are also copyright protected.",
-                  "Users may use it for personal or official purposes only; resale, distribution, or sharing with others is prohibited.",
-                  "The images, documents, or files you create using Shohada Kaj's AI tools are for your own use; however, the copyright of the platform's own templates, designs, icons, and other elements remains with Shohada Kaj.",
-                ]}
-              />
+              <BulletList items={[
+            "All digital templates, images, graphics, files, and content contained on Shohada Kaj are the copyrighted property of Shohada Kaj.",
+            "The layout, design, logos, fonts, and other elements of free or paid templates are also copyright protected.",
+            "Users may use it for personal or official purposes only; resale, distribution, or sharing with others is prohibited.",
+            "The images, documents, or files you create using Shohada Kaj's AI tools are for your own use; however, the copyright of the platform's own templates, designs, icons, and other elements remains with Shohada Kaj.",
+        ]}/>
             </CopyrightSection>
 
             <CopyrightSection number="2" title="DMCA Notices and Reports">
-              <p>
-                If you believe that your copyrighted work has been used without
-                permission on Easy Work, you can send us a DMCA notice.
-              </p>
+              <p><T>{"If you believe that your copyrighted work has been used without\r\n                permission on Easy Work, you can send us a DMCA notice.\r\n              "}</T></p>
 
               <div className="copyright-subsection">
-                <h3>2.1 Required Items in a DMCA Notice</h3>
-                <BulletList
-                  items={[
-                    "Description of copyrighted work",
-                    "Link to the page or file where the copyright infringement occurred.",
-                    "Your name, email, and phone number",
-                    "Written statement that you believe the use is illegal",
-                    "Signature (digital or handwritten)",
-                  ]}
-                />
+                <h3><T>{"2.1 Required Items in a DMCA Notice"}</T></h3>
+                <BulletList items={[
+            "Description of copyrighted work",
+            "Link to the page or file where the copyright infringement occurred.",
+            "Your name, email, and phone number",
+            "Written statement that you believe the use is illegal",
+            "Signature (digital or handwritten)",
+        ]}/>
               </div>
 
               <div className="copyright-subsection">
-                <h3>2.2 Contact address</h3>
+                <h3><T>{"2.2 Contact address"}</T></h3>
                 <div className="contact-lines">
                   <div>
-                    <strong>Email:</strong>{" "}
-                    <a href="mailto:hello@sohozkaj.com">hello@sohozkaj.com</a>
+                    <strong><T>{"Email:"}</T></strong>{<T>{" "}</T>}
+                    <a href="mailto:hello@sohozkaj.com"><T>{"hello@sohozkaj.com"}</T></a>
                   </div>
                   <div>
-                    <strong>Phone:</strong>{" "}
-                    <a href="tel:+8801700559595">01700559595</a>
+                    <strong><T>{"Phone:"}</T></strong>{<T>{" "}</T>}
+                    <a href="tel:+8801700559595"><T>{"01700559595"}</T></a>
                   </div>
                 </div>
               </div>
             </CopyrightSection>
 
             <CopyrightSection number="3" title="Our steps">
-              <BulletList
-                items={[
-                  "Every notice will be verified.",
-                  "If copyright infringement is confirmed, the link/file will be removed or blocked.",
-                  "Repeat violators may have their accounts permanently terminated.",
-                  "Legal action will be taken if necessary.",
-                ]}
-              />
+              <BulletList items={[
+            "Every notice will be verified.",
+            "If copyright infringement is confirmed, the link/file will be removed or blocked.",
+            "Repeat violators may have their accounts permanently terminated.",
+            "Legal action will be taken if necessary.",
+        ]}/>
             </CopyrightSection>
 
             <CopyrightSection number="4" title="Safety and precautions">
-              <BulletList
-                items={[
-                  "Violating the copyright of others may result in legal liability for the user.",
-                  "When you use a template, make sure it is for personal or official use only.",
-                ]}
-              />
+              <BulletList items={[
+            "Violating the copyright of others may result in legal liability for the user.",
+            "When you use a template, make sure it is for personal or official use only.",
+        ]}/>
             </CopyrightSection>
 
             <CopyrightSection number="5" title="Warning to copyright owners">
-              <BulletList
-                items={[
-                  "If you believe that copyright has been violated, please submit a DMCA notice.",
-                  "We will take action as per the notice received.",
-                ]}
-              />
+              <BulletList items={[
+            "If you believe that copyright has been violated, please submit a DMCA notice.",
+            "We will take action as per the notice received.",
+        ]}/>
             </CopyrightSection>
 
             <CopyrightSection number="6" title="Policy change">
-              <BulletList
-                items={[
-                  "Easy Work may update this DMCA & Copyright Policy at any time.",
-                  "Once the new policy goes into effect, using the platform means you accept it.",
-                ]}
-              />
+              <BulletList items={[
+            "Easy Work may update this DMCA & Copyright Policy at any time.",
+            "Once the new policy goes into effect, using the platform means you accept it.",
+        ]}/>
             </CopyrightSection>
 
             <CopyrightSection number="7" title="Communication">
-              <p>
-                For any questions regarding copyright or DMCA, please contact:
-              </p>
+              <p><T>{"For any questions regarding copyright or DMCA, please contact:\r\n              "}</T></p>
               <div className="contact-lines">
                 <div>
-                  <strong>Email:</strong>{" "}
-                  <a href="mailto:hello@sohozkaj.com">hello@sohozkaj.com</a>
+                  <strong><T>{"Email:"}</T></strong>{<T>{" "}</T>}
+                  <a href="mailto:hello@sohozkaj.com"><T>{"hello@sohozkaj.com"}</T></a>
                 </div>
                 <div>
-                  <strong>Phone:</strong>{" "}
-                  <a href="tel:+8801700559595">+88 01700-559595</a>
+                  <strong><T>{"Phone:"}</T></strong>{<T>{" "}</T>}
+                  <a href="tel:+8801700559595"><T>{"+88 01700-559595"}</T></a>
                 </div>
                 <div>
-                  <strong>Website:</strong>{" "}
-                  <a
-                    href="https://www.sohozkaj.com"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    www.sohozkaj.com
-                  </a>
+                  <strong><T>{"Website:"}</T></strong>{<T>{" "}</T>}
+                  <a href="https://www.sohozkaj.com" target="_blank" rel="noreferrer"><T>{"www.sohozkaj.com\r\n                  "}</T></a>
                 </div>
               </div>
             </CopyrightSection>
 
-            <div className="copyright-divider" />
+            <div className="copyright-divider"/>
 
-            <div className="copyright-closing">
-              By using Easy Tasks, you will be deemed to have fully accepted all
-              terms of this DMCA &amp; Copyright Policy.
-            </div>
+            <div className="copyright-closing"><T>{"By using Easy Tasks, you will be deemed to have fully accepted all\r\n              terms of this DMCA &amp; Copyright Policy.\r\n            "}</T></div>
           </article>
         </div>
       </main>
 
       <Footer />
-    </>
-  );
+    </>);
 }

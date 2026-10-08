@@ -1,32 +1,10 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "CustomFont1";
-  src: url("/fonts/font1.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+@font-face { font-family: "CustomFont1"; src: url("/fonts/font1.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "CustomFont2"; src: url("/fonts/font2.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: "CustomFont3"; src: url("/fonts/font3.woff2") format("woff2"); font-weight: normal; font-style: normal; font-display: swap; }
 
-@font-face {
-  font-family: "CustomFont2";
-  src: url("/fonts/font2.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "CustomFont3";
-  src: url("/fonts/font3.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-:root {
-  --foreground: #171717;
-}
+:root { --foreground: #171717; }
 
 @theme inline {
   --color-foreground: var(--foreground);
@@ -35,50 +13,31 @@
   --font-custom3: "CustomFont3", sans-serif;
 }
 
+html, body { min-height: 100%; }
 body {
   color: var(--foreground);
   font-family: var(--font-sans);
-  top: 0px !important;
+  top: 0 !important;
   position: static !important;
 }
 
-/* =========================================================
-   Google Translate Bar, Banner & Tooltip Complete Hide CSS
-   ========================================================= */
-
-/* ১. সব ধরণের ব্যানার, আইফ্রেম এবং বেলুন ফ্রেম হাইড */
-.goog-te-banner-frame,
-.goog-te-banner-frame.skiptranslate,
-iframe.goog-te-banner-frame,
-.goog-te-balloon-frame,
-.skiptranslate {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  width: 0 !important;
+html[data-locale="bn"] body,
+html[lang="bn"] body {
+  font-family: var(--font-bangla), "Noto Sans Bengali", "Hind Siliguri", "Nirmala UI", "SolaimanLipi", var(--font-sans), sans-serif;
+  line-height: 1.65;
 }
 
-/* ২. বডি এলিমেন্টের জন্য মার্জিন/পজিশন রিসেট */
-body > .skiptranslate {
-  display: none !important;
-}
+html[data-locale="bn"] button,
+html[data-locale="bn"] input,
+html[data-locale="bn"] textarea,
+html[data-locale="bn"] select,
+html[data-locale="bn"] option,
+html[data-locale="bn"] label,
+html[data-locale="bn"] [role="button"],
+html[data-locale="bn"] [role="tab"],
+html[data-locale="bn"] [role="option"] { font-family: inherit; }
 
-/* ৩. মাউস ওভার করলে আসা গুগল টুলটিপ ও পপআপ সম্পূর্ণ হাইড */
-#goog-gt-tt,
-.goog-gt-tt-outer,
-.goog-gt-tt-inner {
-  display: none !important;
-  visibility: hidden !important;
-}
+html[data-locale="bn"] input::placeholder,
+html[data-locale="bn"] textarea::placeholder { font-family: inherit; }
 
-/* ৪. টেক্সট হাইলাইট বা ব্যাকগ্রাউন্ড কালার চেঞ্জ বন্ধ করা */
-.goog-text-highlight {
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
-/* ৫. লোডিং স্পিনার হাইড */
-.goog-te-spinner-pos {
-  display: none !important;
-}
+/* Translation is owned by the React i18n layer; the browser must not mutate React-managed text. */
