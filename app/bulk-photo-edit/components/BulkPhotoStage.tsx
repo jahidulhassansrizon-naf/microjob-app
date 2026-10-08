@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { BulkT, useBulkPhotoText } from "./bulkPhotoI18n";
 import { AlertCircle, CheckCircle2, Download, LoaderCircle, RotateCcw, Upload, } from "lucide-react";
 import type { PhotoItem } from "./types";
 interface BulkPhotoStageProps {
@@ -15,6 +15,7 @@ const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>, onAddPhot
     event.target.value = "";
 };
 export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, onRetryPhoto, isProcessing, }: BulkPhotoStageProps) {
+    const { t } = useBulkPhotoText();
     if (photos.length === 0) {
         return (<div className="flex h-full min-h-[460px] flex-1 items-center justify-center overflow-auto p-4 sm:p-8">
         <label className="flex h-[460px] w-full max-w-2xl cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-[#2563EB]/25 bg-white p-8 text-center shadow-sm transition hover:border-[#2563EB]/60 hover:bg-[#F8FBFF]">
@@ -22,9 +23,9 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB] shadow-xs">
             <Upload size={22}/>
           </div>
-          <h3 className="text-sm font-bold text-[#0F172A]"><T>{"Add 2 or more photos"}</T></h3>
-          <p className="mt-2 max-w-sm text-[10px] leading-relaxed text-[#64748B]"><T>{"Add your photos, select the exact AI operations you need, and process\n            the batch one photo at a time.\n          "}</T></p>
-          <span className="mt-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-[10px] font-mono font-semibold text-[#0F172A]/60 shadow-2xs"><T>{"Ctrl+U\n          "}</T></span>
+          <h3 className="text-sm font-bold text-[#0F172A]"><BulkT>{"Add 2 or more photos"}</BulkT></h3>
+          <p className="mt-2 max-w-sm text-[10px] leading-relaxed text-[#64748B]"><BulkT>{"Add your photos, select the exact AI operations you need, and process\n            the batch one photo at a time.\n          "}</BulkT></p>
+          <span className="mt-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-[10px] font-mono font-semibold text-[#0F172A]/60 shadow-2xs"><BulkT>{"Ctrl+U\n          "}</BulkT></span>
         </label>
       </div>);
     }
@@ -35,25 +36,25 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
       <div className="w-full max-w-6xl rounded-3xl border border-[#E2E8F0] bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-black text-[#0F172A]"><T>{"Bulk AI results\n            "}</T></h3>
-            <p className="mt-1 text-[10px] text-[#64748B]"><T>{"Each photo is sent to the existing AI edit pipeline separately, so\n              one photo never becomes a collage or a replacement for another.\n            "}</T></p>
+            <h3 className="text-sm font-black text-[#0F172A]"><BulkT>{"Bulk AI results\n            "}</BulkT></h3>
+            <p className="mt-1 text-[10px] text-[#64748B]"><BulkT>{"Each photo is sent to the existing AI edit pipeline separately, so\n              one photo never becomes a collage or a replacement for another.\n            "}</BulkT></p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#F8FAFC] px-2.5 py-1 text-[8px] font-black text-[#475569]">
-              {completedCount}<T>{"/"}</T>{photos.length}<T>{"done\n            "}</T></span>
+              <BulkT>{`${completedCount}/${photos.length} done`}</BulkT></span>
 
             {processingCount > 0 && (<span className="rounded-full bg-blue-50 px-2.5 py-1 text-[8px] font-black text-blue-700">
-                {processingCount}<T>{"processing\n              "}</T></span>)}
+                <BulkT>{`${processingCount} processing`}</BulkT></span>)}
 
             {failedCount > 0 && (<span className="rounded-full bg-red-50 px-2.5 py-1 text-[8px] font-black text-red-700">
-                {failedCount}<T>{"failed\n              "}</T></span>)}
+                <BulkT>{`${failedCount} failed`}</BulkT></span>)}
 
             <label className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[10px] font-bold transition ${isProcessing
             ? "cursor-not-allowed border-[#E2E8F0] bg-[#F8FAFC] text-[#94A3B8]"
             : "cursor-pointer border-[#E2E8F0] bg-[#F8FAFC] text-[#475569] hover:border-[#2563EB]/40 hover:text-[#2563EB]"}`}>
               <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={isProcessing} onChange={(event) => handleInputChange(event, onAddPhotos)}/>
-              <Upload size={13}/><T>{"Add more\n            "}</T></label>
+              <Upload size={13}/><BulkT>{"Add more\n            "}</BulkT></label>
           </div>
         </div>
 
@@ -63,17 +64,15 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
             const isResult = photo.status === "success" && Boolean(photo.resultUrl);
             return (<article key={photo.id} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]">
                 <div className="relative aspect-[4/5] overflow-hidden bg-[#E2E8F0]">
-                  <img src={displayUrl} alt={isResult
-                    ? `AI edited photo ${index + 1}`
-                    : `Bulk preview ${index + 1}`} className="h-full w-full object-cover"/>
+                  <img src={displayUrl} alt={t(isResult ? `AI edited photo ${index + 1}` : `Bulk preview ${index + 1}`)} className="h-full w-full object-cover"/>
 
                   <div className="absolute inset-x-2 top-2 flex items-center justify-between gap-2">
-                    <span className="rounded-full bg-black/65 px-2 py-1 text-[8px] font-bold text-white"><T>{"Photo "}</T>{index + 1}
+                    <span className="rounded-full bg-black/65 px-2 py-1 text-[8px] font-bold text-white"><BulkT>{`Photo ${index + 1}`}</BulkT>
                     </span>
 
-                    {isResult && (<span className="rounded-full bg-emerald-500/95 px-2 py-1 text-[8px] font-black text-white"><T>{"AI Result\n                      "}</T></span>)}
+                    {isResult && (<span className="rounded-full bg-emerald-500/95 px-2 py-1 text-[8px] font-black text-white"><BulkT>{"AI Result\n                      "}</BulkT></span>)}
 
-                    {photo.status === "pending" && (<span className="rounded-full bg-slate-900/70 px-2 py-1 text-[8px] font-black text-white"><T>{"Waiting\n                      "}</T></span>)}
+                    {photo.status === "pending" && (<span className="rounded-full bg-slate-900/70 px-2 py-1 text-[8px] font-black text-white"><BulkT>{"Waiting\n                      "}</BulkT></span>)}
                   </div>
 
                   {photo.status === "processing" && (<div className="absolute inset-0 overflow-hidden bg-black/20">
@@ -82,22 +81,22 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="rounded-2xl border border-white/20 bg-slate-950/75 px-4 py-3 text-center shadow-xl backdrop-blur">
                           <LoaderCircle size={20} className="mx-auto animate-spin text-cyan-300"/>
-                          <p className="mt-2 text-[10px] font-black text-white"><T>{"AI editing...\n                          "}</T></p>
-                          <p className="mt-1 text-[8px] font-medium text-slate-300"><T>{"Applying selected operations only\n                          "}</T></p>
+                          <p className="mt-2 text-[10px] font-black text-white"><BulkT>{"AI editing...\n                          "}</BulkT></p>
+                          <p className="mt-1 text-[8px] font-medium text-slate-300"><BulkT>{"Applying selected operations only\n                          "}</BulkT></p>
                         </div>
                       </div>
                     </div>)}
 
                   {photo.status === "success" && (<div className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-2 py-1 text-[8px] font-black text-white">
-                      <CheckCircle2 size={10}/><T>{"Completed\n                    "}</T></div>)}
+                      <CheckCircle2 size={10}/><BulkT>{"Completed\n                    "}</BulkT></div>)}
 
                   {photo.status === "error" && (<div className="absolute inset-x-2 bottom-2 rounded-xl border border-red-200 bg-white/95 p-2.5 shadow-sm backdrop-blur">
                       <div className="flex items-start gap-2">
                         <AlertCircle size={13} className="mt-0.5 shrink-0 text-red-500"/>
                         <div className="min-w-0">
-                          <p className="text-[9px] font-black text-red-700"><T>{"AI edit failed\n                          "}</T></p>
+                          <p className="text-[9px] font-black text-red-700"><BulkT>{"AI edit failed\n                          "}</BulkT></p>
                           <p className="mt-1 break-words text-[8px] leading-relaxed text-red-600">
-                            {photo.error || "Unknown error."}
+                            <BulkT>{photo.error || "Unknown error."}</BulkT>
                           </p>
                         </div>
                       </div>
@@ -112,19 +111,19 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
                       </p>
                       <p className="mt-0.5 text-[8px] text-[#64748B]">
                         {photo.status === "success"
-                ? <T>{"Ready to download"}</T> : photo.status === "processing"
-                ? "This photo is being edited"
+                ? <BulkT>{"Ready to download"}</BulkT> : photo.status === "processing"
+                ? <BulkT>{"This photo is being edited"}</BulkT>
                 : photo.status === "error"
-                    ? "Retry this photo"
-                    : "Waiting for the AI queue"}
+                    ? <BulkT>{"Retry this photo"}</BulkT>
+                    : <BulkT>{"Waiting for the AI queue"}</BulkT>}
                       </p>
                     </div>
 
                     {photo.status === "success" && photo.resultUrl && (<button type="button" onClick={() => onDownloadResult(photo)} className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-[#2563EB] px-3 py-2 text-[9px] font-black text-white transition hover:bg-[#1D4ED8]">
-                        <Download size={12}/><T>{"Download\n                      "}</T></button>)}
+                        <Download size={12}/><BulkT>{"Download\n                      "}</BulkT></button>)}
 
                     {photo.status === "error" && (<button type="button" onClick={() => onRetryPhoto(photo.id)} disabled={isProcessing} className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-[9px] font-black text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
-                        <RotateCcw size={12}/><T>{"Retry\n                      "}</T></button>)}
+                        <RotateCcw size={12}/><BulkT>{"Retry\n                      "}</BulkT></button>)}
                   </div>
                 </div>
               </article>);

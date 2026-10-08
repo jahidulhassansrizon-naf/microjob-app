@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { BulkT } from "./bulkPhotoI18n";
 import { Check, ListChecks, Sparkles } from "lucide-react";
 import { TOOL_PRESETS } from "./toolCatalog";
 import type { SelectedTools } from "./types";
@@ -27,12 +27,12 @@ export default function PresetPanel({ selectedTools, expandedPreset, onTogglePre
       <div className="mb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#0F172A]"><T>{"AI Editing tools\n            "}</T></h4>
-            <p className="mt-1 text-[9px] leading-relaxed text-[#64748B]"><T>{"Open a group, choose exact AI operations, then apply that same\n              operation set to every photo separately.\n            "}</T></p>
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#0F172A]"><BulkT>{"AI Editing tools\n            "}</BulkT></h4>
+            <p className="mt-1 text-[9px] leading-relaxed text-[#64748B]"><BulkT>{"Open a group, choose exact AI operations, then apply that same\n              operation set to every photo separately.\n            "}</BulkT></p>
           </div>
 
           <span className="shrink-0 rounded-full bg-[#EFF6FF] px-2 py-1 text-[8px] font-black text-[#2563EB]">
-            {selectedTotal}<T>{"selected\n          "}</T></span>
+            <BulkT>{`${selectedTotal} selected`}</BulkT></span>
         </div>
       </div>
 
@@ -40,17 +40,17 @@ export default function PresetPanel({ selectedTools, expandedPreset, onTogglePre
         {selectedGroups.length > 0 && (<div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
             <div className="flex items-center gap-2">
               <ListChecks size={14} className="text-emerald-700"/>
-              <p className="text-[10px] font-black text-emerald-800"><T>{"Selected AI operations\n              "}</T></p>
+              <p className="text-[10px] font-black text-emerald-800"><BulkT>{"Selected AI operations\n              "}</BulkT></p>
             </div>
 
             <div className="mt-2 space-y-2">
               {selectedGroups.map((group) => (<div key={group.preset.id}>
                   <p className="text-[8px] font-black uppercase tracking-wide text-emerald-700">
-                    {group.preset.name}
+                    <BulkT>{group.preset.name}</BulkT>
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {group.tools.map((tool) => (<span key={tool.name} className="rounded-full border border-emerald-200 bg-white px-2 py-1 text-[8px] font-bold text-emerald-800">
-                        {<T>{tool.name}</T>}
+                        {<BulkT>{tool.name}</BulkT>}
                       </span>))}
                   </div>
                 </div>))}
@@ -69,22 +69,21 @@ export default function PresetPanel({ selectedTools, expandedPreset, onTogglePre
       </div>
 
       <div className="mt-4 border-t border-[#E2E8F0] pt-4">
-        {photosCount < 2 && (<div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-amber-700"><T>{"Add at least 2 photos to enable bulk AI enhancement.\n          "}</T></div>)}
+        {photosCount < 2 && (<div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-amber-700"><BulkT>{"Add at least 2 photos to enable bulk AI enhancement.\n          "}</BulkT></div>)}
 
-        {photosCount >= 2 && selectedTotal === 0 && (<div className="mb-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-blue-700"><T>{"Choose one or more AI tools above to prepare this bulk edit.\n          "}</T></div>)}
+        {photosCount >= 2 && selectedTotal === 0 && (<div className="mb-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-blue-700"><BulkT>{"Choose one or more AI tools above to prepare this bulk edit.\n          "}</BulkT></div>)}
 
-        {isProcessing && (<div className="mb-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-blue-700"><T>{"Processing photo "}</T>{Math.min(processedCount + 1, Math.max(photosCount, 1))}
-            {<T>{" "}</T>}<T>{"of "}</T>{photosCount}<T>{". Keep this tab open until the batch finishes.\n          "}</T></div>)}
+        {isProcessing && (<div className="mb-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[9px] font-semibold leading-relaxed text-blue-700"><BulkT>{`Processing photo ${Math.min(processedCount + 1, Math.max(photosCount, 1))} of ${photosCount}. Keep this tab open until the batch finishes.`}</BulkT></div>)}
 
         <button type="button" onClick={onEnhance} disabled={!canEnhance} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#10B981] px-4 py-3.5 text-xs font-black text-white shadow-sm transition hover:bg-[#059669] disabled:cursor-not-allowed disabled:bg-[#CBD5E1] disabled:text-[#64748B] disabled:shadow-none">
           <Sparkles size={16}/>
           {isProcessing
-        ? <T>{`Processing ${processedCount}/${photosCount}`}</T> : <T>{`Enhance ${photosCount} photos`}</T>}
+        ? <BulkT>{`Processing ${processedCount}/${photosCount}`}</BulkT> : <BulkT>{`Enhance ${photosCount} photos`}</BulkT>}
         </button>
 
         {!isProcessing && canEnhance && (<div className="mt-2 flex items-center justify-center gap-1 text-[8px] font-bold text-[#64748B]">
             <Check size={10} className="text-[#10B981]"/>
-            {selectedTotal}<T>{"exact AI tools will apply to every selected photo\n          "}</T></div>)}
+            <BulkT>{`${selectedTotal} exact AI tools will apply to every selected photo.`}</BulkT></div>)}
       </div>
     </aside>);
 }

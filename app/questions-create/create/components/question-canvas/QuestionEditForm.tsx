@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import type { Dispatch, SetStateAction } from "react";
 import type { Question } from "../../types/question";
 import { cleanMultilineText, getQuestionTypeLabel } from "../../types/question";
@@ -23,6 +23,7 @@ export default function QuestionEditForm({ question, questionNumber, draft, setD
     onCancel: () => void;
     onSave: () => void;
 }) {
+    const { t } = useQuestionText();
     return (<div className="space-y-2 rounded-lg border border-[#2563EB]/30 bg-white p-2 print:hidden">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[8px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/55"><T>{"Edit Question "}</T>{questionNumber}
@@ -48,13 +49,13 @@ export default function QuestionEditForm({ question, questionNumber, draft, setD
       <textarea value={draft.question} onChange={(event) => setDraft((current) => ({
             ...current,
             question: event.target.value,
-        }))} rows={3} className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]" placeholder="Question text" onClick={(event) => event.stopPropagation()}/>
+        }))} rows={3} className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]" placeholder={t("Question text")} onClick={(event) => event.stopPropagation()}/>
 
       {draft.type === "CQ" ? (<>
           <textarea value={draft.stimulus || ""} onChange={(event) => setDraft((current) => ({
                 ...current,
                 stimulus: event.target.value,
-            }))} rows={3} className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]" placeholder="Stimulus / context" onClick={(event) => event.stopPropagation()}/>
+            }))} rows={3} className="w-full resize-y rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[9px] leading-relaxed text-[#0F172A] outline-none focus:border-[#2563EB]" placeholder={t("Stimulus / context")} onClick={(event) => event.stopPropagation()}/>
 
           {(draft.subQuestions || []).map((part, index) => (<div key={`${draft.id}-edit-part-${index}`} className="grid grid-cols-[45px_1fr] gap-2">
               <input value={part.label} onChange={(event) => setDraft((current) => ({

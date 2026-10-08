@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { useAiTemplateText } from "./aiTemplateI18n";
 import React from "react";
 import { Heart, Search } from "lucide-react";
 import { LazyTemplateImage } from "./LazyTemplateImage";
@@ -14,6 +14,7 @@ type Props = {
     onResetFilters: () => void;
 };
 export function TemplateGrid({ filteredTemplates, favoriteIds, showFavorites, onToggleFavorite, onOpenTemplate, onResetFilters, }: Props) {
+    const { t } = useAiTemplateText();
     return (filteredTemplates.length === 0 ? (<div className="empty-state">
         <div className="empty-heart">
           <Search size={28}/>
@@ -21,10 +22,10 @@ export function TemplateGrid({ filteredTemplates, favoriteIds, showFavorites, on
 
         <p>
           {showFavorites
-        ? <T>{"No favorite templates yet."}</T> : <T>{"No template found for your current filters."}</T>}
+        ? t("No favorite templates yet.") : t("No template found for your current filters.")}
         </p>
 
-        <button type="button" className="reset-empty" onClick={onResetFilters}><T>{"Reset filters\n        "}</T></button>
+        <button type="button" className="reset-empty" onClick={onResetFilters}>{t("Reset filters")}</button>
       </div>) : (<div className="masonry-grid">
         {filteredTemplates.map((template) => {
             const isFavorite = favoriteIds.has(template.id);
@@ -36,29 +37,29 @@ export function TemplateGrid({ filteredTemplates, favoriteIds, showFavorites, on
                         onOpenTemplate(template);
                     }
                 }}>
-              <LazyTemplateImage src={template.image} alt={template.title} orientation={template.orientation}/>
+              <LazyTemplateImage src={template.image} alt={t(template.title)} orientation={template.orientation}/>
 
               <div className="image-overlay"/>
 
-              <div className="uses-badge">{imageCountLabel(template.imageCount)}</div>
+              <div className="uses-badge">{t(imageCountLabel(template.imageCount))}</div>
 
               <button type="button" className={`card-heart ${isFavorite ? "card-heart-active" : ""}`} onClick={(e) => {
                     e.stopPropagation();
                     onToggleFavorite(template.id);
-                }} aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}>
+                }} aria-label={isFavorite ? t("Remove from favorites") : t("Add to favorites")}>
                 <Heart size={16} fill={isFavorite ? "currentColor" : "none"}/>
               </button>
 
               <div className="template-hover">
                 <div>
-                  <strong>{<T>{template.title}</T>}</strong>
-                  <span>{template.category}</span>
+                  <strong>{t(template.title)}</strong>
+                  <span>{t(template.category)}</span>
                 </div>
 
                 <button type="button" onClick={(e) => {
                     e.stopPropagation();
                     onOpenTemplate(template);
-                }}><T>{"View template\n                "}</T></button>
+                }}>{t("View template")}</button>
               </div>
             </article>);
         })}

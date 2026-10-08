@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { RefreshCw, Sparkles, Check, Palette, X, ImageIcon, Loader2, Ban, } from "lucide-react";
 export interface PhotoSizeOption {
@@ -345,6 +345,7 @@ function RawSvgClothingPreview({ index, selected, color, alt, }: {
     </div>);
 }
 export default function GenerationSettings({ photoSizes = [], selectedSize = "", handleSizeClick = () => { }, showVisaPopup = false, setShowVisaPopup = () => { }, visaSizesList = [], selectedVisaSize = "", setSelectedVisaSize = () => { }, setSelectedSize = () => { }, isDualMode = false, exitDualMode = () => { }, backgroundColors = [], selectedBg = 0, setSelectedBg = () => { }, setShowColorPicker = () => { }, showColorPicker = false, customBgColor = "#FFFFFF", setCustomBgColor = () => { }, selectedClothing = 0, setSelectedClothing = () => { }, selectedClothingColor = "#EF4444", setSelectedClothingColor, leftClothing = 0, setLeftClothing = () => { }, rightClothing = 0, setRightClothing = () => { }, colorPickerRef, visaPopupRef, onGenerate = () => { }, isGenerating = false, onEditingGuidesChange, onResetSettings, }: GenerationSettingsProps) {
+    const { t } = useAiEditorText();
     const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
     const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
     const [activeGuides, setActiveGuides] = useState<string[]>([]);
@@ -388,19 +389,19 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
       <div>
         <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-sm text-[#0F172A] flex items-center gap-2">
-            <span className="w-1 h-4 bg-[#2563EB] rounded-full"/><T>{"Generation settings\n          "}</T></span>
+            <span className="w-1 h-4 bg-[#2563EB] rounded-full"/><AiT>{"Generation settings\n          "}</AiT></span>
         </div>
 
         {/* PHOTO SIZE SECTION */}
         <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={visaPopupRef}>
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
-            <span><T>{"PHOTO SIZE"}</T></span>
+            <span><AiT>{"PHOTO SIZE"}</AiT></span>
             <button type="button" onClick={() => {
             setShowClothingColorPicker(false);
             setActiveGuides([]);
             onEditingGuidesChange?.([]);
             onResetSettings?.();
-        }} title="Reset generation settings" className="text-[#2563EB] hover:rotate-180 transition-transform duration-300 cursor-pointer">
+        }} title={t("Reset generation settings")} className="text-[#2563EB] hover:rotate-180 transition-transform duration-300 cursor-pointer">
               <RefreshCw size={14}/>
             </button>
           </div>
@@ -408,14 +409,14 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
             {photoSizes.map((size) => {
             const isActive = selectedSize === size.id;
-            return (<button key={size.id} onClick={() => handleSizeClick(size.id)} title={size.tooltip} type="button" className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[10px] relative transition-all cursor-pointer ${isActive
+            return (<button key={size.id} onClick={() => handleSizeClick(size.id)} title={size.tooltip ? t(size.tooltip) : undefined} type="button" className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[10px] relative transition-all cursor-pointer ${isActive
                     ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
                     : "border-[#E2E8F0] text-[#0F172A] hover:border-slate-300"}`}>
                   <div className="w-6 h-6 mb-1 rounded bg-slate-100 flex items-center justify-center text-slate-500">
                     <ImageIcon size={14}/>
                   </div>
 
-                  <span className="truncate max-w-full">{size.label}</span>
+                  <span className="truncate max-w-full"><AiT>{size.label}</AiT></span>
 
                   {isActive && (<span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
                       <Check size={8}/>
@@ -425,7 +426,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
           </div>
 
           {showVisaPopup && (<div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
-              <h4 className="text-xs font-semibold text-[#0F172A] mb-3"><T>{"Visa Photo Size\n              "}</T></h4>
+              <h4 className="text-xs font-semibold text-[#0F172A] mb-3"><AiT>{"Visa Photo Size\n              "}</AiT></h4>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {visaSizesList.map((vItem, idx) => (<button key={idx} type="button" onClick={() => {
@@ -447,7 +448,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
 
         {/* BACKGROUND SECTION */}
         <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={colorPickerRef}>
-          <div className="text-xs text-slate-500 mb-2"><T>{"BACKGROUND"}</T></div>
+          <div className="text-xs text-slate-500 mb-2"><AiT>{"BACKGROUND"}</AiT></div>
 
           <div className="grid grid-cols-4 gap-2">
             {backgroundColors.map((bg, idx) => {
@@ -456,13 +457,13 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 return (<button key={idx} type="button" onClick={() => {
                         setSelectedBg(idx);
                         setShowColorPicker(false);
-                    }} title="Transparent background" aria-label="Transparent background" className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`} style={{
+                    }} title={t("Transparent background")} aria-label={t("Transparent background")} className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`} style={{
                         backgroundImage: "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
                         backgroundSize: "12px 12px",
                         backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
                         backgroundColor: "#ffffff",
                     }}>
-                    <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-sm"><T>{"PNG\n                    "}</T></span>
+                    <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-sm"><AiT>{"PNG\n                    "}</AiT></span>
                     {isSelected && (<span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
                         <Check size={8}/>
                       </span>)}
@@ -495,7 +496,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
 
           {showColorPicker && (<div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-[#0F172A]"><T>{"Custom Background Color\n                "}</T></span>
+                <span className="text-xs font-semibold text-[#0F172A]"><AiT>{"Custom Background Color\n                "}</AiT></span>
 
                 <button type="button" onClick={() => setShowColorPicker(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                   <X size={14}/>
@@ -515,7 +516,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 if (!/^#[0-9A-F]{6}$/i.test(customBgColor)) {
                     setCustomBgColor("#8B1E1E");
                 }
-            }} className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono text-[#0F172A] uppercase focus:outline-none focus:border-[#2563EB]" aria-label="Custom background hex color"/>
+            }} className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono text-[#0F172A] uppercase focus:outline-none focus:border-[#2563EB]" aria-label={t("Custom background hex color")}/>
                 </div>
               </div>
             </div>)}
@@ -524,9 +525,9 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
         {/* CLOTHING STYLE SECTION */}
         <div className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative" ref={clothingColorPopupRef}>
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
-            <span><T>{"CLOTHING STYLE"}</T></span>
+            <span><AiT>{"CLOTHING STYLE"}</AiT></span>
 
-            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium"><T>{"14/14\n            "}</T></span>
+            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium"><AiT>{"14/14\n            "}</AiT></span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
@@ -536,7 +537,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 setShowClothingColorPicker(false);
             }} className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${selectedClothing === -1
                 ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                : "border-[#E2E8F0]"}`} aria-label="No clothing">
+                : "border-[#E2E8F0]"}`} aria-label={t("No clothing")}>
                   <Ban size={18} className="text-slate-400"/>
                 </button>
 
@@ -544,8 +545,8 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 const isSelected = selectedClothing === idx;
                 return (<button key={idx} type="button" onClick={() => handleClothingClick(idx)} className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${isSelected
                         ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                        : "border-[#E2E8F0]"}`} aria-label={name}>
-                      <RawSvgClothingPreview index={idx} selected={isSelected} color={isSelected ? currentColor : undefined} alt={name}/>
+                        : "border-[#E2E8F0]"}`} aria-label={t(name)}>
+                      <RawSvgClothingPreview index={idx} selected={isSelected} color={isSelected ? currentColor : undefined} alt={t(name)}/>
 
                       {isSelected && (<span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                           <Check size={8} strokeWidth={3}/>
@@ -554,13 +555,13 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
             })}
               </div>) : (<div className="space-y-4">
                 <div>
-                  <p className="text-[11px] font-medium text-slate-600 mb-1.5"><T>{"Left Person\n                  "}</T></p>
+                  <p className="text-[11px] font-medium text-slate-600 mb-1.5"><AiT>{"Left Person\n                  "}</AiT></p>
 
                   <div className="grid grid-cols-7 gap-1.5">
                     {CLOTHING_NAMES.map((name, idx) => (<button key={`left-${idx}`} type="button" onClick={() => setLeftClothing(idx)} className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${leftClothing === idx
                     ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                     : "border-[#E2E8F0]"}`}>
-                        <RawSvgClothingPreview index={idx} selected={false} alt={`${name} left person`}/>
+                        <RawSvgClothingPreview index={idx} selected={false} alt={t(`${name} left person`)}/>
 
                         {leftClothing === idx && (<span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={8} strokeWidth={3}/>
@@ -570,13 +571,13 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-slate-600 mb-1.5"><T>{"Right Person\n                  "}</T></p>
+                  <p className="text-[11px] font-medium text-slate-600 mb-1.5"><AiT>{"Right Person\n                  "}</AiT></p>
 
                   <div className="grid grid-cols-7 gap-1.5">
                     {CLOTHING_NAMES.map((name, idx) => (<button key={`right-${idx}`} type="button" onClick={() => setRightClothing(idx)} className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${rightClothing === idx
                     ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                     : "border-[#E2E8F0]"}`}>
-                        <RawSvgClothingPreview index={idx} selected={false} alt={`${name} right person`}/>
+                        <RawSvgClothingPreview index={idx} selected={false} alt={t(`${name} right person`)}/>
 
                         {rightClothing === idx && (<span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={8} strokeWidth={3}/>
@@ -590,9 +591,9 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
           {showClothingColorPicker && selectedClothing >= 0 && (<div className="absolute left-0 top-12 w-full max-w-[280px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-semibold text-[#0F172A]">
-                  {CLOTHING_NAMES[selectedClothing] || "Clothing"}<T>{"\u2014 Pick a\n                  Color\n                "}</T></span>
+                  <AiT>{CLOTHING_NAMES[selectedClothing] || "Clothing"}</AiT><AiT>{"\u2014 Pick a\n                  Color\n                "}</AiT></span>
 
-                <button type="button" onClick={() => setShowClothingColorPicker(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5" aria-label="Close clothing color picker">
+                <button type="button" onClick={() => setShowClothingColorPicker(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5" aria-label={t("Close clothing color picker")}>
                   <X size={14}/>
                 </button>
               </div>
@@ -600,7 +601,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
               <div className="grid grid-cols-6 gap-2.5">
                 {CLOTHING_COLORS.map((color) => {
                 const isColorActive = currentColor.toUpperCase() === color.hex.toUpperCase();
-                return (<button key={color.hex} type="button" onClick={() => handleColorChange(color.hex)} title={color.name} style={{ backgroundColor: color.hex }} className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${isColorActive
+                return (<button key={color.hex} type="button" onClick={() => handleColorChange(color.hex)} title={t(color.name)} style={{ backgroundColor: color.hex }} className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${isColorActive
                         ? "ring-2 ring-[#2563EB] ring-offset-2"
                         : ""}`}>
                       {isColorActive && (<Check size={12} className={color.hex === "#FFFFFF" || color.hex === "#E5E7EB"
@@ -615,9 +616,9 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
         {/* EXTRA EDITING GUIDE */}
         <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative">
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
-            <span><T>{"EXTRA EDITING GUIDE"}</T></span>
+            <span><AiT>{"EXTRA EDITING GUIDE"}</AiT></span>
             <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
-              {activeGuides.length}<T>{"/8\n            "}</T></span>
+              {activeGuides.length}<AiT>{"/8\n            "}</AiT></span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
@@ -641,7 +642,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                             setActiveGuides((prev) => prev.filter((entry) => !entry.startsWith("Custom Instruction:")));
                             return;
                         }
-                        const instruction = window.prompt("Enter a custom editing instruction for the AI:");
+                        const instruction = window.prompt(t("Enter a custom editing instruction for the AI:"));
                         if (!instruction?.trim())
                             return;
                         const guide = `Custom Instruction: ${instruction.trim()}`;
@@ -658,7 +659,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                     <Sparkles size={14} className={`mb-1 ${active ? "text-[#2563EB]" : "text-slate-400"}`}/>
                     <span className="leading-tight">
                       {item === "Custom Instruction" && active
-                ? <T>{"Custom added"}</T> : item}
+                ? <AiT>{"Custom added"}</AiT> : item}
                     </span>
                   </button>);
         })}
@@ -673,8 +674,8 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
             : "bg-[#10B981] hover:bg-[#059669] text-white cursor-pointer active:scale-[0.98]"}`}>
           {isGenerating ? (<>
               <Loader2 size={18} className="animate-spin"/>
-              <span><T>{"Generating Photo..."}</T></span>
-            </>) : (<span><T>{"Generate Photo"}</T></span>)}
+              <span><AiT>{"Generating Photo..."}</AiT></span>
+            </>) : (<span><AiT>{"Generate Photo"}</AiT></span>)}
         </button>
       </div>
     </div>);

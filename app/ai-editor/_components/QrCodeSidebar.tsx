@@ -1,11 +1,12 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, QrCode } from "lucide-react";
 interface QrCodeSidebarProps {
     uploadUrl?: string;
 }
 export default function QrCodeSidebar({ uploadUrl = "" }: QrCodeSidebarProps) {
+    const { t } = useAiEditorText();
     const [copied, setCopied] = useState(false);
     const [imageFailed, setImageFailed] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -53,19 +54,19 @@ export default function QrCodeSidebar({ uploadUrl = "" }: QrCodeSidebarProps) {
         {/* Header */}
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-gray-900 p-3 text-white">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800">
-            {showQr ? (<img src={qrSrc} alt="QR code" className="h-10 w-10 rounded-md bg-white p-0.5" onError={() => setImageFailed(true)}/>) : (<QrCode size={24} className="text-gray-300"/>)}
+            {showQr ? (<img src={qrSrc} alt={t("QR code")} className="h-10 w-10 rounded-md bg-white p-0.5" onError={() => setImageFailed(true)}/>) : (<QrCode size={24} className="text-gray-300"/>)}
           </div>
 
           <div className="min-w-0">
-            <h4 className="text-xs font-semibold"><T>{"Scan Now"}</T></h4>
+            <h4 className="text-xs font-semibold"><AiT>{"Scan Now"}</AiT></h4>
 
-            <p className="text-[10px] text-gray-400"><T>{"Open this editor on your phone\r\n            "}</T></p>
+            <p className="text-[10px] text-gray-400"><AiT>{"Open this editor on your phone\r\n            "}</AiT></p>
           </div>
         </div>
 
         {/* QR Preview */}
         <div className="mb-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-center">
-          {showQr ? (<img src={qrSrc} alt="Scan to open editor" className="mx-auto h-36 w-36 rounded-lg bg-white p-2" onError={() => setImageFailed(true)}/>) : (<div className="flex h-36 items-center justify-center text-gray-400">
+          {showQr ? (<img src={qrSrc} alt={t("Scan to open editor")} className="mx-auto h-36 w-36 rounded-lg bg-white p-2" onError={() => setImageFailed(true)}/>) : (<div className="flex h-36 items-center justify-center text-gray-400">
               <QrCode size={64}/>
             </div>)}
         </div>
@@ -75,10 +76,10 @@ export default function QrCodeSidebar({ uploadUrl = "" }: QrCodeSidebarProps) {
           <button type="button" onClick={copyLink} disabled={!canInteract} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-100 py-2.5 text-xs font-medium text-gray-800 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50">
             {copied ? (<Check size={16} className="text-emerald-600"/>) : (<Copy size={16}/>)}
 
-            {copied ? <T>{"Copied"}</T> : <T>{"Copy link"}</T>}
+            {copied ? <AiT>{"Copied"}</AiT> : <AiT>{"Copy link"}</AiT>}
           </button>
 
-          <button type="button" onClick={openEditor} disabled={!canInteract} className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" title="Open editor in a new tab" aria-label="Open editor">
+          <button type="button" onClick={openEditor} disabled={!canInteract} className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" title={t("Open editor in a new tab")} aria-label={t("Open editor")}>
             <ExternalLink size={15}/>
           </button>
         </div>

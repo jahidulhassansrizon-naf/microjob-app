@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 export interface BoxInfo {
@@ -128,19 +128,20 @@ function EmptyUploadBox({ title, subtitle, onUpload, }: {
     subtitle?: string;
     onUpload: () => void;
 }) {
+    const { t } = useAiEditorText();
     return (<div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E2E8F0] p-4 text-center xl:min-h-0 xl:p-2">
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB]">
         <Upload size={18}/>
       </div>
 
-      <h3 className="mb-1 text-xs font-medium text-[#0F172A]">{title}</h3>
+      <h3 className="mb-1 text-xs font-medium text-[#0F172A]"><AiT>{title}</AiT></h3>
 
       {subtitle && (<p className="mb-3 text-[10px] leading-tight text-[#0F172A]/70">
-          {subtitle}
+          <AiT>{subtitle}</AiT>
         </p>)}
 
       <button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-[11px] font-medium text-white shadow-md transition hover:bg-[#2563EB]/90 active:scale-95">
-        <Upload size={12}/><T>{"Upload Photo\n      "}</T></button>
+        <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>
     </div>);
 }
 function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = true, isScanning = false, }: {
@@ -152,16 +153,17 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
     showBorder?: boolean;
     isScanning?: boolean;
 }) {
+    const { t } = useAiEditorText();
     return (<div className="flex min-w-0 flex-col items-center gap-1.5 xl:min-h-0">
       <span className="max-w-full shrink-0 truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
-        {label}
+        <AiT>{label}</AiT>
       </span>
 
       <FitFrame info={boxInfo} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E2E8F0]" : ""}`} style={getBackgroundStyle(background)}>
         {image ? (<div className="group relative h-full w-full">
-            <img src={image} alt={label} className="h-full w-full object-contain"/>
+            <img src={image} alt={t(label)} className="h-full w-full object-contain"/>
 
-            <button type="button" onClick={onRemove} aria-label={`Remove ${label}`} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100">
+            <button type="button" onClick={onRemove} aria-label={t(`Remove ${label}`)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100">
               <X size={14}/>
             </button>
 
@@ -174,7 +176,10 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
       </FitFrame>
     </div>);
 }
-export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, }: PhotoPreviewAreaProps) {
+export default function PhotoPreviewArea({
+    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive,
+}: PhotoPreviewAreaProps) {
+    const { t } = useAiEditorText();
     const handleRemoveSingle = () => {
         if (originalImageForDual && uploadedImage) {
             setUploadedImage(originalImageForDual);
@@ -194,9 +199,9 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
       {isDeleting && (<div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-[#F8FAFC]/90 p-4 text-center backdrop-blur-md">
           <div className="mb-5 h-16 w-16 animate-spin rounded-full border-4 border-red-500/20 border-t-red-500"/>
 
-          <h3 className="mb-1 text-base font-semibold tracking-wide text-[#0F172A]"><T>{"Deleting Photo...\n          "}</T></h3>
+          <h3 className="mb-1 text-base font-semibold tracking-wide text-[#0F172A]"><AiT>{"Deleting Photo...\n          "}</AiT></h3>
 
-          <p className="max-w-xs text-xs leading-relaxed text-[#0F172A]/70"><T>{"Removing your photo, please wait...\n          "}</T></p>
+          <p className="max-w-xs text-xs leading-relaxed text-[#0F172A]/70"><AiT>{"Removing your photo, please wait...\n          "}</AiT></p>
 
           <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-[#E2E8F0] bg-[#E2E8F0]">
             <div className="h-full w-full animate-pulse rounded-full bg-red-500"/>
@@ -214,7 +219,7 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
               {uploadedImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                   <img src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain"/>
 
-                  <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label="Remove current photo">
+                  <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label={t("Remove current photo")}>
                     <X size={14}/>
                   </button>
 
@@ -227,17 +232,17 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
             </FitFrame>)}
 
           {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]">
-              <ImageIcon size={14} className="text-[#2563EB]"/><T>{"Upload 2 separate images\n            "}</T></button>)}
+              <ImageIcon size={14} className="text-[#2563EB]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
         </div>) : (<div className="flex w-full max-w-[760px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
-              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><T>{"Left Person\n              "}</T></span>
+              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Left Person\n              "}</AiT></span>
 
               <FitFrame info={activeBoxInfo} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
                 {leftImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>
 
-                    <button type="button" onClick={() => setLeftImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label="Remove left photo">
+                    <button type="button" onClick={() => setLeftImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove left photo")}>
                       <X size={14}/>
                     </button>
                   </div>) : (<EmptyUploadBox title="Upload left photo" onUpload={() => triggerUpload("left")}/>)}
@@ -247,13 +252,13 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
-              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><T>{"Right Person\n              "}</T></span>
+              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Right Person\n              "}</AiT></span>
 
               <FitFrame info={activeBoxInfo} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
                 {rightImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={rightImage} alt="Right person" className="h-full w-full object-contain"/>
 
-                    <button type="button" onClick={() => setRightImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label="Remove right photo">
+                    <button type="button" onClick={() => setRightImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove right photo")}>
                       <X size={14}/>
                     </button>
                   </div>) : (<EmptyUploadBox title="Upload right photo" onUpload={() => triggerUpload("right")}/>)}
@@ -267,7 +272,7 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
             <button type="button" onClick={() => {
                 setLeftImage(rightImage);
                 setRightImage(leftImage);
-            }} className="cursor-pointer rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-2 text-[#0F172A] transition hover:bg-[#E2E8F0]/80" title="Swap images" aria-label="Swap images">
+            }} className="cursor-pointer rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-2 text-[#0F172A] transition hover:bg-[#E2E8F0]/80" title="Swap images" aria-label={t("Swap images")}>
               <ArrowLeftRight size={16}/>
             </button>
 
@@ -276,7 +281,7 @@ export default function PhotoPreviewArea({ isDualMode, uploadedImage, setUploade
                 setRightImage(null);
                 exitDualMode();
             }} className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100">
-              <RefreshCw size={14}/><T>{"Exit dual mode\n            "}</T></button>
+              <RefreshCw size={14}/><AiT>{"Exit dual mode\n            "}</AiT></button>
           </div>
         </div>)}
     </div>);

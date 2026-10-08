@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { ChevronDown, Image as ImageIcon, Maximize2, Plane, Printer, RefreshCcw, Users, } from "lucide-react";
 import { R_SIZE_PRESETS, VISA_PRESETS } from "./constants";
 import { useManualEditor } from "./EditorProvider";
@@ -18,6 +18,7 @@ function compactPresetLabel(label: string) {
     return label.replace(" inch", "").replace(" mm", "");
 }
 export default function PhotoSizePanel() {
+    const { t } = useManualEditorText();
     const { photoMode, selectMode, sizeMenu, setSizeMenu, selectedPreset, currentPreset, selectPreset, freeSizeOpen, setFreeSizeOpen, freeWidth, freeHeight, setFreeWidth, setFreeHeight, resetEditor, } = useManualEditor();
     const selectedVisaLabel = photoMode === "visa"
         ? compactPresetLabel(currentPreset.label)
@@ -34,7 +35,7 @@ export default function PhotoSizePanel() {
           <span className="text-xs font-black tracking-wider uppercase text-[#0F172A]"><T>{"PHOTO SIZE\r\n          "}</T></span>
         </div>
 
-        <button type="button" onClick={resetEditor} className="text-[#0F172A]/50 hover:text-[#0F172A] transition-colors cursor-pointer" title="Reset editor">
+        <button type="button" onClick={resetEditor} className="text-[#0F172A]/50 hover:text-[#0F172A] transition-colors cursor-pointer" title={t("Reset editor")}>
           <RefreshCcw size={13}/>
         </button>
       </div>
@@ -89,12 +90,12 @@ export default function PhotoSizePanel() {
                     : "border-[#E2E8F0] bg-white hover:border-[#2563EB]/40"}`}>
                 <span className="mb-1 shrink-0">{item.icon}</span>
 
-                <span title={item.label} className={`truncate w-full text-center text-[9px] font-bold ${isActive ? "text-[#2563EB]" : "text-[#0F172A]"}`}>
+                <span title={t(item.label)} className={`truncate w-full text-center text-[9px] font-bold ${isActive ? "text-[#2563EB]" : "text-[#0F172A]"}`}>
                   {<T>{item.label}</T>}
                 </span>
               </button>
 
-              {isPresetMode && isActive && (<button type="button" aria-label={`Open ${item.label} size menu`} onClick={() => setSizeMenu(sizeMenu === item.id ? null : item.id)} className="absolute -right-1 -top-1 rounded-full bg-white border border-[#E2E8F0] shadow-sm text-[#0F172A]/60 hover:text-[#0F172A] cursor-pointer">
+              {isPresetMode && isActive && (<button type="button" aria-label={t(`Open ${item.label} size menu`)} onClick={() => setSizeMenu(sizeMenu === item.id ? null : item.id)} className="absolute -right-1 -top-1 rounded-full bg-white border border-[#E2E8F0] shadow-sm text-[#0F172A]/60 hover:text-[#0F172A] cursor-pointer">
                   <ChevronDown size={12}/>
                 </button>)}
             </div>);
@@ -109,7 +110,7 @@ export default function PhotoSizePanel() {
             {VISA_PRESETS.map((preset) => (<button key={preset.id} type="button" onClick={() => selectPreset(preset, "visa")} className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${selectedPreset?.id === preset.id
                     ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
                     : "border-[#E2E8F0] bg-white text-[#0F172A] hover:border-[#2563EB]/40"}`}>
-                {preset.label}
+                <T>{preset.label}</T>
               </button>))}
           </div>
         </div>)}
@@ -122,7 +123,7 @@ export default function PhotoSizePanel() {
             {R_SIZE_PRESETS.map((preset) => (<button key={preset.id} type="button" onClick={() => selectPreset(preset, "rsizes")} className={`rounded-xl border px-2 py-2 text-[9px] font-bold transition-colors cursor-pointer ${selectedPreset?.id === preset.id
                     ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm"
                     : "border-[#E2E8F0] bg-white text-[#0F172A] hover:border-[#2563EB]/40"}`}>
-                {compactPresetLabel(preset.label)}
+                <T>{compactPresetLabel(preset.label)}</T>
               </button>))}
           </div>
         </div>)}
@@ -139,7 +140,7 @@ export default function PhotoSizePanel() {
             </label>
           </div>
 
-          <div className="mt-2 text-[9px] font-bold text-[#0F172A]/60"><T>{"Current: "}</T>{currentPreset.label}
+          <div className="mt-2 text-[9px] font-bold text-[#0F172A]/60"><T>{"Current: "}</T><T>{currentPreset.label}</T>
           </div>
 
           {/* Accent CTA Button */}

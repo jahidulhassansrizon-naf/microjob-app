@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import type { Dispatch, FocusEvent, FormEvent, SetStateAction } from "react";
 export default function PaperHeader({ showHeader, hiddenRegionBlockIds, fontSize, logoUrl, institutionName, setInstitutionName, examName, setExamName, selectedSubject, selectedClass, selectedChapter, timeText, totalMarks, setNoEnabled, setNo, headerNoteEnabled, headerNote, activeRegionTargetIds, canvasTextOverrides, isRegionBlockActive, handleRegionBlockInput, handleRegionBlockBlur, handleRegionBlockFocus, onRegionTargetCommit, readEditableText, }: {
     showHeader: boolean;
@@ -28,6 +28,7 @@ export default function PaperHeader({ showHeader, hiddenRegionBlockIds, fontSize
     onRegionTargetCommit?: (targetId: string, value: string) => void;
     readEditableText: (element: HTMLElement) => string;
 }) {
+    const { t } = useQuestionText();
     const headerActive = isRegionBlockActive("paper:header");
     return (<>
       {showHeader && !hiddenRegionBlockIds.has("paper:header") ? (<header data-paper-header="true" data-region-edit-target="paper:header" contentEditable={headerActive} suppressContentEditableWarning onInput={(event) => handleRegionBlockInput("paper:header", event.currentTarget)} onBlur={(event) => handleRegionBlockBlur(event, "paper:header")} onFocus={() => handleRegionBlockFocus("paper:header")} onPointerDown={(event) => {
@@ -101,13 +102,11 @@ export default function PaperHeader({ showHeader, hiddenRegionBlockIds, fontSize
               </span>
             </div>) : null}
 
-          <input value={institutionName} placeholder={headerActive
-                ? ""
-                : "Institution name (school / coaching / college)"} onChange={(event) => setInstitutionName(event.target.value)} className="w-full border-0 bg-transparent text-center font-extrabold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60" style={{
+          <input value={institutionName} placeholder={headerActive ? "" : t("Institution name (school / coaching / college)")} onChange={(event) => setInstitutionName(event.target.value)} className="w-full border-0 bg-transparent text-center font-extrabold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60" style={{
                 fontSize: `${Math.max(14, fontSize + 3)}px`,
             }} data-paper-input="institution" data-region-edit-target="paper:institution"/>
 
-          <input value={examName} placeholder={headerActive ? "" : "Set the exam name here"} onChange={(event) => setExamName(event.target.value)} className="mt-0.5 w-full border-0 bg-transparent text-center font-bold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60" style={{
+          <input value={examName} placeholder={headerActive ? "" : t("Set the exam name here")} onChange={(event) => setExamName(event.target.value)} className="mt-0.5 w-full border-0 bg-transparent text-center font-bold text-[#0F172A] outline-none placeholder:text-[#0F172A]/40 placeholder:opacity-60" style={{
                 fontSize: `${Math.max(11, fontSize + 1)}px`,
             }} data-paper-input="exam" data-region-edit-target="paper:exam"/>
 

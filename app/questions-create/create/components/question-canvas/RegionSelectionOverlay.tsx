@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import { useEffect, useRef, useState, type FocusEvent, type PointerEvent, } from "react";
 import { X } from "lucide-react";
 import type { PaperAnnotation, Question } from "../../types/question";
@@ -319,6 +319,7 @@ export function RegionSelectionOverlay({ pageIndex, pageCount, activeRegion, sel
     onRegionSelectionTargets?: (targetIds: string[]) => void;
     onActivateCanvasAnnotation?: (annotationId: string) => void;
 }) {
+    const { t } = useQuestionText();
     const [activeCanvasDraft, setActiveCanvasDraft] = useState("");
     const editorRef = useRef<HTMLTextAreaElement | null>(null);
     const activeCanvasTargetId = activeRegion?.targetIds.find((targetId) => targetId.startsWith("canvas:")) || null;
@@ -462,7 +463,7 @@ export function RegionSelectionOverlay({ pageIndex, pageCount, activeRegion, sel
                 width: `${activeRegion.width}%`,
                 height: `${activeRegion.height}%`,
             }} aria-hidden="true">
-          <button type="button" data-print-control="true" aria-label="Close selected area" title="Close selected area" onPointerDown={(event) => {
+          <button type="button" data-print-control="true" aria-label="Close selected area" title={t("Close selected area")} onPointerDown={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
             }} onClick={(event) => {

@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "../../i18n";
 import { Trash2 } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 import type { Question } from "../../types/question";
@@ -28,7 +28,7 @@ export default function SelectedQuestionsPanel({ manager, displaySelectedQuestio
 
                     {sectionGroups.map(({ type, questions: groupQuestions }) => (<div key={type} className="flex items-center justify-between gap-2">
                           <span className="text-[9px] font-semibold text-[#0F172A]/70">
-                            {getQuestionTypeLabel(type)}
+                            <T>{getQuestionTypeLabel(type)}</T>
                           </span>
 
                           <div className="flex items-center gap-1">

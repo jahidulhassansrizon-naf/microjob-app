@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
@@ -14,6 +14,7 @@ import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 export default function PhotoEditorPage() {
+    const { t } = useAiEditorText();
     const router = useRouter();
     const [authChecking, setAuthChecking] = useState(false);
     const [selectedSize, setSelectedSize] = useState("Passport");
@@ -977,7 +978,7 @@ export default function PhotoEditorPage() {
     const handleDeleteImage = async (imageToDelete: any) => {
         if (!imageToDelete)
             return;
-        const confirmDelete = window.confirm("Are you sure you want to delete this photo?");
+        const confirmDelete = window.confirm(t("Are you sure you want to delete this photo?"));
         if (!confirmDelete)
             return;
         setPreviewModalImage(null);
@@ -1052,7 +1053,7 @@ export default function PhotoEditorPage() {
       {showCropModal && (<div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
           {isCropping && (<div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3">
               <Loader2 className="w-10 h-10 animate-spin text-[#059669]"/>
-              <p className="text-sm font-medium tracking-wide"><T>{"Saving..."}</T></p>
+              <p className="text-sm font-medium tracking-wide"><AiT>{"Saving..."}</AiT></p>
             </div>)}
 
           <div className="h-14 bg-white flex items-center justify-between pl-6 pr-0 shadow-md shrink-0">
@@ -1060,7 +1061,7 @@ export default function PhotoEditorPage() {
               <span className="bg-[#4F46E5] text-white p-1 rounded-lg">
                 <ImageIcon size={16}/>
               </span>
-              <h2 className="text-sm font-semibold text-[#0F172A]"><T>{"Crop & Rotate Image\n              "}</T></h2>
+              <h2 className="text-sm font-semibold text-[#0F172A]"><AiT>{"Crop & Rotate Image\n              "}</AiT></h2>
             </div>
             <button onClick={() => {
                 if (isCropping)
@@ -1074,12 +1075,12 @@ export default function PhotoEditorPage() {
             </button>
           </div>
 
-          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2"><T>{"For passport size photos, center your face in the crop area \u2014 this\n            gives the best result.\n          "}</T></div>
+          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2"><AiT>{"For passport size photos, center your face in the crop area \u2014 this\n            gives the best result.\n          "}</AiT></div>
 
           <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-auto relative bg-[#0c1017]">
             <div className="w-full h-full flex items-center justify-center">
               <ReactCrop crop={crop} aspect={isDualMode ? 45 / 55 : getSelectedTargetAspect()} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(c) => setCompletedCrop(c)} className="max-h-[70vh]">
-                <img ref={imgRef} src={tempImageForCrop || undefined} alt="Crop Preview" style={{
+                <img ref={imgRef} src={tempImageForCrop || undefined} alt={t("Crop Preview")} style={{
                 transform: `scale(${zoom / 100}) rotate(${rotate}deg)`,
                 transition: "transform 0.2s ease-in-out",
             }} className="max-h-[70vh] object-contain select-none"/>
@@ -1090,13 +1091,13 @@ export default function PhotoEditorPage() {
           <div className="h-16 bg-white border-t border-[#E2E8F0] flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
             <div className="flex items-center gap-1">
               <div className="flex items-center rounded-lg overflow-hidden shadow-sm">
-                <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><T>{"-\n                "}</T></button>
+                <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"-\n                "}</AiT></button>
                 <div className="bg-white text-[#0F172A] font-semibold text-xs px-3 py-2">
-                  {zoom}<T>{"%\n                "}</T></div>
-                <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><T>{"+\n                "}</T></button>
+                  {zoom}<AiT>{"%\n                "}</AiT></div>
+                <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"+\n                "}</AiT></button>
               </div>
               <button onClick={() => setRotate((prev) => (prev + 90) % 360)} disabled={isCropping} className="ml-2 bg-[#059669] text-white px-3 py-2 rounded-lg text-xs flex items-center gap-1 cursor-pointer hover:bg-[#047857] transition disabled:opacity-50">
-                <RotateCw size={14}/><T>{"Rotate\n              "}</T></button>
+                <RotateCw size={14}/><AiT>{"Rotate\n              "}</AiT></button>
             </div>
 
             <div className="flex items-center gap-3 h-full">
@@ -1107,11 +1108,11 @@ export default function PhotoEditorPage() {
                     URL.revokeObjectURL(tempImageForCrop);
                 setTempImageForCrop(null);
                 setShowCropModal(false);
-            }} disabled={isCropping} className="bg-[#F1F5F9] text-[#334155] px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-[#E2E8F0] transition disabled:opacity-50"><T>{"Cancel\n              "}</T></button>
+            }} disabled={isCropping} className="bg-[#F1F5F9] text-[#334155] px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-[#E2E8F0] transition disabled:opacity-50"><AiT>{"Cancel\n              "}</AiT></button>
               <button onClick={() => handleConfirmCrop(imgRef.current)} disabled={isCropping} className="h-16 bg-[#059669] text-white px-6 text-xs flex items-center gap-2 cursor-pointer hover:bg-[#047857] transition font-semibold disabled:opacity-50">
                 {isCropping ? (<>
-                    <Loader2 size={16} className="animate-spin"/><T>{"Saving...\n                  "}</T></>) : (<>
-                    <Check size={16}/><T>{"Crop\n                  "}</T></>)}
+                    <Loader2 size={16} className="animate-spin"/><AiT>{"Saving...\n                  "}</AiT></>) : (<>
+                    <Check size={16}/><AiT>{"Crop\n                  "}</AiT></>)}
               </button>
             </div>
           </div>

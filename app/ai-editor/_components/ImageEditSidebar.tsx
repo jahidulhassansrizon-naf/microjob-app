@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useMemo, useState } from "react";
 import { X, RotateCcw, Sliders, Sparkles, Crop } from "lucide-react";
 export interface FilterState {
@@ -109,7 +109,10 @@ const CONTROLS = [
     { label: "Grayscale", key: "grayscale", min: 0, max: 100, unit: "%" },
     { label: "Sepia", key: "sepia", min: 0, max: 100, unit: "%" },
 ] as const;
-export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters, selectedAspect = "original", setSelectedAspect, onReset, }: ImageEditSidebarProps) {
+export default function ImageEditSidebar({
+    isOpen, onClose, filters, setFilters, selectedAspect = "original", setSelectedAspect, onReset,
+}: ImageEditSidebarProps) {
+    const { t } = useAiEditorText();
     const [activeTab, setActiveTab] = useState<"adjust" | "crop">("adjust");
     const activePreset = useMemo(() => PRESETS.find((preset) => (Object.keys(preset.filters) as (keyof FilterState)[]).every((key) => filters[key] === preset.filters[key]))?.name, [filters]);
     if (!isOpen)
@@ -121,20 +124,20 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
         setFilters(DEFAULT_FILTERS);
         onReset();
     };
-    return (<aside className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#0F172A]/95 backdrop-blur-md border-l border-slate-700 text-white p-5 flex flex-col z-20 shadow-2xl" aria-label="Image editing tools">
+    return (<aside className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#0F172A]/95 backdrop-blur-md border-l border-slate-700 text-white p-5 flex flex-col z-20 shadow-2xl" aria-label={t("Image editing tools")}>
       <div className="overflow-y-auto pr-1">
         <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
           <div className="flex gap-2 bg-slate-800/80 p-1 rounded-lg">
             <button type="button" onClick={() => setActiveTab("adjust")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${activeTab === "adjust"
             ? "bg-[#2563EB] text-white"
             : "text-slate-400 hover:text-white"}`}>
-              <Sliders size={14}/><T>{"Adjustments\r\n            "}</T></button>
+              <Sliders size={14}/><AiT>{"Adjustments\r\n            "}</AiT></button>
             <button type="button" onClick={() => setActiveTab("crop")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${activeTab === "crop"
             ? "bg-[#2563EB] text-white"
             : "text-slate-400 hover:text-white"}`}>
-              <Crop size={14}/><T>{"Aspect Ratio\r\n            "}</T></button>
+              <Crop size={14}/><AiT>{"Aspect Ratio\r\n            "}</AiT></button>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close image editor" className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer">
+          <button type="button" onClick={onClose} aria-label={t("Close image editor")} className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer">
             <X size={18}/>
           </button>
         </div>
@@ -143,7 +146,7 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
             <div className="mb-5">
               <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2.5">
                 <Sparkles size={14} className="text-[#10B981]"/>
-                <span><T>{"Quick Presets"}</T></span>
+                <span><AiT>{"Quick Presets"}</AiT></span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {PRESETS.map((preset) => {
@@ -158,11 +161,11 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
             </div>
 
             <div className="border-t border-slate-700/80 pt-4 mb-2">
-              <span className="text-xs font-medium text-slate-300 block mb-3"><T>{"Manual Controls\r\n              "}</T></span>
+              <span className="text-xs font-medium text-slate-300 block mb-3"><AiT>{"Manual Controls\r\n              "}</AiT></span>
               <div className="space-y-4">
                 {CONTROLS.map((control) => (<label key={control.key} className="block space-y-1.5">
                     <div className="flex justify-between text-xs text-slate-300">
-                      <span>{control.label}</span>
+                      <span><AiT>{control.label}</AiT></span>
                       <span className="font-mono text-slate-400">
                         {filters[control.key]}
                         {control.unit}
@@ -173,7 +176,7 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
               </div>
             </div>
           </>) : (<div className="space-y-3 pt-2">
-            <span className="text-xs font-medium text-slate-300 block mb-2"><T>{"Select Aspect Ratio Crop\r\n            "}</T></span>
+            <span className="text-xs font-medium text-slate-300 block mb-2"><AiT>{"Select Aspect Ratio Crop\r\n            "}</AiT></span>
             <div className="grid grid-cols-2 gap-2.5">
               {ASPECT_RATIOS.map((item) => {
                 const selected = selectedAspect === item.value;
@@ -181,7 +184,7 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
                         ? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB]"
                         : "bg-white/5 border-slate-700 text-slate-300 hover:bg-white/10 hover:border-slate-600"}`}>
                     <Crop size={16} className={selected ? "text-[#2563EB]" : "text-slate-400"}/>
-                    <span>{<T>{item.label}</T>}</span>
+                    <span><AiT>{item.label}</AiT></span>
                   </button>);
             })}
             </div>
@@ -190,7 +193,7 @@ export default function ImageEditSidebar({ isOpen, onClose, filters, setFilters,
 
       <div className="pt-4 border-t border-slate-700 flex gap-2">
         <button type="button" onClick={handleReset} className="flex-1 bg-white/10 hover:bg-white/20 text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
-          <RotateCcw size={14}/><T>{"Reset All\r\n        "}</T></button>
+          <RotateCcw size={14}/><AiT>{"Reset All\r\n        "}</AiT></button>
       </div>
     </aside>);
 }

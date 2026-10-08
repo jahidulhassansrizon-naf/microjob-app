@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "../../i18n";
 import { Shuffle } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 export default function AutoCreatePanel({ manager, onExitDemo, }: {

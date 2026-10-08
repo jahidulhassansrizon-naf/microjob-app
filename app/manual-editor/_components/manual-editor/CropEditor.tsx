@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -16,6 +16,7 @@ function centerFreeCrop(mediaWidth: number, mediaHeight: number) {
     }, mediaWidth, mediaHeight);
 }
 export default function CropEditor() {
+    const { t } = useManualEditorText();
     const { activePhoto, rotation, flipX, applyCroppedDataUrl, cropAvailable, consumeCrop, } = useManualEditor();
     const [open, setOpen] = useState(false);
     const [zoom, setZoom] = useState(100);
@@ -179,7 +180,7 @@ export default function CropEditor() {
           </div>
         </div>
 
-        <button type="button" aria-label="Close crop editor" onClick={closeCrop} className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors cursor-pointer">
+        <button type="button" aria-label={t("Close crop editor")} onClick={closeCrop} className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors cursor-pointer">
           <X size={22} strokeWidth={2.2}/>
         </button>
       </div>
@@ -188,24 +189,24 @@ export default function CropEditor() {
         <div className="flex items-center justify-center origin-center transition-transform duration-75" style={{ transform: `scale(${zoom / 100})` }}>
           {processedSrc ? (<ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(value) => setCompletedCrop(value)} className="max-w-[82vw] max-h-[72vh]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img ref={imgRef} alt="Crop preview" src={processedSrc} onLoad={onImageLoad} className="max-w-[82vw] max-h-[72vh] w-auto h-auto object-contain block"/>
+              <img ref={imgRef} alt={t("Crop preview")} src={processedSrc} onLoad={onImageLoad} className="max-w-[82vw] max-h-[72vh] w-auto h-auto object-contain block"/>
             </ReactCrop>) : (<div className="text-sm text-white/60"><T>{"Preparing image\u2026"}</T></div>)}
         </div>
       </div>
 
       <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-t border-[#E2E8F0] flex items-stretch justify-between">
         <div className="flex items-stretch">
-          <button type="button" aria-label="Zoom out" onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Zoom out")} onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
             <Minus size={17} strokeWidth={2.2}/>
           </button>
           <div className="w-[48px] bg-[#F8FAFC] flex items-center justify-center text-[12px] font-black border-r border-[#E2E8F0] text-[#0F172A]">
             {zoom}<T>{"%\r\n          "}</T></div>
-          <button type="button" aria-label="Zoom in" onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Zoom in")} onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
             <Plus size={17} strokeWidth={2.2}/>
           </button>
-          <button type="button" aria-label="Rotate image" onClick={handleRotate} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Rotate image")} onClick={handleRotate} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
             <RotateCcw size={15} strokeWidth={2}/><T>{"Rotate\r\n          "}</T></button>
-          <button type="button" aria-label="Mirror image" onClick={handleMirror} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Mirror image")} onClick={handleMirror} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
             <FlipHorizontal2 size={15} strokeWidth={2}/><T>{"Mirror\r\n          "}</T></button>
         </div>
 

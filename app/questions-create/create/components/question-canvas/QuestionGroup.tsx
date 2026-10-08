@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import type { Dispatch, DragEvent, FocusEvent, FormEvent, SetStateAction, } from "react";
 import type { JointPage, Question, QuestionLayout } from "../../types/question";
 import { DEFAULT_QUESTION_LAYOUT, getQuestionTypeLabel, } from "../../types/question";
@@ -50,6 +50,7 @@ export default function QuestionGroup({ group, layoutColumns, paperGap, hiddenRe
     questionLayoutById?: Record<string, QuestionLayout>;
     onAdjustQuestionLayout?: (questionId: string, field: keyof QuestionLayout, delta: number) => void;
 }) {
+    const { t } = useQuestionText();
     const headingBlockId = `group:${group.type}:heading-block`;
     const headingTargetId = `group:${group.type}:heading`;
     const isHeadingActive = isRegionBlockActive(headingBlockId);

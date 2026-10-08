@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import { useEffect, useMemo, useRef, useState, type Dispatch, type DragEvent, type FocusEvent, type FormEvent, type PointerEvent as ReactPointerEvent, type SetStateAction, } from "react";
 import { createPortal } from "react-dom";
 import katex from "katex";
@@ -231,6 +231,7 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
     onRegionBlockEmpty?: (blockId: string) => void;
     canvasTextOverrides?: Record<string, string>;
 }) {
+    const { t } = useQuestionText();
     const isEditing = editingQuestionId === question.id;
     const isActive = activeQuestionId === question.id;
     const [draft, setDraft] = useState<Question>(question);
@@ -576,7 +577,7 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
             : "font-bold"} min-w-0 cursor-text text-[#0F172A]`} style={{
             fontSize: `${scaledFontSize}px`,
             lineHeight: 1.45,
-        }} title="Double-click to edit">
+        }} title={t("Double-click to edit")}>
                       <span data-region-edit-target={`question:${question.id}:number`}>
                         {Object.prototype.hasOwnProperty.call(canvasTextOverrides, `question:${question.id}:number`)
             ? canvasTextOverrides[`question:${question.id}:number`]
@@ -734,7 +735,7 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
             {showResizeUI ? (<div className="screen-only pointer-events-none absolute inset-0 z-50" data-print-control="true" aria-hidden="true">
                 <div className="absolute inset-0 rounded-[4px] border border-dashed border-[#2563EB]/60"/>
 
-                <button type="button" aria-label="Move question horizontally" className="pointer-events-auto absolute left-1/2 top-[-8px] flex h-4 min-w-7 -translate-x-1/2 items-center justify-center rounded-full border border-white bg-[#2563EB] px-1 text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)] cursor-move" onPointerDown={beginQuestionMove} onPointerMove={handleQuestionMoveMove} onPointerUp={finishQuestionMove} onPointerCancel={cancelQuestionMove} onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} title="Drag to move question left or right">
+                <button type="button" aria-label="Move question horizontally" className="pointer-events-auto absolute left-1/2 top-[-8px] flex h-4 min-w-7 -translate-x-1/2 items-center justify-center rounded-full border border-white bg-[#2563EB] px-1 text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)] cursor-move" onPointerDown={beginQuestionMove} onPointerMove={handleQuestionMoveMove} onPointerUp={finishQuestionMove} onPointerCancel={cancelQuestionMove} onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()} title={t("Drag to move question left or right")}>
                   <Move size={8}/>
                 </button>
 
@@ -801,17 +802,17 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
          * hover never changes the row's width or height anymore.
          */}
           {showControls && !isEditing ? (<div data-print-control="true" className="screen-only absolute right-1.5 top-0 z-40 flex max-w-[245px] flex-wrap items-center justify-end gap-1 rounded-lg border border-[#E2E8F0] bg-white p-1 shadow-sm" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.preventDefault()}>
-              <button type="button" onClick={beginEdit} className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]" title="Edit question">
+              <button type="button" onClick={beginEdit} className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]" title={t("Edit question")}>
                 <Pencil size={9}/><T>{"Edit\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", -5)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title="Decrease question font size"><T>{"A\u2212\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", 5)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title="Increase question font size"><T>{"A+\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", -1)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title="Reduce spacing"><T>{"S\u2212\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", 1)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title="Increase spacing"><T>{"S+\n              "}</T></button>
-              {jointPage && onMoveToPage && pageCount ? (<select value={currentPageIndex ?? 0} onChange={(event) => onMoveToPage(question.id, Number(event.target.value))} className="h-6 max-w-[68px] rounded-md border border-[#E2E8F0] bg-white px-1 text-[7px] font-bold text-[#0F172A] outline-none" title="Move question to page">
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", -5)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title={t("Decrease question font size")}><T>{"A\u2212\n              "}</T></button>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", 5)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title={t("Increase question font size")}><T>{"A+\n              "}</T></button>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", -1)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title={t("Reduce spacing")}><T>{"S\u2212\n              "}</T></button>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", 1)} className="h-6 rounded-md px-1.5 text-[7px] font-extrabold text-[#0F172A] hover:bg-[#E2E8F0]" title={t("Increase spacing")}><T>{"S+\n              "}</T></button>
+              {jointPage && onMoveToPage && pageCount ? (<select value={currentPageIndex ?? 0} onChange={(event) => onMoveToPage(question.id, Number(event.target.value))} className="h-6 max-w-[68px] rounded-md border border-[#E2E8F0] bg-white px-1 text-[7px] font-bold text-[#0F172A] outline-none" title={t("Move question to page")}>
                   {Array.from({ length: pageCount }, (_, index) => (<option key={index} value={index}><T>{"Page "}</T>{index + 1}
                     </option>))}
                 </select>) : null}
-              <button type="button" onClick={onRemove} className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-red-500 hover:bg-red-50" title="Remove question">
+              <button type="button" onClick={onRemove} className="flex h-6 items-center gap-1 rounded-md px-1.5 text-[7px] font-bold text-red-500 hover:bg-red-50" title={t("Remove question")}>
                 <Trash2 size={9}/>
               </button>
             </div>) : null}

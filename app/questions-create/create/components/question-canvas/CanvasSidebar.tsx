@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "../../i18n";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 import type { Question } from "../../types/question";
 import AutoCreatePanel from "./AutoCreatePanel";

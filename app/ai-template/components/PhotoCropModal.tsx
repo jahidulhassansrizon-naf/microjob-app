@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { useAiTemplateText } from "./aiTemplateI18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import { X } from "lucide-react";
@@ -49,6 +49,7 @@ type PhotoCropModalProps = {
  * whole template grid re-renders on each move and the crop feels laggy.
  */
 export const PhotoCropModal = React.memo(function PhotoCropModal({ imageSrc, onCancel, onApply, }: PhotoCropModalProps) {
+    const { t } = useAiTemplateText();
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
     const [isCropping, setIsCropping] = useState(false);
@@ -141,39 +142,39 @@ export const PhotoCropModal = React.memo(function PhotoCropModal({ imageSrc, onC
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [handleCancel]);
     return (<div className="crop-backdrop">
-      <div className="crop-modal" role="dialog" aria-modal="true" aria-label="Crop your photo">
+      <div className="crop-modal" role="dialog" aria-modal="true" aria-label={t("Crop your photo")}>
         <div className="crop-header">
           <div>
-            <strong><T>{"Adjust your photo"}</T></strong>
-            <span><T>{"Move and resize the crop area to select the part of the photo you\n              want to use.\n            "}</T></span>
+            <strong>{t("Adjust your photo")}</strong>
+            <span>{t("Move and resize the crop area to select the part of the photo you want to use.")}</span>
           </div>
 
-          <button type="button" className="crop-close" onClick={handleCancel} disabled={isCropping} aria-label="Cancel crop">
+          <button type="button" className="crop-close" onClick={handleCancel} disabled={isCropping} aria-label={t("Cancel crop")}>
             <X size={18}/>
           </button>
         </div>
 
         <div className="crop-stage">
           <ReactCrop crop={crop} minWidth={24} minHeight={24} keepSelection ruleOfThirds onChange={(_, percentCrop) => handleCropChange(percentCrop)} onComplete={handleCropComplete} disabled={isCropping}>
-            <img ref={imgRef} src={imageSrc} alt="Crop your uploaded photo" onLoad={handleImageLoad} className="crop-source-image" draggable={false}/>
+            <img ref={imgRef} src={imageSrc} alt={t("Crop your uploaded photo")} onLoad={handleImageLoad} className="crop-source-image" draggable={false}/>
           </ReactCrop>
         </div>
 
         <div className="crop-controls">
-          <span><T>{"Crop"}</T></span>
+          <span>{t("Crop")}</span>
 
-          <span className="crop-controls-help"><T>{"Drag inside the box to move it. Drag any corner or edge to resize\n            freely.\n          "}</T></span>
+          <span className="crop-controls-help">{t("Drag inside the box to move it. Drag any corner or edge to resize freely.")}</span>
 
-          <span><T>{"Free"}</T></span>
+          <span>{t("Free")}</span>
         </div>
 
-        {errorMessage && <p className="crop-error">{errorMessage}</p>}
+        {errorMessage && <p className="crop-error">{t(errorMessage)}</p>}
 
         <div className="crop-actions">
-          <button type="button" className="crop-cancel-btn" onClick={handleCancel} disabled={isCropping}><T>{"Cancel\n          "}</T></button>
+          <button type="button" className="crop-cancel-btn" onClick={handleCancel} disabled={isCropping}>{t("Cancel")}</button>
 
           <button type="button" className="crop-apply-btn" onClick={handleApply} disabled={isCropping}>
-            {isCropping ? <T>{"Preparing..."}</T> : <T>{"Use This Photo"}</T>}
+            {isCropping ? t("Preparing...") : t("Use This Photo")}
           </button>
         </div>
       </div>

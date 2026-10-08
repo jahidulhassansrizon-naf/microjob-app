@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import { FileText, Image as ImageIcon, Minus, Plus, Settings2, Shuffle, X, } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 function Toggle({ checked, onChange, }: {
@@ -15,6 +15,7 @@ export default function PaperToolbar({ manager, demoMode, loadDemo, }: {
     demoMode: boolean;
     loadDemo: () => void;
 }) {
+    const { t } = useQuestionText();
     const { logoInputRef, handleLogoChange, logoUrl, removeLogo, fontScale, setFontScale, handlePageSizeChange, pageSize, setNoEnabled, toggleSetNoEnabled, setNo, setSetNo, shuffleSelected, layoutRef, layoutOpen, setLayoutOpen, layoutColumns, setLayoutColumns, compactSpacing, setCompactSpacing, selectAnswerEnabled, setSelectAnswerEnabled, headerNoteEnabled, setHeaderNoteEnabled, headerNote, setHeaderNote, footerText, setFooterText, } = manager;
     return (<div className="screen-only rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm xl:p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[85px_110px_minmax(270px,1fr)_115px_140px] xl:items-start">
@@ -71,9 +72,9 @@ export default function PaperToolbar({ manager, demoMode, loadDemo, }: {
           <div className="flex h-8 items-center gap-2">
             <Toggle checked={setNoEnabled} onChange={toggleSetNoEnabled}/>
 
-            {setNoEnabled ? (<input value={setNo} onChange={(event) => setSetNo(event.target.value)} placeholder="e.g. A" className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-semibold outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
+            {setNoEnabled ? (<input value={setNo} onChange={(event) => setSetNo(event.target.value)} placeholder={t("e.g. A")} className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-semibold outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
 
-            {setNoEnabled ? (<button type="button" onClick={shuffleSelected} title="Shuffle selected questions" className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]">
+            {setNoEnabled ? (<button type="button" onClick={shuffleSelected} title={t("Shuffle selected questions")} className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 text-[9px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]">
                 <Shuffle size={10}/><T>{"Shuffle\n              "}</T></button>) : null}
           </div>
         </div>
@@ -120,7 +121,7 @@ export default function PaperToolbar({ manager, demoMode, loadDemo, }: {
           <div className="flex min-h-8 items-center gap-2">
             <Toggle checked={headerNoteEnabled} onChange={() => setHeaderNoteEnabled((value) => !value)}/>
 
-            {headerNoteEnabled ? (<input value={headerNote} onChange={(event) => setHeaderNote(event.target.value)} placeholder="Enter a note" className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
+            {headerNoteEnabled ? (<input value={headerNote} onChange={(event) => setHeaderNote(event.target.value)} placeholder={t("Enter a note")} className="h-8 w-full rounded-lg border border-[#E2E8F0] px-2 text-[9px] outline-none focus:border-[#2563EB]"/>) : (<span className="text-[9px] font-semibold text-[#0F172A]/55"><T>{"Off\n              "}</T></span>)}
           </div>
         </div>
 
@@ -135,7 +136,7 @@ export default function PaperToolbar({ manager, demoMode, loadDemo, }: {
 
           <button type="button" onClick={loadDemo} className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-[9px] font-extrabold transition ${demoMode
             ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
-            : "border-[#2563EB]/40 bg-white text-[#2563EB] hover:border-[#2563EB] hover:bg-[#E2E8F0]/60"}`} title="Load a complete demo question paper for UI testing">
+            : "border-[#2563EB]/40 bg-white text-[#2563EB] hover:border-[#2563EB] hover:bg-[#E2E8F0]/60"}`} title={t("Load a complete demo question paper for UI testing")}>
             <FileText size={10}/>
             {demoMode ? <T>{"Demo Loaded"}</T> : <T>{"Load Demo"}</T>}
           </button>

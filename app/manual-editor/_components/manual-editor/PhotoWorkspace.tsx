@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { ArrowLeftRight, FlipHorizontal2, Image as ImageIcon, Maximize2, RotateCcw, RotateCw, ScanLine, Upload, X, ZoomIn, ZoomOut, } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, } from "react";
 import { useManualEditor } from "./EditorProvider";
@@ -82,11 +82,12 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
     onCancel?: () => void;
     firstRunMessage?: string;
 }) {
+    const { t } = useManualEditorText();
     const label = mode === "upscale"
-        ? "Upscaling Image..."
+        ? t("Upscaling Image...")
         : mode === "face"
-            ? "Enhancing Face..."
-            : "Removing Background...";
+            ? t("Enhancing Face...")
+            : t("Removing Background...");
     const progressPercent = Math.max(8, Math.min(100, Math.round(progress * 100)));
     return (<div className="absolute z-40 overflow-hidden rounded-2xl border border-cyan-200/30 bg-slate-950/18 backdrop-blur-[1.5px] pointer-events-auto" style={style} aria-live="polite" aria-busy="true">
       <style>{`
@@ -131,7 +132,7 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
         }
       `}</style>
 
-      {onCancel && (<button type="button" onClick={onCancel} className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70" title="Cancel processing" aria-label="Cancel processing">
+      {onCancel && (<button type="button" onClick={onCancel} className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70" title={t("Cancel processing")} aria-label={t("Cancel processing")}>
           <X className="h-3.5 w-3.5" strokeWidth={2.2}/>
         </button>)}
 
@@ -164,7 +165,7 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
         <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70"><T>{"AI scan in progress\n        "}</T></span>
 
         {firstRunMessage && (<span className="mt-1.5 max-w-[230px] text-center text-[8px] font-semibold leading-tight text-white/85">
-            {firstRunMessage}
+            <T>{firstRunMessage}</T>
           </span>)}
       </div>
 
@@ -179,6 +180,7 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
     </div>);
 }
 export default function PhotoWorkspace() {
+    const { t } = useManualEditorText();
     const { activePhoto, comparisonOriginalFile, dualPhotos, activeDualSlot, setActiveDualSlot, swapDualPhotos, openFilePicker, fileInputRef, handleFileInput, handleDrop, setIsDragging, uploadError, isDragging, activeBackground, backgroundRemoved, currentPreset, photoMode, zoom, setZoom, rotation, setRotation, flipX, setFlipX, removeActivePhoto, activeAiTool, aiProcessing, aiProgress, cancelAiProcessing, isRemovingBackground, aiNotice, objectMaskDataUrl, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, objectTab, brightness, contrast, saturation, } = useManualEditor();
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const previewHostRef = useRef<HTMLDivElement | null>(null);
@@ -579,7 +581,7 @@ export default function PhotoWorkspace() {
               </>) : (<>
                 <div className="flex flex-col items-center gap-2">
                   <div className="text-[11px] font-black text-[#0F172A]">
-                    {currentPreset.label}
+                    <T>{currentPreset.label}</T>
                   </div>
                   <div className="text-[9px] text-slate-500">
                     {presetSizeText}
@@ -602,8 +604,8 @@ export default function PhotoWorkspace() {
                     }} onPointerMove={handleComparePointerMove} onPointerUp={handleComparePointerUp} onPointerCancel={handleComparePointerUp} onDoubleClick={(event) => {
                         event.stopPropagation();
                         setComparePosition(50);
-                    }} role="group" aria-label="Before and after image comparison">
-                        <img src={compareOriginalUrl} alt="Original photo" className="absolute inset-0 block h-full w-full object-contain" draggable={false}/>
+                    }} role="group" aria-label={t("Before and after image comparison")}>
+                        <img src={compareOriginalUrl} alt={t("Original photo")} className="absolute inset-0 block h-full w-full object-contain" draggable={false}/>
 
                         <div className="absolute inset-0 overflow-hidden" style={{
                         clipPath: `inset(0 ${100 - comparePosition}% 0 0)`,
@@ -611,7 +613,7 @@ export default function PhotoWorkspace() {
                             ? activeBackground
                             : "transparent",
                     }}>
-                          <img src={activePhoto!.url} alt="Edited photo" className="absolute inset-0 block h-full w-full object-contain" style={{
+                          <img src={activePhoto!.url} alt={t("Edited photo")} className="absolute inset-0 block h-full w-full object-contain" style={{
                         filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
                     }} draggable={false}/>
                         </div>
@@ -624,7 +626,7 @@ export default function PhotoWorkspace() {
 
                         <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-slate-950/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Edited\n                        "}</T></div>
                         <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-slate-950/65 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Original\n                        "}</T></div>
-                      </div>) : (<img src={activePhoto!.url} alt="Uploaded" className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
+                      </div>) : (<img src={activePhoto!.url} alt={t("Uploaded")} className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
                         filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
                     }}/>)}
 
@@ -642,18 +644,18 @@ export default function PhotoWorkspace() {
 
                   {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (<ObjectMaskCanvas />)}
 
-                  {!aiProcessing && !compareOpen && (<button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={removeActivePhoto} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition" title="Remove photo">
+                  {!aiProcessing && !compareOpen && (<button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={removeActivePhoto} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition" title={t("Remove photo")}>
                       <X size={14}/>
                     </button>)}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title="Zoom out">
+                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title={t("Zoom out")}>
                     <ZoomOut size={14}/>
                   </button>
                   <span className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] flex items-center text-xs font-black">
                     {zoom}<T>{"%\n                  "}</T></span>
-                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title="Zoom in">
+                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title={t("Zoom in")}>
                     <ZoomIn size={14}/>
                   </button>
                   <button type="button" onClick={() => setRotation((rotation - 90 + 360) % 360)} className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition">
@@ -666,7 +668,7 @@ export default function PhotoWorkspace() {
                     <FlipHorizontal2 size={13}/><T>{"Mirror\n                  "}</T></button>
                   {hasComparison && (<button type="button" disabled={Boolean(aiProcessing)} onClick={() => setCompareOpen((current) => !current)} className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 transition ${compareOpen
                         ? "bg-[#2563EB] text-white shadow-md"
-                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"} disabled:cursor-not-allowed disabled:opacity-50`} title="Compare edited and original" aria-pressed={compareOpen}>
+                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"} disabled:cursor-not-allowed disabled:opacity-50`} title={t("Compare edited and original")} aria-pressed={compareOpen}>
                       <ArrowLeftRight size={13}/><T>{"Compare\n                    "}</T></button>)}
                   <button type="button" onClick={() => {
                     setZoom(100);
@@ -678,7 +680,7 @@ export default function PhotoWorkspace() {
               </>)}
 
             {uploadError && (<div className="absolute bottom-3 left-4 right-4 rounded-xl border border-red-500/30 bg-red-50 px-4 py-2 text-center text-[10px] font-semibold text-red-600 shadow-sm">
-                {uploadError}
+                <T>{uploadError}</T>
               </div>)}
           </div>)}
       </main>

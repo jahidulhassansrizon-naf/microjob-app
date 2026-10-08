@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T } from "./_components/manual-editor/manualEditorI18n";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import PhotoSizePanel from "./_components/manual-editor/PhotoSizePanel";
 import BackgroundPanel from "./_components/manual-editor/BackgroundPanel";

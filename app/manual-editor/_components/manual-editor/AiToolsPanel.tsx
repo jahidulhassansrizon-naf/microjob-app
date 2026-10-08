@@ -1,10 +1,11 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { Eraser, Eye, FileEdit, Grid, Loader2, Maximize2, Plus, Redo2, RefreshCcw, ScanLine, Sparkles, Undo2, UserCheck, } from "lucide-react";
 import type { ObjectTab } from "./types";
 import { useManualEditor } from "./EditorProvider";
 import { preloadFaceDetector, preloadUpscaler } from "./aiEnhancement";
 export default function AiToolsPanel() {
+    const { t } = useManualEditorText();
     const { activeAiTool, showUnsupportedAiMessage, runUpscale, runFaceEnhance, aiProcessing, aiNotice, objectTab, setObjectTab, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, brushSize, setObjectBrightness, setObjectContrast, setObjectSaturation, setObjectHue, setShadowStrength, setBrushSize, objectPreview, setObjectPreview, objectBrushMode, setObjectBrushMode, objectMaskBusy, objectApplyBusy, undoObjectMask, redoObjectMask, resetObjectAdjust, cancelObjectAdjust, applyObjectAdjust, } = useManualEditor();
     return (<>
       <style>{`
@@ -78,8 +79,8 @@ export default function AiToolsPanel() {
             <span className="text-[8px] font-bold leading-tight text-[#0F172A]">
               {aiProcessing === tool.id
             ? tool.id === "upscale"
-                ? "Upscaling…"
-                : "Enhancing…"
+                ? <T>{"Upscaling…"}</T>
+                : <T>{"Enhancing…"}</T>
             : <T>{tool.label}</T>}
             </span>
           </button>))}
@@ -95,7 +96,7 @@ export default function AiToolsPanel() {
       </div>
 
       {aiNotice && (<div className="rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-[9px] leading-4 text-indigo-700">
-          {aiNotice}
+          <T>{aiNotice}</T>
         </div>)}
 
       {activeAiTool === "object" && (<div className="space-y-3 rounded-2xl border border-[#E2E8F0] bg-white p-2.5">
@@ -108,7 +109,7 @@ export default function AiToolsPanel() {
             ].map(([id, label]) => (<button key={id} type="button" onClick={() => setObjectTab(id as ObjectTab)} className={`rounded-lg border py-2 text-[10px] font-black transition cursor-pointer ${objectTab === id
                     ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                     : "border-[#E2E8F0] text-gray-500 hover:border-gray-300"}`}>
-                {label}
+                <T>{label}</T>
               </button>))}
           </div>
 
@@ -154,33 +155,33 @@ export default function AiToolsPanel() {
           </div>
 
           <div className="grid grid-cols-6 gap-1.5">
-            <button type="button" title="Brush" onClick={() => setObjectBrushMode("brush")} className={`rounded-lg border p-2 cursor-pointer ${objectBrushMode === "brush"
+            <button type="button" title={t("Brush")} onClick={() => setObjectBrushMode("brush")} className={`rounded-lg border p-2 cursor-pointer ${objectBrushMode === "brush"
                 ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                 : "border-[#E2E8F0] text-gray-600"}`}>
               <Plus size={14} className="mx-auto"/>
             </button>
 
-            <button type="button" title="Erase" onClick={() => setObjectBrushMode("erase")} className={`rounded-lg border p-2 cursor-pointer ${objectBrushMode === "erase"
+            <button type="button" title={t("Erase")} onClick={() => setObjectBrushMode("erase")} className={`rounded-lg border p-2 cursor-pointer ${objectBrushMode === "erase"
                 ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                 : "border-[#E2E8F0] text-gray-600"}`}>
               <Eraser size={14} className="mx-auto"/>
             </button>
 
-            <button type="button" title="Undo" onClick={undoObjectMask} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer">
+            <button type="button" title={t("Undo")} onClick={undoObjectMask} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer">
               <Undo2 size={14} className="mx-auto"/>
             </button>
 
-            <button type="button" title="Redo" onClick={redoObjectMask} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer">
+            <button type="button" title={t("Redo")} onClick={redoObjectMask} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer">
               <Redo2 size={14} className="mx-auto"/>
             </button>
 
-            <button type="button" title="Show / Hide Selection" onClick={() => setObjectPreview(!objectPreview)} className={`rounded-lg border p-2 cursor-pointer ${objectPreview
+            <button type="button" title={t("Show / Hide Selection")} onClick={() => setObjectPreview(!objectPreview)} className={`rounded-lg border p-2 cursor-pointer ${objectPreview
                 ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                 : "border-[#E2E8F0] text-gray-500"}`}>
               <Eye size={14} className="mx-auto"/>
             </button>
 
-            <button type="button" title="Reset" onClick={() => void resetObjectAdjust()} disabled={objectMaskBusy || objectApplyBusy} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" title={t("Reset")} onClick={() => void resetObjectAdjust()} disabled={objectMaskBusy || objectApplyBusy} className="rounded-lg border border-[#E2E8F0] p-2 text-gray-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
               {objectMaskBusy ? (<Loader2 size={14} className="mx-auto animate-spin"/>) : (<RefreshCcw size={14} className="mx-auto"/>)}
             </button>
           </div>

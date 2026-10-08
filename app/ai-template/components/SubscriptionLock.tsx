@@ -1,10 +1,12 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import React from "react";
+import { useAiTemplateText } from "./aiTemplateI18n";
 import { useEffect, useState } from "react";
 import { LockKeyhole, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 type GateStatus = "checking" | "locked" | "active";
 export default function SubscriptionLock() {
+    const { t } = useAiTemplateText();
     const [status, setStatus] = useState<GateStatus>("checking");
     const [showDialog, setShowDialog] = useState(false);
     useEffect(() => {
@@ -51,7 +53,7 @@ export default function SubscriptionLock() {
     };
     return (<>
       {/* Transparent interaction shield: the page remains visible, but no tool activity can pass through. */}
-      <div className="fixed inset-0 z-[1900] cursor-not-allowed bg-transparent" onPointerDown={openDialog} onClick={openDialog} onContextMenu={openDialog} role="button" aria-label="Subscription required" tabIndex={0} onKeyDown={(event) => {
+      <div className="fixed inset-0 z-[1900] cursor-not-allowed bg-transparent" onPointerDown={openDialog} onClick={openDialog} onContextMenu={openDialog} role="button" aria-label={t("Subscription required")} tabIndex={0} onKeyDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
             setShowDialog(true);
@@ -59,15 +61,15 @@ export default function SubscriptionLock() {
         <button type="button" className="absolute right-4 top-20 flex items-center gap-2 rounded-full border border-amber-200 bg-white/95 px-3 py-2 text-xs font-black text-amber-800 shadow-lg backdrop-blur" onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
-        }} onClick={openDialog} aria-label="Subscription required">
+        }} onClick={openDialog} aria-label={t("Subscription required")}>
           <LockKeyhole size={16} strokeWidth={2.5}/>
-          {status === "checking" ? <T>{"Checking access..."}</T> : <T>{"Locked"}</T>}
+          {status === "checking" ? t("Checking access...") : t("Locked")}
         </button>
       </div>
 
       {showDialog && (<div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-[2px]" onClick={() => setShowDialog(false)}>
           <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="subscription-required-title">
-            <button type="button" onClick={() => setShowDialog(false)} className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
+            <button type="button" onClick={() => setShowDialog(false)} className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label={t("Close")}>
               <X size={18}/>
             </button>
 
@@ -76,17 +78,17 @@ export default function SubscriptionLock() {
             </div>
 
             <div className="mt-5 text-center">
-              <h2 id="subscription-required-title" className="text-xl font-black tracking-tight text-slate-900"><T>{"Subscription Required\n              "}</T></h2>
+              <h2 id="subscription-required-title" className="text-xl font-black tracking-tight text-slate-900">{t("Subscription Required")}</h2>
 
-              <p className="mt-3 text-sm font-medium leading-6 text-slate-600"><T>{"\u098F\u0987 \u09AA\u09C7\u0987\u099C\u09C7\u09B0 AI features \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0 \u0995\u09B0\u09A4\u09C7 \u0986\u0997\u09C7 \u098F\u0995\u099F\u09BF active subscription\n                \u09A8\u09BF\u09A4\u09C7 \u09B9\u09AC\u09C7\u0964\n              "}</T></p>
+              <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{t("Before using the AI features on this page, you need an active subscription.")}</p>
 
-              <p className="mt-2 text-xs font-semibold text-slate-400"><T>{"Subscription active \u09B9\u09B2\u09C7 \u098F\u0987 lock \u09A8\u09BF\u099C\u09C7 \u09A5\u09C7\u0995\u09C7\u0987 \u099A\u09B2\u09C7 \u09AF\u09BE\u09AC\u09C7 \u098F\u09AC\u0982 \u09AA\u09C7\u0987\u099C\u09C7\u09B0\n                \u09B8\u09AC feature \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0 \u0995\u09B0\u09A4\u09C7 \u09AA\u09BE\u09B0\u09AC\u09C7\u09A8\u0964\n              "}</T></p>
+              <p className="mt-2 text-xs font-semibold text-slate-400">{t("Once your subscription is active, this lock will disappear automatically and you can use all features on the page.")}</p>
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/subscription" className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-blue-700"><T>{"View Subscription Plans\n              "}</T></Link>
+              <Link href="/subscription" className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-blue-700">{t("View Subscription Plans")}</Link>
 
-              <button type="button" onClick={() => setShowDialog(false)} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"><T>{"Close\n              "}</T></button>
+              <button type="button" onClick={() => setShowDialog(false)} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">{t("Close")}</button>
             </div>
           </div>
         </div>)}

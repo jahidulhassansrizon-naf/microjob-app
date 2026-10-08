@@ -41,6 +41,7 @@ import {
   preloadSegmenter,
   removeBackgroundFromImage,
 } from "./segmentation";
+import { useManualEditorText } from "./manualEditorI18n";
 import type {
   AiTool,
   ObjectBrushMode,
@@ -444,6 +445,7 @@ function applyCanvasSharpness(
 }
 
 export function ManualEditorProvider({ children }: { children: ReactNode }) {
+  const { t } = useManualEditorText();
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -2203,7 +2205,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Print Photo</title>
+<title>${t("Print Photo")}</title>
 <style>
 @page { size: auto; margin: 0; }
 html, body { margin: 0; padding: 0; background: #fff; width: 100%; min-height: 100%; }
@@ -2212,7 +2214,7 @@ img { display: block; width: auto; height: auto; max-width: 100vw; max-height: 1
 </style>
 </head>
 <body>
-<img id="print-image" src="${safeUrl}" alt="Printable photo" />
+<img id="print-image" src="${safeUrl}" alt="${t("Printable photo")}" />
 <script>
 const image = document.getElementById("print-image");
 const triggerPrint = () => setTimeout(() => { window.focus(); window.print(); }, 120);

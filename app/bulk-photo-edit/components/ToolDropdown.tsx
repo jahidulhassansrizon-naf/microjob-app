@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { BulkT } from "./bulkPhotoI18n";
 import { Check, ChevronDown } from "lucide-react";
 import type { ToolPreset } from "./types";
 interface ToolDropdownProps {
@@ -16,8 +16,8 @@ export default function ToolDropdown({ preset, open, selectedTools, onToggleOpen
     return (<div className="mt-2 overflow-hidden rounded-2xl border border-[#DBEAFE] bg-[#F8FBFF] shadow-sm">
       <button type="button" onClick={onToggleOpen} className="flex w-full cursor-pointer items-center justify-between border-b border-[#DBEAFE] px-3 py-2.5 text-left">
         <div>
-          <p className="text-[10px] font-black text-[#0F172A]">{preset.name}<T>{"AI tools"}</T></p>
-          <p className="mt-0.5 text-[8px] text-[#64748B]"><T>{"Select any tools you want to apply."}</T></p>
+          <p className="text-[10px] font-black text-[#0F172A]"><BulkT>{`${preset.name} AI tools`}</BulkT></p>
+          <p className="mt-0.5 text-[8px] text-[#64748B]"><BulkT>{"Select any tools you want to apply."}</BulkT></p>
         </div>
         <ChevronDown size={14} className="rotate-180 text-[#2563EB]"/>
       </button>
@@ -39,11 +39,11 @@ export default function ToolDropdown({ preset, open, selectedTools, onToggleOpen
                   <span className="flex items-center gap-1.5">
                     <span className="text-[#2563EB]">{tool.icon}</span>
                     <span className="text-[10px] font-black leading-tight text-[#0F172A]">
-                      {<T>{tool.name}</T>}
+                      {<BulkT>{tool.name}</BulkT>}
                     </span>
                   </span>
                   <span className="mt-1 block text-[8px] leading-relaxed text-[#64748B]">
-                    {<T>{tool.description}</T>}
+                    {<BulkT>{tool.description}</BulkT>}
                   </span>
                 </span>
               </button>);
@@ -52,8 +52,8 @@ export default function ToolDropdown({ preset, open, selectedTools, onToggleOpen
       </div>
 
       <div className="flex items-center gap-2 border-t border-[#DBEAFE] p-2">
-        <button type="button" onClick={onClear} className="flex-1 cursor-pointer rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-[9px] font-bold text-[#475569] transition hover:bg-[#F8FAFC]"><T>{"Clear\n        "}</T></button>
-        <button type="button" onClick={onDone} className="flex-1 cursor-pointer rounded-xl bg-[#10B981] px-3 py-2 text-[9px] font-black text-white transition hover:bg-[#059669]"><T>{"Done \u00B7 "}</T>{selectedTools.length}
+        <button type="button" onClick={onClear} className="flex-1 cursor-pointer rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-[9px] font-bold text-[#475569] transition hover:bg-[#F8FAFC]"><BulkT>{"Clear\n        "}</BulkT></button>
+        <button type="button" onClick={onDone} className="flex-1 cursor-pointer rounded-xl bg-[#10B981] px-3 py-2 text-[9px] font-black text-white transition hover:bg-[#059669]"><BulkT>{"Done \u00B7 "}</BulkT>{selectedTools.length}
         </button>
       </div>
     </div>);

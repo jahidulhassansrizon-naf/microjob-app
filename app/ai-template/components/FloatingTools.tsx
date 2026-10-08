@@ -1,8 +1,9 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { useAiTemplateText } from "./aiTemplateI18n";
 export function FloatingTools() {
+    const { t } = useAiTemplateText();
     return (<div className="floating-tools">
-      <button type="button" className="yellow-float"><T>{"\u2195"}</T></button>
-      <button type="button" className="red-float"><span><T>{"\u25B6"}</T></span></button>
+      <button type="button" className="yellow-float" aria-label={t("Move tool")}><span>↕</span></button>
+      <button type="button" className="red-float" aria-label={t("Play tool")}><span>▶</span></button>
     </div>);
 }

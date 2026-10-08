@@ -1,4 +1,5 @@
 import { Check, ChevronDown } from "lucide-react";
+import { BulkT } from "./bulkPhotoI18n";
 import type { ToolPreset } from "./types";
 
 interface PresetCardProps {
@@ -32,10 +33,10 @@ export default function PresetCard({
 
       <span className="min-w-0 flex-1">
         <span className="block text-[11px] font-black leading-tight text-[#0F172A]">
-          {preset.name}
+          <BulkT>{preset.name}</BulkT>
         </span>
         <span className="mt-1 block text-[8px] leading-relaxed text-[#64748B]">
-          {preset.description}
+          <BulkT>{preset.description}</BulkT>
         </span>
       </span>
 

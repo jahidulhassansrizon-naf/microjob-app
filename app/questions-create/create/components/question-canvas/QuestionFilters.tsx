@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 import type { FilterOption } from "../../types/question";
 import { Check, ChevronDown, ChevronUp, Loader2, Search, SlidersHorizontal } from "lucide-react";
@@ -15,10 +15,11 @@ function FilterSelect({ label, value, options, placeholder, disabled, loading, o
     onOpen: () => void;
     onChange: (value: string) => void;
 }) {
+    const { t } = useQuestionText();
     const selected = options.find((option) => option.value === value);
     const display = loading
-        ? `Loading ${label.toLowerCase()}...`
-        : selected?.label || placeholder;
+        ? t(`Loading ${label.toLowerCase()}...`)
+        : t(selected?.label || placeholder);
     return (<div className="relative">
       <button type="button" disabled={disabled || loading} onClick={onOpen} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-[11px] font-semibold transition ${disabled || loading
             ? "cursor-not-allowed border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A]/40"
@@ -46,6 +47,7 @@ export default function QuestionFilters({ manager, onExitDemo, }: {
     manager: QuestionManager;
     onExitDemo: () => void;
 }) {
+    const { t } = useQuestionText();
     const { filtersOpen, setFiltersOpen, openFilter, setOpenFilter, selectedClass, selectedSubject, selectedChapter, selectedQuestionType, searchQuery, setSearchQuery, subjects, chapters, loadingSubjects, loadingChapters, questionError, loadingQuestions, handleClassChange, handleSubjectChange, handleChapterChange, handleFetchQuestions, setSelectedQuestionType, } = manager;
     return (<section id="question-filter-panel" className="rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
                 <button type="button" onClick={() => setFiltersOpen((current) => !current)} className="flex w-full items-center justify-between border-b border-[#E2E8F0] px-3 py-3 text-left">
@@ -77,11 +79,11 @@ export default function QuestionFilters({ manager, onExitDemo, }: {
                     onExitDemo();
                     handleFetchQuestions();
                 }
-            }} placeholder="Search questions..." className="w-full border-0 bg-transparent text-[11px] font-medium text-[#0F172A] outline-none placeholder:text-[#0F172A]/40"/>
+            }} placeholder={t("Search questions...")} className="w-full border-0 bg-transparent text-[11px] font-medium text-[#0F172A] outline-none placeholder:text-[#0F172A]/40"/>
                     </div>
 
                     {questionError ? (<p className="rounded-lg bg-red-50 px-2.5 py-2 text-[10px] font-semibold text-red-500">
-                        {questionError}
+                        <T>{questionError}</T>
                       </p>) : null}
 
                     <button type="button" onClick={() => {

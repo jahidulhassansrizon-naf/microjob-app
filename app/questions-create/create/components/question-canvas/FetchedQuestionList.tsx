@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import { Check, FileText, Loader2, Search } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 import { getQuestionTypeLabel } from "../../types/question";
@@ -7,6 +7,7 @@ export default function FetchedQuestionList({ manager, onExitDemo, }: {
     manager: QuestionManager;
     onExitDemo: () => void;
 }) {
+    const { t } = useQuestionText();
     const { questions, visibleQuestions, selectedIds, typeCounts, resultTypeTab, setResultTypeTab, questionSearchQuery, setQuestionSearchQuery, handleSelectAll, toggleSelectQuestion, loadingQuestions, } = manager;
     return (<section className="flex min-h-[320px] flex-1 flex-col overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
                 <div className="space-y-2 border-b border-[#E2E8F0] p-3">
@@ -14,8 +15,8 @@ export default function FetchedQuestionList({ manager, onExitDemo, }: {
                     <span className="text-[10px] font-semibold text-[#0F172A]/70">
                       {questions.length
         ? questionSearchQuery
-            ? `Showing ${visibleQuestions.length} of ${questions.length}`
-            : `${questions.length} found`
+            ? t(`Showing ${visibleQuestions.length} of ${questions.length}`)
+            : t(`${questions.length} found`)
         : <T>{"0 found"}</T>}
                     </span>
 
@@ -35,7 +36,7 @@ export default function FetchedQuestionList({ manager, onExitDemo, }: {
         ] as const).map(([value, label, count]) => (<button key={value} type="button" onClick={() => setResultTypeTab(value)} className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-semibold transition ${resultTypeTab === value
                 ? "bg-[#2563EB] text-white"
                 : "border border-[#E2E8F0] bg-white text-[#0F172A]/70 hover:border-[#E2E8F0]"}`}>
-                        {label}
+                        <T>{label}</T>
                         {value === "all" ? <T>{""}</T> : <T>{` (${count})`}</T>}
                       </button>))}
                   </div>
@@ -43,7 +44,7 @@ export default function FetchedQuestionList({ manager, onExitDemo, }: {
                   <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] px-2.5 py-2">
                     <Search size={12} className="text-[#0F172A]/55"/>
 
-                    <input value={questionSearchQuery} onChange={(event) => setQuestionSearchQuery(event.target.value)} placeholder="Search in fetched questions..." className="w-full border-0 bg-transparent text-[10px] outline-none placeholder:text-[#0F172A]/40"/>
+                    <input value={questionSearchQuery} onChange={(event) => setQuestionSearchQuery(event.target.value)} placeholder={t("Search in fetched questions...")} className="w-full border-0 bg-transparent text-[10px] outline-none placeholder:text-[#0F172A]/40"/>
                   </div>
                 </div>
 
@@ -77,7 +78,7 @@ export default function FetchedQuestionList({ manager, onExitDemo, }: {
 
                                 <div className="mt-1 flex items-center gap-2 text-[9px] text-[#0F172A]/55">
                                   <span className="font-bold">
-                                    {getQuestionTypeLabel(question.type)}
+                                    <T>{getQuestionTypeLabel(question.type)}</T>
                                   </span>
 
                                   <span>{question.marks}<T>{"marks"}</T></span>

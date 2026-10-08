@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "../i18n";
 import type { PaperRenderRequest, PrintPageVariant } from "../types/question";
 import type { QuestionManager } from "../hooks/useQuestionManager";
 import { FileText, GripVertical, Move, SquareDashedMousePointer, } from "lucide-react";

@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T } from "./manualEditorI18n";
 import { QrCode, ScanLine } from "lucide-react";
 import { useManualEditor } from "./EditorProvider";
 export default function QrUploadPanel() {

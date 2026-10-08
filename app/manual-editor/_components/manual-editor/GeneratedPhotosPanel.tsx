@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Download, Eye, Image as ImageIcon, Printer, Trash2, X, } from "lucide-react";
@@ -12,6 +12,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
     onDelete: () => Promise<void>;
     onUseInEditor: () => Promise<void>;
 }) {
+    const { t } = useManualEditorText();
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const [busyAction, setBusyAction] = useState<"download" | "print" | "delete" | "use" | null>(null);
@@ -40,7 +41,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
             setBusyAction(null);
         }
     };
-    const modal = (<div className="fixed inset-0 z-[10000] w-screen h-[100dvh] min-h-[100svh] bg-[#0F172A]/90 backdrop-blur-md flex flex-col font-sans overflow-hidden" role="dialog" aria-modal="true" aria-label="Saved photo preview">
+    const modal = (<div className="fixed inset-0 z-[10000] w-screen h-[100dvh] min-h-[100svh] bg-[#0F172A]/90 backdrop-blur-md flex flex-col font-sans overflow-hidden" role="dialog" aria-modal="true" aria-label={t("Saved photo preview")}>
       <div className="shrink-0 bg-[#F8FAFC] border-b border-[#E2E8F0] px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg">
         <div className="min-w-0 flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 text-[#10B981] flex items-center justify-center shrink-0">
@@ -52,7 +53,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
           </div>
         </div>
 
-        <button type="button" onClick={onClose} disabled={Boolean(busyAction)} className="p-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Close preview">
+        <button type="button" onClick={onClose} disabled={Boolean(busyAction)} className="p-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/50 text-[#0F172A] hover:bg-[#E2E8F0] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" aria-label={t("Close preview")}>
           <X size={17}/>
         </button>
       </div>
@@ -61,7 +62,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
         <div className="min-h-full w-full flex flex-col items-center justify-center gap-4 sm:gap-5">
           <div className="w-full max-w-5xl rounded-3xl border border-white/20 bg-white/10 p-2 sm:p-4 shadow-2xl">
             <div className="relative w-full min-h-[320px] sm:min-h-[460px] lg:min-h-[560px] rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden flex items-center justify-center [background-image:radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]">
-              {!imageError && (<img src={photo.url} alt="Saved generated result" draggable={false} onLoad={() => {
+              {!imageError && (<img src={photo.url} alt={t("Saved generated result")} draggable={false} onLoad={() => {
                 setImageLoading(false);
                 setImageError(false);
             }} onError={() => {
@@ -85,7 +86,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
                   <p className="text-xs sm:text-sm font-extrabold text-[#0F172A]"><T>{"Saved image\r\n                  "}</T></p>
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium mt-1">
-                  {photo.sizeType || "Manual Editor"}
+                  <T>{photo.sizeType || "Manual Editor"}</T>
                   {photo.size ? <T>{` · ${photo.size}`}</T> : <T>{""}</T>}
                   {photo.widthPx && photo.heightPx
         ? <T>{` · ${photo.widthPx} × ${photo.heightPx} px`}</T> : <T>{""}</T>}
@@ -109,7 +110,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
                 </button>
 
                 <button type="button" disabled={Boolean(busyAction)} onClick={() => {
-            if (!window.confirm("Delete this saved photo permanently?")) {
+            if (!window.confirm(t("Delete this saved photo permanently?"))) {
                 return;
             }
             void runAction("delete", onDelete);
@@ -126,6 +127,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
     return createPortal(modal, document.body);
 }
 export default function GeneratedPhotosPanel() {
+    const { t } = useManualEditorText();
     const { generatedPhotos, loadHistoryImage, downloadHistoryImage, openPrintStudioWithImage, deleteHistoryImage, } = useManualEditor();
     const [previewPhoto, setPreviewPhoto] = useState<GeneratedPhoto | null>(null);
     return (<section className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 lg:px-4 lg:py-3 flex flex-col gap-4 lg:gap-2 shadow-lg w-full shrink-0">
@@ -139,8 +141,8 @@ export default function GeneratedPhotosPanel() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 lg:flex lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden lg:pb-1">
         {generatedPhotos.length
-            ? generatedPhotos.map((photo, idx) => (<button type="button" key={`${photo.id || photo.url.slice(0, 18)}-${idx}`} onClick={() => setPreviewPhoto(photo)} className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group" title="Click to preview">
-                <img src={photo.url} alt="Saved result" className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"/>
+            ? generatedPhotos.map((photo, idx) => (<button type="button" key={`${photo.id || photo.url.slice(0, 18)}-${idx}`} onClick={() => setPreviewPhoto(photo)} className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group" title={t("Click to preview")}>
+                <img src={photo.url} alt={t("Saved result")} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"/>
 
                 <span className="absolute inset-x-2 bottom-2 rounded-lg bg-[#0F172A]/85 text-white px-2 py-1.5 text-[9px] font-bold flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Eye size={11}/><T>{"Preview\r\n                "}</T></span>

@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useQuestionText } from "../../i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction, } from "react";
 import PrintDuplexLayout from "../PrintDuplexLayout";
 import type { PaperAnnotation, PaperRenderRequest, Question, } from "../../types/question";
@@ -377,6 +377,7 @@ function createPaperRenderer(manager: QuestionManager, onRegionTargetCommit: (ta
 export default function InteractiveQuestionCanvas({ manager, }: {
     manager: QuestionManager;
 }) {
+    const { t } = useQuestionText();
     const { selectedTab, setSelectedTab, filtersOpen, setFiltersOpen, openFilter, setOpenFilter, selectedClass, setSelectedClass, selectedSubject, setSelectedSubject, selectedChapter, setSelectedChapter, selectedQuestionType, setSelectedQuestionType, searchQuery, setSearchQuery, questionError, questions, loadingQuestions, visibleQuestions, subjects, chapters, loadingSubjects, loadingChapters, totalMarks, selectedQuestions, selectedIds, typeCounts, resultTypeTab, setResultTypeTab, questionSearchQuery, setQuestionSearchQuery, handleClassChange, handleSubjectChange, handleChapterChange, handleFetchQuestions, handleSelectAll, clearSelectedQuestions, toggleSelectQuestion, sectionGroups, sectionMarks, updateSectionMarks, autoCount, setAutoCount, handleAutoCreate, logoInputRef, handleLogoChange, logoUrl, removeLogo, fontScale, setFontScale, handlePageSizeChange, pageSize, setNoEnabled, setNo, setSetNo, shuffleSelected, layoutRef, layoutOpen, setLayoutOpen, layoutColumns, setLayoutColumns, compactSpacing, setCompactSpacing, selectAnswerEnabled, setSelectAnswerEnabled, headerNoteEnabled, setHeaderNoteEnabled, headerNote, setHeaderNote, footerText, setFooterText, timeText, setTimeText, paperStyle, setPaperStyle, canvasTextOverrides, regionSelectMode, setRegionSelectMode, handleRegionTargetCommit: managerHandleRegionTargetCommit, } = manager;
     /*
      * Joint 2 / 2-in-1 center-bar guard

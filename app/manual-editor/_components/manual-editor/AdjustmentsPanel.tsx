@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T } from "./manualEditorI18n";
 import { Check, Download, Printer, Save, SlidersHorizontal, } from "lucide-react";
 import { useManualEditor } from "./EditorProvider";
 export default function AdjustmentsPanel() {
@@ -23,7 +23,7 @@ export default function AdjustmentsPanel() {
 
       {rows.map(([label, value, setter]) => (<div key={label} className="mb-4 lg:mb-2">
           <div className="flex items-center justify-between text-[9px] font-bold text-[#0F172A]/70 uppercase">
-            <span>{label}</span>
+            <span><T>{label}</T></span>
             <span className="text-[#2563EB]">{value}</span>
           </div>
           <input type="range" min={-100} max={100} value={value} onChange={(event) => setter(Number(event.target.value))} className="w-full accent-[#2563EB] cursor-pointer"/>
@@ -43,7 +43,7 @@ export default function AdjustmentsPanel() {
 
       {saveNotice && (<div className="mt-3 rounded-xl bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 px-3 py-2 text-[10px] font-black flex items-center gap-1">
           <Check size={12}/>
-          {saveNotice}
+          <T>{saveNotice}</T>
         </div>)}
     </div>);
 }

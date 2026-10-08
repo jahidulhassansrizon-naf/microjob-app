@@ -1,9 +1,10 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { Check, Eraser, Loader2, Palette } from "lucide-react";
 import { BACKGROUNDS } from "./constants";
 import { useManualEditor } from "./EditorProvider";
 export default function BackgroundPanel() {
+    const { t } = useManualEditorText();
     const { selectedBg, setSelectedBg, customBg, setCustomBg, handleRemoveBackground, isRemovingBackground, backgroundRemoved, setBackgroundRemoved, } = useManualEditor();
     const handlePresetBackground = (backgroundId: string) => {
         setSelectedBg(backgroundId);
@@ -26,7 +27,7 @@ export default function BackgroundPanel() {
         {/* -------------------------------------------------------------- */}
         {BACKGROUNDS.map((bg) => {
             const selected = !backgroundRemoved && selectedBg === bg.id;
-            return (<button key={bg.id} type="button" disabled={isRemovingBackground} aria-label={`Select ${bg.id} background`} onClick={() => handlePresetBackground(bg.id)} className={`group relative h-11 lg:h-9 rounded-2xl border transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${selected
+            return (<button key={bg.id} type="button" disabled={isRemovingBackground} aria-label={t(`Select ${bg.id} background`)} onClick={() => handlePresetBackground(bg.id)} className={`group relative h-11 lg:h-9 rounded-2xl border transition-all duration-200 shadow-sm hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${selected
                     ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
                     : "border-[#E2E8F0] hover:border-slate-300"}`} style={{
                     backgroundColor: bg.color,
@@ -42,11 +43,11 @@ export default function BackgroundPanel() {
         {/* -------------------------------------------------------------- */}
         {/* Custom color                                                    */}
         {/* -------------------------------------------------------------- */}
-        <button type="button" disabled={isRemovingBackground} aria-label="Use custom background color" onClick={handleCustomBackground} className={`relative h-11 lg:h-9 rounded-2xl border flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${!backgroundRemoved && selectedBg === "custom"
+        <button type="button" disabled={isRemovingBackground} aria-label={t("Use custom background color")} onClick={handleCustomBackground} className={`relative h-11 lg:h-9 rounded-2xl border flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${!backgroundRemoved && selectedBg === "custom"
             ? "ring-2 ring-[#2563EB] ring-offset-1 border-transparent"
             : "border-[#E2E8F0] hover:border-slate-300"}`} style={{
             backgroundColor: customBg,
-        }} title="Custom color">
+        }} title={t("Custom color")}>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 shadow-sm">
             <Palette size={17} className="text-[#2563EB] drop-shadow"/>
           </span>
@@ -59,7 +60,7 @@ export default function BackgroundPanel() {
         {/* -------------------------------------------------------------- */}
         {/* Native color picker                                             */}
         {/* -------------------------------------------------------------- */}
-        <label className={`h-11 lg:h-9 rounded-2xl border border-dashed border-[#E2E8F0] text-slate-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-[#0F172A] ${isRemovingBackground ? "pointer-events-none opacity-50" : ""}`} title="Choose custom color"><T>{"+\r\n          "}</T><input type="color" value={customBg} disabled={isRemovingBackground} onChange={(event) => {
+        <label className={`h-11 lg:h-9 rounded-2xl border border-dashed border-[#E2E8F0] text-slate-400 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-[#0F172A] ${isRemovingBackground ? "pointer-events-none opacity-50" : ""}`} title={t("Choose custom color")}><T>{"+\r\n          "}</T><input type="color" value={customBg} disabled={isRemovingBackground} onChange={(event) => {
             setCustomBg(event.target.value);
             setSelectedBg("custom");
             setBackgroundRemoved(false);
@@ -69,9 +70,9 @@ export default function BackgroundPanel() {
         {/* -------------------------------------------------------------- */}
         {/* Remove Background                                               */}
         {/* -------------------------------------------------------------- */}
-        <button type="button" disabled={isRemovingBackground} onClick={() => void handleRemoveBackground()} aria-label="Remove background" title={isRemovingBackground
-            ? "Removing background..."
-            : "Remove background"} className={`col-span-2 h-11 lg:h-9 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[10px] font-black transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${backgroundRemoved
+        <button type="button" disabled={isRemovingBackground} onClick={() => void handleRemoveBackground()} aria-label={t("Remove background")} title={isRemovingBackground
+            ? t("Removing background...")
+            : t("Remove background")} className={`col-span-2 h-11 lg:h-9 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[10px] font-black transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${backgroundRemoved
             ? "border-[#10B981] bg-[#10B981] text-white hover:bg-emerald-600"
             : "border-emerald-200 bg-emerald-50 text-[#10B981] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md"}`}>
           {isRemovingBackground ? (<>

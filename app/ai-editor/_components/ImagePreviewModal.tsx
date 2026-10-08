@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { X, RotateCw, Download, Printer, Trash2, Edit3, Share2, Eye, Loader2, Save, Info, ChevronDown, FileImage, Grid, } from "lucide-react";
 import ImageEditSidebar, { ASPECT_RATIOS, DEFAULT_FILTERS, FilterState, } from "./ImageEditSidebar";
@@ -261,7 +261,10 @@ function downloadBlob(blob: Blob, filename: string) {
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
-export default function ImagePreviewModal({ image, onClose, onDelete, onRegenerate, onSaveImage, }: ImagePreviewModalProps) {
+export default function ImagePreviewModal({
+    image, onClose, onDelete, onRegenerate, onSaveImage,
+}: ImagePreviewModalProps) {
+    const { t } = useAiEditorText();
     const [previewZoom, setPreviewZoom] = useState(100);
     const [previewRotate, setPreviewRotate] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -771,54 +774,54 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
             longPressRef.current = false;
         }} className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer border ${isComparing
             ? "bg-[#10B981] text-white border-[#10B981] font-bold"
-            : "bg-slate-200 hover:bg-slate-300 text-[#0F172A] border-transparent"}`} title="Click to toggle original photo. Press and hold to preview it.">
+            : "bg-slate-200 hover:bg-slate-300 text-[#0F172A] border-transparent"}`} title={t("Click to toggle original photo. Press and hold to preview it.")}>
             <Eye size={14}/>
             <span className="hidden sm:inline">
-              {isComparing ? <T>{"Original Photo"}</T> : <T>{"Compare"}</T>}
+              {isComparing ? <AiT>{"Original Photo"}</AiT> : <AiT>{"Compare"}</AiT>}
             </span>
-            <span className="sm:hidden">{isComparing ? <T>{"Orig"}</T> : <T>{"Comp"}</T>}</span>
+            <span className="sm:hidden">{isComparing ? <AiT>{"Orig"}</AiT> : <AiT>{"Comp"}</AiT>}</span>
           </button>
 
-          <button type="button" onClick={() => setShowMobileInfo((previous) => !previous)} className="lg:hidden bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer" aria-label="Show image details">
+          <button type="button" onClick={() => setShowMobileInfo((previous) => !previous)} className="lg:hidden bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer" aria-label={t("Show image details")}>
             <Info size={14}/>
           </button>
 
           <button type="button" onClick={handleShare} className="hidden md:flex bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer">
-            <Share2 size={14}/><T>{"Share\r\n          "}</T></button>
+            <Share2 size={14}/><AiT>{"Share\r\n          "}</AiT></button>
 
           {onSaveImage && image.id && (<button type="button" onClick={handleSaveEditedImage} disabled={isSaving} className="bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
               {isSaving ? (<Loader2 size={14} className="animate-spin"/>) : (<Save size={14}/>)}
               <span className="hidden sm:inline">
-                {isSaving ? <T>{"Saving..."}</T> : <T>{"Save Changes"}</T>}
+                {isSaving ? <AiT>{"Saving..."}</AiT> : <AiT>{"Save Changes"}</AiT>}
               </span>
-              <span className="sm:hidden"><T>{"Save"}</T></span>
+              <span className="sm:hidden"><AiT>{"Save"}</AiT></span>
             </button>)}
 
           {onRegenerate && (<button type="button" onClick={handleRegenerateClick} disabled={isRegenerating} className="bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
               {isRegenerating ? (<Loader2 size={14} className="animate-spin"/>) : (<RotateCw size={14}/>)}
               <span className="hidden sm:inline">
-                {isRegenerating ? <T>{"Processing..."}</T> : <T>{"Regenerate"}</T>}
+                {isRegenerating ? <AiT>{"Processing..."}</AiT> : <AiT>{"Regenerate"}</AiT>}
               </span>
-              <span className="sm:hidden"><T>{"Retry"}</T></span>
+              <span className="sm:hidden"><AiT>{"Retry"}</AiT></span>
             </button>)}
 
           {/* Download Dropdown */}
           <div className="relative z-50" ref={downloadMenuRef}>
             <button type="button" onClick={() => setShowDownloadMenu((previous) => !previous)} disabled={isDownloading} className="bg-[#10B981] hover:bg-emerald-600 disabled:opacity-50 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer shadow-md">
               {isDownloading ? (<Loader2 size={14} className="animate-spin"/>) : (<Download size={14}/>)}
-              <span>{isDownloading ? <T>{"Downloading..."}</T> : <T>{"Download"}</T>}</span>
+              <span>{isDownloading ? <AiT>{"Downloading..."}</AiT> : <AiT>{"Download"}</AiT>}</span>
               <ChevronDown size={14}/>
             </button>
 
             {showDownloadMenu && (<div className="absolute left-0 top-full mt-2 w-60 sm:w-64 bg-[#F8FAFC] text-[#0F172A] rounded-xl shadow-2xl border border-slate-300 py-2 z-50 text-xs">
-                <div className="px-3 py-1.5 border-b border-slate-200 font-semibold text-slate-500 text-[10px] uppercase"><T>{"Select Format\r\n                "}</T></div>
+                <div className="px-3 py-1.5 border-b border-slate-200 font-semibold text-slate-500 text-[10px] uppercase"><AiT>{"Select Format\r\n                "}</AiT></div>
                 <button type="button" onClick={() => handleDownloadFormat("jpg")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-slate-100 flex items-center gap-2.5 transition cursor-pointer">
                   <div className="p-1.5 bg-[#10B981]/20 text-[#10B981] rounded-lg shrink-0">
                     <FileImage size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><T>{"Standard JPG\r\n                    "}</T></div>
-                    <div className="text-[10px] text-slate-500"><T>{"Recommended for Passport &amp; Visa\r\n                    "}</T></div>
+                    <div className="font-semibold text-[#0F172A]"><AiT>{"Standard JPG\r\n                    "}</AiT></div>
+                    <div className="text-[10px] text-slate-500"><AiT>{"Recommended for Passport &amp; Visa\r\n                    "}</AiT></div>
                   </div>
                 </button>
                 <button type="button" onClick={() => handleDownloadFormat("png")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-slate-100 flex items-center gap-2.5 transition cursor-pointer">
@@ -826,10 +829,10 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
                     <FileImage size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><T>{"HD PNG Image\r\n                    "}</T></div>
+                    <div className="font-semibold text-[#0F172A]"><AiT>{"HD PNG Image\r\n                    "}</AiT></div>
                     <div className="text-[10px] text-slate-500">
                       {isTransparentBackground
-            ? <T>{"Lossless PNG • keeps transparency"}</T> : <T>{"Lossless High Quality"}</T>}
+            ? <AiT>{"Lossless PNG • keeps transparency"}</AiT> : <AiT>{"Lossless High Quality"}</AiT>}
                     </div>
                   </div>
                 </button>
@@ -839,26 +842,26 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
                     <Grid size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><T>{"Print Sheet (4\u00D76&quot;)\r\n                    "}</T></div>
-                    <div className="text-[10px] text-slate-500"><T>{"8-copy grid layout\r\n                    "}</T></div>
+                    <div className="font-semibold text-[#0F172A]"><AiT>{"Print Sheet (4\u00D76&quot;)\r\n                    "}</AiT></div>
+                    <div className="text-[10px] text-slate-500"><AiT>{"8-copy grid layout\r\n                    "}</AiT></div>
                   </div>
                 </button>
               </div>)}
           </div>
 
           <button type="button" onClick={handlePrint} className="hidden md:flex bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer">
-            <Printer size={14}/><T>{"Print\r\n          "}</T></button>
+            <Printer size={14}/><AiT>{"Print\r\n          "}</AiT></button>
 
           <button type="button" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer">
             <Trash2 size={14}/>
-            <span className="hidden sm:inline"><T>{"Delete"}</T></span>
+            <span className="hidden sm:inline"><AiT>{"Delete"}</AiT></span>
           </button>
 
           <button type="button" onClick={() => setIsEditOpen((previous) => !previous)} className={`${isEditOpen ? "bg-[#2563EB] text-white" : "bg-slate-200 hover:bg-slate-300 text-[#0F172A]"} px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer`}>
-            <Edit3 size={14}/><T>{"Edit\r\n          "}</T></button>
+            <Edit3 size={14}/><AiT>{"Edit\r\n          "}</AiT></button>
         </div>
 
-        <button type="button" onClick={onClose} className="bg-red-600 hover:bg-red-700 text-white p-1.5 sm:p-2 rounded-lg transition cursor-pointer shrink-0 ml-1" aria-label="Close preview">
+        <button type="button" onClick={onClose} className="bg-red-600 hover:bg-red-700 text-white p-1.5 sm:p-2 rounded-lg transition cursor-pointer shrink-0 ml-1" aria-label={t("Close preview")}>
           <X size={18}/>
         </button>
       </div>
@@ -874,7 +877,7 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
           <div className="flex items-center justify-between border-b border-slate-300 pb-2">
             <div className="flex items-center gap-2">
               <Info size={16} className="text-[#2563EB]"/>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><T>{"Generation Info\r\n              "}</T></h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Generation Info\r\n              "}</AiT></h3>
             </div>
             <button type="button" onClick={() => setShowMobileInfo(false)} className="lg:hidden text-slate-500 hover:text-[#0F172A]">
               <X size={16}/>
@@ -882,20 +885,20 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 text-xs text-slate-700">
             <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><T>{"Photo Size:"}</T></span>
+              <span className="text-slate-500"><AiT>{"Photo Size:"}</AiT></span>
               <span className="font-bold text-[#2563EB]">{photoSizeLabel}</span>
             </div>
             <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><T>{"Background:"}</T></span>
+              <span className="text-slate-500"><AiT>{"Background:"}</AiT></span>
               <div className="flex items-center gap-1.5">
                 <span className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{ backgroundColor: bgHexColor }}/>
                 <span className="font-medium text-[#0F172A]">
-                  {isTransparentBackground ? <T>{"Transparent"}</T> : bgHexColor}
+                  {isTransparentBackground ? <AiT>{"Transparent"}</AiT> : bgHexColor}
                 </span>
               </div>
             </div>
             <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><T>{"Clothing:"}</T></span>
+              <span className="text-slate-500"><AiT>{"Clothing:"}</AiT></span>
               <span className="font-medium text-[#0F172A] truncate max-w-[100px]">
                 {clothingInfo}
               </span>
@@ -911,8 +914,8 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
                 : { backgroundColor: bgHexColor }),
             transform: `scale(${previewZoom / 100}) rotate(${isComparing ? 0 : previewRotate}deg)`,
         }}>
-            {isComparing && (<div className="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] px-2.5 py-1 rounded-md z-10 uppercase tracking-wider font-bold border border-emerald-400 shadow-lg"><T>{"Original Photo\r\n              "}</T></div>)}
-            <img src={isComparing ? displayOriginalUrl : image.url} alt="Full Preview" className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150" style={{ filter: isComparing ? "none" : filterString(filters) }}/>
+            {isComparing && (<div className="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] px-2.5 py-1 rounded-md z-10 uppercase tracking-wider font-bold border border-emerald-400 shadow-lg"><AiT>{"Original Photo\r\n              "}</AiT></div>)}
+            <img src={isComparing ? displayOriginalUrl : image.url} alt={t("Full Preview")} className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150" style={{ filter: isComparing ? "none" : filterString(filters) }}/>
           </div>
         </div>
 
@@ -921,14 +924,14 @@ export default function ImagePreviewModal({ image, onClose, onDelete, onRegenera
 
       {/* Bottom Controls Bar */}
       <div className="h-12 sm:h-14 bg-[#E2E8F0] border-t border-slate-300 flex items-center justify-center gap-2 sm:gap-3 shrink-0 text-[#0F172A] text-xs select-none z-10 px-2">
-        <button type="button" onClick={() => setPreviewZoom((previous) => Math.max(previous - 10, 50))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><T>{"-\r\n        "}</T></button>
+        <button type="button" onClick={() => setPreviewZoom((previous) => Math.max(previous - 10, 50))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"-\r\n        "}</AiT></button>
         <span className="w-10 text-center font-medium text-xs">
-          {previewZoom}<T>{"%\r\n        "}</T></span>
-        <button type="button" onClick={() => setPreviewZoom((previous) => Math.min(previous + 10, 300))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><T>{"+\r\n        "}</T></button>
-        <button type="button" onClick={() => setPreviewRotate((previous) => (previous + 90) % 360)} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] p-1.5 rounded transition cursor-pointer" title="Rotate">
+          {previewZoom}<AiT>{"%\r\n        "}</AiT></span>
+        <button type="button" onClick={() => setPreviewZoom((previous) => Math.min(previous + 10, 300))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"+\r\n        "}</AiT></button>
+        <button type="button" onClick={() => setPreviewRotate((previous) => (previous + 90) % 360)} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] p-1.5 rounded transition cursor-pointer" title={t("Rotate")}>
           <RotateCw size={14}/>
         </button>
-        <button type="button" onClick={handleResetAll} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1 rounded text-[11px] transition ml-1 cursor-pointer"><T>{"Reset All\r\n        "}</T></button>
+        <button type="button" onClick={handleResetAll} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1 rounded text-[11px] transition ml-1 cursor-pointer"><AiT>{"Reset All\r\n        "}</AiT></button>
       </div>
     </div>);
 }

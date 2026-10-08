@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import React, { useCallback, useEffect, useMemo, useRef, useState, } from "react";
 import { createPortal } from "react-dom";
 import { AlignCenterHorizontal, AlignRight, Download, Grid3X3, Image as ImageIcon, Minus, Move, Plus, Printer, Redo2, RotateCw, Trash2, Undo2, X, } from "lucide-react";
@@ -158,6 +158,7 @@ function nameForPdf(pageSize: PageSizeKey): string {
     return `photo-print-${pageSize.toLowerCase()}.pdf`;
 }
 export default function PrintStudioModal() {
+    const { t } = useManualEditorText();
     const { printStudioOpen, printStudioImage, currentPreset, closePrintStudio } = useManualEditor();
     const pageRef = useRef<HTMLDivElement | null>(null);
     const workspaceRef = useRef<HTMLDivElement | null>(null);
@@ -619,7 +620,7 @@ export default function PrintStudioModal() {
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Print Photo Layout</title>
+<title>${t("Print Photo Layout")}</title>
 <style>
 @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
 html,body { margin:0; padding:0; width:100%; height:100%; background:#fff; }
@@ -628,7 +629,7 @@ img { display:block; width:${pageWidthMm}mm; height:${pageHeightMm}mm; max-width
 </style>
 </head>
 <body>
-<img id="print-layout" src="${safeUrl}" alt="Print layout" />
+<img id="print-layout" src="${safeUrl}" alt={t("Print layout")} />
 <script>
 const image = document.getElementById("print-layout");
 const run = () => setTimeout(() => { window.focus(); window.print(); }, 120);
@@ -677,7 +678,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             <p className="text-[9px] text-[#0F172A]/60 truncate"><T>{"Photo Layout & Print Studio\r\n            "}</T></p>
           </div>
         </div>
-        <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] flex items-center justify-center cursor-pointer text-[#0F172A] transition-colors" aria-label="Close print studio">
+        <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] flex items-center justify-center cursor-pointer text-[#0F172A] transition-colors" aria-label={t("Close print studio")}>
           <X size={16}/>
         </button>
       </header>
@@ -686,7 +687,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
         <aside className="w-[280px] shrink-0 bg-white border-r border-[#E2E8F0] overflow-y-auto flex flex-col">
           <div className="p-4 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2 mb-3">
-              <img src={printStudioImage} alt="Current photo" className="w-12 h-14 object-cover rounded-md border border-[#E2E8F0] bg-[#F8FAFC]"/>
+              <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E2E8F0] bg-[#F8FAFC]"/>
               <div className="min-w-0">
                 <p className="text-[10px] font-extrabold text-[#0F172A]"><T>{"Quick Add\r\n                "}</T></p>
                 <p className="text-[8px] text-[#0F172A]/60 mt-0.5 leading-relaxed"><T>{"Add multiple copies of the current photo in different sizes.\r\n                "}</T></p>
@@ -695,7 +696,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
 
             <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5"><T>{"Units\r\n            "}</T></p>
             <div className="grid grid-cols-4 gap-1.5 mb-3">
-              {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[9px] font-extrabold cursor-pointer transition-colors" title={`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`}>
+              {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[9px] font-extrabold cursor-pointer transition-colors" title={t(`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`)}>
                     {quantity}<T>{"U\r\n                  "}</T></button>))}
             </div>
 
@@ -718,7 +719,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             return (<div key={preset.id} className="grid grid-cols-[1fr_repeat(3,32px)] gap-1.5 items-center">
                     <div>
                       <p className="text-[9px] font-bold text-[#0F172A]">
-                        {preset.label}
+                        <T>{preset.label}</T>
                       </p>
                       <p className="text-[8px] text-[#0F172A]/60">
                         {preset.widthMm}<T>{"\u00D7"}</T>{preset.heightMm}<T>{"mm\r\n                      "}</T></p>
@@ -732,13 +733,13 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mt-4 mb-1.5"><T>{"Photo Sizes\r\n            "}</T></p>
             <div className="grid grid-cols-4 gap-1.5">
               {PRESETS.filter((item) => ["2R", "3R", "4R", "5R", "6R", "8R"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[8px] font-extrabold cursor-pointer transition-colors">
-                  {preset.label}
+                  <T>{preset.label}</T>
                 </button>))}
             </div>
 
             <div className="grid grid-cols-4 gap-1.5 mt-1.5">
               {PRESETS.filter((item) => ["4B", "5B", "6B", "A4"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[8px] font-extrabold cursor-pointer transition-colors">
-                  {preset.label}
+                  <T>{preset.label}</T>
                 </button>))}
             </div>
           </div>
@@ -764,7 +765,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             },
         ] satisfies CheckboxOption[]).map(({ label, checked, setChecked }) => (<label key={label} className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] cursor-pointer transition-colors">
                   <span className="text-[9px] font-semibold text-[#0F172A]">
-                    {label}
+                    <T>{label}</T>
                   </span>
                   <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="accent-[#2563EB] cursor-pointer"/>
                 </label>))}
@@ -822,7 +823,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               </p>
             </div>
             <div className="grid grid-cols-[42px_1fr] gap-2">
-              <button type="button" onClick={() => commit([], items)} className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors" title="Remove all">
+              <button type="button" onClick={() => commit([], items)} className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors" title={t("Remove all")}>
                 <Trash2 size={15}/>
               </button>
               <button type="button" onClick={downloadPdf} disabled={!items.length || isExporting} className="h-10 rounded-lg bg-[#E2E8F0] hover:bg-[#cbd5e1] text-[#0F172A] text-[9px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors">
@@ -876,7 +877,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     touchAction: "none",
                 }} onPointerDown={(event) => beginInteraction(event, item.id, "drag")} onPointerMove={moveInteraction} onPointerUp={endInteraction} onPointerCancel={endInteraction}>
                     <div className={`relative w-full h-full bg-white overflow-visible ${selected ? "ring-2 ring-[#2563EB] ring-offset-1" : ""}`}>
-                      <img src={printStudioImage} alt={item.label} draggable={false} className="block w-full h-full object-cover pointer-events-none select-none"/>
+                      <img src={printStudioImage} alt={t(item.label)} draggable={false} className="block w-full h-full object-cover pointer-events-none select-none"/>
                       {imageBorder && (<div className="absolute inset-0 border border-[#0F172A]/80 pointer-events-none"/>)}
                       {cuttingBorder && (<div className="absolute inset-0 border border-dashed border-[#0F172A]/60 pointer-events-none"/>)}
 
@@ -884,15 +885,15 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                           <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => {
                         event.stopPropagation();
                         removeItem(item.id);
-                    }} className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-red-500 text-white border-2 border-white shadow-md flex items-center justify-center cursor-pointer" title="Remove">
+                    }} className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-red-500 text-white border-2 border-white shadow-md flex items-center justify-center cursor-pointer" title={t("Remove")}>
                             <X size={10}/>
                           </button>
 
-                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "rotate")} className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" title="Rotate">
+                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "rotate")} className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" title={t("Rotate")}>
                             <RotateCw size={10}/>
                           </button>
 
-                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "resize")} className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize" title="Resize">
+                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "resize")} className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize" title={t("Resize")}>
                             <Move size={10} className="rotate-45"/>
                           </button>
 
@@ -920,7 +921,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             <RotateCw size={10}/><T>{"Rotate\r\n            "}</T><span><T>{"\u2022"}</T></span>
             <Move size={10} className="rotate-45"/><T>{"Resize\r\n            "}</T>{selectedItem && (<>
                 <span><T>{"\u2022"}</T></span>
-                <span>{selectedItem.label}</span>
+                <span><T>{selectedItem.label}</T></span>
               </>)}
           </div>
         </main>
@@ -928,7 +929,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
         {toast && (<div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-white shadow-xl p-3">
             <p className="text-[10px] font-extrabold text-[#0F172A]"><T>{"Page Full\r\n            "}</T></p>
             <p className="text-[9px] text-[#0F172A]/70 mt-0.5 leading-relaxed">
-              {toast}
+              <T>{toast}</T>
             </p>
           </div>)}
       </div>

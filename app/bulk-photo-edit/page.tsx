@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { BulkT } from "./components/bulkPhotoI18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
@@ -390,30 +390,30 @@ export default function BulkPhotoEditPage() {
           <div className="border-b border-[#E2E8F0] bg-white px-4 py-3 sm:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h1 className="text-base font-black tracking-tight text-[#0F172A]"><T>{"Bulk Photo Edit\n                "}</T></h1>
-                <p className="mt-1 max-w-2xl text-[10px] leading-relaxed text-[#64748B]"><T>{"Select 2 or more photos, choose exact AI operations, and apply\n                  the same selected operation set to each photo individually.\n                "}</T></p>
+                <h1 className="text-base font-black tracking-tight text-[#0F172A]"><BulkT>{"Bulk Photo Edit\n                "}</BulkT></h1>
+                <p className="mt-1 max-w-2xl text-[10px] leading-relaxed text-[#64748B]"><BulkT>{"Select 2 or more photos, choose exact AI operations, and apply\n                  the same selected operation set to each photo individually.\n                "}</BulkT></p>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <span className={`rounded-full px-2.5 py-1 text-[9px] font-black ${photos.length >= 2
             ? "bg-emerald-50 text-emerald-700"
             : "bg-amber-50 text-amber-700"}`}>
-                  {photos.length}<T>{"photos\n                "}</T></span>
+                  <BulkT>{`${photos.length} photos`}</BulkT></span>
 
                 <span className="rounded-full bg-[#EFF6FF] px-2.5 py-1 text-[9px] font-black text-[#2563EB]">
-                  {selectedTotal}<T>{"AI tools\n                "}</T></span>
+                  <BulkT>{`${selectedTotal} AI tools`}</BulkT></span>
 
                 {isProcessing && (<span className="rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black text-blue-700">
-                    {processedCount}<T>{"/"}</T>{photos.length}<T>{"processed\n                  "}</T></span>)}
+                    <BulkT>{`${processedCount}/${photos.length} processed`}</BulkT></span>)}
 
                 {!isProcessing && completedCount > 0 && (<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black text-emerald-700">
-                    {completedCount}<T>{"ready\n                  "}</T></span>)}
+                    <BulkT>{`${completedCount} ready`}</BulkT></span>)}
 
                 {!isProcessing && failedCount > 0 && (<span className="rounded-full bg-red-50 px-2.5 py-1 text-[9px] font-black text-red-700">
-                    {failedCount}<T>{"failed\n                  "}</T></span>)}
+                    <BulkT>{`${failedCount} failed`}</BulkT></span>)}
 
                 {processingCount > 0 && !isProcessing && (<span className="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black text-amber-700">
-                    {processingCount}<T>{"processing\n                  "}</T></span>)}
+                    <BulkT>{`${processingCount} processing`}</BulkT></span>)}
               </div>
             </div>
           </div>
@@ -423,7 +423,7 @@ export default function BulkPhotoEditPage() {
 
             {message && (<div className="px-4 pb-4 sm:px-8">
                 <div className="mx-auto w-full max-w-5xl rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5 text-[9px] font-semibold leading-relaxed text-blue-700">
-                  {message}
+                  <BulkT>{message}</BulkT>
                 </div>
               </div>)}
           </div>
