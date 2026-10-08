@@ -90,6 +90,7 @@ async function persistBulkResult(image: string, name: string) {
         name,
         category: "bulk-photo-edit",
         toolName: "Bulk Photo Edit",
+        workspace: "creative",
         group: "image",
         url,
         publicId,

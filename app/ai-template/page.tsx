@@ -57,6 +57,7 @@ async function persistGeneratedFile(
         name,
         category,
         toolName: "AI Template",
+        workspace: "creative",
         group: "image",
         url,
         publicId,

@@ -21,6 +21,9 @@ import {
   Video,
   GraduationCap,
   PanelRightClose,
+  Eye,
+  Trash2,
+  Loader2,
   PanelRightOpen,
   type LucideIcon,
 } from "lucide-react";
@@ -257,6 +260,156 @@ function SearchBox({
   );
 }
 
+function getToolFilePreviewKind(file: ToolFile): "image" | "pdf" | "video" | "text" | "other" {
+  const value = `${file.name} ${file.url || ""}`.toLowerCase();
+
+  if (value.includes("data:application/pdf") || /\.pdf(?:$|[?#])/.test(value)) {
+    return "pdf";
+  }
+
+  if (
+    value.includes("data:image/") ||
+    /\.(?:png|jpe?g|webp|gif|bmp|svg)(?:$|[?#])/.test(value)
+  ) {
+    return "image";
+  }
+
+  if (
+    value.includes("data:video/") ||
+    /\.(?:mp4|webm|mov|m4v|ogg)(?:$|[?#])/.test(value)
+  ) {
+    return "video";
+  }
+
+  if (
+    value.includes("data:text/") ||
+    /\.(?:txt|csv|json|xml|html)(?:$|[?#])/.test(value)
+  ) {
+    return "text";
+  }
+
+  return "other";
+}
+
+function ToolFilePreviewModal({
+  file,
+  onClose,
+}: {
+  file: ToolFile;
+  onClose: () => void;
+}) {
+  const kind = getToolFilePreviewKind(file);
+  const previewable = ["image", "pdf", "video", "text"].includes(kind);
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Preview ${file.name}`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+          <div className="min-w-0 flex-1">
+            <p
+              className="truncate text-sm font-semibold text-slate-900"
+              title={file.name}
+            >
+              {file.name}
+            </p>
+            <p className="truncate text-xs text-slate-500">
+              {file.toolName} · {formatDate(file.createdAt)}
+            </p>
+          </div>
+
+          <a
+            href={file.url}
+            download={file.name}
+            className={`${secondaryBtn} shrink-0`}
+          >
+            <Download size={15} />
+            <span className="hidden sm:inline">Download</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
+            aria-label="Close preview"
+            title="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-3 sm:p-6">
+          {kind === "image" && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={file.url}
+              alt={file.name}
+              className="max-h-[calc(92vh-110px)] max-w-full object-contain"
+            />
+          )}
+
+          {kind === "pdf" && (
+            <iframe
+              src={file.url}
+              title={file.name}
+              className="h-[calc(92vh-110px)] w-full rounded-md border border-slate-200 bg-white"
+            />
+          )}
+
+          {kind === "video" && (
+            <video
+              src={file.url}
+              controls
+              playsInline
+              className="max-h-[calc(92vh-110px)] max-w-full rounded-md bg-black"
+            />
+          )}
+
+          {kind === "text" && (
+            <iframe
+              src={file.url}
+              title={file.name}
+              className="h-[calc(92vh-110px)] w-full rounded-md border border-slate-200 bg-white"
+            />
+          )}
+
+          {!previewable && (
+            <div className="w-full max-w-md rounded-lg border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+              <FileText
+                size={28}
+                strokeWidth={1.5}
+                className="mx-auto text-slate-400"
+              />
+              <h3 className="mt-3 text-sm font-semibold text-slate-900">
+                Preview not available
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                This file type cannot be displayed directly in the browser.
+              </p>
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noreferrer"
+                className={`${primaryBtn} mt-4`}
+              >
+                Open file
+                <ArrowRight size={14} />
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SortSelect({
   value,
   onChange,
@@ -442,6 +595,13 @@ export default function MyFilesPage() {
   const [toolFiles, setToolFiles] = useState<ToolFile[]>([]);
   const [filesLoading, setFilesLoading] = useState<boolean>(true);
 
+  // Image preview + delete state
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FileItem | null>(null);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string>("");
+  const [previewToolFile, setPreviewToolFile] = useState<ToolFile | null>(null);
+
   // Authentication and saved-file hydration run in the background so the
   // My Files shell never blocks navigation.
   useEffect(() => {
@@ -554,6 +714,72 @@ export default function MyFilesPage() {
   const resetSearch = () => {
     setSearchQuery("");
     setSwitchNotice("");
+  };
+
+  const handlePreview = (file: FileItem) => {
+    if (!file.url) return;
+    setDeleteError("");
+    setPreviewFile(file);
+  };
+
+  const handleToolPreview = (file: ToolFile) => {
+    if (!file.url) return;
+    setPreviewToolFile(file);
+  };
+
+  const openDeleteConfirm = (file: FileItem) => {
+    setDeleteError("");
+    setDeleteTarget(file);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deletingFileId) return;
+    setDeleteTarget(null);
+    setDeleteError("");
+  };
+
+  const handleDeleteFile = async () => {
+    if (!deleteTarget || deletingFileId) return;
+
+    const file = deleteTarget;
+    setDeletingFileId(file.id);
+    setDeleteError("");
+
+    try {
+      const response = await fetch("/api/my-files", {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: file.id }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || result?.success === false) {
+        throw new Error(
+          typeof result?.error === "string"
+            ? result.error
+            : typeof result?.message === "string"
+              ? result.message
+              : "Failed to delete the file. Please try again.",
+        );
+      }
+
+      setFiles((current) => current.filter((item) => item.id !== file.id));
+      setPreviewFile((current) => (current?.id === file.id ? null : current));
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Failed to delete My Files item:", error);
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete the file. Please try again.",
+      );
+    } finally {
+      setDeletingFileId(null);
+    }
   };
 
   const handleCategoryChange = (id: CategoryId) => {
@@ -754,15 +980,33 @@ export default function MyFilesPage() {
                           animationDelay: `${Math.min(index, 14) * 45}ms`,
                         }}
                       >
-                        <div className="flex aspect-[4/3] items-center justify-center bg-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handlePreview(file)}
+                          disabled={!isImage}
+                          aria-label={isImage ? `View ${file.name}` : undefined}
+                          title={isImage ? "View" : undefined}
+                          className={`group relative flex aspect-[4/3] w-full items-center justify-center bg-slate-100 ${
+                            isImage
+                              ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
+                              : "cursor-default"
+                          }`}
+                        >
                           {isImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={file.url}
-                              alt={file.name}
-                              className="h-full w-full object-contain"
-                              loading="lazy"
-                            />
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={file.url}
+                                alt={file.name}
+                                className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                                loading="lazy"
+                              />
+                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/0 transition-colors duration-200 group-hover:bg-slate-900/20">
+                                <span className="flex h-10 w-10 scale-95 items-center justify-center rounded-full bg-white/95 text-slate-700 opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
+                                  <Eye size={18} />
+                                </span>
+                              </span>
+                            </>
                           ) : (
                             <PlaceholderIcon
                               size={28}
@@ -770,9 +1014,22 @@ export default function MyFilesPage() {
                               className="text-slate-400"
                             />
                           )}
-                        </div>
+                        </button>
                         <div className="flex items-center gap-1.5 px-2.5 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
-                          <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => handlePreview(file)}
+                            disabled={!isImage}
+                            aria-label={
+                              isImage ? `View ${file.name}` : undefined
+                            }
+                            title={isImage ? "View" : undefined}
+                            className={`min-w-0 flex-1 text-left outline-none ${
+                              isImage
+                                ? "cursor-pointer focus-visible:underline focus-visible:underline-offset-2"
+                                : "cursor-default"
+                            }`}
+                          >
                             <p
                               className="truncate text-[13px] font-medium text-slate-900 sm:text-sm"
                               title={file.name}
@@ -782,18 +1039,32 @@ export default function MyFilesPage() {
                             <p className="text-xs text-slate-500">
                               {formatDate(file.createdAt)}
                             </p>
-                          </div>
+                          </button>
                           {file.url && (
                             <a
                               href={file.url}
                               download={file.name}
                               aria-label={`Download ${file.name}`}
                               title="Download"
-                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40"
                             >
                               <Download size={16} />
                             </a>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => openDeleteConfirm(file)}
+                            disabled={deletingFileId === file.id}
+                            aria-label={`Delete ${file.name}`}
+                            title="Delete"
+                            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 disabled:cursor-wait disabled:opacity-60"
+                          >
+                            {deletingFileId === file.id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
                         </div>
                       </article>
                     );
@@ -935,26 +1206,40 @@ export default function MyFilesPage() {
                           key={file.id}
                           className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
                         >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-                            <GroupIcon size={16} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className="truncate text-sm font-medium text-slate-900"
-                              title={file.name}
-                            >
-                              {file.name}
-                            </p>
-                            <p className="truncate text-xs text-slate-500">
-                              {file.toolName} · {formatDate(file.createdAt)}
-                            </p>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToolPreview(file)}
+                            disabled={!file.url}
+                            aria-label={file.url ? `View ${file.name}` : undefined}
+                            title={file.url ? "View" : undefined}
+                            className={`flex min-w-0 flex-1 items-center gap-3 text-left outline-none ${
+                              file.url
+                                ? "cursor-pointer focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
+                                : "cursor-default"
+                            }`}
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                              <GroupIcon size={16} />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className="truncate text-sm font-medium text-slate-900"
+                                title={file.name}
+                              >
+                                {file.name}
+                              </p>
+                              <p className="truncate text-xs text-slate-500">
+                                {file.toolName} · {formatDate(file.createdAt)}
+                              </p>
+                            </div>
+                          </button>
                           {file.url && (
                             <a
                               href={file.url}
                               download={file.name}
                               aria-label={`Download ${file.name}`}
                               title="Download"
+                              onClick={(e) => e.stopPropagation()}
                               className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
                             >
                               <Download size={16} />
@@ -1001,6 +1286,155 @@ export default function MyFilesPage() {
           )}
         </div>
       </main>
+
+      {/* ===================== Image preview ===================== */}
+      {previewFile?.url && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview ${previewFile.name}`}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setPreviewFile(null);
+          }}
+        >
+          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+              <div className="min-w-0 flex-1">
+                <p
+                  className="truncate text-sm font-semibold text-slate-900"
+                  title={previewFile.name}
+                >
+                  {previewFile.name}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {formatDate(previewFile.createdAt)}
+                </p>
+              </div>
+
+              <a
+                href={previewFile.url}
+                download={previewFile.name}
+                className={`${secondaryBtn} shrink-0`}
+              >
+                <Download size={15} />
+                <span className="hidden sm:inline">Download</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewFile(null);
+                  openDeleteConfirm(previewFile);
+                }}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                aria-label={`Delete ${previewFile.name}`}
+                title="Delete"
+              >
+                <Trash2 size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPreviewFile(null)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
+                aria-label="Close preview"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-3 sm:p-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewFile.url}
+                alt={previewFile.name}
+                className="max-h-[calc(92vh-110px)] max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== SohozTools file preview ===================== */}
+      {previewToolFile?.url && (
+        <ToolFilePreviewModal
+          file={previewToolFile}
+          onClose={() => setPreviewToolFile(null)}
+        />
+      )}
+
+      {/* ===================== Delete confirmation ===================== */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-file-title"
+        >
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <Trash2 size={19} />
+              </div>
+              <div className="min-w-0">
+                <h2
+                  id="delete-file-title"
+                  className="text-base font-semibold text-slate-900"
+                >
+                  Delete this file?
+                </h2>
+                <p className="mt-1 break-words text-sm leading-5 text-slate-600">
+                  <span className="font-medium text-slate-800">
+                    {deleteTarget.name}
+                  </span>
+                  <br />
+                  This action will permanently remove the saved file.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              >
+                {deleteError}
+              </p>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDeleteConfirm}
+                disabled={Boolean(deletingFileId)}
+                className={secondaryBtn}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteFile}
+                disabled={Boolean(deletingFileId)}
+                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-red-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40 disabled:cursor-wait disabled:opacity-60"
+              >
+                {deletingFileId ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={15} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
