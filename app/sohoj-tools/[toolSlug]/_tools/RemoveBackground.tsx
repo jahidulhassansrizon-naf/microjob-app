@@ -695,3 +695,7 @@ export default function RemoveBackground() {
     </div>
   );
 }
+// git status
+// git add .
+// git commit -m "ja mon chaise tai korsi"
+// git push origin main
