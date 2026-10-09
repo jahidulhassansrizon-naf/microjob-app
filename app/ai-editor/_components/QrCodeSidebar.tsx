@@ -206,18 +206,18 @@ export default function QrCodeSidebar({ uploadUrl = "", onPhotoReceived }: QrCod
 
   return (
     <aside className="w-full xl:w-[280px]">
-      <div className="rounded-2xl border border-amber-100 bg-[#FFFBE5] p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-900 p-3 text-white">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-800">
-            <Smartphone size={22} className="text-slate-100" />
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-slate-900">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+            <Smartphone size={22} className="text-slate-600" />
           </div>
           <div className="min-w-0 flex-1">
             <h4 className="text-xs font-semibold"><AiT>Upload from phone</AiT></h4>
-            <p className="mt-0.5 text-[10px] leading-4 text-slate-300"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
+            <p className="mt-0.5 text-[10px] leading-4 text-slate-500"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
           </div>
         </div>
 
-        <div className="mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-amber-100 bg-white p-3">
+        <div className="mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-slate-200 bg-white p-3">
           {mobileUrl && uploadState !== "creating" && uploadState !== "error" && uploadState !== "expired" ? (
             <LocalQrCode value={mobileUrl} label={t("QR code")} />
           ) : (
@@ -238,17 +238,17 @@ export default function QrCodeSidebar({ uploadUrl = "", onPhotoReceived }: QrCod
         </p>
 
         {isLocalOrigin && uploadState === "waiting" && (
-          <p className="mb-3 rounded-lg bg-amber-100 px-3 py-2 text-[10px] leading-4 text-amber-900"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
+          <p className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
         )}
         {uploadState === "waiting" && <p className="mb-3 text-center text-[10px] leading-4 text-slate-400"><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>}
 
         {uploadState === "waiting" && (
           <div className="flex gap-2">
-            <button type="button" onClick={copyLink} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-100 py-2.5 text-xs font-medium text-slate-800 transition hover:bg-amber-200">
+            <button type="button" onClick={copyLink} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs font-medium text-slate-800 transition hover:bg-slate-200">
               {copied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
               {copied ? <AiT>Copied</AiT> : <AiT>Copy upload link</AiT>}
             </button>
-            <button type="button" onClick={openUploadPage} className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 px-3 py-2.5 text-xs font-medium text-slate-800 transition hover:bg-amber-50" title={t("Open upload page")} aria-label={t("Open upload page")}>
+            <button type="button" onClick={openUploadPage} className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50" title={t("Open upload page")} aria-label={t("Open upload page")}>
               <ExternalLink size={15} />
             </button>
           </div>
