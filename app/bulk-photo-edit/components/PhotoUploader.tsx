@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { BulkT, useBulkPhotoText } from "./bulkPhotoI18n";
-import { AlertCircle, CheckCircle2, LoaderCircle, Plus, Upload, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, LoaderCircle, Plus, Upload, X, QrCode, ChevronDown, ChevronUp } from "lucide-react";
+import QrCodeSidebar from "@/app/ai-editor/_components/QrCodeSidebar";
 import type { PhotoItem } from "./types";
 interface PhotoUploaderProps {
     photos: PhotoItem[];
@@ -10,6 +12,12 @@ interface PhotoUploaderProps {
 }
 export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onClearPhotos, disabled, }: PhotoUploaderProps) {
     const { t } = useBulkPhotoText();
+    const [showPhoneUpload, setShowPhoneUpload] = useState(false);
+
+    useEffect(() => {
+        if (disabled) setShowPhoneUpload(false);
+    }, [disabled]);
+
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files ?? []);
         if (files.length)
@@ -25,6 +33,24 @@ export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onCl
         <span className="text-sm font-bold text-[#0F172A]"><BulkT>{"Add photos"}</BulkT></span>
         <span className="mt-1 text-[10px] font-medium text-[#0F172A]/50"><BulkT>{"Select 2 or more photos\n        "}</BulkT></span>
       </label>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => setShowPhoneUpload((current) => !current)}
+          disabled={disabled}
+          aria-expanded={showPhoneUpload}
+          className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2.5 text-xs font-semibold text-[#334155] shadow-sm transition hover:border-[#2563EB]/40 hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2"><QrCode size={15} className="text-[#2563EB]"/><BulkT>Upload from phone</BulkT></span>
+          {showPhoneUpload ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {showPhoneUpload && !disabled && (
+          <div className="mt-3">
+            <QrCodeSidebar onPhotoReceived={(file) => onAddPhotos([file])} />
+          </div>
+        )}
+      </div>
 
       <div className="mt-4 flex items-center justify-between">
         <div>

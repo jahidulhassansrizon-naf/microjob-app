@@ -244,27 +244,28 @@ export default function AITemplatePage() {
   );
   const closeModal = useCallback(() => setSelectedId(null), []);
 
+  const handleUserPhotoFile = useCallback((file: File) => {
+    if (!file.type.toLowerCase().startsWith("image/")) {
+      setGenerationError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setGenerationError("The photo must be 15 MB or smaller.");
+      return;
+    }
+    setGenerationError("");
+    setGeneratedImage(null);
+    setCropImage(URL.createObjectURL(file));
+    setIsCropOpen(true);
+  }, []);
+
   const handleUserPhotoChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (!file) return;
-      if (!file.type.toLowerCase().startsWith("image/")) {
-        setGenerationError("Please choose an image file.");
-        event.target.value = "";
-        return;
-      }
-      if (file.size > 15 * 1024 * 1024) {
-        setGenerationError("The photo must be 15 MB or smaller.");
-        event.target.value = "";
-        return;
-      }
-      setGenerationError("");
-      setGeneratedImage(null);
-      setCropImage(URL.createObjectURL(file));
-      setIsCropOpen(true);
       event.target.value = "";
+      if (file) handleUserPhotoFile(file);
     },
-    [],
+    [handleUserPhotoFile],
   );
 
   const handleCropCancel = useCallback(() => {
@@ -476,6 +477,7 @@ export default function AITemplatePage() {
           onClose={closeModal}
           onMove={moveSelected}
           onUserPhotoChange={handleUserPhotoChange}
+          onUserPhotoFile={handleUserPhotoFile}
           onGeneratePhoto={handleGeneratePhoto}
           onToggleFavorite={toggleFavorite}
         />

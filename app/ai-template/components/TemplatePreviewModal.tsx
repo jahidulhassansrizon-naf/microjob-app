@@ -1,7 +1,8 @@
 "use client";
 import { useAiTemplateText } from "./aiTemplateI18n";
 import React from "react";
-import { X, ChevronLeft, ChevronRight, Download, Upload, Heart, Image as ImageIcon, Sparkles } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Download, Upload, Heart, Image as ImageIcon, Sparkles, QrCode } from "lucide-react";
+import QrCodeSidebar from "@/app/ai-editor/_components/QrCodeSidebar";
 import { ScanOverlay } from "./ScanOverlay";
 import type { Template } from "./templateData";
 type Props = {
@@ -16,11 +17,24 @@ type Props = {
     onClose: () => void;
     onMove: (direction: 1 | -1) => void;
     onUserPhotoChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onUserPhotoFile: (file: File) => void;
     onGeneratePhoto: () => void;
     onToggleFavorite: (id: number) => void;
 };
-export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGenerating, userPhoto, userPhotoPreview, generationError, fileInputRef, isSelectedFavorite, onClose, onMove, onUserPhotoChange, onGeneratePhoto, onToggleFavorite, }: Props) {
+export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGenerating, userPhoto, userPhotoPreview, generationError, fileInputRef, isSelectedFavorite, onClose, onMove, onUserPhotoChange, onUserPhotoFile, onGeneratePhoto, onToggleFavorite, }: Props) {
     const { t } = useAiTemplateText();
+    const [showPhoneQr, setShowPhoneQr] = React.useState(false);
+
+    React.useEffect(() => {
+      // A QR opened for one template must not remain attached after navigating to another template.
+      setShowPhoneQr(false);
+    }, [selectedTemplate.id]);
+
+    const handleQrPhotoReceived = React.useCallback((file: File) => {
+      onUserPhotoFile(file);
+      // Once a photo is accepted for this template, collapse the QR panel while it is cropped.
+      setShowPhoneQr(false);
+    }, [onUserPhotoFile]);
     return (<div className="modal-backdrop" onClick={onClose}>
       <div className="template-modal" role="dialog" aria-modal="true" aria-label={t(selectedTemplate.title)} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("Close preview")}><X size={19}/></button>
@@ -56,11 +70,30 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
 
             {userPhotoPreview && (<div className="template-user-preview"><img src={userPhotoPreview} alt={t("Your uploaded photo")}/></div>)}
 
-            <button type="button" className="template-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={isGenerating}>
-              {userPhoto ? t("Change Photo") : t("Choose Photo")}
-            </button>
+            <div className="template-upload-actions">
+              <button type="button" className="template-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={isGenerating}>
+                {userPhoto ? t("Change Photo") : t("Choose Photo")}
+              </button>
+              <button
+                type="button"
+                className={`template-upload-qr-btn ${showPhoneQr ? "active" : ""}`}
+                onClick={() => setShowPhoneQr((current) => !current)}
+                disabled={isGenerating}
+                aria-expanded={showPhoneQr}
+              >
+                <QrCode size={14} />
+                <span>{showPhoneQr ? t("Hide phone upload") : t("Upload from phone")}</span>
+              </button>
+            </div>
             <small>{t("JPG, PNG or WEBP • Max 15 MB")}</small>
           </div>
+
+          {showPhoneQr && (
+            <div className="template-qr-upload-panel">
+              <p>{t("Scan the QR code to send a photo for this template.")}</p>
+              <QrCodeSidebar onPhotoReceived={handleQrPhotoReceived} />
+            </div>
+          )}
 
           {generationError && <div className="template-generation-error" role="alert">{t(generationError)}</div>}
 

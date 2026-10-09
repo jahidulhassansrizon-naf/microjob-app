@@ -882,6 +882,72 @@ export default function AITemplateStyles() {
           opacity: 0.55;
         }
 
+        .template-upload-actions {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .template-upload-actions .template-upload-btn {
+          grid-column: auto;
+          width: 100%;
+          min-width: 0;
+          padding: 0 8px;
+        }
+
+        .template-upload-qr-btn {
+          min-width: 0;
+          height: 38px;
+          padding: 0 8px;
+          border: 1px solid #cbd5e1;
+          border-radius: 9px;
+          background: #ffffff;
+          color: #2563eb;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-size: 9px;
+          line-height: 1.25;
+          font-weight: 900;
+          cursor: pointer;
+          transition: 0.2s ease;
+        }
+
+        .template-upload-qr-btn:hover,
+        .template-upload-qr-btn.active {
+          border-color: #93c5fd;
+          background: #eff6ff;
+          color: #1d4ed8;
+        }
+
+        .template-upload-qr-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+        }
+
+        .template-qr-upload-panel {
+          margin-top: 12px;
+          padding: 12px;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          background: #ffffff;
+        }
+
+        .template-qr-upload-panel > p {
+          margin: 0 0 10px;
+          color: #64748b;
+          font-size: 10px;
+          line-height: 1.6;
+          text-align: center;
+        }
+
+        .template-qr-upload-panel > aside {
+          margin-inline: auto;
+        }
+
         .template-upload-card small {
           grid-column: 1 / -1;
           color: #94a3b8;

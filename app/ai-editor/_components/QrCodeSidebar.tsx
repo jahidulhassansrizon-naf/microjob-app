@@ -205,7 +205,7 @@ export default function QrCodeSidebar({ uploadUrl = "", onPhotoReceived }: QrCod
   })();
 
   return (
-    <aside className="w-full xl:w-[280px]">
+    <aside className="w-full max-w-[280px]">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-slate-900">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">

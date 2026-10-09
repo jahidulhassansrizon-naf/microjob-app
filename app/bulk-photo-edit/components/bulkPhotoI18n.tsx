@@ -15,6 +15,7 @@ const BULK_PHOTO_BN: Record<string, string> = {
   "select 2 or more photos, choose exact ai operations, and apply the same selected operation set to each photo individually.": "২টি বা তার বেশি ছবি নির্বাচন করুন, প্রয়োজনীয় এআই কাজগুলো বেছে নিন এবং একই নির্বাচিত কাজ প্রতিটি ছবিতে আলাদাভাবে প্রয়োগ করুন।",
   "2 or more photos": "২টি বা তার বেশি ছবি",
   "add photos": "ছবি যোগ করুন",
+  "upload from phone": "ফোন থেকে ছবি আপলোড করুন",
   "select 2 or more photos": "২টি বা তার বেশি ছবি নির্বাচন করুন",
   "photo queue": "ছবির তালিকা",
   "selected": "নির্বাচিত",
