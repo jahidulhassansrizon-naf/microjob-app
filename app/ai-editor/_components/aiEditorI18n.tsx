@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { useCallback, type ReactNode } from "react";
 import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 
 /**
@@ -89,9 +89,16 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Keep Marks": "স্বাভাবিক দাগ রাখুন",
   Lipstick: "লিপস্টিক",
   "Custom Instruction": "কাস্টম নির্দেশনা",
-  "Enter a custom editing instruction for the AI:":
-    "এআই-এর জন্য কাস্টম সম্পাদনার নির্দেশনা লিখুন:",
-
+  "Enter a custom editing instruction for the AI:": "এআই-এর জন্য কাস্টম সম্পাদনার নির্দেশনা লিখুন:",
+  "Custom Editing Instruction": "কাস্টম সম্পাদনার নির্দেশনা",
+  "Describe the edit you want the AI to make.": "এআই দিয়ে আপনি কী ধরনের সম্পাদনা করতে চান, তা লিখুন।",
+  "Your instruction": "আপনার নির্দেশনা",
+  "Write your custom instruction here...": "এখানে আপনার কাস্টম নির্দেশনা লিখুন...",
+  "Your instruction will be used when generating the photo.": "ছবি তৈরি করার সময় আপনার নির্দেশনা ব্যবহার করা হবে।",
+  "Press Esc to close": "বন্ধ করতে Esc চাপুন",
+  Cancel: "বাতিল করুন",
+  "Add Instruction": "নির্দেশনা যোগ করুন",
+  Close: "বন্ধ করুন",
   "Image editing tools": "ছবি সম্পাদনার টুল",
   Adjustments: "সমন্বয়",
   "Aspect Ratio": "অনুপাত",
@@ -118,7 +125,6 @@ const AI_EDITOR_BN: Record<string, string> = {
   Blur: "ঝাপসা",
   Grayscale: "ধূসর মাত্রা",
   Sepia: "সেপিয়া",
-
   "Scan Now": "এখনই স্ক্যান করুন",
   "Open this editor on your phone": "ফোনে এই এডিটরটি খুলুন",
   "Scan to open editor": "এডিটর খুলতে স্ক্যান করুন",
@@ -128,20 +134,17 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Open editor": "এডিটর খুলুন",
   "Copy this link:": "এই লিংকটি কপি করুন:",
   "QR code": "QR কোড",
-
   "RECENT GENERATIONS": "সাম্প্রতিক তৈরি করা ছবি",
   "Previous generations": "আগের ছবি",
   "Next generations": "পরের ছবি",
   "View all images": "সব ছবি দেখুন",
   "Toggle generation details": "ছবির বিস্তারিত দেখানো/লুকানো",
-  "No recent generations yet. Click “Generate Photo” to add images here.":
-    "এখনও কোনো সাম্প্রতিক তৈরি করা ছবি নেই। এখানে ছবি যোগ করতে “ছবি তৈরি করুন” চাপুন।",
+  "No recent generations yet. Click “Generate Photo” to add images here.": "এখনও কোনো সাম্প্রতিক তৈরি করা ছবি নেই। এখানে ছবি যোগ করতে “ছবি তৈরি করুন” চাপুন।",
   "Generated photo": "তৈরি করা ছবি",
   View: "দেখুন",
   "All generated images": "সব তৈরি করা ছবি",
   "image(s)": "টি ছবি",
   "Close gallery": "গ্যালারি বন্ধ করুন",
-
   "Original Photo": "মূল ছবি",
   Compare: "তুলনা করুন",
   Orig: "মূল",
@@ -173,13 +176,10 @@ const AI_EDITOR_BN: Record<string, string> = {
   Transparent: "স্বচ্ছ",
   "Clothing:": "পোশাক:",
   "Full Preview": "সম্পূর্ণ পূর্বরূপ",
-  "Click to toggle original photo. Press and hold to preview it.":
-    "মূল ছবিটি দেখাতে/লুকাতে ক্লিক করুন। মূল ছবি দেখার জন্য চেপে ধরে রাখুন।",
-
+  "Click to toggle original photo. Press and hold to preview it.": "মূল ছবিটি দেখাতে/লুকাতে ক্লিক করুন। মূল ছবি দেখার জন্য চেপে ধরে রাখুন।",
   "Upload Photo": "ছবি আপলোড করুন",
   "Deleting Photo...": "ছবি মুছে ফেলা হচ্ছে...",
-  "Removing your photo, please wait...":
-    "আপনার ছবি সরানো হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
+  "Removing your photo, please wait...": "আপনার ছবি সরানো হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
   "Remove current photo": "বর্তমান ছবি সরান",
   "Upload a Photo": "একটি ছবি আপলোড করুন",
   "Upload 2 separate images": "২টি আলাদা ছবি আপলোড করুন",
@@ -194,24 +194,17 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Uploaded or generated preview": "আপলোড করা বা তৈরি করা ছবির পূর্বরূপ",
   "Left person": "বাম পাশের ব্যক্তি",
   "Right person": "ডান পাশের ব্যক্তি",
-
   "Subscription required": "সাবস্ক্রিপশন প্রয়োজন",
   "Checking access...": "অ্যাক্সেস যাচাই করা হচ্ছে...",
   Locked: "লক করা",
   "Subscription Required": "সাবস্ক্রিপশন প্রয়োজন",
-  "This page’s AI features require an active subscription before you can use them.":
-    "এই পেজের AI ফিচার ব্যবহার করতে আগে একটি সক্রিয় সাবস্ক্রিপশন নিতে হবে।",
-  "When your subscription is active, this lock will disappear automatically and you can use all features on the page.":
-    "সাবস্ক্রিপশন সক্রিয় হলে এই লকটি নিজে থেকেই চলে যাবে এবং পেজের সব ফিচার ব্যবহার করতে পারবেন।",
+  "This page’s AI features require an active subscription before you can use them.": "এই পেজের AI ফিচার ব্যবহার করতে আগে একটি সক্রিয় সাবস্ক্রিপশন নিতে হবে।",
+  "When your subscription is active, this lock will disappear automatically and you can use all features on the page.": "সাবস্ক্রিপশন সক্রিয় হলে এই লকটি নিজে থেকেই চলে যাবে এবং পেজের সব ফিচার ব্যবহার করতে পারবেন।",
   "View Subscription Plans": "সাবস্ক্রিপশনের প্ল্যান দেখুন",
-  Close: "বন্ধ করুন",
-
   "Select Clothing Area": "পোশাকের অংশ নির্বাচন করুন",
-  "Brush only over the clothing you want the AI to change. Keep the face, hair and skin untouched.":
-    "এআই যে পোশাকটি পরিবর্তন করবে শুধু সেই অংশে ব্রাশ করুন। মুখ, চুল ও ত্বকের ওপর ব্রাশ করবেন না।",
+  "Brush only over the clothing you want the AI to change. Keep the face, hair and skin untouched.": "এআই যে পোশাকটি পরিবর্তন করবে শুধু সেই অংশে ব্রাশ করুন। মুখ, চুল ও ত্বকের ওপর ব্রাশ করবেন না।",
   "How to use": "কীভাবে ব্যবহার করবেন",
-  "1. Paint over the shirt / dress / jacket.":
-    "১. শার্ট / ড্রেস / জ্যাকেটের ওপর আঁকুন।",
+  "1. Paint over the shirt / dress / jacket.": "১. শার্ট / ড্রেস / জ্যাকেটের ওপর আঁকুন।",
   "2. Do not paint over the face or hair.": "২. মুখ বা চুলের ওপর আঁকবেন না।",
   "3. Do not paint over exposed skin.": "৩. খোলা ত্বকের ওপর আঁকবেন না।",
   "4. Use Eraser to fix mistakes.": "৪. ভুল ঠিক করতে ইরেজার ব্যবহার করুন।",
@@ -219,74 +212,50 @@ const AI_EDITOR_BN: Record<string, string> = {
   Eraser: "ইরেজার",
   "Clear Mask": "মাস্ক মুছে দিন",
   "Important:": "গুরুত্বপূর্ণ:",
-  "White mask = area AI can edit. Unpainted/transparent area = keep unchanged.":
-    "সাদা মাস্ক = যে অংশটি AI সম্পাদনা করতে পারবে। না-আঁকা/স্বচ্ছ অংশ = অপরিবর্তিত থাকবে।",
+  "White mask = area AI can edit. Unpainted/transparent area = keep unchanged.": "সাদা মাস্ক = যে অংশটি AI সম্পাদনা করতে পারবে। না-আঁকা/স্বচ্ছ অংশ = অপরিবর্তিত থাকবে।",
   "Done Selecting": "নির্বাচন সম্পন্ন",
   "Clothing mask source": "পোশাকের মাস্কের উৎস ছবি",
-
   "Saving...": "সংরক্ষণ করা হচ্ছে...",
   "Crop & Rotate Image": "ছবি ক্রপ ও ঘোরান",
-  "For passport size photos, center your face in the crop area — this gives the best result.":
-    "পাসপোর্ট সাইজের ছবির ক্ষেত্রে ক্রপের মাঝখানে মুখ রাখুন—এতে সবচেয়ে ভালো ফল পাওয়া যায়।",
+  "For passport size photos, center your face in the crop area — this gives the best result.": "পাসপোর্ট সাইজের ছবির ক্ষেত্রে ক্রপের মাঝখানে মুখ রাখুন—এতে সবচেয়ে ভালো ফল পাওয়া যায়।",
   Rotate: "ঘোরান",
-  Cancel: "বাতিল করুন",
   Crop: "ক্রপ করুন",
   "Crop Preview": "ক্রপের পূর্বরূপ",
-
   "Please select a valid image file.": "সঠিক একটি ছবি ফাইল নির্বাচন করুন।",
-  "Image is too large. Please choose an image under 12 MB.":
-    "ছবিটি অনেক বড়। ১২ MB-এর কম আকারের ছবি নির্বাচন করুন।",
-  "Could not load image for final size export.":
-    "চূড়ান্ত মাপের জন্য ছবিটি লোড করা যায়নি।",
+  "Image is too large. Please choose an image under 12 MB.": "ছবিটি অনেক বড়। ১২ MB-এর কম আকারের ছবি নির্বাচন করুন।",
+  "Could not load image for final size export.": "চূড়ান্ত মাপের জন্য ছবিটি লোড করা যায়নি।",
   "Source image has invalid dimensions.": "উৎস ছবির মাপ সঠিক নয়।",
-  "Could not create final export canvas.":
-    "চূড়ান্ত এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
+  "Could not create final export canvas.": "চূড়ান্ত এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
   "Could not read the temporary image.": "অস্থায়ী ছবিটি পড়া যায়নি।",
   "Image upload failed.": "ছবি আপলোড ব্যর্থ হয়েছে।",
   "Could not create crop canvas.": "ক্রপ ক্যানভাস তৈরি করা যায়নি।",
   "Could not create rotation canvas.": "ঘোরানোর ক্যানভাস তৈরি করা যায়নি।",
-  "Could not preserve the cropped image preview.":
-    "ক্রপ করা ছবির পূর্বরূপ সংরক্ষণ করা যায়নি।",
-  "Could not convert the cropped image for preview.":
-    "ক্রপ করা ছবিকে পূর্বরূপের জন্য রূপান্তর করা যায়নি।",
-  "Could not process this image. Please try another image.":
-    "এই ছবিটি প্রক্রিয়া করা যায়নি। অন্য একটি ছবি দিয়ে চেষ্টা করুন।",
-  "Edited image upload failed. Please try again.":
-    "সম্পাদিত ছবি আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
+  "Could not preserve the cropped image preview.": "ক্রপ করা ছবির পূর্বরূপ সংরক্ষণ করা যায়নি।",
+  "Could not convert the cropped image for preview.": "ক্রপ করা ছবিকে পূর্বরূপের জন্য রূপান্তর করা যায়নি।",
+  "Could not process this image. Please try another image.": "এই ছবিটি প্রক্রিয়া করা যায়নি। অন্য একটি ছবি দিয়ে চেষ্টা করুন।",
+  "Edited image upload failed. Please try again.": "সম্পাদিত ছবি আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
   "Failed to save the edited image.": "সম্পাদিত ছবি সংরক্ষণ করা যায়নি।",
-  "Error updating edited image in MongoDB:":
-    "MongoDB-তে সম্পাদিত ছবি আপডেট করতে সমস্যা হয়েছে:",
+  "Error updating edited image in MongoDB:": "MongoDB-তে সম্পাদিত ছবি আপডেট করতে সমস্যা হয়েছে:",
   "Could not read the image source.": "ছবির উৎস পড়া যায়নি।",
   "No source image was provided.": "কোনো উৎস ছবি দেওয়া হয়নি।",
-  "Generated photo could not be uploaded to Cloudinary, so it was not saved.":
-    "তৈরি করা ছবি Cloudinary-তে আপলোড করা যায়নি, তাই এটি সংরক্ষণ করা হয়নি।",
-  "AI image editing timed out. Please try again with a smaller photo.":
-    "AI ছবি সম্পাদনার সময়সীমা শেষ হয়েছে। ছোট আকারের ছবি দিয়ে আবার চেষ্টা করুন।",
-  "Dual mode needs both left and right photos.":
-    "দুই ব্যক্তির মোডে বাম ও ডান—দুই পাশের ছবিই প্রয়োজন।",
+  "Generated photo could not be uploaded to Cloudinary, so it was not saved.": "তৈরি করা ছবি Cloudinary-তে আপলোড করা যায়নি, তাই এটি সংরক্ষণ করা হয়নি।",
+  "AI image editing timed out. Please try again with a smaller photo.": "AI ছবি সম্পাদনার সময়সীমা শেষ হয়েছে। ছোট আকারের ছবি দিয়ে আবার চেষ্টা করুন।",
+  "Dual mode needs both left and right photos.": "দুই ব্যক্তির মোডে বাম ও ডান—দুই পাশের ছবিই প্রয়োজন।",
   "Upload a photo before generating.": "ছবি তৈরি করার আগে একটি ছবি আপলোড করুন।",
   "Failed to save generated photos.": "তৈরি করা ছবিগুলো সংরক্ষণ করা যায়নি।",
   "Failed to update the generated photo.": "তৈরি করা ছবি আপডেট করা যায়নি।",
   "Failed to save generated photo.": "তৈরি করা ছবি সংরক্ষণ করা যায়নি।",
-  "Could not generate the photo. Please try again.":
-    "ছবি তৈরি করা যায়নি। আবার চেষ্টা করুন।",
-  "Are you sure you want to delete this photo?":
-    "আপনি কি নিশ্চিত যে এই ছবিটি মুছে ফেলতে চান?",
-  "This generated photo does not have a valid ID.":
-    "এই তৈরি করা ছবিটির বৈধ আইডি নেই।",
+  "Could not generate the photo. Please try again.": "ছবি তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+  "Are you sure you want to delete this photo?": "আপনি কি নিশ্চিত যে এই ছবিটি মুছে ফেলতে চান?",
+  "This generated photo does not have a valid ID.": "এই তৈরি করা ছবিটির বৈধ আইডি নেই।",
   "Failed to delete the generated photo.": "তৈরি করা ছবি মুছে ফেলা যায়নি।",
-  "Failed to delete the image. Please try again.":
-    "ছবি মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
-  "Could not create JPG export canvas.":
-    "JPG এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
-  "Could not encode the image for export.":
-    "ছবিটি এক্সপোর্টের জন্য রূপান্তর করা যায়নি।",
+  "Failed to delete the image. Please try again.": "ছবি মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
+  "Could not create JPG export canvas.": "JPG এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
+  "Could not encode the image for export.": "ছবিটি এক্সপোর্টের জন্য রূপান্তর করা যায়নি।",
   "Unable to load image for editing.": "সম্পাদনার জন্য ছবি লোড করা যায়নি।",
   "Invalid image dimensions.": "ছবির মাপ সঠিক নয়।",
-  "Canvas is not supported by this browser.":
-    "এই ব্রাউজারে ক্যানভাস সমর্থিত নয়।",
-  "Could not create exact-size export canvas.":
-    "নির্ভুল মাপের এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
+  "Canvas is not supported by this browser.": "এই ব্রাউজারে ক্যানভাস সমর্থিত নয়।",
+  "Could not create exact-size export canvas.": "নির্ভুল মাপের এক্সপোর্ট ক্যানভাস তৈরি করা যায়নি।",
   "Save image error:": "ছবি সংরক্ষণের ত্রুটি:",
   "Failed to save image changes.": "ছবির পরিবর্তন সংরক্ষণ করা যায়নি।",
   "Regenerate error:": "আবার তৈরি করার ত্রুটি:",
@@ -295,23 +264,18 @@ const AI_EDITOR_BN: Record<string, string> = {
   "The image could not be exported.": "ছবিটি এক্সপোর্ট করা যায়নি।",
   "Unable to build print sheet.": "প্রিন্ট শিট তৈরি করা যায়নি।",
   "Print sheet generation failed:": "প্রিন্ট শিট তৈরি ব্যর্থ হয়েছে:",
-  "Could not create the print sheet. Please retry with a directly accessible image.":
-    "প্রিন্ট শিট তৈরি করা যায়নি। সরাসরি অ্যাক্সেসযোগ্য ছবি দিয়ে আবার চেষ্টা করুন।",
+  "Could not create the print sheet. Please retry with a directly accessible image.": "প্রিন্ট শিট তৈরি করা যায়নি। সরাসরি অ্যাক্সেসযোগ্য ছবি দিয়ে আবার চেষ্টা করুন।",
   "Photo for printing": "প্রিন্টের জন্য ছবি",
-  "Unable to prepare the photo for printing.":
-    "প্রিন্টের জন্য ছবি প্রস্তুত করা যায়নি।",
+  "Unable to prepare the photo for printing.": "প্রিন্টের জন্য ছবি প্রস্তুত করা যায়নি।",
   "Print failed:": "প্রিন্ট ব্যর্থ হয়েছে:",
   "Could not print this image.": "এই ছবিটি প্রিন্ট করা যায়নি।",
   "Image link copied to clipboard.": "ছবির লিংক ক্লিপবোর্ডে কপি হয়েছে।",
-  "Sharing is not available in this browser.":
-    "এই ব্রাউজারে শেয়ার করার সুবিধা নেই।",
-  "Failed to load recent generations.":
-    "সাম্প্রতিক তৈরি করা ছবিগুলো লোড করা যায়নি।",
-  "Error fetching AI generations from MongoDB:":
-    "MongoDB থেকে AI-এর তৈরি করা ছবিগুলো আনতে সমস্যা হয়েছে:",
+  "Sharing is not available in this browser.": "এই ব্রাউজারে শেয়ার করার সুবিধা নেই।",
+  "Failed to load recent generations.": "সাম্প্রতিক তৈরি করা ছবিগুলো লোড করা যায়নি।",
+  "Error fetching AI generations from MongoDB:": "MongoDB থেকে AI-এর তৈরি করা ছবিগুলো আনতে সমস্যা হয়েছে:",
 };
 
-function normalizeAiText(value: string) {
+function normalizeAiText(value: string): string {
   return value
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
@@ -327,12 +291,12 @@ function translateAiText(
   baseL?: (value: string) => string,
 ): string {
   const raw = String(value ?? "");
-  if (!locale || !String(locale).toLowerCase().startsWith("bn")) return raw;
+  if (!locale || !locale.toLowerCase().startsWith("bn")) return raw;
 
   const key = normalizeAiText(raw);
   if (AI_EDITOR_BN[key]) return AI_EDITOR_BN[key];
 
-  let match = key.match(/^(\d+)\s+image(?:s)?$/i);
+  let match = key.match(/^(\d+)\s+images?$/i);
   if (match) return `${match[1]}টি ছবি`;
 
   match = key.match(/^(.+) left person$/i);
@@ -369,7 +333,10 @@ function translateAiText(
     const latinCount = (translated.match(/[A-Za-z]/g) || []).length;
     const latinTechnical = translated.replace(/AI|PDF|JPG|PNG|WebP/g, "");
 
-    if (bnCount > 0 && (latinCount <= 4 || !/[A-Za-z]/.test(latinTechnical))) {
+    if (
+      bnCount > 0 &&
+      (latinCount <= 4 || !/[A-Za-z]/.test(latinTechnical))
+    ) {
       return translated;
     }
   }
@@ -383,11 +350,13 @@ export function useAiEditorText() {
     (value: string) => translateAiText(value, locale, baseL),
     [locale, baseL],
   );
+
   return { t, locale };
 }
 
-export function AiT({ children }: { children: React.ReactNode }) {
+export function AiT({ children }: { children: ReactNode }) {
   const { t } = useAiEditorText();
+
   if (typeof children !== "string") return <>{children}</>;
   return <>{t(children)}</>;
 }

@@ -1,6 +1,7 @@
 "use client";
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { RefreshCw, Sparkles, Check, Palette, X, ImageIcon, Loader2, Ban, } from "lucide-react";
 export interface PhotoSizeOption {
     id: string;
@@ -47,6 +48,7 @@ export interface GenerationSettingsProps {
     onGenerate?: () => void;
     isGenerating?: boolean;
     onEditingGuidesChange?: (guides: string[]) => void;
+    clearCustomInstructionSignal?: number;
     onResetSettings?: () => void;
 }
 const CLOTHING_COLORS = [
@@ -281,6 +283,7 @@ function recolorSvgMarkup(svg: string, clothingIndex: number, targetColor: strin
     }
     return result;
 }
+const MAX_RECOLORED_SVG_CACHE_ENTRIES = 24;
 function svgToObjectUrl(svg: string) {
     const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
     return URL.createObjectURL(blob);
@@ -288,8 +291,12 @@ function svgToObjectUrl(svg: string) {
 async function getRecoloredSvgUrl(clothingIndex: number, targetColor: string) {
     const cacheKey = `${clothingIndex}:${targetColor.toUpperCase()}`;
     const cachedUrl = recoloredSvgCache.get(cacheKey);
-    if (cachedUrl)
+    if (cachedUrl) {
+        // Refresh insertion order so this small cache behaves like an LRU cache.
+        recoloredSvgCache.delete(cacheKey);
+        recoloredSvgCache.set(cacheKey, cachedUrl);
         return cachedUrl;
+    }
     let rawSvg = rawSvgCache.get(clothingIndex);
     if (!rawSvg) {
         const response = await fetch(`/icons/clothing-${clothingIndex + 1}.svg`, {
@@ -303,6 +310,14 @@ async function getRecoloredSvgUrl(clothingIndex: number, targetColor: string) {
     }
     const recolored = recolorSvgMarkup(rawSvg, clothingIndex, targetColor);
     const objectUrl = svgToObjectUrl(recolored);
+    if (recoloredSvgCache.size >= MAX_RECOLORED_SVG_CACHE_ENTRIES) {
+        const oldestEntry = recoloredSvgCache.entries().next().value;
+        if (oldestEntry) {
+            const [oldestKey, oldestUrl] = oldestEntry;
+            recoloredSvgCache.delete(oldestKey);
+            URL.revokeObjectURL(oldestUrl);
+        }
+    }
     recoloredSvgCache.set(cacheKey, objectUrl);
     return objectUrl;
 }
@@ -344,11 +359,15 @@ function RawSvgClothingPreview({ index, selected, color, alt, }: {
       <img src={displaySrc} alt={alt} className={`w-full h-full object-cover rounded-lg scale-105 transition-opacity duration-150 ${isReady ? "opacity-100" : "opacity-80"}`}/>
     </div>);
 }
-export default function GenerationSettings({ photoSizes = [], selectedSize = "", handleSizeClick = () => { }, showVisaPopup = false, setShowVisaPopup = () => { }, visaSizesList = [], selectedVisaSize = "", setSelectedVisaSize = () => { }, setSelectedSize = () => { }, isDualMode = false, exitDualMode = () => { }, backgroundColors = [], selectedBg = 0, setSelectedBg = () => { }, setShowColorPicker = () => { }, showColorPicker = false, customBgColor = "#FFFFFF", setCustomBgColor = () => { }, selectedClothing = 0, setSelectedClothing = () => { }, selectedClothingColor = "#EF4444", setSelectedClothingColor, leftClothing = 0, setLeftClothing = () => { }, rightClothing = 0, setRightClothing = () => { }, colorPickerRef, visaPopupRef, onGenerate = () => { }, isGenerating = false, onEditingGuidesChange, onResetSettings, }: GenerationSettingsProps) {
+export default function GenerationSettings({ photoSizes = [], selectedSize = "", handleSizeClick = () => { }, showVisaPopup = false, setShowVisaPopup = () => { }, visaSizesList = [], selectedVisaSize = "", setSelectedVisaSize = () => { }, setSelectedSize = () => { }, isDualMode = false, exitDualMode = () => { }, backgroundColors = [], selectedBg = 0, setSelectedBg = () => { }, setShowColorPicker = () => { }, showColorPicker = false, customBgColor = "#FFFFFF", setCustomBgColor = () => { }, selectedClothing = 0, setSelectedClothing = () => { }, selectedClothingColor = "#EF4444", setSelectedClothingColor, leftClothing = 0, setLeftClothing = () => { }, rightClothing = 0, setRightClothing = () => { }, colorPickerRef, visaPopupRef, onGenerate = () => { }, isGenerating = false, onEditingGuidesChange, clearCustomInstructionSignal = 0, onResetSettings, }: GenerationSettingsProps) {
     const { t } = useAiEditorText();
     const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
     const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
     const [activeGuides, setActiveGuides] = useState<string[]>([]);
+    const [showCustomInstructionModal, setShowCustomInstructionModal] = useState(false);
+    const [customInstructionDraft, setCustomInstructionDraft] = useState("");
+    const previousCustomInstructionClearSignalRef = useRef(clearCustomInstructionSignal);
+    const customInstructionTextareaRef = useRef<HTMLTextAreaElement>(null);
     const clothingColorPopupRef = useRef<HTMLDivElement>(null);
     const currentColor = setSelectedClothingColor
         ? selectedClothingColor
@@ -367,6 +386,44 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
             ? prev.filter((item) => item !== guide)
             : [...prev, guide]);
     };
+    const handleCustomInstructionSubmit = () => {
+        const instruction = customInstructionDraft.trim();
+        if (!instruction) return;
+        const guide = `Custom Instruction: ${instruction}`;
+        setActiveGuides((prev) => [
+            ...prev.filter((entry) => !entry.startsWith("Custom Instruction:")),
+            guide,
+        ]);
+        setShowCustomInstructionModal(false);
+        setCustomInstructionDraft("");
+    };
+    useEffect(() => {
+        if (!showCustomInstructionModal) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const handleModalKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setShowCustomInstructionModal(false);
+            }
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                handleCustomInstructionSubmit();
+            }
+        };
+        document.addEventListener("keydown", handleModalKeyDown);
+        customInstructionTextareaRef.current?.focus();
+        return () => {
+            document.removeEventListener("keydown", handleModalKeyDown);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [showCustomInstructionModal, customInstructionDraft]);
+    useEffect(() => {
+        if (previousCustomInstructionClearSignalRef.current !== clearCustomInstructionSignal) {
+            previousCustomInstructionClearSignalRef.current = clearCustomInstructionSignal;
+            setActiveGuides((prev) => prev.filter((entry) => !entry.startsWith("Custom Instruction:")));
+            setCustomInstructionDraft("");
+        }
+    }, [clearCustomInstructionSignal]);
     useEffect(() => {
         onEditingGuidesChange?.(activeGuides);
     }, [activeGuides, onEditingGuidesChange]);
@@ -642,14 +699,8 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                             setActiveGuides((prev) => prev.filter((entry) => !entry.startsWith("Custom Instruction:")));
                             return;
                         }
-                        const instruction = window.prompt(t("Enter a custom editing instruction for the AI:"));
-                        if (!instruction?.trim())
-                            return;
-                        const guide = `Custom Instruction: ${instruction.trim()}`;
-                        setActiveGuides((prev) => [
-                            ...prev.filter((entry) => !entry.startsWith("Custom Instruction:")),
-                            guide,
-                        ]);
+                        setCustomInstructionDraft("");
+                        setShowCustomInstructionModal(true);
                         return;
                     }
                     toggleGuide(item);
@@ -678,5 +729,88 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
             </>) : (<span><AiT>{"Generate Photo"}</AiT></span>)}
         </button>
       </div>
+      {showCustomInstructionModal && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowCustomInstructionModal(false);
+          }}
+          role="presentation"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="custom-instruction-title"
+            aria-describedby="custom-instruction-description"
+            className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+          >
+            <div className="flex items-start gap-4 border-b border-slate-100 px-6 pb-5 pt-6 sm:px-7">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/20">
+                <Sparkles size={22} strokeWidth={2.2} />
+              </div>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <h2 id="custom-instruction-title" className="text-lg font-semibold tracking-tight text-slate-900">
+                  {t("Custom Editing Instruction")}
+                </h2>
+                <p id="custom-instruction-description" className="mt-1.5 text-sm leading-6 text-slate-500">
+                  {t("Describe the edit you want the AI to make.")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCustomInstructionModal(false)}
+                aria-label={t("Close")}
+                className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleCustomInstructionSubmit();
+              }}
+              className="px-6 py-6 sm:px-7"
+            >
+              <label htmlFor="custom-instruction-input" className="mb-2 block text-sm font-medium text-slate-700">
+                {t("Your instruction")}
+              </label>
+              <textarea
+                ref={customInstructionTextareaRef}
+                id="custom-instruction-input"
+                value={customInstructionDraft}
+                onChange={(event) => setCustomInstructionDraft(event.target.value)}
+                placeholder={t("Write your custom instruction here...")}
+                rows={5}
+                className="block w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              />
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                {t("Your instruction will be used when generating the photo.")}
+              </p>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-xs text-slate-400">{t("Press Esc to close")}</span>
+                <div className="flex justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomInstructionModal(false)}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  >
+                    {t("Cancel")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!customInstructionDraft.trim()}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                  >
+                    <Sparkles size={15} />
+                    {t("Add Instruction")}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </section>
+        </div>,
+        document.body
+      )}
     </div>);
 }

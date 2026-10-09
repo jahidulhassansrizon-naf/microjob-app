@@ -562,7 +562,11 @@ export default function DashboardNavbar({ scaleWithZoom = false, }: {
           {/* Left: Logo                                                   */}
           {/* ------------------------------------------------------------ */}
 
-          <Link ref={leftRef} href="/dashboard" className="flex min-w-0 shrink items-center gap-2.5">
+          <Link
+            ref={leftRef}
+            href="/"
+            className="flex min-w-0 shrink items-center gap-2.5"
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20"><DT>{"SK\n            "}</DT></div>
 
             <div className="flex min-w-0 flex-col leading-none">

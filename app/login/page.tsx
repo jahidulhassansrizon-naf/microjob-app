@@ -1,6 +1,6 @@
 // app/login/page.tsx
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, MessageCircle, ArrowLeft, Loader2, } from "lucide-react";
@@ -10,6 +10,111 @@ function LoginContent() {
     const searchParams = useSearchParams();
     // URL parameters detection
     const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "";
+    const [checkingExistingSession, setCheckingExistingSession] = useState(true);
+    useEffect(() => {
+        let active = true;
+
+        const readCookieToken = () => {
+            const entry = document.cookie
+                .split(";")
+                .map((item) => item.trim())
+                .find((item) => item.startsWith("token="));
+            if (!entry) return "";
+            const value = entry.slice("token=".length);
+            try {
+                return decodeURIComponent(value);
+            }
+            catch {
+                return value;
+            }
+        };
+
+        let localToken = "";
+        try {
+            localToken = localStorage.getItem("token") || "";
+        }
+        catch {
+            // Cookie-based sessions can still be checked if localStorage is unavailable.
+        }
+        const token = localToken || readCookieToken();
+        if (!token) {
+            setCheckingExistingSession(false);
+            // Finishes the shared bar if this route was opened from the home-page Login link.
+            window.setTimeout(() => {
+                window.dispatchEvent(new Event("navigation-progress:finish"));
+            }, 0);
+            return () => {
+                active = false;
+            };
+        }
+
+        // Also cover a direct visit to /login when a saved session is available.
+        // Deferring one tick ensures the layout-level listener has been registered.
+        const progressStartTimer = window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("navigation-progress:start", {
+                detail: { targetPath: "/login" },
+            }));
+        }, 0);
+
+        const clearInvalidSession = () => {
+            try {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+            }
+            catch {
+                // Storage cleanup is best-effort.
+            }
+            document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+        };
+
+        void fetch("/api/auth/me", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(async (response) => {
+                if (!active) return;
+                if (response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    if (data?.user) {
+                        try {
+                            localStorage.setItem("user", JSON.stringify(data.user));
+                        }
+                        catch {
+                            // The authenticated session does not depend on cached user data.
+                        }
+                    }
+
+                    const requestedTarget = callbackUrl.trim();
+                    const safeTargetUrl = requestedTarget.startsWith("/")
+                        && !requestedTarget.startsWith("//")
+                        && !requestedTarget.startsWith("/login")
+                        ? requestedTarget
+                        : "/dashboard";
+                    router.replace(safeTargetUrl);
+                    return;
+                }
+
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    clearInvalidSession();
+                }
+                setCheckingExistingSession(false);
+                window.dispatchEvent(new Event("navigation-progress:finish"));
+            })
+            .catch(() => {
+                // A network/server error should not destroy an existing token.
+                if (active) {
+                    setCheckingExistingSession(false);
+                    window.dispatchEvent(new Event("navigation-progress:finish"));
+                }
+            });
+
+        return () => {
+            active = false;
+            window.clearTimeout(progressStartTimer);
+        };
+    }, [callbackUrl, router]);
     const [showPassword, setShowPassword] = useState(false);
     const { locale, setLocale } = useI18n();
     const [loading, setLoading] = useState(false);
@@ -83,6 +188,12 @@ function LoginContent() {
             setLoading(false);
         }
     };
+    if (checkingExistingSession) {
+        // The layout-level progress bar provides the visual while the session is verified.
+        return (<div role="status" aria-live="polite" aria-label="Checking login status">
+          <span className="sr-only"><T>{"Checking login status..."}</T></span>
+        </div>);
+    }
     return (<div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-slate-50 font-sans overflow-x-hidden relative">
       {/* Left Visual Banner */}
       <div className="lg:w-1/2 bg-slate-900 py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">

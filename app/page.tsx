@@ -2,7 +2,6 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Hero from "@/components/Hero";
 import HeroFeatures from "@/components/HeroFeatures";
 import AiEditorSection from "@/components/AiEditorSection";
@@ -13,29 +12,12 @@ import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
 export default function Home() {
-    const router = useRouter();
     const [isChecking, setIsChecking] = useState(true);
     useEffect(() => {
-        // Helper function: Cookie থেকে টোকেন বের করার জন্য
-        const getCookie = (name: string) => {
-            if (typeof document === "undefined")
-                return null;
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2)
-                return parts.pop()?.split(";").shift();
-            return null;
-        };
-        const tokenLocal = localStorage.getItem("token");
-        const tokenCookie = getCookie("token");
-        // টোকেন থাকলে সরাসরি ড্যাশবোর্ডে পাঠাবে
-        if (tokenLocal || tokenCookie) {
-            router.replace("/dashboard");
-        }
-        else {
-            setIsChecking(false);
-        }
-    }, [router]);
+        // লগইন করা ইউজারও হোম পেজ দেখতে পারবে; এখানে সেশন থাকলেই
+        // ড্যাশবোর্ডে স্বয়ংক্রিয় রিডাইরেক্ট করা হবে না।
+        setIsChecking(false);
+    }, []);
     // Scroll Restoration (রিলোড দিলে ঠিক একই পজিশনে ধরে রাখার লজিক)
     useEffect(() => {
         if (isChecking)

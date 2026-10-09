@@ -41,6 +41,10 @@ export default function PhotoEditorPage() {
     const [recentList, setRecentList] = useState<any[]>([]);
     const [previewModalImage, setPreviewModalImage] = useState<any>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    // Prevent duplicate generation submissions before React has time to re-render.
+    // This lock is local to this user's page and never shared between users.
+    const generationInFlightRef = useRef(false);
+    const [customInstructionClearToken, setCustomInstructionClearToken] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
@@ -269,10 +273,14 @@ export default function PhotoEditorPage() {
             context.fillRect(0, 0, target.widthPx, target.heightPx);
         }
         context.drawImage(image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+        // Keep only the serialized image data; release the large canvas bitmap now.
+        const dataUrl = transparentBackground
+            ? canvas.toDataURL("image/png")
+            : canvas.toDataURL("image/jpeg", 0.95);
+        canvas.width = 0;
+        canvas.height = 0;
         return {
-            dataUrl: transparentBackground
-                ? canvas.toDataURL("image/png")
-                : canvas.toDataURL("image/jpeg", 0.95),
+            dataUrl,
             widthPx: target.widthPx,
             heightPx: target.heightPx,
             dpi: target.dpi,
@@ -752,38 +760,46 @@ export default function PhotoEditorPage() {
         return instructions.join(" ");
     };
     const callGenerateApi = async (payload: Record<string, unknown>) => {
-        const image = typeof payload.image === "string" ? payload.image.trim() : "";
+        let image = typeof payload.image === "string" ? payload.image.trim() : "";
         if (!image) {
             throw new Error("No source image was provided.");
         }
-        const prompt = buildAiEditingPrompt(payload);
+
+        // These values can contain large base64 image strings. Keep them request-scoped
+        // and release references in finally after success or failure.
+        let prompt = "";
+        let result: any = null;
+        let normalized: Awaited<ReturnType<typeof normalizeImageToExactPhysicalSize>> | null = null;
         const formData = new FormData();
-        if (/^https?:\/\//i.test(image)) {
-            formData.append("imageUrl", image);
-        }
-        else {
-            formData.append("image", await dataUrlToFile(image, `sohozkaj-ai-source-${Date.now()}.jpg`));
-        }
-        formData.append("prompt", prompt);
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), 180000);
+
         try {
+            prompt = buildAiEditingPrompt(payload);
+            if (/^https?:\/\//i.test(image)) {
+                formData.append("imageUrl", image);
+            }
+            else {
+                const sourceFile = await dataUrlToFile(image, `sohozkaj-ai-source-${Date.now()}.jpg`);
+                formData.append("image", sourceFile);
+            }
+            formData.append("prompt", prompt);
+
             const response = await fetch("/api/image-generate", {
                 method: "POST",
                 body: formData,
                 signal: controller.signal,
                 cache: "no-store",
             });
-            const result = await response.json().catch(() => null);
-            if (!response.ok ||
-                !result?.success ||
-                typeof result.image !== "string") {
+            result = await response.json().catch(() => null);
+            if (!response.ok || !result?.success || typeof result.image !== "string") {
                 const message = result?.error || `AI image editing failed (${response.status}).`;
                 throw new Error(message);
             }
+
             const currentSize = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
             const transparentBackground = payload.transparentBackground === true;
-            const normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground);
+            normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground);
             const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
             if (!cloudUrl) {
                 throw new Error("Generated photo could not be uploaded to Cloudinary, so it was not saved.");
@@ -798,6 +814,18 @@ export default function PhotoEditorPage() {
         }
         finally {
             window.clearTimeout(timeoutId);
+            controller.abort();
+            // FormData may hold a File backed by the temporary source image.
+            formData.delete("image");
+            formData.delete("imageUrl");
+            formData.delete("prompt");
+            if (result && typeof result.image === "string") {
+                result.image = "";
+            }
+            result = null;
+            normalized = null;
+            prompt = "";
+            image = "";
         }
     };
     const handleGeneratePhoto = async () => {
@@ -812,6 +840,11 @@ export default function PhotoEditorPage() {
             setErrorMessage("Upload a photo before generating.");
             return;
         }
+        if (generationInFlightRef.current) {
+            return;
+        }
+        generationInFlightRef.current = true;
+        let generationSucceeded = false;
         setIsGenerating(true);
         try {
             const currentSizeLabel = getCurrentSizeLabel();
@@ -897,6 +930,7 @@ export default function PhotoEditorPage() {
                 }
                 const createdItems = Array.isArray(result.data) ? result.data : [];
                 setRecentList((prev) => [...createdItems, ...prev]);
+                generationSucceeded = true;
                 return;
             }
             const rawImage = originalImageForDual || uploadedImage!;
@@ -964,6 +998,7 @@ export default function PhotoEditorPage() {
                     setRecentList((prev) => [createdItem, ...prev]);
                 }
             }
+            generationSucceeded = true;
         }
         catch (error) {
             console.error("Generation error:", error);
@@ -972,6 +1007,13 @@ export default function PhotoEditorPage() {
                 : "Could not generate the photo. Please try again.");
         }
         finally {
+            if (generationSucceeded) {
+                // Custom instructions are one-shot: the completed generation has
+                // already used/saved its snapshot, so do not carry the text forward.
+                setEditingGuides((prev) => prev.filter((entry) => !entry.startsWith("Custom Instruction:")));
+                setCustomInstructionClearToken((prev) => prev + 1);
+            }
+            generationInFlightRef.current = false;
             setIsGenerating(false);
         }
     };
@@ -1123,7 +1165,7 @@ export default function PhotoEditorPage() {
       <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
         <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
