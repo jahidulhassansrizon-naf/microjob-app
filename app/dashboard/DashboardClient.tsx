@@ -102,7 +102,7 @@ function WelcomeBanner({ userName, fit }: {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link href="/sohoj-tools" className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-[#2563EB] outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/50"><DT>{"Explore all tools\n              "}</DT><ArrowRight size={14}/>
             </Link>
-            <Link href="/my-files" prefetch onMouseEnter={prefetchMyFilesData} onFocus={prefetchMyFilesData} onTouchStart={() => prefetchMyFilesData(true)} onMouseDown={() => prefetchMyFilesData(true)} onClick={() => prefetchMyFilesData(true)} className="inline-flex cursor-pointer items-center rounded-md border border-white/40 px-4 py-2 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"><DT>{"My Files\n            "}</DT></Link>
+            <Link href="/my-files" prefetch onMouseEnter={() => prefetchMyFilesData()} onFocus={() => prefetchMyFilesData()} onTouchStart={() => prefetchMyFilesData(true)} onMouseDown={() => prefetchMyFilesData(true)} onClick={() => prefetchMyFilesData(true)} className="inline-flex cursor-pointer items-center rounded-md border border-white/40 px-4 py-2 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"><DT>{"My Files\n            "}</DT></Link>
           </div>
 
           <p className="mt-3 text-sm text-blue-100">
