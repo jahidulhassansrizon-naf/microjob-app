@@ -165,14 +165,14 @@ export default function MobileUploadClient({ token }: { token: string }) {
   const locked = status === "validating" || status === "preparing" || status === "sending" || status === "sent" || status === "expired" || status === "used";
 
   return (
-    <main className="min-h-screen bg-[#FFF9DE] px-4 py-8 text-slate-900 sm:py-12">
-      <div className="mx-auto w-full max-w-md">
+    <main data-mobile-upload-page="true" className="min-h-[100dvh] w-full bg-white px-4 py-5 text-slate-900 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-xl">
         <div className="mb-5 flex items-center justify-center gap-3 text-slate-800">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm"><Smartphone size={23} /></div>
           <div><p className="text-xs font-medium text-slate-500">Sohozkaj</p><h1 className="text-lg font-bold"><span>{t("Upload a photo from your phone")}</span></h1></div>
         </div>
 
-        <section className="overflow-hidden rounded-3xl border border-amber-100 bg-white shadow-lg shadow-amber-900/5">
+        <section className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none sm:rounded-3xl">
           <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <p className="text-sm leading-6 text-slate-600">{t("Choose a photo from your gallery, then send it to the computer showing this QR code.")}</p>
             <p className="mt-2 text-xs leading-5 text-slate-400">{t("Your phone must stay on this page until the photo is sent.")}</p>
@@ -184,7 +184,7 @@ export default function MobileUploadClient({ token }: { token: string }) {
                 <img src={previewUrl} alt={t("Select an image from your phone's gallery.")} className="max-h-72 w-full object-contain" />
               </div>
             ) : (
-              <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/50 px-5 py-6 text-center">
+              <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-center">
                 <ImageUp size={34} className="mb-3 text-blue-600" />
                 <p className="text-sm font-semibold text-slate-800">{t("Choose photo")}</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">{t("Select an image from your phone's gallery.")}</p>
