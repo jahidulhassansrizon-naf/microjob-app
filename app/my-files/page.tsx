@@ -30,6 +30,12 @@ import {
 } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
+import {
+  getCachedMyFilesData,
+  getMyFilesThumbnailUrl,
+  refreshMyFilesData,
+  removeCachedMyFilesItem,
+} from "./myFilesData";
 
 /* ------------------------------------------------------------------ */
 /* Page-specific, context-aware English ↔ Bangla translations       */
@@ -575,7 +581,6 @@ function SortSelect({
 /* ------------------------------------------------------------------ */
 /* Scan animation (লোডিং-এর সময়) + zoom scale                          */
 /* ------------------------------------------------------------------ */
-const MIN_SCAN_MS = 1000; // ডাটা দ্রুত এলেও স্ক্যান অ্যানিমেশনটা কমপক্ষে এতক্ষণ দেখাবে
 const SCAN_CSS = `
 @keyframes mf-scan { 0% { left: -200px; } 100% { left: 100%; } }
 @keyframes mf-wipe {
@@ -738,19 +743,18 @@ export default function MyFilesPage() {
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string>("");
   const [previewToolFile, setPreviewToolFile] = useState<ToolFile | null>(null);
-  // Authentication and saved-file hydration run in the background so the
-  // My Files shell never blocks navigation.
+  // Check auth first, then hydrate instantly from the in-memory cache when the
+  // navbar has already prefetched the user's files. Revalidate quietly in the
+  // background so recent uploads/deletions still appear without stale UI delay.
   useEffect(() => {
     let mounted = true;
-    let finishTimer: ReturnType<typeof setTimeout> | null = null;
-    const startedAt = Date.now();
-    // স্ক্যান অ্যানিমেশন যেন অন্তত একবার পুরোটা দেখা যায়
-    const finishLoading = () => {
-      const wait = Math.max(0, MIN_SCAN_MS - (Date.now() - startedAt));
-      finishTimer = setTimeout(() => {
-        if (mounted) setFilesLoading(false);
-      }, wait);
+    const applyData = (data: { files: unknown[]; toolFiles: unknown[] }) => {
+      if (!mounted) return;
+      setFiles(Array.isArray(data.files) ? (data.files as FileItem[]) : []);
+      setToolFiles(Array.isArray(data.toolFiles) ? (data.toolFiles as ToolFile[]) : []);
+      setFilesLoading(false);
     };
+
     void getClientSession()
       .then(async (session) => {
         if (!mounted) return;
@@ -759,29 +763,32 @@ export default function MyFilesPage() {
           return;
         }
         setIsAuthenticated(true);
+
+        const cachedData = getCachedMyFilesData();
+        if (cachedData) {
+          applyData(cachedData);
+          // Show cached thumbnails immediately, then refresh in the background.
+          void refreshMyFilesData()
+            .then((freshData) => applyData(freshData))
+            .catch((error) => console.error("Failed to refresh My Files:", error));
+          return;
+        }
+
         try {
-          const response = await fetch("/api/my-files", {
-            credentials: "include",
-            cache: "no-store",
-          });
-          const result = await response.json().catch(() => null);
-          if (!mounted || !response.ok || !result?.success) return;
-          const data = result.data || {};
-          setFiles(Array.isArray(data.files) ? data.files : []);
-          setToolFiles(Array.isArray(data.toolFiles) ? data.toolFiles : []);
+          const data = await refreshMyFilesData();
+          applyData(data);
         } catch (error) {
           console.error("Failed to load My Files:", error);
-        } finally {
-          finishLoading();
+          if (mounted) setFilesLoading(false);
         }
       })
       .catch((error) => {
         console.error("My Files authentication error:", error);
-        finishLoading();
+        if (mounted) setFilesLoading(false);
       });
+
     return () => {
       mounted = false;
-      if (finishTimer) clearTimeout(finishTimer);
     };
   }, []);
   // সার্চ করলে: বর্তমান ট্যাবে না পেলে, যে ট্যাবে ফাইলটা আছে সেখানে অটো চলে যাবে
@@ -880,6 +887,7 @@ export default function MyFilesPage() {
         );
       }
       setFiles((current) => current.filter((item) => item.id !== file.id));
+      removeCachedMyFilesItem(file.id);
       setPreviewFile((current) => (current?.id === file.id ? null : current));
       setDeleteTarget(null);
     } catch (error) {
@@ -1119,11 +1127,7 @@ export default function MyFilesPage() {
                     return (
                       <article
                         key={file.id}
-                        className="mf-wipe overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
-                        style={{
-                          animation: "mf-wipe 0.65s ease-out both",
-                          animationDelay: `${Math.min(index, 14) * 45}ms`,
-                        }}
+                        className="overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
                       >
                         <button
                           type="button"
@@ -1149,10 +1153,10 @@ export default function MyFilesPage() {
                             <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={file.url}
+                                src={getMyFilesThumbnailUrl(file.url || "")}
                                 alt={file.name}
                                 className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-                                loading="lazy"
+                                loading={index < 8 ? "eager" : "lazy"}
                               />
                               <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/0 transition-colors duration-200 group-hover:bg-slate-900/20">
                                 <span className="flex h-10 w-10 scale-95 items-center justify-center rounded-full bg-white/95 text-slate-700 opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">

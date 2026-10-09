@@ -185,11 +185,30 @@ export async function GET(request: Request) {
     await connectDB();
     const objectId = new mongoose.Types.ObjectId(userId);
     const [generations, scannedDocuments, savedForms, questionPapers, userFiles] = await Promise.all([
-      AIGeneration.find({ userId: objectId }).sort({ createdAt: -1 }).lean(),
-      ScannedDocument.find({ userId: objectId }).sort({ createdAt: -1 }).lean(),
-      SavedForm.find({ userId }).sort({ createdAt: -1 }).lean(),
-      QuestionPaper.find({ userId }).sort({ updatedAt: -1 }).limit(50).lean(),
-      UserFile.find({ userId: objectId }).sort({ createdAt: -1 }).limit(100).lean(),
+      // Fetch only fields displayed by My Files. Image payloads and other
+      // generation metadata are not needed to render the listing.
+      AIGeneration.find({ userId: objectId })
+        .select("_id source createdAt url")
+        .sort({ createdAt: -1 })
+        .lean(),
+      ScannedDocument.find({ userId: objectId })
+        .select("_id title createdAt imageUrl")
+        .sort({ createdAt: -1 })
+        .lean(),
+      SavedForm.find({ userId })
+        .select("_id createdAt formData.toolName formData.tool formData.source formData.fileName formData.title formData.name formData.url formData.imageUrl formData.fileUrl")
+        .sort({ createdAt: -1 })
+        .lean(),
+      QuestionPaper.find({ userId })
+        .select("_id title createdAt updatedAt")
+        .sort({ updatedAt: -1 })
+        .limit(50)
+        .lean(),
+      UserFile.find({ userId: objectId })
+        .select("_id name category toolName group workspace url createdAt")
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
     ]);
 
     const creativeUserFiles = userFiles.filter(

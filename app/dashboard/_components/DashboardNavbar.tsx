@@ -9,6 +9,7 @@ import { FolderOpen, SlidersHorizontal, PenTool, Layers, LayoutGrid, FileText, P
 import DashboardSidebar from "./DashboardSidebar";
 import { logoutClientSession } from "@/lib/clientAuth";
 import { getSlug, toolsData } from "@/app/_components/toolsData";
+import { clearMyFilesDataCache, prefetchMyFilesData } from "@/app/my-files/myFilesData";
 interface UserData {
     fullName?: string;
     phoneNumber?: string;
@@ -198,10 +199,14 @@ function NavItem({ item, active }: {
     active: boolean;
 }) {
     const router = useRouter();
+    const prefetchDestination = () => {
+        router.prefetch(item.href);
+        if (item.href === "/my-files") prefetchMyFilesData();
+    };
     return (<div className="relative flex h-full shrink-0 items-center">
       {item.upcoming && <UpcomingFlag />}
 
-      <Link href={item.href} prefetch onMouseEnter={() => router.prefetch(item.href)} onFocus={() => router.prefetch(item.href)} className={`${itemBase} ${active ? itemActive : itemIdle}`}>
+      <Link href={item.href} prefetch onMouseEnter={prefetchDestination} onFocus={prefetchDestination} onTouchStart={() => { if (item.href === "/my-files") prefetchMyFilesData(true); else prefetchDestination(); }} onMouseDown={() => { if (item.href === "/my-files") prefetchMyFilesData(true); }} onClick={() => { if (item.href === "/my-files") prefetchMyFilesData(true); }} className={`${itemBase} ${active ? itemActive : itemIdle}`}>
         <NavLabel item={item}/>
       </Link>
     </div>);
@@ -247,7 +252,7 @@ function MoreMenu({ items, open, setOpen, active, isActive, }: {
       </button>
 
       {open && (<div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] font-medium shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
-          {items.map((item) => (<Link key={item.id} href={item.href} prefetch onMouseEnter={() => router.prefetch(item.href)} onFocus={() => router.prefetch(item.href)} className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${isActive(item.match)
+          {items.map((item) => (<Link key={item.id} href={item.href} prefetch onMouseEnter={() => { router.prefetch(item.href); if (item.href === "/my-files") prefetchMyFilesData(); }} onFocus={() => { router.prefetch(item.href); if (item.href === "/my-files") prefetchMyFilesData(); }} onTouchStart={() => { if (item.href === "/my-files") prefetchMyFilesData(true); }} onMouseDown={() => { if (item.href === "/my-files") prefetchMyFilesData(true); }} onClick={() => { if (item.href === "/my-files") prefetchMyFilesData(true); }} className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${isActive(item.match)
                     ? "bg-blue-50 text-[#1D4ED8]"
                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"}`}>
               <IconTile icon={item.icon} tone={item.tone}/>
@@ -403,6 +408,7 @@ export default function DashboardNavbar({ scaleWithZoom = false, }: {
                 if (currentToken !== tokenAtRequest) return;
 
                 if ([401, 403, 404].includes(response.status)) {
+                    clearMyFilesDataCache();
                     try {
                         localStorage.removeItem("token");
                         localStorage.removeItem("user");
@@ -567,6 +573,7 @@ export default function DashboardNavbar({ scaleWithZoom = false, }: {
     /* Actions                                                            */
     /* ------------------------------------------------------------------ */
     const handleLogout = () => {
+        clearMyFilesDataCache();
         void logoutClientSession().finally(() => {
             setUser(null);
             window.location.replace("/login");
