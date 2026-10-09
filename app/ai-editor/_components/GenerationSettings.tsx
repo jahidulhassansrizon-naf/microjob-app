@@ -745,9 +745,6 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
             className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
           >
             <div className="flex items-start gap-4 border-b border-slate-100 px-6 pb-5 pt-6 sm:px-7">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/20">
-                <Sparkles size={22} strokeWidth={2.2} />
-              </div>
               <div className="min-w-0 flex-1 pt-0.5">
                 <h2 id="custom-instruction-title" className="text-lg font-semibold tracking-tight text-slate-900">
                   {t("Custom Editing Instruction")}
@@ -760,7 +757,7 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                 type="button"
                 onClick={() => setShowCustomInstructionModal(false)}
                 aria-label={t("Close")}
-                className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <X size={19} />
               </button>
@@ -793,16 +790,15 @@ export default function GenerationSettings({ photoSizes = [], selectedSize = "",
                   <button
                     type="button"
                     onClick={() => setShowCustomInstructionModal(false)}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                   >
                     {t("Cancel")}
                   </button>
                   <button
                     type="submit"
                     disabled={!customInstructionDraft.trim()}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                   >
-                    <Sparkles size={15} />
                     {t("Add Instruction")}
                   </button>
                 </div>

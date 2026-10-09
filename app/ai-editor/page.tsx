@@ -386,11 +386,7 @@ export default function PhotoEditorPage() {
         const timer = window.setTimeout(() => setErrorMessage(null), 7000);
         return () => window.clearTimeout(timer);
     }, [errorMessage]);
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = "";
-        if (!file)
-            return;
+    const openImageForCrop = (file: File) => {
         if (!file.type.startsWith("image/")) {
             setErrorMessage("Please select a valid image file.");
             return;
@@ -410,6 +406,16 @@ export default function PhotoEditorPage() {
         setRotate(0);
         setShowCropModal(true);
         setRegeneratingId(null);
+    };
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (file) openImageForCrop(file);
+    };
+    const handleQrPhotoReceived = (file: File) => {
+        // A QR-delivered photo follows the same single-photo upload flow as the main picker.
+        setActiveTarget(null);
+        openImageForCrop(file);
     };
     const uploadToCloudinary = async (imageData: string) => {
         if (!imageData)
@@ -1173,9 +1179,10 @@ export default function PhotoEditorPage() {
           </div>
 
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <QrCodeSidebar uploadUrl={typeof window !== "undefined"
-            ? `${window.location.origin}${window.location.pathname}`
-            : ""}/>
+            <QrCodeSidebar
+              uploadUrl={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""}
+              onPhotoReceived={handleQrPhotoReceived}
+            />
           </div>
         </div>
 
