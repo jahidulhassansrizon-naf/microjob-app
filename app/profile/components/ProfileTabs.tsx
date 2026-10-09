@@ -1,3 +1,4 @@
+import { T } from "./profileI18n";
 export const tabs = [
   "Personal Information",
   "Shop / Business Information",
@@ -27,7 +28,7 @@ export default function ProfileTabs({
               : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
           }`}
         >
-          {tab}
+          <T>{tab}</T>
         </button>
       ))}
     </div>

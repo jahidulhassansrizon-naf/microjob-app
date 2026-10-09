@@ -9,7 +9,7 @@ import {
   filterTemplates,
   sortTemplates,
   TEMPLATES_BY_ID,
-  TEMPLATE_IDS_BY_IMAGE,
+  getTemplateIdByImage,
   templates,
 } from "./components/templateData";
 import type {
@@ -119,7 +119,7 @@ export default function AITemplatePage() {
             saved
               .map((url) =>
                 typeof url === "string"
-                  ? TEMPLATE_IDS_BY_IMAGE.get(url)
+                  ? getTemplateIdByImage(url)
                   : undefined,
               )
               .filter((id): id is number => id !== undefined),
@@ -306,7 +306,10 @@ export default function AITemplatePage() {
     try {
       const formData = new FormData();
       formData.append("image", userPhoto, userPhoto.name);
-      formData.append("templateImage", selectedTemplate.image);
+      const templateImageForApi = selectedTemplate.image.startsWith("/")
+        ? new URL(selectedTemplate.image, window.location.origin).toString()
+        : selectedTemplate.image;
+      formData.append("templateImage", templateImageForApi);
       const templatePrompt = [
         "Create a new image using the two attached images.",
         "",

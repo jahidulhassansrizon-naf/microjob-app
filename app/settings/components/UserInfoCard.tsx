@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useSettingsText } from "./settingsI18n";
 import { Edit, Loader2, Mail, User } from "lucide-react";
 type UserInfo = {
     fullName?: string;
@@ -14,12 +14,19 @@ type UserInfo = {
     postcode?: string;
     about?: string;
 };
-function renderField(label: string, value: string | number | undefined, className = "bg-gray-50/80 border-gray-100") {
+function renderField(label: string, value: string | number | undefined, t: (value: string) => string, className = "bg-gray-50/80 border-gray-100") {
+    const displayValue = !value
+        ? t("Not provided")
+        : label === "Country" && String(value).toLowerCase() === "bangladesh"
+            ? t("Bangladesh")
+            : label === "Gender"
+                ? t(String(value))
+                : value;
     return (<div className={`p-2.5 rounded-xl border ${className}`}>
-      <p className="text-[10px] font-bold text-gray-400">{label}</p>
+      <p className="text-[10px] font-bold text-gray-400">{t(label)}</p>
 
       <p className="font-semibold text-gray-800 mt-0.5 break-words">
-        {value || "Not provided"}
+        {displayValue}
       </p>
     </div>);
 }
@@ -30,12 +37,13 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
     onEdit: () => void;
     onSendVerification: () => void;
 }) {
+    const { t } = useSettingsText();
     return (<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3">
         <div className="flex items-center gap-2 text-xs font-bold text-gray-700 min-w-0">
           <User size={16} className="text-[#2563EB] shrink-0"/>
 
-          <span className="truncate">{user?.fullName || "Guest User"}</span>
+          <span className="truncate">{user?.fullName || t("Guest User")}</span>
         </div>
 
         <button type="button" onClick={onEdit} className="bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0">
@@ -45,11 +53,11 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        {renderField("Full Name", user?.fullName)}
+        {renderField("Full Name", user?.fullName, t)}
 
-        {renderField("Phone Number", user?.phoneNumber)}
+        {renderField("Phone Number", user?.phoneNumber, t)}
 
-        {renderField("Country", user?.country || "Bangladesh")}
+        {renderField("Country", user?.country ? (user.country.toLowerCase() === "bangladesh" ? "Bangladesh" : user.country) : "Bangladesh", t)}
 
         <div className={`p-2.5 rounded-xl border ${isEmailVerified
             ? "bg-emerald-50/50 border-emerald-100"
@@ -58,7 +66,7 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
 
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <span className="font-semibold text-gray-800 break-all">
-              {user?.email || "Not provided"}
+              {user?.email || t("Not provided")}
             </span>
 
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${isEmailVerified
@@ -79,21 +87,21 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
             </div>)}
         </div>
 
-        {renderField("Profession / Designation", user?.profession, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Profession / Designation", user?.profession, t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("Gender", user?.gender, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Gender", user?.gender ? t(user.gender) : user?.gender, t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("Date of Birth", user?.dob ? user.dob.slice(0, 10) : "", "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Date of Birth", user?.dob ? user.dob.slice(0, 10) : "", t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("Address", user?.address, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Address", user?.address, t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("District", user?.district)}
+        {renderField("District", user?.district, t)}
 
-        {renderField("Thana / Upazila", user?.thana, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Thana / Upazila", user?.thana, t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("Postcode", user?.postcode, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Postcode", user?.postcode, t, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
 
-        {renderField("About yourself", user?.about, "md:col-span-2 bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("About yourself", user?.about, t, "md:col-span-2 bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
       </div>
     </div>);
 }

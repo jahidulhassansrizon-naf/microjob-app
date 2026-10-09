@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./components/profileI18n";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
@@ -27,6 +27,7 @@ interface UserProfile {
     profileImagePublicId?: string;
 }
 export default function ProfilePage() {
+    const { t } = useProfileText();
     const router = useRouter();
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -91,7 +92,7 @@ export default function ProfilePage() {
         {error && (<div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
             <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5"/>
 
-            <p className="text-xs text-red-600">{error}</p>
+            <p className="text-xs text-red-600">{t(error)}</p>
           </div>)}
 
         <ProfileHeader user={user} onUserUpdated={handleUserUpdated}/>

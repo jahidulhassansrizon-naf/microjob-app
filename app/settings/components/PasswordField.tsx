@@ -1,4 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
+import { useSettingsText } from "./settingsI18n";
 
 export default function PasswordField({
   label,
@@ -13,10 +14,11 @@ export default function PasswordField({
   visible: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useSettingsText();
   return (
     <div>
       <label className="block text-xs font-bold text-gray-700 mb-1.5">
-        {label}
+        {t(label)}
       </label>
 
       <div className="relative">
@@ -31,7 +33,7 @@ export default function PasswordField({
           type="button"
           onClick={onToggle}
           className="absolute inset-y-0 right-0 px-3 text-gray-400 hover:text-gray-700"
-          aria-label={visible ? "Hide password" : "Show password"}
+          aria-label={t(visible ? "Hide password" : "Show password")}
         >
           {visible ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>

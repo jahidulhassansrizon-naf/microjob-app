@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./profileI18n";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, CreditCard, Wallet } from "lucide-react";
@@ -24,31 +24,49 @@ function parseTime(value?: string | null) {
     const t = Date.parse(value);
     return Number.isFinite(t) ? t : null;
 }
-function formatDate(value?: string | null) {
+function formatDate(value?: string | null, locale?: string) {
     const t = parseTime(value);
     if (t === null)
         return "—";
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : undefined, {
         day: "numeric",
         month: "short",
         year: "numeric",
     }).format(new Date(t));
 }
-function formatTime(value?: string | null) {
+function formatTime(value?: string | null, locale?: string) {
     const t = parseTime(value);
     if (t === null)
         return "";
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : undefined, {
         hour: "numeric",
         minute: "2-digit",
     }).format(new Date(t));
 }
 // Returns a big headline value and a smaller supporting line.
-function describeRemaining(ms: number) {
+function describeRemaining(ms: number, locale?: string) {
     const days = Math.floor(ms / DAY);
     const hours = Math.floor((ms % DAY) / HOUR);
     const minutes = Math.floor((ms % HOUR) / MINUTE);
     const seconds = Math.floor((ms % MINUTE) / 1000);
+    if (locale?.toLowerCase().startsWith("bn")) {
+        if (days > 0) {
+            return {
+                main: `${days} দিন`,
+                sub: `${hours} ঘণ্টা ${minutes} মিনিট বাকি`,
+            };
+        }
+        if (hours > 0) {
+            return {
+                main: `${hours} ঘণ্টা ${minutes} মিনিট`,
+                sub: "সময় বাকি",
+            };
+        }
+        return {
+            main: `${minutes} মিনিট ${seconds} সেকেন্ড`,
+            sub: "সময় বাকি",
+        };
+    }
     if (days > 0) {
         return {
             main: `${days} ${days === 1 ? "day" : "days"}`,
@@ -61,6 +79,7 @@ function describeRemaining(ms: number) {
     return { main: `${minutes}m ${seconds}s`, sub: "remaining" };
 }
 export default function SubscriptionCard() {
+    const { t, locale } = useProfileText();
     const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -126,7 +145,7 @@ export default function SubscriptionCard() {
         const used = ((now - startMs) / (expiryMs - startMs)) * 100;
         return Math.min(100, Math.max(0, used));
     }, [startMs, expiryMs, now]);
-    const remaining = remainingMs !== null && !isExpired ? describeRemaining(remainingMs) : null;
+    const remaining = remainingMs !== null && !isExpired ? describeRemaining(remainingMs, locale) : null;
     const hasAmount = subscription?.amount != null;
     // ---------- Loading ----------
     if (loading) {
@@ -175,11 +194,11 @@ export default function SubscriptionCard() {
         <div className="mt-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
             <h3 className="text-2xl font-semibold tracking-tight text-slate-900">
-              {subscription.planName || "Your plan"}
+              <T>{subscription.planName || "Your plan"}</T>
             </h3>
             <p className="mt-1 text-sm text-slate-500">
               {isActive
-        ? <T>{`Renew before ${formatDate(subscription.expiresAt)} to keep your access.`}</T> : <T>{`Your plan ended on ${formatDate(subscription.expiresAt)}.`}</T>}
+        ? <T>{`Renew before ${formatDate(subscription.expiresAt, locale)} to keep your access.`}</T> : <T>{`Your plan ended on ${formatDate(subscription.expiresAt, locale)}.`}</T>}
             </p>
           </div>
 
@@ -194,12 +213,12 @@ export default function SubscriptionCard() {
         </div>
 
         {progress !== null && (<div className="mt-5">
-            <div role="progressbar" aria-label="Subscription time used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div role="progressbar" aria-label={t("Subscription time used")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div className={`h-full rounded-full transition-[width] duration-500 ${progress > 90 ? "bg-amber-500" : "bg-blue-600"}`} style={{ width: `${progress}%` }}/>
             </div>
             <div className="mt-2 flex justify-between text-xs text-slate-500">
-              <span>{formatDate(subscription.startedAt)}</span>
-              <span>{formatDate(subscription.expiresAt)}</span>
+              <span>{formatDate(subscription.startedAt, locale)}</span>
+              <span>{formatDate(subscription.expiresAt, locale)}</span>
             </div>
           </div>)}
       </div>
@@ -209,9 +228,9 @@ export default function SubscriptionCard() {
           <dt className="flex items-center gap-1.5 text-xs text-slate-500">
             <CalendarClock size={14}/><T>{"Started\n          "}</T></dt>
           <dd className="mt-1 text-sm font-medium text-slate-900">
-            {formatDate(subscription.startedAt)}
+            {formatDate(subscription.startedAt, locale)}
             <span className="ml-1.5 font-normal text-slate-500">
-              {formatTime(subscription.startedAt)}
+              {formatTime(subscription.startedAt, locale)}
             </span>
           </dd>
         </div>
@@ -220,9 +239,9 @@ export default function SubscriptionCard() {
           <dt className="flex items-center gap-1.5 text-xs text-slate-500">
             <CalendarClock size={14}/><T>{"Expires\n          "}</T></dt>
           <dd className="mt-1 text-sm font-medium text-slate-900">
-            {formatDate(subscription.expiresAt)}
+            {formatDate(subscription.expiresAt, locale)}
             <span className="ml-1.5 font-normal text-slate-500">
-              {formatTime(subscription.expiresAt)}
+              {formatTime(subscription.expiresAt, locale)}
             </span>
           </dd>
         </div>

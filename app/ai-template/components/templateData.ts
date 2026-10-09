@@ -91,10 +91,9 @@ export const HASHTAGS = [
 /* -------------------------------------------------------------------------- */
 
 /**
- * Optional, authoritative metadata keyed by image URL. Anything listed here
- * wins over the values derived from the file slug. Use this (or replace it
- * with real data from the backend) when the slug alone is not enough, e.g. for
- * orientation and color, which cannot be known from a file name.
+ * Optional, authoritative metadata keyed by the local image path. Anything
+ * listed here wins over values derived from the cleaned local filename slug.
+ * Use this when the filename alone is not enough, e.g. for orientation/color.
  */
 type TemplateMetadataOverride = Partial<
   Pick<
@@ -306,22 +305,38 @@ function hasAny(tokens: ReadonlySet<string>, words: readonly string[]) {
   return words.some((word) => tokens.has(word));
 }
 
-function getSlug(url: string): string {
-  try {
-    const segments = new URL(url).pathname.split("/").filter(Boolean);
+function getSlug(imagePathOrUrl: string): string {
+  let pathname = imagePathOrUrl;
 
-    if (segments.length >= 2) {
-      return segments[segments.length - 2];
-    }
+  // Strip query/hash first. For absolute URLs remove only the protocol and host;
+  // no original source URLs are stored in this project.
+  pathname = pathname.split(/[?#]/, 1)[0].replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "");
 
-    if (segments.length === 1) {
-      return segments[0].replace(/\.[a-z0-9]+$/i, "");
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return "ai-template";
+
+  const parent = segments.length >= 2 ? segments[segments.length - 2] : "";
+  // Legacy remote URLs used the parent directory as the template slug. Local
+  // files instead use /ai-template-images/<slug>jpg-clean.jpg.
+  if (parent && parent.toLowerCase() !== "ai-template-images") {
+    try {
+      return decodeURIComponent(parent);
+    } catch {
+      return parent;
     }
-  } catch {
-    /* fall through to default */
   }
 
-  return "ai-template";
+  let fileName = segments[segments.length - 1];
+  try {
+    fileName = decodeURIComponent(fileName);
+  } catch {
+    // Keep the literal filename when URI decoding is not possible.
+  }
+
+  return fileName
+    .replace(/\.(?:jpe?g|png|webp|gif|avif)$/i, "")
+    .replace(/(?:jpe?g|png|webp)-clean$/i, "")
+    .replace(/[-_]+$/g, "");
 }
 
 function slugToTitle(slug: string) {
@@ -419,7 +434,11 @@ function inferTags(slug: string): string[] {
   return Array.from(unique);
 }
 
-function buildTemplate(image: string, index: number, total: number): Template {
+function buildTemplate(
+  image: string,
+  index: number,
+  total: number,
+): Template {
   const slug = getSlug(image);
   const tokens = new Set(tokenize(slug));
   const category = inferCategory(tokens);
@@ -447,9 +466,26 @@ export const TEMPLATES_BY_ID = new Map<number, Template>(
   templates.map((template) => [template.id, template]),
 );
 
+/** Exact local paths are preferred; slugs also migrate favorites saved with old source URLs. */
 export const TEMPLATE_IDS_BY_IMAGE = new Map<string, number>(
   templates.map((template) => [template.image, template.id]),
 );
+
+const TEMPLATE_IDS_BY_SLUG = (() => {
+  const map = new Map<string, number>();
+  templates.forEach((template) => {
+    const slug = getSlug(template.image).toLowerCase();
+    if (!map.has(slug)) map.set(slug, template.id);
+  });
+  return map;
+})();
+
+/** Resolve current local image paths and legacy remote image URLs without retaining source URLs. */
+export function getTemplateIdByImage(imageUrl: string): number | undefined {
+  const exactMatch = TEMPLATE_IDS_BY_IMAGE.get(imageUrl);
+  if (exactMatch !== undefined) return exactMatch;
+  return TEMPLATE_IDS_BY_SLUG.get(getSlug(imageUrl).toLowerCase());
+}
 
 /** Favorites are stored by image URL so they survive changes to the list order. */
 export const FAVORITES_STORAGE_KEY = "sohozkaj:template-favorites";

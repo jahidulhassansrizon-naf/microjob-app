@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useSettingsText } from "./settingsI18n";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { Loader2, Save, X } from "lucide-react";
 import { InputField, SelectField } from "./FormFields";
@@ -43,6 +43,7 @@ export default function PersonalInfoTab({ user, profileForm, setProfileForm, isE
     verifyingEmail: boolean;
     onSendVerification: () => void;
 }) {
+    const { t } = useSettingsText();
     return (<>
       <UserInfoCard user={user} isEmailVerified={isEmailVerified} verifyingEmail={verifyingEmail} onEdit={onEdit} onSendVerification={onSendVerification}/>
 
@@ -118,7 +119,7 @@ export default function PersonalInfoTab({ user, profileForm, setProfileForm, isE
                     <textarea rows={3} value={profileForm.address} onChange={(event) => setProfileForm((previous) => ({
                 ...previous,
                 address: event.target.value,
-            }))} placeholder="Enter your address" className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
+            }))} placeholder={t("Enter your address")} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
                   </div>
 
                   <div className="md:col-span-2">
@@ -127,7 +128,7 @@ export default function PersonalInfoTab({ user, profileForm, setProfileForm, isE
                     <textarea rows={4} value={profileForm.about} onChange={(event) => setProfileForm((previous) => ({
                 ...previous,
                 about: event.target.value,
-            }))} placeholder="Tell us a little about yourself" className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
+            }))} placeholder={t("Tell us a little about yourself")} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
                   </div>
                 </div>
 

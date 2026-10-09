@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./profileI18n";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Camera, Loader2, Trash2, UserRound } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
@@ -20,6 +20,7 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
     user: UserProfile | null;
     onUserUpdated?: (user: UserProfile) => void;
 }) {
+    const { t } = useProfileText();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -48,7 +49,7 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
             "image/gif",
         ]);
         if (!allowedTypes.has(file.type)) {
-            setUploadError("JPG, PNG, WEBP or GIF image select করুন।");
+            setUploadError("JPG, PNG, WebP or GIF image select.");
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
@@ -102,7 +103,7 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
     const handleDeletePhoto = async () => {
         if (!previewUrl || uploading || deleting)
             return;
-        const shouldDelete = window.confirm("Are you sure you want to delete your profile photo?");
+        const shouldDelete = window.confirm(t("Are you sure you want to delete your profile photo?"));
         if (!shouldDelete)
             return;
         setUploadError("");
@@ -148,8 +149,8 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
     return (<section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
       <div className="flex flex-col items-center justify-center text-center gap-4">
         <div className="relative">
-          <button type="button" onClick={openFilePicker} disabled={busy} className="group relative block h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-full bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100 outline-none cursor-pointer focus-visible:ring-4 focus-visible:ring-[#2563EB]/20 disabled:cursor-wait" aria-label="Change profile photo">
-            {previewUrl ? (<img src={previewUrl} alt={`${user?.fullName || "User"} profile photo`} className="h-full w-full object-cover"/>) : (<span className="flex h-full w-full items-center justify-center text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <button type="button" onClick={openFilePicker} disabled={busy} className="group relative block h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-full bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100 outline-none cursor-pointer focus-visible:ring-4 focus-visible:ring-[#2563EB]/20 disabled:cursor-wait" aria-label={t("Change profile photo")}>
+            {previewUrl ? (<img src={previewUrl} alt={`${user?.fullName || t("User")} ${t("profile photo")}`} className="h-full w-full object-cover"/>) : (<span className="flex h-full w-full items-center justify-center text-3xl sm:text-4xl font-extrabold tracking-tight">
                 {getInitials(user?.fullName)}
               </span>)}
 
@@ -158,11 +159,11 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
             </span>
           </button>
 
-          <button type="button" onClick={openFilePicker} disabled={busy} className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#2563EB] text-white shadow-md transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-70" aria-label="Upload or change profile photo" title="Upload or change photo">
+          <button type="button" onClick={openFilePicker} disabled={busy} className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#2563EB] text-white shadow-md transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-70" aria-label={t("Upload or change profile photo")} title={t("Upload or change photo")}>
             {uploading ? (<Loader2 size={15} className="animate-spin"/>) : (<Camera size={15}/>)}
           </button>
 
-          {previewUrl && (<button type="button" onClick={handleDeletePhoto} disabled={busy} className="absolute bottom-0 left-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-md transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-70" aria-label="Delete profile photo" title="Delete profile photo">
+          {previewUrl && (<button type="button" onClick={handleDeletePhoto} disabled={busy} className="absolute bottom-0 left-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-md transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-70" aria-label={t("Delete profile photo")} title={t("Delete profile photo")}>
               {deleting ? (<Loader2 size={15} className="animate-spin"/>) : (<Trash2 size={15}/>)}
             </button>)}
 
@@ -174,24 +175,24 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
             <UserRound size={13}/><T>{"Profile\n          "}</T></div>
 
           <h2 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">
-            {user?.fullName || "User Account"}
+            {user?.fullName || <T>{"User Account"}</T>}
           </h2>
 
           <p className="mt-2 text-xs font-medium text-slate-400">
             {uploading
         ? <T>{"Uploading your photo to Cloudinary..."}</T> : deleting
-        ? "Deleting your profile photo..."
+        ? <T>{"Deleting your profile photo..."}</T>
         : previewUrl
-            ? "Click your photo to change it, or use the red button to delete it."
-            : "Click your photo to upload a profile picture."}
+            ? <T>{"Click your photo to change it, or use the red button to delete it."}</T>
+            : <T>{"Click your photo to upload a profile picture."}</T>}
           </p>
 
           {uploadError && (<p className="mt-2 text-xs font-semibold text-red-600">
-              {uploadError}
+              {t(uploadError)}
             </p>)}
 
           {deleteError && (<p className="mt-2 text-xs font-semibold text-red-600">
-              {deleteError}
+              {t(deleteError)}
             </p>)}
         </div>
       </div>

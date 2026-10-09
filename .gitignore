@@ -44,4 +44,4 @@ bot/gemini-profile/
 bot/gemini-session.json
 bot/chrome-profile/
 playwright-service/gemini-session.json
-playwright-service/node_modules/
+playwright-service/node_modules/public/ai-template-images/*.zip

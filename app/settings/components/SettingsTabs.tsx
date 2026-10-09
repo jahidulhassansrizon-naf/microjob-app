@@ -1,3 +1,5 @@
+import { useSettingsText } from "./settingsI18n";
+
 const tabs = [
   "Personal Information",
   "Change Password",
@@ -14,6 +16,7 @@ export default function SettingsTabs({
   activeTab: SettingsTab;
   onChange: (tab: SettingsTab) => void;
 }) {
+  const { t } = useSettingsText();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
       {tabs.map((tab) => (
@@ -27,7 +30,7 @@ export default function SettingsTabs({
               : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
           }`}
         >
-          {tab}
+          {t(tab)}
         </button>
       ))}
     </div>

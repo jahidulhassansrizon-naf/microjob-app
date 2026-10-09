@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useSettingsText } from "./settingsI18n";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { LockKeyhole, Loader2, Save } from "lucide-react";
 import PasswordField from "./PasswordField";

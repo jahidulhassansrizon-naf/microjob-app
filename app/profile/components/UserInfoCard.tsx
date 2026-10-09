@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "./profileI18n";
 import { Edit, Loader2, Mail, User } from "lucide-react";
 type UserInfo = {
     fullName?: string;
@@ -15,11 +15,11 @@ type UserInfo = {
     about?: string;
 };
 function renderField(label: string, value: string | number | undefined, className = "bg-gray-50/80 border-gray-100") {
+    const standardValue = typeof value === "string" && ["male", "female", "other", "bangladesh"].includes(value.trim().toLowerCase());
     return (<div className={`p-2.5 rounded-xl border ${className}`}>
-      <p className="text-[10px] font-bold text-gray-400">{label}</p>
-
+      <p className="text-[10px] font-bold text-gray-400"><T>{label}</T></p>
       <p className="font-semibold text-gray-800 mt-0.5 break-words">
-        {value || "Not provided"}
+        {!value ? <T>{"Not provided"}</T> : standardValue ? <T>{String(value)}</T> : value}
       </p>
     </div>);
 }
@@ -35,7 +35,7 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
         <div className="flex items-center gap-2 text-xs font-bold text-gray-700 min-w-0">
           <User size={16} className="text-[#2563EB] shrink-0"/>
 
-          <span className="truncate">{user?.fullName || "Guest User"}</span>
+          <span className="truncate">{user?.fullName || <T>{"Guest User"}</T>}</span>
         </div>
 
         <button type="button" onClick={onEdit} className="bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0">
@@ -49,7 +49,7 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
 
         {renderField("Phone Number", user?.phoneNumber)}
 
-        {renderField("Country", user?.country || "Bangladesh")}
+        {renderField("Country", user?.country || "বাংলাদেশ")}
 
         <div className={`p-2.5 rounded-xl border ${isEmailVerified
             ? "bg-emerald-50/50 border-emerald-100"

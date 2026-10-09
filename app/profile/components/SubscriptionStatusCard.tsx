@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./profileI18n";
 import { useEffect, useMemo, useState } from "react";
 import { BadgeCheck, CalendarClock, CreditCard } from "lucide-react";
 type JsonObject = Record<string, unknown>;
@@ -46,14 +46,19 @@ function getSubscriptionPlan(user: UserSubscriptionData | null) {
     return (readNestedString(user.subscription, ["planName", "plan", "name", "title"]) ||
         readNestedString(user, ["subscriptionPlan", "planName", "plan", "subscriptionName"]));
 }
-function formatCountdown(ms: number) {
+function formatCountdown(ms: number, locale?: string) {
     if (ms <= 0)
-        return "Expired";
+        return locale?.toLowerCase().startsWith("bn") ? "মেয়াদ শেষ" : "Expired";
     const totalSeconds = Math.floor(ms / 1000);
     const days = Math.floor(totalSeconds / 86400);
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
+    if (locale?.toLowerCase().startsWith("bn")) {
+        if (days > 0) return `${days} দিন ${hours} ঘণ্টা ${minutes} মিনিট`;
+        if (hours > 0) return `${hours} ঘণ্টা ${minutes} মিনিট ${seconds} সেকেন্ড`;
+        return `${minutes} মিনিট ${seconds} সেকেন্ড`;
+    }
     if (days > 0)
         return `${days}d ${hours}h ${minutes}m`;
     if (hours > 0)
@@ -63,6 +68,7 @@ function formatCountdown(ms: number) {
 export default function SubscriptionStatusCard({ user, }: {
     user: UserSubscriptionData | null;
 }) {
+    const { locale } = useProfileText();
     const endValue = getSubscriptionEnd(user);
     const plan = getSubscriptionPlan(user);
     const endMs = useMemo(() => {
@@ -80,15 +86,15 @@ export default function SubscriptionStatusCard({ user, }: {
             setRemainingMs(Math.max(0, endMs - Date.now()));
         }, 1000);
         return () => window.clearInterval(timer);
-    }, [endMs]);
+    }, [endMs, locale]);
     const formattedEnd = useMemo(() => {
         if (endMs === null)
             return null;
-        return new Intl.DateTimeFormat(undefined, {
+        return new Intl.DateTimeFormat(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : undefined, {
             dateStyle: "medium",
             timeStyle: "short",
         }).format(new Date(endMs));
-    }, [endMs]);
+    }, [endMs, locale]);
     const isExpired = endMs !== null && remainingMs === 0;
     return (<div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-5">
       <div className="flex items-center justify-between gap-4">
@@ -100,7 +106,7 @@ export default function SubscriptionStatusCard({ user, }: {
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400"><T>{"Subscription\n            "}</T></p>
             <h3 className="text-sm font-bold text-gray-900 truncate">
-              {plan || "Current plan"}
+              <T>{plan || "Current plan"}</T>
             </h3>
           </div>
         </div>
@@ -111,7 +117,7 @@ export default function SubscriptionStatusCard({ user, }: {
                 ? "bg-emerald-50 text-emerald-700"
                 : "bg-gray-100 text-gray-500"}`}>
           <BadgeCheck size={11}/>
-          {isExpired ? <T>{"Expired"}</T> : endMs !== null ? "Active" : "Not available"}
+          {isExpired ? <T>{"Expired"}</T> : endMs !== null ? <T>{"Active"}</T> : <T>{"Not available"}</T>}
         </span>
       </div>
 
@@ -122,14 +128,14 @@ export default function SubscriptionStatusCard({ user, }: {
         </div>
 
         <div className="mt-2 text-2xl font-black tracking-tight text-gray-900">
-          {remainingMs === null ? <T>{"—"}</T> : formatCountdown(remainingMs)}
+          {remainingMs === null ? <T>{"—"}</T> : formatCountdown(remainingMs, locale)}
         </div>
 
         <p className="text-[10px] text-gray-400 mt-1">
           {remainingMs === null
         ? <T>{"Your subscription expiry field is not present in the supplied profile data yet."}</T> : isExpired
-        ? "Your subscription has expired."
-        : "Time remaining on your current subscription."}
+        ? <T>{"Your subscription has expired."}</T>
+        : <T>{"Time remaining on your current subscription."}</T>}
         </p>
       </div>
     </div>);

@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T } from "./profileI18n";
 import { CheckCircle2 } from "lucide-react";
 export default function ProfileProgress({ profileCompletion, missingPercentage, }: {
     profileCompletion: number;

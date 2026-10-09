@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./profileI18n";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { Loader2, Save, Store } from "lucide-react";
 import { InputField } from "./FormFields";
@@ -25,6 +25,7 @@ export default function BusinessInfoTab({ business, businessForm, setBusinessFor
     savingBusiness: boolean;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+    const { t } = useProfileText();
     return (<form onSubmit={onSubmit} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
@@ -69,7 +70,7 @@ export default function BusinessInfoTab({ business, businessForm, setBusinessFor
           <textarea rows={4} value={businessForm.businessAddress} onChange={(event) => setBusinessForm((previous) => ({
             ...previous,
             businessAddress: event.target.value,
-        }))} placeholder="Enter complete business address" className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
+        }))} placeholder={t("Enter complete business address")} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
         </div>
       </div>
 

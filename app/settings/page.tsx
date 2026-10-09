@@ -1,5 +1,5 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useSettingsText } from "./components/settingsI18n";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LockKeyhole, MonitorSmartphone, RefreshCw, UserRound } from "lucide-react";
@@ -84,6 +84,7 @@ async function safeJson(response: Response): Promise<ApiResponse> {
 }
 export default function SettingsPage() {
     const router = useRouter();
+    const { t } = useSettingsText();
     const [user, setUser] = useState<UserProfile | null>(null);
     const [activeSection, setActiveSection] = useState<SettingSection>("Personal Information");
     const [profileForm, setProfileForm] = useState<ProfileFormData>(emptyProfileForm);
@@ -405,8 +406,8 @@ export default function SettingsPage() {
                     <Icon size={17}/>
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-xs font-bold truncate">{item}</span>
-                    <span className="mt-0.5 block text-[10px] text-slate-400">{item === "Devices Login" ? <T>{"Sessions"}</T> : item === "Change Password" ? "Security" : "Account details"}</span>
+                    <span className="block text-xs font-bold truncate"><T>{item}</T></span>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">{item === "Devices Login" ? t("Sessions") : item === "Change Password" ? t("Security") : t("Account details")}</span>
                   </span>
                 </button>);
         })}
@@ -419,8 +420,8 @@ export default function SettingsPage() {
                   <ActiveIcon size={18}/>
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-slate-900">{activeSection}</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">{sectionMeta[activeSection].description}</p>
+                  <h2 className="text-base font-bold text-slate-900"><T>{activeSection}</T></h2>
+                  <p className="mt-0.5 text-xs text-slate-500"><T>{sectionMeta[activeSection].description}</T></p>
                 </div>
               </div>
               <button type="button" onClick={() => void fetchProfile(false)} disabled={refreshing} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
@@ -440,7 +441,7 @@ export default function SettingsPage() {
           <div className={`rounded-xl border px-4 py-3 shadow-lg flex items-start gap-2.5 bg-white ${toast.type === "success" ? "border-emerald-100" : "border-red-100"}`}>
             {toast.type === "success" ? (<CheckCircle2 size={17} className="text-emerald-500 shrink-0"/>) : (<AlertCircle size={17} className="text-red-500 shrink-0"/>)}
             <p className={`text-xs font-semibold ${toast.type === "success" ? "text-emerald-700" : "text-red-700"}`}>
-              {toast.message}
+              {t(toast.message)}
             </p>
           </div>
         </div>)}

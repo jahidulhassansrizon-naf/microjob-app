@@ -1,3 +1,4 @@
+import { useProfileText } from "./profileI18n";
 import type { ChangeEvent } from "react";
 
 export function InputField({
@@ -15,10 +16,11 @@ export function InputField({
   type?: string;
   required?: boolean;
 }) {
+  const { t } = useProfileText();
   return (
     <div>
       <label className="block text-xs font-bold text-gray-700 mb-1.5">
-        {label}
+        {t(label)}
       </label>
 
       <input
@@ -28,7 +30,7 @@ export function InputField({
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onChange(event.target.value)
         }
-        placeholder={placeholder}
+        placeholder={placeholder ? t(placeholder) : undefined}
         className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
       />
     </div>
@@ -46,10 +48,11 @@ export function SelectField({
   onChange: (value: string) => void;
   options: string[];
 }) {
+  const { t } = useProfileText();
   return (
     <div>
       <label className="block text-xs font-bold text-gray-700 mb-1.5">
-        {label}
+        {t(label)}
       </label>
 
       <select
@@ -59,7 +62,7 @@ export function SelectField({
       >
         {options.map((option) => (
           <option key={option} value={option}>
-            {option || `Select ${label.toLowerCase()}`}
+            {option ? t(option) : t(`Select ${label.toLowerCase()}`)}
           </option>
         ))}
       </select>

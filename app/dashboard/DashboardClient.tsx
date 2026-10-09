@@ -87,7 +87,7 @@ function WelcomeBanner({ userName, fit }: {
     const showcase = ["Nid Joiner", "Compress PDF", "Image Upscaler"]
         .map((name) => toolsData.find((t) => t.name === name))
         .filter((t): t is ToolItem => Boolean(t));
-    return (<section className={`mt-6 rounded-xl bg-[#2563EB] text-white ${fit ? "px-10 py-6" : "px-5 py-5 sm:px-10 sm:py-7"}`}>
+    return (<section className={`mb-6 rounded-xl bg-[#2563EB] text-white ${fit ? "px-10 py-6" : "px-5 py-5 sm:px-10 sm:py-7"}`}>
       <div className={`flex ${fit
             ? "flex-row items-center justify-between gap-8"
             : "flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8"}`}>
@@ -233,8 +233,8 @@ function HomeScreen({ userName }: {
                 transformOrigin: "top left",
             }
             : undefined}>
-          <PopularToolsSection fit={fit}/>
           <WelcomeBanner userName={userName} fit={fit}/>
+          <PopularToolsSection fit={fit}/>
         </div>
       </div>
     </section>);
@@ -426,7 +426,7 @@ export default function DashboardClient({ initialLoginSuccess = false, }: {
       <div>
         <DashboardNavbar scaleWithZoom/>
 
-        {/* টুলস + ব্যানার একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
+        {/* ব্যানার উপরে + টুলস নিচে, একসাথে প্রথম স্ক্রিনে; ফুটার একটু স্ক্রল করলে */}
         <HomeScreen userName={userName}/>
       </div>
 

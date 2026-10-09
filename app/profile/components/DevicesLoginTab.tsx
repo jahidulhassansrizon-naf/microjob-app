@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useProfileText } from "./profileI18n";
 import { Loader2, RefreshCw } from "lucide-react";
 type DeviceSession = {
     id: string;
@@ -14,6 +14,7 @@ export default function DevicesLoginTab({ devices, loadingDevices, onRefresh, }:
     loadingDevices: boolean;
     onRefresh: () => void;
 }) {
+    const { t } = useProfileText();
     return (<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div>
@@ -36,7 +37,7 @@ export default function DevicesLoginTab({ devices, loadingDevices, onRefresh, }:
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-xs font-bold text-gray-800">
-                    {device.deviceName || "Unknown device"}
+                    {device.deviceName || <T>{"Unknown device"}</T>}
                   </p>
 
                   {device.current && (<span className="text-[9px] font-bold rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700"><T>{"Current device\n                    "}</T></span>)}
@@ -45,7 +46,7 @@ export default function DevicesLoginTab({ devices, loadingDevices, onRefresh, }:
                 <p className="text-[11px] text-gray-500 mt-1">
                   {[device.browser, device.location, device.ipAddress]
                     .filter(Boolean)
-                    .join(" • ") || "Device details unavailable"}
+                    .join(" • ") || t("Device details unavailable")}
                 </p>
               </div>
 
@@ -53,7 +54,7 @@ export default function DevicesLoginTab({ devices, loadingDevices, onRefresh, }:
                 <p className="text-[10px] font-bold text-gray-400 uppercase"><T>{"Last active\n                "}</T></p>
 
                 <p className="text-[11px] text-gray-700 font-semibold mt-0.5">
-                  {device.lastActive || "Unknown"}
+                  {device.lastActive || <T>{"Unknown"}</T>}
                 </p>
               </div>
             </div>))}
