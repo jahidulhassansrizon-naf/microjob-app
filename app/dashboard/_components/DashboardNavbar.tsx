@@ -368,20 +368,59 @@ export default function DashboardNavbar({ scaleWithZoom = false, }: {
             }
         };
         window.addEventListener("sohozkaj:user-updated", handleUserUpdated as EventListener);
+
+        // Refresh cached profile data without blocking the dashboard render. Prefer
+        // the same bearer token used by client API calls; the server verifies it.
+        let tokenAtRequest = "";
+        try {
+            tokenAtRequest = localStorage.getItem("token") || "";
+        } catch {
+            // The HttpOnly cookie can still authenticate the request.
+        }
+
         fetch("/api/auth/me", {
             method: "GET",
             credentials: "include",
             cache: "no-store",
+            headers: tokenAtRequest ? { Authorization: `Bearer ${tokenAtRequest}` } : undefined,
         })
             .then(async (response) => {
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || !data?.user)
-                return;
-            applyUser(data.user as UserData);
-        })
+                const data = await response.json().catch(() => ({}));
+                if (!mounted) return;
+
+                if (response.ok && data?.user) {
+                    applyUser(data.user as UserData);
+                    return;
+                }
+
+                // Do not let a slow response for an old token clear a newer login.
+                let currentToken = "";
+                try {
+                    currentToken = localStorage.getItem("token") || "";
+                } catch {
+                    // Continue with the best available cookie-based state.
+                }
+                if (currentToken !== tokenAtRequest) return;
+
+                if ([401, 403, 404].includes(response.status)) {
+                    try {
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("user");
+                    } catch {
+                        // Storage cleanup is best-effort.
+                    }
+                    // Clear the HttpOnly cookie on the server without delaying redirect.
+                    void fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include",
+                        keepalive: true,
+                    }).catch(() => undefined);
+                    window.location.replace("/login");
+                }
+            })
             .catch((error) => {
-            console.error("Failed to refresh navbar user data", error);
-        });
+                if (mounted) console.error("Failed to refresh navbar user data", error);
+            });
         return () => {
             mounted = false;
             window.removeEventListener("sohozkaj:user-updated", handleUserUpdated as EventListener);

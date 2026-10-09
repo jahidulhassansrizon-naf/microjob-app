@@ -5,6 +5,34 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, MessageCircle, ArrowLeft, Loader2, } from "lucide-react";
 import { useI18n, T } from "@/components/i18n/I18nProvider";
+
+/**
+ * This is only a client-side fast-path hint, not authentication. Protected API
+ * routes still verify the JWT on the server. We only skip blocking the page
+ * transition when a cached identity exists and the JWT has not expired.
+ */
+function hasUnexpiredJwt(token: string): boolean {
+    try {
+        const payloadPart = token.split(".")[1];
+        if (!payloadPart) return false;
+
+        const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+        const bytes = Uint8Array.from(window.atob(padded), (character) =>
+            character.charCodeAt(0),
+        );
+        const payload = JSON.parse(new TextDecoder().decode(bytes)) as { exp?: unknown };
+
+        return (
+            typeof payload.exp === "number" &&
+            Number.isFinite(payload.exp) &&
+            payload.exp * 1000 > Date.now() + 5_000
+        );
+    } catch {
+        return false;
+    }
+}
+
 function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -23,23 +51,39 @@ function LoginContent() {
             const value = entry.slice("token=".length);
             try {
                 return decodeURIComponent(value);
-            }
-            catch {
+            } catch {
                 return value;
             }
         };
 
+        const requestedTarget = callbackUrl.trim();
+        const safeTargetUrl = requestedTarget.startsWith("/")
+            && !requestedTarget.startsWith("//")
+            && !requestedTarget.startsWith("/login")
+            ? requestedTarget
+            : "/dashboard";
+
         let localToken = "";
+        let hasCachedIdentity = false;
         try {
             localToken = localStorage.getItem("token") || "";
+            const cachedUserValue = localStorage.getItem("user");
+            if (cachedUserValue) {
+                const cachedUser = JSON.parse(cachedUserValue) as Record<string, unknown> | null;
+                hasCachedIdentity = Boolean(
+                    cachedUser &&
+                    typeof cachedUser === "object" &&
+                    (cachedUser.id || cachedUser._id || cachedUser.phoneNumber || cachedUser.email)
+                );
+            }
+        } catch {
+            // Continue with a cookie-based check if browser storage is unavailable.
         }
-        catch {
-            // Cookie-based sessions can still be checked if localStorage is unavailable.
-        }
+
         const token = localToken || readCookieToken();
         if (!token) {
             setCheckingExistingSession(false);
-            // Finishes the shared bar if this route was opened from the home-page Login link.
+            // Finish the shared bar if no saved session exists.
             window.setTimeout(() => {
                 window.dispatchEvent(new Event("navigation-progress:finish"));
             }, 0);
@@ -48,11 +92,27 @@ function LoginContent() {
             };
         }
 
-        // Also cover a direct visit to /login when a saved session is available.
-        // Deferring one tick ensures the layout-level listener has been registered.
+        // Fast path for the common Dashboard destination: a cached identity plus
+        // an unexpired JWT lets us navigate immediately. Other callback targets
+        // retain the original server-first check. This is only a UI hint; the
+        // dashboard refreshes the user in the background and APIs verify JWTs.
+        const isDashboardTarget = safeTargetUrl === "/dashboard"
+            || safeTargetUrl.startsWith("/dashboard/")
+            || safeTargetUrl.startsWith("/dashboard?");
+        if (isDashboardTarget && hasCachedIdentity && hasUnexpiredJwt(token)) {
+            window.dispatchEvent(new CustomEvent("navigation-progress:start", {
+                detail: { targetPath: safeTargetUrl },
+            }));
+            router.replace(safeTargetUrl);
+            return () => {
+                active = false;
+            };
+        }
+
+        // First-time/uncached sessions still use the server check before redirecting.
         const progressStartTimer = window.setTimeout(() => {
             window.dispatchEvent(new CustomEvent("navigation-progress:start", {
-                detail: { targetPath: "/login" },
+                detail: { targetPath: safeTargetUrl },
             }));
         }, 0);
 
@@ -60,10 +120,15 @@ function LoginContent() {
             try {
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
-            }
-            catch {
+            } catch {
                 // Storage cleanup is best-effort.
             }
+            // The API also owns an HttpOnly cookie which JavaScript cannot clear.
+            void fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+                keepalive: true,
+            }).catch(() => undefined);
             document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
         };
 
@@ -80,30 +145,23 @@ function LoginContent() {
                     if (data?.user) {
                         try {
                             localStorage.setItem("user", JSON.stringify(data.user));
-                        }
-                        catch {
+                        } catch {
                             // The authenticated session does not depend on cached user data.
                         }
                     }
 
-                    const requestedTarget = callbackUrl.trim();
-                    const safeTargetUrl = requestedTarget.startsWith("/")
-                        && !requestedTarget.startsWith("//")
-                        && !requestedTarget.startsWith("/login")
-                        ? requestedTarget
-                        : "/dashboard";
                     router.replace(safeTargetUrl);
                     return;
                 }
 
-                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                if ([401, 403, 404].includes(response.status)) {
                     clearInvalidSession();
                 }
                 setCheckingExistingSession(false);
                 window.dispatchEvent(new Event("navigation-progress:finish"));
             })
             .catch(() => {
-                // A network/server error should not destroy an existing token.
+                // A network/server error should not destroy a potentially valid token.
                 if (active) {
                     setCheckingExistingSession(false);
                     window.dispatchEvent(new Event("navigation-progress:finish"));
