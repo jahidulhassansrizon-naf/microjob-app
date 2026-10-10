@@ -658,12 +658,15 @@ function SealSparkle({ className, delay, size, }: {
       <path d="M12 0c.9 6.4 5.6 11.1 12 12-6.4.9-11.1 5.6-12 12-.9-6.4-5.6-11.1-12-12C6.4 11.1 11.1 6.4 12 0z" fill="#FFFBE0"/>
     </svg>);
 }
-function PremiumSeal() {
+function PremiumSeal({ compact = false }: { compact?: boolean }) {
     const { locale } = useI18n();
-    return (<span title={locale === "bn" ? "পেইড টুল" : "Paid tool"} className="absolute right-3 top-3 h-9 w-9 sm:h-10 sm:w-10" style={{
-            // হালকা রোটেট + সোনালি গ্লো
+    return (<span title={locale === "bn" ? "পেইড টুল" : "Paid tool"} className={`absolute ${compact ? "right-1 top-1 h-7 w-7" : "right-3 top-3 h-9 w-9 sm:h-10 sm:w-10"}`} style={{
+            // Compact dashboard tiles use a smaller seal tucked into the corner;
+            // the full tools catalogue keeps its original size and placement.
             transform: "rotate(12deg)",
-            filter: "drop-shadow(0 3px 5px rgba(88,50,0,0.45)) drop-shadow(0 0 6px rgba(255,214,90,0.55))",
+            filter: compact
+                ? "drop-shadow(0 1px 2px rgba(88,50,0,0.4)) drop-shadow(0 0 3px rgba(255,214,90,0.45))"
+                : "drop-shadow(0 3px 5px rgba(88,50,0,0.45)) drop-shadow(0 0 6px rgba(255,214,90,0.55))",
         }}>
       <style>{`
         @keyframes seal-shine {
@@ -694,12 +697,12 @@ function PremiumSeal() {
         }}/>
 
       {/* ভেতরের পাতলা রিং */}
-      <span aria-hidden="true" className="absolute inset-[3.5px] rounded-full" style={{
+      <span aria-hidden="true" className={`absolute ${compact ? "inset-[2.5px]" : "inset-[3.5px]"} rounded-full`} style={{
             background: "linear-gradient(320deg, #FFF1B0 0%, #E5A92A 50%, #A8680A 100%)",
         }}/>
 
       {/* সোনালি মুখ (সবসময় আলো চলে যায়) */}
-      <span aria-hidden="true" className="absolute inset-[5.5px] overflow-hidden rounded-full" style={{
+      <span aria-hidden="true" className={`absolute ${compact ? "inset-[4px]" : "inset-[5.5px]"} overflow-hidden rounded-full`} style={{
             background: "radial-gradient(circle at 30% 25%, #FFE79A 0%, #F2BC3E 55%, #D8981A 100%)",
             boxShadow: "inset 0 1px 1px rgba(255,255,255,0.65), inset 0 -1px 1px rgba(120,70,0,0.35)",
         }}>
@@ -710,7 +713,7 @@ function PremiumSeal() {
       </span>
 
       {/* খোদাই করা মুকুট */}
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="absolute left-1/2 top-1/2 h-[17px] w-[17px] -translate-x-1/2 -translate-y-1/2 sm:h-5 sm:w-5" style={{ filter: "drop-shadow(0 0.75px 0 rgba(255,244,190,0.75))" }}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={`absolute left-1/2 top-1/2 ${compact ? "h-3.5 w-3.5" : "h-[17px] w-[17px] sm:h-5 sm:w-5"} -translate-x-1/2 -translate-y-1/2`} style={{ filter: "drop-shadow(0 0.75px 0 rgba(255,244,190,0.75))" }}>
         <path d="M4.2 17.4 3 8.6l5 3.9L12 5.8l4 6.7 5-3.9-1.2 8.8z" fill={SEAL_INK}/>
         <rect x="4.6" y="18.9" width="14.8" height="2.3" rx="1.1" fill={SEAL_INK}/>
         <circle cx="3" cy="8.2" r="1.35" fill={SEAL_INK}/>
@@ -719,9 +722,9 @@ function PremiumSeal() {
       </svg>
 
       {/* চারপাশে চকমক তারা */}
-      <SealSparkle className="-left-1.5 -top-1.5" size={10} delay="0s"/>
-      <SealSparkle className="-bottom-1 -right-1.5" size={9} delay="0.7s"/>
-      <SealSparkle className="-bottom-1.5 left-0" size={7} delay="1.3s"/>
+      <SealSparkle className={compact ? "-left-0.5 -top-0.5" : "-left-1.5 -top-1.5"} size={compact ? 6 : 10} delay="0s"/>
+      <SealSparkle className={compact ? "-bottom-0.5 -right-0.5" : "-bottom-1 -right-1.5"} size={compact ? 5 : 9} delay="0.7s"/>
+      <SealSparkle className={compact ? "-bottom-0.5 left-0.5" : "-bottom-1.5 left-0"} size={compact ? 4 : 7} delay="1.3s"/>
     </span>);
 }
 // একই টাইল ডিজাইন দুই পেজেই ব্যবহার হবে
@@ -818,7 +821,7 @@ export function ToolTile({ tool, boxPercent, }: {
           </span>)}
 
         {/* The paid/premium seal disappears after an active subscription is detected. */}
-        {showPaidSeal && <PremiumSeal />}
+        {showPaidSeal && <PremiumSeal compact={compact} />}
 
         {tool.access === "free" && (<span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs bg-emerald-600"><T>{"free\n          "}</T></span>)}
 
