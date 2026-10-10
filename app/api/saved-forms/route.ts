@@ -7,7 +7,7 @@ import SavedForm from "@/models/SavedForm";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 function getTokenFromRequest(request: Request): string | null {
   const authorization = request.headers.get("authorization");

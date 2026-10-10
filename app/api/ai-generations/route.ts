@@ -8,7 +8,7 @@ import Subscription from "@/models/Subscription";
 
 export const runtime = "nodejs";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const CLOUDINARY_FOLDER = "sohozkaj-ai-photos";
 

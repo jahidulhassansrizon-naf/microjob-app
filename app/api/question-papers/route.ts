@@ -7,7 +7,7 @@ import QuestionPaper from "@/models/QuestionPaper";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 function tokenFromRequest(request: Request) {
   const authorization = request.headers.get("authorization");

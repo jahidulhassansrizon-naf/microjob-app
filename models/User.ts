@@ -127,6 +127,33 @@ const UserSchema = new Schema(
       trim: true,
     },
 
+    // Role is assigned by the server. Public registration always creates users.
+    // The environment-managed administrator is not stored as a User document.
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+      index: true,
+    },
+
+    lastLoginAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    lastSeenAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    loginCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     credits: {
       type: Number,
       default: 0,

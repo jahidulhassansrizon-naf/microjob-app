@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const ALLOWED_BUSINESS_FIELDS = [
   "businessName",

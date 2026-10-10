@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_Bengali } from "next/font/google";
 import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
+import ActivityTracker from "@/app/_components/ActivityTracker";
 import NavigationProgressBar from "./_components/NavigationProgressBar";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={initialLocale} data-locale={initialLocale} translate="no" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`} suppressHydrationWarning>
         <I18nProvider initialLocale={initialLocale}>
+          <ActivityTracker />
           <ConditionalSiteChrome>
             <PageBackgroundInitializer />
             <NavigationProgressBar />

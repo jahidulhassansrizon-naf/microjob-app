@@ -6,7 +6,7 @@ import Subscription from "@/models/Subscription";
 
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const PAYMENTLY_BASE_URL = (
   process.env.PAYMENTLY_BASE_URL || "https://test-app.paymently.io/api"

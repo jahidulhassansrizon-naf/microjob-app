@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Otp from "@/models/Otp";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +22,13 @@ export async function POST(req: Request) {
     const cleanEmail = email.toString().toLowerCase().trim();
     const cleanPhone = phoneNumber ? phoneNumber.toString().trim() : "";
     const cleanOtp = otp.toString().trim();
+
+    if (isConfiguredAdminEmail(cleanEmail)) {
+      return NextResponse.json(
+        { message: "This email is reserved for the administrator and cannot be registered as a regular user." },
+        { status: 409 },
+      );
+    }
 
     // ডাটাবেজ থেকে ওটিপি চেক করার সময় email, phoneNumber এবং identifier সব দিক থেকে কুয়েরি করা হলো যাতে মিস না হয়
     const validOtp = await Otp.findOne({
@@ -66,6 +74,7 @@ export async function POST(req: Request) {
       email: cleanEmail,
       fullName,
       district,
+      role: "user",
       password: hashedPassword,
     });
 
@@ -88,6 +97,7 @@ export async function POST(req: Request) {
           phoneNumber: newUser.phoneNumber,
           email: newUser.email,
           district: newUser.district,
+          role: "user",
         },
       },
       { status: 201 },

@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_super_secret_key_here";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -25,6 +26,13 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json(
         { error: "Invalid token payload." },
         { status: 401 },
+      );
+    }
+
+    if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
+      return NextResponse.json(
+        { error: "The administrator password is managed through the server's ADMIN_PASSWORD environment variable." },
+        { status: 403 },
       );
     }
 

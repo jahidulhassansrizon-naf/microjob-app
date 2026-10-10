@@ -57,7 +57,7 @@ function LoginContent() {
         };
 
         const requestedTarget = callbackUrl.trim();
-        const safeTargetUrl = requestedTarget.startsWith("/")
+        let safeTargetUrl = requestedTarget.startsWith("/")
             && !requestedTarget.startsWith("//")
             && !requestedTarget.startsWith("/login")
             ? requestedTarget
@@ -65,6 +65,7 @@ function LoginContent() {
 
         let localToken = "";
         let hasCachedIdentity = false;
+        let cachedRole = "user";
         try {
             localToken = localStorage.getItem("token") || "";
             const cachedUserValue = localStorage.getItem("user");
@@ -75,22 +76,19 @@ function LoginContent() {
                     typeof cachedUser === "object" &&
                     (cachedUser.id || cachedUser._id || cachedUser.phoneNumber || cachedUser.email)
                 );
+                if (cachedUser && typeof cachedUser === "object" && cachedUser.role === "admin") {
+                    cachedRole = "admin";
+                }
             }
         } catch {
             // Continue with a cookie-based check if browser storage is unavailable.
         }
 
+        if (!requestedTarget && cachedRole === "admin") safeTargetUrl = "/admin";
+
         const token = localToken || readCookieToken();
-        if (!token) {
-            setCheckingExistingSession(false);
-            // Finish the shared bar if no saved session exists.
-            window.setTimeout(() => {
-                window.dispatchEvent(new Event("navigation-progress:finish"));
-            }, 0);
-            return () => {
-                active = false;
-            };
-        }
+        // Even when no JS-readable token exists, check the HttpOnly session cookie.
+        // This is how the environment-configured Admin session remains inaccessible to JS.
 
         // Fast path for the common Dashboard destination: a cached identity plus
         // an unexpired JWT lets us navigate immediately. Other callback targets
@@ -136,7 +134,7 @@ function LoginContent() {
             method: "GET",
             credentials: "include",
             cache: "no-store",
-            headers: { Authorization: `Bearer ${token}` },
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then(async (response) => {
                 if (!active) return;
@@ -150,7 +148,12 @@ function LoginContent() {
                         }
                     }
 
-                    router.replace(safeTargetUrl);
+                    const verifiedTarget = requestedTarget
+                        ? safeTargetUrl
+                        : data.user.role === "admin"
+                            ? "/admin"
+                            : "/dashboard";
+                    router.replace(verifiedTarget);
                     return;
                 }
 
@@ -207,23 +210,36 @@ function LoginContent() {
             if (!response.ok) {
                 throw new Error(data.message || "Invalid credentials!");
             }
-            if (data.token)
+            const isAdminLogin = data?.user?.role === "admin";
+            if (isAdminLogin) {
+                // The server sets an HttpOnly cookie for Admin; never persist its JWT in JS storage.
+                localStorage.removeItem("token");
+            } else if (data.token) {
+                // Preserve the existing user-session compatibility flow.
                 localStorage.setItem("token", data.token);
+            }
             if (data.user)
                 localStorage.setItem("user", JSON.stringify(data.user));
-            const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
-            const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
-            document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
+            if (!isAdminLogin && data.token) {
+                const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
+                const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
+                document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
+            }
             // Keep the existing Dashboard + Login Successful overlay flow.
             // The dashboard receives a one-time query flag so the overlay is already
             // present on its very first render, preventing a visible dashboard flash.
             const targetUrl = callbackUrl
                 ? decodeURIComponent(callbackUrl)
-                : "/dashboard";
+                : data?.user?.role === "admin"
+                    ? "/admin"
+                    : "/dashboard";
             const safeTargetUrl = targetUrl.startsWith("/") && !targetUrl.startsWith("//")
                 ? targetUrl
                 : "/dashboard";
-            if (safeTargetUrl === "/dashboard" ||
+            if (safeTargetUrl === "/admin" || safeTargetUrl.startsWith("/admin/")) {
+                window.location.replace(safeTargetUrl);
+            }
+            else if (safeTargetUrl === "/dashboard" ||
                 safeTargetUrl.startsWith("/dashboard?") ||
                 safeTargetUrl.startsWith("/dashboard/")) {
                 const separator = safeTargetUrl.includes("?") ? "&" : "?";

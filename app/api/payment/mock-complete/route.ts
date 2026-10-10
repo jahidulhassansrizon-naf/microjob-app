@@ -6,7 +6,7 @@ import Subscription from "@/models/Subscription";
 
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const PLANS = {
   "1-month": { name: "1 Month", months: 1, days: 30, amount: 199 },

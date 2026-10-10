@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
 
 const JWT_SECRET =
-  process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
+  process.env.JWT_SECRET || "";
 
 type JwtPayload = {
   userId?: string;

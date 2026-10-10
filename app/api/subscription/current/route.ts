@@ -10,7 +10,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const JWT_SECRET =
-  process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
+  process.env.JWT_SECRET || "";
 
 function getTokenFromRequest(request: Request) {
   const authHeader = request.headers.get("authorization");

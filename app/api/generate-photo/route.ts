@@ -11,7 +11,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_jwt_key_12345";
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 function getTokenFromRequest(request: Request): string | null {
   const authorization = request.headers.get("authorization");

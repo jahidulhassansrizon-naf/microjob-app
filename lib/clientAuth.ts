@@ -30,6 +30,8 @@ function readCachedUser(): ClientAuthUser | null {
 export function getClientAuthHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
 
+  const cachedUser = readCachedUser();
+  if (cachedUser?.role === "admin") return {};
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
