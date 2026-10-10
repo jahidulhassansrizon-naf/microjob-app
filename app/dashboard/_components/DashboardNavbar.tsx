@@ -143,14 +143,10 @@ const NAV_ITEMS: NavConfig[] = [
     {
         id: "sohoj-tools",
         href: "/sohoj-tools",
-        label: "SohozTools",
+        label: "All Tools",
         icon: Wrench,
         tone: "orange",
         match: "/sohoj-tools",
-        tag: {
-            text: "Free",
-            className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100",
-        },
     },
 ];
 const NAV_GAP = 2;

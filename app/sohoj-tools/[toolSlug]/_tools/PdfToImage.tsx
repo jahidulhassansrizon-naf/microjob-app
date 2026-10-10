@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { FileImage, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Minimize2, Combine, FilePlus, ArrowLeft, X, Plus, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
@@ -246,8 +246,128 @@ function triggerDownload(blob: Blob, filename: string) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+/**
+ * Page-specific whole-phrase English ↔ Bangla translations.
+ * Do not use the shared word-by-word translator here: it can produce mixed
+ * phrases when the language changes. Unknown runtime PDF errors are handled
+ * with a friendly, localized message below.
+ */
+const PDF_TO_IMAGE_BN: Record<string, string> = {
+    "back to tools": "টুলসের তালিকায় ফিরে যান",
+    "/": "/",
+    "pdf tools": "PDF টুলস",
+    "pdf to image": "PDF থেকে ছবি",
+    "free": "বিনামূল্যে",
+    "convert each pdf page to png, jpg, webp, or avif.": "PDF-এর প্রতিটি পৃষ্ঠা PNG, JPG, WebP অথবা AVIF ছবিতে রূপান্তর করুন।",
+    "files (": "ফাইল (",
+    ")": ")",
+    "add": "যোগ করুন",
+    "drop pdf files here or click to upload": "PDF ফাইল এখানে টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+    "pdf files, max 500 mb each": "প্রতিটি PDF ফাইল সর্বোচ্চ ৫০০ MB",
+    "mb": "MB",
+    "image format": "ছবির ফরম্যাট",
+    "resolution": "রেজোলিউশন",
+    "standard": "সাধারণ",
+    "96 dpi — good for screen and sharing": "96 DPI — স্ক্রিনে দেখা ও শেয়ার করার জন্য উপযোগী",
+    "high": "উচ্চ",
+    "144 dpi — sharper text and details": "144 DPI — আরও স্পষ্ট লেখা ও বিস্তারিত দেখার জন্য",
+    "ultra high": "অতি উচ্চ",
+    "216 dpi — best for print": "216 DPI — প্রিন্টের জন্য সর্বোত্তম",
+    "preview": "পূর্বরূপ",
+    "rendering": "তৈরি হচ্ছে",
+    "ready": "প্রস্তুত",
+    "empty": "খালি",
+    "error": "ত্রুটি",
+    "rendering your pdf…": "PDF-এর পৃষ্ঠাগুলো থেকে ছবি তৈরি হচ্ছে…",
+    "getting started…": "প্রস্তুত করা হচ্ছে…",
+    "conversion failed": "রূপান্তর করা যায়নি",
+    "download all (.zip)": "সবগুলো ডাউনলোড করুন (.zip)",
+    "· ": "· ",
+    "download": "ডাউনলোড",
+    "add files to get started": "শুরু করতে ফাইল যোগ করুন",
+    "your result will appear here after you run the tool.": "টুলটি চালানোর পর ফলাফল এখানে দেখা যাবে।",
+    "conversion failed — try again": "রূপান্তর করা যায়নি—আবার চেষ্টা করুন",
+    "reset": "রিসেট করুন",
+    "converting…": "রূপান্তর করা হচ্ছে…",
+    "convert to images": "ছবিতে রূপান্তর করুন",
+    "your files are processed in the browser — they are not uploaded to any server.": "আপনার ফাইলগুলো ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+    "?": "?",
+    "how to use": "ব্যবহারের নিয়ম",
+    "upload your pdf, choose your preferred image format (jpg, png, webp, or avif) and resolution quality, then click \"convert to images\" to extract pages as image files.": "আপনার PDF আপলোড করুন। পছন্দের ছবির ফরম্যাট (JPG, PNG, WebP অথবা AVIF) ও রেজোলিউশন বেছে নিয়ে \"ছবিতে রূপান্তর করুন\"-এ ক্লিক করুন। PDF-এর প্রতিটি পৃষ্ঠা আলাদা ছবি হিসেবে তৈরি হবে।",
+    "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+    "compress pdf": "PDF-এর আকার কমান",
+    "shrink embedded photos and scans inside a pdf — text stays sharp.": "PDF-এর ভেতরের ছবি ও স্ক্যানের আকার কমান—লেখার স্পষ্টতা বজায় থাকবে।",
+    "merge pdfs": "একাধিক PDF একত্র করুন",
+    "combine multiple pdf files into one document in your chosen order.": "একাধিক PDF আপনার পছন্দের ক্রমে একটি নথিতে একত্র করুন।",
+    "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "share this tool": "এই টুলটি শেয়ার করুন",
+    "couldn't get a 2d canvas context.": "PDF থেকে ছবি তৈরির জন্য প্রয়োজনীয় ক্যানভাস চালু করা যায়নি। আবার চেষ্টা করুন।",
+};
+
+function toBanglaNumerals(value: string): string {
+    return value.replace(/[0-9]/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+}
+
+function translatePdfToImageText(value: string, locale: string | undefined): string {
+    const raw = String(value ?? "");
+    if (!String(locale ?? "").toLowerCase().startsWith("bn")) return raw;
+
+    const normalized = raw.replace(/\s+/g, " ").trim().toLowerCase();
+    const exact = PDF_TO_IMAGE_BN[normalized];
+    if (exact !== undefined) return exact;
+
+    let match = normalized.match(/^page (\d+) of (\d+)$/);
+    if (match) return `মোট ${toBanglaNumerals(match[2])} পৃষ্ঠার মধ্যে ${toBanglaNumerals(match[1])} নম্বর পৃষ্ঠা`;
+
+    match = normalized.match(/^(\d+) pages?$/);
+    if (match) return `${toBanglaNumerals(match[1])} ${match[1] === "1" ? "পৃষ্ঠা" : "পৃষ্ঠা"}`;
+
+    match = normalized.match(/^(\d+) pages? converted$/);
+    if (match) return `${toBanglaNumerals(match[1])}টি পৃষ্ঠা রূপান্তর করা হয়েছে`;
+
+    match = normalized.match(/^page (\d+)$/);
+    if (match) return `পৃষ্ঠা ${toBanglaNumerals(match[1])}`;
+
+    match = normalized.match(/^done: (\d+) pages? ready to download$/);
+    if (match) return `সম্পন্ন: ${toBanglaNumerals(match[1])}টি পৃষ্ঠা ডাউনলোডের জন্য প্রস্তুত`;
+
+    match = normalized.match(/^rendering page (\d+) of (\d+)…$/);
+    if (match) return `মোট ${toBanglaNumerals(match[2])} পৃষ্ঠার মধ্যে ${toBanglaNumerals(match[1])} নম্বর পৃষ্ঠা তৈরি হচ্ছে…`;
+
+    match = raw.trim().match(/^Ready to convert: (.+)$/i);
+    if (match) return `রূপান্তরের জন্য প্রস্তুত: ${match[1]}`;
+
+    match = normalized.match(/^couldn't encode page (\d+) to an image\.$/);
+    if (match) return `PDF-এর ${toBanglaNumerals(match[1])} নম্বর পৃষ্ঠাকে ছবিতে রূপান্তর করা যায়নি। অন্য ফরম্যাট বেছে আবার চেষ্টা করুন।`;
+
+    // Runtime/parser errors from pdf.js may vary by file and version. Keep them
+    // understandable in Bangla rather than showing untranslated technical text.
+    if (/pdf|invalid|password|encrypt|stream|object|xref|worker|canvas/i.test(raw)) {
+        return "PDF ফাইলটি পড়া বা রূপান্তর করা যায়নি। ফাইলটি ঠিক আছে কি না পরীক্ষা করে আবার চেষ্টা করুন।";
+    }
+    return raw;
+}
+
+function PdfT({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translatePdfToImageText(children, locale)}</>;
+}
+
+function getPdfToImageErrorMessage(error: unknown, locale: string | undefined): string {
+    const message = error instanceof Error ? error.message : "";
+    if (String(locale ?? "").toLowerCase().startsWith("bn")) {
+        if (message.includes("Couldn't get a 2D canvas context.")) return PDF_TO_IMAGE_BN["couldn't get a 2d canvas context."];
+        const encodeMatch = message.match(/Couldn't encode page (\d+) to an image\./i);
+        if (encodeMatch) return `PDF-এর ${toBanglaNumerals(encodeMatch[1])} নম্বর পৃষ্ঠাকে ছবিতে রূপান্তর করা যায়নি। অন্য ফরম্যাট বেছে আবার চেষ্টা করুন।`;
+        return "PDF ফাইলটি পড়া বা রূপান্তর করা যায়নি। ফাইলটি ঠিক আছে কি না পরীক্ষা করে আবার চেষ্টা করুন।";
+    }
+    return message || "Something went wrong while converting this PDF.";
+}
+
 export default function PdfToImage() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const tx = (value: string) => translatePdfToImageText(value, locale);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [imageFormat, setImageFormat] = useState<ImageFormat>("JPG");
     const [resolution, setResolution] = useState<Resolution>("high");
@@ -314,9 +434,7 @@ export default function PdfToImage() {
         }
         catch (err) {
             console.error(err);
-            setErrorMessage(err instanceof Error
-                ? err.message
-                : "Something went wrong while converting this PDF.");
+            setErrorMessage(getPdfToImageErrorMessage(err, locale));
         }
         finally {
             setIsProcessing(false);
@@ -377,16 +495,16 @@ export default function PdfToImage() {
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#2563EB] transition-colors">
           <ArrowLeft size={14}/>
 
-          <span><T>{"Back to Tools"}</T></span>
+          <span><PdfT>{"Back to Tools"}</PdfT></span>
         </Link>
 
-        <span><T>{"/"}</T></span>
+        <span><PdfT>{"/"}</PdfT></span>
 
-        <span><T>{"PDF Tools"}</T></span>
+        <span><PdfT>{"PDF Tools"}</PdfT></span>
 
-        <span><T>{"/"}</T></span>
+        <span><PdfT>{"/"}</PdfT></span>
 
-        <span className="font-semibold text-[#0F172A]"><T>{"PDF to Image"}</T></span>
+        <span className="font-semibold text-[#0F172A]"><PdfT>{"PDF to Image"}</PdfT></span>
       </div>
 
       {/* Header Card */}
@@ -398,21 +516,21 @@ export default function PdfToImage() {
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"PDF to Image"}</T></h1>
+              <h1 className="text-lg font-bold text-[#0F172A]"><PdfT>{"PDF to Image"}</PdfT></h1>
 
-              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full"><PdfT>{"Free\n              "}</PdfT></span>
             </div>
 
-            <p className="text-xs text-[#0F172A] font-medium mt-0.5"><T>{"Convert each PDF page to PNG, JPG, WebP, or AVIF.\n            "}</T></p>
+            <p className="text-xs text-[#0F172A] font-medium mt-0.5"><PdfT>{"Convert each PDF page to PNG, JPG, WebP, or AVIF.\n            "}</PdfT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Star size={16}/>
           </button>
 
-          <button className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
             <Share2 size={16}/>
           </button>
         </div>
@@ -425,12 +543,12 @@ export default function PdfToImage() {
           {/* Upload Card */}
           <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Files ("}</T>{selectedFile ? 1 : 0}<T>{")\n              "}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Files ("}</PdfT>{String(selectedFile ? 1 : 0).replace(/[0-9]/g, (digit) => String(locale ?? "").toLowerCase().startsWith("bn") ? "০১২৩৪৫৬৭৮৯"[Number(digit)] : digit)}<PdfT>{")\n              "}</PdfT></h2>
 
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#4F46E5] bg-[#4F46E5]/10 hover:bg-[#2563EB]/10 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#4F46E5]/20">
                 <Plus size={12}/>
 
-                <span><T>{"Add"}</T></span>
+                <span><PdfT>{"Add"}</PdfT></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
               </label>
@@ -441,9 +559,9 @@ export default function PdfToImage() {
                   <Upload size={20}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A]"><T>{"Drop PDF files here or click to upload\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A]"><PdfT>{"Drop PDF files here or click to upload\n                "}</PdfT></span>
 
-                <span className="text-[10px] text-[#0F172A] font-medium mt-1"><T>{"PDF files, max 500 MB each\n                "}</T></span>
+                <span className="text-[10px] text-[#0F172A] font-medium mt-1"><PdfT>{"PDF files, max 500 MB each\n                "}</PdfT></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
               </label>) : (<div className="bg-[#F8FAFC] border border-[#0F172A]/10 rounded-xl p-3 flex items-center justify-between">
@@ -458,7 +576,7 @@ export default function PdfToImage() {
                     </p>
 
                     <p className="text-[10px] text-[#0F172A]">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<T>{"MB\n                    "}</T></p>
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<PdfT>{"MB\n                    "}</PdfT></p>
                   </div>
                 </div>
 
@@ -470,7 +588,7 @@ export default function PdfToImage() {
 
           {/* Image Format Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Image format"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Image format"}</PdfT></h2>
 
             <div className="grid grid-cols-4 gap-2">
               {(["JPG", "PNG", "WebP", "AVIF"] as const).map((fmt) => (<button key={fmt} onClick={() => handleFormatChange(fmt)} className={`py-2 text-xs font-bold rounded-xl border transition-all ${imageFormat === fmt
@@ -483,34 +601,34 @@ export default function PdfToImage() {
 
           {/* Resolution Selector Card */}
           <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Resolution"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Resolution"}</PdfT></h2>
 
             <div className="space-y-2">
               {/* Standard */}
               <button onClick={() => handleResolutionChange("standard")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "standard"
             ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
             : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><T>{"Standard"}</T></p>
+                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Standard"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><T>{"96 DPI \u2014 good for screen and sharing\n                "}</T></p>
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"96 DPI \u2014 good for screen and sharing\n                "}</PdfT></p>
               </button>
 
               {/* High */}
               <button onClick={() => handleResolutionChange("high")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "high"
             ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
             : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><T>{"High"}</T></p>
+                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"High"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><T>{"144 DPI \u2014 sharper text and details\n                "}</T></p>
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"144 DPI \u2014 sharper text and details\n                "}</PdfT></p>
               </button>
 
               {/* Ultra high */}
               <button onClick={() => handleResolutionChange("ultra")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "ultra"
             ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
             : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><T>{"Ultra high"}</T></p>
+                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Ultra high"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><T>{"216 DPI \u2014 best for print\n                "}</T></p>
+                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"216 DPI \u2014 best for print\n                "}</PdfT></p>
               </button>
             </div>
           </div>
@@ -519,7 +637,7 @@ export default function PdfToImage() {
         {/* Right Side: Preview */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[520px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Preview"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Preview"}</PdfT></h2>
 
             <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
             ? "bg-[#2563EB]/10 text-[#0F172A]"
@@ -530,35 +648,34 @@ export default function PdfToImage() {
                     : selectedFile
                         ? "bg-blue-100 text-blue-600"
                         : "bg-[#F8FAFC] text-[#0F172A]"}`}>
-              {errorMessage
-        ? <T>{"Error"}</T> : pages
-        ? `${pages.length} page${pages.length === 1 ? "" : "s"}`
-        : isProcessing
-            ? "Rendering"
-            : selectedFile
-                ? "Ready"
-                : "Empty"}
+              <PdfT>{errorMessage ? "Error" : pages
+                ? `${pages.length} page${pages.length === 1 ? "" : "s"}`
+                : isProcessing
+                    ? "Rendering"
+                    : selectedFile
+                        ? "Ready"
+                        : "Empty"}</PdfT>
             </span>
           </div>
 
           {isProcessing ? (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
               <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3"/>
 
-              <p className="text-xs font-bold text-[#0F172A]"><T>{"Rendering your PDF\u2026\n              "}</T></p>
+              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Rendering your PDF\u2026\n              "}</PdfT></p>
 
               <p className="text-[11px] text-[#0F172A] mt-1">
                 {progress && progress.total > 0
-            ? <T>{`Page ${progress.done} of ${progress.total}`}</T> : <T>{"Getting started…"}</T>}
+            ? <PdfT>{`Page ${progress.done} of ${progress.total}`}</PdfT> : <PdfT>{"Getting started…"}</PdfT>}
               </p>
             </div>) : errorMessage ? (<div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#2563EB]/30 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
               <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#2563EB]/30">
                 <AlertCircle size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><T>{"Conversion failed\n              "}</T></p>
+              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Conversion failed\n              "}</PdfT></p>
 
               <p className="text-[11px] text-[#4F46E5] mt-1 max-w-xs">
-                {errorMessage}
+                <PdfT>{errorMessage ?? ""}</PdfT>
               </p>
             </div>) : pages ? (<div className="my-auto py-4 space-y-4">
               <div className="flex items-center justify-between">
@@ -568,28 +685,28 @@ export default function PdfToImage() {
                   </div>
 
                   <p className="text-xs font-bold text-[#0F172A]">
-                    {pages.length}<T>{"page\n                    "}</T>{pages.length === 1 ? <T>{""}</T> : <T>{"s"}</T>}<T>{"converted\n                  "}</T></p>
+                    <PdfT>{`${pages.length} page${pages.length === 1 ? "" : "s"} converted`}</PdfT>
+                  </p>
                 </div>
 
                 {pages.length > 1 && (<button onClick={downloadAllAsZip} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-[#2563EB]/90 transition-all">
-                    <Download size={12}/><T>{"Download all (.zip)\n                  "}</T></button>)}
+                    <Download size={12}/><PdfT>{"Download all (.zip)\n                  "}</PdfT></button>)}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[380px] overflow-y-auto pr-1">
                 {pages.map((page) => (<div key={page.pageNumber} className="bg-[#F8FAFC] border border-[#0F172A]/10 p-2.5 rounded-xl flex flex-col items-center text-center gap-1.5">
                     <div className="w-full aspect-[3/4] bg-white border border-[#0F172A]/10 rounded-md overflow-hidden flex items-center justify-center">
-                      <img src={page.thumbnailUrl} alt={`Page ${page.pageNumber}`} className="max-w-full max-h-full object-contain"/>
+                      <img src={page.thumbnailUrl} alt={tx(`Page ${page.pageNumber}`)} className="max-w-full max-h-full object-contain"/>
                     </div>
 
-                    <p className="text-[11px] font-bold text-[#0F172A] truncate w-full"><T>{"Page "}</T>{page.pageNumber}
-                    </p>
+                    <p className="text-[11px] font-bold text-[#0F172A] truncate w-full"><PdfT>{`Page ${page.pageNumber}`}</PdfT></p>
 
                     <p className="text-[10px] text-[#0F172A]">
-                      {formatBytes(page.blob.size)}<T>{"\u00B7 "}</T>{page.format}
+                      {formatBytes(page.blob.size)}<PdfT>{"\u00B7 "}</PdfT>{page.format}
                     </p>
 
                     <button onClick={() => downloadPage(page)} className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-[#0F172A]/10 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-[#E2E8F0] transition-all">
-                      <Download size={11}/><T>{"Download\n                    "}</T></button>
+                      <Download size={11}/><PdfT>{"Download\n                    "}</PdfT></button>
                   </div>))}
               </div>
             </div>) : (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
@@ -597,9 +714,9 @@ export default function PdfToImage() {
                 <FileText size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><T>{"Add files to get started\n              "}</T></p>
+              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Add files to get started\n              "}</PdfT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><T>{"Your result will appear here after you run the tool.\n              "}</T></p>
+              <p className="text-[11px] text-[#0F172A] mt-1"><PdfT>{"Your result will appear here after you run the tool.\n              "}</PdfT></p>
             </div>)}
 
           <div />
@@ -618,28 +735,29 @@ export default function PdfToImage() {
                     : "bg-[#0F172A]/40"}`}/>
 
           <span>
-            {errorMessage
-        ? <T>{"Conversion failed — try again"}</T> : pages
-        ? `Done: ${pages.length} page${pages.length === 1 ? "" : "s"} ready to download`
-        : isProcessing
-            ? progress && progress.total > 0
-                ? `Rendering page ${progress.done} of ${progress.total}…`
-                : "Rendering…"
-            : selectedFile
-                ? `Ready to convert: ${selectedFile.name}`
-                : "Add an input to get started"}
+            <PdfT>{errorMessage
+              ? "Conversion failed — try again"
+              : pages
+                  ? `Done: ${pages.length} page${pages.length === 1 ? "" : "s"} ready to download`
+                  : isProcessing
+                      ? progress && progress.total > 0
+                          ? `Rendering page ${progress.done} of ${progress.total}…`
+                          : "Rendering…"
+                      : selectedFile
+                          ? `Ready to convert: ${selectedFile.name}`
+                          : "Add an input to get started"}</PdfT>
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-white transition-all"><T>{"Reset\n          "}</T></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-white transition-all"><PdfT>{"Reset\n          "}</PdfT></button>
 
           <button onClick={handleConvert} disabled={!canConvert} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${canConvert
             ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
             : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"}`}>
             {isProcessing ? (<Loader2 size={14} className="animate-spin"/>) : (<FileImage size={14}/>)}
 
-            <span>{isProcessing ? <T>{"Converting…"}</T> : <T>{"Convert to images"}</T>}</span>
+            <span>{isProcessing ? <PdfT>{"Converting…"}</PdfT> : <PdfT>{"Convert to images"}</PdfT>}</span>
           </button>
         </div>
       </div>
@@ -648,27 +766,27 @@ export default function PdfToImage() {
       <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
         <Lock size={15} className="text-[#10B981] shrink-0"/>
 
-        <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</T></span>
+        <span><PdfT>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</PdfT></span>
       </div>
 
       {/* How to use Accordion */}
       <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
         <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB]"><T>{"?"}</T></span>
+            <span className="text-[#2563EB]"><PdfT>{"?"}</PdfT></span>
 
-            <span><T>{"How to use"}</T></span>
+            <span><PdfT>{"How to use"}</PdfT></span>
           </div>
 
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3"><T>{"Upload your PDF, choose your preferred image format (JPG, PNG, WebP,\n            or AVIF) and resolution quality, then click \"Convert to images\" to\n            extract pages as image files.\n          "}</T></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3"><PdfT>{"Upload your PDF, choose your preferred image format (JPG, PNG, WebP,\n            or AVIF) and resolution quality, then click \"Convert to images\" to\n            extract pages as image files.\n          "}</PdfT></div>)}
       </div>
 
       {/* Tools in Same Category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Tools in the same category\n        "}</PdfT></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/compress-pdf" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
@@ -677,9 +795,9 @@ export default function PdfToImage() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><T>{"Compress PDF\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><PdfT>{"Compress PDF\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><T>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</T></p>
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><PdfT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</PdfT></p>
             </div>
           </Link>
 
@@ -689,9 +807,9 @@ export default function PdfToImage() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><T>{"Merge PDFs\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><PdfT>{"Merge PDFs\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><T>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</T></p>
+              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><PdfT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</PdfT></p>
             </div>
           </Link>
         </div>

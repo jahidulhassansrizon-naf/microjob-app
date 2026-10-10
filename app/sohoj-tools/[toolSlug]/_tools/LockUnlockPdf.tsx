@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState } from "react";
 import Link from "next/link";
 import { Lock, Star, Share2, Upload, FileText, ChevronDown, ChevronUp, Minimize2, Combine, FilePlus, ArrowLeft, X, Plus, KeyRound, Loader2, Download, CheckCircle2, AlertCircle, Eye, EyeOff, } from "lucide-react";
@@ -135,6 +135,134 @@ interface ActionResult {
     size: number;
 }
 type Mode = "lock" | "unlock";
+
+/**
+ * Exact, page-specific English ↔ Bangla translations.
+ * Avoid the shared word-by-word translator here: it can create mixed strings
+ * such as "Drop a PDF এখানে or click to আপলোড". In Bangla mode, authored UI
+ * strings are translated as complete phrases; unknown text is left intact.
+ */
+const LOCK_UNLOCK_PDF_BN: Record<string, string> = {
+    "back to tools": "টুলসের তালিকায় ফিরে যান",
+    "/": "/",
+    "pdf tools": "PDF টুলস",
+    "lock / unlock pdf": "PDF লক / আনলক",
+    "free": "বিনামূল্যে",
+    "add a password to protect your pdf or remove an existing password.": "PDF-এ পাসওয়ার্ড যোগ করে সুরক্ষিত করুন অথবা আগে থেকে থাকা পাসওয়ার্ড সরিয়ে ফেলুন।",
+    "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "share this tool": "এই টুলটি শেয়ার করুন",
+    "files (": "ফাইল (",
+    ")": ")",
+    "add": "যোগ করুন",
+    "drop a pdf here or click to upload": "এখানে PDF টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+    "1 pdf file, max 500 mb": "১টি PDF ফাইল, সর্বোচ্চ ৫০০ MB",
+    "mb": "MB",
+    "remove selected pdf": "নির্বাচিত PDF সরিয়ে ফেলুন",
+    "password settings": "পাসওয়ার্ড সেটিংস",
+    "lock": "লক",
+    "unlock": "আনলক",
+    "new password": "নতুন পাসওয়ার্ড",
+    "at least 4 characters": "কমপক্ষে ৪টি অক্ষর",
+    "hide password": "পাসওয়ার্ড আড়াল করুন",
+    "show password": "পাসওয়ার্ড দেখান",
+    "confirm password": "পাসওয়ার্ড নিশ্চিত করুন",
+    "re-enter password": "পাসওয়ার্ড আবার লিখুন",
+    "passwords don't match.": "পাসওয়ার্ড দুটি মিলছে না।",
+    "this password will be required to open the pdf. anyone without it won't be able to view the document.": "PDF খুলতে এই পাসওয়ার্ডটি লাগবে। পাসওয়ার্ড ছাড়া কেউ নথিটি দেখতে পারবেন না।",
+    "current password": "বর্তমান পাসওয়ার্ড",
+    "enter the pdf's password": "PDF-এর পাসওয়ার্ড লিখুন",
+    "we'll use this to remove the password and produce an open-access copy of your pdf.": "এই পাসওয়ার্ড দিয়ে PDF-এর সুরক্ষা সরিয়ে একটি পাসওয়ার্ডবিহীন কপি তৈরি করা হবে।",
+    "preview": "পূর্বরূপ",
+    "error": "ত্রুটি",
+    "done": "সম্পন্ন",
+    "locking": "লক করা হচ্ছে",
+    "unlocking": "আনলক করা হচ্ছে",
+    "locking…": "লক করা হচ্ছে…",
+    "unlocking…": "আনলক করা হচ্ছে…",
+    "ready": "প্রস্তুত",
+    "empty": "খালি",
+    "encrypting your pdf…": "আপনার PDF-এ পাসওয়ার্ড যোগ করা হচ্ছে…",
+    "decrypting your pdf…": "আপনার PDF থেকে পাসওয়ার্ড সরানো হচ্ছে…",
+    "everything runs in your browser — larger files take a little longer.": "সব কাজ আপনার ব্রাউজারেই হয়—বড় ফাইলের ক্ষেত্রে একটু বেশি সময় লাগতে পারে।",
+    "locking failed": "PDF লক করা যায়নি",
+    "unlocking failed": "PDF আনলক করা যায়নি",
+    "your pdf is password-protected": "আপনার PDF পাসওয়ার্ড দিয়ে সুরক্ষিত হয়েছে",
+    "your pdf is unlocked": "আপনার PDF-এর পাসওয়ার্ড সরানো হয়েছে",
+    "download locked pdf": "পাসওয়ার্ডযুক্ত PDF ডাউনলোড করুন",
+    "download unlocked pdf": "পাসওয়ার্ডবিহীন PDF ডাউনলোড করুন",
+    "enter a password to continue": "এগিয়ে যেতে পাসওয়ার্ড লিখুন",
+    "add files to get started": "শুরু করতে ফাইল যোগ করুন",
+    "your result will appear here after you run the tool.": "টুলটি চালালে ফলাফল এখানে দেখা যাবে।",
+    "reset": "রিসেট করুন",
+    "lock pdf": "PDF লক করুন",
+    "unlock pdf": "PDF আনলক করুন",
+    "your files are processed in the browser — they are not uploaded to any server.": "আপনার ফাইলগুলো ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+    "?": "?",
+    "how to use": "ব্যবহারের নিয়ম",
+    "upload your pdf, choose lock to add a password or unlock to remove one, enter the password, then run the tool to download the result.": "আপনার PDF আপলোড করুন। পাসওয়ার্ড যোগ করতে লক, আর সরাতে আনলক নির্বাচন করুন। পাসওয়ার্ড লিখে টুলটি চালান, তারপর ফলাফল ডাউনলোড করুন।",
+    "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+    "compress pdf": "PDF-এর আকার কমান",
+    "shrink embedded photos and scans inside a pdf — text stays sharp.": "PDF-এর ভেতরের ছবি ও স্ক্যানের আকার কমান—লেখার স্পষ্টতা বজায় থাকবে।",
+    "merge pdfs": "একাধিক PDF একত্র করুন",
+    "combine multiple pdf files into one document in your chosen order.": "একাধিক PDF আপনার পছন্দের ক্রমে একটি নথিতে একত্র করুন।",
+    "couldn't load the pdf processing files. please refresh the page and try again.": "PDF প্রক্রিয়াকরণের ফাইলগুলো লোড করা যায়নি। পৃষ্ঠাটি রিফ্রেশ করে আবার চেষ্টা করুন।",
+    "the pdf processing tool couldn't start. please refresh the page and try again.": "PDF প্রক্রিয়াকরণের টুলটি চালু করা যায়নি। পৃষ্ঠাটি রিফ্রেশ করে আবার চেষ্টা করুন।",
+    "this tool can only run in your browser.": "এই টুলটি শুধু আপনার ব্রাউজারেই চালানো যায়।",
+    "couldn't protect this pdf. please check the file and try again.": "এই PDF-টি সুরক্ষিত করা যায়নি। ফাইলটি পরীক্ষা করে আবার চেষ্টা করুন।",
+    "couldn't unlock this pdf. check that the password is correct and the pdf is supported.": "এই PDF-এর পাসওয়ার্ড সরানো যায়নি। পাসওয়ার্ড সঠিক কি না দেখুন এবং PDF-টি সমর্থিত কি না নিশ্চিত করুন।",
+    "something went wrong while protecting this pdf. please try again.": "PDF সুরক্ষিত করার সময় সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    "something went wrong while unlocking this pdf. check the password and try again.": "PDF আনলক করার সময় সমস্যা হয়েছে। পাসওয়ার্ড যাচাই করে আবার চেষ্টা করুন।",
+    "locking failed — try again": "PDF লক করা যায়নি—আবার চেষ্টা করুন",
+    "unlocking failed — try again": "PDF আনলক করা যায়নি—আবার চেষ্টা করুন",
+    "add an input to get started": "শুরু করতে একটি ফাইল যোগ করুন",
+};
+
+function translateLockUnlockPdfText(value: string, locale: string | undefined): string {
+    const raw = String(value ?? "");
+    if (!String(locale ?? "").toLowerCase().startsWith("bn")) return raw;
+
+    const normalized = raw.replace(/\s+/g, " ").trim().toLowerCase();
+    const exact = LOCK_UNLOCK_PDF_BN[normalized];
+    if (exact !== undefined) return exact;
+
+    // Keep dynamic filenames and file sizes intact while translating the UI.
+    const doneMatch = raw.trim().match(/^Done:\s*(.+?)\s+ready to download$/i);
+    if (doneMatch) return `সম্পন্ন: ${doneMatch[1]} — ডাউনলোডের জন্য প্রস্তুত`;
+
+    const readyMatch = raw.trim().match(/^Ready to process:\s*(.+)$/i);
+    if (readyMatch) return `প্রক্রিয়াকরণের জন্য প্রস্তুত: ${readyMatch[1]}`;
+
+    return raw;
+}
+
+function PdfT({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translateLockUnlockPdfText(children, locale)}</>;
+}
+
+function getUserFacingErrorMessage(error: unknown, mode: Mode): string {
+    const message = error instanceof Error ? error.message : "";
+
+    if (message.includes("Couldn't load") || message.includes("Make sure qpdf.js")) {
+        return "Couldn't load the PDF processing files. Please refresh the page and try again.";
+    }
+    if (message.includes("no factory function was found")) {
+        return "The PDF processing tool couldn't start. Please refresh the page and try again.";
+    }
+    if (message.includes("qpdf can only run in the browser.")) {
+        return "This tool can only run in your browser.";
+    }
+    if (message.includes("qpdf couldn't produce an output file")) {
+        return mode === "lock"
+            ? "Couldn't protect this PDF. Please check the file and try again."
+            : "Couldn't unlock this PDF. Check that the password is correct and the PDF is supported.";
+    }
+
+    return mode === "lock"
+        ? "Something went wrong while protecting this PDF. Please try again."
+        : "Something went wrong while unlocking this PDF. Check the password and try again.";
+}
 // ---------------------------------------------------------------------------
 // Vercel / TypeScript Blob compatibility helper
 // ---------------------------------------------------------------------------
@@ -153,7 +281,8 @@ function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
     return buffer;
 }
 export default function LockUnlockPdf() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const tx = (value: string) => translateLockUnlockPdfText(value, locale);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showHowToUse, setShowHowToUse] = useState(false);
     const [mode, setMode] = useState<Mode>("lock");
@@ -212,9 +341,7 @@ export default function LockUnlockPdf() {
         }
         catch (err) {
             console.error(err);
-            setErrorMessage(err instanceof Error
-                ? err.message
-                : `Something went wrong while ${mode === "lock" ? "locking" : "unlocking"} this PDF.`);
+            setErrorMessage(getUserFacingErrorMessage(err, mode));
         }
         finally {
             setIsProcessing(false);
@@ -248,16 +375,16 @@ export default function LockUnlockPdf() {
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
           <ArrowLeft size={14}/>
 
-          <span><T>{"Back to Tools"}</T></span>
+          <span><PdfT>{"Back to Tools"}</PdfT></span>
         </Link>
 
-        <span><T>{"/"}</T></span>
+        <span><PdfT>{"/"}</PdfT></span>
 
-        <span><T>{"PDF Tools"}</T></span>
+        <span><PdfT>{"PDF Tools"}</PdfT></span>
 
-        <span><T>{"/"}</T></span>
+        <span><PdfT>{"/"}</PdfT></span>
 
-        <span className="font-semibold text-[#0F172A]"><T>{"Lock / Unlock PDF"}</T></span>
+        <span className="font-semibold text-[#0F172A]"><PdfT>{"Lock / Unlock PDF"}</PdfT></span>
       </div>
 
       {/* Header Card */}
@@ -269,21 +396,31 @@ export default function LockUnlockPdf() {
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Lock / Unlock PDF\n              "}</T></h1>
+              <h1 className="text-lg font-bold text-[#0F172A]"><PdfT>{"Lock / Unlock PDF\n              "}</PdfT></h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><PdfT>{"Free\n              "}</PdfT></span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Add a password to protect your PDF or remove an existing password.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><PdfT>{"Add a password to protect your PDF or remove an existing password.\n            "}</PdfT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button
+            type="button"
+            aria-label={tx("Add to favorites")}
+            title={tx("Add to favorites")}
+            className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
+          >
             <Star size={16}/>
           </button>
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button
+            type="button"
+            aria-label={tx("Share this tool")}
+            title={tx("Share this tool")}
+            className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
+          >
             <Share2 size={16}/>
           </button>
         </div>
@@ -296,12 +433,12 @@ export default function LockUnlockPdf() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Files ("}</T>{selectedFile ? 1 : 0}<T>{")\n                "}</T></h2>
+                <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Files ("}</PdfT>{selectedFile ? 1 : 0}<PdfT>{")\n                "}</PdfT></h2>
 
                 <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#EFF6FF] hover:bg-[#DBEAFE] px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#DBEAFE]">
                   <Plus size={12}/>
 
-                  <span><T>{"Add"}</T></span>
+                  <span><PdfT>{"Add"}</PdfT></span>
 
                   <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
                 </label>
@@ -312,9 +449,9 @@ export default function LockUnlockPdf() {
                     <Upload size={20}/>
                   </div>
 
-                  <span className="text-xs font-bold text-[#0F172A]"><T>{"Drop a PDF here or click to upload\n                  "}</T></span>
+                  <span className="text-xs font-bold text-[#0F172A]"><PdfT>{"Drop a PDF here or click to upload\n                  "}</PdfT></span>
 
-                  <span className="text-[10px] text-gray-400 font-medium mt-1"><T>{"1 PDF file, max 500 MB\n                  "}</T></span>
+                  <span className="text-[10px] text-gray-400 font-medium mt-1"><PdfT>{"1 PDF file, max 500 MB\n                  "}</PdfT></span>
 
                   <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
                 </label>) : (<div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
@@ -329,11 +466,17 @@ export default function LockUnlockPdf() {
                       </p>
 
                       <p className="text-[10px] text-gray-400">
-                        {(selectedFile.size / (1024 * 1024)).toFixed(2)}<T>{"MB\n                      "}</T></p>
+                        {(selectedFile.size / (1024 * 1024)).toFixed(2)}<PdfT>{"MB\n                      "}</PdfT></p>
                     </div>
                   </div>
 
-                  <button onClick={handleReset} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    aria-label={tx("Remove selected PDF")}
+                    title={tx("Remove selected PDF")}
+                    className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors"
+                  >
                     <X size={16}/>
                   </button>
                 </div>)}
@@ -342,57 +485,69 @@ export default function LockUnlockPdf() {
 
           {/* Password Settings Card */}
           {selectedFile && (<div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Password settings\n              "}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Password settings\n              "}</PdfT></h2>
 
               {/* Toggle Tabs */}
               <div className="bg-[#E2E8F0] p-1 rounded-xl flex items-center gap-1">
                 <button onClick={() => handleModeChange("lock")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${mode === "lock"
                 ? "bg-white text-[#0F172A] shadow-xs"
                 : "text-gray-500 hover:text-[#0F172A]"}`}>
-                  <Lock size={12}/><T>{"Lock\n                "}</T></button>
+                  <Lock size={12}/><PdfT>{"Lock\n                "}</PdfT></button>
 
                 <button onClick={() => handleModeChange("unlock")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${mode === "unlock"
                 ? "bg-white text-[#0F172A] shadow-xs"
                 : "text-gray-500 hover:text-[#0F172A]"}`}>
-                  <KeyRound size={12}/><T>{"Unlock\n                "}</T></button>
+                  <KeyRound size={12}/><PdfT>{"Unlock\n                "}</PdfT></button>
               </div>
 
               {mode === "lock" ? (<div className="space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-600 block"><T>{"New password\n                    "}</T></label>
+                    <label className="text-[11px] font-bold text-gray-600 block"><PdfT>{"New password\n                    "}</PdfT></label>
 
                     <div className="relative">
-                      <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={L("At least 4 characters")} className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
+                      <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={tx("At least 4 characters")} className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
 
-                      <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={tx(showPassword ? "Hide password" : "Show password")}
+                        title={tx(showPassword ? "Hide password" : "Show password")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
                         {showPassword ? (<EyeOff size={14}/>) : (<Eye size={14}/>)}
                       </button>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-600 block"><T>{"Confirm password\n                    "}</T></label>
+                    <label className="text-[11px] font-bold text-gray-600 block"><PdfT>{"Confirm password\n                    "}</PdfT></label>
 
-                    <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={L("Re-enter password")} className={`w-full bg-white border rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 ${passwordsMismatch
+                    <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={tx("Re-enter password")} className={`w-full bg-white border rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 ${passwordsMismatch
                     ? "border-[#93C5FD] focus:ring-[#2563EB]/20"
                     : "border-gray-200 focus:ring-[#2563EB]/20"}`}/>
 
-                    {passwordsMismatch && (<p className="text-[10px] text-[#2563EB] font-medium"><T>{"Passwords don't match.\n                      "}</T></p>)}
+                    {passwordsMismatch && (<p className="text-[10px] text-[#2563EB] font-medium"><PdfT>{"Passwords don't match.\n                      "}</PdfT></p>)}
                   </div>
 
-                  <p className="text-[10px] text-gray-400 leading-relaxed"><T>{"This password will be required to open the PDF. Anyone\n                    without it won't be able to view the document.\n                  "}</T></p>
+                  <p className="text-[10px] text-gray-400 leading-relaxed"><PdfT>{"This password will be required to open the PDF. Anyone\n                    without it won't be able to view the document.\n                  "}</PdfT></p>
                 </div>) : (<div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-600 block"><T>{"Current password\n                  "}</T></label>
+                  <label className="text-[11px] font-bold text-gray-600 block"><PdfT>{"Current password\n                  "}</PdfT></label>
 
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder={L("Enter the PDF's password")} className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
+                    <input type={showPassword ? "text" : "password"} value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder={tx("Enter the PDF's password")} className="w-full bg-white border border-gray-200 rounded-xl pl-3 pr-9 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
 
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={tx(showPassword ? "Hide password" : "Show password")}
+                      title={tx(showPassword ? "Hide password" : "Show password")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
                       {showPassword ? <EyeOff size={14}/> : <Eye size={14}/>}
                     </button>
                   </div>
 
-                  <p className="text-[10px] text-gray-400 leading-relaxed pt-1"><T>{"We'll use this to remove the password and produce an\n                    open-access copy of your PDF.\n                  "}</T></p>
+                  <p className="text-[10px] text-gray-400 leading-relaxed pt-1"><PdfT>{"We'll use this to remove the password and produce an\n                    open-access copy of your PDF.\n                  "}</PdfT></p>
                 </div>)}
             </div>)}
         </div>
@@ -400,7 +555,7 @@ export default function LockUnlockPdf() {
         {/* Right Side: Lock Preview Box */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Preview"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Preview"}</PdfT></h2>
 
             <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
             ? "bg-red-100 text-red-600"
@@ -412,15 +567,15 @@ export default function LockUnlockPdf() {
                         ? "bg-blue-100 text-blue-600"
                         : "bg-gray-100 text-gray-500"}`}>
               {errorMessage
-        ? <T>{"Error"}</T> : result
-        ? "Done"
+        ? <PdfT>{"Error"}</PdfT> : result
+        ? <PdfT>{"Done"}</PdfT>
         : isProcessing
             ? mode === "lock"
-                ? "Locking"
-                : "Unlocking"
+                ? <PdfT>{"Locking"}</PdfT>
+                : <PdfT>{"Unlocking"}</PdfT>
             : selectedFile
-                ? "Ready"
-                : "Empty"}
+                ? <PdfT>{"Ready"}</PdfT>
+                : <PdfT>{"Empty"}</PdfT>}
             </span>
           </div>
 
@@ -429,21 +584,21 @@ export default function LockUnlockPdf() {
 
               <p className="text-xs font-bold text-[#0F172A]">
                 {mode === "lock"
-            ? <T>{"Encrypting your PDF…"}</T> : <T>{"Decrypting your PDF…"}</T>}
+            ? <PdfT>{"Encrypting your PDF…"}</PdfT> : <PdfT>{"Decrypting your PDF…"}</PdfT>}
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1"><T>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</T></p>
+              <p className="text-[11px] text-gray-400 mt-1"><PdfT>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</PdfT></p>
             </div>) : errorMessage ? (<div className="bg-[#EFF6FF]/60 rounded-2xl border border-dashed border-[#BFDBFE] p-8 flex flex-col items-center justify-center my-auto text-center py-20">
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center mb-3 border border-red-200">
                 <AlertCircle size={20}/>
               </div>
 
               <p className="text-xs font-bold text-[#1E3A8A]">
-                {mode === "lock" ? <T>{"Locking failed"}</T> : <T>{"Unlocking failed"}</T>}
+                {mode === "lock" ? <PdfT>{"Locking failed"}</PdfT> : <PdfT>{"Unlocking failed"}</PdfT>}
               </p>
 
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
-                {errorMessage}
+                <PdfT>{errorMessage}</PdfT>
               </p>
             </div>) : result ? (<div className="my-auto py-8 flex flex-col items-center gap-5">
               <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-100">
@@ -453,7 +608,7 @@ export default function LockUnlockPdf() {
               <div className="text-center">
                 <p className="text-xs font-bold text-[#0F172A]">
                   {mode === "lock"
-            ? <T>{"Your PDF is password-protected"}</T> : <T>{"Your PDF is unlocked"}</T>}
+            ? <PdfT>{"Your PDF is password-protected"}</PdfT> : <PdfT>{"Your PDF is unlocked"}</PdfT>}
                 </p>
 
                 <p className="text-[11px] text-gray-400 mt-1">
@@ -465,7 +620,7 @@ export default function LockUnlockPdf() {
                 <Download size={14}/>
 
                 {mode === "lock"
-            ? <T>{"Download locked PDF"}</T> : <T>{"Download unlocked PDF"}</T>}
+            ? <PdfT>{"Download locked PDF"}</PdfT> : <PdfT>{"Download unlocked PDF"}</PdfT>}
               </button>
             </div>) : (<div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
               <div className="w-10 h-10 bg-[#EFF6FF] text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#DBEAFE]">
@@ -474,10 +629,10 @@ export default function LockUnlockPdf() {
 
               <p className="text-xs font-bold text-[#0F172A]">
                 {selectedFile
-            ? <T>{"Enter a password to continue"}</T> : <T>{"Add files to get started"}</T>}
+            ? <PdfT>{"Enter a password to continue"}</PdfT> : <PdfT>{"Add files to get started"}</PdfT>}
               </p>
 
-              <p className="text-[11px] text-gray-400 mt-1"><T>{"Your result will appear here after you run the tool.\n              "}</T></p>
+              <p className="text-[11px] text-gray-400 mt-1"><PdfT>{"Your result will appear here after you run the tool.\n              "}</PdfT></p>
             </div>)}
 
           <div />
@@ -497,20 +652,20 @@ export default function LockUnlockPdf() {
 
           <span>
             {errorMessage
-        ? <T>{`${mode === "lock" ? "Locking" : "Unlocking"} failed — try again`}</T> : result
-        ? `Done: ${formatBytes(result.size)} ready to download`
+        ? <PdfT>{`${mode === "lock" ? "Locking" : "Unlocking"} failed — try again`}</PdfT> : result
+        ? <PdfT>{`Done: ${formatBytes(result.size)} ready to download`}</PdfT>
         : isProcessing
             ? mode === "lock"
-                ? "Locking…"
-                : "Unlocking…"
+                ? <PdfT>{"Locking…"}</PdfT>
+                : <PdfT>{"Unlocking…"}</PdfT>
             : selectedFile
-                ? `Ready to process: ${selectedFile.name}`
-                : "Add an input to get started"}
+                ? <PdfT>{`Ready to process: ${selectedFile.name}`}</PdfT>
+                : <PdfT>{"Add an input to get started"}</PdfT>}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"><T>{"Reset\n          "}</T></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"><PdfT>{"Reset\n          "}</PdfT></button>
 
           <button onClick={handleSubmit} disabled={!canSubmit} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${canSubmit
             ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#1D4ED8]"
@@ -520,11 +675,11 @@ export default function LockUnlockPdf() {
             <span>
               {isProcessing
             ? mode === "lock"
-                ? "Locking…"
-                : "Unlocking…"
+                ? <PdfT>{"Locking…"}</PdfT>
+                : <PdfT>{"Unlocking…"}</PdfT>
             : mode === "lock"
-                ? "Lock PDF"
-                : "Unlock PDF"}
+                ? <PdfT>{"Lock PDF"}</PdfT>
+                : <PdfT>{"Unlock PDF"}</PdfT>}
             </span>
           </button>
         </div>
@@ -534,27 +689,27 @@ export default function LockUnlockPdf() {
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0"/>
 
-        <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</T></span>
+        <span><PdfT>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</PdfT></span>
       </div>
 
       {/* How to use Accordion */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC]/70 transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB] font-bold"><T>{"?"}</T></span>
+            <span className="text-[#2563EB] font-bold"><PdfT>{"?"}</PdfT></span>
 
-            <span><T>{"How to use"}</T></span>
+            <span><PdfT>{"How to use"}</PdfT></span>
           </div>
 
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3"><T>{"Upload your PDF, choose Lock to add a password or Unlock to remove\n            one, enter the password, then run the tool to download the result.\n          "}</T></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3"><PdfT>{"Upload your PDF, choose Lock to add a password or Unlock to remove\n            one, enter the password, then run the tool to download the result.\n          "}</PdfT></div>)}
       </div>
 
       {/* Same Category Tools */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Tools in the same category\n        "}</PdfT></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/compress-pdf" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#BFDBFE] transition-all flex items-start gap-3 group">
@@ -563,9 +718,9 @@ export default function LockUnlockPdf() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Compress PDF\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><PdfT>{"Compress PDF\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><T>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</T></p>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><PdfT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</PdfT></p>
             </div>
           </Link>
 
@@ -575,9 +730,9 @@ export default function LockUnlockPdf() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Merge PDFs\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><PdfT>{"Merge PDFs\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><T>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</T></p>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><PdfT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</PdfT></p>
             </div>
           </Link>
         </div>
