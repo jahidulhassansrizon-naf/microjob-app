@@ -196,7 +196,7 @@ export async function POST(request: Request) {
       },
       redirect_url: `${APP_URL}/payment/success`,
       return_type: "GET",
-      cancel_url: `${APP_URL}/payment/cancel`,
+      cancel_url: `${APP_URL}/subscription`,
       webhook_url: `${APP_URL}/api/payment/webhook`,
     };
 
