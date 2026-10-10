@@ -69,7 +69,6 @@ const SPLIT_PDF_BN: Record<string, string> = Object.fromEntries(Object.entries({
     "enter at least one page or range, e.g. 1-3, 5": "কমপক্ষে একটি পৃষ্ঠা বা পৃষ্ঠার পরিসর লিখুন, যেমন 1-3, 5।",
     "couldn't read this pdf - it may be encrypted or corrupted.": "এই PDF ফাইলটি পড়া যায়নি। এটি পাসওয়ার্ড-সুরক্ষিত বা নষ্ট হয়ে থাকতে পারে।",
     "something went wrong while splitting this pdf.": "PDF ভাগ করার সময় সমস্যা হয়েছে। আবার চেষ্টা করুন।",
-    "splitting…": "ভাগ করা হচ্ছে…",
     "add to favorites": "পছন্দের তালিকায় যোগ করুন",
     "share this tool": "এই টুলটি শেয়ার করুন",
     "remove pdf": "PDF সরান",
