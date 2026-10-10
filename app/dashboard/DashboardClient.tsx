@@ -68,7 +68,7 @@ const INSPIRED_BY_URL = "";
 // my-nafia:start
 const CONTACT_NAME = "Jahidul Hasan Sreezon";
 const CONTACT_FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61593666395329";
-const CONTACT_PHOTO_URL = "https://scontent.fcgp39-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=78S-n7gNgUkQ7kNvwELG9hI&_nc_oc=AdrffUkQs1QZx-eWlE2MaeHUzUutp6VXDqkWDAloY_Ex1w8PqGIKk_hhfsIa_8Kp4Ds&_nc_zt=23&_nc_ht=scontent.fcgp39-1.fna&_nc_gid=3CzP5deqZC_4jVabR_0z0g&_nc_ss=7b2a8&oh=00_AQPg9M9F1zQmZUX9-4CT171qGc3lQAICV49bxxx1C-9xBQ&oe=6AC876AF";
+const CONTACT_PHOTO_URL = "https://scontent.fdac165-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFXk2DRYIMaT2rWUpeNS_QDO3oAE2SwZaw7egATZLBlrFuLbZxjfp2t1mEf0QSZ0qIfZc4Yht_g_s0X90DPJ-dn&_nc_ohc=-V2O-FBUvXkQ7kNvwFq-ymM&_nc_oc=Adrs-QyftXhcttufrbgUp1ssVGqD1Kj86lQjWqzAvomAPDOODDxnhC7jmAZkUrMCjq8&_nc_zt=23&_nc_ht=scontent.fdac165-1.fna&_nc_gid=lSseAorXaTEwTuBsJIOvmA&_nc_ss=7b2a8&oh=00_AQPZr1ODCauMKkRVxy-PjTXIultKpZpSJhoNAvBr-5DiBA&oe=6AD05FAF";
 // my-nafia:end
 function WelcomeBanner({ userName, fit }: {
     userName: string;
@@ -285,10 +285,17 @@ function CreditLine() {
 // my-nafia:end
 // my-nafia:start
 function ContactCard() {
+    const [photoFailed, setPhotoFailed] = useState(false);
     return (<section className="border-t border-slate-200 bg-white/60">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-6 text-center sm:flex-row sm:gap-5 sm:px-6 sm:text-left">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={CONTACT_PHOTO_URL} alt={CONTACT_NAME} referrerPolicy="no-referrer" className="h-16 w-16 rounded-full border border-slate-200 object-cover shadow-sm"/>
+        {photoFailed ? (
+          <div role="img" aria-label={CONTACT_NAME} className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-blue-50 text-lg font-semibold text-[#2563EB] shadow-sm">
+            JS
+          </div>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={CONTACT_PHOTO_URL} alt={CONTACT_NAME} referrerPolicy="no-referrer" onError={() => setPhotoFailed(true)} className="h-16 w-16 shrink-0 rounded-full border border-slate-200 object-cover shadow-sm" />
+        )}
         <div>
           <p className="text-xs text-slate-500"><DT>{"Contact"}</DT></p>
           <PersonName name={CONTACT_NAME} href={CONTACT_FACEBOOK_URL} className="text-base font-semibold text-[#2563EB]"/>
