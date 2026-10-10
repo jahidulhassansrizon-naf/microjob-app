@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Pencil, Star, Share2, Upload, FileText, ChevronDown, ChevronUp, Minimize2, Combine, ArrowLeft, X, Plus, Lock, Type, Highlighter, PenTool, MousePointer2, Undo2, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle, } from "lucide-react";
@@ -58,8 +58,96 @@ function generateId() {
     }
     return `ann_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
+type EditPdfTextProps = { children: React.ReactNode };
+
+const EDIT_PDF_BN: Record<string, string> = {
+  "back to tools": "টুলসমূহে ফিরে যান",
+  "pdf tools": "PDF টুল",
+  "edit pdf": "PDF সম্পাদনা",
+  "free": "বিনামূল্যে",
+  "open any pdf in a full-screen editor — add or edit text, draw, highlight, sign, stamp, insert images and rearrange pages.": "যেকোনো PDF পূর্ণ-পর্দার এডিটরে খুলুন—লেখা যোগ বা সম্পাদনা করুন, আঁকুন, হাইলাইট করুন, স্বাক্ষর ও স্ট্যাম্প যোগ করুন, ছবি যুক্ত করুন এবং পৃষ্ঠাগুলো সাজান।",
+  "files (": "ফাইল (",
+  ")": ")",
+  "add": "যোগ করুন",
+  "drop a pdf here or click to upload": "PDF ফাইল এখানে টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+  "1 pdf file, max 300 mb": "সর্বোচ্চ ৩০০ MB আকারের ১টি PDF ফাইল",
+  "mb": "MB",
+  "preview": "প্রিভিউ",
+  "ready": "প্রস্তুত",
+  "empty": "খালি",
+  "ready to open in the editor": "এডিটরে খোলার জন্য প্রস্তুত",
+  "add files to get started": "শুরু করতে ফাইল যোগ করুন",
+  "click \"open editor\" below to add text, drawings and highlights.": "লেখা, আঁকা ও হাইলাইট যোগ করতে নিচের “এডিটর খুলুন” বোতামে ক্লিক করুন।",
+  "your result will appear here after you run the tool.": "টুলটি চালানোর পর ফলাফল এখানে দেখা যাবে।",
+  "add an input to get started": "শুরু করতে একটি ফাইল যোগ করুন",
+  "reset": "রিসেট",
+  "open editor": "এডিটর খুলুন",
+  "your files are processed in the browser — they are not uploaded to any server.": "আপনার ফাইল ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+  "?": "?",
+  "how to use": "ব্যবহারের নিয়ম",
+  "upload your pdf, click \"open editor\" to open the interactive editor, add text, shapes, or signatures, and save your edited document.": "আপনার PDF আপলোড করুন। ইন্টার‌্যাক্টিভ এডিটর খুলতে “এডিটর খুলুন” ক্লিক করুন, লেখা, আকৃতি বা স্বাক্ষর যোগ করুন এবং সম্পাদিত নথিটি সংরক্ষণ করুন।",
+  "tools in the same category": "একই বিভাগের টুল",
+  "compress pdf": "PDF সংকুচিত করুন",
+  "shrink embedded photos and scans inside a pdf — text stays sharp.": "PDF-এর ভেতরের ছবি ও স্ক্যানের আকার কমান—লেখা থাকবে স্পষ্ট।",
+  "merge pdfs": "PDF ফাইল একত্র করুন",
+  "combine multiple pdf files into one document in your chosen order.": "আপনার নির্ধারিত ক্রমে একাধিক PDF ফাইলকে একটি নথিতে একত্র করুন।",
+  "page": "পৃষ্ঠা",
+  "/": "/",
+  "saving...": "সংরক্ষণ হচ্ছে…",
+  "save & download": "সংরক্ষণ ও ডাউনলোড",
+  "loading pdf…": "PDF লোড হচ্ছে…",
+  "select / pan": "নির্বাচন / সরানো",
+  "add text": "লেখা যোগ করুন",
+  "draw / sign": "আঁকুন / স্বাক্ষর করুন",
+  "highlight": "হাইলাইট করুন",
+  "undo last action": "শেষ কাজটি পূর্বাবস্থায় ফেরান",
+  "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+  "share this tool": "এই টুলটি শেয়ার করুন",
+  "remove pdf": "PDF সরিয়ে ফেলুন",
+  "close editor": "এডিটর বন্ধ করুন",
+  "could not open this pdf. it may be corrupted or password protected.": "এই PDF খোলা যায়নি। ফাইলটি নষ্ট হতে পারে অথবা পাসওয়ার্ড দিয়ে সুরক্ষিত থাকতে পারে।",
+  "something went wrong while rendering this page.": "এই পৃষ্ঠা দেখাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+  "something went wrong while saving your pdf. please try again.": "PDF সংরক্ষণ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+};
+
+function normalizeEditPdfText(value: string): string {
+  return value.replace(/\r\n/g, " ").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function translateEditPdfText(value: string, locale: string | undefined, baseL?: (value: string) => string): string {
+  const raw = String(value ?? "");
+  if (!locale || !String(locale).toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+  const leading = raw.match(/^\s*/)?.[0] ?? "";
+  const trailing = raw.match(/\s*$/)?.[0] ?? "";
+  const key = normalizeEditPdfText(raw);
+  const exact = EDIT_PDF_BN[key];
+  if (exact !== undefined) return `${leading}${exact}${trailing}`;
+
+  let match = raw.trim().match(/^Ready to edit:\s*(.+)$/i);
+  if (match) return `${leading}সম্পাদনার জন্য প্রস্তুত: ${match[1]}${trailing}`;
+  match = raw.trim().match(/^Page\s+(\d+)$/i);
+  if (match) return `${leading}পৃষ্ঠা ${match[1]}${trailing}`;
+  match = raw.trim().match(/^Page\s+(\d+)\s*\/\s*(\d+)$/i);
+  if (match) return `${leading}পৃষ্ঠা ${match[1]} / ${match[2]}${trailing}`;
+  match = raw.trim().match(/^Could not open this PDF/i);
+  if (match) return `${leading}এই PDF খোলা যায়নি। ফাইলটি নষ্ট হতে পারে অথবা পাসওয়ার্ড দিয়ে সুরক্ষিত থাকতে পারে।${trailing}`;
+  match = raw.trim().match(/^Something went wrong while (rendering|saving)/i);
+  if (match) return `${leading}${match[1].toLowerCase() === "rendering" ? "পৃষ্ঠা দেখাতে" : "PDF সংরক্ষণ করতে"} সমস্যা হয়েছে। আবার চেষ্টা করুন।${trailing}`;
+
+  const fallback = baseL ? baseL(raw) : raw;
+  if (fallback !== raw && /[\u0980-\u09FF]/.test(fallback)) return `${leading}${fallback}${trailing}`;
+  return raw;
+}
+
+function EditPdfText({ children }: EditPdfTextProps) {
+  const { locale, L } = useSohozI18n();
+  if (typeof children !== "string") return <>{children}</>;
+  return <>{translateEditPdfText(children, locale, L)}</>;
+}
+
 export default function EditPdf() {
-    const { L } = useSohozI18n();
+    const { locale, L } = useSohozI18n();
+    const EL = useCallback((value: string) => translateEditPdfText(value, locale, L), [locale, L]);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showHowToUse, setShowHowToUse] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -542,16 +630,16 @@ export default function EditPdf() {
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
           <ArrowLeft size={14}/>
 
-          <span><T>{"Back to Tools"}</T></span>
+          <span><EditPdfText>{"Back to Tools"}</EditPdfText></span>
         </Link>
 
-        <span><T>{"/"}</T></span>
+        <span><EditPdfText>{"/"}</EditPdfText></span>
 
-        <span><T>{"PDF Tools"}</T></span>
+        <span><EditPdfText>{"PDF Tools"}</EditPdfText></span>
 
-        <span><T>{"/"}</T></span>
+        <span><EditPdfText>{"/"}</EditPdfText></span>
 
-        <span className="font-semibold text-[#0F172A]"><T>{"Edit PDF"}</T></span>
+        <span className="font-semibold text-[#0F172A]"><EditPdfText>{"Edit PDF"}</EditPdfText></span>
       </div>
 
       {/* Header Card */}
@@ -563,21 +651,21 @@ export default function EditPdf() {
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Edit PDF"}</T></h1>
+              <h1 className="text-lg font-bold text-[#0F172A]"><EditPdfText>{"Edit PDF"}</EditPdfText></h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><EditPdfText>{"Free\n              "}</EditPdfText></span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Open any PDF in a full-screen editor \u2014 add or edit text, draw,\n              highlight, sign, stamp, insert images and rearrange pages.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><EditPdfText>{"Open any PDF in a full-screen editor \u2014 add or edit text, draw,\n              highlight, sign, stamp, insert images and rearrange pages.\n            "}</EditPdfText></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={EL("Add to favorites")} title={EL("Add to favorites")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16}/>
           </button>
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={EL("Share this tool")} title={EL("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16}/>
           </button>
         </div>
@@ -589,12 +677,12 @@ export default function EditPdf() {
         <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Files ("}</T>{selectedFile ? 1 : 0}<T>{")\n              "}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Files ("}</EditPdfText>{selectedFile ? 1 : 0}<EditPdfText>{")\n              "}</EditPdfText></h2>
 
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-[#E2E8F0]">
                 <Plus size={12}/>
 
-                <span><T>{"Add"}</T></span>
+                <span><EditPdfText>{"Add"}</EditPdfText></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
               </label>
@@ -605,9 +693,9 @@ export default function EditPdf() {
                   <Upload size={20}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A]"><T>{"Drop a PDF here or click to upload\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Drop a PDF here or click to upload\n                "}</EditPdfText></span>
 
-                <span className="text-[10px] text-gray-400 font-medium mt-1"><T>{"1 PDF file, max 300 MB\n                "}</T></span>
+                <span className="text-[10px] text-gray-400 font-medium mt-1"><EditPdfText>{"1 PDF file, max 300 MB\n                "}</EditPdfText></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
               </label>) : (<div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
@@ -622,11 +710,11 @@ export default function EditPdf() {
                     </p>
 
                     <p className="text-[10px] text-gray-400">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<T>{"MB\n                    "}</T></p>
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<EditPdfText>{"MB\n                    "}</EditPdfText></p>
                   </div>
                 </div>
 
-                <button onClick={handleReset} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                <button onClick={handleReset} aria-label={EL("Remove PDF")} title={EL("Remove PDF")} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
                   <X size={16}/>
                 </button>
               </div>)}
@@ -636,10 +724,10 @@ export default function EditPdf() {
         {/* Right Side: Preview Box */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Preview"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Preview"}</EditPdfText></h2>
 
             <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-              {selectedFile ? <T>{"Ready"}</T> : <T>{"Empty"}</T>}
+              {selectedFile ? <EditPdfText>{"Ready"}</EditPdfText> : <EditPdfText>{"Empty"}</EditPdfText>}
             </span>
           </div>
 
@@ -651,12 +739,12 @@ export default function EditPdf() {
 
             <p className="text-xs font-bold text-[#0F172A]">
               {selectedFile
-        ? <T>{"Ready to open in the editor"}</T> : <T>{"Add files to get started"}</T>}
+        ? <EditPdfText>{"Ready to open in the editor"}</EditPdfText> : <EditPdfText>{"Add files to get started"}</EditPdfText>}
             </p>
 
             <p className="text-[11px] text-gray-400 mt-1">
               {selectedFile
-        ? <T>{'Click "Open editor" below to add text, drawings and highlights.'}</T> : <T>{"Your result will appear here after you run the tool."}</T>}
+        ? <EditPdfText>{'Click "Open editor" below to add text, drawings and highlights.'}</EditPdfText> : <EditPdfText>{"Your result will appear here after you run the tool."}</EditPdfText>}
             </p>
           </div>
 
@@ -668,7 +756,7 @@ export default function EditPdf() {
       {error && (<div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-red-700 font-medium">
           <AlertCircle size={15} className="text-red-500 shrink-0"/>
 
-          <span>{error}</span>
+          <span>{EL(error)}</span>
         </div>)}
 
       {/* Bottom Action Controls Bar */}
@@ -678,19 +766,19 @@ export default function EditPdf() {
 
           <span>
             {selectedFile
-        ? <T>{`Ready to edit: ${selectedFile.name}`}</T> : <T>{"Add an input to get started"}</T>}
+        ? <EditPdfText>{`Ready to edit: ${selectedFile.name}`}</EditPdfText> : <EditPdfText>{"Add an input to get started"}</EditPdfText>}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"><T>{"Reset\n          "}</T></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"><EditPdfText>{"Reset\n          "}</EditPdfText></button>
 
           <button onClick={handleOpenEditor} disabled={!selectedFile} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${selectedFile
             ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
             : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
             <Pencil size={14}/>
 
-            <span><T>{"Open editor"}</T></span>
+            <span><EditPdfText>{"Open editor"}</EditPdfText></span>
           </button>
         </div>
       </div>
@@ -699,27 +787,27 @@ export default function EditPdf() {
       <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0"/>
 
-        <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</T></span>
+        <span><EditPdfText>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</EditPdfText></span>
       </div>
 
       {/* How to use Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB] font-bold"><T>{"?"}</T></span>
+            <span className="text-[#2563EB] font-bold"><EditPdfText>{"?"}</EditPdfText></span>
 
-            <span><T>{"How to use"}</T></span>
+            <span><EditPdfText>{"How to use"}</EditPdfText></span>
           </div>
 
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3"><T>{"Upload your PDF, click \"Open editor\" to open the interactive editor,\n            add text, shapes, or signatures, and save your edited document.\n          "}</T></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3"><EditPdfText>{"Upload your PDF, click \"Open editor\" to open the interactive editor,\n            add text, shapes, or signatures, and save your edited document.\n          "}</EditPdfText></div>)}
       </div>
 
       {/* Same Category Tools */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Tools in the same category\n        "}</EditPdfText></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/compress-pdf" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
@@ -728,9 +816,9 @@ export default function EditPdf() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Compress PDF\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><EditPdfText>{"Compress PDF\n              "}</EditPdfText></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><T>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</T></p>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><EditPdfText>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</EditPdfText></p>
             </div>
           </Link>
 
@@ -740,9 +828,9 @@ export default function EditPdf() {
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Merge PDFs\n              "}</T></h4>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><EditPdfText>{"Merge PDFs\n              "}</EditPdfText></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><T>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</T></p>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><EditPdfText>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</EditPdfText></p>
             </div>
           </Link>
         </div>
@@ -764,25 +852,25 @@ export default function EditPdf() {
               </div>
 
               <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-xl p-1">
-                <button onClick={() => setTool("select")} title={L("Select / pan")} className={`p-2 rounded-lg transition-all ${tool === "select"
+                <button onClick={() => setTool("select")} title={EL("Select / pan")} className={`p-2 rounded-lg transition-all ${tool === "select"
                 ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
                 : "text-gray-400 hover:text-[#0F172A]"}`}>
                   <MousePointer2 size={16}/>
                 </button>
 
-                <button onClick={() => setTool("text")} title={L("Add text")} className={`p-2 rounded-lg transition-all ${tool === "text"
+                <button onClick={() => setTool("text")} title={EL("Add text")} className={`p-2 rounded-lg transition-all ${tool === "text"
                 ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
                 : "text-gray-400 hover:text-[#0F172A]"}`}>
                   <Type size={16}/>
                 </button>
 
-                <button onClick={() => setTool("draw")} title={L("Draw / sign")} className={`p-2 rounded-lg transition-all ${tool === "draw"
+                <button onClick={() => setTool("draw")} title={EL("Draw / sign")} className={`p-2 rounded-lg transition-all ${tool === "draw"
                 ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
                 : "text-gray-400 hover:text-[#0F172A]"}`}>
                   <PenTool size={16}/>
                 </button>
 
-                <button onClick={() => setTool("highlight")} title={L("Highlight")} className={`p-2 rounded-lg transition-all ${tool === "highlight"
+                <button onClick={() => setTool("highlight")} title={EL("Highlight")} className={`p-2 rounded-lg transition-all ${tool === "highlight"
                 ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
                 : "text-gray-400 hover:text-[#0F172A]"}`}>
                   <Highlighter size={16}/>
@@ -797,7 +885,7 @@ export default function EditPdf() {
                 }}/>))}
               </div>
 
-              <button onClick={handleUndo} disabled={annotations.length === 0} title={L("Undo last action")} className={`p-2 rounded-lg transition-all ${annotations.length === 0
+              <button onClick={handleUndo} disabled={annotations.length === 0} title={EL("Undo last action")} className={`p-2 rounded-lg transition-all ${annotations.length === 0
                 ? "text-gray-300 cursor-not-allowed"
                 : "text-gray-500 hover:bg-gray-50"}`}>
                 <Undo2 size={16}/>
@@ -812,7 +900,7 @@ export default function EditPdf() {
                     <ChevronLeft size={16}/>
                   </button>
 
-                  <span><T>{"Page "}</T>{currentPage}<T>{"/ "}</T>{numPages}
+                  <span><EditPdfText>{"Page "}</EditPdfText>{currentPage}<EditPdfText>{"/ "}</EditPdfText>{numPages}
                   </span>
 
                   <button onClick={() => goToPage(1)} disabled={currentPage >= numPages} className={`p-1.5 rounded-lg ${currentPage >= numPages
@@ -827,10 +915,10 @@ export default function EditPdf() {
                 : "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"}`}>
                 {isExporting ? (<Loader2 size={14} className="animate-spin"/>) : (<Download size={14}/>)}
 
-                <span>{isExporting ? <T>{"Saving..."}</T> : <T>{"Save & Download"}</T>}</span>
+                <span>{isExporting ? <EditPdfText>{"Saving..."}</EditPdfText> : <EditPdfText>{"Save & Download"}</EditPdfText>}</span>
               </button>
 
-              <button onClick={() => setIsEditorOpen(false)} className="p-2 text-gray-400 hover:text-[#0F172A] rounded-lg transition-colors">
+              <button onClick={() => setIsEditorOpen(false)} aria-label={EL("Close editor")} title={EL("Close editor")} className="p-2 text-gray-400 hover:text-[#0F172A] rounded-lg transition-colors">
                 <X size={18}/>
               </button>
             </div>
@@ -838,7 +926,7 @@ export default function EditPdf() {
             {error && (<div className="mx-4 mt-3 bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium shrink-0">
                 <AlertCircle size={14} className="text-red-500 shrink-0"/>
 
-                <span>{error}</span>
+                <span>{EL(error)}</span>
               </div>)}
 
             {/* Canvas area */}
@@ -846,7 +934,7 @@ export default function EditPdf() {
               {isLoadingPdf ? (<div className="flex flex-col items-center justify-center gap-2 text-gray-400 mt-20">
                   <Loader2 size={28} className="animate-spin"/>
 
-                  <span className="text-xs font-bold"><T>{"Loading PDF\u2026"}</T></span>
+                  <span className="text-xs font-bold"><EditPdfText>{"Loading PDF\u2026"}</EditPdfText></span>
                 </div>) : (<div className="relative shadow-lg bg-white" style={{
                     lineHeight: 0,
                 }}>

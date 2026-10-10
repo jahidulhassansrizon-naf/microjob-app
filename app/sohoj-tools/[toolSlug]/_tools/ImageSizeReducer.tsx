@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import JSZip from "jszip";
@@ -17,8 +17,140 @@ interface CompressedResult {
     name: string;
     mimeType: string;
 }
+/* -------------------------------------------------------------------------- */
+/* Page-specific English ↔ Bangla translation                                */
+/* -------------------------------------------------------------------------- */
+const IMAGE_SIZE_BN: Record<string, string> = {
+  "success": "সফল হয়েছে",
+  "unable to complete": "কাজটি সম্পন্ন করা যায়নি",
+  "close notification": "বিজ্ঞপ্তি বন্ধ করুন",
+  "back to tools": "টুলসের তালিকায় ফিরে যান",
+  "image tools": "ছবির টুলস",
+  "image size reducer": "ছবির ফাইলের আকার কমান",
+  "free": "বিনামূল্যে",
+  "shrink jpg, png, and webp photos in your browser — quality stays sharp.": "ব্রাউজারেই JPG, PNG ও WebP ছবির ফাইলের আকার কমান—ছবির মানও স্পষ্ট থাকবে।",
+  "quality": "ছবির মান",
+  "png is lossless; quality has little effect on size.": "PNG ফরম্যাটে ছবির মানের ক্ষতি হয় না; তাই মানের সেটিং বদলালেও ফাইলের আকার খুব একটা কমে না।",
+  "lower quality = smaller file size": "ছবির মান কমালে ফাইলের আকারও কমে",
+  "max dimension": "সর্বোচ্চ মাত্রা",
+  "keep original size": "মূল আকার অপরিবর্তিত রাখুন",
+  "3840px (4k)": "৩৮৪০ পিক্সেল (4K)",
+  "2560px (2k)": "২৫৬০ পিক্সেল (2K)",
+  "1920px (full hd)": "১৯২০ পিক্সেল (Full HD)",
+  "1280px (hd)": "১২৮০ পিক্সেল (HD)",
+  "1024px": "১০২৪ পিক্সেল",
+  "800px": "৮০০ পিক্সেল",
+  "images larger than this will be resized": "এর চেয়ে বড় ছবিগুলো নির্ধারিত মাত্রা অনুযায়ী ছোট করা হবে।",
+  "preserve exif": "EXIF তথ্য সংরক্ষণ করুন",
+  "keep camera & location data": "ক্যামেরা ও অবস্থানের তথ্য রেখে দিন",
+  "keep original name": "মূল নাম অপরিবর্তিত রাখুন",
+  "don't add the \"-compressed\" suffix": "ফাইলের নামের শেষে “-compressed” যোগ করবেন না",
+  "output format": "আউটপুট ফরম্যাট",
+  "original": "মূল ফরম্যাট",
+  "compression preview": "সংকুচিত ছবির পূর্বরূপ",
+  "done": "সম্পন্ন",
+  "empty": "এখনও কোনো ছবি যোগ করা হয়নি",
+  "add an image to get started": "শুরু করতে একটি ছবি যোগ করুন",
+  "before and after previews will appear here after processing.": "প্রক্রিয়াকরণ শেষ হলে এখানে আগের ও পরের ছবির পূর্বরূপ দেখা যাবে।",
+  "click to compare": "তুলনা করতে ক্লিক করুন",
+  "add more images": "আরও ছবি যোগ করুন",
+  "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+  "reset": "রিসেট করুন",
+  "compress more images": "আরও ছবি সংকুচিত করুন",
+  "zipping...": "ZIP ফাইল তৈরি হচ্ছে...",
+  "compressing...": "ছবি সংকুচিত হচ্ছে...",
+  "compress images": "ছবি সংকুচিত করুন",
+  "before": "আগের ছবি",
+  "exit": "বন্ধ করুন",
+  "download": "ডাউনলোড",
+  "download zip": "ZIP ডাউনলোড করুন",
+  "edit": "সম্পাদনা করুন",
+  "after": "পরের ছবি",
+  "image editing": "ছবি সম্পাদনা",
+  "brightness": "উজ্জ্বলতা",
+  "contrast": "কনট্রাস্ট",
+  "saturation": "রঙের গাঢ়ত্ব",
+  "saving...": "সংরক্ষণ করা হচ্ছে...",
+  "save & apply edits": "সম্পাদনা সংরক্ষণ ও প্রয়োগ করুন",
+  "share this tool": "এই টুলটি শেয়ার করুন",
+  "remove image": "ছবি সরান",
+  "before and after image comparison": "আগের ও পরের ছবির তুলনা",
+  "please wait until the current processing is finished.": "বর্তমান প্রক্রিয়াকরণ শেষ হওয়া পর্যন্ত অপেক্ষা করুন।",
+  "please select jpg, png, or webp image files.": "অনুগ্রহ করে JPG, PNG অথবা WebP ফাইল নির্বাচন করুন।",
+  "unable to determine image dimensions.": "ছবির মাত্রা নির্ধারণ করা যায়নি।",
+  "the processed image could not be decoded.": "প্রক্রিয়াকরণ করা ছবিটি খোলা যায়নি।",
+  "canvas rendering is not available in this browser.": "এই ব্রাউজারে ক্যানভাস রেন্ডারিং সুবিধা নেই।",
+  "the browser could not encode the edited image.": "ব্রাউজারটি সম্পাদিত ছবিটি তৈরি করতে পারেনি।",
+  "the source image could not be loaded for editing.": "সম্পাদনার জন্য মূল ছবিটি লোড করা যায়নি।",
+  "the image could not be downloaded.": "ছবিটি ডাউনলোড করা যায়নি।",
+  "edits applied successfully.": "ছবির সম্পাদনাগুলো সফলভাবে প্রয়োগ করা হয়েছে।",
+  "the edited image could not be saved.": "সম্পাদিত ছবিটি সংরক্ষণ করা যায়নি।",
+  "zip downloaded successfully.": "ZIP ফাইল সফলভাবে ডাউনলোড হয়েছে।",
+  "the zip file could not be generated.": "ZIP ফাইল তৈরি করা যায়নি।",
+  "tool link copied to clipboard.": "টুলের লিংক কপি করা হয়েছে।",
+  "sharing is not available in this browser.": "এই ব্রাউজারে শেয়ার করার সুবিধা নেই।",
+  "the tool link could not be shared.": "টুলের লিংক শেয়ার করা যায়নি।",
+  "images compressed successfully": "ছবিগুলো সফলভাবে সংকুচিত হয়েছে",
+  "one or more images could not be processed.": "এক বা একাধিক ছবি প্রক্রিয়াকরণ করা যায়নি।",
+  "compress images quickly in your browser.": "ব্রাউজারেই দ্রুত ছবির আকার কমান।",
+  "add an input to get started": "শুরু করতে একটি ছবি যোগ করুন",
+  "nid joiner": "NID ছবি একত্র করার টুল",
+  "turn nid card front and back photos into a clean a4 pdf — all in your browser.": "NID কার্ডের সামনের ও পেছনের ছবি একসঙ্গে সাজিয়ে A4 PDF তৈরি করুন—সব কাজই হবে আপনার ব্রাউজারে।",
+  "remove background": "ছবির ব্যাকগ্রাউন্ড সরান",
+  "erase portrait, product, or logo backgrounds in your browser — download a transparent png.": "ব্রাউজারেই ব্যক্তি, পণ্য বা লোগোর ছবির ব্যাকগ্রাউন্ড সরিয়ে স্বচ্ছ PNG ডাউনলোড করুন।",
+  "passport joiner": "পাসপোর্টের ছবি একত্র করার টুল",
+  "turn passport front and back page photos into a clean a4 pdf — icao 88×125 mm layout, all in your browser.": "পাসপোর্টের সামনের ও পেছনের পৃষ্ঠার ছবি এক পাতার পরিষ্কার A4 PDF-এ সাজান—ICAO-এর ৮৮×১২৫ মিমি বিন্যাসে, ব্রাউজারেই।",
+  "saving": "সংরক্ষণ করা হচ্ছে",
+};
+
+function normalizeImageSizeText(value: string): string {
+  return value.replace(/\\r\\n/g, " ").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function translateImageSizeText(
+  value: unknown,
+  locale: string | undefined,
+  baseL?: (value: string) => string,
+): string {
+  const raw = String(value ?? "");
+  if (!locale || !String(locale).toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+  const key = normalizeImageSizeText(raw);
+  const exact = IMAGE_SIZE_BN[key];
+  if (exact !== undefined) return exact;
+
+  let match = /^(\d+)\s+file\(s\) added$/i.exec(key);
+  if (match) return `${match[1]}টি ফাইল যোগ করা হয়েছে`;
+  match = /^(\d+)\s+image\(s\) ready for compression$/i.exec(key);
+  if (match) return `${match[1]}টি ছবি সংকুচিত করার জন্য প্রস্তুত`;
+  match = /^processing images…\s*(\d+)%$/i.exec(raw.trim());
+  if (match) return `ছবি প্রক্রিয়াকরণ হচ্ছে… ${match[1]}%`;
+  match = /^processing images\.\.\.\s*(\d+)%$/i.exec(raw.trim());
+  if (match) return `ছবি প্রক্রিয়াকরণ হচ্ছে… ${match[1]}%`;
+  match = /^(\d+)\s+image\(s\) compressed successfully\.$/i.exec(key);
+  if (match) return `${match[1]}টি ছবি সফলভাবে সংকুচিত হয়েছে।`;
+  match = /^(\d+) image\(s\) added\. (\d+) unsupported file\(s\) were skipped\.$/i.exec(key);
+  if (match) return `${match[1]}টি ছবি যোগ করা হয়েছে। সমর্থিত নয় এমন ${match[2]}টি ফাইল বাদ দেওয়া হয়েছে।`;
+  match = /^click or scan qr code to upload \((.+)\)$/i.exec(key);
+  if (match) return `আপলোড করতে ক্লিক করুন অথবা QR কোড স্ক্যান করুন (${match[1]})`;
+
+  // Prefer a complete translation from the shared dictionary; reject mixed-language results.
+  const translated = baseL ? baseL(raw) : raw;
+  if (translated && translated !== raw && /[\u0980-\u09FF]/.test(translated)) {
+    const technicalStripped = translated.replace(/JPG|PNG|WebP|AVIF|EXIF|ZIP|NID|MB|GB|KB|B|px|4K|2K|HD|Full HD/gi, "");
+    if (!/[A-Za-z]/.test(technicalStripped)) return translated.trim();
+  }
+  return raw;
+}
+
+function ImageSizeT({ children }: { children: React.ReactNode }) {
+  const { locale, L } = useSohozI18n();
+  if (typeof children !== "string") return <>{children}</>;
+  return <>{translateImageSizeText(children, locale, L)}</>;
+}
+
 export default function ImageSizeReducer() {
-    const { L } = useSohozI18n();
+    const { L, locale } = useSohozI18n();
+    const IL = useCallback((value: string) => translateImageSizeText(value, locale, L), [locale, L]);
     const [quality, setQuality] = useState<number>(75);
     const [maxDimension, setMaxDimension] = useState<string>("Keep original size");
     const [isDimensionOpen, setIsDimensionOpen] = useState<boolean>(false);
@@ -803,8 +935,8 @@ export default function ImageSizeReducer() {
     const handleShare = useCallback(async () => {
         try {
             const shareData = {
-                title: "Image Size Reducer",
-                text: "Compress images quickly in your browser.",
+                title: IL("Image Size Reducer"),
+                text: IL("Compress images quickly in your browser."),
                 url: window.location.href,
             };
             if (navigator.share) {
@@ -825,7 +957,7 @@ export default function ImageSizeReducer() {
             console.error("Share error:", error);
             showNotification("The tool link could not be shared.", "error");
         }
-    }, [showNotification]);
+    }, [showNotification, IL]);
     return (<div className="w-full space-y-5 text-[#0F172A] font-sans pb-24 relative">
       {/* Toast Notification */}
       {showToast && (<div className={`fixed top-5 right-5 max-w-sm px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 z-[70] animate-in fade-in slide-in-from-top-2 ${toastType === "success"
@@ -837,14 +969,14 @@ export default function ImageSizeReducer() {
 
           <div className="min-w-0">
             <p className="text-xs font-bold">
-              {toastType === "success" ? <T>{"Success"}</T> : <T>{"Unable to complete"}</T>}
+              {toastType === "success" ? <ImageSizeT>{"Success"}</ImageSizeT> : <ImageSizeT>{"Unable to complete"}</ImageSizeT>}
             </p>
             <p className={`text-[11px] font-medium break-words ${toastType === "success" ? "text-emerald-600" : "text-red-600"}`}>
-              {toastMessage}
+              <ImageSizeT>{toastMessage}</ImageSizeT>
             </p>
           </div>
 
-          <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0" aria-label={L("Close notification")}>
+          <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0" aria-label={IL("Close notification")}>
             <X size={14}/>
           </button>
         </div>)}
@@ -856,12 +988,12 @@ export default function ImageSizeReducer() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link className="flex items-center gap-1 hover:text-[#0F172A] transition-colors cursor-pointer" href="/sohoj-tools">
           <ArrowLeft size={14}/>
-          <span><T>{"Back to Tools"}</T></span>
+          <span><ImageSizeT>{"Back to Tools"}</ImageSizeT></span>
         </Link>
-        <span><T>{"/"}</T></span>
-        <span><T>{"Image Tools"}</T></span>
-        <span><T>{"/"}</T></span>
-        <span className="font-semibold text-[#0F172A]"><T>{"Image Size Reducer"}</T></span>
+        <span><ImageSizeT>{"/"}</ImageSizeT></span>
+        <span><ImageSizeT>{"Image Tools"}</ImageSizeT></span>
+        <span><ImageSizeT>{"/"}</ImageSizeT></span>
+        <span className="font-semibold text-[#0F172A]"><ImageSizeT>{"Image Size Reducer"}</ImageSizeT></span>
       </div>
 
       {/* Header Card */}
@@ -872,10 +1004,10 @@ export default function ImageSizeReducer() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Image Size Reducer\n              "}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-lg font-bold text-[#0F172A]"><ImageSizeT>{"Image Size Reducer\n              "}</ImageSizeT></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><ImageSizeT>{"Free\n              "}</ImageSizeT></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n              sharp.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><ImageSizeT>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n              sharp.\n            "}</ImageSizeT></p>
           </div>
         </div>
 
@@ -883,7 +1015,7 @@ export default function ImageSizeReducer() {
           <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
             <Star size={16}/>
           </button>
-          <button onClick={handleShare} title={L("Share this tool")} aria-label={L("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button onClick={handleShare} title={IL("Share this tool")} aria-label={IL("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
             <Share2 size={16}/>
           </button>
         </div>
@@ -896,9 +1028,9 @@ export default function ImageSizeReducer() {
           {/* Quality Slider */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#0F172A]"><T>{"Quality"}</T></label>
+              <label className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Quality"}</ImageSizeT></label>
               <span className="text-xs font-bold text-[#0F172A]">
-                {quality}<T>{"%\n              "}</T></span>
+                {quality}<ImageSizeT>{"%\n              "}</ImageSizeT></span>
             </div>
             <input type="range" min="1" max="100" value={quality} onChange={(e) => {
             setQuality(Number(e.target.value));
@@ -906,15 +1038,15 @@ export default function ImageSizeReducer() {
         }} className="w-full accent-[#2563EB] bg-gray-200 rounded-lg h-2 cursor-pointer"/>
             <p className="text-[10px] text-gray-400 font-medium">
               {outputFormat === "PNG"
-        ? <T>{"PNG is lossless; quality has little effect on size."}</T> : <T>{"Lower quality = smaller file size"}</T>}
+        ? <ImageSizeT>{"PNG is lossless; quality has little effect on size."}</ImageSizeT> : <ImageSizeT>{"Lower quality = smaller file size"}</ImageSizeT>}
             </p>
           </div>
 
           {/* Max Dimension Dropdown */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2 relative" ref={dropdownRef}>
-            <label className="text-xs font-bold text-[#0F172A] block"><T>{"Max dimension\n            "}</T></label>
+            <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Max dimension\n            "}</ImageSizeT></label>
             <div onClick={() => setIsDimensionOpen(!isDimensionOpen)} className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-[#0F172A] cursor-pointer hover:border-[#2563EB] transition-all shadow-xs">
-              <span>{maxDimension}</span>
+              <span><ImageSizeT>{maxDimension}</ImageSizeT></span>
               <ChevronDown size={16} className={`text-gray-400 transition-transform ${isDimensionOpen ? "rotate-180" : ""}`}/>
             </div>
 
@@ -926,18 +1058,18 @@ export default function ImageSizeReducer() {
                 }} className={`px-3 py-2 text-xs font-medium cursor-pointer transition-colors ${maxDimension === opt
                     ? "bg-[#F8FAFC] text-[#2563EB] font-bold"
                     : "text-[#0F172A] hover:bg-gray-50"}`}>
-                    {opt}
+                    <ImageSizeT>{opt}</ImageSizeT>
                   </div>))}
               </div>)}
 
-            <p className="text-[10px] text-gray-400 font-medium"><T>{"Images larger than this will be resized\n            "}</T></p>
+            <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Images larger than this will be resized\n            "}</ImageSizeT></p>
           </div>
 
           {/* Preserve EXIF */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-[#0F172A] block"><T>{"Preserve EXIF\n              "}</T></label>
-              <p className="text-[10px] text-gray-400 font-medium"><T>{"Keep camera & location data\n              "}</T></p>
+              <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Preserve EXIF\n              "}</ImageSizeT></label>
+              <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Keep camera & location data\n              "}</ImageSizeT></p>
             </div>
             <button onClick={() => {
             setPreserveExif(!preserveExif);
@@ -950,8 +1082,8 @@ export default function ImageSizeReducer() {
           {/* Keep original name */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-[#0F172A] block"><T>{"Keep original name\n              "}</T></label>
-              <p className="text-[10px] text-gray-400 font-medium"><T>{"Don't add the \"-compressed\" suffix\n              "}</T></p>
+              <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Keep original name\n              "}</ImageSizeT></label>
+              <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Don't add the \"-compressed\" suffix\n              "}</ImageSizeT></p>
             </div>
             <button onClick={() => {
             setKeepOriginalName(!keepOriginalName);
@@ -963,7 +1095,7 @@ export default function ImageSizeReducer() {
 
           {/* Output Format */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2">
-            <label className="text-xs font-bold text-[#0F172A] block"><T>{"Output format\n            "}</T></label>
+            <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Output format\n            "}</ImageSizeT></label>
             <div className="grid grid-cols-5 gap-1.5 bg-gray-50/80 p-1 rounded-xl border border-gray-100">
               {[
             { name: "Original", icon: Crop },
@@ -980,7 +1112,7 @@ export default function ImageSizeReducer() {
                     ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
                     : "text-gray-500 hover:text-[#0F172A]"}`}>
                     <IconComponent size={14}/>
-                    <span>{<T>{item.name}</T>}</span>
+                    <span>{<ImageSizeT>{item.name}</ImageSizeT>}</span>
                   </button>);
         })}
             </div>
@@ -990,16 +1122,16 @@ export default function ImageSizeReducer() {
         {/* Right Side: Compression Preview Box */}
         <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[460px] transition-colors ${isDragging ? "bg-[#F8FAFC]/30 border-[#2563EB]" : ""}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Compression preview\n            "}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Compression preview\n            "}</ImageSizeT></h2>
             <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isCompressed
             ? "bg-emerald-100 text-emerald-700"
             : selectedFiles.length > 0
                 ? "bg-[#E2E8F0] text-[#2563EB]"
                 : "bg-gray-100 text-gray-500"}`}>
               {isCompressed
-        ? <T>{"Done"}</T> : selectedFiles.length > 0
-        ? `${selectedFiles.length} file(s) added`
-        : "Empty"}
+        ? <ImageSizeT>{"Done"}</ImageSizeT> : selectedFiles.length > 0
+        ? <ImageSizeT>{`${selectedFiles.length} file(s) added`}</ImageSizeT>
+        : <ImageSizeT>{"Empty"}</ImageSizeT>}
             </span>
           </div>
 
@@ -1009,8 +1141,8 @@ export default function ImageSizeReducer() {
               <div className="w-10 h-10 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
                 <Upload size={20}/>
               </div>
-              <p className="text-xs font-bold text-[#0F172A]"><T>{"Add an image to get started\n              "}</T></p>
-              <p className="text-[11px] text-gray-400 mt-1"><T>{"Before and after previews will appear here after processing.\n              "}</T></p>
+              <p className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Add an image to get started\n              "}</ImageSizeT></p>
+              <p className="text-[11px] text-gray-400 mt-1"><ImageSizeT>{"Before and after previews will appear here after processing.\n              "}</ImageSizeT></p>
             </div>) : (<div className="flex flex-wrap gap-4 items-start justify-start overflow-y-auto max-h-[420px] p-1">
               {previews.map((src, index) => {
                 const file = selectedFiles[index];
@@ -1029,14 +1161,14 @@ export default function ImageSizeReducer() {
                       <img src={displaySrc} alt={file?.name || "preview"} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"/>
 
                       {isCompressed && compRes && (<>
-                          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs"><T>{"-"}</T>{compRes.reductionPercentage}<T>{"%\n                          "}</T></span>
+                          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs"><ImageSizeT>{"-"}</ImageSizeT>{compRes.reductionPercentage}<ImageSizeT>{"%\n                          "}</ImageSizeT></span>
 
                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                            <span className="bg-black/75 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-xs"><T>{"Click to compare\n                            "}</T></span>
+                            <span className="bg-black/75 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-xs"><ImageSizeT>{"Click to compare\n                            "}</ImageSizeT></span>
                           </div>
                         </>)}
 
-                      <button onClick={(e) => handleRemoveImage(index, e)} disabled={isCompressing} className="absolute top-2 left-2 bg-black/50 hover:bg-black/80 text-white p-1 rounded-md backdrop-blur-xs transition-all opacity-80 group-hover:opacity-100 z-10 cursor-pointer" title={L("Remove image")}>
+                      <button onClick={(e) => handleRemoveImage(index, e)} disabled={isCompressing} className="absolute top-2 left-2 bg-black/50 hover:bg-black/80 text-white p-1 rounded-md backdrop-blur-xs transition-all opacity-80 group-hover:opacity-100 z-10 cursor-pointer" title={IL("Remove image")}>
                         <X size={12}/>
                       </button>
                     </div>
@@ -1051,12 +1183,12 @@ export default function ImageSizeReducer() {
                             <span>
                               {formatFileSize(compRes.compressedSize)}
                             </span>
-                            <span className="text-emerald-400"><T>{"\u2022"}</T></span>
+                            <span className="text-emerald-400"><ImageSizeT>{"\u2022"}</ImageSizeT></span>
                             <span>
-                              {compRes.width}<T>{"x"}</T>{compRes.height}
+                              {compRes.width}<ImageSizeT>{"x"}</ImageSizeT>{compRes.height}
                             </span>
                           </div>) : (<span className="text-[10px] text-gray-400 font-medium">
-                            {file ? formatFileSize(file.size) : <T>{"0 B"}</T>}
+                            {file ? formatFileSize(file.size) : <ImageSizeT>{"0 B"}</ImageSizeT>}
                           </span>)}
                       </div>
                     </div>
@@ -1065,7 +1197,7 @@ export default function ImageSizeReducer() {
 
               <div onClick={() => fileInputRef.current?.click()} className="w-44 h-52 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#2563EB] bg-gray-50/40 hover:bg-[#F8FAFC]/20 flex flex-col items-center justify-center text-gray-400 hover:text-[#2563EB] cursor-pointer transition-all shrink-0">
                 <Plus className="text-gray-400" size={22}/>
-                <span className="text-xs font-semibold text-gray-500 mt-2"><T>{"Add more images\n                "}</T></span>
+                <span className="text-xs font-semibold text-gray-500 mt-2"><ImageSizeT>{"Add more images\n                "}</ImageSizeT></span>
               </div>
             </div>)}
 
@@ -1073,40 +1205,51 @@ export default function ImageSizeReducer() {
         </div>
       </div>
 
-      {/* Tools in the same category */}
+      {/* Related tools: clear titles and descriptions help users understand each tool */}
       <div className="space-y-3 pt-4">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <h3 className="text-sm font-bold text-[#0F172A]"><ImageSizeT>{"Tools in the same category"}</ImageSizeT></h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {[
             {
-                name: "NID Joiner",
-                href: "/sohoj-tools/nid-joiner",
-                icon: CreditCard,
-                bg: "bg-emerald-500",
+              name: "NID Joiner",
+              description: "Turn NID card front and back photos into a clean A4 PDF — all in your browser.",
+              href: "/sohoj-tools/nid-joiner",
+              icon: CreditCard,
             },
             {
-                name: "Remove Background",
-                href: "/sohoj-tools/remove-background",
-                icon: null,
-                bg: "bg-emerald-500",
+              name: "Remove Background",
+              description: "Erase portrait, product, or logo backgrounds in your browser — download a transparent PNG.",
+              href: "/sohoj-tools/remove-background",
+              icon: ImageIcon,
             },
             {
-                name: "Passport Joiner",
-                href: "/sohoj-tools/passport-joiner",
-                icon: BookOpen,
-                bg: "bg-emerald-500",
+              name: "Passport Joiner",
+              description: "Turn passport front and back page photos into a clean A4 PDF — ICAO 88×125 mm layout, all in your browser.",
+              href: "/sohoj-tools/passport-joiner",
+              icon: BookOpen,
             },
-        ].map((tool, idx) => {
+          ].map((tool) => {
             const Icon = tool.icon;
-            return (<Link key={idx} href={tool.href} className={`${tool.bg} aspect-square flex flex-col items-center justify-center p-6 rounded-3xl shadow-sm text-center text-white hover:opacity-95 transition-all group cursor-pointer`}>
-                <div className="w-10 h-10 mb-2 flex items-center justify-center">
-                  {Icon && <Icon className="text-white" size={28}/>}
+            return (
+              <Link
+                key={tool.name}
+                href={tool.href}
+                className="group flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-xs transition-all hover:border-[#CBD5E1] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB] transition-colors group-hover:bg-blue-50">
+                  <Icon size={20} aria-hidden="true" />
                 </div>
-                <span className="text-[11px] font-bold leading-tight">
-                  {<T>{tool.name}</T>}
-                </span>
-              </Link>);
-        })}
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-[#2563EB]">
+                    <ImageSizeT>{tool.name}</ImageSizeT>
+                  </h4>
+                  <p className="mt-1 line-clamp-3 text-[11px] leading-relaxed text-gray-500">
+                    <ImageSizeT>{tool.description}</ImageSizeT>
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -1123,11 +1266,11 @@ export default function ImageSizeReducer() {
 
           <span className="truncate">
             {isCompressing
-        ? <T>{`Processing images… ${compressionProgress}%`}</T> : isCompressed
-        ? "Images compressed successfully"
+        ? <ImageSizeT>{`Processing images… ${compressionProgress}%`}</ImageSizeT> : isCompressed
+        ? <ImageSizeT>{"Images compressed successfully"}</ImageSizeT>
         : selectedFiles.length > 0
-            ? `${selectedFiles.length} image(s) ready for compression`
-            : "Add an input to get started"}
+            ? <ImageSizeT>{`${selectedFiles.length} image(s) ready for compression`}</ImageSizeT>
+            : <ImageSizeT>{"Add an input to get started"}</ImageSizeT>}
           </span>
 
           {isCompressing && (<span className="hidden sm:block w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
@@ -1136,21 +1279,21 @@ export default function ImageSizeReducer() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"><T>{"Reset\n          "}</T></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"><ImageSizeT>{"Reset\n          "}</ImageSizeT></button>
 
           {isCompressed ? (<>
               <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1.5">
                 <RefreshCw size={14}/>
-                <span><T>{"Compress more images"}</T></span>
+                <span><ImageSizeT>{"Compress more images"}</ImageSizeT></span>
               </button>
 
               <button disabled={isZipping} onClick={handleDownloadAll} className="px-5 py-2 text-xs font-bold bg-[#2563EB] text-white rounded-xl hover:bg-[#2563EB] transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50">
                 {isZipping ? (<Loader2 className="animate-spin" size={14}/>) : compressedResults.length > 1 ? (<Archive size={14}/>) : (<Download size={14}/>)}
                 <span>
                   {isZipping
-            ? <T>{"Zipping..."}</T> : compressedResults.length > 1
-            ? "Download ZIP"
-            : "Download"}
+            ? <ImageSizeT>{"Zipping..."}</ImageSizeT> : compressedResults.length > 1
+            ? <ImageSizeT>{"Download ZIP"}</ImageSizeT>
+            : <ImageSizeT>{"Download"}</ImageSizeT>}
                 </span>
               </button>
             </>) : (<button disabled={selectedFiles.length === 0 || isCompressing} onClick={handleCompress} className={`px-5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${selectedFiles.length > 0 && !isCompressing
@@ -1158,7 +1301,7 @@ export default function ImageSizeReducer() {
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
               {isCompressing && <Loader2 className="animate-spin" size={14}/>}
               <span>
-                {isCompressing ? <T>{"Compressing..."}</T> : <T>{"Compress images"}</T>}
+                {isCompressing ? <ImageSizeT>{"Compressing..."}</ImageSizeT> : <ImageSizeT>{"Compress images"}</ImageSizeT>}
               </span>
             </button>)}
         </div>
@@ -1167,7 +1310,7 @@ export default function ImageSizeReducer() {
       {/* BEFORE / AFTER SIDE-BY-SIDE LIGHTBOX MODAL */}
       {activeCompareIndex !== null &&
             isCompressed &&
-            compressedResults[activeCompareIndex] && (<div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200 select-none" role="dialog" aria-modal="true" aria-label={L("Before and after image comparison")} onMouseDown={(e) => {
+            compressedResults[activeCompareIndex] && (<div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200 select-none" role="dialog" aria-modal="true" aria-label={IL("Before and after image comparison")} onMouseDown={(e) => {
                 if (e.target === e.currentTarget)
                     closeCompareModal();
             }}>
@@ -1185,13 +1328,13 @@ export default function ImageSizeReducer() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-1 px-4 overflow-hidden relative">
               {/* Left Column: Before */}
               <div className="relative flex flex-col items-center justify-center border-r border-white/10 overflow-hidden bg-black/40 rounded-l-2xl">
-                <span className="absolute top-4 left-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10"><T>{"Before\n                "}</T></span>
+                <span className="absolute top-4 left-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10"><ImageSizeT>{"Before\n                "}</ImageSizeT></span>
 
                 <div className="w-full h-full flex items-center justify-center p-6 overflow-auto" style={{
                 transform: `scale(${zoomLevel / 100})`,
                 transition: "transform 0.15s ease-out",
             }}>
-                  <img src={previews[activeCompareIndex]} alt={L("Before")} className="max-h-[75vh] max-w-full object-contain shadow-2xl"/>
+                  <img src={previews[activeCompareIndex]} alt={IL("Before")} className="max-h-[75vh] max-w-full object-contain shadow-2xl"/>
                 </div>
 
                 {/* Zoom Controls */}
@@ -1200,7 +1343,7 @@ export default function ImageSizeReducer() {
                     <ZoomOut size={14}/>
                   </button>
                   <span className="font-mono text-[11px] font-bold">
-                    {zoomLevel}<T>{"%\n                  "}</T></span>
+                    {zoomLevel}<ImageSizeT>{"%\n                  "}</ImageSizeT></span>
                   <button onClick={() => setZoomLevel((z) => Math.min(200, z + 25))} className="hover:text-[#2563EB] transition-colors cursor-pointer">
                     <ZoomIn size={14}/>
                   </button>
@@ -1214,30 +1357,30 @@ export default function ImageSizeReducer() {
                   <div className="flex items-center gap-2">
                     <button onClick={closeCompareModal} className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-indigo-400/30 cursor-pointer">
                       <LogOut size={12}/>
-                      <span><T>{"Exit"}</T></span>
+                      <span><ImageSizeT>{"Exit"}</ImageSizeT></span>
                     </button>
 
                     {compressedResults[activeCompareIndex] && (<button onClick={() => handleDownloadSingle(compressedResults[activeCompareIndex])} className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-emerald-400/30 cursor-pointer">
                         <Download size={12}/>
-                        <span><T>{"Download"}</T></span>
+                        <span><ImageSizeT>{"Download"}</ImageSizeT></span>
                       </button>)}
 
                     <button onClick={() => setIsEditing(!isEditing)} className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${isEditing
                 ? "bg-[#2563EB] hover:bg-[#2563EB] text-white border-[#2563EB]"
                 : "bg-white/10 hover:bg-white/20 text-white border-white/20"}`}>
                       <Pencil size={12}/>
-                      <span><T>{"Edit"}</T></span>
+                      <span><ImageSizeT>{"Edit"}</ImageSizeT></span>
                     </button>
                   </div>
 
-                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md"><T>{"After\n                  "}</T></span>
+                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md"><ImageSizeT>{"After\n                  "}</ImageSizeT></span>
                 </div>
 
                 <div className="w-full h-full flex items-center justify-center p-6 overflow-auto" style={{
                 transform: `scale(${zoomLevel / 100})`,
                 transition: "transform 0.15s ease-out",
             }}>
-                  <img src={compressedResults[activeCompareIndex].previewUrl} alt={L("After")} className="max-h-[75vh] max-w-full object-contain shadow-2xl transition-all duration-100" style={{
+                  <img src={compressedResults[activeCompareIndex].previewUrl} alt={IL("After")} className="max-h-[75vh] max-w-full object-contain shadow-2xl transition-all duration-100" style={{
                 filter: `brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%)`,
             }}/>
                 </div>
@@ -1246,7 +1389,7 @@ export default function ImageSizeReducer() {
                 {isEditing && (<div className="absolute top-0 right-0 h-full w-64 bg-white shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
                     <div className="p-6 flex flex-col mt-14 overflow-y-auto flex-1">
                       <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Image Editing\n                        "}</T></h3>
+                        <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider"><ImageSizeT>{"Image Editing\n                        "}</ImageSizeT></h3>
                         <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors cursor-pointer">
                           <X size={16}/>
                         </button>
@@ -1256,8 +1399,8 @@ export default function ImageSizeReducer() {
                         {/* Brightness */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
-                            <span><T>{"Brightness"}</T></span>
-                            <span>{editSettings.brightness}<T>{"%"}</T></span>
+                            <span><ImageSizeT>{"Brightness"}</ImageSizeT></span>
+                            <span>{editSettings.brightness}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.brightness} onChange={(e) => setEditSettings({
                     ...editSettings,
@@ -1268,8 +1411,8 @@ export default function ImageSizeReducer() {
                         {/* Contrast */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
-                            <span><T>{"Contrast"}</T></span>
-                            <span>{editSettings.contrast}<T>{"%"}</T></span>
+                            <span><ImageSizeT>{"Contrast"}</ImageSizeT></span>
+                            <span>{editSettings.contrast}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.contrast} onChange={(e) => setEditSettings({
                     ...editSettings,
@@ -1280,8 +1423,8 @@ export default function ImageSizeReducer() {
                         {/* Saturation */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
-                            <span><T>{"Saturation"}</T></span>
-                            <span>{editSettings.saturation}<T>{"%"}</T></span>
+                            <span><ImageSizeT>{"Saturation"}</ImageSizeT></span>
+                            <span>{editSettings.saturation}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.saturation} onChange={(e) => setEditSettings({
                     ...editSettings,
@@ -1293,7 +1436,7 @@ export default function ImageSizeReducer() {
                       <button onClick={handleApplyEditing} disabled={isApplyingEdit} className="mt-6 w-full py-2.5 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                         {isApplyingEdit && (<Loader2 className="animate-spin" size={14}/>)}
                         <span>
-                          {isApplyingEdit ? <T>{"Saving..."}</T> : <T>{"Save & Apply Edits"}</T>}
+                          {isApplyingEdit ? <ImageSizeT>{"Saving..."}</ImageSizeT> : <ImageSizeT>{"Save & Apply Edits"}</ImageSizeT>}
                         </span>
                       </button>
                     </div>

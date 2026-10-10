@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -72,8 +72,136 @@ function resolvePageDimensions(imgObj: Pick<UploadedImage, "width" | "height">, 
     }
     return { pdfWidth, pdfHeight, pageOrientation };
 }
+type ImagesToPdfTranslator = (value: string) => string;
+
+const IMAGES_TO_PDF_BN: Record<string, string> = {
+    "sohoj tools": "সহজ টুলস",
+    "/": "/",
+    "image tools": "ছবির টুলস",
+    "images to pdf": "ছবি থেকে PDF",
+    "free": "বিনামূল্যে",
+    "combine jpg, png, webp, and more into one pdf — reorder pages in your browser.": "JPG, PNG, WebPসহ বিভিন্ন ছবি একটিমাত্র PDF-এ যুক্ত করুন—ব্রাউজারেই পৃষ্ঠাগুলোর ক্রম সাজান।",
+    "settings": "সেটিংস",
+    "customize pdf output": "PDF-এর আউটপুট নিজের মতো সাজান",
+    "page": "পৃষ্ঠা",
+    "image": "ছবি",
+    "effects": "প্রভাব",
+    "orientation": "পাতার দিক",
+    "auto": "স্বয়ংক্রিয়",
+    "portrait": "উল্লম্ব",
+    "landscape": "আড়াআড়ি",
+    "auto orientation": "স্বয়ংক্রিয়ভাবে পাতার দিক নির্ধারণ",
+    "portrait mode": "উল্লম্ব মোড",
+    "landscape mode": "আড়াআড়ি মোড",
+    "(output)": "(আউটপুট)",
+    "page size": "পাতার মাপ",
+    "letter": "লেটার",
+    "legal": "লিগ্যাল",
+    "margin": "মার্জিন",
+    "none": "কোনোটি নয়",
+    "small": "ছোট",
+    "medium": "মাঝারি",
+    "large": "বড়",
+    "page numbers": "পৃষ্ঠা নম্বর",
+    "add page numbers": "পৃষ্ঠা নম্বর যোগ করুন",
+    "image fit": "ছবি বসানোর ধরন",
+    "fit to page": "পাতার মধ্যে সম্পূর্ণ ছবি",
+    "maintain full image aspect ratio": "ছবির আসল অনুপাত ঠিক রাখুন",
+    "fill page": "পুরো পৃষ্ঠা ভরুন",
+    "stretch to fill full page printable area": "প্রিন্ট করার উপযোগী পুরো জায়গা ছবিতে ভরুন",
+    "grayscale mode": "সাদাকালো মোড",
+    "convert color images to black & white pdf": "রঙিন ছবিগুলো সাদাকালো PDF-এ রূপান্তর করুন",
+    "reset": "পুনরায় সেট করুন",
+    "generating pdf...": "PDF তৈরি হচ্ছে...",
+    "create pdf": "PDF তৈরি করুন",
+    "pdf preview": "PDF-এর পূর্বরূপ",
+    "pages": "পৃষ্ঠা",
+    "add more": "আরও ছবি যোগ করুন",
+    "empty": "খালি",
+    "add images to get started": "শুরু করতে ছবি যোগ করুন",
+    "drag and drop jpg, png, or webp images here": "JPG, PNG বা WebP ছবি এখানে টেনে এনে ছেড়ে দিন",
+    "or press ctrl+v to paste a copied image": "অথবা কপি করা ছবি পেস্ট করতে Ctrl+V চাপুন",
+    "page ": "পৃষ্ঠা ",
+    "p.": "পৃষ্ঠা",
+    "tools in the same category": "একই বিভাগের টুলগুলো",
+    "image size reducer": "ছবির আকার কমান",
+    "shrink jpg, png, and webp photos in your browser — quality stays sharp.": "ব্রাউজারেই JPG, PNG ও WebP ছবির আকার কমান—ছবির মানও থাকবে ভালো।",
+    "nid joiner": "NID-এর ছবি একত্র করুন",
+    "turn nid card front and back photos into a clean a4 pdf — all in your browser.": "NID কার্ডের সামনের ও পেছনের ছবি মিলিয়ে পরিচ্ছন্ন A4 PDF তৈরি করুন—সবই ব্রাউজারে।",
+    "remove background": "ছবির পটভূমি সরান",
+    "erase portrait, product, or logo backgrounds in your browser — download a transparent png.": "ব্রাউজারেই ব্যক্তি, পণ্য বা লোগোর পটভূমি সরিয়ে স্বচ্ছ PNG ডাউনলোড করুন।",
+    "only jpg, png, and webp images are supported.": "শুধু JPG, PNG ও WebP ছবি ব্যবহার করা যাবে।",
+    "canvas 2d context is not available.": "ছবি প্রক্রিয়াকরণের সুবিধা চালু করা যায়নি।",
+    "something went wrong while generating the pdf. please try again.": "PDF তৈরি করার সময় সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    "remove page": "পৃষ্ঠা সরান",
+    "move left": "বাঁয়ে সরান",
+    "move right": "ডানে সরান",
+    "save to favourites": "পছন্দের তালিকায় যোগ করুন",
+    "save to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "favorite": "পছন্দের তালিকায় যোগ করুন",
+    "share": "শেয়ার করুন",
+    "share this tool": "টুলটি শেয়ার করুন",
+};
+
+function normalizeImagesToPdfText(value: string): string {
+    return value.replace(/\r\n/g, " ").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function toImagesPdfBanglaDigits(value: string): string {
+    return value.replace(/[0-9]/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+}
+
+function translateImagesToPdfText(
+    value: string,
+    locale: string | undefined,
+    baseL?: ImagesToPdfTranslator,
+): string {
+    const raw = String(value ?? "");
+    if (!locale || !locale.toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+
+    const leading = raw.match(/^\s*/)?.[0] ?? "";
+    const trailing = raw.match(/\s*$/)?.[0] ?? "";
+    const trimmed = raw.trim();
+    const key = normalizeImagesToPdfText(raw);
+    const exact = IMAGES_TO_PDF_BN[key];
+    if (exact !== undefined) return `${leading}${exact}${trailing}`;
+
+    let match = trimmed.match(/^page\s+(\d+)$/i);
+    if (match) return `${leading}পৃষ্ঠা ${toImagesPdfBanglaDigits(match[1])}${trailing}`;
+
+    match = trimmed.match(/^p\.\s*(\d+)$/i);
+    if (match) return `${leading}পৃষ্ঠা ${toImagesPdfBanglaDigits(match[1])}${trailing}`;
+
+    match = trimmed.match(/^(\d+)\s+pages?$/i);
+    if (match) return `${leading}${toImagesPdfBanglaDigits(match[1])}টি পৃষ্ঠা${trailing}`;
+
+    match = trimmed.match(/^failed to load\s+(.+)$/i);
+    if (match) return `${leading}\"${match[1]}\" ছবিটি লোড করা যায়নি।${trailing}`;
+
+    // Use the shared dictionary only if it returns a fully Bengali translation;
+    // never allow a partially translated English sentence to leak into this page.
+    if (baseL) {
+        const fallback = baseL(raw);
+        if (fallback && fallback !== raw && /[\u0980-\u09FF]/.test(fallback) && !/[A-Za-z]/.test(fallback)) {
+            return fallback;
+        }
+    }
+    return raw;
+}
+
+function ImagePdfT({ children }: { children: React.ReactNode }) {
+    const { locale, L: baseL } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translateImagesToPdfText(children, locale, baseL)}</>;
+}
+
+function formatImagesToPdfNumber(value: number, locale: string | undefined): string {
+    return value.toLocaleString(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : "en-US");
+}
+
 export default function ImagesToPdf() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseL } = useSohozI18n();
+    const L = useCallback((value: string) => translateImagesToPdfText(value, locale, baseL), [locale, baseL]);
     // Navigation & Customization State
     const [activeTab, setActiveTab] = useState<ActiveTab>("page");
     const [orientation, setOrientation] = useState<Orientation>("auto");
@@ -461,12 +589,12 @@ export default function ImagesToPdf() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
           <ArrowLeft size={14}/>
-          <span><T>{"Sohoj Tools"}</T></span>
+          <span><ImagePdfT>{"Sohoj Tools"}</ImagePdfT></span>
         </Link>
-        <span><T>{"/"}</T></span>
-        <span><T>{"Image Tools"}</T></span>
-        <span><T>{"/"}</T></span>
-        <span className="font-semibold text-[#0F172A]"><T>{"Images to PDF"}</T></span>
+        <span><ImagePdfT>{"/"}</ImagePdfT></span>
+        <span><ImagePdfT>{"Image Tools"}</ImagePdfT></span>
+        <span><ImagePdfT>{"/"}</ImagePdfT></span>
+        <span className="font-semibold text-[#0F172A]"><ImagePdfT>{"Images to PDF"}</ImagePdfT></span>
       </div>
 
       {/* Header Card */}
@@ -477,18 +605,18 @@ export default function ImagesToPdf() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Images to PDF\n              "}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-lg font-bold text-[#0F172A]"><ImagePdfT>{"Images to PDF\n              "}</ImagePdfT></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><ImagePdfT>{"Free\n              "}</ImagePdfT></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Combine JPG, PNG, WebP, and more into one PDF \u2014 reorder pages in\n              your browser.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><ImagePdfT>{"Combine JPG, PNG, WebP, and more into one PDF \u2014 reorder pages in\n              your browser.\n            "}</ImagePdfT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button type="button" aria-label={L("Save to favourites")} title={L("Save to favourites")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16}/>
           </button>
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button type="button" aria-label={L("Share this tool")} title={L("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16}/>
           </button>
         </div>
@@ -496,7 +624,7 @@ export default function ImagesToPdf() {
 
       {/* Error Banner */}
       {errorMessage && (<div className="bg-red-50 border border-red-100 text-red-600 text-xs font-semibold px-4 py-3 rounded-xl">
-          {errorMessage}
+          {translateImagesToPdfText(errorMessage, locale, baseL)}
         </div>)}
 
       {/* Main Layout Grid */}
@@ -510,8 +638,8 @@ export default function ImagesToPdf() {
                 <SlidersHorizontal size={13}/>
               </div>
               <div>
-                <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Settings"}</T></h2>
-                <p className="text-[10px] text-gray-400"><T>{"Customize PDF output\n                "}</T></p>
+                <h2 className="text-xs font-bold text-[#0F172A]"><ImagePdfT>{"Settings"}</ImagePdfT></h2>
+                <p className="text-[10px] text-gray-400"><ImagePdfT>{"Customize PDF output\n                "}</ImagePdfT></p>
               </div>
             </div>
 
@@ -520,14 +648,14 @@ export default function ImagesToPdf() {
               <button type="button" onClick={() => setActiveTab("page")} className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${activeTab === "page"
             ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
             : "text-gray-500 hover:text-[#0F172A]"}`}>
-                <FileText size={13}/><T>{"Page\n              "}</T></button>
+                <FileText size={13}/><ImagePdfT>{"Page\n              "}</ImagePdfT></button>
               <button type="button" onClick={() => setActiveTab("image")} className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${activeTab === "image"
             ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
             : "text-gray-500 hover:text-[#0F172A]"}`}>
-                <ImageIcon size={13}/><T>{"Image\n              "}</T></button>
+                <ImageIcon size={13}/><ImagePdfT>{"Image\n              "}</ImagePdfT></button>
               <button type="button" onClick={() => setActiveTab("effects")} className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${activeTab === "effects"
             ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-            : "text-gray-500 hover:text-[#0F172A]"}`}><T>{"Effects\n              "}</T></button>
+            : "text-gray-500 hover:text-[#0F172A]"}`}><ImagePdfT>{"Effects\n              "}</ImagePdfT></button>
             </div>
 
             {/* TAB 1: Page Settings */}
@@ -535,8 +663,8 @@ export default function ImagesToPdf() {
                 {/* Orientation Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-[#0F172A]"><T>{"Orientation\n                    "}</T></span>
-                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><T>{"ORIENTATION\n                    "}</T></span>
+                    <span className="font-bold text-[#0F172A]"><ImagePdfT>{"Orientation\n                    "}</ImagePdfT></span>
+                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><ImagePdfT>{"ORIENTATION\n                    "}</ImagePdfT></span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {orientationItems.map((item) => {
@@ -545,25 +673,25 @@ export default function ImagesToPdf() {
                         ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold shadow-2xs"
                         : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
                           <IconComp size={15}/>
-                          <span className="text-[10px]">{<T>{item.label}</T>}</span>
+                          <span className="text-[10px]">{<ImagePdfT>{item.label}</ImagePdfT>}</span>
                         </button>);
             })}
                   </div>
                   <div className="p-2.5 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-[10px] text-gray-500">
                     <span className="font-bold text-[#0F172A]">
                       {orientation === "auto"
-            ? <T>{"Auto Orientation"}</T> : orientation === "portrait"
-            ? "Portrait Mode"
-            : "Landscape Mode"}
+            ? <ImagePdfT>{"Auto Orientation"}</ImagePdfT> : orientation === "portrait"
+            ? <ImagePdfT>{"Portrait Mode"}</ImagePdfT>
+            : <ImagePdfT>{"Landscape Mode"}</ImagePdfT>}
                     </span>
-                    <br /><T>{"pt \u00B7 "}</T>{PAGE_SIZES[pageSize]?.label || "A4"}<T>{"(output)\n                  "}</T></div>
+                    <br /><ImagePdfT>{"pt \u00B7 "}</ImagePdfT><ImagePdfT>{PAGE_SIZES[pageSize]?.label || "A4"}</ImagePdfT><ImagePdfT>{"(output)\n                  "}</ImagePdfT></div>
                 </div>
 
                 {/* Page Size Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-[#0F172A]"><T>{"Page size"}</T></span>
-                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><T>{"PAGE SIZE\n                    "}</T></span>
+                    <span className="font-bold text-[#0F172A]"><ImagePdfT>{"Page size"}</ImagePdfT></span>
+                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><ImagePdfT>{"PAGE SIZE\n                    "}</ImagePdfT></span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {pageSizeItems.map((item) => (<button key={item.id} type="button" onClick={() => setPageSize(item.id)} className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${pageSize === item.id
@@ -572,7 +700,7 @@ export default function ImagesToPdf() {
                         <div className="w-3.5 h-4 border border-current rounded-xs flex items-center justify-center text-[7px] font-bold">
                           {item.label.charAt(0)}
                         </div>
-                        <span className="text-[10px]">{<T>{item.label}</T>}</span>
+                        <span className="text-[10px]">{<ImagePdfT>{item.label}</ImagePdfT>}</span>
                       </button>))}
                   </div>
                 </div>
@@ -580,15 +708,15 @@ export default function ImagesToPdf() {
                 {/* Margin Section */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-[#0F172A]"><T>{"Margin"}</T></span>
-                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><T>{"MARGIN\n                    "}</T></span>
+                    <span className="font-bold text-[#0F172A]"><ImagePdfT>{"Margin"}</ImagePdfT></span>
+                    <span className="text-[9px] font-bold text-gray-400 tracking-wider"><ImagePdfT>{"MARGIN\n                    "}</ImagePdfT></span>
                   </div>
                   <div className="grid grid-cols-4 gap-1.5">
                     {marginItems.map((item) => (<button key={item.id} type="button" onClick={() => setMargin(item.id)} className={`py-2 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${margin === item.id
                     ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold shadow-2xs"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
                         <div className="w-4 h-4 border border-current rounded-xs border-dashed flex items-center justify-center"/>
-                        <span className="text-[9px]">{<T>{item.label}</T>}</span>
+                        <span className="text-[9px]">{<ImagePdfT>{item.label}</ImagePdfT>}</span>
                       </button>))}
                   </div>
                 </div>
@@ -596,8 +724,8 @@ export default function ImagesToPdf() {
                 {/* Page Numbers Switch */}
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="text-[11px] font-bold text-[#0F172A] block"><T>{"Page numbers\n                    "}</T></span>
-                    <span className="text-[9px] text-gray-400 block"><T>{"Add page numbers\n                    "}</T></span>
+                    <span className="text-[11px] font-bold text-[#0F172A] block"><ImagePdfT>{"Page numbers\n                    "}</ImagePdfT></span>
+                    <span className="text-[9px] text-gray-400 block"><ImagePdfT>{"Add page numbers\n                    "}</ImagePdfT></span>
                   </div>
                   <button type="button" onClick={() => setPageNumbers((prev) => !prev)} aria-pressed={pageNumbers} className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${pageNumbers ? "bg-[#2563EB]" : "bg-gray-200"}`}>
                     <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${pageNumbers ? "translate-x-4" : "translate-x-0"}`}/>
@@ -608,19 +736,19 @@ export default function ImagesToPdf() {
             {/* TAB 2: Image Fit Settings */}
             {activeTab === "image" && (<div className="space-y-4 pt-1">
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-[#0F172A] block"><T>{"Image Fit\n                  "}</T></span>
+                  <span className="text-[11px] font-bold text-[#0F172A] block"><ImagePdfT>{"Image Fit\n                  "}</ImagePdfT></span>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setImageFit("contain")} className={`p-3 rounded-xl border text-left transition-all ${imageFit === "contain"
                 ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold"
                 : "border-gray-200 text-gray-600"}`}>
-                      <span className="text-xs block font-bold"><T>{"Fit to Page\n                      "}</T></span>
-                      <span className="text-[9px] text-gray-400 block mt-0.5"><T>{"Maintain full image aspect ratio\n                      "}</T></span>
+                      <span className="text-xs block font-bold"><ImagePdfT>{"Fit to Page\n                      "}</ImagePdfT></span>
+                      <span className="text-[9px] text-gray-400 block mt-0.5"><ImagePdfT>{"Maintain full image aspect ratio\n                      "}</ImagePdfT></span>
                     </button>
                     <button type="button" onClick={() => setImageFit("cover")} className={`p-3 rounded-xl border text-left transition-all ${imageFit === "cover"
                 ? "border-[#2563EB] bg-[#F8FAFC]/30 text-[#2563EB] font-bold"
                 : "border-gray-200 text-gray-600"}`}>
-                      <span className="text-xs block font-bold"><T>{"Fill Page"}</T></span>
-                      <span className="text-[9px] text-gray-400 block mt-0.5"><T>{"Stretch to fill full page printable area\n                      "}</T></span>
+                      <span className="text-xs block font-bold"><ImagePdfT>{"Fill Page"}</ImagePdfT></span>
+                      <span className="text-[9px] text-gray-400 block mt-0.5"><ImagePdfT>{"Stretch to fill full page printable area\n                      "}</ImagePdfT></span>
                     </button>
                   </div>
                 </div>
@@ -630,8 +758,8 @@ export default function ImagesToPdf() {
             {activeTab === "effects" && (<div className="space-y-4 pt-1">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <div>
-                    <span className="text-xs font-bold text-[#0F172A] block"><T>{"Grayscale Mode\n                    "}</T></span>
-                    <span className="text-[9px] text-gray-400 block"><T>{"Convert color images to black & white PDF\n                    "}</T></span>
+                    <span className="text-xs font-bold text-[#0F172A] block"><ImagePdfT>{"Grayscale Mode\n                    "}</ImagePdfT></span>
+                    <span className="text-[9px] text-gray-400 block"><ImagePdfT>{"Convert color images to black & white PDF\n                    "}</ImagePdfT></span>
                   </div>
                   <button type="button" onClick={() => setGrayscale((prev) => !prev)} aria-pressed={grayscale} className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${grayscale ? "bg-[#2563EB]" : "bg-gray-200"}`}>
                     <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${grayscale ? "translate-x-4" : "translate-x-0"}`}/>
@@ -643,13 +771,13 @@ export default function ImagesToPdf() {
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-1">
             <button type="button" onClick={handleReset} className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5">
-              <RotateCcw size={13}/><T>{"Reset\n            "}</T></button>
+              <RotateCcw size={13}/><ImagePdfT>{"Reset\n            "}</ImagePdfT></button>
             <button type="button" onClick={handleCreatePdf} disabled={images.length === 0 || isGenerating} className={`flex-1 py-2.5 text-xs font-bold rounded-xl text-center transition-all flex items-center justify-center gap-2 ${images.length > 0 && !isGenerating
             ? "bg-[#2563EB] hover:bg-[#2563EB] text-white shadow-md shadow-orange-500/20 cursor-pointer active:scale-[0.98]"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
               {isGenerating ? (<>
-                  <Loader2 size={14} className="animate-spin"/><T>{"Generating PDF...\n                "}</T></>) : (<>
-                  <Download size={14}/><T>{"Create PDF\n                "}</T></>)}
+                  <Loader2 size={14} className="animate-spin"/><ImagePdfT>{"Generating PDF...\n                "}</ImagePdfT></>) : (<>
+                  <Download size={14}/><ImagePdfT>{"Create PDF\n                "}</ImagePdfT></>)}
             </button>
           </div>
         </div>
@@ -659,17 +787,17 @@ export default function ImagesToPdf() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[460px] flex flex-col justify-between">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-[#0F172A]"><T>{"PDF preview\n                "}</T></h2>
+                <h2 className="text-xs font-bold text-[#0F172A]"><ImagePdfT>{"PDF preview\n                "}</ImagePdfT></h2>
                 {images.length > 0 && (<span className="text-[10px] bg-[#E2E8F0] text-[#2563EB] font-bold px-2 py-0.5 rounded-full">
-                    {images.length} {images.length === 1 ? <T>{"page"}</T> : <T>{"pages"}</T>}
+                    {formatImagesToPdfNumber(images.length, locale)} {images.length === 1 ? <ImagePdfT>{"page"}</ImagePdfT> : <ImagePdfT>{"pages"}</ImagePdfT>}
                   </span>)}
               </div>
               {images.length > 0 ? (<button type="button" onClick={() => fileInputRef.current?.click()} className="text-[11px] text-[#2563EB] font-bold hover:text-[#2563EB] flex items-center gap-1">
-                  <Plus size={13}/><T>{"Add more\n                "}</T></button>) : (<span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium"><T>{"Empty\n                "}</T></span>)}
+                  <Plus size={13}/><ImagePdfT>{"Add more\n                "}</ImagePdfT></button>) : (<span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium"><ImagePdfT>{"Empty\n                "}</ImagePdfT></span>)}
             </div>
 
             {/* Dropzone & Preview Container */}
-            {images.length === 0 ? (<div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0} onKeyDown={(e) => {
+            {images.length === 0 ? (<div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} role="button" aria-label={L("Add images to get started")} tabIndex={0} onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     fileInputRef.current?.click();
                 }
@@ -679,9 +807,9 @@ export default function ImagesToPdf() {
                 <div className="w-14 h-14 bg-[#F8FAFC] text-[#2563EB] rounded-2xl flex items-center justify-center mb-3">
                   <UploadCloud size={28}/>
                 </div>
-                <span className="text-xs font-bold text-[#0F172A] block"><T>{"Add images to get started\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-1"><T>{"Drag and drop JPG, PNG, or WebP images here\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-4 font-medium bg-white px-3 py-1 rounded-full border border-gray-100 shadow-2xs"><T>{"Or press Ctrl+V to paste a copied image\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A] block"><ImagePdfT>{"Add images to get started\n                "}</ImagePdfT></span>
+                <span className="text-[10px] text-gray-400 mt-1"><ImagePdfT>{"Drag and drop JPG, PNG, or WebP images here\n                "}</ImagePdfT></span>
+                <span className="text-[10px] text-gray-400 mt-4 font-medium bg-white px-3 py-1 rounded-full border border-gray-100 shadow-2xs"><ImagePdfT>{"Or press Ctrl+V to paste a copied image\n                "}</ImagePdfT></span>
               </div>) : (
         /* Grid Display of Uploaded Pages */
         <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto p-1 rounded-xl transition-all ${isDragging ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`}>
@@ -729,7 +857,7 @@ export default function ImagesToPdf() {
                         {pageNumbers && (<div className="absolute left-0 right-0 flex items-center justify-center text-gray-400" style={{
                             bottom: `${marginYPercent / 2}%`,
                             fontSize: "6px",
-                        }}><T>{"Page "}</T>{index + 1}<T>{"/ "}</T>{images.length}
+                        }}><ImagePdfT>{"Page "}</ImagePdfT>{formatImagesToPdfNumber(index + 1, locale)}<ImagePdfT>{"/ "}</ImagePdfT>{formatImagesToPdfNumber(images.length, locale)}
                           </div>)}
 
                         {/* Processing overlay — shown briefly while the
@@ -740,7 +868,7 @@ export default function ImagesToPdf() {
                           </div>)}
 
                         {/* Page Badge */}
-                        <span className="absolute top-2 left-2 bg-gray-900/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs"><T>{"P. "}</T>{index + 1}
+                        <span className="absolute top-2 left-2 bg-gray-900/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs"><ImagePdfT>{"P. "}</ImagePdfT>{formatImagesToPdfNumber(index + 1, locale)}
                         </span>
                         {/* Remove Button */}
                         <button type="button" onClick={() => removeImage(img.id)} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-xs hover:bg-red-600" title={L("Remove page")}>
@@ -771,15 +899,15 @@ export default function ImagesToPdf() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><ImagePdfT>{"Tools in the same category\n        "}</ImagePdfT></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/image-size-reducer" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Image Size Reducer\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImagePdfT>{"Image Size Reducer\n              "}</ImagePdfT></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImagePdfT>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</ImagePdfT></p>
             </div>
           </Link>
 
@@ -788,16 +916,16 @@ export default function ImagesToPdf() {
               <CreditCard size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"NID Joiner\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImagePdfT>{"NID Joiner\n              "}</ImagePdfT></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImagePdfT>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</ImagePdfT></p>
             </div>
           </Link>
 
           <Link href="/sohoj-tools/remove-background" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0"></div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Remove Background\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImagePdfT>{"Remove Background\n              "}</ImagePdfT></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImagePdfT>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</ImagePdfT></p>
             </div>
           </Link>
         </div>

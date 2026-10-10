@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop, } from "react-image-crop";
@@ -45,8 +45,55 @@ const getNumericAspectRatio = (val: string): number | undefined => {
             return undefined;
     }
 };
+
+const CROP_IMAGE_BN: Record<string, string> = {
+    "Sohoj Tools": "সহজ টুলস",
+    "Image Tools": "ছবির টুলস",
+    "Crop Image": "ছবি কাটছাঁট",
+    "Free": "বিনামূল্যে",
+    "Trim images to the area you need — free or fixed aspect ratios, all in your browser.": "ছবির প্রয়োজনীয় অংশটুকু রাখুন—ইচ্ছামতো বা নির্দিষ্ট অনুপাত বেছে নিয়ে, সবকিছু আপনার ব্রাউজারেই।",
+    "Aspect ratio": "ছবির অনুপাত",
+    "Output format": "আউটপুট ফরম্যাট",
+    "Reset": "পুনরায় শুরু করুন",
+    "Crop & Download": "কাটছাঁট করে ডাউনলোড করুন",
+    "Crop preview": "কাটছাঁটের পূর্বরূপ",
+    "Change Image": "ছবি পরিবর্তন করুন",
+    "Ready": "প্রস্তুত",
+    "Empty": "খালি",
+    "Click or drag an image here": "এখানে ক্লিক করুন অথবা ছবি টেনে আনুন",
+    "Drag the crop handles to select the area you want to keep.": "ছবির যে অংশটি রাখতে চান, সেটি বেছে নিতে কাটছাঁটের সীমানা টেনে ঠিক করুন।",
+    "Or press Ctrl+V to paste a copied image": "অথবা কপি করা ছবি পেস্ট করতে Ctrl+V চাপুন",
+    "Tools in the same category": "একই বিভাগের টুলস",
+    "Image Size Reducer": "ছবির আকার কমান",
+    "Shrink JPG, PNG, and WebP photos in your browser — quality stays sharp.": "JPG, PNG ও WebP ছবির আকার কমান, ছবির মান অক্ষুণ্ণ রেখেই—সবকিছু আপনার ব্রাউজারেই।",
+    "NID Joiner": "এনআইডির ছবি একত্র করুন",
+    "Turn NID card front and back photos into a clean A4 PDF — all in your browser.": "এনআইডি কার্ডের সামনের ও পেছনের ছবি একত্র করে পরিপাটি A4 PDF তৈরি করুন—সবকিছু আপনার ব্রাউজারেই।",
+    "Remove Background": "ছবির পটভূমি সরান",
+    "Erase portrait, product, or logo backgrounds in your browser — download a transparent PNG.": "ব্রাউজারেই ব্যক্তি, পণ্য বা লোগোর ছবির পটভূমি সরিয়ে স্বচ্ছ PNG ডাউনলোড করুন।",
+    "Source": "মূল ছবি",
+    "Add to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "Share this tool": "এই টুল শেয়ার করুন",
+    "Select an image to crop": "কাটছাঁটের জন্য ছবি নির্বাচন করুন",
+};
+
+function normalizeCropImageText(text: string): string {
+    return text.replace(/\s+/g, " ").trim();
+}
+
+function CropText({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (locale === "bn" && typeof children === "string") {
+        const translated = CROP_IMAGE_BN[normalizeCropImageText(children)];
+        if (translated) return <>{translated}</>;
+    }
+    return <BaseT>{children}</BaseT>;
+}
+
 export default function CropImage() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseL } = useSohozI18n();
+    const L = (text: string) => locale === "bn"
+        ? CROP_IMAGE_BN[normalizeCropImageText(text)] ?? baseL(text)
+        : baseL(text);
     const [aspectRatio, setAspectRatio] = useState<string>("free");
     const [outputFormat, setOutputFormat] = useState<string>("JPG");
     const [imgSrc, setImgSrc] = useState<string>("");
@@ -168,18 +215,18 @@ export default function CropImage() {
         }
       `}</style>
 
-      <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={onSelectFile}/>
+      <input type="file" ref={fileInputRef} accept="image/*" aria-label={L("Select an image to crop")} className="hidden" onChange={onSelectFile}/>
 
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
           <ArrowLeft size={14}/>
-          <span><T>{"Sohoj Tools"}</T></span>
+          <span><CropText>{"Sohoj Tools"}</CropText></span>
         </Link>
-        <span><T>{"/"}</T></span>
-        <span><T>{"Image Tools"}</T></span>
-        <span><T>{"/"}</T></span>
-        <span className="font-semibold text-[#0F172A]"><T>{"Crop Image"}</T></span>
+        <span><CropText>{"/"}</CropText></span>
+        <span><CropText>{"Image Tools"}</CropText></span>
+        <span><CropText>{"/"}</CropText></span>
+        <span className="font-semibold text-[#0F172A]"><CropText>{"Crop Image"}</CropText></span>
       </div>
 
       {/* Header Card */}
@@ -190,18 +237,18 @@ export default function CropImage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Crop Image"}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-lg font-bold text-[#0F172A]"><CropText>{"Crop Image"}</CropText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><CropText>{"Free\n              "}</CropText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Trim images to the area you need \u2014 free or fixed aspect ratios,\n              all in your browser.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><CropText>{"Trim images to the area you need \u2014 free or fixed aspect ratios,\n              all in your browser.\n            "}</CropText></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={L("Add to favorites")} title={L("Add to favorites")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16}/>
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={L("Share this tool")} title={L("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16}/>
           </button>
         </div>
@@ -213,7 +260,7 @@ export default function CropImage() {
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-5 self-start">
           {/* Aspect Ratio Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Aspect ratio"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><CropText>{"Aspect ratio"}</CropText></h2>
             <div className="grid grid-cols-5 gap-2">
               {[
             { label: "Free", value: "free" },
@@ -225,16 +272,16 @@ export default function CropImage() {
                 ? "border-sky-500 bg-sky-50/40 text-sky-600 font-bold shadow-2xs"
                 : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
                   <div className="w-4 h-4 border border-current rounded-xs flex items-center justify-center text-[8px]">
-                    {ratio.value === "free" ? <T>{"..."}</T> : ratio.label.charAt(0)}
+                    {ratio.value === "free" ? <CropText>{"..."}</CropText> : ratio.label.charAt(0)}
                   </div>
-                  <span className="text-[10px]">{ratio.label}</span>
+                  <span className="text-[10px]">{locale === "bn" && ratio.value === "free" ? "ইচ্ছামতো" : ratio.label}</span>
                 </button>))}
             </div>
           </div>
 
           {/* Output Format Card */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Output format"}</T></h2>
+            <h2 className="text-xs font-bold text-[#0F172A]"><CropText>{"Output format"}</CropText></h2>
             <div className="grid grid-cols-4 gap-2">
               {["JPG", "PNG", "WebP", "AVIF"].map((format) => (<button key={format} onClick={() => setOutputFormat(format)} className={`py-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${outputFormat === format
                 ? "border-sky-500 bg-sky-50/40 text-sky-600 font-bold shadow-2xs"
@@ -247,11 +294,11 @@ export default function CropImage() {
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-1">
             <button onClick={handleReset} className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center gap-1.5">
-              <RotateCcw size={13}/><T>{"Reset\n            "}</T></button>
+              <RotateCcw size={13}/><CropText>{"Reset\n            "}</CropText></button>
             <button onClick={handleDownload} disabled={!imgSrc || !completedCrop?.width} className={`flex-1 py-2.5 text-xs font-bold rounded-xl text-center transition-all flex items-center justify-center gap-1.5 ${imgSrc && completedCrop?.width
             ? "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer shadow-xs"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
-              <Download size={14}/><T>{"Crop & Download\n            "}</T></button>
+              <Download size={14}/><CropText>{"Crop & Download\n            "}</CropText></button>
           </div>
         </div>
 
@@ -259,14 +306,14 @@ export default function CropImage() {
         <div className="lg:col-span-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Crop preview"}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><CropText>{"Crop preview"}</CropText></h2>
               <div className="flex items-center gap-2">
                 {imgSrc && (<button onClick={() => fileInputRef.current?.click()} className="text-[10px] bg-sky-50 text-sky-600 hover:bg-sky-100 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all">
-                    <Upload size={12}/><T>{"Change Image\n                  "}</T></button>)}
+                    <Upload size={12}/><CropText>{"Change Image\n                  "}</CropText></button>)}
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${imgSrc
             ? "bg-emerald-50 text-emerald-600 font-semibold"
             : "bg-gray-100 text-gray-400"}`}>
-                  {imgSrc ? <T>{"Ready"}</T> : <T>{"Empty"}</T>}
+                  {imgSrc ? <CropText>{"Ready"}</CropText> : <CropText>{"Empty"}</CropText>}
                 </span>
               </div>
             </div>
@@ -278,9 +325,9 @@ export default function CropImage() {
                 <div className="w-14 h-14 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mb-3">
                   <ImageIcon size={28}/>
                 </div>
-                <span className="text-xs font-bold text-[#0F172A] block"><T>{"Click or drag an image here\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-1"><T>{"Drag the crop handles to select the area you want to keep.\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-4 font-medium"><T>{"Or press Ctrl+V to paste a copied image\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A] block"><CropText>{"Click or drag an image here\n                "}</CropText></span>
+                <span className="text-[10px] text-gray-400 mt-1"><CropText>{"Drag the crop handles to select the area you want to keep.\n                "}</CropText></span>
+                <span className="text-[10px] text-gray-400 mt-4 font-medium"><CropText>{"Or press Ctrl+V to paste a copied image\n                "}</CropText></span>
               </div>) : (<div className="flex-1 bg-[#F8FAFC] border border-gray-100 rounded-2xl p-3 flex items-center justify-center min-h-[360px]">
                 <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={getNumericAspectRatio(aspectRatio)} className="max-w-full max-h-[360px]">
                   <img ref={imgRef} src={imgSrc} alt={L("Source")} onLoad={onImageLoad} className="max-h-[360px] w-auto max-w-full object-contain rounded-lg block mx-auto"/>
@@ -292,15 +339,15 @@ export default function CropImage() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><CropText>{"Tools in the same category\n        "}</CropText></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/image-size-reducer" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-sky-200 transition-all flex items-start gap-3 group">
             <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><T>{"Image Size Reducer\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><CropText>{"Image Size Reducer\n              "}</CropText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><CropText>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</CropText></p>
             </div>
           </Link>
 
@@ -309,16 +356,16 @@ export default function CropImage() {
               <CreditCard size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><T>{"NID Joiner\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><CropText>{"NID Joiner\n              "}</CropText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><CropText>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</CropText></p>
             </div>
           </Link>
 
           <Link href="/sohoj-tools/remove-background" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-sky-200 transition-all flex items-start gap-3 group">
             <div className="w-8 h-8 bg-sky-50 text-sky-500 rounded-lg flex items-center justify-center shrink-0"></div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><T>{"Remove Background\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-sky-500 transition-colors"><CropText>{"Remove Background\n              "}</CropText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><CropText>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</CropText></p>
             </div>
           </Link>
         </div>

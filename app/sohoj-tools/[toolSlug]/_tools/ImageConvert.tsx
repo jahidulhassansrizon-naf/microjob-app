@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Image as ImageIcon, Star, Share2, ArrowLeft, Download, FileType, CreditCard, Zap, Scale, Feather, Loader2, CheckCircle2, Trash2, } from "lucide-react";
@@ -12,8 +12,85 @@ interface UploadedFile {
     convertedUrl?: string;
     status: "idle" | "converting" | "done";
 }
+type ImageConvertTextProps = {
+    children: React.ReactNode;
+    locale: string;
+};
+
+// Full-sentence translations are defined locally so this page does not depend
+// on the shared translator recognizing every multiline UI string.
+const IMAGE_CONVERT_BN: Record<string, string> = {
+    "/": "/",
+    "sohoj tools": "সহজ টুলস",
+    "image tools": "ছবির টুলস",
+    "image convert": "ছবি রূপান্তর",
+    "free": "বিনামূল্যে",
+    "convert jpg, png, webp, heic, and more — batch export in your browser.": "আপনার ব্রাউজারেই JPG, PNG, WebP, HEIC-সহ বিভিন্ন ধরনের ছবি একসঙ্গে রূপান্তর করে ডাউনলোড করুন।",
+    "output format": "আউটপুটের ফরম্যাট",
+    "jpg": "JPG",
+    "png": "PNG",
+    "webp": "WebP",
+    "avif": "AVIF",
+    "quality": "ছবির মান",
+    "high": "উচ্চ মান",
+    "balanced": "ভারসাম্যপূর্ণ",
+    "smaller file": "ছোট ফাইল",
+    "reset": "আবার শুরু করুন",
+    "converting...": "ছবি রূপান্তর করা হচ্ছে…",
+    "convert images": "ছবি রূপান্তর করুন",
+    "download all": "সবগুলো ডাউনলোড করুন",
+    "conversion preview": "রূপান্তরিত ছবির প্রিভিউ",
+    "empty": "খালি",
+    "converted": "রূপান্তর সম্পন্ন",
+    "ready": "প্রস্তুত",
+    "add an image to get started": "শুরু করতে একটি ছবি যোগ করুন",
+    "before and after previews will appear here after conversion.": "ছবি রূপান্তর করার পর আগের ও পরের ছবির প্রিভিউ এখানে দেখা যাবে।",
+    "or press ctrl+v to paste a copied image": "অথবা কপি করা ছবি পেস্ট করতে Ctrl+V চাপুন",
+    "+ add more images": "+ আরও ছবি যোগ করুন",
+    "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+    "image size reducer": "ছবির আকার কমান",
+    "shrink jpg, png, and webp photos in your browser — quality stays sharp.": "ছবির মান স্পষ্ট রেখে ব্রাউজারেই JPG, PNG ও WebP ছবির আকার কমান।",
+    "nid joiner": "NID-এর দুই পাশ একত্র করুন",
+    "turn nid card front and back photos into a clean a4 pdf — all in your browser.": "NID কার্ডের সামনের ও পেছনের ছবি একত্র করে ব্রাউজারেই পরিষ্কার A4 PDF তৈরি করুন।",
+    "remove background": "ছবির পটভূমি সরান",
+    "erase portrait, product, or logo backgrounds in your browser — download a transparent png.": "ব্রাউজারেই ব্যক্তি, পণ্য বা লোগোর পটভূমি সরিয়ে স্বচ্ছ ব্যাকগ্রাউন্ডসহ PNG ডাউনলোড করুন।",
+    "download converted image": "রূপান্তরিত ছবি ডাউনলোড করুন",
+    "remove image": "ছবিটি সরান",
+    "save to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "share this tool": "এই টুলটি শেয়ার করুন",
+};
+
+function normalizeImageConvertText(value: string): string {
+    return value
+        .replace(/&apos;/gi, "'")
+        .replace(/&quot;/gi, '"')
+        .replace(/&amp;/gi, "&")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function translateImageConvertText(value: string, locale: string): string | null {
+    if (!locale.toLowerCase().startsWith("bn")) return null;
+    const normalized = normalizeImageConvertText(value);
+    const translated = IMAGE_CONVERT_BN[normalized];
+    if (translated === undefined) return null;
+    const leading = value.match(/^\s*/)?.[0] ?? "";
+    const trailing = value.match(/\s*$/)?.[0] ?? "";
+    return `${leading}${translated}${trailing}`;
+}
+
+function ImageConvertText({ children, locale }: ImageConvertTextProps) {
+    if (typeof children === "string") {
+        const translated = translateImageConvertText(children, locale);
+        if (translated !== null) return <>{translated}</>;
+    }
+    return <BaseT>{children}</BaseT>;
+}
+
 export default function ImageConvert() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseL } = useSohozI18n();
+    const L = (value: string) => translateImageConvertText(value, locale) ?? baseL(value);
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [format, setFormat] = useState<OutputFormat>("jpg");
     const [quality, setQuality] = useState<QualityPreset>("high");
@@ -148,12 +225,12 @@ export default function ImageConvert() {
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
           <ArrowLeft size={14}/>
-          <span><T>{"Sohoj Tools"}</T></span>
+          <span><ImageConvertText locale={locale}>{"Sohoj Tools"}</ImageConvertText></span>
         </Link>
-        <span><T>{"/"}</T></span>
-        <span><T>{"Image Tools"}</T></span>
-        <span><T>{"/"}</T></span>
-        <span className="font-semibold text-[#0F172A]"><T>{"Image Convert"}</T></span>
+        <span><ImageConvertText locale={locale}>{"/"}</ImageConvertText></span>
+        <span><ImageConvertText locale={locale}>{"Image Tools"}</ImageConvertText></span>
+        <span><ImageConvertText locale={locale}>{"/"}</ImageConvertText></span>
+        <span className="font-semibold text-[#0F172A]"><ImageConvertText locale={locale}>{"Image Convert"}</ImageConvertText></span>
       </div>
 
       {/* Header Card */}
@@ -164,18 +241,18 @@ export default function ImageConvert() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><T>{"Image Convert"}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-lg font-bold text-[#0F172A]"><ImageConvertText locale={locale}>{"Image Convert"}</ImageConvertText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><ImageConvertText locale={locale}>{"Free\n              "}</ImageConvertText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><T>{"Convert JPG, PNG, WebP, HEIC, and more \u2014 batch export in your\n              browser.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5"><ImageConvertText locale={locale}>{"Convert JPG, PNG, WebP, HEIC, and more \u2014 batch export in your\n              browser.\n            "}</ImageConvertText></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={L("Save to favorites")} title={L("Save to favorites")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16}/>
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={L("Share this tool")} title={L("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16}/>
           </button>
         </div>
@@ -188,7 +265,7 @@ export default function ImageConvert() {
           <div className="space-y-4">
             {/* Output Format Card */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Output format"}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><ImageConvertText locale={locale}>{"Output format"}</ImageConvertText></h2>
               <div className="grid grid-cols-4 gap-2">
                 {[
             { id: "jpg", label: "JPG" },
@@ -202,14 +279,14 @@ export default function ImageConvert() {
                 ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
                 : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200"}`}>
                     <FileType size={16}/>
-                    {<T>{item.label}</T>}
+                    {<ImageConvertText locale={locale}>{item.label}</ImageConvertText>}
                   </button>))}
               </div>
             </div>
 
             {/* Quality Preset Card */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Quality"}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><ImageConvertText locale={locale}>{"Quality"}</ImageConvertText></h2>
               <div className="grid grid-cols-3 gap-2">
                 {[
             {
@@ -237,7 +314,7 @@ export default function ImageConvert() {
                     : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200"}`}>
                       <Icon size={15}/>
                       <span className="text-center leading-tight">
-                        {<T>{item.label}</T>}
+                        {<ImageConvertText locale={locale}>{item.label}</ImageConvertText>}
                       </span>
                     </button>);
         })}
@@ -247,14 +324,14 @@ export default function ImageConvert() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-2">
-            <button onClick={handleReset} className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold rounded-xl transition-all"><T>{"Reset\n            "}</T></button>
+            <button onClick={handleReset} className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold rounded-xl transition-all"><ImageConvertText locale={locale}>{"Reset\n            "}</ImageConvertText></button>
             {!isDone ? (<button onClick={handleConvert} disabled={files.length === 0 || isConverting} className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${files.length > 0 && !isConverting
                 ? "bg-[#2563EB] hover:bg-[#2563EB] text-white shadow-xs cursor-pointer"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                 {isConverting ? (<>
-                    <Loader2 size={14} className="animate-spin"/><T>{"Converting...\n                  "}</T></>) : <T>{("Convert images")}</T>}
+                    <Loader2 size={14} className="animate-spin"/><ImageConvertText locale={locale}>{"Converting...\n                  "}</ImageConvertText></>) : <ImageConvertText locale={locale}>{("Convert images")}</ImageConvertText>}
               </button>) : (<button onClick={handleDownloadAll} className="flex-1 py-2.5 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
-                <Download size={14}/><T>{"Download All\n              "}</T></button>)}
+                <Download size={14}/><ImageConvertText locale={locale}>{"Download All\n              "}</ImageConvertText></button>)}
           </div>
         </div>
 
@@ -262,9 +339,9 @@ export default function ImageConvert() {
         <div className="lg:col-span-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[440px] flex flex-col justify-between">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Conversion preview\n              "}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><ImageConvertText locale={locale}>{"Conversion preview\n              "}</ImageConvertText></h2>
               <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">
-                {files.length === 0 ? <T>{"Empty"}</T> : isDone ? "Converted" : "Ready"}
+                {files.length === 0 ? <ImageConvertText locale={locale}>{"Empty"}</ImageConvertText> : isDone ? <ImageConvertText locale={locale}>{"Converted"}</ImageConvertText> : <ImageConvertText locale={locale}>{"Ready"}</ImageConvertText>}
               </span>
             </div>
 
@@ -273,9 +350,9 @@ export default function ImageConvert() {
                 <div className="w-14 h-14 bg-[#F8FAFC] text-[#2563EB] rounded-2xl flex items-center justify-center mb-3">
                   <ImageIcon size={28}/>
                 </div>
-                <span className="text-xs font-bold text-[#0F172A] block"><T>{"Add an image to get started\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-1 font-medium"><T>{"Before and after previews will appear here after conversion.\n                "}</T></span>
-                <span className="text-[10px] text-gray-400 mt-5 font-medium"><T>{"Or press Ctrl+V to paste a copied image\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A] block"><ImageConvertText locale={locale}>{"Add an image to get started\n                "}</ImageConvertText></span>
+                <span className="text-[10px] text-gray-400 mt-1 font-medium"><ImageConvertText locale={locale}>{"Before and after previews will appear here after conversion.\n                "}</ImageConvertText></span>
+                <span className="text-[10px] text-gray-400 mt-5 font-medium"><ImageConvertText locale={locale}>{"Or press Ctrl+V to paste a copied image\n                "}</ImageConvertText></span>
               </div>) : (
         /* Active File List & Grid Preview */
         <div className="flex-1 my-1 overflow-y-auto max-h-[380px] space-y-3 pr-1">
@@ -307,7 +384,7 @@ export default function ImageConvert() {
 
                 {/* Add More Button inside Preview Panel */}
                 <div className="pt-2 text-center">
-                  <button onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-[#2563EB] hover:text-[#2563EB] underline"><T>{"+ Add more images\n                  "}</T></button>
+                  <button onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-[#2563EB] hover:text-[#2563EB] underline"><ImageConvertText locale={locale}>{"+ Add more images\n                  "}</ImageConvertText></button>
                 </div>
               </div>)}
           </div>
@@ -316,15 +393,15 @@ export default function ImageConvert() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><ImageConvertText locale={locale}>{"Tools in the same category\n        "}</ImageConvertText></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/sohoj-tools/image-size-reducer" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Image Size Reducer\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImageConvertText locale={locale}>{"Image Size Reducer\n              "}</ImageConvertText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImageConvertText locale={locale}>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "}</ImageConvertText></p>
             </div>
           </Link>
 
@@ -333,8 +410,8 @@ export default function ImageConvert() {
               <CreditCard size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"NID Joiner\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImageConvertText locale={locale}>{"NID Joiner\n              "}</ImageConvertText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImageConvertText locale={locale}>{"Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "}</ImageConvertText></p>
             </div>
           </Link>
 
@@ -342,8 +419,8 @@ export default function ImageConvert() {
             <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><T>{"Remove Background\n              "}</T></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><T>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</T></p>
+              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><ImageConvertText locale={locale}>{"Remove Background\n              "}</ImageConvertText></h4>
+              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><ImageConvertText locale={locale}>{"Erase portrait, product, or logo backgrounds in your browser \u2014\n                download a transparent PNG.\n              "}</ImageConvertText></p>
             </div>
           </Link>
         </div>

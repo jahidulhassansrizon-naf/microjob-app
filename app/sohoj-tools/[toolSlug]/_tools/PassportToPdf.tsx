@@ -1,9 +1,183 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n, L as baseL } from "@/app/sohoj-tools/_i18n";
 import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, } from "react";
 import Link from "next/link";
 import { BookOpen, Star, Share2, ArrowLeft, RotateCw, ZoomIn, ZoomOut, Maximize2, Minimize2, Printer, Upload, Image as ImageIcon, CreditCard, Scissors, Crop, Trash2, Check, X, GripVertical, AlertCircle, CheckCircle2, Download, } from "lucide-react";
+/* -------------------------------------------------------------------------- */
+/*  Page-specific English ↔ Bangla UI translation                             */
+/* -------------------------------------------------------------------------- */
+const PASSPORT_JOINER_BN: Record<string, string> = {
+  "sohoj tools": "সহজ টুলস",
+  "image tools": "ছবির টুলস",
+  "passport joiner": "পাসপোর্টের ছবি সাজিয়ে PDF তৈরি",
+  "free": "বিনামূল্যে",
+  "processing": "প্রক্রিয়াকরণ চলছে",
+  "done": "সম্পন্ন",
+  "ready": "প্রস্তুত",
+  "empty": "খালি",
+  "create a clean a4 passport pdf directly in the browser.": "ব্রাউজারেই পাসপোর্টের ছবি সাজিয়ে পরিষ্কার A4 PDF তৈরি করুন।",
+  "turn passport front and back page photos into a clean a4 pdf — icao 88×125 mm layout, all in your browser.": "ব্রাউজারেই পাসপোর্টের সামনের ও পেছনের পাতার ছবি সাজিয়ে ICAO-এর ৮৮×১২৫ মিমি মাপ অনুযায়ী পরিষ্কার A4 PDF তৈরি করুন।",
+  "settings": "সেটিংস",
+  "page orientation": "পাতার দিক",
+  "auto": "স্বয়ংক্রিয়",
+  "portrait": "লম্বালম্বি",
+  "landscape": "আড়াআড়ি",
+  "layout": "ছবি সাজানোর ধরন",
+  "switch": "বদলান",
+  "side by side": "পাশাপাশি",
+  "stacked": "একটির নিচে আরেকটি",
+  "rotate": "ঘোরানো",
+  "rotate 90°": "৯০° ঘোরান",
+  "both pages rotate together.": "দুটি পাতাই একসঙ্গে ঘুরবে।",
+  "position on page": "পাতায় অবস্থান",
+  "top": "উপরে",
+  "center": "মাঝখানে",
+  "bottom": "নিচে",
+  "copies": "কপির সংখ্যা",
+  "two copies are placed on the same a4 sheet, at actual size when they fit.": "একই A4 পাতায় দুটি কপি রাখা হবে। জায়গা হলে কপিগুলো আসল মাপেই থাকবে।",
+  "rounded corners (14px)": "গোলাকার কোণা (১৪ পিক্সেল)",
+  "round the corners of each page image": "প্রতিটি পাতার ছবির কোণা গোল করুন।",
+  "adjustments": "ছবি ঠিকঠাক করা",
+  "reset": "রিসেট করুন",
+  "brightness": "উজ্জ্বলতা",
+  "contrast": "কনট্রাস্ট",
+  "sharpening": "স্পষ্টতা বাড়ানো",
+  "a4": "A4",
+  "· 1 sheet": "· ১টি পাতা",
+  "actual size: each page is 88×125 mm.": "আসল মাপ: প্রতিটি পাতা ৮৮×১২৫ মিমি।",
+  "print": "প্রিন্ট করুন",
+  "live preview": "তাৎক্ষণিক প্রিভিউ",
+  "a4 —": "A4 —",
+  "794×1123 px": "794×1123 পিক্সেল",
+  "1123×794 px": "1123×794 পিক্সেল",
+  "%": "%",
+  "upload your passport page": "পাসপোর্টের পাতার ছবি আপলোড করুন",
+  "add the front and back page photos from the controls below.": "নিচের অপশন থেকে পাসপোর্টের সামনের ও পেছনের পাতার ছবি যোগ করুন।",
+  "images ready — review the crop and create your pdf.": "ছবি যোগ করা হয়েছে—ক্রপ ঠিক আছে কি না দেখে PDF তৈরি করুন।",
+  "upload front and back page photos to get started.": "শুরু করতে পাসপোর্টের সামনের ও পেছনের পাতার ছবি আপলোড করুন।",
+  "processing…": "প্রক্রিয়াকরণ চলছে…",
+  "create pdf": "PDF তৈরি করুন",
+  "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+  "preview unavailable — check the crop.": "প্রিভিউ দেখা যাচ্ছে না—ছবির ক্রপ ঠিক আছে কি না দেখুন।",
+  "crop & straighten passport page": "পাসপোর্টের পাতা ক্রপ ও সোজা করুন",
+  "drag any corner or edge freely. drag inside the selected area to move the entire crop. the selected quadrilateral is straightened automatically.": "যেকোনো কোণা বা কিনারা টেনে নিজের মতো করে ঠিক করুন। নির্বাচিত অংশের ভেতরে টানলে পুরো ক্রপটি সরবে। নির্বাচিত অংশটি স্বয়ংক্রিয়ভাবে সোজা করা হবে।",
+  "drag inside to move": "ভেতরে টেনে সরান",
+  "corner handles move independently; edge handles move two corners together.": "কোণার নিয়ন্ত্রণগুলো আলাদাভাবে সরানো যায়; কিনারার নিয়ন্ত্রণ সরালে একসঙ্গে দুটি কোণা সরে।",
+  "the crop ratio is free — the page is fitted inside the 88×125 mm slot without stretching.": "ক্রপের অনুপাত নির্দিষ্ট নয়—ছবিটি টেনে বিকৃত না করে ৮৮×১২৫ মিমি জায়গার মধ্যে মানিয়ে নেওয়া হবে।",
+  "reset crop": "ক্রপ রিসেট করুন",
+  "cancel": "বাতিল করুন",
+  "apply crop": "ক্রপ প্রয়োগ করুন",
+  "click or drop an image here": "এখানে ক্লিক করুন অথবা ছবি টেনে এনে ছেড়ে দিন",
+  "jpg • png • webp • heic": "JPG • PNG • WebP • HEIC",
+  "maximum 20 mb": "সর্বোচ্চ ২০ MB",
+  "replace image": "ছবি বদলান",
+  "crop image": "ছবি ক্রপ করুন",
+  "remove image": "ছবি সরান",
+  "front passport page": "পাসপোর্টের সামনের পাতা",
+  "back passport page": "পাসপোর্টের পেছনের পাতা",
+  "front preview": "সামনের পাতার প্রিভিউ",
+  "back preview": "পেছনের পাতার প্রিভিউ",
+  "image size reducer": "ছবির আকার কমান",
+  "shrink jpg, png, and webp photos in your browser — quality stays sharp.": "ব্রাউজারেই JPG, PNG ও WebP ছবির আকার কমান, ছবির স্পষ্টতা বজায় রেখে।",
+  "nid joiner": "NID কার্ডের দুই পাশ একত্র করুন",
+  "turn nid card front and back photos into a clean a4 pdf — all in your browser.": "ব্রাউজারেই NID কার্ডের সামনের ও পেছনের ছবি সাজিয়ে পরিষ্কার A4 PDF তৈরি করুন।",
+  "remove background": "ছবির ব্যাকগ্রাউন্ড সরান",
+  "erase portrait, product, or logo backgrounds in your browser — download a transparent png.": "ব্রাউজারেই ব্যক্তি, পণ্য বা লোগোর ছবির ব্যাকগ্রাউন্ড সরিয়ে স্বচ্ছ PNG ডাউনলোড করুন।",
+  "free perspective crop editor": "পার্সপেক্টিভ ঠিক করার ফ্রি ক্রপ এডিটর",
+  "close crop editor": "ক্রপ এডিটর বন্ধ করুন",
+  "passport crop source": "ক্রপ করার জন্য পাসপোর্টের ছবি",
+  "passport crop controls": "পাসপোর্টের ছবি ক্রপ করার নিয়ন্ত্রণ",
+  "close notification": "বিজ্ঞপ্তি বন্ধ করুন",
+  "share this tool": "এই টুলটি শেয়ার করুন",
+  "rounded corners": "গোলাকার কোণা",
+  "zoom out": "ছোট করে দেখুন",
+  "zoom in": "বড় করে দেখুন",
+  "reset zoom to 100%": "জুম ১০০%-এ ফিরিয়ে আনুন",
+  "rotate both passport pages": "পাসপোর্টের দুটি পাতাই ঘোরান",
+  "toggle fullscreen preview": "প্রিভিউ পূর্ণপর্দায় দেখুন বা বন্ধ করুন",
+  "actual size": "আসল মাপ",
+  "this image could not be decoded by your browser.": "আপনার ব্রাউজার ছবিটি পড়তে পারেনি।",
+  "your browser could not create a drawing canvas.": "আপনার ব্রাউজারে ছবি আঁকার ক্যানভাস তৈরি করা যায়নি।",
+  "the selected file does not contain a readable image.": "নির্বাচিত ফাইলে পড়া যায় এমন ছবি নেই।",
+  "heic converter could not be loaded.": "HEIC রূপান্তরকারী লোড করা যায়নি।",
+  "this heic photo could not be converted. please export it as jpg or png and try again.": "এই HEIC ছবিটি রূপান্তর করা যায়নি। JPG বা PNG হিসেবে সংরক্ষণ করে আবার চেষ্টা করুন।",
+  "please choose a jpg, png, webp or heic image.": "JPG, PNG, WebP অথবা HEIC ছবি নির্বাচন করুন।",
+  "image size must be 20 mb or smaller.": "ছবির আকার ২০ MB বা তার কম হতে হবে।",
+  "the crop shape is too narrow or unstable. please adjust the corners.": "ক্রপের আকৃতি অতিরিক্ত সরু বা স্থিতিশীল নয়। কোণাগুলো ঠিক করুন।",
+  "please keep all four crop corners inside the image.": "ক্রপের চারটি কোণই ছবির ভেতরে রাখুন।",
+  "the image could not be uploaded.": "ছবি আপলোড করা যায়নি।",
+  "crop applied.": "ক্রপ প্রয়োগ করা হয়েছে।",
+  "passport joiner settings have been reset.": "পাসপোর্ট ছবির সেটিংস রিসেট করা হয়েছে।",
+  "upload at least one passport page before creating the pdf.": "PDF তৈরির আগে অন্তত একটি পাসপোর্ট পাতার ছবি আপলোড করুন।",
+  "pdf created — a4, 300 dpi.": "PDF তৈরি হয়েছে—A4, 300 DPI।",
+  "something went wrong while creating the pdf.": "PDF তৈরির সময় একটি সমস্যা হয়েছে।",
+  "upload at least one passport page before printing.": "প্রিন্ট করার আগে অন্তত একটি পাসপোর্ট পাতার ছবি আপলোড করুন।",
+  "please allow pop-ups for this site to print.": "প্রিন্ট করতে এই সাইটের পপ-আপ চালু করার অনুমতি দিন।",
+  "print dialog opened — choose 'actual size' / 100%.": "প্রিন্টের ডায়ালগ খোলা হয়েছে—‘আসল মাপ’ / ১০০% নির্বাচন করুন।",
+  "something went wrong while preparing the print layout.": "প্রিন্টের বিন্যাস প্রস্তুত করার সময় সমস্যা হয়েছে।",
+  "added to your favorites.": "পছন্দের তালিকায় যোগ করা হয়েছে।",
+  "removed from your favorites.": "পছন্দের তালিকা থেকে সরানো হয়েছে।",
+  "page link copied to clipboard.": "পেজের লিংক কপি করা হয়েছে।",
+  "sharing isn't available in this browser.": "এই ব্রাউজারে শেয়ার করার সুবিধা নেই।",
+  "fullscreen mode is not available in this browser.": "এই ব্রাউজারে পূর্ণপর্দা মোড ব্যবহার করা যায় না।",
+  "go back": "পেছনে যান",
+  "remove from favorites": "পছন্দের তালিকা থেকে সরান",
+  "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+};
+
+function normalizePassportText(value: string): string {
+  return value.replace(/\\r\\n/g, " ").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function translatePassportText(value: unknown, locale: string | undefined, fallback?: (value: string) => string): string {
+  const raw = String(value ?? "");
+  if (!locale || !String(locale).toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+  const key = normalizePassportText(raw);
+  const exact = PASSPORT_JOINER_BN[key];
+  if (exact !== undefined) return exact;
+
+  let match = /^(front|back) passport image added\.$/i.exec(key);
+  if (match) return `${match[1].toLowerCase() === "front" ? "সামনের" : "পেছনের"} পাতার পাসপোর্টের ছবি যোগ করা হয়েছে।`;
+  match = /^please upload a higher-resolution image \(at least (\d+) × (\d+) px\)\.$/i.exec(key);
+  if (match) return `আরও ভালো মানের ছবি আপলোড করুন (কমপক্ষে ${match[1]} × ${match[2]} পিক্সেল)।`;
+  match = /^scaled to (\d+)% to fit the sheet — not actual size\.$/i.exec(key);
+  if (match) return `পাতায় মানিয়ে নিতে ছবির মাপ ${match[1]}% করা হয়েছে—এটি আসল মাপ নয়।`;
+  match = /^(front|back) passport page, copy (\d+)$/i.exec(key);
+  if (match) return `পাসপোর্টের ${match[1].toLowerCase() === "front" ? "সামনের" : "পেছনের"} পাতা, ${match[2]} নম্বর কপি`;
+  match = /^upload (front|back) passport page$/i.exec(key);
+  if (match) return `${match[1].toLowerCase() === "front" ? "সামনের" : "পেছনের"} পাসপোর্টের পাতার ছবি আপলোড করুন`;
+  match = /^(replace|crop|remove) (front|back) passport page$/i.exec(key);
+  if (match) {
+    const action: Record<string, string> = { replace: "বদলান", crop: "ক্রপ করুন", remove: "সরান" };
+    return `${match[2].toLowerCase() === "front" ? "সামনের" : "পেছনের"} পাসপোর্টের পাতা ${action[match[1].toLowerCase()]}`;
+  }
+  match = /^(\d+) copies? · 1 sheet$/i.exec(key);
+  if (match) return `${match[1]}টি কপি · ১টি পাতা`;
+
+  if (fallback) {
+    const translated = fallback(raw);
+    if (translated && translated !== raw && /[\u0980-\u09FF]/.test(translated)) {
+      const technicalStripped = translated.replace(/PDF|A4|JPG|PNG|WebP|HEIC|NID|DPI|px|mm|%|ICAO|[0-9×]+/gi, "");
+      if (!/[A-Za-z]/.test(technicalStripped)) return translated;
+    }
+  }
+  return raw;
+}
+
+function T({ children }: { children: React.ReactNode }) {
+  const { locale, L: fallback } = useSohozI18n();
+  if (typeof children === "string" || typeof children === "number") {
+    return <>{translatePassportText(children, locale, fallback)}</>;
+  }
+  return <>{children}</>;
+}
+
+function L(value: string): string {
+  const locale = typeof document !== "undefined" && document.documentElement.getAttribute("data-locale") === "bn" ? "bn" : "en";
+  return translatePassportText(value, locale, baseL);
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -950,7 +1124,7 @@ function ProcessedCanvas({ result, label, className = "block w-full h-full objec
         <span className="w-4 h-4 rounded-full border-2 border-[#2563EB] border-t-transparent animate-spin"/>
       </div>);
     }
-    return (<canvas ref={ref} role="img" aria-label={label} className={className}/>);
+    return (<canvas ref={ref} role="img" aria-label={L(label)} className={className}/>);
 }
 type SegmentOption<T> = {
     value: T;
@@ -966,7 +1140,7 @@ function Segmented<T extends string | number>({ value, options, onChange, disabl
     return (<div role="group" className="grid gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100 text-xs font-bold" style={{
             gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
         }}>
-      {options.map((option) => (<button key={String(option.value)} type="button" onClick={() => onChange(option.value)} disabled={disabled} aria-pressed={value === option.value} aria-label={option.ariaLabel} className={`py-1.5 rounded-lg transition-all flex justify-center items-center gap-1 disabled:opacity-50 ${value === option.value
+      {options.map((option) => (<button key={String(option.value)} type="button" onClick={() => onChange(option.value)} disabled={disabled} aria-pressed={value === option.value} aria-label={option.ariaLabel ? L(option.ariaLabel) : undefined} className={`py-1.5 rounded-lg transition-all flex justify-center items-center gap-1 disabled:opacity-50 ${value === option.value
                 ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
                 : "text-gray-500 hover:text-[#0F172A]"}`}>
           {<T>{option.label}</T>}
@@ -985,7 +1159,7 @@ function SliderRow({ label, value, min, max, unit = "", onChange, disabled, }: {
     const id = useId();
     return (<div className="space-y-1">
       <div className="flex justify-between text-[10px] font-bold text-gray-600">
-        <label htmlFor={id}>{label}</label>
+        <label htmlFor={id}><T>{label}</T></label>
         <span className="bg-[#E2E8F0] text-[#2563EB] px-1 rounded">
           {value}
           {unit}
@@ -1239,7 +1413,7 @@ function UploadSlot({ slot, label, asset, settings, onUpload, onCrop, onRemove, 
             event.preventDefault();
             setIsDragging(false);
             onUpload(slot, event.dataTransfer.files);
-        }} role={asset ? undefined : "button"} tabIndex={asset ? undefined : 0} aria-label={asset ? undefined : `Upload ${label}`} onKeyDown={asset
+        }} role={asset ? undefined : "button"} tabIndex={asset ? undefined : 0} aria-label={asset ? undefined : L(`Upload ${label}`)} onKeyDown={asset
             ? undefined
             : (event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -1269,13 +1443,13 @@ function UploadSlot({ slot, label, asset, settings, onUpload, onCrop, onRemove, 
               </div>
 
               <div className="flex items-center gap-1">
-                <button type="button" onClick={openPicker} className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors" title={L("Replace image")} aria-label={`Replace ${label}`}>
+                <button type="button" onClick={openPicker} className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors" title={L("Replace image")} aria-label={L(`Replace ${label}`)}>
                   <Upload size={13}/>
                 </button>
-                <button type="button" onClick={() => onCrop(slot)} className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors" title={L("Crop image")} aria-label={`Crop ${label}`}>
+                <button type="button" onClick={() => onCrop(slot)} className="p-1.5 rounded-lg bg-[#F8FAFC] text-[#2563EB] hover:bg-[#E2E8F0] transition-colors" title={L("Crop image")} aria-label={L(`Crop ${label}`)}>
                   <Crop size={13}/>
                 </button>
-                <button type="button" onClick={() => onRemove(slot)} className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title={L("Remove image")} aria-label={`Remove ${label}`}>
+                <button type="button" onClick={() => onRemove(slot)} className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title={L("Remove image")} aria-label={L(`Remove ${label}`)}>
                   <Trash2 size={13}/>
                 </button>
               </div>
@@ -1285,7 +1459,7 @@ function UploadSlot({ slot, label, asset, settings, onUpload, onCrop, onRemove, 
           <div className="w-10 h-10 bg-[#E2E8F0] text-[#2563EB] rounded-full flex items-center justify-center mb-2">
             <Upload size={18}/>
           </div>
-          <span className="text-xs font-bold text-[#0F172A]">{label}</span>
+          <span className="text-xs font-bold text-[#0F172A]"><T>{label}</T></span>
           <span className="text-[9px] text-gray-400 mt-0.5"><T>{"Click or drop an image here\n          "}</T></span>
           <span className="text-[8px] bg-[#E2E8F0] text-[#2563EB] font-bold px-1.5 py-0.5 rounded mt-2"><T>{"JPG \u2022 PNG \u2022 WEBP \u2022 HEIC\n          "}</T></span>
           <span className="text-[8px] text-gray-400 mt-1"><T>{"Maximum 20 MB"}</T></span>
@@ -1324,7 +1498,8 @@ const ZOOM_MIN = 50;
 const ZOOM_MAX = 300;
 const ZOOM_STEP = 25;
 export default function PassportToPdf() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseTranslate } = useSohozI18n();
+    const L = useCallback((value: string) => translatePassportText(value, locale, baseTranslate), [locale, baseTranslate]);
     const [orientation, setOrientation] = useState<Orientation>("auto");
     const [layout, setLayout] = useState<Layout>("stacked");
     const [rotation, setRotation] = useState<number>(0);
@@ -1572,8 +1747,8 @@ export default function PassportToPdf() {
         try {
             if (navigator.share) {
                 await navigator.share({
-                    title: "Passport Joiner",
-                    text: "Create a clean A4 passport PDF directly in the browser.",
+                    title: L("Passport Joiner"),
+                    text: L("Create a clean A4 passport PDF directly in the browser."),
                     url: window.location.href,
                 });
                 return;
@@ -1636,7 +1811,7 @@ export default function PassportToPdf() {
                     : "bg-white/95 border-gray-200 text-[#0F172A]"}`} role={notice.type === "error" ? "alert" : "status"}>
           <div className="flex items-start gap-2">
             {notice.type === "error" ? (<AlertCircle size={16} className="mt-0.5 shrink-0"/>) : notice.type === "success" ? (<CheckCircle2 size={16} className="mt-0.5 shrink-0"/>) : (<Download size={16} className="mt-0.5 shrink-0"/>)}
-            <p className="text-xs font-semibold leading-5">{notice.message}</p>
+            <p className="text-xs font-semibold leading-5">{translatePassportText(notice.message, locale, baseTranslate)}</p>
             <button type="button" onClick={() => setNotice(null)} className="ml-1 opacity-60 hover:opacity-100" aria-label={L("Close notification")}>
               <X size={13}/>
             </button>
@@ -1671,7 +1846,7 @@ export default function PassportToPdf() {
         <div className="flex items-center gap-2 shrink-0">
           <button type="button" onClick={toggleFavorite} className={`p-2 rounded-xl transition-all border ${isFavorite
             ? "text-[#2563EB] bg-[#F8FAFC] border-[#E2E8F0]"
-            : "text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 border-gray-100"}`} aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={isFavorite}>
+            : "text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 border-gray-100"}`} aria-label={L(isFavorite ? "Remove from favorites" : "Add to favorites")} aria-pressed={isFavorite}>
             <Star size={16} fill={isFavorite ? "currentColor" : "none"}/>
           </button>
           <button type="button" onClick={() => void handleShare()} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100" aria-label={L("Share this tool")}>
@@ -1795,7 +1970,7 @@ export default function PassportToPdf() {
                 {geometry.orientation === "portrait" ? <T>{"Portrait"}</T> : <T>{"Landscape"}</T>}
               </span>
               <span>
-                {copies}<T>{"copy"}</T>{copies === 1 ? <T>{""}</T> : <T>{"ies"}</T>}<T>{"\u00B7 1 sheet\n              "}</T></span>
+                <T>{`${copies} ${copies === 1 ? "copy" : "copies"} · 1 sheet`}</T></span>
             </div>
             {hasImages ? (<p className={`text-[10px] font-medium ${scalePercent < 100 ? "text-amber-600" : "text-emerald-600"}`}>
                 {scalePercent < 100
@@ -1906,10 +2081,10 @@ export default function PassportToPdf() {
               </div>
               <div>
                 <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
-                  {title}
+                  <T>{title}</T>
                 </h4>
                 <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
-                  {text}
+                  <T>{text}</T>
                 </p>
               </div>
             </Link>))}

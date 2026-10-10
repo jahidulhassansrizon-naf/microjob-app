@@ -1,9 +1,138 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState } from "react";
 import Link from "next/link";
-import { FileCode, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Minimize2, Combine, FilePlus, ArrowLeft, X, Plus, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
+import { FileCode, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Minimize2, Combine, ArrowLeft, X, Plus, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
+// ---------------------------------------------------------------------------
+// Page-specific, context-aware translations. Keep format names such as PDF,
+// MB and KB intact, but translate complete UI sentences and dynamic statuses.
+// ---------------------------------------------------------------------------
+function normalizeSplitPdfText(value: string): string {
+    return String(value ?? "")
+        .replace(/[’‘]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[–—]/g, "-")
+        .replace(/\r\n/g, " ")
+        .replace(/[\r\n]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function splitPdfDigits(value: number | string): string {
+    return String(value).replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+}
+
+const SPLIT_PDF_BN: Record<string, string> = Object.fromEntries(Object.entries({
+    "back to tools": "টুলসমূহে ফিরে যান",
+    "pdf tools": "PDF টুলস",
+    "split pdf": "PDF ভাগ করুন",
+    "free": "বিনামূল্যে",
+    "extract specific pages or split every page into separate files.": "নির্দিষ্ট পৃষ্ঠাগুলো আলাদা করুন অথবা প্রতিটি পৃষ্ঠাকে পৃথক PDF ফাইলে ভাগ করুন।",
+    "add": "যোগ করুন",
+    "drop a pdf here or click to upload": "এখানে PDF ফাইল টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+    "1 pdf file, max 500 mb": "সর্বোচ্চ ৫০০ MB আকারের ১টি PDF ফাইল",
+    "split options": "ভাগ করার বিকল্প",
+    "all pages": "সব পৃষ্ঠা",
+    "page ranges": "পৃষ্ঠার পরিসর",
+    "pages or ranges": "পৃষ্ঠা বা পৃষ্ঠার পরিসর",
+    "preview": "প্রিভিউ",
+    "error": "ত্রুটি",
+    "splitting": "ভাগ করা হচ্ছে",
+    "reading": "পড়া হচ্ছে",
+    "ready": "প্রস্তুত",
+    "empty": "খালি",
+    "splitting your pdf…": "PDF ভাগ করা হচ্ছে…",
+    "reading your pdf…": "PDF পড়া হচ্ছে…",
+    "everything runs in your browser - larger files take a little longer.": "সব কাজ আপনার ব্রাউজারেই হয়—বড় ফাইলের ক্ষেত্রে একটু বেশি সময় লাগতে পারে।",
+    "split failed": "PDF ভাগ করা যায়নি",
+    "download all": "সবগুলো ডাউনলোড করুন",
+    "download": "ডাউনলোড করুন",
+    "choose your split options": "PDF ভাগ করার বিকল্প বেছে নিন",
+    "add files to get started": "শুরু করতে PDF ফাইল যোগ করুন",
+    "your result will appear here after you run the tool.": "টুলটি চালানোর পর ফলাফল এখানে দেখা যাবে।",
+    "split failed - try again": "PDF ভাগ করা যায়নি—আবার চেষ্টা করুন",
+    "splitting…": "ভাগ করা হচ্ছে…",
+    "reading pdf…": "PDF পড়া হচ্ছে…",
+    "add an input to get started": "শুরু করতে একটি PDF ফাইল যোগ করুন",
+    "reset": "রিসেট করুন",
+    "your files are processed in the browser - they are not uploaded to any server.": "আপনার ফাইলগুলো ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+    "how to use": "ব্যবহারের নিয়ম",
+    'upload your pdf file, choose the pages you want to extract or select page ranges, then click "split pdf" to save them as separate files.': 'আপনার PDF ফাইল আপলোড করুন, আলাদা করতে চান এমন পৃষ্ঠা বা পৃষ্ঠার পরিসর বেছে নিন, তারপর “PDF ভাগ করুন” চাপুন। পৃষ্ঠাগুলো আলাদা ফাইল হিসেবে সংরক্ষিত হবে।',
+    "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+    "compress pdf": "PDF সংকুচিত করুন",
+    "shrink embedded photos and scans inside a pdf - text stays sharp.": "PDF-এর ভেতরের ছবি ও স্ক্যানের আকার কমান—লেখা থাকবে স্পষ্ট।",
+    "merge pdfs": "PDF ফাইল একত্র করুন",
+    "combine multiple pdf files into one document in your chosen order.": "আপনার পছন্দের ক্রমে একাধিক PDF ফাইল এক নথিতে একত্র করুন।",
+    " · reading…": " · পড়া হচ্ছে…",
+    "enter at least one page or range, e.g. 1-3, 5": "কমপক্ষে একটি পৃষ্ঠা বা পৃষ্ঠার পরিসর লিখুন, যেমন 1-3, 5।",
+    "couldn't read this pdf - it may be encrypted or corrupted.": "এই PDF ফাইলটি পড়া যায়নি। এটি পাসওয়ার্ড-সুরক্ষিত বা নষ্ট হয়ে থাকতে পারে।",
+    "something went wrong while splitting this pdf.": "PDF ভাগ করার সময় সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    "splitting…": "ভাগ করা হচ্ছে…",
+    "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "share this tool": "এই টুলটি শেয়ার করুন",
+    "remove pdf": "PDF সরান",
+}).map(([key, translated]) => [normalizeSplitPdfText(key), translated]));
+
+function translateSplitPdfText(value: string, locale: string | undefined): string {
+    const raw = String(value ?? "");
+    if (!String(locale ?? "en").toLowerCase().startsWith("bn")) return raw;
+
+    const key = normalizeSplitPdfText(raw);
+    const exact = SPLIT_PDF_BN[key];
+    if (exact !== undefined) return exact;
+
+    let match = raw.trim().match(/^range\s+"(.+)"\s+is out of bounds\s+[-—]\s+this PDF has (\d+) pages?\.?$/i);
+    if (match) return `পৃষ্ঠা ${match[1]}-এর পরিসর এই PDF-এর সীমার বাইরে। ফাইলটিতে মোট ${splitPdfDigits(match[2])}টি পৃষ্ঠা আছে।`;
+
+    match = raw.trim().match(/^page\s+(\d+)\s+is out of bounds\s+[-—]\s+this PDF has (\d+) pages?\.?$/i);
+    if (match) return `পৃষ্ঠা ${splitPdfDigits(match[1])} এই PDF-এর সীমার বাইরে। ফাইলটিতে মোট ${splitPdfDigits(match[2])}টি পৃষ্ঠা আছে।`;
+
+    match = raw.trim().match(/^"(.+)" isn't a valid page or range\.?$/i);
+    if (match) return `“${match[1]}” বৈধ পৃষ্ঠা বা পৃষ্ঠার পরিসর নয়।`;
+
+    match = raw.trim().match(/^page\s+(\d+)$/i);
+    if (match) return `পৃষ্ঠা ${splitPdfDigits(match[1])}`;
+
+    match = raw.trim().match(/^pages\s+(\d+)\s*-\s*(\d+)$/i);
+    if (match) return `পৃষ্ঠা ${splitPdfDigits(match[1])}–${splitPdfDigits(match[2])}`;
+
+    match = raw.trim().match(/^files\s*\((\d+)\)$/i);
+    if (match) return `ফাইল (${splitPdfDigits(match[1])})`;
+
+    match = raw.trim().match(/^(\d+)\s+pages?$/i);
+    if (match) return `${splitPdfDigits(match[1])}টি পৃষ্ঠা`;
+
+    match = raw.trim().match(/^(\d+)\s+files?$/i);
+    if (match) return `${splitPdfDigits(match[1])}টি ফাইল`;
+
+    match = raw.trim().match(/^(\d+)\s+files?\s+ready$/i);
+    if (match) return `ডাউনলোডের জন্য ${splitPdfDigits(match[1])}টি ফাইল প্রস্তুত`;
+
+    match = raw.trim().match(/^done:\s*(\d+)\s+files?\s+ready to download$/i);
+    if (match) return `কাজ শেষ: ডাউনলোডের জন্য ${splitPdfDigits(match[1])}টি ফাইল প্রস্তুত`;
+
+    match = raw.trim().match(/^ready to split:\s*(.+)$/i);
+    if (match) return `ভাগ করার জন্য প্রস্তুত: ${match[1]}`;
+
+    match = raw.trim().match(/^this PDF has (\d+) pages?\.\s*separate multiple ranges with commas\s*[-—]\s*each one becomes its own file\.?$/i);
+    if (match) return `এই PDF-এ ${splitPdfDigits(match[1])}টি পৃষ্ঠা আছে। একাধিক পরিসর কমা দিয়ে আলাদা করুন—প্রতিটি পরিসরের জন্য আলাদা ফাইল তৈরি হবে।`;
+
+    // If an unexpected PDF parsing message reaches the UI, prefer a clear
+    // Bengali recovery message rather than exposing a half-translated error.
+    if (/pdf|page|range|encrypt|corrupt|invalid|split|object|stream|parser|parse|unexpected|failed|error/i.test(raw)) {
+        return "PDF ফাইলটি ভাগ করা যায়নি। ফাইলটি ঠিক আছে কি না পরীক্ষা করে আবার চেষ্টা করুন।";
+    }
+    return raw;
+}
+
+function T({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translateSplitPdfText(children, locale)}</>;
+}
+
 // ---------------------------------------------------------------------------
 // Split engine (pdf-lib)
 // ---------------------------------------------------------------------------
@@ -22,13 +151,14 @@ interface SplitResult {
     size: number;
     pageCount: number;
 }
-function formatBytes(bytes: number): string {
+function formatBytes(bytes: number, locale: string | undefined = "en"): string {
+    const numberLocale = String(locale ?? "en").toLowerCase().startsWith("bn") ? "bn-BD" : "en-US";
     if (bytes < 1024)
-        return `${bytes} B`;
+        return `${bytes.toLocaleString(numberLocale)} B`;
     const kb = bytes / 1024;
     if (kb < 1024)
-        return `${kb.toFixed(1)} KB`;
-    return `${(kb / 1024).toFixed(2)} MB`;
+        return `${kb.toLocaleString(numberLocale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })} KB`;
+    return `${(kb / 1024).toLocaleString(numberLocale, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} MB`;
 }
 function slugify(label: string): string {
     return label.toLowerCase().replace(/\s+/g, "-");
@@ -109,7 +239,7 @@ async function buildSplitFiles(file: File, groups: PageGroup[]): Promise<SplitRe
     return outputs;
 }
 export default function SplitPdf() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showHowToUse, setShowHowToUse] = useState(false);
     const [pageCount, setPageCount] = useState<number | null>(null);
@@ -250,11 +380,11 @@ export default function SplitPdf() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={translateSplitPdfText("Add to favorites", locale)} title={translateSplitPdfText("Add to favorites", locale)} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Star size={16}/>
           </button>
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={translateSplitPdfText("Share this tool", locale)} title={translateSplitPdfText("Share this tool", locale)} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
             <Share2 size={16}/>
           </button>
         </div>
@@ -266,7 +396,7 @@ export default function SplitPdf() {
         <div className="lg:col-span-4 space-y-4">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Files ("}</T>{selectedFile ? 1 : 0}<T>{")\n              "}</T></h2>
+              <h2 className="text-xs font-bold text-[#0F172A]"><T>{`Files (${selectedFile ? 1 : 0})`}</T></h2>
 
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#EFF6FF] hover:bg-[#DBEAFE] px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#DBEAFE]">
                 <Plus size={12}/>
@@ -298,15 +428,15 @@ export default function SplitPdf() {
                     </p>
 
                     <p className="text-[10px] text-gray-400">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<T>{"MB\n                      "}</T>{isLoadingFile
+                      {(selectedFile.size / (1024 * 1024)).toLocaleString(String(locale ?? "en").toLowerCase().startsWith("bn") ? "bn-BD" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<T>{" MB"}</T>{isLoadingFile
             ? <T>{" · reading…"}</T> : pageCount
-            ? ` · ${pageCount} page${pageCount === 1 ? "" : "s"}`
+            ? ` · ${translateSplitPdfText(`${pageCount} page${pageCount === 1 ? "" : "s"}`, locale)}`
             : ""}
                     </p>
                   </div>
                 </div>
 
-                <button onClick={handleReset} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                <button onClick={handleReset} aria-label={translateSplitPdfText("Remove PDF", locale)} title={translateSplitPdfText("Remove PDF", locale)} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
                   <X size={16}/>
                 </button>
               </div>)}
@@ -327,12 +457,12 @@ export default function SplitPdf() {
                 : "text-gray-500 hover:text-[#0F172A]"}`}><T>{"Page ranges\n                "}</T></button>
               </div>
 
-              {splitMode === "all" ? (<p className="text-[11px] text-gray-400 leading-relaxed"><T>{"Every page becomes its own PDF \u2014 "}</T>{pageCount}<T>{"file\n                  "}</T>{pageCount === 1 ? <T>{""}</T> : <T>{"s"}</T>}<T>{"in total.\n                "}</T></p>) : (<div className="space-y-2">
+              {splitMode === "all" ? (<p className="text-[11px] text-gray-400 leading-relaxed">{String(locale ?? "en").toLowerCase().startsWith("bn") ? `প্রতিটি পৃষ্ঠা আলাদা PDF ফাইল হবে—মোট ${splitPdfDigits(pageCount)}টি ফাইল তৈরি হবে।` : `Every page becomes its own PDF — ${pageCount} file${pageCount === 1 ? "" : "s"} in total.`}</p>) : (<div className="space-y-2">
                   <label className="text-[11px] font-bold text-gray-600 block"><T>{"Pages or ranges\n                  "}</T></label>
 
-                  <input type="text" value={rangesInput} onChange={(e) => setRangesInput(e.target.value)} placeholder={L("e.g. 1-3, 5")} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
+                  <input type="text" value={rangesInput} onChange={(e) => setRangesInput(e.target.value)} placeholder={String(locale ?? "en").toLowerCase().startsWith("bn") ? "যেমন: 1-3, 5" : "e.g. 1-3, 5"} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
 
-                  <p className="text-[10px] text-gray-400"><T>{"This PDF has "}</T>{pageCount}<T>{"page\n                    "}</T>{pageCount === 1 ? <T>{""}</T> : <T>{"s"}</T>}<T>{". Separate multiple ranges with\n                    commas \u2014 each one becomes its own file.\n                  "}</T></p>
+                  <p className="text-[10px] text-gray-400">{String(locale ?? "en").toLowerCase().startsWith("bn") ? `এই PDF-এ ${splitPdfDigits(pageCount)}টি পৃষ্ঠা আছে। একাধিক পরিসর কমা দিয়ে আলাদা করুন—প্রতিটি পরিসরের জন্য আলাদা ফাইল তৈরি হবে।` : `This PDF has ${pageCount} page${pageCount === 1 ? "" : "s"}. Separate multiple ranges with commas — each one becomes its own file.`}</p>
                 </div>)}
             </div>)}
         </div>
@@ -353,14 +483,14 @@ export default function SplitPdf() {
                         : "bg-gray-100 text-gray-500"}`}>
               {errorMessage
         ? <T>{"Error"}</T> : results
-        ? `${results.length} file${results.length === 1 ? "" : "s"}`
+        ? translateSplitPdfText(`${results.length} file${results.length === 1 ? "" : "s"}`, locale)
         : isProcessing
-            ? "Splitting"
+            ? <T>{"Splitting"}</T>
             : isLoadingFile
-                ? "Reading"
+                ? <T>{"Reading"}</T>
                 : selectedFile
-                    ? "Ready"
-                    : "Empty"}
+                    ? <T>{"Ready"}</T>
+                    : <T>{"Empty"}</T>}
             </span>
           </div>
 
@@ -380,7 +510,7 @@ export default function SplitPdf() {
               <p className="text-xs font-bold text-red-700"><T>{"Split failed"}</T></p>
 
               <p className="text-[11px] text-red-500 mt-1 max-w-xs">
-                {errorMessage}
+                {translateSplitPdfText(errorMessage, locale)}
               </p>
             </div>) : results ? (<div className="my-auto py-4 space-y-4">
               <div className="flex items-center justify-between">
@@ -390,7 +520,7 @@ export default function SplitPdf() {
                   </div>
 
                   <p className="text-xs font-bold text-[#0F172A]">
-                    {results.length}<T>{"file\n                    "}</T>{results.length === 1 ? <T>{""}</T> : <T>{"s"}</T>}<T>{"ready\n                  "}</T></p>
+                    {translateSplitPdfText(`${results.length} file${results.length === 1 ? "" : "s"} ready`, locale)}</p>
                 </div>
 
                 {results.length > 1 && (<button onClick={handleDownloadAll} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-[#1D4ED8] transition-all">
@@ -408,7 +538,7 @@ export default function SplitPdf() {
                     </p>
 
                     <p className="text-[10px] text-gray-400">
-                      {formatBytes(result.size)}
+                      {formatBytes(result.size, locale)}
                     </p>
 
                     <button onClick={() => downloadResult(result)} className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-gray-200 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-gray-100 transition-all">
@@ -446,14 +576,14 @@ export default function SplitPdf() {
           <span>
             {errorMessage
         ? <T>{"Split failed — try again"}</T> : results
-        ? `Done: ${results.length} file${results.length === 1 ? "" : "s"} ready to download`
+        ? translateSplitPdfText(`Done: ${results.length} file${results.length === 1 ? "" : "s"} ready to download`, locale)
         : isProcessing
-            ? "Splitting…"
+            ? <T>{"Splitting…"}</T>
             : isLoadingFile
-                ? "Reading PDF…"
+                ? <T>{"Reading PDF…"}</T>
                 : selectedFile
-                    ? `Ready to split: ${selectedFile.name}`
-                    : "Add an input to get started"}
+                    ? translateSplitPdfText(`Ready to split: ${selectedFile.name}`, locale)
+                    : <T>{"Add an input to get started"}</T>}
           </span>
         </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,74 @@ type BijoyConverterModule = {
 declare const require: (moduleName: string) => BijoyConverterModule;
 const { ConvertToUnicode, ConvertToASCII, }: BijoyConverterModule = require("bijoy-to-unicode-bengali-conversion");
 // Tools in same category data
+const BIJOY_BN: Record<string, string> = {
+    "Go back": "পেছনে যান",
+    "Sohoj Tools": "সহজ টুলস",
+    "/": "/",
+    "Text Tools": "লেখার টুলস",
+    "Bijoy ↔ Unicode": "বিজয় ↔ Unicode",
+    "Bijoy": "বিজয়",
+    "Convert to Unicode": "Unicode-এ রূপান্তর করুন",
+    "Convert to Bijoy": "বিজয়ে রূপান্তর করুন",
+    "Free": "বিনামূল্যে",
+    "Convert Bangla text between Bijoy ANSI and Unicode directly in your browser.": "ব্রাউজারেই সরাসরি বিজয় ANSI ও Unicode-এর মধ্যে বাংলা লেখা রূপান্তর করুন।",
+    "Add to favorites": "প্রিয় তালিকায় যোগ করুন",
+    "Remove from favorites": "প্রিয় তালিকা থেকে সরান",
+    "Share this tool": "এই টুলটি শেয়ার করুন",
+    "Conversion input": "রূপান্তরের ইনপুট",
+    "Conversion direction": "রূপান্তরের দিক",
+    "Bijoy to Unicode": "বিজয় থেকে Unicode",
+    "Unicode to Bijoy": "Unicode থেকে বিজয়",
+    "Bijoy (ANSI)": "বিজয় (ANSI)",
+    "Unicode": "Unicode",
+    "Paste Bijoy font text here...": "এখানে বিজয় ফন্টের লেখা পেস্ট করুন...",
+    "Paste Unicode Bangla text here...": "এখানে Unicode বাংলা লেখা পেস্ট করুন...",
+    "characters": "টি অক্ষর",
+    "Converted text": "রূপান্তরিত লেখা",
+    "Ready ·": "প্রস্তুত · ",
+    "Empty": "খালি",
+    "Paste text to get started": "শুরু করতে লেখা পেস্ট করুন",
+    "Choose a direction, paste your text, then convert it in the browser.": "প্রথমে রূপান্তরের দিক বেছে নিয়ে লেখা পেস্ট করুন। এরপর ব্রাউজারেই লেখাটি রূপান্তরিত হবে।",
+    "Copied!": "কপি হয়েছে!",
+    "Copy Converted Text": "রূপান্তরিত লেখা কপি করুন",
+    "Converted": "রূপান্তর সম্পন্ন",
+    "Text ready to convert": "লেখা রূপান্তরের জন্য প্রস্তুত",
+    "Add an input to get started": "শুরু করতে লেখা যোগ করুন",
+    "Reset": "সব মুছে ফেলুন",
+    "Your files are processed in the browser — they are not uploaded to any server.": "আপনার লেখা ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—এটি কোনো সার্ভারে আপলোড করা হয় না।",
+    "How to use": "ব্যবহারের নিয়ম",
+    "1. Select the conversion direction (Bijoy to Unicode or Unicode to Bijoy).": "১. রূপান্তরের দিক বেছে নিন (বিজয় থেকে Unicode অথবা Unicode থেকে বিজয়)।",
+    "2. Paste your input text into the text area on the left.": "২. বাম পাশের লেখার ঘরে আপনার লেখা পেস্ট করুন।",
+    "3. The converted output will automatically generate on the right box.": "৩. রূপান্তরিত লেখা স্বয়ংক্রিয়ভাবে ডান পাশের ঘরে দেখা যাবে।",
+    "4. Click 'Copy Converted Text' to copy your result instantly.": "৪. ফলাফল কপি করতে ‘রূপান্তরিত লেখা কপি করুন’ বাটনে চাপ দিন।",
+    "Tools in the same category": "একই বিভাগের অন্যান্য টুল",
+    "Banglish Typing": "বাংলিশ টাইপিং",
+    "Type Bangla with an English keyboard — live Banglish to Bangla and Bangla to Banglish conversion in your browser.": "ইংরেজি কিবোর্ডে বাংলা লিখুন—ব্রাউজারেই বাংলিশ থেকে বাংলা এবং বাংলা থেকে বাংলিশে সরাসরি রূপান্তর করুন।",
+    "Image to Text": "ছবি থেকে লেখা",
+    "Extract text from images with OCR in your browser — supports English and Bengali.": "ব্রাউজারে OCR প্রযুক্তি ব্যবহার করে ছবি থেকে লেখা বের করুন—ইংরেজি ও বাংলা দুটিই সমর্থিত।",
+    "Text to convert": "রূপান্তরের জন্য লেখা",
+    "Couldn't convert this text. Please check the input.": "লেখাটি রূপান্তর করা যায়নি। অনুগ্রহ করে ইনপুটটি পরীক্ষা করুন।",
+};
+
+function normalizeBijoyText(value: string): string {
+    return value.replace(/\s+/g, " ").trim();
+}
+
+function translateBijoyText(value: string, locale: string, baseL?: (text: string) => string): string {
+    const key = normalizeBijoyText(value);
+    if (!key) return value;
+    if (!/^bn(?:-|$)/i.test(String(locale))) {
+        return baseL ? baseL(value) : value;
+    }
+    return BIJOY_BN[key] ?? (baseL ? baseL(value) : value);
+}
+
+function BijoyText({ children }: { children: React.ReactNode }) {
+    const { locale, L } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translateBijoyText(children, locale, L)}</>;
+}
+
 const relatedTools = [
     {
         title: "Banglish Typing",
@@ -33,7 +101,8 @@ const relatedTools = [
     },
 ];
 export default function BijoyToUnicode() {
-    const { L } = useSohozI18n();
+    const { locale, L } = useSohozI18n();
+    const EL = useCallback((value: string) => translateBijoyText(value, locale, L), [locale, L]);
     const router = useRouter();
     // States
     const [direction, setDirection] = useState<"bijoyToUnicode" | "unicodeToBijoy">("bijoyToUnicode");
@@ -71,9 +140,9 @@ export default function BijoyToUnicode() {
         }
         catch {
             setConvertedText("");
-            setConversionError("Couldn't convert this text. Please check the input.");
+            setConversionError(EL("Couldn't convert this text. Please check the input."));
         }
-    }, [inputText, direction, convert]);
+    }, [inputText, direction, convert, EL]);
     // Input change handler (typing / pasting)
     const handleConversion = (text: string) => {
         setInputText(text);
@@ -110,19 +179,19 @@ export default function BijoyToUnicode() {
           <div>
             {/* Breadcrumb with Back Button */}
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={L("Go back")}>
+              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={EL("Go back")} aria-label={EL("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
 
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><BijoyText>{"Sohoj Tools\n              "}</BijoyText></Link>
 
-              <span><T>{"/"}</T></span>
+              <span><BijoyText>{"/"}</BijoyText></span>
 
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"Text Tools\n              "}</T></span>
+              <span className="hover:text-[#0F172A] cursor-pointer"><BijoyText>{"Text Tools\n              "}</BijoyText></span>
 
-              <span><T>{"/"}</T></span>
+              <span><BijoyText>{"/"}</BijoyText></span>
 
-              <span className="text-[#0F172A] font-semibold"><T>{"Bijoy \u2194 Unicode\n              "}</T></span>
+              <span className="text-[#0F172A] font-semibold"><BijoyText>{"Bijoy \u2194 Unicode\n              "}</BijoyText></span>
             </div>
 
             {/* Title & Badge */}
@@ -131,21 +200,21 @@ export default function BijoyToUnicode() {
                 <Languages size={18}/>
               </div>
 
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Bijoy \u2194 Unicode\n              "}</T></h1>
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><BijoyText>{"Bijoy \u2194 Unicode\n              "}</BijoyText></h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><BijoyText>{"Free\n              "}</BijoyText></span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Convert Bangla text between Bijoy ANSI and Unicode directly in\n              your browser.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-1"><BijoyText>{"Convert Bangla text between Bijoy ANSI and Unicode directly in\n              your browser.\n            "}</BijoyText></p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs">
+            <button onClick={() => setIsFavorite(!isFavorite)} title={EL(isFavorite ? "Remove from favorites" : "Add to favorites")} aria-label={EL(isFavorite ? "Remove from favorites" : "Add to favorites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs">
               <Star size={16} className={isFavorite ? "fill-amber-400 text-[#2563EB]" : ""}/>
             </button>
 
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button title={EL("Share this tool")} aria-label={EL("Share this tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -157,24 +226,24 @@ export default function BijoyToUnicode() {
           <div className="lg:col-span-4 space-y-4">
             {/* Conversion Direction Card */}
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block"><T>{"Conversion input\n              "}</T></span>
+              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block"><BijoyText>{"Conversion input\n              "}</BijoyText></span>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-semibold text-gray-500 block"><T>{"Conversion direction\n                "}</T></span>
+                <span className="text-[11px] font-semibold text-gray-500 block"><BijoyText>{"Conversion direction\n                "}</BijoyText></span>
 
                 <div className="space-y-2">
                   <button onClick={() => handleDirectionChange("bijoyToUnicode")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${direction === "bijoyToUnicode"
             ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
             : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
                     <ArrowLeftRight size={14}/>
-                    <span><T>{"Bijoy to Unicode"}</T></span>
+                    <span><BijoyText>{"Bijoy to Unicode"}</BijoyText></span>
                   </button>
 
                   <button onClick={() => handleDirectionChange("unicodeToBijoy")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${direction === "unicodeToBijoy"
             ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
             : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
                     <ArrowLeftRight size={14}/>
-                    <span><T>{"Unicode to Bijoy"}</T></span>
+                    <span><BijoyText>{"Unicode to Bijoy"}</BijoyText></span>
                   </button>
                 </div>
               </div>
@@ -184,13 +253,13 @@ export default function BijoyToUnicode() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase">
-                  {direction === "bijoyToUnicode" ? <T>{"Bijoy (ANSI)"}</T> : <T>{"Unicode"}</T>}
+                  {direction === "bijoyToUnicode" ? <BijoyText>{"Bijoy (ANSI)"}</BijoyText> : <BijoyText>{"Unicode"}</BijoyText>}
                 </span>
               </div>
 
-              <textarea rows={9} placeholder={direction === "bijoyToUnicode"
-            ? "Paste Bijoy font text here..."
-            : "Paste Unicode Bangla text here..."} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"/>
+              <textarea rows={9} aria-label={EL("Text to convert")} placeholder={direction === "bijoyToUnicode"
+            ? EL("Paste Bijoy font text here...")
+            : EL("Paste Unicode Bangla text here...")} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"/>
 
               <div className="flex items-center justify-between">
                 {conversionError ? (<span className="text-[10px] font-semibold text-red-500">
@@ -198,7 +267,7 @@ export default function BijoyToUnicode() {
                   </span>) : (<span />)}
 
                 <span className="text-[10px] font-medium text-gray-400">
-                  {inputText.length}<T>{"characters\n                "}</T></span>
+                  {inputText.length}<BijoyText>{"characters\n                "}</BijoyText></span>
               </div>
             </div>
           </div>
@@ -208,9 +277,9 @@ export default function BijoyToUnicode() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[380px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Converted text\n                  "}</T></span>
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><BijoyText>{"Converted text\n                  "}</BijoyText></span>
 
-                  {convertedText ? (<span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><T>{"Ready \u00B7 "}</T>{convertedText.length}<T>{"characters\n                    "}</T></span>) : (<span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md"><T>{"Empty\n                    "}</T></span>)}
+                  {convertedText ? (<span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><BijoyText>{"Ready \u00B7 "}</BijoyText>{convertedText.length}<BijoyText>{"characters\n                    "}</BijoyText></span>) : (<span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md"><BijoyText>{"Empty\n                    "}</BijoyText></span>)}
                 </div>
 
                 {/* Output Display Area */}
@@ -220,9 +289,9 @@ export default function BijoyToUnicode() {
                         <Languages size={24}/>
                       </div>
 
-                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><T>{"Paste text to get started\n                      "}</T></h3>
+                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><BijoyText>{"Paste text to get started\n                      "}</BijoyText></h3>
 
-                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><T>{"Choose a direction, paste your text, then convert it in\n                        the browser.\n                      "}</T></p>
+                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><BijoyText>{"Choose a direction, paste your text, then convert it in\n                        the browser.\n                      "}</BijoyText></p>
                     </div>) : (<div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl text-xs text-[#0F172A] leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
                       {convertedText}
                     </div>)}
@@ -234,7 +303,7 @@ export default function BijoyToUnicode() {
                   <button onClick={handleCopy} className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-2xs">
                     {copied ? <Check size={14}/> : <Copy size={14}/>}
 
-                    <span>{copied ? <T>{"Copied!"}</T> : <T>{"Copy Converted Text"}</T>}</span>
+                    <span>{copied ? <BijoyText>{"Copied!"}</BijoyText> : <BijoyText>{"Copy Converted Text"}</BijoyText>}</span>
                   </button>
                 </div>)}
             </div>
@@ -254,23 +323,21 @@ export default function BijoyToUnicode() {
               {conversionError
             ? conversionError
             : convertedText
-                ? "Converted"
+                ? EL("Converted")
                 : inputText
-                    ? "Text ready to convert"
-                    : "Add an input to get started"}
+                    ? EL("Text ready to convert")
+                    : EL("Add an input to get started")}
             </span>
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button onClick={handleReset} className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#0F172A] font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
               <RotateCcw size={13}/>
-              <span><T>{"Reset"}</T></span>
+              <span><BijoyText>{"Reset"}</BijoyText></span>
             </button>
 
             <button onClick={handleConvertClick} disabled={!inputText.trim()} className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
-              <span><T>{"Convert to"}</T>{<T>{" "}</T>}
-                {direction === "bijoyToUnicode" ? <T>{"Unicode"}</T> : <T>{"Bijoy"}</T>}
-              </span>
+              <span>{direction === "bijoyToUnicode" ? EL("Convert to Unicode") : EL("Convert to Bijoy")}</span>
             </button>
           </div>
         </div>
@@ -279,7 +346,7 @@ export default function BijoyToUnicode() {
         <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0"/>
 
-          <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</T></span>
+          <span><BijoyText>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</BijoyText></span>
         </div>
 
         {/* HOW TO USE DROPDOWN */}
@@ -287,26 +354,26 @@ export default function BijoyToUnicode() {
           <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500"/>
-              <span><T>{"How to use"}</T></span>
+              <span><BijoyText>{"How to use"}</BijoyText></span>
             </div>
 
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
           {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
-              <p><T>{"1. Select the conversion direction (Bijoy to Unicode or Unicode\n                to Bijoy).\n              "}</T></p>
+              <p><BijoyText>{"1. Select the conversion direction (Bijoy to Unicode or Unicode\n                to Bijoy).\n              "}</BijoyText></p>
 
-              <p><T>{"2. Paste your input text into the text area on the left."}</T></p>
+              <p><BijoyText>{"2. Paste your input text into the text area on the left."}</BijoyText></p>
 
-              <p><T>{"3. The converted output will automatically generate on the right\n                box.\n              "}</T></p>
+              <p><BijoyText>{"3. The converted output will automatically generate on the right\n                box.\n              "}</BijoyText></p>
 
-              <p><T>{"4. Click 'Copy Converted Text' to copy your result instantly.\n              "}</T></p>
+              <p><BijoyText>{"4. Click 'Copy Converted Text' to copy your result instantly.\n              "}</BijoyText></p>
             </div>)}
         </div>
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><BijoyText>{"Tools in the same category\n          "}</BijoyText></h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
@@ -318,11 +385,11 @@ export default function BijoyToUnicode() {
                     </div>
 
                     <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-sky-600 transition-colors">
-                      {<T>{tool.title}</T>}
+                      {<BijoyText>{tool.title}</BijoyText>}
                     </h3>
 
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                      {<T>{tool.description}</T>}
+                      {<BijoyText>{tool.description}</BijoyText>}
                     </p>
                   </div>
                 </Link>);

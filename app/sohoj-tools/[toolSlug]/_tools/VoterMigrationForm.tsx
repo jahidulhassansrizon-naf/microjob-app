@@ -1,10 +1,177 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Star, Share, FileText, CreditCard, ShieldCheck, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Printer, RotateCcw, RefreshCw, Download, X, Calendar as CalendarIcon, AlertTriangle, Loader2, Minus, Plus, CheckCircle2, } from "lucide-react";
 import { DISTRICTS, upazilasForDistrict, districtBnById, upazilaBnById, } from "./bd-geo-data";
+
+/* -------------------------------------------------------------------------- */
+/*                  Voter Migration page-specific translations                */
+/* -------------------------------------------------------------------------- */
+const VOTER_MIGRATION_BN: Record<string, string> = {
+  "no results found": "কোনো ফলাফল পাওয়া যায়নি",
+  "age": "বয়স",
+  "— not yet 18": "— এখনও ১৮ বছর পূর্ণ হয়নি",
+  "the electoral roll requires an age of at least 18.": "ভোটার তালিকায় অন্তর্ভুক্ত হতে কমপক্ষে ১৮ বছর বয়স হতে হবে।",
+  "• but under 18 the name is not added to the voter list — the office may return this form.": "• ১৮ বছরের কম বয়স হলে ভোটার তালিকায় নাম যুক্ত হয় না—নির্বাচন অফিস এই আবেদন ফেরত দিতে পারে।",
+  "• turns 18 on:": "• ১৮ বছর পূর্ণ হবে:",
+  "fix the date": "জন্মতারিখ ঠিক করুন",
+  "continue anyway": "তবুও চালিয়ে যান",
+  "sohoj tools": "সহজ টুলস",
+  "general tools": "সাধারণ টুলস",
+  "voter migration form": "ভোটার এলাকা স্থানান্তর ফর্ম",
+  "free": "বিনামূল্যে",
+  "used": "ব্যবহার হয়েছে",
+  "times": "বার",
+  "fill in your details on the left — see a live form-13 on the right and download it as pdf.": "বাম পাশে আপনার তথ্য পূরণ করুন—ডান পাশে Form-13-এর পূর্বরূপ দেখুন এবং PDF হিসেবে ডাউনলোড করুন।",
+  "settings": "সেটিংস",
+  "preview updates as you type.": "টাইপ করার সঙ্গে সঙ্গে পূর্বরূপ আপডেট হবে।",
+  "processing...": "প্রক্রিয়াকরণ চলছে...",
+  "print": "প্রিন্ট করুন",
+  "download pdf": "PDF ডাউনলোড করুন",
+  "clear all": "সব মুছে ফেলুন",
+  "live preview": "সরাসরি পূর্বরূপ",
+  "page": "পৃষ্ঠা",
+  "of 2": " / ২",
+  "page 1": "পৃষ্ঠা ১",
+  "page 2": "পৃষ্ঠা ২",
+  "preview": "পূর্বরূপ",
+  "empty": "খালি",
+  "form complete — download or print your application.": "ফর্ম পূরণ সম্পন্ন—আপনার আবেদন ডাউনলোড করুন অথবা প্রিন্ট করুন।",
+  "add an input to get started": "শুরু করতে তথ্য পূরণ করুন",
+  "required fields completed": "টি আবশ্যক ঘর পূরণ হয়েছে",
+  "restore last application": "সর্বশেষ আবেদন ফিরিয়ে আনুন",
+  "important information and instructions:": "গুরুত্বপূর্ণ তথ্য ও নির্দেশনা:",
+  "attach the following documents with the application:": "আবেদনের সঙ্গে নিচের নথিগুলো সংযুক্ত করুন:",
+  "a photocopy of the national id (nid) must be attached.": "জাতীয় পরিচয়পত্রের (NID) একটি ফটোকপি সংযুক্ত করতে হবে।",
+  "a certificate from a first-class officer / mayor / councillor / union chairman proving you live at the new address.": "নতুন ঠিকানায় বসবাসের প্রমাণ হিসেবে প্রথম শ্রেণির কর্মকর্তা, মেয়র, কাউন্সিলর বা ইউনিয়ন পরিষদ চেয়ারম্যানের সনদ সংযুক্ত করুন।",
+  "a copy of a utility bill (if available).": "প্রযোজ্য হলে ইউটিলিটি বিলের একটি কপি সংযুক্ত করুন।",
+  "house rent receipt / chowkidari tax receipt / municipal tax receipt or other proof.": "বাড়িভাড়ার রসিদ, চৌকিদারি করের রসিদ, পৌরকর রসিদ অথবা অন্য কোনো প্রমাণপত্র সংযুক্ত করুন।",
+  "fill in every field accurately. wrong information can get the application rejected.": "প্রতিটি ঘরে সঠিক তথ্য দিন। ভুল তথ্যের কারণে আবেদন বাতিল হতে পারে।",
+  "print the completed form-13, sign it, and submit it to your upazila / thana election office.": "পূরণ করা Form-13 প্রিন্ট করে স্বাক্ষর করুন এবং উপজেলা/থানা নির্বাচন অফিসে জমা দিন।",
+  "you do not need a broker or any payment to migrate your vote — this service is free of charge.": "ভোটার এলাকা পরিবর্তনের জন্য কোনো দালাল বা টাকা দেওয়ার প্রয়োজন নেই—এই সেবা সম্পূর্ণ বিনামূল্যে।",
+  "your files are processed in the browser — they are not uploaded to any server.": "আপনার ফাইল ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+  "how to use": "ব্যবহারের নিয়ম",
+  "1. fill in your personal details, election office name, current and new address on the left panel.": "১. বাম পাশের অংশে আপনার ব্যক্তিগত তথ্য, নির্বাচন অফিস এবং বর্তমান ও নতুন ঠিকানার তথ্য পূরণ করুন।",
+  "2. watch the official form-13 update live on the right panel.": "২. ডান পাশে সরকারি Form-13-এর পূর্বরূপের পরিবর্তন সরাসরি দেখুন।",
+  "3. print or download the 2-page form as a pdf to submit.": "৩. জমা দেওয়ার জন্য দুই পৃষ্ঠার ফর্মটি প্রিন্ট করুন অথবা PDF হিসেবে ডাউনলোড করুন।",
+  "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+  "1. recipient (election office)": "১. প্রাপক (নির্বাচন অফিস)",
+  "district (election office)": "জেলা (নির্বাচন অফিস)",
+  "district name": "জেলার নাম",
+  "upazila / thana (election office)": "উপজেলা/থানা (নির্বাচন অফিস)",
+  "upazila / thana name": "উপজেলা/থানার নাম",
+  "2. applicant details": "২. আবেদনকারীর তথ্য",
+  "applicant name": "আবেদনকারীর নাম",
+  "national id (nid) number": "জাতীয় পরিচয়পত্রের (NID) নম্বর",
+  "national id number": "জাতীয় পরিচয়পত্রের নম্বর",
+  "date of birth": "জন্মতারিখ",
+  "e.g. 01-01-1990": "যেমন ০১-০১-১৯৯০",
+  "3. current enrolment": "৩. বর্তমান ভোটার নিবন্ধনের তথ্য",
+  "voter number": "ভোটার নম্বর",
+  "current voter number": "বর্তমান ভোটার নম্বর",
+  "voter area name": "ভোটার এলাকার নাম",
+  "voter area code": "ভোটার এলাকার কোড",
+  "e.g. 0512": "যেমন ০৫১২",
+  "district": "জেলা",
+  "upazila / thana": "উপজেলা/থানা",
+  "village / road name and number": "গ্রাম/রাস্তার নাম ও নম্বর",
+  "village / road name": "গ্রাম/রাস্তার নাম",
+  "house / holding number": "বাড়ি/হোল্ডিং নম্বর",
+  "4. area you want to move to": "৪. যে এলাকায় স্থানান্তরিত হতে চান",
+  "district (new)": "নতুন জেলা",
+  "upazila / thana (new)": "নতুন উপজেলা/থানা",
+  "city corporation / municipality / union / cantonment board": "সিটি কর্পোরেশন/পৌরসভা/ইউনিয়ন/ক্যান্টনমেন্ট বোর্ড",
+  "e.g. union parishad name": "যেমন: ইউনিয়ন পরিষদের নাম",
+  "ward number": "ওয়ার্ড নম্বর",
+  "e.g. 05": "যেমন ০৫",
+  "voter area name (new)": "নতুন ভোটার এলাকার নাম",
+  "voter area code (new)": "নতুন ভোটার এলাকার কোড",
+  "e.g. 0731": "যেমন ০৭৩১",
+  "village / road name and number (new)": "নতুন গ্রাম/রাস্তার নাম ও নম্বর",
+  "house / holding number (new)": "নতুন বাড়ি/হোল্ডিং নম্বর",
+  "mobile number": "মোবাইল নম্বর",
+  "post office": "ডাকঘর",
+  "post office name": "ডাকঘরের নাম",
+  "post code (4 digits)": "পোস্ট কোড (৪ সংখ্যা)",
+  "5. residence period and reason": "৫. বসবাসের সময়কাল ও স্থানান্তরের কারণ",
+  "living at the new address since": "নতুন ঠিকানায় বসবাস শুরুর সময়",
+  "e.g. january 2023": "যেমন: জানুয়ারি ২০২৩",
+  "reason for migration": "স্থানান্তরের কারণ",
+  "e.g. job / marriage": "যেমন: চাকরি/বিয়ে",
+  "6. identifier details (optional)": "৬. পরিচয়দানকারীর তথ্য (ঐচ্ছিক)",
+  "identifier name": "পরিচয়দানকারীর নাম",
+  "identifier nid number": "পরিচয়দানকারীর NID নম্বর",
+  "identifier address": "পরিচয়দানকারীর ঠিকানা",
+  "zoom out": "ছোট করে দেখুন",
+  "zoom in": "বড় করে দেখুন",
+  "go back": "পেছনে যান",
+  "must be 11 digits starting with 01": "মোবাইল নম্বরটি ০১ দিয়ে শুরু করে ১১ সংখ্যার হতে হবে",
+  "post code must be 4 digits": "পোস্ট কোড ৪ সংখ্যার হতে হবে",
+  "no saved application found yet.": "এখনও কোনো সংরক্ষিত আবেদন পাওয়া যায়নি।",
+  "last application restored.": "সর্বশেষ আবেদন ফিরিয়ে আনা হয়েছে।",
+  "couldn't restore the last application.": "সর্বশেষ আবেদন ফিরিয়ে আনা যায়নি।",
+  "form cleared.": "ফর্মের সব তথ্য মুছে ফেলা হয়েছে।",
+  "pdf downloaded.": "PDF ডাউনলোড হয়েছে।",
+  "couldn't generate the pdf. please try again.": "PDF তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+  "post code digit": "পোস্ট কোডের সংখ্যা",
+  "import": "আমদানি",
+  "pdf import": "PDF থেকে তথ্য নিন",
+  "personal": "ব্যক্তিগত তথ্য",
+  "name, contact": "নাম ও যোগাযোগ",
+  "summary": "সারসংক্ষেপ",
+  "profile": "পরিচিতি",
+  "experience": "অভিজ্ঞতা",
+  "work history": "কর্মজীবনের অভিজ্ঞতা",
+  "education": "শিক্ষা",
+  "degrees & institutions": "ডিগ্রি ও শিক্ষাপ্রতিষ্ঠান",
+  "projects": "প্রকল্প",
+  "portfolio work": "পোর্টফোলিওর কাজ",
+  "skills": "দক্ষতা",
+  "skills, certifications": "দক্ষতা ও সনদ",
+  "custom": "নিজস্ব বিভাগ",
+  "extra sections": "অতিরিক্ত বিভাগ",
+  "family card form": "পারিবারিক কার্ডের ফর্ম",
+  "fill in your details on the left — see a live application letter on the right and download as pdf.": "বাম পাশে তথ্য পূরণ করুন—ডান পাশে আবেদনপত্রের পূর্বরূপ দেখুন এবং PDF হিসেবে ডাউনলোড করুন।",
+  "reduce video file size": "ভিডিওর আকার কমান",
+  "check status of department of social services allowance application status, — by tracking id or nid — and print the result.": "ট্র্যাকিং আইডি বা NID দিয়ে সমাজসেবা অধিদপ্তরের ভাতার আবেদনের অবস্থা দেখুন এবং ফলাফল প্রিন্ট করুন।",
+
+  "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+  "share tool": "টুলটি শেয়ার করুন",
+};
+
+function normalizeVoterMigrationText(value: string): string {
+  return value.replace(/\\r\\n/g, " ").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function translateVoterMigrationText(value: unknown, locale?: string): string {
+  const raw = String(value ?? "");
+  const currentLocale = locale ?? (typeof document !== "undefined" ? document.documentElement.getAttribute("data-locale") ?? "en" : "en");
+  if (!String(currentLocale).toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+  const leading = raw.match(/^\s*/)?.[0] ?? "";
+  const trailing = raw.match(/\s*$/)?.[0] ?? "";
+  const key = normalizeVoterMigrationText(raw);
+  const exact = VOTER_MIGRATION_BN[key];
+  if (exact !== undefined) return `${leading}${exact}${trailing}`;
+
+  let match = raw.trim().match(/^([0-9০-৯]+)\s*\/\s*([0-9০-৯]+)\s+required fields completed$/i);
+  if (match) return `${match[1]}টির মধ্যে ${match[2]}টি আবশ্যক ঘর পূরণ হয়েছে`;
+  match = raw.trim().match(/^must be 11 digits starting with 01\s*\((\d+)\/11\)$/i);
+  if (match) return `০১ দিয়ে শুরু করে ১১ সংখ্যার মোবাইল নম্বর লিখুন (${match[1]}/১১)`;
+  match = raw.trim().match(/^post code digit\s+(\d+)$/i);
+  if (match) return `পোস্ট কোডের সংখ্যা ${match[1]}`;
+  return raw;
+}
+
+function T({ children }: { children: React.ReactNode }) {
+  const { locale } = useSohozI18n();
+  if (typeof children === "string" || typeof children === "number") {
+    return <>{translateVoterMigrationText(children, locale)}</>;
+  }
+  return <>{children}</>;
+}
+
 const STORAGE_KEY = "sohojkaj:voter-migration-form:last-application";
 const USAGE_KEY = "sohojkaj:voter-migration-form:usage-count";
 const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -353,7 +520,7 @@ function Section({ title, children, }: {
     children: React.ReactNode;
 }) {
     return (<div className="space-y-2 border border-indigo-200/80 rounded-xl p-3 bg-indigo-50/20">
-      <h3 className="text-[11.5px] font-bold text-indigo-900">{title}</h3>
+      <h3 className="text-[11.5px] font-bold text-indigo-900"><T>{title}</T></h3>
       {children}
     </div>);
 }
@@ -366,14 +533,14 @@ function Field({ label, children, hint, counter, }: {
     return (<div className="space-y-0.5 min-w-0">
       <div className="flex items-end justify-between gap-2">
         <label className="text-[11px] font-semibold text-gray-600 leading-tight">
-          {label}
+          <T>{label}</T>
         </label>
         {counter && (<span className="text-[10px] font-medium text-gray-400 shrink-0">
             {counter}
           </span>)}
       </div>
       {children}
-      {hint && <p className="text-[10px] text-red-500 font-medium">{hint}</p>}
+      {hint && <p className="text-[10px] text-red-500 font-medium"><T>{hint}</T></p>}
     </div>);
 }
 function TextInput({ value, onChange, placeholder, inputMode, maxLength, }: {
@@ -390,6 +557,7 @@ function PostCodeBoxes({ value, onChange, }: {
     value: string;
     onChange: (v: string) => void;
 }) {
+    const { locale } = useSohozI18n();
     const refs = useRef<Array<HTMLInputElement | null>>([]);
     function focusBox(i: number) {
         const el = refs.current[Math.max(0, Math.min(3, i))];
@@ -399,7 +567,7 @@ function PostCodeBoxes({ value, onChange, }: {
     return (<div className="flex items-center gap-1.5">
       {Array.from({ length: 4 }).map((_, i) => (<input key={i} ref={(el) => {
                 refs.current[i] = el;
-            }} type="text" inputMode="numeric" autoComplete="off" aria-label={`Post code digit ${i + 1}`} value={value[i] ?? ""} onFocus={(e) => e.target.select()} onChange={(e) => {
+            }} type="text" inputMode="numeric" autoComplete="off" aria-label={`${translateVoterMigrationText("Post code digit", locale)} ${i + 1}`} value={value[i] ?? ""} onFocus={(e) => e.target.select()} onChange={(e) => {
                 const d = digitsOnly(e.target.value, 8).slice(-1);
                 if (!d)
                     return;
@@ -462,6 +630,8 @@ function DobPicker({ value, onPick, placeholder, }: {
     onPick: (d: Date | null) => void;
     placeholder: string;
 }) {
+    const { locale } = useSohozI18n();
+    const isBangla = String(locale).toLowerCase().startsWith("bn");
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(value ?? new Date(1995, 0, 1));
     const rootRef = useRef<HTMLDivElement>(null);
@@ -488,7 +658,7 @@ function DobPicker({ value, onPick, placeholder, }: {
       <div onClick={() => setOpen((o) => !o)} className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500">
         <CalendarIcon size={13} className="text-gray-400 shrink-0"/>
         {value ? (<span className="flex-1 text-[#0F172A] font-semibold">
-            {formatDateBn(value)}
+            {isBangla ? formatDateBn(value) : formatDateEn(value)}
           </span>) : (<span className="flex-1 text-gray-400">{placeholder}</span>)}
         {value && (<button type="button" onClick={(e) => {
                 e.stopPropagation();
@@ -505,11 +675,11 @@ function DobPicker({ value, onPick, placeholder, }: {
             </button>
             <div className="flex items-center gap-1">
               <span className="text-xs font-bold text-[#0F172A]">
-                {EN_MONTHS[month]}
+                {isBangla ? BN_MONTHS[month] : EN_MONTHS[month]}
               </span>
               <select value={year} onChange={(e) => setViewDate(new Date(Number(e.target.value), month, 1))} className="text-[11px] font-bold text-[#0F172A] border border-gray-200 rounded px-1 py-0.5 outline-none">
                 {yearOptions.map((y) => (<option key={y} value={y}>
-                    {y}
+                    {isBangla ? toBn(y) : y}
                   </option>))}
               </select>
             </div>
@@ -519,7 +689,7 @@ function DobPicker({ value, onPick, placeholder, }: {
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (<span key={i} className="text-[10px] text-center font-semibold text-gray-400">
+            {(isBangla ? ["র", "সো", "ম", "বু", "বৃ", "শু", "শ"] : ["S", "M", "T", "W", "T", "F", "S"]).map((d, i) => (<span key={i} className="text-[10px] text-center font-semibold text-gray-400">
                 {d}
               </span>))}
           </div>
@@ -538,7 +708,7 @@ function DobPicker({ value, onPick, placeholder, }: {
                         : isFuture
                             ? "text-gray-300 cursor-not-allowed"
                             : "text-[#0F172A] hover:bg-indigo-50"}`}>
-                  {day}
+                  {isBangla ? toBn(day) : day}
                 </button>);
             })}
           </div>
@@ -551,6 +721,8 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
     onPick: (month: number, year: number) => void;
     placeholder: string;
 }) {
+    const { locale } = useSohozI18n();
+    const isBangla = String(locale).toLowerCase().startsWith("bn");
     const [open, setOpen] = useState(false);
     const [viewYear, setViewYear] = useState<number>(year ?? new Date().getFullYear());
     const rootRef = useRef<HTMLDivElement>(null);
@@ -567,7 +739,7 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
         document.addEventListener("mousedown", onDocClick);
         return () => document.removeEventListener("mousedown", onDocClick);
     }, []);
-    const display = month !== null && year !== null ? `${BN_MONTHS[month]}, ${toBn(year)}` : "";
+    const display = month !== null && year !== null ? `${isBangla ? BN_MONTHS[month] : EN_MONTHS[month]}, ${isBangla ? toBn(year) : year}` : "";
     return (<div ref={rootRef} className="relative">
       <div onClick={() => setOpen((o) => !o)} className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500">
         <CalendarIcon size={13} className="text-gray-400 shrink-0"/>
@@ -579,13 +751,13 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
             <button type="button" onClick={() => setViewYear((y) => y - 1)} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
               <ChevronLeft size={14}/>
             </button>
-            <span className="text-xs font-bold text-[#0F172A]">{viewYear}</span>
+            <span className="text-xs font-bold text-[#0F172A]">{isBangla ? toBn(viewYear) : viewYear}</span>
             <button type="button" onClick={() => setViewYear((y) => y + 1)} disabled={viewYear >= new Date().getFullYear()} className="p-1 hover:bg-gray-100 rounded-md text-gray-500 disabled:opacity-30">
               <ChevronRight size={14}/>
             </button>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
-            {BN_MONTHS.map((m, i) => {
+            {(isBangla ? BN_MONTHS : EN_MONTHS).map((m, i) => {
                 const disabled = viewYear === new Date().getFullYear() &&
                     i > new Date().getMonth();
                 const selected = month === i && year === viewYear;
@@ -610,6 +782,8 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
     onFixDate: () => void;
     onContinue: () => void;
 }) {
+    const { locale } = useSohozI18n();
+    const isBangla = String(locale).toLowerCase().startsWith("bn");
     return (<div className="print-hide fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl relative">
         <button onClick={onFixDate} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
@@ -622,7 +796,7 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
         <p className="text-xs text-gray-500 text-center mt-1"><T>{"The electoral roll requires an age of at least 18.\n        "}</T></p>
         <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 mt-4 text-left text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
           <p><T>{"\u2022 But under 18 the name is not added to the voter list \u2014 the office\n            may return this form.\n          "}</T></p>
-          <p className="text-[#2563EB] font-bold"><T>{"\u2022 Turns 18 on: "}</T>{formatDateEn(turns18On)}
+          <p className="text-[#2563EB] font-bold"><T>{"\u2022 Turns 18 on: "}</T>{isBangla ? formatDateBn(turns18On) : formatDateEn(turns18On)}
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4">
@@ -633,7 +807,8 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
     </div>);
 }
 export default function VoterMigrationForm() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const L = (value: string) => translateVoterMigrationText(value, locale);
     const router = useRouter();
     const [regDistrict, setRegDistrict] = useState("");
     const [regUpazila, setRegUpazila] = useState("");
@@ -1166,7 +1341,7 @@ export default function VoterMigrationForm() {
 
       {toast && (<div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400"/>
-          {toast}
+          <T>{toast}</T>
         </div>)}
 
       <div className="w-full space-y-6">
@@ -1190,16 +1365,16 @@ export default function VoterMigrationForm() {
               <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Voter Migration Form\n              "}</T></h1>
               <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
               <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                <CheckCircle2 size={12} className="text-gray-300"/><T>{"Used "}</T>{toBn(usageCount)}<T>{"times\n              "}</T></span>
+                <CheckCircle2 size={12} className="text-gray-300"/><T>{"Used "}</T>{(String(locale).toLowerCase().startsWith("bn") ? toBn(usageCount) : usageCount)}<T>{"times\n              "}</T></span>
             </div>
             <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Fill in your details on the left \u2014 see a live Form-13 on the right\n              and download it as PDF.\n            "}</T></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-indigo-500 hover:border-indigo-300 transition-all shadow-2xs">
+            <button type="button" onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Add to favorites")} title={L("Add to favorites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-indigo-500 hover:border-indigo-300 transition-all shadow-2xs">
               <Star size={16} className={isFavorite ? "fill-indigo-400 text-indigo-400" : ""}/>
             </button>
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button type="button" aria-label={L("Share tool")} title={L("Share tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -1387,7 +1562,7 @@ export default function VoterMigrationForm() {
                     </button>
                   </div>
                   <div className="relative">
-                    <button onClick={() => setPageMenuOpen((o) => !o)} className="text-[11px] font-semibold text-white bg-gray-900 px-2.5 py-1 rounded-md flex items-center gap-1"><T>{"Page "}</T>{activePage}<T>{"of 2\n                      "}</T><ChevronDown size={11}/>
+                    <button onClick={() => setPageMenuOpen((o) => !o)} className="text-[11px] font-semibold text-white bg-gray-900 px-2.5 py-1 rounded-md flex items-center gap-1"><T>{"Page "}</T>{String(locale).toLowerCase().startsWith("bn") ? toBn(activePage) : activePage}<T>{"of 2\n                      "}</T><ChevronDown size={11}/>
                     </button>
                     {pageMenuOpen && (<div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
                         <button onClick={() => scrollToPage(1)} className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"><T>{"Page 1\n                        "}</T></button>
@@ -1599,8 +1774,8 @@ export default function VoterMigrationForm() {
             <span>
               {isComplete
         ? <T>{"Form complete — download or print your application."}</T> : anyFieldFilled
-        ? `${toBn(filledRequired)}/${toBn(requiredFields.length)} required fields completed`
-        : "Add an input to get started"}
+        ? <T>{`${toBn(filledRequired)}/${toBn(requiredFields.length)} required fields completed`}</T>
+        : <T>{"Add an input to get started"}</T>}
             </span>
           </div>
 

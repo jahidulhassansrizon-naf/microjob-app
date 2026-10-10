@@ -1,10 +1,84 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toBangla } from "@subhesadek/avro-phonetic";
 import { ArrowLeft, Star, Share, Copy, Check, ChevronDown, ChevronUp, Keyboard, ArrowLeftRight, RotateCcw, ShieldCheck, Languages, ScanText, } from "lucide-react";
+
+// Page-specific English → Bangla UI translations. User-entered and converted
+// content is deliberately left untouched.
+const BANGLISH_TYPING_BN: Record<string, string> = {
+  "Go back": "ফিরে যান",
+  "Sohoj Tools": "সহজ টুলস",
+  "Text Tools": "লেখার সরঞ্জাম",
+  "Banglish Typing": "বাংলিশ টাইপিং",
+  "Free": "বিনামূল্যে",
+  "Type Bangla with an English keyboard — live Banglish to Bangla and Bangla to Banglish conversion in your browser.": "ইংরেজি কিবোর্ডে লিখুন—ব্রাউজারেই সঙ্গে সঙ্গে বাংলিশ থেকে বাংলা এবং বাংলা থেকে বাংলিশে রূপান্তর করুন।",
+  "Add to favorites": "প্রিয় তালিকায় যোগ করুন",
+  "Remove from favorites": "প্রিয় তালিকা থেকে সরান",
+  "Share this tool": "এই টুলটি শেয়ার করুন",
+  "Type here": "এখানে লিখুন",
+  "Conversion mode": "রূপান্তরের ধরন",
+  "Banglish to Bangla": "বাংলিশ থেকে বাংলা",
+  "Bangla to Banglish": "বাংলা থেকে বাংলিশ",
+  "Banglish — type here": "বাংলিশ—এখানে লিখুন",
+  "Bangla — paste here": "বাংলা—এখানে লিখুন বা পেস্ট করুন",
+  "Type in Banglish using English letters...": "ইংরেজি অক্ষরে বাংলিশ লিখুন...",
+  "Write or paste Bangla text here...": "এখানে বাংলা লিখুন বা পেস্ট করুন...",
+  "Banglish input text": "বাংলিশ লেখার ঘর",
+  "Bangla input text": "বাংলা লেখার ঘর",
+  "chars •": "অক্ষর •",
+  "words": "শব্দ",
+  "Converted text": "রূপান্তরিত লেখা",
+  "Ready ·": "প্রস্তুত ·",
+  "characters": "অক্ষর",
+  "Empty": "খালি",
+  "Start typing to convert": "রূপান্তর দেখতে লেখা শুরু করুন",
+  "Choose a mode, type in the left panel, and the converted text appears instantly.": "রূপান্তরের ধরন বেছে নিয়ে বাঁ পাশের ঘরে লিখুন—রূপান্তরিত লেখা সঙ্গে সঙ্গেই দেখা যাবে।",
+  "Copied!": "কপি হয়েছে!",
+  "Copy Converted Text": "রূপান্তরিত লেখা কপি করুন",
+  "Quick reference": "দ্রুত নির্দেশিকা",
+  "This tool supports pure Banglish. Examples: sonar &rarr; সোনার, amil valo achi &rarr; আমি ভালো আছি. Common words like onek and ekhon work directly.": "এই টুলে সরাসরি বাংলিশ লিখে বাংলা করা যায়। উদাহরণ: sonar → সোনার, amil valo achi → আমি ভালো আছি। onek ও ekhon-এর মতো সাধারণ শব্দও সরাসরি কাজ করে।",
+  "Converted": "রূপান্তর সম্পন্ন",
+  "Text ready to convert": "রূপান্তরের জন্য লেখা প্রস্তুত",
+  "Start typing in the box above": "ওপরের ঘরে লেখা শুরু করুন",
+  "Reset": "মুছে ফেলুন",
+  "Convert text": "রূপান্তর করুন",
+  "Couldn't convert this text. Please check the input.": "লেখাটি রূপান্তর করা যায়নি। ইনপুটটি পরীক্ষা করুন।",
+  "Your files are processed in the browser — they are not uploaded to any server.": "আপনার লেখা ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+  "How to use": "ব্যবহারের নিয়ম",
+  "1. Select the conversion mode (Banglish to Bangla or Bangla to Banglish).": "১. রূপান্তরের ধরন বেছে নিন (বাংলিশ থেকে বাংলা অথবা বাংলা থেকে বাংলিশ)।",
+  "2. Type phonetically in the input text area using your English keyboard.": "২. ইনপুট ঘরে ইংরেজি কিবোর্ড ব্যবহার করে উচ্চারণ অনুযায়ী লিখুন।",
+  "3. Review the live converted Bangla or Banglish output on the right.": "৩. ডান পাশের ঘরে সঙ্গে সঙ্গে তৈরি হওয়া বাংলা বা বাংলিশ ফলাফল দেখুন।",
+  "4. Use the Quick Reference grid below for specific conjunct letters.": "৪. যুক্তাক্ষরের নির্দিষ্ট রূপ দেখতে নিচের দ্রুত নির্দেশিকা ব্যবহার করুন।",
+  "Tools in the same category": "একই ধরনের অন্যান্য টুল",
+  "Bijoy ↔ Unicode": "বিজয় ↔ ইউনিকোড",
+  "Convert Bangla text between Bijoy ANSI and Unicode directly in your browser.": "ব্রাউজারেই বাংলা লেখা বিজয় ANSI ও ইউনিকোডের মধ্যে রূপান্তর করুন।",
+  "Image to Text": "ছবি থেকে লেখা",
+  "Extract text from images with OCR in your browser — supports English and Bengali.": "ব্রাউজারেই OCR প্রযুক্তি ব্যবহার করে ছবি থেকে লেখা বের করুন—ইংরেজি ও বাংলা দুটোই সমর্থিত।",
+};
+
+function normalizeBanglishTypingText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function translateBanglishTypingText(value: string, locale: string | undefined): string {
+  if (!locale || !locale.toLowerCase().startsWith("bn")) return value;
+  const normalized = normalizeBanglishTypingText(value);
+  if (!normalized) return value;
+  const translated = BANGLISH_TYPING_BN[normalized];
+  if (!translated) return value;
+  const leading = value.match(/^\s*/)?.[0] ?? "";
+  const trailing = value.match(/\s*$/)?.[0] ?? "";
+  return `${leading}${translated}${trailing}`;
+}
+
+function BanglishTypingText({ children, locale }: { children: React.ReactNode; locale: string | undefined }) {
+  if (typeof children !== "string") return <>{children}</>;
+  return <>{translateBanglishTypingText(children, locale)}</>;
+}
+
 /**
  * ---- Custom Bangla -> Banglish reverse transliteration ----
  *
@@ -234,7 +308,8 @@ const relatedTools = [
     },
 ];
 export default function BanglishTyping() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const BL = useCallback((value: string) => translateBanglishTypingText(value, locale), [locale]);
     const router = useRouter();
     // States
     const [mode, setMode] = useState<"banglishToBangla" | "banglaToBanglish">("banglishToBangla");
@@ -309,31 +384,31 @@ export default function BanglishTyping() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={L("Go back")}>
+              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={BL("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
-              <span><T>{"/"}</T></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"Text Tools\n              "}</T></span>
-              <span><T>{"/"}</T></span>
-              <span className="text-[#0F172A] font-semibold"><T>{"Banglish Typing\n              "}</T></span>
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><BanglishTypingText locale={locale}>{"Sohoj Tools\n              "}</BanglishTypingText></Link>
+              <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>
+              <span className="hover:text-[#0F172A] cursor-pointer"><BanglishTypingText locale={locale}>{"Text Tools\n              "}</BanglishTypingText></span>
+              <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>
+              <span className="text-[#0F172A] font-semibold"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></span>
             </div>
 
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-lime-100 text-lime-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Keyboard size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Banglish Typing\n              "}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><BanglishTypingText locale={locale}>{"Free\n              "}</BanglishTypingText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Type Bangla with an English keyboard \u2014 live Banglish to Bangla and\n              Bangla to Banglish conversion in your browser.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-1"><BanglishTypingText locale={locale}>{"Type Bangla with an English keyboard \u2014 live Banglish to Bangla and\n              Bangla to Banglish conversion in your browser.\n            "}</BanglishTypingText></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs">
+            <button onClick={() => setIsFavorite(!isFavorite)} title={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} aria-label={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs">
               <Star size={16} className={isFavorite ? "fill-amber-400 text-[#2563EB]" : ""}/>
             </button>
-            <button className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button title={BL("Share this tool")} aria-label={BL("Share this tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -345,24 +420,24 @@ export default function BanglishTyping() {
           <div className="lg:col-span-4 space-y-4">
             {/* Conversion Mode Card */}
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block"><T>{"Type here\n              "}</T></span>
+              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block"><BanglishTypingText locale={locale}>{"Type here\n              "}</BanglishTypingText></span>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-semibold text-gray-500 block"><T>{"Conversion mode\n                "}</T></span>
+                <span className="text-[11px] font-semibold text-gray-500 block"><BanglishTypingText locale={locale}>{"Conversion mode\n                "}</BanglishTypingText></span>
 
                 <div className="space-y-2">
                   <button onClick={() => handleModeChange("banglishToBangla")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${mode === "banglishToBangla"
             ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
             : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
                     <ArrowLeftRight size={14}/>
-                    <span><T>{"Banglish to Bangla"}</T></span>
+                    <span><BanglishTypingText locale={locale}>{"Banglish to Bangla"}</BanglishTypingText></span>
                   </button>
 
                   <button onClick={() => handleModeChange("banglaToBanglish")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${mode === "banglaToBanglish"
             ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
             : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
                     <ArrowLeftRight size={14}/>
-                    <span><T>{"Bangla to Banglish"}</T></span>
+                    <span><BanglishTypingText locale={locale}>{"Bangla to Banglish"}</BanglishTypingText></span>
                   </button>
                 </div>
               </div>
@@ -373,21 +448,21 @@ export default function BanglishTyping() {
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase">
                   {mode === "banglishToBangla"
-        ? <T>{"Banglish — type here"}</T> : <T>{"Bangla — paste here"}</T>}
+        ? <BanglishTypingText locale={locale}>{"Banglish — type here"}</BanglishTypingText> : <BanglishTypingText locale={locale}>{"Bangla — paste here"}</BanglishTypingText>}
                 </span>
               </div>
 
-              <textarea rows={9} placeholder={mode === "banglishToBangla"
-            ? "ekhane likhun..."
-            : "এখানে বাংলা লিখুন বা পেস্ট করুন..."} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"/>
+              <textarea rows={9} aria-label={BL(mode === "banglishToBangla" ? "Banglish input text" : "Bangla input text")} placeholder={mode === "banglishToBangla"
+            ? BL("Type in Banglish using English letters...")
+            : BL("Write or paste Bangla text here...")} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"/>
 
               <div className="flex items-center justify-between">
                 {conversionError ? (<span className="text-[10px] font-semibold text-red-500">
-                    {conversionError}
+                    {BL(conversionError)}
                   </span>) : (<span />)}
                 <span className="text-[10px] font-medium text-gray-400">
-                  {inputText.length}<T>{"chars \u2022"}</T>{<T>{" "}</T>}
-                  {inputText.trim() ? inputText.trim().split(/\s+/).length : 0}{<T>{" "}</T>}<T>{"words\n                "}</T></span>
+                  {inputText.length}<BanglishTypingText locale={locale}>{"chars \u2022"}</BanglishTypingText>{<BanglishTypingText locale={locale}>{" "}</BanglishTypingText>}
+                  {inputText.trim() ? inputText.trim().split(/\s+/).length : 0}{<BanglishTypingText locale={locale}>{" "}</BanglishTypingText>}<BanglishTypingText locale={locale}>{"words\n                "}</BanglishTypingText></span>
               </div>
             </div>
           </div>
@@ -397,8 +472,8 @@ export default function BanglishTyping() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[380px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Converted text\n                  "}</T></span>
-                  {convertedText ? (<span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><T>{"Ready \u00B7 "}</T>{convertedText.length}<T>{"characters\n                    "}</T></span>) : (<span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md"><T>{"Empty\n                    "}</T></span>)}
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><BanglishTypingText locale={locale}>{"Converted text\n                  "}</BanglishTypingText></span>
+                  {convertedText ? (<span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Ready \u00B7 "}</BanglishTypingText>{convertedText.length}<BanglishTypingText locale={locale}>{"characters\n                    "}</BanglishTypingText></span>) : (<span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Empty\n                    "}</BanglishTypingText></span>)}
                 </div>
 
                 <div className="pt-4">
@@ -406,8 +481,8 @@ export default function BanglishTyping() {
                       <div className="w-12 h-12 bg-sky-50 text-sky-500 rounded-xl flex items-center justify-center mb-3">
                         <Keyboard size={24}/>
                       </div>
-                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><T>{"Start typing to convert\n                      "}</T></h3>
-                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><T>{"Choose a mode, type in the left panel, and the converted\n                        text appears instantly.\n                      "}</T></p>
+                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><BanglishTypingText locale={locale}>{"Start typing to convert\n                      "}</BanglishTypingText></h3>
+                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><BanglishTypingText locale={locale}>{"Choose a mode, type in the left panel, and the converted\n                        text appears instantly.\n                      "}</BanglishTypingText></p>
                     </div>) : (<div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl text-xs text-[#0F172A] leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
                       {convertedText}
                     </div>)}
@@ -417,7 +492,7 @@ export default function BanglishTyping() {
               {convertedText && (<div className="pt-4 border-t border-gray-100 flex justify-end">
                   <button onClick={handleCopy} className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-2xs">
                     {copied ? <Check size={14}/> : <Copy size={14}/>}
-                    <span>{copied ? <T>{"Copied!"}</T> : <T>{"Copy Converted Text"}</T>}</span>
+                    <span>{copied ? <BanglishTypingText locale={locale}>{"Copied!"}</BanglishTypingText> : <BanglishTypingText locale={locale}>{"Copy Converted Text"}</BanglishTypingText>}</span>
                   </button>
                 </div>)}
             </div>
@@ -426,7 +501,7 @@ export default function BanglishTyping() {
 
         {/* QUICK REFERENCE SECTION */}
         <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-          <h2 className="text-xs font-bold text-[#0F172A] tracking-wide uppercase"><T>{"Quick reference\n          "}</T></h2>
+          <h2 className="text-xs font-bold text-[#0F172A] tracking-wide uppercase"><BanglishTypingText locale={locale}>{"Quick reference\n          "}</BanglishTypingText></h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {quickReferences.map((ref, idx) => (<div key={idx} className="bg-[#F8FAFC] border border-gray-200/60 rounded-xl p-2 flex items-center justify-between text-[11px]">
                 <span className="text-[#0F172A] font-semibold truncate pr-1">
@@ -435,7 +510,7 @@ export default function BanglishTyping() {
                 <span className="text-[#0F172A] font-bold">{ref.bn}</span>
               </div>))}
           </div>
-          <p className="text-[11px] text-gray-500 pt-1"><T>{"This tool supports pure Banglish. Examples: sonar &rarr; \u09B8\u09CB\u09A8\u09BE\u09B0, amil\n            valo achi &rarr; \u0986\u09AE\u09BF \u09AD\u09BE\u09B2\u09CB \u0986\u099B\u09BF. Common words like onek and ekhon work\n            directly.\n          "}</T></p>
+          <p className="text-[11px] text-gray-500 pt-1"><BanglishTypingText locale={locale}>{"This tool supports pure Banglish. Examples: sonar &rarr; \u09B8\u09CB\u09A8\u09BE\u09B0, amil\n            valo achi &rarr; \u0986\u09AE\u09BF \u09AD\u09BE\u09B2\u09CB \u0986\u099B\u09BF. Common words like onek and ekhon work\n            directly.\n          "}</BanglishTypingText></p>
         </div>
 
         {/* BOTTOM ACTION BAR */}
@@ -448,23 +523,23 @@ export default function BanglishTyping() {
                 : "bg-[#2563EB]"}`}></span>
             <span>
               {conversionError
-            ? conversionError
+            ? BL(conversionError)
             : convertedText
-                ? "Converted"
+                ? BL("Converted")
                 : inputText
-                    ? "Text ready to convert"
-                    : "Start typing in the box above"}
+                    ? BL("Text ready to convert")
+                    : BL("Start typing in the box above")}
             </span>
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button onClick={handleReset} className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#0F172A] font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
               <RotateCcw size={13}/>
-              <span><T>{"Reset"}</T></span>
+              <span><BanglishTypingText locale={locale}>{"Reset"}</BanglishTypingText></span>
             </button>
 
             <button onClick={handleConvertClick} disabled={!inputText.trim()} className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
-              <span><T>{"Convert text"}</T></span>
+              <span><BanglishTypingText locale={locale}>{"Convert text"}</BanglishTypingText></span>
             </button>
           </div>
         </div>
@@ -472,7 +547,7 @@ export default function BanglishTyping() {
         {/* PRIVACY NOTICE */}
         <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0"/>
-          <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</T></span>
+          <span><BanglishTypingText locale={locale}>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</BanglishTypingText></span>
         </div>
 
         {/* HOW TO USE DROPDOWN */}
@@ -480,22 +555,22 @@ export default function BanglishTyping() {
           <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-              <span><T>{"How to use"}</T></span>
+              <span><BanglishTypingText locale={locale}>{"How to use"}</BanglishTypingText></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
           {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
-              <p><T>{"1. Select the conversion mode (Banglish to Bangla or Bangla to\n                Banglish).\n              "}</T></p>
-              <p><T>{"2. Type phonetically in the input text area using your English\n                keyboard.\n              "}</T></p>
-              <p><T>{"3. Review the live converted Bangla or Banglish output on the\n                right.\n              "}</T></p>
-              <p><T>{"4. Use the Quick Reference grid below for specific conjunct\n                letters.\n              "}</T></p>
+              <p><BanglishTypingText locale={locale}>{"1. Select the conversion mode (Banglish to Bangla or Bangla to\n                Banglish).\n              "}</BanglishTypingText></p>
+              <p><BanglishTypingText locale={locale}>{"2. Type phonetically in the input text area using your English\n                keyboard.\n              "}</BanglishTypingText></p>
+              <p><BanglishTypingText locale={locale}>{"3. Review the live converted Bangla or Banglish output on the\n                right.\n              "}</BanglishTypingText></p>
+              <p><BanglishTypingText locale={locale}>{"4. Use the Quick Reference grid below for specific conjunct\n                letters.\n              "}</BanglishTypingText></p>
             </div>)}
         </div>
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><BanglishTypingText locale={locale}>{"Tools in the same category\n          "}</BanglishTypingText></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
             const ToolIcon = tool.icon;
@@ -505,10 +580,10 @@ export default function BanglishTyping() {
                       <ToolIcon size={18}/>
                     </div>
                     <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-sky-600 transition-colors">
-                      {<T>{tool.title}</T>}
+                      {<BanglishTypingText locale={locale}>{tool.title}</BanglishTypingText>}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                      {<T>{tool.description}</T>}
+                      {<BanglishTypingText locale={locale}>{tool.description}</BanglishTypingText>}
                     </p>
                   </div>
                 </Link>);

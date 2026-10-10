@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,6 +48,111 @@ const MILESTONES: {
     { label: "Legal marriage age (men)", age: 21 },
     { label: "Standard government retirement age", age: 59 },
 ];
+const AGE_CALCULATOR_BN: Record<string, string> = {
+    "Sohoj Tools": "সহজ টুলস",
+    "General Tools": "সাধারণ টুলস",
+    "Age Calculator": "বয়স গণনা",
+    "Free": "বিনামূল্যে",
+    "Pick your date of birth from the dropdowns — your exact age appears instantly, no typing needed.": "ড্রপডাউন থেকে জন্মতারিখ বেছে নিন—কিছু টাইপ করতে হবে না, সঙ্গে সঙ্গেই সঠিক বয়স দেখতে পাবেন।",
+    "Day": "দিন",
+    "Month": "মাস",
+    "Year": "বছর",
+    "Eligible for NID & voter registration": "এনআইডি ও ভোটার নিবন্ধনের উপযুক্ত বয়স",
+    "Legal driving age (non-heavy vehicle)": "হালকা যানবাহন চালানোর আইনগত বয়স",
+    "Legal marriage age (women)": "নারীদের আইনগত বিয়ের বয়স",
+    "Legal marriage age (men)": "পুরুষদের আইনগত বিয়ের বয়স",
+    "Standard government retirement age": "সরকারি চাকরি থেকে অবসরের প্রচলিত বয়স",
+    "Infant": "শিশু",
+    "Toddler": "হাঁটতে শেখা ছোট শিশু",
+    "Child": "শিশু-কিশোর",
+    "Teenager": "কিশোর-কিশোরী",
+    "Adult": "প্রাপ্তবয়স্ক",
+    "Senior citizen": "জ্যেষ্ঠ নাগরিক",
+    "Go back": "আগের পাতায় যান",
+    "Save to favourites": "পছন্দের তালিকায় রাখুন",
+    "Share this tool": "এই টুল শেয়ার করুন",
+    "Enter dates": "তারিখ দিন",
+    "Date of birth": "জন্মতারিখ",
+    "Choose the day, month and year — cannot be a future date": "দিন, মাস ও বছর বেছে নিন—ভবিষ্যতের তারিখ দেওয়া যাবে না।",
+    "Calculate age on a different date": "অন্য একটি তারিখ অনুযায়ী বয়স গণনা করুন",
+    "Off = calculate as of today": "বন্ধ থাকলে আজকের তারিখ অনুযায়ী বয়স গণনা হবে",
+    "Compare with another person": "অন্য একজনের সঙ্গে বয়সের তুলনা করুন",
+    "Enter their birth date to see who is older": "কে বেশি বয়সী তা জানতে অন্য ব্যক্তির জন্মতারিখ দিন।",
+    "That date doesn't exist.": "এই তারিখটি সঠিক নয়।",
+    "That date can't be in the future.": "তারিখটি ভবিষ্যতের হতে পারে না।",
+    "That date of birth doesn't exist. Please check the day and month.": "এই জন্মতারিখটি সঠিক নয়। দিন ও মাস ঠিক আছে কি না দেখুন।",
+    "Date of birth can't be in the future.": "জন্মতারিখ ভবিষ্যতের হতে পারে না।",
+    "That date doesn't exist. Please check the day and month.": "এই তারিখটি সঠিক নয়। দিন ও মাস ঠিক আছে কি না দেখুন।",
+    "This date is earlier than the date of birth — pick a later date.": "এই তারিখটি জন্মতারিখের আগের। অনুগ্রহ করে এর পরের কোনো তারিখ বেছে নিন।",
+    "Your age": "আপনার বয়স",
+    "Calculated": "গণনা সম্পন্ন",
+    "Empty": "ফাঁকা",
+    "Exact age today": "আজকের হিসাবে সঠিক বয়স",
+    "Years": "বছর",
+    "Months": "মাস",
+    "Days": "দিন",
+    "Total Months": "মোট মাস",
+    "Total Weeks": "মোট সপ্তাহ",
+    "Total Days": "মোট দিন",
+    "Milestones": "বয়সের গুরুত্বপূর্ণ ধাপ",
+    "Both people are exactly the same age.": "দুজনের বয়স একদম সমান।",
+    "The first date of birth is": "প্রথম ব্যক্তির জন্মতারিখ",
+    "older": "বয়সে বড়",
+    "younger": "বয়সে ছোট",
+    "than the second.": "দ্বিতীয় ব্যক্তির তুলনায়।",
+    "Copied": "কপি করা হয়েছে",
+    "Copy result": "ফলাফল কপি করুন",
+    "Choose a date of birth on the left to see the age instantly.": "সঙ্গে সঙ্গে বয়স দেখতে বাঁ পাশ থেকে জন্মতারিখ বেছে নিন।",
+    "No typing required — just pick the day, month and year from the dropdown lists.": "কিছু টাইপ করতে হবে না—ড্রপডাউন তালিকা থেকে শুধু দিন, মাস ও বছর বেছে নিন।",
+    "Everything is calculated in your browser — nothing is uploaded to any server.": "সব হিসাব আপনার ব্রাউজারেই হয়—কোনো তথ্য সার্ভারে আপলোড করা হয় না।",
+    "Reset": "নতুন করে শুরু করুন",
+    "Print / Save": "প্রিন্ট / সংরক্ষণ",
+    "How to use": "ব্যবহারের নিয়ম",
+    "1. Pick the day, month and year of birth from the three dropdown lists — no typing needed.": "১. তিনটি ড্রপডাউন তালিকা থেকে জন্মতারিখের দিন, মাস ও বছর বেছে নিন—কিছু টাইপ করতে হবে না।",
+    "2. Your exact age, next birthday and total days lived appear immediately on the right.": "২. ডান পাশে সঙ্গে সঙ্গেই আপনার সঠিক বয়স, পরবর্তী জন্মদিন এবং মোট কত দিন বেঁচেছেন তা দেখা যাবে।",
+    "3. Turn on \"Calculate age on a different date\" to see the age as of a past or future date.": "৩. অতীত বা ভবিষ্যতের কোনো নির্দিষ্ট তারিখে বয়স জানতে ‘অন্য একটি তারিখ অনুযায়ী বয়স গণনা করুন’ চালু করুন।",
+    "4. Turn on \"Compare with another person\" to see who is older and by how much.": "৪. কে কতটা বড় তা জানতে ‘অন্য একজনের সঙ্গে বয়সের তুলনা করুন’ চালু করুন।",
+    "Tools in the same category": "একই বিভাগের টুলস",
+    "Family Card Form": "পারিবারিক কার্ডের ফরম",
+    "Fill in your details on the left — see a live application letter on the right and download as PDF.": "বাঁ পাশে তথ্য পূরণ করুন—ডান পাশে আবেদনপত্রের পূর্বরূপ দেখুন এবং PDF হিসেবে ডাউনলোড করুন।",
+    "Voter Migration Form": "ভোটার স্থানান্তর ফরম",
+    "Fill in your details on the left — see a live Form-13 on the right and download it as PDF.": "বাঁ পাশে তথ্য পূরণ করুন—ডান পাশে ফরম-১৩-এর পূর্বরূপ দেখুন এবং PDF হিসেবে ডাউনলোড করুন।",
+    "Birthday today — turning": "আজ জন্মদিন—বয়স হচ্ছে",
+    "Turns": "বছর পূর্ণ হবে",
+    "In": "বাকি",
+    "Since": "তারিখ:",
+    "Age on": "এই তারিখে বয়স:",
+};
+
+const AGE_MONTHS_BN = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+
+function normalizeAgeText(text: string): string {
+    return text.replace(/\s+/g, " ").trim();
+}
+
+function formatAgeNumber(value: number, locale: string): string {
+    return value.toLocaleString(locale === "bn" ? "bn-BD" : "en-GB");
+}
+
+function translateAgeText(text: string): string | undefined {
+    const normalized = normalizeAgeText(text);
+    const exact = AGE_CALCULATOR_BN[normalized];
+    if (exact) return exact;
+    if (normalized.startsWith("Age on ")) return `এই তারিখে বয়স: ${normalized.slice(7)}`;
+    if (normalized.startsWith("Since ")) return `তারিখ: ${normalized.slice(6)}`;
+    if (normalized.startsWith("In ")) return `বাকি ${normalized.slice(3)}`;
+    return undefined;
+}
+
+function AgeText({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (locale === "bn" && typeof children === "string") {
+        const translated = translateAgeText(children);
+        if (translated) return <>{translated}</>;
+    }
+    return <BaseT>{children}</BaseT>;
+}
+
 // ---------------------------------------------------------------------------
 // Small date helpers
 // ---------------------------------------------------------------------------
@@ -95,8 +200,8 @@ function diffYMD(from: Date, to: Date): YMD & {
     const totalMonths = years * 12 + months;
     return { years, months, days, totalDays, totalWeeks, totalMonths };
 }
-function formatDate(d: Date) {
-    return d.toLocaleDateString("en-GB", {
+function formatDate(d: Date, locale: string = "en") {
+    return d.toLocaleDateString(locale === "bn" ? "bn-BD-u-ca-gregory" : "en-GB", {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -115,17 +220,21 @@ function lifeStage(years: number) {
         return "Adult";
     return "Senior citizen";
 }
-function plural(n: number, unit: string) {
+function plural(n: number, unit: string, locale: string = "en") {
+    if (locale === "bn") {
+        const units: Record<string, string> = { year: "বছর", month: "মাস", day: "দিন" };
+        return `${formatAgeNumber(n, locale)} ${units[unit] ?? unit}`;
+    }
     return `${n} ${unit}${n === 1 ? "" : "s"}`;
 }
-function shortDuration(ymd: YMD) {
+function shortDuration(ymd: YMD, locale: string = "en") {
     const parts: string[] = [];
     if (ymd.years)
-        parts.push(plural(ymd.years, "year"));
+        parts.push(plural(ymd.years, "year", locale));
     if (ymd.months)
-        parts.push(plural(ymd.months, "month"));
+        parts.push(plural(ymd.months, "month", locale));
     if (ymd.days || parts.length === 0)
-        parts.push(plural(ymd.days, "day"));
+        parts.push(plural(ymd.days, "day", locale));
     return parts.join(", ");
 }
 // ---------------------------------------------------------------------------
@@ -144,6 +253,7 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
     yearFrom: number;
     yearTo: number;
 }) {
+    const { locale } = useSohozI18n();
     const maxDay = month && year ? daysInMonth(Number(month), Number(year)) : 31;
     const days = Array.from({ length: maxDay }, (_, i) => i + 1);
     const years: number[] = [];
@@ -158,29 +268,29 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
     const selectClass = "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#2563EB] cursor-pointer";
     return (<div className="grid grid-cols-3 gap-2">
       <div>
-        <label htmlFor={`${idPrefix}-day`} className="sr-only"><T>{"Day\n        "}</T></label>
+        <label htmlFor={`${idPrefix}-day`} className="sr-only"><AgeText>{"Day\n        "}</AgeText></label>
         <select id={`${idPrefix}-day`} value={day} onChange={(e) => onDay(e.target.value)} className={selectClass}>
-          <option value=""><T>{"Day"}</T></option>
+          <option value=""><AgeText>{"Day"}</AgeText></option>
           {days.map((d) => (<option key={d} value={d}>
-              {d}
+              {formatAgeNumber(d, locale)}
             </option>))}
         </select>
       </div>
       <div>
-        <label htmlFor={`${idPrefix}-month`} className="sr-only"><T>{"Month\n        "}</T></label>
+        <label htmlFor={`${idPrefix}-month`} className="sr-only"><AgeText>{"Month\n        "}</AgeText></label>
         <select id={`${idPrefix}-month`} value={month} onChange={(e) => onMonth(e.target.value)} className={selectClass}>
-          <option value=""><T>{"Month"}</T></option>
+          <option value=""><AgeText>{"Month"}</AgeText></option>
           {MONTHS.map((m, i) => (<option key={m} value={i + 1}>
-              {m}
+              {locale === "bn" ? AGE_MONTHS_BN[i] : m}
             </option>))}
         </select>
       </div>
       <div>
-        <label htmlFor={`${idPrefix}-year`} className="sr-only"><T>{"Year\n        "}</T></label>
+        <label htmlFor={`${idPrefix}-year`} className="sr-only"><AgeText>{"Year\n        "}</AgeText></label>
         <select id={`${idPrefix}-year`} value={year} onChange={(e) => onYear(e.target.value)} className={selectClass}>
-          <option value=""><T>{"Year"}</T></option>
+          <option value=""><AgeText>{"Year"}</AgeText></option>
           {years.map((y) => (<option key={y} value={y}>
-              {y}
+              {formatAgeNumber(y, locale)}
             </option>))}
         </select>
       </div>
@@ -190,7 +300,10 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
 // Main component
 // ---------------------------------------------------------------------------
 export default function AgeCalculator() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseL } = useSohozI18n();
+    const L = (text: string) => locale === "bn"
+        ? translateAgeText(text) ?? baseL(text)
+        : baseL(text);
     const router = useRouter();
     const today = useMemo(() => stripTime(new Date()), []);
     const currentYear = today.getFullYear();
@@ -319,7 +432,9 @@ export default function AgeCalculator() {
     const handleCopy = async () => {
         if (!age || !birthDate)
             return;
-        const text = `Date of birth: ${formatDate(birthDate)}\nExact age: ${age.years} years, ${age.months} months, ${age.days} days\nTotal days: ${age.totalDays.toLocaleString()}`;
+        const text = locale === "bn"
+            ? `জন্মতারিখ: ${formatDate(birthDate, locale)}\nসঠিক বয়স: ${formatAgeNumber(age.years, locale)} বছর, ${formatAgeNumber(age.months, locale)} মাস, ${formatAgeNumber(age.days, locale)} দিন\nমোট দিন: ${formatAgeNumber(age.totalDays, locale)}`
+            : `Date of birth: ${formatDate(birthDate, locale)}\nExact age: ${age.years} years, ${age.months} months, ${age.days} days\nTotal days: ${age.totalDays.toLocaleString()}`;
         try {
             await navigator.clipboard.writeText(text);
             setCopied(true);
@@ -338,21 +453,21 @@ export default function AgeCalculator() {
               <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1 cursor-pointer" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
-              <span><T>{"/"}</T></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"General Tools\n              "}</T></span>
-              <span><T>{"/"}</T></span>
-              <span className="text-[#0F172A] font-semibold"><T>{"Age Calculator\n              "}</T></span>
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><AgeText>{"Sohoj Tools\n              "}</AgeText></Link>
+              <span><AgeText>{"/"}</AgeText></span>
+              <span className="hover:text-[#0F172A] cursor-pointer"><AgeText>{"General Tools\n              "}</AgeText></span>
+              <span><AgeText>{"/"}</AgeText></span>
+              <span className="text-[#0F172A] font-semibold"><AgeText>{"Age Calculator\n              "}</AgeText></span>
             </div>
 
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Calculator size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Age Calculator\n              "}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><AgeText>{"Age Calculator\n              "}</AgeText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><AgeText>{"Free\n              "}</AgeText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Pick your date of birth from the dropdowns \u2014 your exact age\n              appears instantly, no typing needed.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-1"><AgeText>{"Pick your date of birth from the dropdowns \u2014 your exact age\n              appears instantly, no typing needed.\n            "}</AgeText></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -371,15 +486,15 @@ export default function AgeCalculator() {
           <div className="lg:col-span-5 space-y-4 print:hidden">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-5">
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Enter dates\n                "}</T></span>
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><AgeText>{"Enter dates\n                "}</AgeText></span>
               </div>
 
               {/* Date of Birth */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
-                  <Cake size={13} className="text-[#4F46E5]"/><T>{"Date of birth "}</T><span className="text-red-500"><T>{"*"}</T></span>
+                  <Cake size={13} className="text-[#4F46E5]"/><AgeText>{"Date of birth "}</AgeText><span className="text-red-500"><AgeText>{"*"}</AgeText></span>
                 </label>
-                <p className="text-[11px] text-gray-400 font-medium"><T>{"Choose the day, month and year \u2014 cannot be a future date\n                "}</T></p>
+                <p className="text-[11px] text-gray-400 font-medium"><AgeText>{"Choose the day, month and year \u2014 cannot be a future date\n                "}</AgeText></p>
                 <DatePicker idPrefix="dob" day={dobDay} month={dobMonth} year={dobYear} onDay={setDobDay} onMonth={setDobMonth} onYear={setDobYear} yearFrom={currentYear - 120} yearTo={currentYear}/>
               </div>
 
@@ -391,12 +506,12 @@ export default function AgeCalculator() {
                       <Clock3 size={14}/>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#0F172A]"><T>{"Calculate age on a different date\n                      "}</T></h4>
-                      <p className="text-[10px] text-gray-500 font-medium"><T>{"Off = calculate as of today\n                      "}</T></p>
+                      <h4 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Calculate age on a different date\n                      "}</AgeText></h4>
+                      <p className="text-[10px] text-gray-500 font-medium"><AgeText>{"Off = calculate as of today\n                      "}</AgeText></p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={useCustomTargetDate} onChange={() => setUseCustomTargetDate((v) => !v)} className="sr-only peer"/>
+                    <input type="checkbox" checked={useCustomTargetDate} onChange={() => setUseCustomTargetDate((v) => !v)} aria-label={L("Calculate age on a different date")} className="sr-only peer"/>
                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2563EB]"/>
                   </label>
                 </div>
@@ -413,21 +528,21 @@ export default function AgeCalculator() {
                       <Users size={14}/>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#0F172A]"><T>{"Compare with another person\n                      "}</T></h4>
-                      <p className="text-[10px] text-gray-500 font-medium"><T>{"Enter their birth date to see who is older\n                      "}</T></p>
+                      <h4 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Compare with another person\n                      "}</AgeText></h4>
+                      <p className="text-[10px] text-gray-500 font-medium"><AgeText>{"Enter their birth date to see who is older\n                      "}</AgeText></p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={compareOn} onChange={() => setCompareOn((v) => !v)} className="sr-only peer"/>
+                    <input type="checkbox" checked={compareOn} onChange={() => setCompareOn((v) => !v)} aria-label={L("Compare with another person")} className="sr-only peer"/>
                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F46E5]"/>
                   </label>
                 </div>
                 {compareOn && (<div className="pt-1 space-y-2">
                     <DatePicker idPrefix="cmp" day={cmpDay} month={cmpMonth} year={cmpYear} onDay={setCmpDay} onMonth={setCmpMonth} onYear={setCmpYear} yearFrom={currentYear - 120} yearTo={currentYear}/>
                     {cmpComplete && !cmpValid && (<p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
-                        <AlertCircle size={12}/><T>{"That date doesn't exist.\n                      "}</T></p>)}
+                        <AlertCircle size={12}/><AgeText>{"That date doesn't exist.\n                      "}</AgeText></p>)}
                     {cmpFuture && (<p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
-                        <AlertCircle size={12}/><T>{"That date can't be in the\n                        future.\n                      "}</T></p>)}
+                        <AlertCircle size={12}/><AgeText>{"That date can't be in the\n                        future.\n                      "}</AgeText></p>)}
                   </div>)}
               </div>
 
@@ -435,7 +550,7 @@ export default function AgeCalculator() {
               {errorMessage && (<div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-3.5 py-2.5">
                   <AlertCircle size={15} className="mt-0.5 shrink-0"/>
                   <p className="text-xs font-semibold leading-relaxed">
-                    {errorMessage}
+                    <AgeText>{errorMessage}</AgeText>
                   </p>
                 </div>)}
             </div>
@@ -448,10 +563,10 @@ export default function AgeCalculator() {
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
                   <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#4F46E5]"/>
-                    <span><T>{"Your age"}</T></span>
+                    <span><AgeText>{"Your age"}</AgeText></span>
                   </span>
                   <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
-                    {age ? <T>{"Calculated"}</T> : <T>{"Empty"}</T>}
+                    {age ? <AgeText>{"Calculated"}</AgeText> : <AgeText>{"Empty"}</AgeText>}
                   </span>
                 </div>
 
@@ -460,39 +575,39 @@ export default function AgeCalculator() {
                     <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-2xl p-6 text-center space-y-2">
                       <p className="text-xs font-bold text-[#4338CA] uppercase tracking-widest">
                         {useCustomTargetDate
-            ? <T>{`Age on ${formatDate(targetDate)}`}</T> : <T>{"Exact age today"}</T>}
+            ? <AgeText>{`Age on ${formatDate(targetDate, locale)}`}</AgeText> : <AgeText>{"Exact age today"}</AgeText>}
                       </p>
                       <h2 className="text-3xl font-extrabold text-[#312E81]">
-                        {age.years}{<T>{" "}</T>}
-                        <span className="text-base font-normal"><T>{"Years"}</T></span><T>{","}</T>{<T>{" "}</T>}
-                        {age.months}{<T>{" "}</T>}
-                        <span className="text-base font-normal"><T>{"Months"}</T></span><T>{","}</T>{<T>{" "}</T>}
-                        {age.days}{<T>{" "}</T>}
-                        <span className="text-base font-normal"><T>{"Days"}</T></span>
+                        {formatAgeNumber(age.years, locale)}{<AgeText>{" "}</AgeText>}
+                        <span className="text-base font-normal"><AgeText>{"Years"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
+                        {formatAgeNumber(age.months, locale)}{<AgeText>{" "}</AgeText>}
+                        <span className="text-base font-normal"><AgeText>{"Months"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
+                        {formatAgeNumber(age.days, locale)}{<AgeText>{" "}</AgeText>}
+                        <span className="text-base font-normal"><AgeText>{"Days"}</AgeText></span>
                       </h2>
                       <span className="inline-block bg-white text-[#4338CA] border border-[#C7D2FE] text-[11px] font-bold px-3 py-1 rounded-full">
-                        {lifeStage(age.years)}
+                        <AgeText>{lifeStage(age.years)}</AgeText>
                       </span>
                     </div>
 
                     {/* Quick stats */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><T>{"Total Months\n                        "}</T></p>
+                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Months\n                        "}</AgeText></p>
                         <p className="text-base font-bold text-[#0F172A]">
-                          {age.totalMonths.toLocaleString()}
+                          {formatAgeNumber(age.totalMonths, locale)}
                         </p>
                       </div>
                       <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><T>{"Total Weeks\n                        "}</T></p>
+                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Weeks\n                        "}</AgeText></p>
                         <p className="text-base font-bold text-[#0F172A]">
-                          {age.totalWeeks.toLocaleString()}
+                          {formatAgeNumber(age.totalWeeks, locale)}
                         </p>
                       </div>
                       <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1 col-span-2 sm:col-span-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><T>{"Total Days\n                        "}</T></p>
+                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Days\n                        "}</AgeText></p>
                         <p className="text-base font-bold text-[#0F172A]">
-                          {age.totalDays.toLocaleString()}
+                          {formatAgeNumber(age.totalDays, locale)}
                         </p>
                       </div>
                     </div>
@@ -501,28 +616,32 @@ export default function AgeCalculator() {
                     {nextBirthday && (<div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex items-center gap-3">
                         <div className="w-9 h-9 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0"></div>
                         <p className="text-xs font-semibold text-[#0F172A] leading-relaxed">
-                          {nextBirthday.isToday ? (<><T>{"\uD83C\uDF89 Birthday today \u2014 turning"}</T>{<T>{" "}</T>}
-                              <b>{nextBirthday.turningAge}</b><T>{"!\n                            "}</T></>) : (<><T>{"Turns "}</T><b>{nextBirthday.turningAge}</b><T>{"in"}</T>{<T>{" "}</T>}
-                              <b>{shortDuration(nextBirthday.untilNext)}</b><T>{", on"}</T>{<T>{" "}</T>}
-                              {formatDate(nextBirthday.date)}
+                          {nextBirthday.isToday ? (locale === "bn" ? <>
+                              🎉 আজ জন্মদিন—আপনার বয়স এখন <b>{formatAgeNumber(nextBirthday.turningAge, locale)} বছর</b>!
+                            </> : <>
+                              🎉 Birthday today — turning <b>{nextBirthday.turningAge}</b>!
+                            </>) : (locale === "bn" ? <>
+                              আর <b>{shortDuration(nextBirthday.untilNext, locale)}</b> পর <b>{formatAgeNumber(nextBirthday.turningAge, locale)}</b> বছর পূর্ণ হবে, তারিখ {formatDate(nextBirthday.date, locale)}
+                            </> : <>
+                              Turns <b>{nextBirthday.turningAge}</b> in <b>{shortDuration(nextBirthday.untilNext, locale)}</b>, on {formatDate(nextBirthday.date, locale)}
                             </>)}
                         </p>
                       </div>)}
 
                     {/* Milestones relevant to daily life / paperwork in BD */}
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-[#0F172A]"><T>{"Milestones\n                      "}</T></p>
+                      <p className="text-xs font-bold text-[#0F172A]"><AgeText>{"Milestones\n                      "}</AgeText></p>
                       <div className="space-y-1.5">
                         {milestones.map((m) => (<div key={m.label} className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200/80 rounded-lg px-3 py-2">
                             <div className="flex items-center gap-2 min-w-0">
                               {m.reached ? (<CheckCircle2 size={15} className="text-emerald-500 shrink-0"/>) : (<AlertCircle size={15} className="text-gray-300 shrink-0"/>)}
                               <span className="text-[11px] font-semibold text-[#0F172A] truncate">
-                                {m.label}
+                                <AgeText>{m.label}</AgeText>
                               </span>
                             </div>
                             <span className={`text-[11px] font-bold whitespace-nowrap ${m.reached ? "text-emerald-600" : "text-gray-400"}`}>
                               {m.reached
-                ? <T>{`Since ${formatDate(m.date)}`}</T> : <T>{`In ${shortDuration(m.remaining as YMD)}`}</T>}
+                ? <AgeText>{`Since ${formatDate(m.date, locale)}`}</AgeText> : <AgeText>{`In ${shortDuration(m.remaining as YMD, locale)}`}</AgeText>}
                             </span>
                           </div>))}
                       </div>
@@ -534,9 +653,11 @@ export default function AgeCalculator() {
                           <Users size={17}/>
                         </div>
                         <p className="text-xs font-semibold text-[#1E40AF] leading-relaxed">
-                          {comparison.isSame ? <T>{("Both people are exactly the same age.")}</T> : (<><T>{"The first date of birth is"}</T>{<T>{" "}</T>}
-                              <b>{shortDuration(comparison.diff)}</b>{<T>{" "}</T>}
-                              {comparison.personOneOlder ? <T>{"older"}</T> : <T>{"younger"}</T>}{<T>{" "}</T>}<T>{"than the second.\n                            "}</T></>)}
+                          {comparison.isSame ? <AgeText>{"Both people are exactly the same age."}</AgeText> : (locale === "bn" ? <>
+                              প্রথম ব্যক্তি দ্বিতীয় ব্যক্তির চেয়ে <b>{shortDuration(comparison.diff, locale)}</b> বয়সে {comparison.personOneOlder ? "বড়" : "ছোট"}।
+                            </> : <>
+                              The first date of birth is <b>{shortDuration(comparison.diff, locale)}</b> {comparison.personOneOlder ? "older" : "younger"} than the second.
+                            </>)}
                         </p>
                       </div>)}
 
@@ -544,15 +665,15 @@ export default function AgeCalculator() {
                     <div className="flex items-center gap-2 print:hidden">
                       <button onClick={handleCopy} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer">
                         {copied ? (<Check size={14} className="text-emerald-600"/>) : (<Copy size={14}/>)}
-                        {copied ? <T>{"Copied"}</T> : <T>{"Copy result"}</T>}
+                        {copied ? <AgeText>{"Copied"}</AgeText> : <AgeText>{"Copy result"}</AgeText>}
                       </button>
                     </div>
                   </div>) : (<div className="mt-16 flex flex-col items-center justify-center text-center p-8 space-y-3">
                     <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-2xl flex items-center justify-center shadow-2xs">
                       <Calculator size={22}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Choose a date of birth on the left to see the age\n                      instantly.\n                    "}</T></h3>
-                    <p className="text-[11px] text-gray-400 font-medium max-w-xs leading-relaxed"><T>{"No typing required \u2014 just pick the day, month and year\n                      from the dropdown lists.\n                    "}</T></p>
+                    <h3 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Choose a date of birth on the left to see the age\n                      instantly.\n                    "}</AgeText></h3>
+                    <p className="text-[11px] text-gray-400 font-medium max-w-xs leading-relaxed"><AgeText>{"No typing required \u2014 just pick the day, month and year\n                      from the dropdown lists.\n                    "}</AgeText></p>
                   </div>)}
               </div>
             </div>
@@ -563,14 +684,14 @@ export default function AgeCalculator() {
         <div className="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs print:hidden">
           <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#4F46E5]"/>
-            <span><T>{"Everything is calculated in your browser \u2014 nothing is uploaded to\n              any server.\n            "}</T></span>
+            <span><AgeText>{"Everything is calculated in your browser \u2014 nothing is uploaded to\n              any server.\n            "}</AgeText></span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button onClick={handleReset} className="px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"><T>{"Reset\n            "}</T></button>
+            <button onClick={handleReset} className="px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"><AgeText>{"Reset\n            "}</AgeText></button>
             <button onClick={() => window.print()} disabled={!age} className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer">
               <Calculator size={14}/>
-              <span><T>{"Print / Save"}</T></span>
+              <span><AgeText>{"Print / Save"}</AgeText></span>
             </button>
           </div>
         </div>
@@ -580,22 +701,22 @@ export default function AgeCalculator() {
           <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-[#F8FAFC] transition-colors cursor-pointer">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5]"/>
-              <span><T>{"How to use"}</T></span>
+              <span><AgeText>{"How to use"}</AgeText></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
           {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
-              <p><T>{"1. Pick the day, month and year of birth from the three dropdown\n                lists \u2014 no typing needed.\n              "}</T></p>
-              <p><T>{"2. Your exact age, next birthday and total days lived appear\n                immediately on the right.\n              "}</T></p>
-              <p><T>{"3. Turn on \"Calculate age on a different date\" to see the age as\n                of a past or future date.\n              "}</T></p>
-              <p><T>{"4. Turn on \"Compare with another person\" to see who is older and\n                by how much.\n              "}</T></p>
+              <p><AgeText>{"1. Pick the day, month and year of birth from the three dropdown\n                lists \u2014 no typing needed.\n              "}</AgeText></p>
+              <p><AgeText>{"2. Your exact age, next birthday and total days lived appear\n                immediately on the right.\n              "}</AgeText></p>
+              <p><AgeText>{"3. Turn on \"Calculate age on a different date\" to see the age as\n                of a past or future date.\n              "}</AgeText></p>
+              <p><AgeText>{"4. Turn on \"Compare with another person\" to see who is older and\n                by how much.\n              "}</AgeText></p>
             </div>)}
         </div>
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3 print:hidden">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><AgeText>{"Tools in the same category\n          "}</AgeText></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
             const ToolIcon = tool.icon;
@@ -605,10 +726,10 @@ export default function AgeCalculator() {
                       <ToolIcon size={18}/>
                     </div>
                     <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-[#4F46E5] transition-colors">
-                      {<T>{tool.title}</T>}
+                      {<AgeText>{tool.title}</AgeText>}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                      {<T>{tool.description}</T>}
+                      {<AgeText>{tool.description}</AgeText>}
                     </p>
                   </div>
                 </Link>);

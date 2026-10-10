@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSohozI18n, L as baseL } from "@/app/sohoj-tools/_i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -104,14 +104,15 @@ function resetFFmpegSingleton() {
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
 /* -------------------------------------------------------------------------- */
-function formatBytes(bytes: number): string {
+function formatBytes(bytes: number, locale: string = "en"): string {
+    const numberLocale = locale === "bn" ? "bn-BD" : "en-US";
     if (bytes < 1024)
-        return `${bytes} B`;
+        return `${bytes.toLocaleString(numberLocale)} B`;
     if (bytes < 1024 * 1024)
-        return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024).toLocaleString(numberLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} KB`;
     if (bytes < 1024 * 1024 * 1024)
-        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        return `${(bytes / (1024 * 1024)).toLocaleString(numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toLocaleString(numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GB`;
 }
 function isVideoFile(file: File): boolean {
     return (file.type.startsWith("video/") ||
@@ -131,10 +132,123 @@ interface CompressionResult {
     fileName: string;
 }
 /* -------------------------------------------------------------------------- */
+/*                     English / Bangla UI translations                       */
+/* -------------------------------------------------------------------------- */
+const REDUCE_VIDEO_BN: Record<string, string> = {
+    "Video Converter": "ভিডিও কনভার্টার",
+    "Convert video formats easily between MP4, WebM, AVI, and MKV.": "সহজেই MP4, WebM, AVI ও MKV ফরম্যাটের মধ্যে ভিডিও রূপান্তর করুন।",
+    "Trim Video": "ভিডিও ট্রিম করুন",
+    "Cut and trim unwanted parts of your video quickly in browser.": "ব্রাউজারেই দ্রুত ভিডিওর অপ্রয়োজনীয় অংশ কেটে বাদ দিন।",
+    "High quality": "উচ্চ মান",
+    "Larger file": "ফাইলের আকার বেশি হবে",
+    "Balanced": "ভারসাম্যপূর্ণ",
+    "Recommended": "প্রস্তাবিত",
+    "Smallest file": "সবচেয়ে ছোট ফাইল",
+    "Lower quality": "মান কিছুটা কম হবে",
+    "Original": "মূল ভিডিও",
+    "Sohoj Tools": "সহজ টুলস",
+    "Video Tools": "ভিডিও টুলস",
+    "Reduce Video File Size": "ভিডিওর ফাইলের আকার কমান",
+    "Free": "বিনামূল্যে",
+    "Shrink video files in your browser — adjust quality and resolution before sharing or uploading. Your video never leaves your device.": "ব্রাউজারেই ভিডিওর ফাইলের আকার কমান—শেয়ার বা আপলোড করার আগে মান ও রেজোলিউশন ঠিক করুন। আপনার ভিডিও ডিভাইসের বাইরে পাঠানো হয় না।",
+    "Go back": "আগের পাতায় যান",
+    "Toggle favorite": "পছন্দের তালিকায় যোগ বা বাদ দিন",
+    "Share": "শেয়ার করুন",
+    "Dismiss error": "ত্রুটি বার্তাটি বন্ধ করুন",
+    "That doesn't look like a video. Choose an MP4, MOV, MKV, WebM or AVI file.": "এটি ভিডিও ফাইল বলে মনে হচ্ছে না। MP4, MOV, MKV, WebM অথবা AVI ফাইল বেছে নিন।",
+    "Loading the video engine (about 30 MB, only downloaded once)…": "ভিডিও প্রক্রিয়াকরণ ব্যবস্থা লোড হচ্ছে (প্রায় ৩০ MB; একবারই ডাউনলোড হবে)…",
+    "Couldn't download the video engine. Check your connection and try again.": "ভিডিও প্রক্রিয়াকরণ ব্যবস্থা ডাউনলোড করা যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    "Retry": "আবার চেষ্টা করুন",
+    "Files (": "ফাইল (",
+    ")": ")",
+    "Drop another video or click to replace": "অন্য ভিডিও টেনে আনুন অথবা বদলাতে ক্লিক করুন",
+    "Drop a video here or click to upload": "এখানে ভিডিও টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+    "One video file, max 500 MB": "একটি ভিডিও ফাইল; সর্বোচ্চ ৫০০ MB",
+    "Or press Ctrl+V to paste a copied video": "অথবা কপি করা ভিডিও পেস্ট করতে Ctrl+V চাপুন",
+    "Quality": "ভিডিওর মান",
+    "Resolution": "রেজোলিউশন",
+    "Videos are only scaled down, never enlarged.": "ভিডিওর রেজোলিউশন শুধু কমানো হবে, কখনো বাড়ানো হবে না।",
+    "Video preview": "ভিডিওর পূর্বরূপ",
+    "Compressing": "সংকুচিত হচ্ছে",
+    "Compressed": "সংকুচিত ভিডিও",
+    "Loaded": "লোড হয়েছে",
+    "Empty": "ফাঁকা",
+    "Add a video to get started": "শুরু করতে একটি ভিডিও যোগ করুন",
+    "Your original and compressed preview will appear here.": "এখানে মূল ও সংকুচিত ভিডিওর পূর্বরূপ দেখা যাবে।",
+    "Compressing your video…": "আপনার ভিডিও সংকুচিত করা হচ্ছে…",
+    "This runs on your device, so large files can take a few minutes. Keep this tab open.": "এই কাজটি আপনার ডিভাইসেই হচ্ছে, তাই বড় ফাইলে কয়েক মিনিট লাগতে পারে। এই ট্যাবটি খোলা রাখুন।",
+    "This video was already well compressed, so the result isn't smaller. Try \"Smallest file\" or a lower resolution.": "ভিডিওটি আগে থেকেই ভালোভাবে সংকুচিত, তাই নতুন ফাইলটি আরও ছোট হয়নি। ‘সবচেয়ে ছোট ফাইল’ মানটি অথবা কম রেজোলিউশন বেছে দেখুন।",
+    "% smaller.": "% ছোট হয়েছে।",
+    ", saving": ", সাশ্রয় হয়েছে",
+    "Download video": "ভিডিও ডাউনলোড করুন",
+    "Loading video engine…": "ভিডিও প্রক্রিয়াকরণ ব্যবস্থা লোড হচ্ছে…",
+    "Video engine failed to load": "ভিডিও প্রক্রিয়াকরণ ব্যবস্থা লোড করা যায়নি",
+    "Ready to compress": "সংকুচিত করার জন্য প্রস্তুত",
+    "Done. Your compressed video is ready": "কাজ শেষ। আপনার সংকুচিত ভিডিও প্রস্তুত",
+    "Compressing…": "সংকুচিত হচ্ছে…",
+    "Reset": "নতুন করে শুরু করুন",
+    "Cancel": "বাতিল করুন",
+    "Compress again": "আবার সংকুচিত করুন",
+    "Compress video": "ভিডিও সংকুচিত করুন",
+    "How to use": "ব্যবহারের নিয়ম",
+    "1. Upload or drag and drop your video file into the input box on the left.": "১. বাঁ পাশের ঘরে ভিডিও ফাইল আপলোড করুন অথবা টেনে এনে ছেড়ে দিন।",
+    "2. Preview the original file details and select your target quality and resolution.": "২. মূল ভিডিওর তথ্য ও পূর্বরূপ দেখুন, তারপর পছন্দের মান ও রেজোলিউশন বেছে নিন।",
+    "3. Click \"Compress video\" to process, then download your reduced file.": "৩. ভিডিও প্রক্রিয়া করতে ‘ভিডিও সংকুচিত করুন’ ক্লিক করুন, এরপর ছোট করা ফাইলটি ডাউনলোড করুন।",
+    "Tools in the same category": "একই বিভাগের টুলস",
+};
+
+function normalizeReduceVideoText(text: string): string {
+    return text
+        .replace(/&apos;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function toReduceVideoBanglaDigits(value: string | number): string {
+    return String(value).replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+}
+
+function translateReduceVideoText(text: string): string | undefined {
+    const normalized = normalizeReduceVideoText(text);
+    const exact = REDUCE_VIDEO_BN[normalized];
+    if (exact) return exact;
+
+    const oversized = normalized.match(/^This file is (.+)\. The limit is (.+)\. Trim the video first, then try again\.$/);
+    if (oversized) {
+        return `ফাইলটির আকার ${oversized[1]}। সর্বোচ্চ সীমা ${oversized[2]}। আগে ভিডিওটি ট্রিম করে ছোট করুন, তারপর আবার চেষ্টা করুন।`;
+    }
+
+    const progressStatus = normalized.match(/^Compressing…\s*(\d+)%$/);
+    if (progressStatus) return `সংকুচিত হচ্ছে… ${toReduceVideoBanglaDigits(progressStatus[1])}%`;
+
+    if (normalized.startsWith("Compression failed.")) {
+        const details = normalized.slice("Compression failed.".length).trim();
+        if (!details || details === "Unknown error") return "ভিডিও সংকুচিত করা যায়নি। আবার চেষ্টা করুন।";
+        return `ভিডিও সংকুচিত করা যায়নি। ${details}`;
+    }
+    if (normalized === "The browser ran out of memory. Try a smaller file, a lower resolution, or close other tabs.") {
+        return "ব্রাউজারের মেমোরি শেষ হয়ে গেছে। ছোট ফাইল বা কম রেজোলিউশন বেছে নিন, অথবা অন্য ট্যাবগুলো বন্ধ করে আবার চেষ্টা করুন।";
+    }
+    return undefined;
+}
+
+function T({ children }: { children: React.ReactNode }) {
+    const { locale } = useSohozI18n();
+    if (locale === "bn" && typeof children === "string") {
+        const translated = translateReduceVideoText(children);
+        if (translated) return <>{translated}</>;
+    }
+    return <BaseT>{children}</BaseT>;
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                  Component                                 */
 /* -------------------------------------------------------------------------- */
 export default function ReduceVideoFileSize() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const L = (text: string) => locale === "bn" ? translateReduceVideoText(text) ?? baseL(text) : baseL(text);
     const router = useRouter();
     // UI state
     const [isFavorite, setIsFavorite] = useState(false);
@@ -195,7 +309,7 @@ export default function ReduceVideoFileSize() {
             return;
         }
         if (selected.size > MAX_FILE_SIZE) {
-            setError(`This file is ${formatBytes(selected.size)}. The limit is ${formatBytes(MAX_FILE_SIZE)}. Trim the video first, then try again.`);
+            setError(`This file is ${formatBytes(selected.size, locale)}. The limit is ${formatBytes(MAX_FILE_SIZE, locale)}. Trim the video first, then try again.`);
             return;
         }
         if (inputUrlRef.current)
@@ -207,7 +321,7 @@ export default function ReduceVideoFileSize() {
         setFile(selected);
         setProgress(0);
         setError(null);
-    }, [isCompressing, clearResult]);
+    }, [isCompressing, clearResult, locale]);
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         handleFile(e.target.files?.[0]);
         e.target.value = "";
@@ -443,7 +557,7 @@ export default function ReduceVideoFileSize() {
         {error && (<div role="alert" className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4">
             <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
             <p className="text-xs font-medium leading-relaxed flex-1">
-              {error}
+              <T>{error}</T>
             </p>
             <button onClick={() => setError(null)} aria-label={L("Dismiss error")} className="p-0.5 hover:bg-red-100 rounded-md transition-colors">
               <X size={14}/>
@@ -495,7 +609,7 @@ export default function ReduceVideoFileSize() {
                       {file.name}
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      {formatBytes(file.size)}
+                      {formatBytes(file.size, locale)}
                     </p>
                   </div>
                 </div>)}
@@ -511,9 +625,9 @@ export default function ReduceVideoFileSize() {
             return (<button key={key} type="button" onClick={() => setQuality(key)} aria-pressed={active} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-colors disabled:opacity-50 ${active
                     ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                     : "border-[#E2E8F0] hover:border-[#2563EB]/30 hover:bg-[#F8FAFC]"}`}>
-                      <span className="text-xs font-bold">{preset.label}</span>
+                      <span className="text-xs font-bold"><T>{preset.label}</T></span>
                       <span className="text-[11px] text-slate-500 font-medium">
-                        {preset.hint}
+                        <T>{preset.hint}</T>
                       </span>
                     </button>);
         })}
@@ -527,7 +641,7 @@ export default function ReduceVideoFileSize() {
             return (<button key={opt.key} type="button" onClick={() => setResolution(opt.key)} aria-pressed={active} className={`px-2 py-2 rounded-xl border text-[11px] font-bold transition-colors disabled:opacity-50 ${active
                     ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
                     : "border-[#E2E8F0] hover:border-[#2563EB]/30 hover:bg-[#F8FAFC]"}`}>
-                        {opt.label}
+                        <T>{opt.label}</T>
                       </button>);
         })}
                 </div>
@@ -544,10 +658,10 @@ export default function ReduceVideoFileSize() {
                 <span className="text-[11px] font-semibold text-slate-500 bg-[#E2E8F0]/50 px-2.5 py-0.5 rounded-md">
                   {isCompressing
         ? <T>{"Compressing"}</T> : result
-        ? "Compressed"
+        ? <T>{"Compressed"}</T>
         : file
-            ? "Loaded"
-            : "Empty"}
+            ? <T>{"Loaded"}</T>
+            : <T>{"Empty"}</T>}
                 </span>
               </div>
 
@@ -566,7 +680,7 @@ export default function ReduceVideoFileSize() {
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-slate-500"><T>{"Original\n                        "}</T></span>
                         <span className="text-[11px] font-semibold text-slate-500">
-                          {formatBytes(file.size)}
+                          {formatBytes(file.size, locale)}
                         </span>
                       </div>
                       <video src={inputUrl} controls preload="metadata" className="w-full max-h-[340px] rounded-xl bg-black"/>
@@ -577,7 +691,7 @@ export default function ReduceVideoFileSize() {
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-[#10B981]"><T>{"Compressed\n                          "}</T></span>
                           <span className="text-[11px] font-semibold text-[#10B981]">
-                            {formatBytes(result.size)}
+                            {formatBytes(result.size, locale)}
                           </span>
                         </div>
                         <video src={result.url} controls preload="metadata" className="w-full max-h-[340px] rounded-xl bg-black"/>
@@ -589,7 +703,7 @@ export default function ReduceVideoFileSize() {
                       <div className="flex items-center justify-between text-xs font-bold text-[#0F172A]">
                         <span className="flex items-center gap-2 text-[#2563EB]">
                           <Loader2 size={14} className="animate-spin"/><T>{"Compressing your video\u2026\n                        "}</T></span>
-                        <span className="text-[#2563EB]">{progress}<T>{"%"}</T></span>
+                        <span className="text-[#2563EB]">{(progress).toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"%"}</T></span>
                       </div>
                       <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 w-full bg-[#E2E8F0] rounded-full overflow-hidden">
                         <div className="h-full bg-[#2563EB] rounded-full transition-[width] duration-300" style={{ width: `${Math.max(progress, 2)}%` }}/>
@@ -606,10 +720,10 @@ export default function ReduceVideoFileSize() {
                         <div className="text-xs font-medium leading-relaxed">
                           {gotLarger ? (<p className="text-amber-900"><T>{"This video was already well compressed, so the\n                              result isn&apos;t smaller. Try &quot;Smallest\n                              file&quot; or a lower resolution.\n                            "}</T></p>) : (<p className="text-[#0F172A]">
                               <span className="font-bold text-[#10B981]">
-                                {savedPercent}<T>{"% smaller.\n                              "}</T></span>{<T>{" "}</T>}
-                              {formatBytes(file.size)}<T>{"\u2192"}</T>{<T>{" "}</T>}
-                              {formatBytes(result.size)}<T>{", saving"}</T>{<T>{" "}</T>}
-                              {formatBytes(savedBytes)}<T>{".\n                            "}</T></p>)}
+                                {savedPercent.toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"% smaller.\n                              "}</T></span>{<T>{" "}</T>}
+                              {formatBytes(file.size, locale)}<T>{"\u2192"}</T>{<T>{" "}</T>}
+                              {formatBytes(result.size, locale)}<T>{", saving"}</T>{<T>{" "}</T>}
+                              {formatBytes(savedBytes, locale)}<T>{".\n                            "}</T></p>)}
                         </div>
                       </div>
 
@@ -625,7 +739,7 @@ export default function ReduceVideoFileSize() {
         <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
           <div className="text-xs font-medium text-slate-500 flex items-center gap-2" aria-live="polite">
             <span className={`w-2 h-2 rounded-full ${statusDot}`}></span>
-            <span>{statusText}</span>
+            <span><T>{statusText}</T></span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">

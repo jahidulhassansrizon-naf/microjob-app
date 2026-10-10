@@ -1,10 +1,163 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Star, Share, Copy, Check, ChevronDown, ChevronUp, ScanText, RotateCcw, ShieldCheck, Upload, Languages, Keyboard, AlertTriangle, } from "lucide-react";
 import { createWorker } from "tesseract.js";
+/* ========================================================================== */
+/* Page-local English ↔ Bangla UI translation                                 */
+/* ========================================================================== */
+const IMAGE_TO_TEXT_BN: Record<string, string> = {
+    "sohoj tools": "সহজ টুলস",
+    "text tools": "লেখার টুলস",
+    "image to text": "ছবি থেকে লেখা",
+    "free": "বিনামূল্যে",
+    "extract text from images with ocr in your browser — supports english and bengali.": "আপনার ব্রাউজারেই OCR প্রযুক্তির সাহায্যে ছবি থেকে লেখা বের করুন—ইংরেজি ও বাংলা সমর্থিত।",
+    "remove from favorites": "পছন্দের তালিকা থেকে সরান",
+    "add to favorites": "পছন্দের তালিকায় যোগ করুন",
+    "link copied": "লিংক কপি হয়েছে",
+    "share this tool": "এই টুলটি শেয়ার করুন",
+    "image to text — sohoj tools": "ছবি থেকে লেখা — Sohoj Tools",
+    "go back": "পেছনে যান",
+    "files": "ফাইল",
+    "files ": "ফাইল ",
+    "(0)": "(০)",
+    "(1)": "(১)",
+    "remove": "সরান",
+    "remove uploaded file": "আপলোড করা ফাইল সরান",
+    "download converted image": "রূপান্তরিত ছবি ডাউনলোড করুন",
+    "remove image": "ছবি সরান",
+    "extracted text (editable)": "বের করা লেখা (সম্পাদনাযোগ্য)",
+    "upload image file": "ছবির ফাইল আপলোড করুন",
+    "upload an image. drop a file here or press enter to browse. maximum size 50 megabytes.": "একটি ছবি আপলোড করুন। ফাইল এখানে টেনে আনুন অথবা ফাইল বাছাই করতে Enter চাপুন। সর্বোচ্চ আকার ৫০ MB।",
+    "drop an image here or click to upload": "ছবি এখানে টেনে আনুন অথবা আপলোড করতে ক্লিক করুন",
+    "jpg, png, webp, bmp, or gif — max 50mb": "JPG, PNG, WebP, BMP অথবা GIF — সর্বোচ্চ ৫০ MB",
+    "ocr language": "OCR-এর ভাষা",
+    "english + bengali (উভয়ই)": "ইংরেজি + বাংলা (উভয়ই)",
+    "english only": "শুধু ইংরেজি",
+    "bengali only (বাংলা)": "শুধু বাংলা",
+    "image preview & extracted text": "ছবির প্রিভিউ ও বের করা লেখা",
+    "processing": "প্রক্রিয়াকরণ চলছে",
+    "failed": "ব্যর্থ হয়েছে",
+    "no text found": "কোনো লেখা পাওয়া যায়নি",
+    "completed": "সম্পন্ন",
+    "ready": "প্রস্তুত",
+    "converted": "রূপান্তর সম্পন্ন",
+    "empty": "খালি",
+    "upload an image to extract text": "লেখা বের করতে একটি ছবি আপলোড করুন",
+    "your image preview and extracted text will appear here.": "এখানে ছবির প্রিভিউ ও বের করা লেখা দেখা যাবে।",
+    "result": "ফলাফল",
+    "select all extracted text": "বের করা সব লেখা নির্বাচন করুন",
+    "copy extracted text to clipboard": "বের করা লেখা ক্লিপবোর্ডে কপি করুন",
+    "select all": "সব নির্বাচন করুন",
+    "copied!": "কপি হয়েছে!",
+    "copy failed": "কপি করা যায়নি",
+    "copy": "কপি করুন",
+    "text copied to clipboard": "লেখা ক্লিপবোর্ডে কপি করা হয়েছে",
+    "copy failed. select the text and copy it manually.": "কপি করা যায়নি। লেখাটি নির্বাচন করে নিজে কপি করুন।",
+    "couldn't load language data": "ভাষার ডেটা লোড করা যায়নি",
+    "loading took too long": "লোড হতে অতিরিক্ত সময় লেগেছে",
+    "couldn't read this image": "ছবিটি পড়া যায়নি",
+    "text extraction failed": "লেখা বের করা যায়নি",
+    "the ocr language data couldn't be downloaded. check your internet connection and try again.": "OCR-এর ভাষার ডেটা ডাউনলোড করা যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    "downloading the ocr language data is taking too long. check your connection and try again.": "OCR-এর ভাষার ডেটা ডাউনলোড হতে অনেক সময় লাগছে। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    "something went wrong while reading this image. try again, or use a clearer image.": "ছবিটি পড়ার সময় সমস্যা হয়েছে। আবার চেষ্টা করুন অথবা আরও স্পষ্ট ছবি ব্যবহার করুন।",
+    "unsupported file type. please upload a jpg, png, webp, bmp, or gif image.": "এই ফাইলের ধরন সমর্থিত নয়। JPG, PNG, WebP, BMP অথবা GIF ছবি আপলোড করুন।",
+    "this file is empty. please choose another image.": "ফাইলটি খালি। অন্য একটি ছবি বেছে নিন।",
+    "this image couldn't be decoded. it may be corrupted or too large for your browser.": "ছবিটি খোলা যায়নি। ফাইলটি নষ্ট হতে পারে অথবা আপনার ব্রাউজারের জন্য অতিরিক্ত বড় হতে পারে।",
+    "this image couldn't be prepared for scanning. try a smaller or different image.": "ছবিটি স্ক্যানের জন্য প্রস্তুত করা যায়নি। ছোট আকারের বা অন্য একটি ছবি দিয়ে চেষ্টা করুন।",
+    "preparing image…": "ছবি প্রস্তুত করা হচ্ছে…",
+    "loading ocr engine…": "OCR ব্যবস্থা চালু হচ্ছে…",
+    "try again": "আবার চেষ্টা করুন",
+    "use english only": "শুধু ইংরেজি ব্যবহার করুন",
+    "no text found in this image": "এই ছবিতে কোনো লেখা পাওয়া যায়নি",
+    "try a sharper, well-lit image with dark text on a plain background, and check that the ocr language matches the text.": "আরও স্পষ্ট ও ভালো আলোতে তোলা ছবি ব্যবহার করুন, যেখানে সাদামাটা পটভূমিতে গাঢ় লেখা রয়েছে। OCR-এর ভাষা ছবির লেখার ভাষার সঙ্গে মিলছে কি না, সেটিও দেখে নিন।",
+    "click \"extract text\" button below to start ocr conversion.": "OCR শুরু করতে নিচের “লেখা বের করুন” বাটনে ক্লিক করুন।",
+    "low confidence — please review the text for mistakes.": "লেখা শনাক্ত করার নির্ভরযোগ্যতা কম—ভুল আছে কি না, দয়া করে লেখাটি দেখে নিন।",
+    "scanning image…": "ছবি স্ক্যান করা হচ্ছে…",
+    "ready to scan text": "লেখা স্ক্যানের জন্য প্রস্তুত",
+    "extracting text": "লেখা বের করা হচ্ছে",
+    "extract text from image": "ছবি থেকে লেখা বের করুন",
+    "extracting…": "লেখা বের করা হচ্ছে…",
+    "extract text": "লেখা বের করুন",
+    "cancel": "বাতিল করুন",
+    "reset": "পুনরায় সেট করুন",
+    "your files are processed in the browser — they are not uploaded to any server.": "আপনার ফাইল ব্রাউজারেই প্রক্রিয়াকরণ করা হয়—কোনো সার্ভারে আপলোড করা হয় না।",
+    "how to use": "ব্যবহারের নিয়ম",
+    "1. upload an image containing english or bengali text using the upload box.": "১. আপলোড বক্স ব্যবহার করে ইংরেজি বা বাংলা লেখা থাকা একটি ছবি আপলোড করুন।",
+    "2. select your target ocr language (english, bengali, or both).": "২. লেখা শনাক্ত করার ভাষা বেছে নিন—ইংরেজি, বাংলা অথবা উভয়ই।",
+    "3. click the \"extract text\" button to scan the image.": "৩. ছবির লেখা স্ক্যান করতে “লেখা বের করুন” বাটনে ক্লিক করুন।",
+    "4. copy the recognized text or edit it directly from the result box.": "৪. শনাক্ত করা লেখা কপি করুন অথবা ফলাফলের বাক্সে সরাসরি সম্পাদনা করুন।",
+    "tools in the same category": "একই ধরনের টুল",
+    "bijoy ↔ unicode": "বিজয় ↔ ইউনিকোড",
+    "convert bangla text between bijoy ansi and unicode directly in your browser.": "ব্রাউজারেই বিজয় ANSI ও ইউনিকোডের মধ্যে বাংলা লেখা রূপান্তর করুন।",
+    "banglish typing": "বাংলিশ টাইপিং",
+    "type bangla with an english keyboard — live banglish to bangla and bangla to banglish conversion in your browser.": "ইংরেজি কিবোর্ডে বাংলা লিখুন—ব্রাউজারেই বাংলিশ থেকে বাংলা এবং বাংলা থেকে বাংলিশে তাৎক্ষণিক রূপান্তর করুন।",
+};
+
+function normalizeImageToTextText(value: string): string {
+    return value
+        .replace(/&quot;/gi, '"')
+        .replace(/&amp;/gi, "&")
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/\\r\\n/g, " ")
+        .replace(/[\r\n]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function toBanglaImageDigits(value: string): string {
+    return value.replace(/[0-9]/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+}
+
+function translateImageToTextText(value: unknown, locale?: string, fallback?: (value: string) => string): string {
+    const raw = String(value ?? "");
+    const currentLocale = locale ?? (typeof document !== "undefined" ? document.documentElement.getAttribute("data-locale") ?? "en" : "en");
+    if (!currentLocale.toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+
+    const normalized = normalizeImageToTextText(raw);
+    const exact = IMAGE_TO_TEXT_BN[normalized];
+    if (exact !== undefined) return exact;
+
+    let match = raw.trim().match(/^this file is ([\d.]+)\s*mb\. the maximum allowed size is 50\s*mb\.?$/i);
+    if (match) return `ফাইলটির আকার ${toBanglaImageDigits(match[1])} MB। সর্বোচ্চ অনুমোদিত আকার ৫০ MB।`;
+
+    match = raw.trim().match(/^(loading ocr engine|downloading language data|preparing ocr engine|recognizing text|working)(?:…|\.\.\.)\s*(\d+%?)?$/i);
+    if (match) {
+        const labels: Record<string, string> = {
+            "loading ocr engine": "OCR ব্যবস্থা চালু হচ্ছে",
+            "downloading language data": "ভাষার ডেটা ডাউনলোড হচ্ছে",
+            "preparing ocr engine": "OCR ব্যবস্থা প্রস্তুত করা হচ্ছে",
+            "recognizing text": "লেখা শনাক্ত করা হচ্ছে",
+            "working": "কাজ চলছে",
+        };
+        const percent = match[2] ? ` ${toBanglaImageDigits(match[2])}` : "";
+        return `${labels[match[1].toLowerCase()]}…${percent}`;
+    }
+
+    match = raw.trim().match(/^preview of (.+)$/i);
+    if (match) return `ছবির প্রিভিউ: ${match[1]}`;
+
+    // Use the shared dictionary only when it provides an actually translated
+    // result; do not return partly-English text for this page.
+    if (fallback) {
+        const translated = fallback(raw);
+        if (translated && translated !== raw && /[\u0980-\u09FF]/.test(translated)) {
+            const withoutKnownTerms = translated.replace(/\b(?:OCR|JPG|PNG|WebP|BMP|GIF|MB|Sohoj Tools|ANSI|Unicode|Banglish|Enter)\b/gi, "");
+            if (!/[A-Za-z]{3,}/.test(withoutKnownTerms)) return translated;
+        }
+    }
+    return raw;
+}
+
+function ImageToTextT({ children }: { children: React.ReactNode }) {
+    const { locale, L: baseL } = useSohozI18n();
+    if (typeof children !== "string") return <>{children}</>;
+    return <>{translateImageToTextText(children, locale, baseL)}</>;
+}
+
 /* ========================================================================== */
 /* Constants                                                                  */
 /* ========================================================================== */
@@ -416,7 +569,8 @@ function useOcr() {
 /* Component                                                                  */
 /* ========================================================================== */
 export default function ImageToText() {
-    const { L } = useSohozI18n();
+    const { locale, L: baseL } = useSohozI18n();
+    const tx = useCallback((value: string) => translateImageToTextText(value, locale, baseL), [locale, baseL]);
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const resultRef = useRef<HTMLTextAreaElement>(null);
@@ -485,7 +639,7 @@ export default function ImageToText() {
         const url = window.location.href;
         if (typeof navigator.share === "function") {
             try {
-                await navigator.share({ title: "Image to Text — Sohoj Tools", url });
+                await navigator.share({ title: tx("Image to Text — Sohoj Tools"), url });
             }
             catch {
                 /* user dismissed the share sheet */
@@ -512,33 +666,33 @@ export default function ImageToText() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button type="button" onClick={() => router.back()} className={`p-1 hover:bg-[#E2E8F0]/70 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1 ${focusRing}`} title={L("Go back")} aria-label={L("Go back")}>
+              <button type="button" onClick={() => router.back()} className={`p-1 hover:bg-[#E2E8F0]/70 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1 ${focusRing}`} title={tx("Go back")} aria-label={tx("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
-              <span aria-hidden="true"><T>{"/"}</T></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"Text Tools\n              "}</T></span>
-              <span aria-hidden="true"><T>{"/"}</T></span>
-              <span className="text-[#0F172A] font-semibold" aria-current="page"><T>{"Image to Text\n              "}</T></span>
+              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><ImageToTextT>{"Sohoj Tools\n              "}</ImageToTextT></Link>
+              <span aria-hidden="true"><ImageToTextT>{"/"}</ImageToTextT></span>
+              <span className="hover:text-[#0F172A] cursor-pointer"><ImageToTextT>{"Text Tools\n              "}</ImageToTextT></span>
+              <span aria-hidden="true"><ImageToTextT>{"/"}</ImageToTextT></span>
+              <span className="text-[#0F172A] font-semibold" aria-current="page"><ImageToTextT>{"Image to Text\n              "}</ImageToTextT></span>
             </div>
 
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <ScanText size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Image to Text\n              "}</T></h1>
-              <span className="bg-[#D1FAE5] text-[#047857] text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><ImageToTextT>{"Image to Text\n              "}</ImageToTextT></h1>
+              <span className="bg-[#D1FAE5] text-[#047857] text-[11px] font-bold px-2 py-0.5 rounded-full"><ImageToTextT>{"Free\n              "}</ImageToTextT></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Extract text from images with OCR in your browser \u2014 supports\n              English and Bengali.\n            "}</T></p>
+            <p className="text-xs text-gray-500 font-medium mt-1"><ImageToTextT>{"Extract text from images with OCR in your browser \u2014 supports\n              English and Bengali.\n            "}</ImageToTextT></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button type="button" onClick={() => setIsFavorite(!isFavorite)} aria-pressed={isFavorite} aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"} className={`p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs ${focusRing}`}>
+            <button type="button" onClick={() => setIsFavorite(!isFavorite)} aria-pressed={isFavorite} aria-label={isFavorite ? tx("Remove from favorites") : tx("Add to favorites")} className={`p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs ${focusRing}`}>
               <Star size={16} className={isFavorite ? "fill-[#2563EB] text-[#2563EB]" : ""}/>
             </button>
             <button type="button" onClick={handleShare} aria-label={shareFeedback.status === "copied"
-            ? "Link copied"
-            : "Share this tool"} className={`p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs ${focusRing}`}>
+            ? tx("Link copied")
+            : tx("Share this tool")} className={`p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs ${focusRing}`}>
               {shareFeedback.status === "copied" ? (<Check size={16} className="text-emerald-600"/>) : (<Share size={16}/>)}
             </button>
           </div>
@@ -550,19 +704,19 @@ export default function ImageToText() {
           <div className="lg:col-span-4 space-y-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase"><T>{"Files "}</T>{selectedFile ? <T>{"(1)"}</T> : <T>{"(0)"}</T>}
+                <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase"><ImageToTextT>{"Files "}</ImageToTextT>{selectedFile ? <ImageToTextT>{"(1)"}</ImageToTextT> : <ImageToTextT>{"(0)"}</ImageToTextT>}
                 </span>
-                {selectedFile && (<button type="button" onClick={handleReset} disabled={isProcessing} aria-label={L("Remove uploaded file")} className={`text-[11px] font-semibold text-[#64748B] hover:text-[#2563EB] flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[#64748B] ${focusRing}`}>
+                {selectedFile && (<button type="button" onClick={handleReset} disabled={isProcessing} aria-label={tx("Remove uploaded file")} className={`text-[11px] font-semibold text-[#64748B] hover:text-[#2563EB] flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[#64748B] ${focusRing}`}>
                     <RotateCcw size={12}/>
-                    <span><T>{"Remove"}</T></span>
+                    <span><ImageToTextT>{"Remove"}</ImageToTextT></span>
                   </button>)}
               </div>
 
               {/* Hidden input lives outside the conditional so refs and resets always work */}
-              <input ref={fileInputRef} type="file" accept={ACCEPT_ATTR} className="hidden" onChange={handleFileChange} disabled={isProcessing} tabIndex={-1} aria-label={L("Upload image file")}/>
+              <input ref={fileInputRef} type="file" accept={ACCEPT_ATTR} className="hidden" onChange={handleFileChange} disabled={isProcessing} tabIndex={-1} aria-label={tx("Upload image file")}/>
 
               {/* Upload Box */}
-              {!selectedFile ? (<div role="button" tabIndex={0} aria-label={`Upload an image. Drop a file here or press Enter to browse. Maximum size 50 megabytes.`} onClick={() => fileInputRef.current?.click()} onKeyDown={(e) => {
+              {!selectedFile ? (<div role="button" tabIndex={0} aria-label={tx("Upload an image. Drop a file here or press Enter to browse. Maximum size 50 megabytes.")} onClick={() => fileInputRef.current?.click()} onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     fileInputRef.current?.click();
@@ -576,35 +730,35 @@ export default function ImageToText() {
                   <div className="w-10 h-10 bg-[#DBEAFE] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <Upload size={20}/>
                   </div>
-                  <span className="text-xs font-bold text-[#0F172A] mb-1"><T>{"Drop an image here or click to upload\n                  "}</T></span>
-                  <span className="text-[10px] text-gray-400 font-medium"><T>{"JPG, PNG, WebP, BMP, or GIF \u2014 max 50MB\n                  "}</T></span>
+                  <span className="text-xs font-bold text-[#0F172A] mb-1"><ImageToTextT>{"Drop an image here or click to upload\n                  "}</ImageToTextT></span>
+                  <span className="text-[10px] text-gray-400 font-medium"><ImageToTextT>{"JPG, PNG, WebP, BMP, or GIF \u2014 max 50MB\n                  "}</ImageToTextT></span>
                 </div>) : (<div className="p-3 bg-gray-50 border border-gray-200/80 rounded-xl flex items-center gap-3">
                   <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
                     {previewUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- blob: URLs can't use next/image
-            <img src={previewUrl} alt={L("")} decoding="async" className="w-full h-full object-cover"/>)}
+            <img src={previewUrl} alt="" decoding="async" className="w-full h-full object-cover"/>)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-[#0F172A] truncate">
                       {selectedFile.name}
                     </p>
                     <p className="text-[10px] text-gray-400">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)}<T>{"MB\n                    "}</T></p>
+                      {(locale?.toLowerCase().startsWith("bn") ? toBanglaImageDigits((selectedFile.size / (1024 * 1024)).toFixed(2)) : (selectedFile.size / (1024 * 1024)).toFixed(2))}<ImageToTextT>{"MB\n                    "}</ImageToTextT></p>
                   </div>
                 </div>)}
 
               {/* PROD FIX: validation feedback (type / size / empty file) */}
               {fileError && (<p role="alert" className="text-[11px] font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 leading-relaxed">
-                  {fileError}
+                  <ImageToTextT>{fileError}</ImageToTextT>
                 </p>)}
 
               {/* Language Selection */}
               <div className="space-y-1.5 pt-2 border-t border-gray-100">
-                <label htmlFor="ocr-language" className="text-[11px] font-bold text-[#0F172A] block"><T>{"OCR Language\n                "}</T></label>
+                <label htmlFor="ocr-language" className="text-[11px] font-bold text-[#0F172A] block"><ImageToTextT>{"OCR Language\n                "}</ImageToTextT></label>
                 <select id="ocr-language" value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} disabled={isProcessing} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed">
-                  <option value="eng+ben"><T>{"English + Bengali (\u0989\u09AD\u09AF\u09BC\u0987)"}</T></option>
-                  <option value="eng"><T>{"English Only"}</T></option>
-                  <option value="ben"><T>{"Bengali Only (\u09AC\u09BE\u0982\u09B2\u09BE)"}</T></option>
+                  <option value="eng+ben"><ImageToTextT>{"English + Bengali (\u0989\u09AD\u09AF\u09BC\u0987)"}</ImageToTextT></option>
+                  <option value="eng"><ImageToTextT>{"English Only"}</ImageToTextT></option>
+                  <option value="ben"><ImageToTextT>{"Bengali Only (\u09AC\u09BE\u0982\u09B2\u09BE)"}</ImageToTextT></option>
                 </select>
               </div>
             </div>
@@ -615,9 +769,9 @@ export default function ImageToText() {
             <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[420px]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Image preview & Extracted text\n                  "}</T></span>
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><ImageToTextT>{"Image preview & Extracted text\n                  "}</ImageToTextT></span>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${badge.cls}`}>
-                    {badge.label}
+                    <ImageToTextT>{badge.label}</ImageToTextT>
                   </span>
                 </div>
 
@@ -626,31 +780,31 @@ export default function ImageToText() {
                       <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-xl flex items-center justify-center mb-3">
                         <ScanText size={24}/>
                       </div>
-                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><T>{"Upload an image to extract text\n                      "}</T></h3>
-                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><T>{"Your image preview and extracted text will appear here.\n                      "}</T></p>
+                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><ImageToTextT>{"Upload an image to extract text\n                      "}</ImageToTextT></h3>
+                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><ImageToTextT>{"Your image preview and extracted text will appear here.\n                      "}</ImageToTextT></p>
                     </div>) : (<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Left: Image Preview */}
                       <div className="p-3 bg-gray-50/50 border border-gray-200/60 rounded-xl flex flex-col items-center justify-center min-h-[250px]">
                         {previewUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- blob: URLs can't use next/image
-            <img src={previewUrl} alt={`Preview of ${selectedFile.name}`} decoding="async" className="max-h-[220px] object-contain rounded-lg shadow-2xs"/>)}
+            <img src={previewUrl} alt={tx(`Preview of ${selectedFile.name}`)} decoding="async" className="max-h-[220px] object-contain rounded-lg shadow-2xs"/>)}
                       </div>
 
                       {/* Right: Extracted Result Area */}
                       <div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl flex flex-col justify-between">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide"><T>{"Result\n                          "}</T></span>
+                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide"><ImageToTextT>{"Result\n                          "}</ImageToTextT></span>
                           {ocr.text && !isProcessing && (<div className="flex items-center gap-1.5">
-                              <button type="button" onClick={handleSelectAll} aria-label={L("Select all extracted text")} className={`text-[11px] font-bold text-gray-500 hover:text-[#0F172A] bg-gray-100 px-2 py-1 rounded-lg transition-colors ${focusRing}`}><T>{"Select all\n                              "}</T></button>
-                              <button type="button" onClick={handleCopyText} aria-label={L("Copy extracted text to clipboard")} className={`text-[11px] font-bold flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${focusRing} ${copyFeedback.status === "failed"
+                              <button type="button" onClick={handleSelectAll} aria-label={tx("Select all extracted text")} className={`text-[11px] font-bold text-gray-500 hover:text-[#0F172A] bg-gray-100 px-2 py-1 rounded-lg transition-colors ${focusRing}`}><ImageToTextT>{"Select all\n                              "}</ImageToTextT></button>
+                              <button type="button" onClick={handleCopyText} aria-label={tx("Copy extracted text to clipboard")} className={`text-[11px] font-bold flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${focusRing} ${copyFeedback.status === "failed"
                     ? "text-red-600 bg-red-50"
                     : "text-emerald-600 hover:text-[#1D4ED8] bg-emerald-50"}`}>
                                 {copyFeedback.status === "copied" ? (<Check size={12}/>) : (<Copy size={12}/>)}
                                 <span>
                                   {copyFeedback.status === "copied"
-                ? <T>{"Copied!"}</T> : copyFeedback.status === "failed"
-                ? "Copy failed"
-                : "Copy"}
+                ? <ImageToTextT>{"Copied!"}</ImageToTextT> : copyFeedback.status === "failed"
+                ? <ImageToTextT>{"Copy failed"}</ImageToTextT>
+                : <ImageToTextT>{"Copy"}</ImageToTextT>}
                                 </span>
                               </button>
                             </div>)}
@@ -659,8 +813,8 @@ export default function ImageToText() {
                         {/* Screen-reader announcement for copy result */}
                         <span className="sr-only" role="status" aria-live="polite">
                           {copyFeedback.status === "copied"
-            ? <T>{"Text copied to clipboard"}</T> : copyFeedback.status === "failed"
-            ? "Copy failed. Select the text and copy it manually."
+            ? <ImageToTextT>{"Text copied to clipboard"}</ImageToTextT> : copyFeedback.status === "failed"
+            ? <ImageToTextT>{"Copy failed. Select the text and copy it manually."}</ImageToTextT>
             : ""}
                         </span>
 
@@ -668,7 +822,7 @@ export default function ImageToText() {
                           {isProcessing ? (<div role="status" aria-live="polite" className="flex flex-col items-center justify-center h-full py-12 text-center">
                               <div className="w-6 h-6 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin mb-2" aria-hidden="true"></div>
                               <p className="text-xs font-semibold text-[#1D4ED8]">
-                                {ocr.progressMessage}
+                                <ImageToTextT>{ocr.progressMessage}</ImageToTextT>
                               </p>
                             </div>) : ocr.error ? (
             // PROD FIX: dedicated failure UI with recovery actions
@@ -677,29 +831,29 @@ export default function ImageToText() {
                                 <AlertTriangle size={20}/>
                               </div>
                               <h3 className="text-xs font-bold text-[#0F172A] mb-1">
-                                {ERROR_TITLES[ocr.error.kind]}
+                                <ImageToTextT>{ERROR_TITLES[ocr.error.kind]}</ImageToTextT>
                               </h3>
                               <p className="text-[11px] text-gray-500 max-w-xs leading-relaxed mb-3">
-                                {ocr.error.message}
+                                <ImageToTextT>{ocr.error.message}</ImageToTextT>
                               </p>
                               <div className="flex flex-wrap items-center justify-center gap-2">
-                                <button type="button" onClick={handleExtractText} className={`px-3 py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg text-[11px] font-bold transition-colors ${focusRing}`}><T>{"Try again\n                                "}</T></button>
-                                {canFallbackToEnglish && (<button type="button" onClick={handleRetryEnglishOnly} className={`px-3 py-1.5 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-lg text-[11px] font-bold transition-colors ${focusRing}`}><T>{"Use English only\n                                  "}</T></button>)}
+                                <button type="button" onClick={handleExtractText} className={`px-3 py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg text-[11px] font-bold transition-colors ${focusRing}`}><ImageToTextT>{"Try again\n                                "}</ImageToTextT></button>
+                                {canFallbackToEnglish && (<button type="button" onClick={handleRetryEnglishOnly} className={`px-3 py-1.5 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-lg text-[11px] font-bold transition-colors ${focusRing}`}><ImageToTextT>{"Use English only\n                                  "}</ImageToTextT></button>)}
                               </div>
                             </div>) : ocr.noTextFound ? (
             // PROD FIX: friendly empty-result state
             <div role="status" className="flex flex-col items-center justify-center h-full py-8 text-center">
-                              <h3 className="text-xs font-bold text-[#0F172A] mb-1"><T>{"No text found in this image\n                              "}</T></h3>
-                              <p className="text-[11px] text-gray-500 max-w-xs leading-relaxed"><T>{"Try a sharper, well-lit image with dark text on\n                                a plain background, and check that the OCR\n                                language matches the text.\n                              "}</T></p>
-                            </div>) : ocr.text ? (<textarea ref={resultRef} value={ocr.text} onChange={(e) => ocr.setText(e.target.value)} aria-label={L("Extracted text (editable)")} spellCheck={false} className="w-full h-full min-h-[160px] bg-transparent text-xs font-medium text-[#0F172A] focus:outline-none resize-none leading-relaxed"/>) : (<div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-400">
-                              <p className="text-xs font-medium"><T>{"Click &quot;Extract text&quot; button below to\n                                start OCR conversion.\n                              "}</T></p>
+                              <h3 className="text-xs font-bold text-[#0F172A] mb-1"><ImageToTextT>{"No text found in this image\n                              "}</ImageToTextT></h3>
+                              <p className="text-[11px] text-gray-500 max-w-xs leading-relaxed"><ImageToTextT>{"Try a sharper, well-lit image with dark text on\n                                a plain background, and check that the OCR\n                                language matches the text.\n                              "}</ImageToTextT></p>
+                            </div>) : ocr.text ? (<textarea ref={resultRef} value={ocr.text} onChange={(e) => ocr.setText(e.target.value)} aria-label={tx("Extracted text (editable)")} spellCheck={false} className="w-full h-full min-h-[160px] bg-transparent text-xs font-medium text-[#0F172A] focus:outline-none resize-none leading-relaxed"/>) : (<div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-400">
+                              <p className="text-xs font-medium"><ImageToTextT>{"Click &quot;Extract text&quot; button below to\n                                start OCR conversion.\n                              "}</ImageToTextT></p>
                             </div>)}
                         </div>
 
                         {ocr.text &&
                 !isProcessing &&
                 ocr.confidence !== null &&
-                ocr.confidence < LOW_CONFIDENCE_THRESHOLD && (<p className="mt-2 text-[10px] font-medium text-amber-700 leading-relaxed"><T>{"Low confidence \u2014 please review the text for\n                              mistakes.\n                            "}</T></p>)}
+                ocr.confidence < LOW_CONFIDENCE_THRESHOLD && (<p className="mt-2 text-[10px] font-medium text-amber-700 leading-relaxed"><ImageToTextT>{"Low confidence \u2014 please review the text for\n                              mistakes.\n                            "}</ImageToTextT></p>)}
                       </div>
                     </div>)}
                 </div>
@@ -708,18 +862,18 @@ export default function ImageToText() {
               {/* Action Button Bar inside the card */}
               {selectedFile && (<div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-[11px] font-medium text-gray-500">
-                    {isProcessing ? <T>{"Scanning image…"}</T> : <T>{"Ready to scan text"}</T>}
+                    {isProcessing ? <ImageToTextT>{"Scanning image…"}</ImageToTextT> : <ImageToTextT>{"Ready to scan text"}</ImageToTextT>}
                   </span>
                   <div className="flex items-center gap-2">
                     {isProcessing ? (
             // PROD FIX: user can cancel mid-run (terminates the worker)
-            <button type="button" onClick={ocr.cancel} className={`px-3 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-xl text-xs font-bold transition-colors ${focusRing}`}><T>{"Cancel\n                      "}</T></button>) : (<button type="button" onClick={handleReset} className={`px-3 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-xl text-xs font-bold transition-colors ${focusRing}`}><T>{"Reset\n                      "}</T></button>)}
+            <button type="button" onClick={ocr.cancel} className={`px-3 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-xl text-xs font-bold transition-colors ${focusRing}`}><ImageToTextT>{"Cancel\n                      "}</ImageToTextT></button>) : (<button type="button" onClick={handleReset} className={`px-3 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] rounded-xl text-xs font-bold transition-colors ${focusRing}`}><ImageToTextT>{"Reset\n                      "}</ImageToTextT></button>)}
                     <button type="button" onClick={handleExtractText} disabled={isProcessing} aria-busy={isProcessing} aria-label={isProcessing
-                ? "Extracting text"
-                : "Extract text from image"} className={`px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-[#2563EB] ${focusRing}`}>
+                ? tx("Extracting text")
+                : tx("Extract text from image")} className={`px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-[#2563EB] ${focusRing}`}>
                       {isProcessing ? (<span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>) : (<ScanText size={14}/>)}
                       <span>
-                        {isProcessing ? <T>{"Extracting…"}</T> : <T>{"Extract text"}</T>}
+                        {isProcessing ? <ImageToTextT>{"Extracting…"}</ImageToTextT> : <ImageToTextT>{"Extract text"}</ImageToTextT>}
                       </span>
                     </button>
                   </div>
@@ -731,7 +885,7 @@ export default function ImageToText() {
         {/* PRIVACY NOTICE */}
         <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
           <ShieldCheck size={16} className="text-[#10B981] shrink-0"/>
-          <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</T></span>
+          <span><ImageToTextT>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</ImageToTextT></span>
         </div>
 
         {/* HOW TO USE DROPDOWN */}
@@ -739,22 +893,22 @@ export default function ImageToText() {
           <button type="button" onClick={() => setShowHowToUse(!showHowToUse)} aria-expanded={showHowToUse} aria-controls="how-to-use-panel" className={`w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-[#F8FAFC]/70 transition-colors ${focusRing}`}>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
-              <span><T>{"How to use"}</T></span>
+              <span><ImageToTextT>{"How to use"}</ImageToTextT></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
           {showHowToUse && (<div id="how-to-use-panel" className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
-              <p><T>{"1. Upload an image containing English or Bengali text using the\n                upload box.\n              "}</T></p>
-              <p><T>{"2. Select your target OCR language (English, Bengali, or Both).\n              "}</T></p>
-              <p><T>{"3. Click the &quot;Extract text&quot; button to scan the image.\n              "}</T></p>
-              <p><T>{"4. Copy the recognized text or edit it directly from the result\n                box.\n              "}</T></p>
+              <p><ImageToTextT>{"1. Upload an image containing English or Bengali text using the\n                upload box.\n              "}</ImageToTextT></p>
+              <p><ImageToTextT>{"2. Select your target OCR language (English, Bengali, or Both).\n              "}</ImageToTextT></p>
+              <p><ImageToTextT>{"3. Click the &quot;Extract text&quot; button to scan the image.\n              "}</ImageToTextT></p>
+              <p><ImageToTextT>{"4. Copy the recognized text or edit it directly from the result\n                box.\n              "}</ImageToTextT></p>
             </div>)}
         </div>
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><ImageToTextT>{"Tools in the same category\n          "}</ImageToTextT></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool) => {
             const ToolIcon = tool.icon;
@@ -764,10 +918,10 @@ export default function ImageToText() {
                       <ToolIcon size={18}/>
                     </div>
                     <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-[#2563EB] transition-colors">
-                      {<T>{tool.title}</T>}
+                      {<ImageToTextT>{tool.title}</ImageToTextT>}
                     </h3>
                     <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                      {<T>{tool.description}</T>}
+                      {<ImageToTextT>{tool.description}</ImageToTextT>}
                     </p>
                   </div>
                 </Link>);

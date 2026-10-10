@@ -1,8 +1,277 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n, L as baseI18nL } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode, } from "react";
 import Link from "next/link";
 import { Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, ExternalLink, FileText, ImagePlus, LayoutTemplate, Link2, Mail, MapPin, Minus, Phone, Plus, Printer, RotateCw, Share2, ShieldCheck, Star, Trash2, Upload, UserRound, X, } from "lucide-react";
+
+/* -------------------------------------------------------------------------- */
+/*                 Page-specific English ↔ Bangla localization               */
+/* -------------------------------------------------------------------------- */
+const ATS_CV_BN: Record<string, string> = {
+  "sohoz tools": "সহজ টুলস",
+  "educational tools": "শিক্ষামূলক টুলস",
+  "ats friendly cv maker": "ATS উপযোগী CV তৈরির টুল",
+  "free": "বিনামূল্যে",
+  "build an ats-friendly cv — live preview and high-quality a4 print/pdf flow.": "ATS উপযোগী CV তৈরি করুন—লাইভ প্রিভিউ এবং মানসম্মত A4 প্রিন্ট/PDF সুবিধাসহ।",
+  "import": "আমদানি",
+  "pdf import": "PDF আমদানি",
+  "name, contact": "নাম ও যোগাযোগের তথ্য",
+  "personal": "ব্যক্তিগত তথ্য",
+  "summary": "সারাংশ",
+  "profile": "প্রোফাইল",
+  "experience": "অভিজ্ঞতা",
+  "work history": "কাজের অভিজ্ঞতা",
+  "education": "শিক্ষা",
+  "degrees & institutions": "ডিগ্রি ও শিক্ষাপ্রতিষ্ঠান",
+  "projects": "প্রকল্প",
+  "portfolio work": "পোর্টফোলিওর কাজ",
+  "skills": "দক্ষতা",
+  "skills, certifications": "দক্ষতা ও সনদ",
+  "custom": "নিজস্ব বিভাগ",
+  "custom section": "নিজস্ব বিভাগ",
+  "extra sections": "অতিরিক্ত বিভাগ",
+  "classic ats": "ক্লাসিক ATS",
+  "modern": "আধুনিক",
+  "professional": "পেশাদার",
+  "elegant": "মার্জিত",
+  "your cv preview will appear here": "আপনার CV-এর প্রিভিউ এখানে দেখা যাবে",
+  "start filling the form to build your ats-friendly cv.": "ATS উপযোগী CV তৈরি করতে ফর্মটি পূরণ করা শুরু করুন।",
+  "ats cv preview": "ATS CV প্রিভিউ",
+  "your name": "আপনার নাম",
+  "professional title": "পেশাগত পদবি",
+  "start date": "শুরুর তারিখ",
+  "present": "বর্তমান",
+  "job title": "পদবি",
+  "degree / certificate": "ডিগ্রি / সনদ",
+  "project": "প্রকল্প",
+  "professional experience": "পেশাগত অভিজ্ঞতা",
+  "certifications": "সনদপত্র",
+  "languages": "ভাষাসমূহ",
+  "0. import from pdf": "০. PDF থেকে তথ্য নিন",
+  "upload an existing text-based cv pdf to pre-fill common fields directly in your browser.": "আগের কোনো টেক্সট-ভিত্তিক CV PDF আপলোড করে ব্রাউজারেই সাধারণ তথ্যের ঘরগুলো স্বয়ংক্রিয়ভাবে পূরণ করুন।",
+  "reading pdf…": "PDF পড়া হচ্ছে…",
+  "upload an existing cv pdf": "আগের CV-এর PDF আপলোড করুন",
+  "up to 8 mb. text-based pdfs can be parsed in the browser; scanned image-only pdfs may require manual entry.": "সর্বোচ্চ ৮ MB। টেক্সট-ভিত্তিক PDF ব্রাউজারেই পড়া যায়; স্ক্যান করা ছবির PDF-এর তথ্য হাতে লিখতে হতে পারে।",
+  "imported:": "আমদানি করা ফাইল:",
+  "1. personal information": "১. ব্যক্তিগত তথ্য",
+  "these details appear at the top of your cv and are synced with the preview instantly.": "এই তথ্যগুলো CV-এর শুরুতে দেখানো হবে এবং টাইপ করার সঙ্গে সঙ্গে প্রিভিউতে আপডেট হবে।",
+  "photo (optional)": "ছবি (ঐচ্ছিক)",
+  "recommended: square image": "বর্গাকার ছবি ব্যবহার করার পরামর্শ দেওয়া হচ্ছে",
+  "change photo": "ছবি পরিবর্তন করুন",
+  "add photo": "ছবি যোগ করুন",
+  "remove photo": "ছবি সরান",
+  "photo design on": "ছবির নকশা চালু",
+  "design photo": "ছবির নকশা",
+  "shape": "আকৃতি",
+  "square": "বর্গাকার",
+  "rounded": "গোল কোণা",
+  "circle": "বৃত্তাকার",
+  "full name": "পূর্ণ নাম",
+  "naphia jannatul mowa": "আপনার পূর্ণ নাম লিখুন",
+  "job title / headline": "পদবি / পেশাগত পরিচিতি",
+  "senior marketing manager": "সিনিয়র মার্কেটিং ম্যানেজার",
+  "email": "ইমেইল",
+  "name@example.com": "name@example.com",
+  "phone": "ফোন নম্বর",
+  "+880 1xxxxxxxxx": "+880 1XXXXXXXXX",
+  "location / address": "অবস্থান / ঠিকানা",
+  "dhaka, bangladesh": "ঢাকা, বাংলাদেশ",
+  "linkedin (optional)": "LinkedIn (ঐচ্ছিক)",
+  "linkedin.com/in/username": "linkedin.com/in/username",
+  "website / portfolio (optional)": "ওয়েবসাইট / পোর্টফোলিও (ঐচ্ছিক)",
+  "portfolio.com": "portfolio.com",
+  "2. professional summary": "২. পেশাগত সারাংশ",
+  "write a concise value statement. keep it focused on experience, strengths, and the type of role you want.": "আপনার অভিজ্ঞতা, দক্ষতা এবং কাঙ্ক্ষিত পদের সঙ্গে মিল রেখে সংক্ষিপ্ত পেশাগত পরিচিতি লিখুন।",
+  "section title on cv": "CV-তে বিভাগের শিরোনাম",
+  "results-oriented professional with experience in…": "অভিজ্ঞতাসম্পন্ন পেশাজীবী, যিনি ফলাফল ও উন্নতিতে গুরুত্ব দেন…",
+  "3. work experience": "৩. কাজের অভিজ্ঞতা",
+  "add roles in reverse chronological order. use measurable responsibilities and achievements where possible.": "সর্বশেষ কাজটি আগে দিয়ে অভিজ্ঞতাগুলো যোগ করুন। সম্ভব হলে দায়িত্ব ও অর্জন পরিমাপযোগ্যভাবে লিখুন।",
+  "add": "যোগ করুন",
+  "no experience added yet. add your first role below.": "এখনো কোনো কাজের অভিজ্ঞতা যোগ করা হয়নি। নিচে প্রথম অভিজ্ঞতাটি যোগ করুন।",
+  "remove": "সরান",
+  "marketing manager": "মার্কেটিং ম্যানেজার",
+  "company": "প্রতিষ্ঠান",
+  "company name": "প্রতিষ্ঠানের নাম",
+  "location": "অবস্থান",
+  "city, country": "শহর, দেশ",
+  "jan 2022": "জানুয়ারি ২০২২",
+  "end date": "শেষের তারিখ",
+  "dec 2024": "ডিসেম্বর ২০২৪",
+  "currently employed": "এখনো এই প্রতিষ্ঠানে কর্মরত",
+  "responsibilities & achievements": "দায়িত্ব ও অর্জন",
+  "led a team of 6… improved campaign performance by 40%…": "৬ জনের একটি দল পরিচালনা করেছি… প্রচারণার কার্যকারিতা ৪০% বাড়িয়েছি…",
+  "add another experience": "আরও অভিজ্ঞতা যোগ করুন",
+  "4. education": "৪. শিক্ষাগত যোগ্যতা",
+  "add degrees, certificates, training, or other academic credentials.": "ডিগ্রি, সনদ, প্রশিক্ষণ বা অন্যান্য শিক্ষাগত যোগ্যতা যোগ করুন।",
+  "no education added yet. add your first qualification below.": "এখনো কোনো শিক্ষাগত যোগ্যতা যোগ করা হয়নি। নিচে প্রথম যোগ্যতাটি যোগ করুন।",
+  "b.sc. in computer science": "কম্পিউটার সায়েন্সে স্নাতক (B.Sc.)",
+  "institution": "শিক্ষাপ্রতিষ্ঠান",
+  "university name": "বিশ্ববিদ্যালয়ের নাম",
+  "toronto, canada": "টরন্টো, কানাডা",
+  "start / year": "শুরুর তারিখ / বছর",
+  "graduation / end date": "স্নাতক / শেষের তারিখ",
+  "details (one per line, optional)": "বিস্তারিত (প্রতি লাইনে একটি, ঐচ্ছিক)",
+  "dean’s list relevant coursework: marketing analytics": "ডিনস লিস্ট\nপ্রাসঙ্গিক পাঠ্যক্রম: মার্কেটিং অ্যানালিটিক্স",
+  "add another education": "আরও শিক্ষাগত যোগ্যতা যোগ করুন",
+  "5. projects": "৫. প্রকল্প",
+  "showcase relevant portfolio projects, freelance work, case studies, or coursework.": "প্রাসঙ্গিক পোর্টফোলিও প্রকল্প, ফ্রিল্যান্স কাজ, কেস স্টাডি বা কোর্সের কাজ তুলে ধরুন।",
+  "no projects added yet. this section is optional.": "এখনো কোনো প্রকল্প যোগ করা হয়নি। এই বিভাগটি ঐচ্ছিক।",
+  "project name": "প্রকল্পের নাম",
+  "portfolio website": "পোর্টফোলিও ওয়েবসাইট",
+  "role / technology": "ভূমিকা / প্রযুক্তি",
+  "react developer": "React ডেভেলপার",
+  "project link (optional)": "প্রকল্পের লিংক (ঐচ্ছিক)",
+  "description": "বিবরণ",
+  "built a responsive… improved performance…": "সব ধরনের পর্দায় মানানসই ব্যবস্থা তৈরি করেছি… কার্যকারিতা উন্নত করেছি…",
+  "add another project": "আরও প্রকল্প যোগ করুন",
+  "6. additional": "৬. অতিরিক্ত তথ্য",
+  "skills section title on cv": "CV-তে দক্ষতা বিভাগের শিরোনাম",
+  "add ats-readable skills, certifications, and languages. each entry is kept as real text in the cv, not as an image.": "ATS সহজে পড়তে পারে এমন দক্ষতা, সনদ ও ভাষা যোগ করুন। প্রতিটি তথ্য CV-তে ছবি নয়, আসল টেক্সট হিসেবে থাকবে।",
+  "digital marketing": "ডিজিটাল মার্কেটিং",
+  "level (optional)": "দক্ষতার স্তর (ঐচ্ছিক)",
+  "advanced": "উন্নত",
+  "add skill": "দক্ষতা যোগ করুন",
+  "certifications section title": "সনদপত্র বিভাগের শিরোনাম",
+  "certifications (one per line, optional)": "সনদপত্র (প্রতি লাইনে একটি, ঐচ্ছিক)",
+  "google ads certification hubspot inbound marketing": "Google Ads সনদ\nHubSpot Inbound Marketing",
+  "languages section title": "ভাষা বিভাগের শিরোনাম",
+  "languages (one per line, optional)": "ভাষাসমূহ (প্রতি লাইনে একটি, ঐচ্ছিক)",
+  "english — fluent french — intermediate": "ইংরেজি — সাবলীল\nফরাসি — মধ্যম স্তর",
+  "7. custom sections (optional)": "৭. নিজস্ব বিভাগ (ঐচ্ছিক)",
+  "add extra sections such as awards, volunteer work, publications, interests, or leadership. empty sections will not appear on the cv.": "পুরস্কার, স্বেচ্ছাসেবা, প্রকাশনা, আগ্রহ বা নেতৃত্বের মতো অতিরিক্ত বিভাগ যোগ করুন। ফাঁকা বিভাগ CV-তে দেখা যাবে না।",
+  "no extra sections yet. add one only when you need it.": "এখনো কোনো অতিরিক্ত বিভাগ নেই। প্রয়োজন হলেই যোগ করুন।",
+  "section title": "বিভাগের শিরোনাম",
+  "awards": "পুরস্কার",
+  "content": "বিষয়বস্তু",
+  "awarded… led…": "পুরস্কার পেয়েছি… নেতৃত্ব দিয়েছি…",
+  "add new section": "নতুন বিভাগ যোগ করুন",
+  "favorite": "প্রিয় তালিকায় যোগ করুন",
+  "share": "শেয়ার করুন",
+  "zoom out": "ছোট করে দেখুন",
+  "zoom in": "বড় করে দেখুন",
+  "settings": "সেটিংস",
+  "fill in your cv step by step. the preview updates as you type.": "ধাপে ধাপে CV পূরণ করুন। টাইপ করার সঙ্গে সঙ্গে প্রিভিউ আপডেট হবে।",
+  "template": "টেমপ্লেট",
+  "more designs coming soon": "নতুন নকশা শিগগিরই আসছে",
+  "previous step": "আগের ধাপ",
+  "‹ previous step": "‹ আগের ধাপ",
+  "next step": "পরের ধাপ",
+  "view preview": "প্রিভিউ দেখুন",
+  "preview": "প্রিভিউ",
+  "live preview": "লাইভ প্রিভিউ",
+  "steps ·": "ধাপ ·",
+  "· a4": "· A4",
+  "ready": "প্রস্তুত",
+  "draft": "খসড়া",
+  "cv ready for download / print.": "CV ডাউনলোড বা প্রিন্ট করার জন্য প্রস্তুত।",
+  "complete the required fields to export your cv.": "CV ডাউনলোড করতে প্রয়োজনীয় ঘরগুলো পূরণ করুন।",
+  "clear all": "সব মুছে দিন",
+  "preparing…": "প্রস্তুত করা হচ্ছে…",
+  "print": "প্রিন্ট করুন",
+  "download pdf": "PDF ডাউনলোড করুন",
+  "your cv and images are processed in your browser. this component does not upload your cv data to a server.": "আপনার CV ও ছবি ব্রাউজারেই প্রক্রিয়াকরণ করা হয়। এই টুল আপনার CV-এর তথ্য সার্ভারে আপলোড করে না।",
+  "how to use": "ব্যবহারের নিয়ম",
+  "1. choose a template from the top section.": "১. উপরের অংশ থেকে একটি টেমপ্লেট বেছে নিন।",
+  "2. import an existing pdf or fill each step manually.": "২. আগের কোনো PDF থেকে তথ্য নিন অথবা প্রতিটি ধাপ হাতে পূরণ করুন।",
+  "3. watch the a4 preview update instantly as you type.": "৩. টাইপ করার সঙ্গে সঙ্গে A4 প্রিভিউ আপডেট হতে দেখুন।",
+  "4. use print or download pdf, then choose save as pdf in your browser’s print dialog.": "৪. প্রিন্ট বা PDF ডাউনলোড নির্বাচন করুন, এরপর ব্রাউজারের প্রিন্ট উইন্ডোতে ‘Save as PDF’ বেছে নিন।",
+  "tools in the same category": "একই বিভাগের অন্যান্য টুল",
+  "all sohoz tools": "সব সহজ টুল",
+  "explore the complete collection of browser-based tools in one place.": "ব্রাউজারেই ব্যবহারযোগ্য সব টুল এক জায়গায় দেখুন।",
+  "uploaded profile": "আপলোড করা প্রোফাইল ছবি",
+  "reset to fit the panel width": "প্রিভিউকে প্যানেলের প্রস্থ অনুযায়ী দেখান",
+  "scrollable a4 cv preview": "স্ক্রল করা যায় এমন A4 CV প্রিভিউ",
+  "cv preview panel": "CV প্রিভিউ প্যানেল",
+  "add your full name in personal information before continuing.": "পরবর্তী ধাপে যাওয়ার আগে ব্যক্তিগত তথ্য অংশে আপনার পূর্ণ নাম লিখুন।",
+  "add your email address in personal information before continuing.": "পরবর্তী ধাপে যাওয়ার আগে ব্যক্তিগত তথ্য অংশে আপনার ইমেইল ঠিকানা লিখুন।",
+  "enter a valid email address in personal information before continuing.": "পরবর্তী ধাপে যাওয়ার আগে ব্যক্তিগত তথ্য অংশে সঠিক ইমেইল ঠিকানা লিখুন।",
+  "enter a valid email address.": "সঠিক ইমেইল ঠিকানা লিখুন।",
+  "please select a valid image file.": "সঠিক ছবি ফাইল নির্বাচন করুন।",
+  "profile photo must be 5 mb or smaller.": "প্রোফাইল ছবির আকার সর্বোচ্চ ৫ MB হতে পারবে।",
+  "profile photo added to your cv.": "CV-তে প্রোফাইল ছবি যোগ করা হয়েছে।",
+  "the photo could not be read. please try another image.": "ছবিটি পড়া যায়নি। অন্য একটি ছবি দিয়ে চেষ্টা করুন।",
+  "please upload a pdf cv file.": "CV-এর PDF ফাইল আপলোড করুন।",
+  "pdf import is limited to 8 mb.": "PDF আমদানির সর্বোচ্চ সীমা ৮ MB।",
+  "the pdf was uploaded, but no selectable text was found. this usually means the cv is scanned; fill the fields manually or import a text-based pdf.": "PDF আপলোড হয়েছে, কিন্তু নির্বাচনযোগ্য টেক্সট পাওয়া যায়নি। সম্ভবত CV-টি স্ক্যান করা ছবি। ঘরগুলো হাতে পূরণ করুন অথবা টেক্সট-ভিত্তিক PDF ব্যবহার করুন।",
+  "the pdf was read in your browser and the detected fields were added to the form.": "ব্রাউজারে PDF পড়ে পাওয়া তথ্য ফর্মে যোগ করা হয়েছে।",
+  "this pdf could not be read in the browser. you can still fill the cv manually.": "ব্রাউজারে এই PDF পড়া যায়নি। আপনি চাইলে হাতে CV পূরণ করতে পারেন।",
+  "add your full name and email before exporting the cv.": "CV তৈরি বা ডাউনলোডের আগে আপনার পূর্ণ নাম ও ইমেইল দিন।",
+  "print dialog opened. choose ‘save as pdf’ and keep paper size set to a4.": "প্রিন্ট উইন্ডো খোলা হয়েছে। ‘Save as PDF’ বেছে নিন এবং কাগজের মাপ A4 রাখুন।",
+  "print dialog opened with only the cv preview visible.": "শুধু CV প্রিভিউ দেখিয়ে প্রিন্ট উইন্ডো খোলা হয়েছে।",
+  "share sheet opened.": "শেয়ার করার উইন্ডো খোলা হয়েছে।",
+  "tool link copied to your clipboard.": "টুলের লিংক ক্লিপবোর্ডে কপি করা হয়েছে।",
+  "copy the page url from your browser to share this cv maker.": "CV তৈরির টুলটি শেয়ার করতে ব্রাউজার থেকে পেজের URL কপি করুন।",
+  "the form is already clear.": "ফর্মটি ইতিমধ্যেই ফাঁকা আছে।",
+  "clear all cv data? this will remove your personal details, experience, education, projects, skills, and custom sections.": "CV-এর সব তথ্য মুছে ফেলবেন? এতে ব্যক্তিগত তথ্য, অভিজ্ঞতা, শিক্ষা, প্রকল্প, দক্ষতা এবং নিজস্ব বিভাগ মুছে যাবে।",
+  "all cv fields were reset.": "CV-এর সব ঘর রিসেট করা হয়েছে।",
+  "dismiss error": "ত্রুটির বার্তা বন্ধ করুন",
+  "dismiss notice": "বিজ্ঞপ্তি বন্ধ করুন",
+  "private & on-device": "ব্যক্তিগত ও আপনার ডিভাইসেই প্রক্রিয়াকৃত",
+  "your image is processed in your browser and is never uploaded. the ai model downloads once on first use and is cached after that. it also removes noise and jpeg blockiness, so larger images take more time.": "আপনার ছবি ব্রাউজারেই প্রক্রিয়াকরণ করা হয়, কোথাও আপলোড করা হয় না। AI মডেল প্রথম ব্যবহারে একবার ডাউনলোড হয় এবং পরে ক্যাশে থাকে। এটি ছবির নয়েজ ও JPEG-এর ব্লকজাতীয় দাগও কমায়, তাই বড় ছবিতে বেশি সময় লাগে।",
+};
+
+function normalizeAtsCvText(value: string): string {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\\r\\n/g, " ")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function getAtsCvLocale(): string {
+  if (typeof document === "undefined") return "en";
+  return document.documentElement.getAttribute("data-locale") || "en";
+}
+
+function translateAtsCvText(value: unknown, locale: string | undefined, fallback?: string): string {
+  const raw = String(value ?? "");
+  if (!locale || !String(locale).toLowerCase().startsWith("bn") || !/[A-Za-z]/.test(raw)) return raw;
+  const key = normalizeAtsCvText(raw);
+  let translated = ATS_CV_BN[key];
+
+  let match: RegExpExecArray | null;
+  if (translated === undefined && (match = /^skill (\d+)$/i.exec(key))) translated = `দক্ষতা ${match[1]}`;
+  if (translated === undefined && (match = /^remove skill (\d+)$/i.exec(key))) translated = `দক্ষতা ${match[1]} সরান`;
+  if (translated === undefined && (match = /^(experience|education|project|custom section) (\d+)$/i.exec(key))) {
+    const labels: Record<string, string> = { experience: "অভিজ্ঞতা", education: "শিক্ষাগত যোগ্যতা", project: "প্রকল্প", "custom section": "নিজস্ব বিভাগ" };
+    translated = `${labels[match[1]]} ${match[2]}`;
+  }
+  if (translated === undefined && (match = /^(\d+) of (\d+) fields filled$/i.exec(key))) translated = `${match[2]}টির মধ্যে ${match[1]}টি ঘর পূরণ হয়েছে`;
+  if (translated === undefined && (match = /^this file is (.+)\. the maximum size is (.+)\.$/i.exec(key))) translated = `ফাইলটির আকার ${match[1]}। সর্বোচ্চ অনুমোদিত আকার ${match[2]}।`;
+  if (translated === undefined && (match = /^output size: ([\d,]+) × ([\d,]+) px$/i.exec(key))) translated = `আউটপুটের মাপ: ${match[1]} × ${match[2]} পিক্সেল`;
+  if (translated === undefined && (match = /^([\d,]+) × ([\d,]+) px is over the ([\d,]+) × ([\d,]+) px browser limit\. choose 2x or use a smaller image\.$/i.exec(key))) translated = `${match[1]} × ${match[2]} পিক্সেল ব্রাউজারের ${match[3]} × ${match[4]} পিক্সেল সীমার চেয়ে বড়। 2x নির্বাচন করুন অথবা ছোট ছবি ব্যবহার করুন।`;
+  if (translated === undefined && (match = /^remove skill (\d+)$/i.exec(key))) translated = `দক্ষতা ${match[1]} সরান`;
+
+  if (translated === undefined && fallback && fallback !== raw) {
+    const hasBangla = /[\u0980-\u09FF]/.test(fallback);
+    const technicalRemoved = fallback.replace(/\b(?:PDF|CV|ATS|A4|URL|NID|AI|MB|KB|LinkedIn|React|Google|HubSpot)\b/gi, "");
+    if (hasBangla && !/[A-Za-z]/.test(technicalRemoved)) translated = fallback;
+  }
+  if (translated === undefined) translated = raw;
+
+  // Keep deliberate spacing in JSX fragments such as labels joined to a count.
+  const leading = raw.match(/^\s*/)?.[0] ?? "";
+  const trailing = raw.match(/\s*$/)?.[0] ?? "";
+  return `${leading}${translated}${trailing}`;
+}
+
+function L(value: string): string {
+  return translateAtsCvText(value, getAtsCvLocale(), baseI18nL(value));
+}
+
+function AtsCvText({ children }: { children: ReactNode }) {
+  const { locale, L: globalL } = useSohozI18n();
+  if (typeof children === "string" || typeof children === "number") {
+    return <>{translateAtsCvText(children, locale, globalL(String(children)))}</>;
+  }
+  return <>{children}</>;
+}
+
+
 /* -------------------------------------------------------------------------- */
 /*                                Type system                                 */
 /* -------------------------------------------------------------------------- */
@@ -389,16 +658,16 @@ function Field({ label, value, placeholder, required, type = "text", onChange, i
     return (<label className="block space-y-1.5">
       <span className="flex items-center justify-between gap-2 text-[10px] font-semibold text-[#0F172A]">
         <span>
-          {label} {required ? <span className="text-rose-500"><T>{"*"}</T></span> : null}
+          {L(label)} {required ? <span className="text-rose-500"><AtsCvText>{"*"}</AtsCvText></span> : null}
         </span>
       </span>
       <div className={`relative ${error ? "" : ""}`}>
         {icon ? (<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             {icon}
           </span>) : null}
-        <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} disabled={disabled} className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0] ${icon ? "pl-9" : ""} ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-[#E2E8F0]"}`}/>
+        <input type={type} value={/section title/i.test(label) ? L(value) : value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} disabled={disabled} className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0] ${icon ? "pl-9" : ""} ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-[#E2E8F0]"}`}/>
       </div>
-      {error ? (<span className="text-[9px] font-medium text-rose-500">{error}</span>) : null}
+      {error ? (<span className="text-[9px] font-medium text-rose-500">{L(error)}</span>) : null}
     </label>);
 }
 function TextAreaField({ label, value, placeholder, onChange, rows = 5, }: {
@@ -409,8 +678,8 @@ function TextAreaField({ label, value, placeholder, onChange, rows = 5, }: {
     rows?: number;
 }) {
     return (<label className="block space-y-1.5">
-      <span className="text-[10px] font-semibold text-[#0F172A]">{label}</span>
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={rows} className="w-full resize-y rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[11px] leading-relaxed text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0]"/>
+      <span className="text-[10px] font-semibold text-[#0F172A]">{L(label)}</span>
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} rows={rows} className="w-full resize-y rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[11px] leading-relaxed text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0]"/>
     </label>);
 }
 function PrimaryButton({ children, onClick, type = "button", disabled, className = "", title, }: {
@@ -421,7 +690,7 @@ function PrimaryButton({ children, onClick, type = "button", disabled, className
     className?: string;
     title?: string;
 }) {
-    return (<button type={type} onClick={onClick} disabled={disabled} title={title} className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}>
+    return (<button type={type} onClick={onClick} disabled={disabled} title={title ? L(title) : undefined} className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}>
       {children}
     </button>);
 }
@@ -445,10 +714,10 @@ function SectionCard({ title, description, children, action, }: {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[11px] font-extrabold uppercase tracking-wide text-[#2563EB]">
-            {title}
+            {L(title)}
           </h3>
           {description ? (<p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-              {description}
+              {L(description)}
             </p>) : null}
         </div>
         {action}
@@ -462,7 +731,7 @@ function IconButton({ label, onClick, children, active, }: {
     children: ReactNode;
     active?: boolean;
 }) {
-    return (<button type="button" title={label} aria-label={label} onClick={onClick} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${active
+    return (<button type="button" title={L(label)} aria-label={L(label)} onClick={onClick} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${active
             ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
             : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-[#0F172A]"}`}>
       {children}
@@ -472,7 +741,7 @@ function EmptyState({ text }: {
     text: string;
 }) {
     return (<div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/70 p-4 text-center text-[10px] text-gray-400">
-      {text}
+      {L(text)}
     </div>);
 }
 /* -------------------------------------------------------------------------- */
@@ -710,10 +979,10 @@ function TemplateDocument({ data }: {
           </div>
 
           <div className="cv-header-main">
-            <h1>{personal.fullName || "Your Name"}</h1>
+            <h1>{personal.fullName || L("Your Name")}</h1>
 
             <p className="cv-role">
-              {personal.jobTitle || "Professional title"}
+              {personal.jobTitle || L("Professional title")}
             </p>
 
             <div className="cv-contact-grid">
@@ -747,15 +1016,15 @@ function TemplateDocument({ data }: {
 
         {!hasAny ? (<div className="cv-empty-state">
             <FileText size={24}/>
-            <strong><T>{"Your CV preview will appear here"}</T></strong>
-            <span><T>{"Start filling the form to build your ATS-friendly CV."}</T></span>
+            <strong><AtsCvText>{"Your CV preview will appear here"}</AtsCvText></strong>
+            <span><AtsCvText>{"Start filling the form to build your ATS-friendly CV."}</AtsCvText></span>
           </div>) : null}
 
-        {data.summary.trim() ? (<CVSection title={data.summaryTitle || "SUMMARY"}>
+        {data.summary.trim() ? (<CVSection title={L(data.summaryTitle || "SUMMARY")}>
             <p className="cv-paragraph pre-wrap">{data.summary}</p>
           </CVSection>) : null}
 
-        {hasExperience ? (<CVSection title={data.experienceTitle || "PROFESSIONAL EXPERIENCE"}>
+        {hasExperience ? (<CVSection title={L(data.experienceTitle || "PROFESSIONAL EXPERIENCE")}>
             <div className="cv-stack">
               {data.experiences.map((item) => {
                 if (![
@@ -768,13 +1037,13 @@ function TemplateDocument({ data }: {
                 ].some((value) => value.trim()))
                     return null;
                 const period = item.currentlyEmployed
-                    ? `${item.startDate || "Start date"} – Present`
+                    ? `${item.startDate || L("Start date")} – ${L("Present")}`
                     : [item.startDate, item.endDate].filter(Boolean).join(" – ");
                 return (<div className="cv-entry" key={item.id}>
                     <div className="cv-entry-top">
                       <div>
                         <div className="cv-entry-title">
-                          {item.jobTitle || "Job title"}
+                          {item.jobTitle || L("Job title")}
                         </div>
 
                         <div className="cv-entry-subtitle">
@@ -788,14 +1057,14 @@ function TemplateDocument({ data }: {
                     </div>
 
                     {item.description ? (<p className="cv-paragraph pre-wrap">
-                        {<T>{item.description}</T>}
+                        {item.description}
                       </p>) : null}
                   </div>);
             })}
             </div>
           </CVSection>) : null}
 
-        {hasEducation ? (<CVSection title={data.educationTitle || "EDUCATION"}>
+        {hasEducation ? (<CVSection title={L(data.educationTitle || "EDUCATION")}>
             <div className="cv-stack">
               {data.education.map((item) => {
                 if (![
@@ -814,7 +1083,7 @@ function TemplateDocument({ data }: {
                     <div className="cv-entry-top">
                       <div>
                         <div className="cv-entry-title">
-                          {item.degree || "Degree / certificate"}
+                          {item.degree || L("Degree / certificate")}
                         </div>
 
                         <div className="cv-entry-subtitle">
@@ -833,7 +1102,7 @@ function TemplateDocument({ data }: {
             </div>
           </CVSection>) : null}
 
-        {hasProjects ? (<CVSection title={data.projectTitle || "PROJECTS"}>
+        {hasProjects ? (<CVSection title={L(data.projectTitle || "PROJECTS")}>
             <div className="cv-stack">
               {data.projects.map((item) => {
                 if (![item.name, item.role, item.link, item.description].some((value) => value.trim()))
@@ -842,7 +1111,7 @@ function TemplateDocument({ data }: {
                     <div className="cv-entry-top">
                       <div>
                         <div className="cv-entry-title">
-                          {item.name || "Project"}
+                          {item.name || L("Project")}
                         </div>
 
                         {item.role ? (<div className="cv-entry-subtitle">{item.role}</div>) : null}
@@ -854,31 +1123,31 @@ function TemplateDocument({ data }: {
                     </div>
 
                     {item.description ? (<p className="cv-paragraph pre-wrap">
-                        {<T>{item.description}</T>}
+                        {item.description}
                       </p>) : null}
                   </div>);
             })}
             </div>
           </CVSection>) : null}
 
-        {hasSkills ? (<CVSection title={data.skillsTitle || "SKILLS"}>
+        {hasSkills ? (<CVSection title={L(data.skillsTitle || "SKILLS")}>
             <div className="cv-skill-list">
               {data.skills.map((skill) => {
                 if (!skill.name.trim())
                     return null;
                 return (<span className="cv-skill" key={skill.id}>
                     {skill.name}
-                    {skill.level ? <T>{` — ${skill.level}`}</T> : <T>{""}</T>}
+                    {skill.level ? ` — ${skill.level}` : ""}
                   </span>);
             })}
             </div>
           </CVSection>) : null}
 
-        {hasCertificates ? (<CVSection title={data.certificateTitle || "CERTIFICATIONS"}>
+        {hasCertificates ? (<CVSection title={L(data.certificateTitle || "CERTIFICATIONS")}>
             <p className="cv-paragraph pre-wrap">{data.certificates}</p>
           </CVSection>) : null}
 
-        {hasLanguages ? (<CVSection title={data.languageTitle || "LANGUAGES"}>
+        {hasLanguages ? (<CVSection title={L(data.languageTitle || "LANGUAGES")}>
             <p className="cv-paragraph pre-wrap">{data.languages}</p>
           </CVSection>) : null}
 
@@ -896,7 +1165,7 @@ function CVSection({ title, children, }: {
     key?: string;
 }) {
     return (<section className="cv-section">
-      <div className="cv-section-title">{title}</div>
+      <div className="cv-section-title">{L(title)}</div>
       {children}
     </section>);
 }
@@ -974,7 +1243,8 @@ async function optimizeImageDataUrl(dataUrl: string): Promise<string> {
     return canvas.toDataURL("image/jpeg", 0.84);
 }
 export default function AtsCvMaker() {
-    const { L } = useSohozI18n();
+    const { locale } = useSohozI18n();
+    const L = useCallback((value: string) => translateAtsCvText(value, locale, baseI18nL(value)), [locale]);
     const [cvData, dispatch] = useReducer(reducer, undefined, createInitialCVData);
     const [currentStep, setCurrentStep] = useState(1);
     const [isHowToUseOpen, setIsHowToUseOpen] = useState(false);
@@ -1324,7 +1594,7 @@ export default function AtsCvMaker() {
             notify("info", "The form is already clear.");
             return;
         }
-        const confirmed = window.confirm("Clear all CV data? This will remove your personal details, experience, education, projects, skills, and custom sections.");
+        const confirmed = window.confirm(L("Clear all CV data? This will remove your personal details, experience, education, projects, skills, and custom sections."));
         if (!confirmed)
             return;
         dispatch({
@@ -1354,19 +1624,19 @@ export default function AtsCvMaker() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[11px] font-bold text-[#0F172A]">
-            {steps[currentStep - 1].label}
+            {L(steps[currentStep - 1].label)}
           </div>
 
           <div className="text-[9px] text-gray-500">
-            {steps[currentStep - 1].meta}
+            {L(steps[currentStep - 1].meta)}
           </div>
         </div>
 
         <div className="rounded-md bg-[#F8FAFC] px-2 py-1 text-right">
           <div className="text-[10px] font-extrabold text-[#2563EB]">
-            {currentStep}<T>{"/8\n          "}</T></div>
+            {currentStep}<AtsCvText>{"/8\n          "}</AtsCvText></div>
 
-          <div className="text-[8px] text-gray-400"><T>{"steps \u00B7 "}</T>{completionPercent}<T>{"%\n          "}</T></div>
+          <div className="text-[8px] text-gray-400"><AtsCvText>{"steps \u00B7 "}</AtsCvText>{completionPercent}<AtsCvText>{"%\n          "}</AtsCvText></div>
         </div>
       </div>
 
@@ -1384,7 +1654,7 @@ export default function AtsCvMaker() {
         <div className="flex min-w-0 flex-1 items-center justify-between gap-1 overflow-x-auto py-1">
           {steps.map((step) => {
             const isLocked = step.id > 2 && Boolean(personalStepError);
-            return (<button type="button" key={step.id} onClick={() => goToStep(step.id)} className={`group flex min-w-[42px] flex-col items-center gap-1 ${isLocked ? "cursor-not-allowed opacity-50" : ""}`} aria-current={step.id === currentStep ? "step" : undefined} aria-disabled={isLocked} title={isLocked ? (personalStepError ?? undefined) : undefined}>
+            return (<button type="button" key={step.id} onClick={() => goToStep(step.id)} className={`group flex min-w-[42px] flex-col items-center gap-1 ${isLocked ? "cursor-not-allowed opacity-50" : ""}`} aria-current={step.id === currentStep ? "step" : undefined} aria-disabled={isLocked} title={isLocked && personalStepError ? L(personalStepError) : undefined}>
                 <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold transition ${step.id === currentStep
                     ? "bg-[#2563EB] text-white shadow-sm"
                     : step.id < currentStep
@@ -1394,7 +1664,7 @@ export default function AtsCvMaker() {
                 </span>
 
                 <span className={`text-[7px] font-semibold ${step.id === currentStep ? "text-[#2563EB]" : "text-gray-400"}`}>
-                  {step.label}
+                  {L(step.label)}
                 </span>
               </button>);
         })}
@@ -1405,11 +1675,11 @@ export default function AtsCvMaker() {
         </button>
       </div>
 
-      <div className="text-center text-[8px] text-gray-400"><T>{"Required fields:"}</T>{<T>{" "}</T>}
+      <div className="text-center text-[8px] text-gray-400"><AtsCvText>{"Required fields:"}</AtsCvText>{<AtsCvText>{" "}</AtsCvText>}
         <span className={requiredCount === 2
             ? "font-bold text-emerald-600"
             : "font-bold text-[#2563EB]"}>
-          {requiredCount}<T>{"/2\n        "}</T></span>
+          {requiredCount}<AtsCvText>{"/2\n        "}</AtsCvText></span>
       </div>
     </div>);
     const renderImportStep = () => (<SectionCard title={L("0. Import from PDF")} description="Upload an existing text-based CV PDF to pre-fill common fields directly in your browser.">
@@ -1419,16 +1689,16 @@ export default function AtsCvMaker() {
         </span>
 
         <span className="text-[11px] font-bold text-indigo-700">
-          {isImporting ? <T>{"Reading PDF…"}</T> : <T>{"Upload an existing CV PDF"}</T>}
+          {isImporting ? <AtsCvText>{"Reading PDF…"}</AtsCvText> : <AtsCvText>{"Upload an existing CV PDF"}</AtsCvText>}
         </span>
 
-        <span className="mt-1 max-w-xs text-[9px] leading-relaxed text-gray-400"><T>{"Up to 8 MB. Text-based PDFs can be parsed in the browser; scanned\n          image-only PDFs may require manual entry.\n        "}</T></span>
+        <span className="mt-1 max-w-xs text-[9px] leading-relaxed text-gray-400"><AtsCvText>{"Up to 8 MB. Text-based PDFs can be parsed in the browser; scanned\n          image-only PDFs may require manual entry.\n        "}</AtsCvText></span>
       </button>
 
       <input ref={importInputRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => void handleImportPdf(event.target.files?.[0])}/>
 
       {cvData.importedFileName ? (<div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-[9px] text-emerald-700">
-          <span className="truncate pr-3"><T>{"Imported: "}</T>{cvData.importedFileName}
+          <span className="truncate pr-3"><AtsCvText>{"Imported: "}</AtsCvText>{cvData.importedFileName}
           </span>
           <CheckCircle2 size={13}/>
         </div>) : null}
@@ -1440,9 +1710,9 @@ export default function AtsCvMaker() {
         return (<SectionCard title={L("1. Personal information")} description="These details appear at the top of your CV and are synced with the preview instantly.">
         <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/40 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-[#0F172A]"><T>{"Photo (optional)\n            "}</T></span>
+            <span className="text-[10px] font-bold text-[#0F172A]"><AtsCvText>{"Photo (optional)\n            "}</AtsCvText></span>
 
-            <span className="text-[9px] text-gray-400"><T>{"Recommended: square image\n            "}</T></span>
+            <span className="text-[9px] text-gray-400"><AtsCvText>{"Recommended: square image\n            "}</AtsCvText></span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1455,28 +1725,28 @@ export default function AtsCvMaker() {
             <div className="flex flex-wrap items-center gap-2">
               <SecondaryButton onClick={() => photoInputRef.current?.click()}>
                 <ImagePlus size={12}/>
-                {cvData.personal.photo ? <T>{"Change photo"}</T> : <T>{"Add photo"}</T>}
+                {cvData.personal.photo ? <AtsCvText>{"Change photo"}</AtsCvText> : <AtsCvText>{"Add photo"}</AtsCvText>}
               </SecondaryButton>
 
               {cvData.personal.photo ? (<SecondaryButton onClick={() => updatePersonal("photo", "")}>
-                  <Trash2 size={11}/><T>{"Remove photo\n                "}</T></SecondaryButton>) : null}
+                  <Trash2 size={11}/><AtsCvText>{"Remove photo\n                "}</AtsCvText></SecondaryButton>) : null}
 
               {cvData.personal.photo ? (<button type="button" onClick={() => updatePersonal("designPhoto", !cvData.personal.designPhoto)} className={`rounded-lg border px-2.5 py-2 text-[9px] font-bold transition ${cvData.personal.designPhoto
                     ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
                     : "border-gray-200 bg-white text-gray-500"}`}>
                   {cvData.personal.designPhoto
-                ? <T>{"Photo design on"}</T> : <T>{"Design photo"}</T>}
+                ? <AtsCvText>{"Photo design on"}</AtsCvText> : <AtsCvText>{"Design photo"}</AtsCvText>}
                 </button>) : null}
             </div>
           </div>
 
           {cvData.personal.photo && cvData.personal.designPhoto ? (<div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] text-gray-500">
-              <span className="font-semibold"><T>{"Shape"}</T></span>
+              <span className="font-semibold"><AtsCvText>{"Shape"}</AtsCvText></span>
 
               {(["square", "rounded", "circle"] as PhotoShape[]).map((shape) => (<button type="button" key={shape} onClick={() => updatePersonal("photoShape", shape)} className={`rounded-md px-2 py-1 ${cvData.personal.photoShape === shape
                         ? "bg-[#2563EB] text-white"
                         : "bg-white ring-1 ring-gray-200 hover:bg-gray-50"}`}>
-                    {shape}
+                    {L(shape)}
                   </button>))}
             </div>) : null}
 
@@ -1517,7 +1787,7 @@ export default function AtsCvMaker() {
     const renderExperienceStep = () => (<SectionCard title={L("3. Work experience")} description="Add roles in reverse chronological order. Use measurable responsibilities and achievements where possible." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_EXPERIENCE",
             })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
-          <Plus size={11}/><T>{"Add\n        "}</T></button>}>
+          <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.experienceTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
             section: "experience",
@@ -1529,14 +1799,14 @@ export default function AtsCvMaker() {
       <div className="space-y-3">
         {cvData.experiences.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><T>{"Experience "}</T>{index + 1}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Experience "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_EXPERIENCE",
                 id: item.id,
             })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
-                <Trash2 size={11}/><T>{"Remove\n              "}</T></button>
+                <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1581,7 +1851,7 @@ export default function AtsCvMaker() {
                 id: item.id,
                 field: "currentlyEmployed",
                 value: event.target.checked,
-            })} className="h-3.5 w-3.5 accent-[#2563EB]"/><T>{"Currently employed\n              "}</T></label>
+            })} className="h-3.5 w-3.5 accent-[#2563EB]"/><AtsCvText>{"Currently employed\n              "}</AtsCvText></label>
 
               <div className="sm:col-span-2">
                 <TextAreaField label="Responsibilities & achievements" value={item.description} rows={5} placeholder={"Led a team of 6…\nImproved campaign performance by 40%…"} onChange={(value) => dispatch({
@@ -1598,12 +1868,12 @@ export default function AtsCvMaker() {
       <PrimaryButton onClick={() => dispatch({
             type: "ADD_EXPERIENCE",
         })} className="w-full">
-        <Plus size={12}/><T>{"Add another experience\n      "}</T></PrimaryButton>
+        <Plus size={12}/><AtsCvText>{"Add another experience\n      "}</AtsCvText></PrimaryButton>
     </SectionCard>);
     const renderEducationStep = () => (<SectionCard title={L("4. Education")} description="Add degrees, certificates, training, or other academic credentials." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_EDUCATION",
             })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
-          <Plus size={11}/><T>{"Add\n        "}</T></button>}>
+          <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.educationTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
             section: "education",
@@ -1615,14 +1885,14 @@ export default function AtsCvMaker() {
       <div className="space-y-3">
         {cvData.education.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><T>{"Education "}</T>{index + 1}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Education "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_EDUCATION",
                 id: item.id,
             })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
-                <Trash2 size={11}/><T>{"Remove\n              "}</T></button>
+                <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1676,12 +1946,12 @@ export default function AtsCvMaker() {
       <PrimaryButton onClick={() => dispatch({
             type: "ADD_EDUCATION",
         })} className="w-full">
-        <Plus size={12}/><T>{"Add another education\n      "}</T></PrimaryButton>
+        <Plus size={12}/><AtsCvText>{"Add another education\n      "}</AtsCvText></PrimaryButton>
     </SectionCard>);
     const renderProjectsStep = () => (<SectionCard title={L("5. Projects")} description="Showcase relevant portfolio projects, freelance work, case studies, or coursework." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_PROJECT",
             })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
-          <Plus size={11}/><T>{"Add\n        "}</T></button>}>
+          <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.projectTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
             section: "project",
@@ -1693,14 +1963,14 @@ export default function AtsCvMaker() {
       <div className="space-y-3">
         {cvData.projects.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><T>{"Project "}</T>{index + 1}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Project "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_PROJECT",
                 id: item.id,
             })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
-                <Trash2 size={11}/><T>{"Remove\n              "}</T></button>
+                <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1742,7 +2012,7 @@ export default function AtsCvMaker() {
       <PrimaryButton onClick={() => dispatch({
             type: "ADD_PROJECT",
         })} className="w-full">
-        <Plus size={12}/><T>{"Add another project\n      "}</T></PrimaryButton>
+        <Plus size={12}/><AtsCvText>{"Add another project\n      "}</AtsCvText></PrimaryButton>
     </SectionCard>);
     const renderSkillsStep = () => (<SectionCard title={L("6. Additional")} description="Add ATS-readable skills, certifications, and languages. Each entry is kept as real text in the CV, not as an image.">
       <Field label="Skills section title on CV" value={cvData.skillsTitle} onChange={(value) => dispatch({
@@ -1753,7 +2023,7 @@ export default function AtsCvMaker() {
 
       <div className="space-y-2">
         {cvData.skills.map((skill, index) => (<div key={skill.id} className="grid grid-cols-[1fr_120px_auto] items-end gap-2">
-            <Field label={`Skill ${index + 1}`} value={skill.name} placeholder={L("Digital Marketing")} onChange={(value) => dispatch({
+            <Field label={L(`Skill ${index + 1}`)} value={skill.name} placeholder={L("Digital Marketing")} onChange={(value) => dispatch({
                 type: "UPDATE_SKILL",
                 id: skill.id,
                 field: "name",
@@ -1770,7 +2040,7 @@ export default function AtsCvMaker() {
             <button type="button" onClick={() => dispatch({
                 type: "REMOVE_SKILL",
                 id: skill.id,
-            })} className="mb-0.5 rounded-lg border border-gray-200 bg-white p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-500" aria-label={`Remove skill ${index + 1}`}>
+            })} className="mb-0.5 rounded-lg border border-gray-200 bg-white p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-500" aria-label={L(`Remove skill ${index + 1}`)}>
               <Trash2 size={12}/>
             </button>
           </div>))}
@@ -1779,7 +2049,7 @@ export default function AtsCvMaker() {
       <button type="button" onClick={() => dispatch({
             type: "ADD_SKILL",
         })} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/50 px-3 py-2 text-[10px] font-bold text-[#2563EB] hover:bg-[#F8FAFC]">
-        <Plus size={12}/><T>{"Add skill\n      "}</T></button>
+        <Plus size={12}/><AtsCvText>{"Add skill\n      "}</AtsCvText></button>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -1816,20 +2086,20 @@ export default function AtsCvMaker() {
     const renderCustomStep = () => (<SectionCard title={L("7. Custom sections (optional)")} description="Add extra sections such as awards, volunteer work, publications, interests, or leadership. Empty sections will not appear on the CV." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_CUSTOM",
             })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
-          <Plus size={11}/><T>{"Add\n        "}</T></button>}>
+          <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       {cvData.customSections.length === 0 ? (<EmptyState text="No extra sections yet. Add one only when you need it."/>) : null}
 
       <div className="space-y-3">
         {cvData.customSections.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><T>{"Custom section "}</T>{index + 1}
+              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Custom section "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_CUSTOM",
                 id: item.id,
             })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
-                <Trash2 size={11}/><T>{"Remove\n              "}</T></button>
+                <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
             <div className="space-y-3">
@@ -1853,7 +2123,7 @@ export default function AtsCvMaker() {
       <PrimaryButton onClick={() => dispatch({
             type: "ADD_CUSTOM",
         })} className="w-full">
-        <Plus size={12}/><T>{"Add new section\n      "}</T></PrimaryButton>
+        <Plus size={12}/><AtsCvText>{"Add new section\n      "}</AtsCvText></PrimaryButton>
     </SectionCard>);
     const renderCurrentStepContent = () => {
         switch (currentStep) {
@@ -1885,15 +2155,15 @@ export default function AtsCvMaker() {
               <FileText size={12} className="inline"/>
             </Link>
 
-            <span><T>{"/"}</T></span>
+            <span><AtsCvText>{"/"}</AtsCvText></span>
 
-            <Link href="/sohoj-tools" className="transition hover:text-[#0F172A]"><T>{"Sohoz Tools\n            "}</T></Link>
+            <Link href="/sohoj-tools" className="transition hover:text-[#0F172A]"><AtsCvText>{"Sohoz Tools\n            "}</AtsCvText></Link>
 
-            <span><T>{"/"}</T></span>
-            <span><T>{"Educational Tools"}</T></span>
-            <span><T>{"/"}</T></span>
+            <span><AtsCvText>{"/"}</AtsCvText></span>
+            <span><AtsCvText>{"Educational Tools"}</AtsCvText></span>
+            <span><AtsCvText>{"/"}</AtsCvText></span>
 
-            <span className="font-semibold text-[#0F172A]"><T>{"ATS Friendly CV Maker\n            "}</T></span>
+            <span className="font-semibold text-[#0F172A]"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></span>
           </nav>
 
           <div className="flex items-center gap-2.5">
@@ -1901,12 +2171,12 @@ export default function AtsCvMaker() {
               <FileText size={18}/>
             </div>
 
-            <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A] md:text-2xl"><T>{"ATS Friendly CV Maker\n            "}</T></h1>
+            <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A] md:text-2xl"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></h1>
 
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700"><T>{"Free\n            "}</T></span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700"><AtsCvText>{"Free\n            "}</AtsCvText></span>
           </div>
 
-          <p className="mt-1 text-[10px] font-medium text-gray-500"><T>{"Build an ATS-friendly CV \u2014 live preview and high-quality A4\n            print/PDF flow.\n          "}</T></p>
+          <p className="mt-1 text-[10px] font-medium text-gray-500"><AtsCvText>{"Build an ATS-friendly CV \u2014 live preview and high-quality A4\n            print/PDF flow.\n          "}</AtsCvText></p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1927,7 +2197,7 @@ export default function AtsCvMaker() {
                     : "border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB]"}`} role="status">
           {notice.type === "success" ? (<CheckCircle2 size={14}/>) : notice.type === "error" ? (<CircleHelp size={14}/>) : null}
 
-          <span>{notice.text}</span>
+          <span>{L(notice.text)}</span>
 
           <button type="button" className="ml-auto opacity-70 hover:opacity-100" onClick={() => setNotice(null)} aria-label={L("Dismiss notice")}>
             <X size={13}/>
@@ -1939,17 +2209,17 @@ export default function AtsCvMaker() {
           <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
             <div className="space-y-4">
               <div>
-                <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Settings"}</T></h2>
+                <h2 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Settings"}</AtsCvText></h2>
 
-                <p className="mt-0.5 text-[10px] leading-relaxed text-gray-500"><T>{"Fill in your CV step by step. The preview updates as you type.\n                "}</T></p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-gray-500"><AtsCvText>{"Fill in your CV step by step. The preview updates as you type.\n                "}</AtsCvText></p>
               </div>
 
               <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]/20 p-3.5">
                 <button type="button" onClick={() => setIsTemplateOpen((open) => !open)} className="flex w-full items-center justify-between text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-[#0F172A]"><T>{"Template\n                    "}</T></span>
+                    <span className="text-[11px] font-bold text-[#0F172A]"><AtsCvText>{"Template\n                    "}</AtsCvText></span>
 
-                    <span className="text-[9px] font-medium text-[#2563EB]"><T>{"More designs coming soon\n                    "}</T></span>
+                    <span className="text-[9px] font-medium text-[#2563EB]"><AtsCvText>{"More designs coming soon\n                    "}</AtsCvText></span>
                   </div>
 
                   <ChevronDown size={14} className={`text-gray-400 transition ${isTemplateOpen ? "rotate-180" : ""}`}/>
@@ -1983,7 +2253,7 @@ export default function AtsCvMaker() {
 
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold text-[#0F172A]">
-                              {<T>{template.label}</T>}
+                              {L(template.label)}
                             </span>
 
                             {selected ? (<CheckCircle2 size={14} className="fill-orange-500 text-[#2563EB]"/>) : null}
@@ -2000,12 +2270,12 @@ export default function AtsCvMaker() {
               </div>
 
               <div className="flex items-center gap-2 pt-1">
-                <SecondaryButton onClick={handlePrevStep} disabled={currentStep === 1} className="flex-1"><T>{"\u2039 Previous step\n                "}</T></SecondaryButton>
+                <SecondaryButton onClick={handlePrevStep} disabled={currentStep === 1} className="flex-1"><AtsCvText>{"\u2039 Previous step\n                "}</AtsCvText></SecondaryButton>
 
                 {currentStep < steps.length ? (<PrimaryButton onClick={handleNextStep} disabled={currentStep === 2 && Boolean(personalStepError)} title={currentStep === 2
                 ? (personalStepError ?? undefined)
-                : undefined} className="flex-1"><T>{"Next step "}</T><ChevronRight size={12}/>
-                  </PrimaryButton>) : (<PrimaryButton onClick={handleViewPreview} className="flex-1"><T>{"View preview "}</T><ExternalLink size={11}/>
+                : undefined} className="flex-1"><AtsCvText>{"Next step "}</AtsCvText><ChevronRight size={12}/>
+                  </PrimaryButton>) : (<PrimaryButton onClick={handleViewPreview} className="flex-1"><AtsCvText>{"View preview "}</AtsCvText><ExternalLink size={11}/>
                   </PrimaryButton>)}
               </div>
             </div>
@@ -2017,20 +2287,20 @@ export default function AtsCvMaker() {
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 print:hidden">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold text-[#0F172A]"><T>{"Preview"}</T></h2>
+                  <h2 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Preview"}</AtsCvText></h2>
 
                   <span className="flex items-center gap-1 text-[9px] text-gray-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>{<T>{" "}</T>}<T>{"Live preview\n                  "}</T></span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>{<AtsCvText>{" "}</AtsCvText>}<AtsCvText>{"Live preview\n                  "}</AtsCvText></span>
                 </div>
 
                 <div className="mt-1 flex items-center gap-1.5 text-[8px] text-gray-400">
                   <span>
-                    {templates.find((item) => item.id === cvData.selectedTemplate)?.label}{<T>{" "}</T>}<T>{"\u00B7 A4\n                  "}</T></span>
+                    {L(templates.find((item) => item.id === cvData.selectedTemplate)?.label ?? "Classic ATS")}{<AtsCvText>{" "}</AtsCvText>}<AtsCvText>{"\u00B7 A4\n                  "}</AtsCvText></span>
 
                   <span className={`rounded-full px-1.5 py-0.5 font-semibold ${formReady
             ? "bg-emerald-50 text-emerald-600"
             : "bg-gray-100 text-gray-400"}`}>
-                    {formReady ? <T>{"Ready"}</T> : <T>{"Draft"}</T>}
+                    {formReady ? <AtsCvText>{"Ready"}</AtsCvText> : <AtsCvText>{"Draft"}</AtsCvText>}
                   </span>
                 </div>
               </div>
@@ -2044,7 +2314,7 @@ export default function AtsCvMaker() {
                 </IconButton>
 
                 <button type="button" onClick={resetPreviewZoom} title={L("Reset to fit the panel width")} className="h-8 min-w-12 rounded-lg border border-gray-200 bg-white px-2 text-[9px] font-bold text-gray-500 hover:bg-gray-50">
-                  {previewZoom}<T>{"%\n                "}</T></button>
+                  {previewZoom}<AtsCvText>{"%\n                "}</AtsCvText></button>
 
                 <IconButton label="Zoom in" onClick={() => {
             hasManualZoomRef.current = true;
@@ -2053,7 +2323,7 @@ export default function AtsCvMaker() {
                   <Plus size={12}/>
                 </IconButton>
 
-                <button type="button" onClick={handleViewPreview} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-2 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"><T>{"Preview\n                "}</T></button>
+                <button type="button" onClick={handleViewPreview} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-2 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"><AtsCvText>{"Preview\n                "}</AtsCvText></button>
               </div>
             </div>
 
@@ -2080,21 +2350,21 @@ export default function AtsCvMaker() {
 
             <span>
               {formReady
-        ? <T>{"CV ready for download / print."}</T> : <T>{"Complete the required fields to export your CV."}</T>}
+        ? <AtsCvText>{"CV ready for download / print."}</AtsCvText> : <AtsCvText>{"Complete the required fields to export your CV."}</AtsCvText>}
             </span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
             <SecondaryButton onClick={handleClearAll} disabled={isExporting}>
-              <RotateCw size={12}/><T>{"Clear all\n            "}</T></SecondaryButton>
+              <RotateCw size={12}/><AtsCvText>{"Clear all\n            "}</AtsCvText></SecondaryButton>
 
             <SecondaryButton onClick={() => void handlePrint("print")} disabled={isExporting}>
-              <Printer size={12}/> {isExporting ? <T>{"Preparing…"}</T> : <T>{"Print"}</T>}
+              <Printer size={12}/> {isExporting ? <AtsCvText>{"Preparing…"}</AtsCvText> : <AtsCvText>{"Print"}</AtsCvText>}
             </SecondaryButton>
 
             <PrimaryButton onClick={() => void handlePrint("pdf")} disabled={isExporting}>
-              <Download size={12}/>{<T>{" "}</T>}
-              {isExporting ? <T>{"Preparing…"}</T> : <T>{"Download PDF"}</T>}
+              <Download size={12}/>{<AtsCvText>{" "}</AtsCvText>}
+              {isExporting ? <AtsCvText>{"Preparing…"}</AtsCvText> : <AtsCvText>{"Download PDF"}</AtsCvText>}
             </PrimaryButton>
           </div>
         </div>
@@ -2103,33 +2373,33 @@ export default function AtsCvMaker() {
       <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-[10px] font-medium text-emerald-800 shadow-sm print:hidden">
         <ShieldCheck size={17} className="shrink-0 text-emerald-600"/>
 
-        <span><T>{"Your CV and images are processed in your browser. This component does\n          not upload your CV data to a server.\n        "}</T></span>
+        <span><AtsCvText>{"Your CV and images are processed in your browser. This component does\n          not upload your CV data to a server.\n        "}</AtsCvText></span>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm print:hidden">
         <button type="button" onClick={() => setIsHowToUseOpen((open) => !open)} className="flex w-full items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/60">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#2563EB]"><T>{"?"}</T></span>
+            <span className="font-bold text-[#2563EB]"><AtsCvText>{"?"}</AtsCvText></span>
 
-            <span className="text-xs font-bold text-[#0F172A]"><T>{"How to use"}</T></span>
+            <span className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"How to use"}</AtsCvText></span>
           </div>
 
           <ChevronDown size={15} className={`text-gray-400 transition ${isHowToUseOpen ? "rotate-180" : ""}`}/>
         </button>
 
         {isHowToUseOpen ? (<div className="space-y-2 border-t border-gray-100 px-5 pb-4 pt-3 text-[10px] leading-relaxed text-gray-600">
-            <p><T>{"1. Choose a template from the top section."}</T></p>
+            <p><AtsCvText>{"1. Choose a template from the top section."}</AtsCvText></p>
 
-            <p><T>{"2. Import an existing PDF or fill each step manually."}</T></p>
+            <p><AtsCvText>{"2. Import an existing PDF or fill each step manually."}</AtsCvText></p>
 
-            <p><T>{"3. Watch the A4 preview update instantly as you type."}</T></p>
+            <p><AtsCvText>{"3. Watch the A4 preview update instantly as you type."}</AtsCvText></p>
 
-            <p><T>{"4. Use Print or Download PDF, then choose Save as PDF in your\n              browser\u2019s print dialog.\n            "}</T></p>
+            <p><AtsCvText>{"4. Use Print or Download PDF, then choose Save as PDF in your\n              browser\u2019s print dialog.\n            "}</AtsCvText></p>
           </div>) : null}
       </div>
 
       <div className="space-y-3 print:hidden">
-        <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Tools in the same category\n        "}</T></h3>
+        <h3 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Tools in the same category\n        "}</AtsCvText></h3>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Link href="/sohoj-tools" className="group flex items-start gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:border-teal-300">
@@ -2138,9 +2408,9 @@ export default function AtsCvMaker() {
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600"><T>{"All Sohoz Tools\n              "}</T></h4>
+              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600"><AtsCvText>{"All Sohoz Tools\n              "}</AtsCvText></h4>
 
-              <p className="mt-0.5 line-clamp-2 text-[9px] text-gray-400"><T>{"Explore the complete collection of browser-based tools in one\n                place.\n              "}</T></p>
+              <p className="mt-0.5 line-clamp-2 text-[9px] text-gray-400"><AtsCvText>{"Explore the complete collection of browser-based tools in one\n                place.\n              "}</AtsCvText></p>
             </div>
           </Link>
         </div>

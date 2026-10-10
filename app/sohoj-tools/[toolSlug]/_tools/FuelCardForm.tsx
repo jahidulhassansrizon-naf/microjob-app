@@ -1,10 +1,190 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
 import { Check, ChevronDown, FileDown, FileText, Maximize, Minus, Plus, Printer, RotateCcw, Search, Share2, Star, X, } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { createPortal, flushSync } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, } from "react";
+
+/* Fuel Card Form UI translations. The application sheet itself stays in Bangla. */
+const FUEL_UI_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["Sohoz Tools", "সহজ টুলস"],
+  ["General Tools", "সাধারণ টুলস"],
+  ["Fuel Card Form", "জ্বালানি তেলের আবেদনপত্র"],
+  ["Free", "বিনামূল্যে"],
+  ["✓ Used ", "✓ ব্যবহৃত: "],
+  ["time", "বার"],
+  ["times", "বার"],
+  ["Fill in your details on the left — see the application letter on the right and download it as PDF.", "বাম পাশে আপনার তথ্য পূরণ করুন—ডান পাশে আবেদনপত্রের পূর্বরূপ দেখুন এবং PDF হিসেবে ডাউনলোড করুন।"],
+  ["Remove from favorites", "প্রিয় তালিকা থেকে সরান"],
+  ["Add to favorites", "প্রিয় তালিকায় যোগ করুন"],
+  ["Share", "শেয়ার করুন"],
+  ["Form progress", "ফর্ম পূরণের অগ্রগতি"],
+  ["fields", "টি ঘর"],
+  ["Personal & organization details", "ব্যক্তিগত ও প্রতিষ্ঠানের তথ্য"],
+  ["ব্যক্তিগত ও প্রতিষ্ঠানের তথ্য", "Personal & organization details"],
+  ["Applicant", "আবেদনকারী"],
+  ["আবেদনকারী", "Applicant"],
+  ["Father / proprietor", "পিতা / স্বত্বাধিকারী"],
+  ["পিতা / স্বত্বাধিকারীর নাম", "Father / proprietor name"],
+  ["NID / trade license", "এনআইডি / ট্রেড লাইসেন্স"],
+  ["Mobile", "মোবাইল"],
+  ["Address & pump details", "ঠিকানা ও পাম্পের তথ্য"],
+  ["ঠিকানা ও পাম্পের তথ্য", "Address & pump details"],
+  ["Village / road", "গ্রাম / রাস্তা"],
+  ["Pump name", "পাম্পের নাম"],
+  ["Machine & usage details", "যন্ত্রপাতি ও ব্যবহারের তথ্য"],
+  ["মেশিন ও ব্যবহারের তথ্য", "Machine & usage details"],
+  ["Machine / equipment", "মেশিন / যন্ত্রপাতি"],
+  ["Fuel type", "জ্বালানির ধরন"],
+  ["জ্বালানি তেলের ধরন", "Fuel type"],
+  ["Fuel quantity", "জ্বালানি তেলের পরিমাণ"],
+  ["Purpose of use", "ব্যবহারের উদ্দেশ্য"],
+  ["Applicant / organization name", "আবেদনকারী / প্রতিষ্ঠানের নাম"],
+  ["আবেদনকারীর / প্রতিষ্ঠানের নাম", "Applicant / organization name"],
+  ["Father / proprietor name", "পিতা / স্বত্বাধিকারীর নাম"],
+  ["পিতা / প্রোপাইটরের নাম", "Father / proprietor name"],
+  ["NID / trade license number", "এনআইডি / ট্রেড লাইসেন্স নম্বর"],
+  ["এনআইডি / ট্রেড লাইসেন্স নম্বর", "NID / trade license number"],
+  ["মোবাইল নম্বর", "Mobile number"],
+  ["Mobile number", "মোবাইল নম্বর"],
+  ["গ্রাম / রাস্তা", "Village / road"],
+  ["Village or road name", "গ্রাম অথবা রাস্তার নাম"],
+  ["গ্রাম অথবা রাস্তার নাম", "Village or road name"],
+  ["ইউনিয়ন", "Union"],
+  ["Union", "ইউনিয়ন"],
+  ["ইউনিয়নের নাম", "Union name"],
+  ["Union name", "ইউনিয়নের নাম"],
+  ["ডাকঘর", "Post office"],
+  ["Post office", "ডাকঘর"],
+  ["ডাকঘরের নাম", "Post office name"],
+  ["Post office name", "ডাকঘরের নাম"],
+  ["থানা / উপজেলা", "Police station / upazila"],
+  ["Police station / upazila", "থানা / উপজেলা"],
+  ["জেলা", "District"],
+  ["District", "জেলা"],
+  ["জেলা বাছাই করুন", "Choose a district"],
+  ["Choose a district", "জেলা বাছাই করুন"],
+  ["যে পাম্প থেকে তেল নেবেন", "Name of the fuel pump"],
+  ["Name of the fuel pump", "যে পাম্প থেকে তেল নেবেন"],
+  ["মেশিন / যন্ত্রপাতির নাম", "Machine / equipment name"],
+  ["Machine / equipment name", "মেশিন / যন্ত্রপাতির নাম"],
+  ["যেমন: জেনারেটর", "e.g. generator"],
+  ["e.g. generator", "যেমন: জেনারেটর"],
+  ["যেমন: 50", "e.g. 50"],
+  ["e.g. 50", "যেমন: ৫০"],
+  ["ব্যবহারের উদ্দেশ্য", "Purpose of use"],
+  ["যেমন: জেনারেটর চালানো", "e.g. operating a generator"],
+  ["e.g. operating a generator", "যেমন: জেনারেটর চালানো"],
+  ["Enter a valid 11-digit mobile number.", "সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন।"],
+  ["e.g. 01XXXXXXXXX", "যেমন: ০১XXXXXXXXX"],
+  ["Preview", "পূর্বরূপ"],
+  ["Live preview", "লাইভ পূর্বরূপ"],
+  ["Update preview", "পূর্বরূপ হালনাগাদ করুন"],
+  ["Bangla digits (০১২৩)", "বাংলা অঙ্ক (০১২৩)"],
+  ["Zoom out", "ছোট করে দেখুন"],
+  ["Zoom in", "বড় করে দেখুন"],
+  ["Actual size (100%)", "প্রকৃত আকার (১০০%)"],
+  ["100%", "১০০%"],
+  ["Fit to width", "প্রস্থ অনুযায়ী মানানসই করুন"],
+  ["Filled", "পূরণ করা হয়েছে"],
+  ["Empty", "ফাঁকা"],
+  ["Page 1 of 1", "পৃষ্ঠা ১ / ১"],
+  ["A4 · 210 × 297 mm — print & PDF use this exact layout", "A4 · ২১০ × ২৯৭ মিমি — প্রিন্ট ও PDF-এ এই একই বিন্যাস থাকবে"],
+  ["Reset view", "পূর্বরূপের অবস্থান ঠিক করুন"],
+  ["Important Information and Instructions:", "গুরুত্বপূর্ণ তথ্য ও নির্দেশনা:"],
+  ["The following documents must be attached:", "আবেদনপত্রের সঙ্গে নিচের কাগজপত্র সংযুক্ত করতে হবে:"],
+  ["Attach a passport-size photo to the application with glue or stapler.", "আবেদনপত্রে আঠা বা স্ট্যাপলার দিয়ে পাসপোর্ট সাইজের ছবি সংযুক্ত করুন।"],
+  ["Submit a photocopy of National ID (NID) or trade license.", "জাতীয় পরিচয়পত্র (এনআইডি) অথবা ট্রেড লাইসেন্সের ফটোকপি জমা দিন।"],
+  ["Attach copies of required organization/equipment documents.", "প্রতিষ্ঠান বা যন্ত্রপাতির প্রয়োজনীয় কাগজপত্রের কপি সংযুক্ত করুন।"],
+  ["An active mobile number must be provided.", "সচল মোবাইল নম্বর দিতে হবে।"],
+  ["Fill in all information correctly and accurately. The application may be cancelled for incorrect information.", "সব তথ্য সঠিক ও নির্ভুলভাবে পূরণ করুন। ভুল তথ্য দিলে আবেদন বাতিল হতে পারে।"],
+  ["After printing, obtain signature and approval from a respectable person, ward representative or relevant officer before submitting at the pump.", "প্রিন্ট করার পর পাম্পে জমা দেওয়ার আগে গণ্যমান্য ব্যক্তি, ওয়ার্ড প্রতিনিধি বা সংশ্লিষ্ট কর্মকর্তার স্বাক্ষর ও অনুমোদন নিন।"],
+  ["Collect only the approved quantity of fuel oil as per distribution policy; apply again for additional quantity.", "বণ্টন নীতি অনুযায়ী অনুমোদিত পরিমাণ জ্বালানি তেলই সংগ্রহ করুন। অতিরিক্ত পরিমাণের জন্য পুনরায় আবেদন করুন।"],
+  ["Add an input to get started", "শুরু করতে তথ্য পূরণ করুন"],
+  ["Clear all", "সব মুছে ফেলুন"],
+  ["Restore last form", "আগের ফর্ম ফিরিয়ে আনুন"],
+  ["Print", "প্রিন্ট করুন"],
+  ["Processing...", "প্রস্তুত করা হচ্ছে..."],
+  ["Download PDF", "PDF ডাউনলোড করুন"],
+  ["Dismiss", "বার্তাটি বন্ধ করুন"],
+  ["Cleared", "সব মুছে ফেলা হয়েছে"],
+  ["All fields have been reset.", "সব ঘরের তথ্য মুছে ফেলা হয়েছে।"],
+  ["Nothing to restore", "ফিরিয়ে আনার মতো কোনো তথ্য নেই"],
+  ["There is no previously saved form on this device.", "এই ডিভাইসে আগে সংরক্ষিত কোনো ফর্ম নেই।"],
+  ["Restored", "আগের তথ্য ফিরিয়ে আনা হয়েছে"],
+  ["Your last form has been loaded.", "আপনার সর্বশেষ ফর্মের তথ্য ফিরিয়ে আনা হয়েছে।"],
+  ["Link copied", "লিংক কপি হয়েছে"],
+  ["The page link is on your clipboard.", "পেজের লিংক ক্লিপবোর্ডে কপি করা হয়েছে।"],
+  ["Could not share", "শেয়ার করা যায়নি"],
+  ["Sharing is not supported in this browser.", "এই ব্রাউজারে শেয়ার করার সুবিধা নেই।"],
+  ["Sharing was blocked by the browser.", "ব্রাউজার শেয়ার করার অনুমতি দেয়নি।"],
+  ["PDF ready", "PDF তৈরি হয়েছে"],
+  ["Your Fuel Card Form has been downloaded.", "জ্বালানি তেলের আবেদনপত্র PDF হিসেবে ডাউনলোড হয়েছে।"],
+  ["PDF failed", "PDF তৈরি করা যায়নি"],
+  ["The PDF could not be created. Please try again or use Print → Save as PDF.", "PDF তৈরি করা যায়নি। আবার চেষ্টা করুন অথবা প্রিন্ট অপশন থেকে ‘PDF হিসেবে সংরক্ষণ করুন’ বেছে নিন।"],
+  ["Fuel Oil Application", "জ্বালানি তেলের আবেদনপত্র"],
+  ["Fill in the Fuel Card Form online.", "অনলাইনে জ্বালানি তেলের আবেদনপত্র পূরণ করুন।"],
+  ["Fuel type", "জ্বালানির ধরন"],
+  ["Actual size (100%)", "প্রকৃত আকার (১০০%)"],
+  ["fields filled", "টি ঘর পূরণ হয়েছে"],
+  ["of", "এর মধ্যে"],
+]
+
+function normalizeFuelUiText(value: string): string {
+  return value.replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+
+const containsBangla = (value: string) => /[\u0980-\u09E5\u09F0-\u09FF]/.test(value);
+
+// The table intentionally includes English→Bangla rows for English UI labels
+// and Bangla→English rows for places where the source JSX already has Bangla.
+// Keep those directions separate so one row cannot accidentally reverse the
+// translation of a title in Bangla mode.
+const FUEL_UI_BN: Record<string, string> = Object.fromEntries(
+  FUEL_UI_PAIRS
+    .filter(([source, target]) => !containsBangla(source) && containsBangla(target))
+    .map(([en, bn]) => [normalizeFuelUiText(en), bn]),
+);
+const FUEL_UI_EN: Record<string, string> = Object.fromEntries([
+  ...FUEL_UI_PAIRS
+    .filter(([source, target]) => containsBangla(source) && !containsBangla(target))
+    .map(([bn, en]) => [normalizeFuelUiText(bn), en] as const),
+  ...FUEL_UI_PAIRS
+    .filter(([source, target]) => !containsBangla(source) && containsBangla(target))
+    .map(([en, bn]) => [normalizeFuelUiText(bn), en] as const),
+]);
+
+function isFuelBanglaLocale(locale: unknown): boolean {
+  return String(locale ?? "en").toLowerCase().startsWith("bn");
+}
+
+function translateFuelUiText(value: string, locale: unknown, fallback?: (value: string) => string): string {
+  const key = normalizeFuelUiText(value);
+  if (!key) return value;
+
+  const dynamicFilled = key.match(/^(\d+) of (\d+) fields filled$/i);
+  if (dynamicFilled) {
+    if (isFuelBanglaLocale(locale)) {
+      return `${toBnDigits(dynamicFilled[1])} / ${toBnDigits(dynamicFilled[2])}টি ঘর পূরণ হয়েছে`;
+    }
+    return `${dynamicFilled[1]} of ${dynamicFilled[2]} fields filled`;
+  }
+
+  if (isFuelBanglaLocale(locale)) {
+    // Do not send already-Bangla copy through the global fallback translator.
+    if (containsBangla(key)) return value;
+    return FUEL_UI_BN[key] ?? fallback?.(key) ?? value;
+  }
+  return FUEL_UI_EN[key] ?? value;
+}
+
+function T({ children }: { children: ReactNode }) {
+  const { locale, L } = useSohozI18n();
+  if (typeof children !== "string") return <>{children}</>;
+  return <>{translateFuelUiText(children, locale, L)}</>;
+}
+
 /* ────────────────────────────────────────────────────────────────────────── */
 /*  Types & constants                                                         */
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -263,7 +443,7 @@ const BASE = 3.6; // mm – base font size on paper
 const DOT = "0.3mm dotted #334155";
 const FUEL_CARD_TEXT = {
     title: "জ্বালানি তেলের আবেদনপত্র",
-    subtitle: "(Fuel Oil Application)",
+    subtitle: "(জ্বালানি তেলের আবেদনপত্র)",
     photo: ["পাসপোর্ট সাইজ", "ছবি", "আঠা / স্ট্যাপল দিয়ে", "সংযুক্ত করুন"],
     submissionHead: "বিনীত নিবেদন:",
     submission: "উপরোক্ত বিষয়ের প্রেক্ষিতে বিনীত নিবেদন এই যে, আমার প্রতিষ্ঠান/কাজের জন্য নিয়মিত জ্বালানি তেলের প্রয়োজন হয়। অতএব, উল্লিখিত পরিমাণ জ্বালানি তেল সংগ্রহের অনুমতি প্রদানে প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য বিনীত অনুরোধ করছি।",
@@ -322,7 +502,7 @@ function FormRow({ no, label, height = ROW_H, children, }: {
             lineHeight: 1.5,
         }}>
       <div style={{ width: "8mm", flexShrink: 0, fontWeight: 700 }}>
-        {toBnDigits(String(no))}<T>{"\u0964\n      "}</T></div>
+        {toBnDigits(String(no))}।</div>
       <div style={{ flexShrink: 0, whiteSpace: "nowrap", paddingBottom: "0.3mm" }}>
         {label}
       </div>
@@ -524,7 +704,7 @@ function FuelCardPreview({ form, bnDigits = false, flat = false, documentRef, id
 
       <FormRow no={12} label="জ্বালানি তেলের পরিমাণ:">
         <DotValue value={d(form.fuelQuantity)} capacity={14} width={44}/>
-        <div style={{ flexShrink: 0, marginLeft: "1.5mm", paddingBottom: "0.3mm" }}><T>{"\u09B2\u09BF\u099F\u09BE\u09B0\n        "}</T></div>
+        <div style={{ flexShrink: 0, marginLeft: "1.5mm", paddingBottom: "0.3mm" }}>লিটার</div>
       </FormRow>
       <FormRow no={13} label="ব্যবহারের উদ্দেশ্য:">
         <DotValue value={d(form.purposeOfUse)} capacity={68}/>
@@ -592,7 +772,7 @@ function FuelCardPreview({ form, bnDigits = false, flat = false, documentRef, id
             fontSize: `${BASE - 0.1}mm`,
             whiteSpace: "nowrap",
         }}>
-          <span style={{ paddingBottom: "0.3mm" }}><T>{"\u0985\u09A8\u09C1\u09AE\u09CB\u09A6\u09BF\u09A4 \u099C\u09CD\u09AC\u09BE\u09B2\u09BE\u09A8\u09BF \u09A4\u09C7\u09B2\u09C7\u09B0 \u09AA\u09B0\u09BF\u09AE\u09BE\u09A3:\n          "}</T></span>
+          <span style={{ paddingBottom: "0.3mm" }}>অনুমোদিত জ্বালানি তেলের পরিমাণ:</span>
           <span style={{
             display: "inline-block",
             width: "34mm",
@@ -600,7 +780,7 @@ function FuelCardPreview({ form, bnDigits = false, flat = false, documentRef, id
             margin: "0 1.5mm",
             borderBottom: DOT,
         }}/>
-          <span style={{ paddingBottom: "0.3mm" }}><T>{"\u09B2\u09BF\u099F\u09BE\u09B0 (\u0995\u09A5\u09BE\u09AF\u09BC:"}</T></span>
+          <span style={{ paddingBottom: "0.3mm" }}>লিটার (কথায়:</span>
           <span style={{
             display: "inline-block",
             flex: 1,
@@ -608,7 +788,7 @@ function FuelCardPreview({ form, bnDigits = false, flat = false, documentRef, id
             margin: "0 1.5mm",
             borderBottom: DOT,
         }}/>
-          <span style={{ paddingBottom: "0.3mm" }}><T>{")"}</T></span>
+          <span style={{ paddingBottom: "0.3mm" }}>)</span>
         </div>
 
         <div style={{ display: "flex", gap: "10mm", marginTop: "11mm" }}>
@@ -663,6 +843,7 @@ function TextField({ no, label, hint, value, placeholder, onChange, inputMode, m
     suffix?: string;
     validate?: (value: string) => string;
 }) {
+    const { locale, L } = useSohozI18n();
     const [touched, setTouched] = useState(false);
     const message = validate ? validate(value) : "";
     const showError = Boolean(message) && touched;
@@ -679,7 +860,7 @@ function TextField({ no, label, hint, value, placeholder, onChange, inputMode, m
           </span>) : null}
       </div>
       {showError ? (<p role="alert" className="mt-1 text-[10px] leading-3 text-[#B91C1C]">
-          {message}
+          {translateFuelUiText(message, locale, L)}
         </p>) : null}
     </label>);
 }
@@ -715,16 +896,16 @@ function FuelTypeField({ no, value, onChange, }: {
     value: FuelCardFormState["fuelType"];
     onChange: (value: FuelType) => void;
 }) {
+    const { locale, L } = useSohozI18n();
     return (<div>
-      <FieldLabel no={no} hint="Fuel type"><T>{"\u099C\u09CD\u09AC\u09BE\u09B2\u09BE\u09A8\u09BF \u09A4\u09C7\u09B2\u09C7\u09B0 \u09A7\u09B0\u09A8\n      "}</T></FieldLabel>
-      <div role="radiogroup" aria-label={L("Fuel type")} className="grid grid-cols-3 gap-2">
+      <FieldLabel no={no} hint={translateFuelUiText("Fuel type", locale, L)}><T>{"জ্বালানি তেলের ধরন"}</T></FieldLabel>
+      <div role="radiogroup" aria-label={translateFuelUiText("Fuel type", locale, L)} className="grid grid-cols-3 gap-2">
         {FUEL_TYPES.map((type) => {
             const active = value === type;
             return (<button key={type} type="button" role="radio" aria-checked={active} onClick={() => onChange(type)} className={cx("flex h-11 flex-col items-center justify-center rounded-md border leading-tight transition", active
                     ? "border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8] ring-2 ring-[#DBEAFE]"
                     : "border-[#CBD5E1] bg-white text-[#475569] hover:bg-[#F8FAFC]")}>
-              <span className="text-[12px] font-semibold">{FUEL_BN[type]}</span>
-              <span className="text-[9px] font-normal opacity-70">{type}</span>
+              <span className="text-[12px] font-semibold">{isFuelBanglaLocale(locale) ? FUEL_BN[type] : type}</span>
             </button>);
         })}
       </div>
@@ -763,6 +944,7 @@ function PreviewToolbar({ zoom, onZoomBy, onZoom100, onFit, hasData, live, onLiv
     bnDigits: boolean;
     onBnDigits: (value: boolean) => void;
 }) {
+    const { locale, L } = useSohozI18n();
     const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md border border-[#CBD5E1] bg-white text-[#64748B] hover:text-[#0F172A]";
     return (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#E2E8F0] px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -775,18 +957,18 @@ function PreviewToolbar({ zoom, onZoomBy, onZoom100, onFit, hasData, live, onLiv
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button type="button" aria-label={L("Zoom out")} onClick={() => onZoomBy(-0.1)} className={iconBtn}>
+        <button type="button" aria-label={translateFuelUiText("Zoom out", locale, L)} onClick={() => onZoomBy(-0.1)} className={iconBtn}>
           <Minus className="h-3.5 w-3.5"/>
         </button>
         <span className="min-w-[44px] text-center text-[10px] font-semibold text-[#475569]">
           {Math.round(zoom * 100)}<T>{"%\n        "}</T></span>
-        <button type="button" aria-label={L("Zoom in")} onClick={() => onZoomBy(0.1)} className={iconBtn}>
+        <button type="button" aria-label={translateFuelUiText("Zoom in", locale, L)} onClick={() => onZoomBy(0.1)} className={iconBtn}>
           <Plus className="h-3.5 w-3.5"/>
         </button>
-        <button type="button" aria-label={L("Actual size (100%)")} title={L("100%")} onClick={onZoom100} className={iconBtn}>
+        <button type="button" aria-label={translateFuelUiText("Actual size (100%)", locale, L)} title={translateFuelUiText("100%", locale, L)} onClick={onZoom100} className={iconBtn}>
           <Search className="h-3.5 w-3.5"/>
         </button>
-        <button type="button" aria-label={L("Fit to width")} title={L("Fit to width")} onClick={onFit} className={iconBtn}>
+        <button type="button" aria-label={translateFuelUiText("Fit to width", locale, L)} title={translateFuelUiText("Fit to width", locale, L)} onClick={onFit} className={iconBtn}>
           <Maximize className="h-3.5 w-3.5"/>
         </button>
         <span className={cx("ml-1 rounded-full px-2 py-1 text-[9px] font-bold", hasData
@@ -818,7 +1000,8 @@ function PrintRoot({ form, mode, bnDigits, }: {
 /*  Main component                                                            */
 /* ────────────────────────────────────────────────────────────────────────── */
 export default function FuelCardForm() {
-    const { L } = useSohozI18n();
+    const { locale, L } = useSohozI18n();
+    const FL = useCallback((value: string) => translateFuelUiText(value, locale, L), [locale, L]);
     const [form, setForm] = useState<FuelCardFormState>(EMPTY_FORM);
     const [hydrated, setHydrated] = useState(false);
     const [favorite, setFavorite] = useState(false);
@@ -840,7 +1023,7 @@ export default function FuelCardForm() {
     const pdfBusy = mode === "pdf";
     const previewForm = live ? form : (frozen ?? form);
     const filledCount = useMemo(() => FIELD_KEYS.filter((key) => String(form[key] ?? "").trim() !== "").length, [form]);
-    const districtOptions = useMemo(() => DISTRICTS.map(([en, bn]) => ({ value: en, label: `${bn} (${en})` })), []);
+    const districtOptions = useMemo(() => DISTRICTS.map(([en, bn]) => ({ value: en, label: isFuelBanglaLocale(locale) ? bn : en })), [locale]);
     const dismissToast = useCallback((toastKey: number) => {
         const timer = toastTimers.current.get(toastKey);
         if (timer)
@@ -851,12 +1034,14 @@ export default function FuelCardForm() {
     const pushToast = useCallback((kind: ToastKind, title: string, message: string) => {
         toastId.current += 1;
         const newId = toastId.current;
+        const localizedTitle = translateFuelUiText(title, locale, L);
+        const localizedMessage = translateFuelUiText(message, locale, L);
         setToasts((current) => [
             ...current.slice(-3),
-            { id: newId, kind, title, message },
+            { id: newId, kind, title: localizedTitle, message: localizedMessage },
         ]);
         toastTimers.current.set(newId, setTimeout(() => dismissToast(newId), 4000));
-    }, [dismissToast]);
+    }, [dismissToast, locale, L]);
     /* load the Bangla font once */
     useEffect(() => {
         ensureBanglaFont();
@@ -959,8 +1144,8 @@ export default function FuelCardForm() {
     };
     const share = async () => {
         const payload = {
-            title: "Fuel Card Form",
-            text: "Fill in the Fuel Card Form online.",
+            title: FL("Fuel Card Form"),
+            text: FL("Fill in the Fuel Card Form online."),
             url: window.location.href,
         };
         try {
@@ -1038,8 +1223,8 @@ export default function FuelCardForm() {
                 compress: true,
             });
             pdf.setProperties({
-                title: "Fuel Oil Application",
-                subject: "Fuel oil application",
+                title: FL("Fuel Oil Application"),
+                subject: FL("Fuel Oil Application"),
             });
             // Keep the captured aspect ratio; never exceed the A4 page.
             const imgW = 210;
@@ -1182,12 +1367,12 @@ export default function FuelCardForm() {
           </div>
 
           <div className="flex items-center gap-2 pt-1">
-            <button type="button" title={favorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={favorite} onClick={toggleFavorite} className={cx("flex h-9 w-9 items-center justify-center rounded-lg border bg-white transition", favorite
+            <button type="button" title={favorite ? FL("Remove from favorites") : FL("Add to favorites")} aria-pressed={favorite} onClick={toggleFavorite} className={cx("flex h-9 w-9 items-center justify-center rounded-lg border bg-white transition", favorite
             ? "border-[#93C5FD] text-[#2563EB]"
             : "border-[#CBD5E1] text-[#64748B] hover:bg-[#F8FAFC]")}>
               <Star className={cx("h-4 w-4", favorite && "fill-current")}/>
             </button>
-            <button type="button" title={L("Share")} aria-label={L("Share")} onClick={share} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#64748B] transition hover:bg-[#F8FAFC]">
+            <button type="button" title={FL("Share")} aria-label={FL("Share")} onClick={share} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#64748B] transition hover:bg-[#F8FAFC]">
               <Share2 className="h-4 w-4"/>
             </button>
           </div>
@@ -1209,36 +1394,36 @@ export default function FuelCardForm() {
               </div>
             </div>
 
-            <SectionCard number={1} title={L("ব্যক্তিগত ও প্রতিষ্ঠানের তথ্য")} subtitle={L("Personal & organization details")}>
+            <SectionCard number={1} title={FL("ব্যক্তিগত ও প্রতিষ্ঠানের তথ্য")} subtitle={FL("Personal & organization details")}>
               <div className="space-y-3.5">
-                <TextField no={1} label="আবেদনকারী / প্রতিষ্ঠানের নাম" hint="Applicant" placeholder={L("নাম অথবা প্রতিষ্ঠানের নাম")} maxLength={60} value={form.applicantOrganization} onChange={(v) => setText("applicantOrganization", v)}/>
-                <TextField no={2} label="পিতা / প্রোপাইটরের নাম" hint="Father / proprietor" placeholder={L("পিতা অথবা প্রোপাইটরের নাম")} maxLength={50} value={form.fatherProprietor} onChange={(v) => setText("fatherProprietor", v)}/>
-                <TextField no={8} label="এনআইডি / ট্রেড লাইসেন্স নম্বর" hint="NID / trade license" placeholder={L("এনআইডি অথবা লাইসেন্স নম্বর")} maxLength={25} value={form.nidLicenseNumber} onChange={(v) => setText("nidLicenseNumber", v)}/>
-                <TextField no={14} label="মোবাইল নম্বর" hint="Mobile" placeholder={L("01783666743")} inputMode="tel" maxLength={11} value={form.mobileNumber} validate={validateMobile} onChange={(v) => setText("mobileNumber", digitString(v, 11))}/>
+                <TextField no={1} label={FL("আবেদনকারী / প্রতিষ্ঠানের নাম")} hint={FL("Applicant")} placeholder={FL("নাম অথবা প্রতিষ্ঠানের নাম")} maxLength={60} value={form.applicantOrganization} onChange={(v) => setText("applicantOrganization", v)}/>
+                <TextField no={2} label={FL("পিতা / প্রোপাইটরের নাম")} hint={FL("Father / proprietor")} placeholder={FL("পিতা অথবা প্রোপাইটরের নাম")} maxLength={50} value={form.fatherProprietor} onChange={(v) => setText("fatherProprietor", v)}/>
+                <TextField no={8} label={FL("এনআইডি / ট্রেড লাইসেন্স নম্বর")} hint={FL("NID / trade license")} placeholder={FL("এনআইডি অথবা লাইসেন্স নম্বর")} maxLength={25} value={form.nidLicenseNumber} onChange={(v) => setText("nidLicenseNumber", v)}/>
+                <TextField no={14} label={FL("মোবাইল নম্বর")} hint={FL("Mobile")} placeholder={FL("e.g. 01XXXXXXXXX")} inputMode="tel" maxLength={11} value={form.mobileNumber} validate={validateMobile} onChange={(v) => setText("mobileNumber", digitString(v, 11))}/>
               </div>
             </SectionCard>
 
-            <SectionCard number={2} title={L("ঠিকানা ও পাম্পের তথ্য")} subtitle={L("Address & pump details")}>
+            <SectionCard number={2} title={FL("ঠিকানা ও পাম্পের তথ্য")} subtitle={FL("Address & pump details")}>
               <div className="space-y-3.5">
-                <TextField no={3} label="গ্রাম / রাস্তা" hint="Village / road" placeholder={L("গ্রাম অথবা রাস্তার নাম")} maxLength={50} value={form.villageRoad} onChange={(v) => setText("villageRoad", v)}/>
+                <TextField no={3} label={FL("গ্রাম / রাস্তা")} hint={FL("Village / road")} placeholder={FL("গ্রাম অথবা রাস্তার নাম")} maxLength={50} value={form.villageRoad} onChange={(v) => setText("villageRoad", v)}/>
                 <div className="grid grid-cols-2 gap-3">
-                  <TextField no={4} label="ইউনিয়ন" placeholder={L("ইউনিয়নের নাম")} maxLength={30} value={form.unionName} onChange={(v) => setText("unionName", v)}/>
-                  <TextField no={5} label="ডাকঘর" placeholder={L("ডাকঘরের নাম")} maxLength={30} value={form.postOffice} onChange={(v) => setText("postOffice", v)}/>
+                  <TextField no={4} label={FL("ইউনিয়ন")} placeholder={FL("ইউনিয়নের নাম")} maxLength={30} value={form.unionName} onChange={(v) => setText("unionName", v)}/>
+                  <TextField no={5} label={FL("ডাকঘর")} placeholder={FL("ডাকঘরের নাম")} maxLength={30} value={form.postOffice} onChange={(v) => setText("postOffice", v)}/>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <TextField no={6} label="থানা / উপজেলা" placeholder={L("থানা / উপজেলা")} maxLength={30} value={form.thanaUpazila} onChange={(v) => setText("thanaUpazila", v)}/>
-                  <SelectField no={7} label="জেলা" value={form.district} placeholder={L("জেলা বাছাই করুন")} options={districtOptions} onChange={(v) => setText("district", v)}/>
+                  <TextField no={6} label={FL("থানা / উপজেলা")} placeholder={FL("থানা / উপজেলা")} maxLength={30} value={form.thanaUpazila} onChange={(v) => setText("thanaUpazila", v)}/>
+                  <SelectField no={7} label={FL("জেলা")} value={form.district} placeholder={FL("জেলা বাছাই করুন")} options={districtOptions} onChange={(v) => setText("district", v)}/>
                 </div>
-                <TextField no={9} label="পাম্পের নাম" hint="Pump name" placeholder={L("যে পাম্প থেকে তেল নেবেন")} maxLength={60} value={form.pumpName} onChange={(v) => setText("pumpName", v)}/>
+                <TextField no={9} label={FL("পাম্পের নাম")} hint={FL("Pump name")} placeholder={FL("যে পাম্প থেকে তেল নেবেন")} maxLength={60} value={form.pumpName} onChange={(v) => setText("pumpName", v)}/>
               </div>
             </SectionCard>
 
-            <SectionCard number={3} title={L("মেশিন ও ব্যবহারের তথ্য")} subtitle={L("Machine & usage details")}>
+            <SectionCard number={3} title={FL("মেশিন ও ব্যবহারের তথ্য")} subtitle={FL("Machine & usage details")}>
               <div className="space-y-3.5">
-                <TextField no={10} label="মেশিন / যন্ত্রপাতির নাম" hint="Machine / equipment" placeholder={L("যেমন: জেনারেটর")} maxLength={50} value={form.machineEquipment} onChange={(v) => setText("machineEquipment", v)}/>
+                <TextField no={10} label={FL("মেশিন / যন্ত্রপাতির নাম")} hint={FL("Machine / equipment")} placeholder={FL("যেমন: জেনারেটর")} maxLength={50} value={form.machineEquipment} onChange={(v) => setText("machineEquipment", v)}/>
                 <FuelTypeField no={11} value={form.fuelType} onChange={(v) => setField("fuelType", v)}/>
-                <TextField no={12} label="জ্বালানি তেলের পরিমাণ" hint="Fuel quantity" placeholder={L("যেমন: 50")} inputMode="decimal" suffix="লিটার" value={form.fuelQuantity} onChange={(v) => setText("fuelQuantity", decimalString(v))}/>
-                <TextField no={13} label="ব্যবহারের উদ্দেশ্য" hint="Purpose of use" placeholder={L("যেমন: জেনারেটর চালানো")} maxLength={90} value={form.purposeOfUse} onChange={(v) => setText("purposeOfUse", v)}/>
+                <TextField no={12} label={FL("জ্বালানি তেলের পরিমাণ")} hint={FL("Fuel quantity")} placeholder={FL("যেমন: 50")} inputMode="decimal" suffix="লিটার" value={form.fuelQuantity} onChange={(v) => setText("fuelQuantity", decimalString(v))}/>
+                <TextField no={13} label={FL("ব্যবহারের উদ্দেশ্য")} hint={FL("Purpose of use")} placeholder={FL("যেমন: জেনারেটর চালানো")} maxLength={90} value={form.purposeOfUse} onChange={(v) => setText("purposeOfUse", v)}/>
               </div>
             </SectionCard>
           </div>
@@ -1337,7 +1522,7 @@ export default function FuelCardForm() {
                 {toast.message}
               </p>
             </div>
-            <button type="button" aria-label={L("Dismiss")} onClick={() => dismissToast(toast.id)} className="text-[#64748B] hover:text-[#0F172A]">
+            <button type="button" aria-label={FL("Dismiss")} onClick={() => dismissToast(toast.id)} className="text-[#64748B] hover:text-[#0F172A]">
               <X className="h-3 w-3"/>
             </button>
           </div>))}
