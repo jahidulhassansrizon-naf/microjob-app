@@ -93,15 +93,17 @@ export default async function DynamicToolPage({
     notFound();
   }
 
+  // Every tool page requires a verified login, including tools marked free.
+  // The subscription check below remains limited to paid tools.
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value ?? null;
+  const userId = getUserIdFromToken(token);
+
+  if (!userId) {
+    redirect(`/login?callbackUrl=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
+  }
+
   if (PAID_TOOL_SLUGS.has(toolSlug)) {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value ?? null;
-    const userId = getUserIdFromToken(token);
-
-    if (!userId) {
-      redirect(`/login?next=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
-    }
-
     // The short-lived signed access cookie is refreshed by the auth/subscription
     // endpoints. It avoids a MongoDB round-trip on every paid-tool navigation
     // while keeping the server-side access decision cryptographically verified.

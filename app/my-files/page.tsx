@@ -977,6 +977,19 @@ export default function MyFilesPage() {
         height: Math.max(0, (viewH - NAV_BASE_HEIGHT * zoomScale) / zoomScale),
       }
     : undefined;
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-slate-900">
+        <main className="flex items-center justify-center px-4">
+          <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+            <Loader2 size={18} className="animate-spin text-[#2563EB]" />
+            <T>{"Verifying your login..."}</T>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] text-slate-900 lg:h-dvh">
       <style>{SCAN_CSS}</style>

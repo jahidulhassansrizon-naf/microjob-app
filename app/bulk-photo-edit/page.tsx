@@ -379,6 +379,18 @@ export default function BulkPhotoEditPage() {
     const completedCount = photos.filter((photo) => photo.status === "success").length;
     const processingCount = photos.filter((photo) => photo.status === "processing").length;
     const failedCount = photos.filter((photo) => photo.status === "error").length;
+    if (!isAuthenticated) {
+        return (
+          <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] font-sans text-[#0F172A]">
+            <main className="flex items-center justify-center px-4">
+              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+                <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-[#2563EB] border-t-transparent" />
+                <BulkT>{"Verifying your login..."}</BulkT>
+              </div>
+            </main>
+          </div>
+        );
+    }
     return (<div className="flex min-h-screen select-none flex-col bg-[#F8FAFC] font-sans text-[#0F172A]">
       <DashboardNavbar />
       <SubscriptionLock />

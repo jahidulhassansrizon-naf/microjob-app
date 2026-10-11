@@ -46,6 +46,10 @@ interface NavConfig {
         text: string;
         className: string;
     };
+    accessTag?: {
+        text: string;
+        className: string;
+    };
     menu?: string[];
 }
 const aiTemplateItems = [
@@ -100,6 +104,10 @@ const NAV_ITEMS: NavConfig[] = [
         icon: PenTool,
         tone: "pink",
         match: "/manual-editor",
+        accessTag: {
+            text: "Free",
+            className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100",
+        },
     },
     {
         id: "bulk-photo-edit",
@@ -128,6 +136,10 @@ const NAV_ITEMS: NavConfig[] = [
         tag: {
             text: "New",
             className: "bg-blue-50 text-[#1D4ED8] ring-1 ring-inset ring-blue-100",
+        },
+        accessTag: {
+            text: "Free",
+            className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100",
         },
     },
     {
@@ -185,6 +197,10 @@ function NavLabel({ item, open }: {
 
       {item.tag && (<span className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}>
           {item.tag.text}
+        </span>)}
+
+      {item.accessTag && (<span className={`rounded-full px-1.5 text-[9px] font-bold uppercase leading-[14px] ${item.accessTag.className}`}>
+          <DT>{item.accessTag.text}</DT>
         </span>)}
 
       {item.menu && (<ChevronDown size={13} className={`-ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#1D4ED8]" : "text-slate-500"}`}/>)}
@@ -259,6 +275,10 @@ function MoreMenu({ items, open, setOpen, active, isActive, }: {
 
               {item.tag && (<span className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}>
                   {item.tag.text}
+                </span>)}
+
+              {item.accessTag && (<span className={`rounded-full px-1.5 text-[9px] font-bold uppercase leading-[14px] ${item.accessTag.className}`}>
+                  <DT>{item.accessTag.text}</DT>
                 </span>)}
             </Link>))}
         </div>)}

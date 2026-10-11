@@ -225,30 +225,28 @@ function LoginContent() {
                 const isSecure = window.location.protocol === "https:" ? "; Secure" : "";
                 document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
             }
-            // Keep the existing Dashboard + Login Successful overlay flow.
-            // The dashboard receives a one-time query flag so the overlay is already
-            // present on its very first render, preventing a visible dashboard flash.
-            const targetUrl = callbackUrl
-                ? decodeURIComponent(callbackUrl)
-                : data?.user?.role === "admin"
-                    ? "/admin"
-                    : "/dashboard";
-            const safeTargetUrl = targetUrl.startsWith("/") && !targetUrl.startsWith("//")
-                ? targetUrl
-                : "/dashboard";
-            if (safeTargetUrl === "/admin" || safeTargetUrl.startsWith("/admin/")) {
-                window.location.replace(safeTargetUrl);
+            // Return directly to the requested page. A one-time UI cookie lets the
+            // root layout render the Login Successful overlay over that page on its
+            // very first response, instead of showing a separate /login-success screen.
+            const fallbackTarget = data?.user?.role === "admin" ? "/admin" : "/dashboard";
+            const requestedTarget = callbackUrl.trim();
+            const isSafeLocalTarget = requestedTarget.startsWith("/")
+                && !requestedTarget.startsWith("//")
+                && !/^\/(?:login|register|login-success)(?:[/?#]|$)/i.test(requestedTarget);
+            const targetUrl = isSafeLocalTarget ? requestedTarget : fallbackTarget;
+
+            // URL normalisation preserves the original tool/query target and also
+            // guards against unusual slash/backslash forms becoming external URLs.
+            let target = new URL(targetUrl, window.location.origin);
+            if (target.origin !== window.location.origin) {
+                target = new URL(fallbackTarget, window.location.origin);
             }
-            else if (safeTargetUrl === "/dashboard" ||
-                safeTargetUrl.startsWith("/dashboard?") ||
-                safeTargetUrl.startsWith("/dashboard/")) {
-                const separator = safeTargetUrl.includes("?") ? "&" : "?";
-                window.location.replace(`${safeTargetUrl}${separator}loginSuccess=1`);
-            }
-            else {
-                // Preserve the previous success route for non-dashboard callback URLs.
-                window.location.replace(`/login-success?next=${encodeURIComponent(safeTargetUrl)}`);
-            }
+            target.searchParams.delete("loginSuccess");
+            const targetPath = `${target.pathname}${target.search}${target.hash}`;
+
+            const secureCookie = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `sohoj_login_success=1; path=/; max-age=30; SameSite=Lax${secureCookie}`;
+            window.location.replace(targetPath);
         }
         catch (error: unknown) {
             if (error instanceof Error) {

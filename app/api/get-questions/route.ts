@@ -1,3 +1,4 @@
+import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -426,6 +427,9 @@ Generate an ORIGINAL practice question that follows the relevant structure.
 }
 
 export async function POST(req: Request) {
+  if (!hasVerifiedRequestSession(req)) {
+    return errorResponse("Authentication required. Please log in to continue.", 401);
+  }
   try {
     let body: unknown;
 

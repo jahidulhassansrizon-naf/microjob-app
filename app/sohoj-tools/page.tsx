@@ -181,6 +181,18 @@ function SohojToolsContent() {
                 return true;
         }
     });
+    if (!isAuthenticated) {
+        return (
+          <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-[#0F172A] font-sans">
+            <main className="flex items-center justify-center px-4">
+              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+                <Loader2 size={18} className="animate-spin text-[#2563EB]" />
+                <T>{"Verifying your login..."}</T>
+              </div>
+            </main>
+          </div>
+        );
+    }
     return (<div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar scaleWithZoom/>
 

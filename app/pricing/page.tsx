@@ -1,102 +1,236 @@
-// app/pricing/page.tsx
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+
+import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { motion, Variants } from "framer-motion";
-import { Sparkles, Gift, Check, Edit3, FileCode, FileText, Printer, HelpCircle, Layers, CheckCircle, FileCheck, LucideIcon, } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { getClientSession } from "@/lib/clientAuth";
+import { ArrowRight, CalendarCheck, CalendarClock, Check, Layers, LayoutGrid, PenTool, Printer, SlidersHorizontal, Wallet, type LucideIcon } from "lucide-react";
+import { getSlug, REQUIRE_SUBSCRIPTION, toolsData } from "@/app/_components/toolsData";
+import { motion, type Variants } from "framer-motion";
 import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
-// Strict Type Interface for Credit Items
-interface CreditItem {
+
+/**
+ * Subscription plans.
+ * Update `price` and `months` to change pricing. Monthly cost and savings are calculated automatically.
+ * The existing checkout API continues to handle payment.
+ */
+const plans = [
+  { id: "1-month", name: "1 Month", duration: "30 Days", months: 1, price: 199, note: "Flexible monthly access", badge: null },
+  { id: "3-month", name: "3 Months", duration: "90 Days", months: 3, price: 499, note: "For regular users", badge: null },
+  { id: "6-month", name: "6 Months", duration: "180 Days", months: 6, price: 799, note: "Longer access, less hassle", badge: "Most chosen" },
+  { id: "1-year", name: "1 Year", duration: "365 Days", months: 12, price: 1299, note: "Full-year access", badge: "Best value" },
+] as const;
+
+const features = [
+  "Access to all available paid tools",
+  "Use the same account across supported tools",
+  "Manage your subscription status from this page",
+  "Payment verification and subscription access are handled automatically",
+] as const;
+
+const BASE_MONTHLY = plans[0].price / plans[0].months;
+const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
+const getSavings = (price: number, months: number) => Math.round((1 - price / (BASE_MONTHLY * months)) * 100);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getTiming(sub: { startedAt: string | null; expiresAt: string | null }) {
+  const start = sub.startedAt ? Date.parse(sub.startedAt) : NaN;
+  const end = sub.expiresAt ? Date.parse(sub.expiresAt) : NaN;
+  const now = Date.now();
+  const hasEnd = Number.isFinite(end);
+  const msLeft = hasEnd ? end - now : null;
+  const expired = msLeft !== null && msLeft <= 0;
+  const daysLeft = msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
+  const progress = Number.isFinite(start) && hasEnd && end > start
+    ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+    : null;
+  return { expired, daysLeft, progress };
+}
+
+const capitalize = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
+
+const SUBSCRIPTION_BN: Record<string, string> = {
+  "choose your subscription plan": "আপনার সাবস্ক্রিপশনের প্ল্যান নির্বাচন করুন",
+  "flexible subscription plans": "আপনার সুবিধামতো সাবস্ক্রিপশন প্ল্যান",
+  "see all tools": "সব টুল দেখুন",
+  "paid and free tools": "পেইড ও ফ্রি টুল",
+  "explore the tools on sohozkaj": "Sohozkaj-এর টুলগুলো দেখুন",
+  "your subscription unlocks paid tools. manual editor is free, while ai editor, ai template, print media, and bulk photo edit require an active subscription.": "সাবস্ক্রিপশন থাকলে পেইড টুলগুলো ব্যবহার করতে পারবেন। ম্যানুয়াল এডিটর বিনামূল্যে ব্যবহারযোগ্য; AI Editor, AI Template, Print Media ও Bulk Photo Edit ব্যবহারে সক্রিয় সাবস্ক্রিপশন প্রয়োজন।",
+  "paid": "পেইড",
+  "credits": "ক্রেডিট",
+  "ai editor": "AI এডিটর",
+  "manual editor": "ম্যানুয়াল এডিটর",
+  "ai template": "AI টেমপ্লেট",
+  "print media": "প্রিন্ট মিডিয়া",
+  "bulk photo edit": "একসঙ্গে একাধিক ছবি সম্পাদনা",
+  "free": "বিনামূল্যে",
+  "pick the duration that suits you. the longer the plan, the lower your monthly cost.": "আপনার সুবিধামতো মেয়াদ বেছে নিন। মেয়াদ যত বেশি হবে, মাসিক খরচ তত কম হবে।",
+  "current subscription": "বর্তমান সাবস্ক্রিপশন",
+  "no active plan": "কোনো সক্রিয় প্ল্যান নেই",
+  "choose a plan below to unlock all the paid tools.": "সব পেইড টুল ব্যবহার করতে নিচের যেকোনো একটি প্ল্যান বেছে নিন।",
+  expired: "মেয়াদ শেষ",
+  active: "সক্রিয়",
+  "day left": "দিন বাকি",
+  "days left": "দিন বাকি",
+  "this plan ended on": "এই প্ল্যানের মেয়াদ শেষ হয়েছে",
+  ". choose a plan below to renew.": "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
+  "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
+  ". you can renew or switch to a longer plan anytime.": " পর্যন্ত। আপনি যেকোনো সময় নবায়ন করতে বা আরও দীর্ঘ মেয়াদের প্ল্যানে যেতে পারেন।",
+  "amount paid": "পরিশোধিত অর্থ",
+  started: "শুরুর তারিখ",
+  ended: "মেয়াদ শেষ",
+  expires: "মেয়াদ শেষ হবে",
+  "1 month": "১ মাস",
+  "3 months": "৩ মাস",
+  "6 months": "৬ মাস",
+  "1 year": "১ বছর",
+  "30 days": "৩০ দিন",
+  "90 days": "৯০ দিন",
+  "180 days": "১৮০ দিন",
+  "365 days": "৩৬৫ দিন",
+  "flexible monthly access": "প্রতি মাসে নবায়নের সুবিধা",
+  "for regular users": "নিয়মিত ব্যবহারকারীদের জন্য",
+  "longer access, less hassle": "দীর্ঘমেয়াদি ব্যবহার, কম ঝামেলা",
+  "full-year access": "পুরো এক বছরের সুবিধা",
+  "most chosen": "সবচেয়ে জনপ্রিয়",
+  "best value": "সবচেয়ে সাশ্রয়ী",
+  "billed monthly": "মাসিক বিল",
+  "your selection": "আপনার নির্বাচন",
+  total: "সর্বমোট",
+  "included with every plan": "প্রতিটি প্ল্যানে যা যা থাকছে",
+  "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
+  "use the same account across supported tools": "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
+  "manage your subscription status from this page": "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
+  "payment verification and subscription access are handled automatically": "পেমেন্ট যাচাই ও সাবস্ক্রিপশন অ্যাক্সেস স্বয়ংক্রিয়ভাবে পরিচালিত হয়",
+  "back to tools": "টুলসে ফিরে যান",
+  "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
+  "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
+  "unable to create payment request.": "পেমেন্টের অনুরোধ তৈরি করা যায়নি।",
+  "payment could not be started. please try again.": "পেমেন্ট শুরু করা যায়নি। আবার চেষ্টা করুন।",
+};
+
+function normalizeSubscriptionText(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/\r?\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function translateSubscriptionText(
+  value: string,
+  locale: string | undefined,
+  baseL: (value: string) => string,
+): string {
+  const raw = String(value ?? "");
+  if (!locale || !String(locale).toLowerCase().startsWith("bn")) return raw;
+
+  const key = normalizeSubscriptionText(raw);
+  if (!key) return raw;
+
+  const exact = SUBSCRIPTION_BN[key];
+  if (exact !== undefined) return exact;
+
+  let match = /^continue with (.+)$/i.exec(key);
+  if (match) return `${translateSubscriptionText(match[1], locale, baseL)} নিয়ে এগিয়ে যান`;
+
+  match = /^(৳[\d,]+)\s*\/\s*month$/i.exec(key);
+  if (match) return `${match[1]} / মাস`;
+
+  match = /^save\s+(\d+)\s*%$/i.exec(key);
+  if (match) return `${match[1]}% সাশ্রয়`;
+
+  match = /^(\d+)\s+days? left$/i.exec(key);
+  if (match) return `${match[1]} দিন বাকি`;
+
+  match = /^(?:⚡\s*)?(\d+)\s+credits?$/i.exec(key);
+  if (match) return `⚡ ${match[1].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)])} ক্রেডিট`;
+
+  const translated = baseL(raw);
+  if (translated && translated !== raw) {
+    const hasBangla = /[\u0980-\u09FF]/.test(translated);
+    const hasUntranslatedLatin = /[A-Za-z]/.test(
+      translated.replace(/\b(?:AI|PDF|JPG|PNG|WebP|EXIF|GPS|URL)\b/g, ""),
+    );
+    if (hasBangla && !hasUntranslatedLatin) return translated;
+  }
+  return raw;
+}
+
+function useSubscriptionText() {
+  const { locale, L: baseL } = useSohozI18n();
+  const t = useCallback((value: string) => translateSubscriptionText(value, locale, baseL), [locale, baseL]);
+  return { t, locale };
+}
+
+function T({ children }: { children: ReactNode }) {
+  const { t } = useSubscriptionText();
+  if (typeof children !== "string") return <>{children}</>;
+  return <>{t(children)}</>;
+}
+
+// Featured tools shown here match the DashboardNavbar icons and access rules.
+interface FeaturedToolItem {
+    id: string;
+    href: string;
     icon: LucideIcon;
     title: string;
-    credits: string;
-    isFree: boolean;
+    access: "paid" | "free";
     bg: string;
     text: string;
 }
-// Data array with Explicit Typing (Updated with professional palette)
-const creditItems: CreditItem[] = [
+
+const featuredToolLinks: FeaturedToolItem[] = [
     {
-        icon: Sparkles,
+        id: "ai-editor",
+        href: "/ai-editor",
+        icon: SlidersHorizontal,
         title: "AI Editor",
-        credits: "⚡ 2 credits",
-        isFree: false,
-        bg: "bg-blue-50",
-        text: "text-[#2563EB]",
+        access: "paid",
+        bg: "bg-violet-50",
+        text: "text-violet-600",
     },
     {
-        icon: Edit3,
+        id: "manual-editor",
+        href: "/manual-editor",
+        icon: PenTool,
         title: "Manual Editor",
-        credits: "⚡ 1 credit",
-        isFree: false,
+        access: "free",
+        bg: "bg-pink-50",
+        text: "text-pink-600",
+    },
+    {
+        id: "ai-template",
+        href: "/ai-template",
+        icon: LayoutGrid,
+        title: "AI Template",
+        access: "paid",
         bg: "bg-indigo-50",
         text: "text-indigo-600",
     },
     {
-        icon: FileCode,
-        title: "AI Template",
-        credits: "⚡ 4 credits",
-        isFree: false,
-        bg: "bg-purple-50",
-        text: "text-purple-600",
-    },
-    {
-        icon: FileText,
-        title: "Document Generate",
-        credits: "⚡ 1 credit",
-        isFree: false,
-        bg: "bg-blue-50",
-        text: "text-[#2563EB]",
-    },
-    {
+        id: "print-media",
+        href: "/print-media",
         icon: Printer,
         title: "Print Media",
-        credits: "⚡ 1 credit",
-        isFree: false,
-        bg: "bg-sky-50",
-        text: "text-sky-600",
+        access: "paid",
+        bg: "bg-cyan-50",
+        text: "text-cyan-600",
     },
     {
+        id: "bulk-photo-edit",
+        href: "/bulk-photo-edit",
         icon: Layers,
         title: "Bulk Photo Edit",
-        credits: "⚡ 2 credits",
-        isFree: false,
-        bg: "bg-indigo-50",
-        text: "text-indigo-600",
-    },
-    {
-        icon: HelpCircle,
-        title: "Question Create",
-        credits: "Free",
-        isFree: true,
+        access: "paid",
         bg: "bg-emerald-50",
-        text: "text-[#10B981]",
-    },
-    {
-        icon: CheckCircle,
-        title: "Question Expert",
-        credits: "Free",
-        isFree: true,
-        bg: "bg-emerald-50",
-        text: "text-[#10B981]",
-    },
-    {
-        icon: FileCheck,
-        title: "Form Autofill",
-        credits: "Free",
-        isFree: true,
-        bg: "bg-emerald-50",
-        text: "text-[#10B981]",
-    },
-    {
-        icon: Sparkles,
-        title: "60+ SohozTools",
-        credits: "Free",
-        isFree: true,
-        bg: "bg-emerald-50",
-        text: "text-[#10B981]",
+        text: "text-emerald-600",
     },
 ];
 // Typed Framer Motion Variants
@@ -120,121 +254,532 @@ const cardVariants: Variants = {
         },
     },
 };
+
 export default function PricingPage() {
-    return (<div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col">
-      {/* Main Pricing Section */}
-      <main className="flex-grow w-full flex flex-col items-center">
-        {/* Top Hero Section */}
-        <div className="w-full bg-gradient-to-b from-blue-50/50 via-slate-50 to-[#F8FAFC] pt-16 md:pt-20 pb-36 md:pb-44 px-4 sm:px-8 flex flex-col items-center border-b border-[#E2E8F0]">
-          <div className="max-w-[1240px] w-full flex flex-col items-center text-center">
-            {/* Top Tag */}
-            <div className="inline-flex items-center px-5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#10B981] text-xs md:text-sm font-semibold mb-8 shadow-xs">
-              <span><T>{"Simple Credit System"}</T></span>
+  type SubscriptionStatus = {
+    id: string;
+    planId: string;
+    planName: string;
+    amount: number;
+    paymentStatus: string;
+    accessStatus: string;
+    startedAt: string | null;
+    expiresAt: string | null;
+  };
+
+  const { t, locale } = useSubscriptionText();
+  const router = useRouter();
+  const toolNavigationInFlightRef = useRef(false);
+  const [selectedId, setSelectedId] = useState<string>("6-month");
+  const [showNotice, setShowNotice] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
+
+  /**
+   * Keep tool cards on Pricing in sync with the normal Sohozkaj access flow:
+   * guests log in first, paid tools require an active subscription, and only
+   * then does navigation continue to the selected tool.
+   */
+  const handleToolNavigation = useCallback(async (
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string,
+    access: "paid" | "free",
+  ) => {
+    // Preserve normal browser behavior for new-tab and modified clicks.
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    if (toolNavigationInFlightRef.current) return;
+    toolNavigationInFlightRef.current = true;
+
+    try {
+      const session = await getClientSession();
+      if (!session.authenticated) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(href)}`);
+        return;
+      }
+
+      if (access === "paid" && REQUIRE_SUBSCRIPTION) {
+        const response = await fetch("/api/subscription/current", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => ({}));
+        const subscription = data?.subscription;
+        const expiresAt = subscription?.expiresAt
+          ? new Date(subscription.expiresAt).getTime()
+          : 0;
+        const hasActiveSubscription = response.ok &&
+          subscription?.accessStatus === "ACTIVE" &&
+          subscription?.paymentStatus === "COMPLETED" &&
+          expiresAt > Date.now();
+
+        if (!hasActiveSubscription) {
+          router.push("/subscription");
+          return;
+        }
+      }
+
+      router.push(href);
+    } catch (error) {
+      console.error("Failed to verify access before opening a Pricing tool:", error);
+      // Fail closed if authentication or subscription status cannot be verified.
+      router.push(
+        access === "paid" && REQUIRE_SUBSCRIPTION
+          ? "/subscription"
+          : `/login?callbackUrl=${encodeURIComponent(href)}`,
+      );
+    } finally {
+      toolNavigationInFlightRef.current = false;
+    }
+  }, [router]);
+
+  // Restore the plan selected before the visitor was sent to log in.
+  useEffect(() => {
+    const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+    if (requestedPlan && plans.some((plan) => plan.id === requestedPlan)) {
+      setSelectedId(requestedPlan);
+    }
+  }, []);
+
+  const formatDate = (value: string | null) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : "en-BD", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const loadCurrentSubscription = async () => {
+    try {
+      setSubscriptionLoading(true);
+      const response = await fetch("/api/subscription/current", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setCurrentSubscription(null);
+        return;
+      }
+      setCurrentSubscription(data?.subscription ?? null);
+    } catch (error) {
+      console.error("Failed to load current subscription:", error);
+      setCurrentSubscription(null);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadCurrentSubscription();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    setShowNotice(false);
+    setPaymentError("");
+  };
+
+  const handleContinue = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    setShowNotice(false);
+    setPaymentError("");
+
+    const returnPath = `/pricing?plan=${encodeURIComponent(selected.id)}`;
+    const loginUrl = `/login?callbackUrl=${encodeURIComponent(returnPath)}`;
+
+    try {
+      // Verify the session first so guests are sent to login instead of seeing a checkout API error.
+      let storedToken = "";
+      try {
+        storedToken = localStorage.getItem("token") || "";
+      } catch {
+        // Cookie-based authentication can still be checked if localStorage is unavailable.
+      }
+
+      const sessionResponse = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
+      });
+
+      if (!sessionResponse.ok) {
+        if ([401, 403, 404].includes(sessionResponse.status)) {
+          window.location.href = loginUrl;
+          return;
+        }
+        throw new Error("Unable to verify your login session. Please try again.");
+      }
+
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: selected.price,
+          metadata: {
+            plan_id: selected.id,
+            plan_name: selected.name,
+            duration: selected.duration,
+            months: selected.months,
+          },
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.payment_url) {
+        if ([401, 403].includes(response.status)) {
+          window.location.href = loginUrl;
+          return;
+        }
+        throw new Error(data?.message || "Unable to create payment request.");
+      }
+      window.location.href = data.payment_url;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setPaymentError(error instanceof Error ? error.message : "Payment could not be started. Please try again.");
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
+      <main className="flex-1">
+        <div data-nav-content className="mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-4 py-8 sm:px-6 lg:py-10">
+          <section className="relative overflow-hidden rounded-3xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/80 p-6 shadow-sm sm:p-8">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
+            <div className="relative max-w-3xl">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold tracking-wide text-[#2563EB]">
+                <Wallet size={13} />
+                <T>{"Flexible subscription plans"}</T>
+              </span>
+              <h1 className="text-[clamp(26px,3.6vh,38px)] font-bold leading-tight tracking-tight text-[#0F172A]">
+                <T>{"Choose your subscription plan"}</T>
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
+                <T>{"Pick the duration that suits you. The longer the plan, the lower your monthly cost."}</T>
+              </p>
             </div>
+          </section>
 
-            {/* Main Heading */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-6"><T>{"Pay only for "}</T><span className="text-[#2563EB]"><T>{"what you use"}</T></span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-sm md:text-base text-slate-500 max-w-xl font-medium leading-relaxed mb-4"><T>{"No subscriptions, no hidden fees. Use credits to generate\r\n              documents, images and print media. Every new account gets 20 bonus\r\n              credits.\r\n            "}</T></p>
-          </div>
-        </div>
-
-        {/* Overlapping Banner Card Container */}
-        <div className="w-full max-w-[1240px] px-4 sm:px-8 flex flex-col items-center -mt-24 md:-mt-32 z-10 mb-20">
-          {/* Banner Card */}
-          <div className="w-full max-w-[1140px] bg-gradient-to-r from-[#2563EB] via-indigo-600 to-indigo-800 rounded-[30px] p-8 md:p-12 lg:p-14 text-white shadow-2xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* Background Glow Overlay Circles */}
-            <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-            <div className="absolute right-16 bottom-0 w-72 h-72 bg-black/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            {/* Left Column: Bonus Credits */}
-            <div className="lg:col-span-4 flex flex-col items-start lg:border-r lg:border-white/20 lg:pr-10">
-              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-[10px] font-extrabold text-white uppercase tracking-wider mb-4 border border-white/20">
-                <span><T>{"#"}</T></span>
-                <span><T>{"New User Bonus"}</T></span>
+          <section aria-label={t("Current subscription")}>
+            {subscriptionLoading ? (
+              <div aria-busy="true" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+                <div className="mt-4 h-6 w-36 animate-pulse rounded bg-slate-100" />
+                <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
               </div>
-              <span className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-none"><T>{"20\r\n              "}</T></span>
-              <span className="text-xl md:text-2xl font-bold tracking-tight text-white mt-3"><T>{"Bonus Credits\r\n              "}</T></span>
-              <span className="text-[11px] text-white/80 font-medium leading-relaxed mt-2 max-w-[220px]"><T>{"(2 credits for register & 18 credits for profile completion)\r\n              "}</T></span>
-            </div>
+            ) : currentSubscription ? (
+              (() => {
+                const { expired, daysLeft, progress } = getTiming(currentSubscription);
+                const statusLabel = expired ? "Expired" : capitalize(currentSubscription.accessStatus) || "Active";
+                const isActive = statusLabel === "Active";
+                const RING_R = 52;
+                const RING_C = 2 * Math.PI * RING_R;
+                const remainingPct = expired ? 0 : progress === null ? null : 100 - progress;
+                const ringStroke = expired
+                  ? "stroke-slate-300"
+                  : remainingPct !== null && remainingPct < 10
+                    ? "stroke-amber-500"
+                    : "stroke-[#2563EB]";
+                const ringMain = expired ? "0" : daysLeft === null ? "—" : daysLeft === 0 ? "<1" : String(daysLeft);
+                const ringLabel = daysLeft === 1 || (daysLeft === 0 && !expired) ? "day left" : "days left";
 
-            {/* Right Column: Title, Subtitle, Pills & CTA */}
-            <div className="lg:col-span-8 flex flex-col items-start lg:pl-4 z-10">
-              <h3 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-white"><T>{"Start creating for free \u2014 right now\r\n              "}</T></h3>
-              <p className="text-xs md:text-sm text-white/85 font-medium mt-2.5 mb-7"><T>{"Get 20 bonus credits to create documents, images and more.\r\n              "}</T></p>
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex flex-col items-center gap-4 p-[clamp(14px,2.6vh,32px)] sm:flex-row sm:gap-6">
+                      <div className="relative h-[clamp(84px,12vh,128px)] w-[clamp(84px,12vh,128px)] shrink-0">
+                        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden="true">
+                          <circle cx="60" cy="60" r={RING_R} fill="none" strokeWidth="9" className="stroke-slate-100" />
+                          {remainingPct !== null && remainingPct > 0 && (
+                            <circle
+                              cx="60"
+                              cy="60"
+                              r={RING_R}
+                              fill="none"
+                              strokeWidth="9"
+                              strokeLinecap="round"
+                              strokeDasharray={`${(RING_C * remainingPct) / 100} ${RING_C}`}
+                              className={`${ringStroke} transition-[stroke-dasharray] duration-700`}
+                            />
+                          )}
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">{ringMain}</span>
+                          <span className="mt-1 text-[11px] text-slate-500"><T>{ringLabel}</T></span>
+                        </div>
+                      </div>
 
-              {/* Feature Pills */}
-              <div className="flex flex-wrap gap-3 mb-8">
-                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                  <Check size={13} className="stroke-[3]"/>
-                  <span><T>{"40 Documents"}</T></span>
-                </div>
-                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                  <Check size={13} className="stroke-[3]"/>
-                  <span><T>{"10 AI Edits"}</T></span>
-                </div>
-                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                  <Check size={13} className="stroke-[3]"/>
-                  <span><T>{"40 Print Exports"}</T></span>
-                </div>
-                <div className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                  <Check size={13} className="stroke-[3]"/>
-                  <span><T>{"5 AI Templates"}</T></span>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <Link href="/login" className="bg-white text-[#2563EB] hover:bg-blue-50 transition font-extrabold text-xs md:text-sm px-7 py-3.5 rounded-xl shadow-lg inline-flex items-center gap-2 cursor-pointer group">
-                <Gift size={16} className="text-[#2563EB] group-hover:scale-110 transition-transform"/>
-                <span><T>{"Claim 20 Free Credits"}</T></span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Animated "What are credits, really?" Section */}
-        <div className="max-w-[1240px] w-full px-4 sm:px-8 flex flex-col items-center mb-24">
-          {/* Header Animation */}
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: "easeOut" }} className="flex flex-col items-center text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-3"><T>{"What are credits, really?\r\n            "}</T></h2>
-            <p className="text-sm md:text-base text-slate-500 max-w-xl font-medium"><T>{"Every action uses a few credits \u2014 the more credits you have, the\r\n              more you can do. Some modules are completely free.\r\n            "}</T></p>
-          </motion.div>
-
-          {/* Staggered Grid Cards Animation */}
-          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
-            {creditItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (<motion.div key={index} variants={cardVariants} whileHover={{ y: -6, transition: { duration: 0.2 } }} className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
-                  <div className="flex items-start justify-between">
-                    <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.text} flex items-center justify-center font-bold`}>
-                      <IconComponent size={20}/>
+                      <div className="min-w-0 flex-1 text-center sm:text-left">
+                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
+                          <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]"><T>{currentSubscription.planName}</T></h2>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                            <T>{statusLabel}</T>
+                          </span>
+                        </div>
+                        <p className="mx-auto mt-2.5 max-w-md rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-2 text-left text-[13px] font-medium leading-5 text-red-700 sm:mx-0">
+                          {expired ? (
+                            <>
+                              <T>{"This plan ended on"}</T>{" "}
+                              <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
+                              <T>{". Choose a plan below to renew."}</T>
+                            </>
+                          ) : (
+                            <>
+                              <T>{"Your access is active until"}</T>{" "}
+                              <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
+                              <T>{". You can renew or switch to a longer plan anytime."}</T>
+                            </>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${item.isFree
-                    ? "text-[#10B981] bg-emerald-50"
-                    : "text-[#2563EB] bg-blue-50"}`}>
-                      {item.credits}
+
+                    <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><Wallet size={15} /></span>
+                        <div>
+                          <dt className="text-xs text-slate-500"><T>{"Amount paid"}</T></dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">{formatPrice(currentSubscription.amount)}</dd>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><CalendarCheck size={15} /></span>
+                        <div>
+                          <dt className="text-xs text-slate-500"><T>{"Started"}</T></dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">{formatDate(currentSubscription.startedAt)}</dd>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><CalendarClock size={15} /></span>
+                        <div>
+                          <dt className="text-xs text-slate-500">{expired ? <T>{"Ended"}</T> : <T>{"Expires"}</T>}</dt>
+                          <dd className="text-sm font-semibold text-[#0F172A]">{formatDate(currentSubscription.expiresAt)}</dd>
+                        </div>
+                      </div>
+                    </dl>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-semibold text-[#0F172A]"><T>{"No active plan"}</T></h2>
+                <p className="mt-1 text-sm text-slate-600"><T>{"Choose a plan below to unlock all the paid tools."}</T></p>
+              </div>
+            )}
+          </section>
+
+          <section role="radiogroup" aria-label={t("Subscription plans")} className="grid grid-cols-1 gap-[clamp(10px,1.8vh,20px)] pt-3 sm:grid-cols-2 lg:grid-cols-4">
+            {plans.map((plan) => {
+              const isSelected = plan.id === selectedId;
+              const savings = getSavings(plan.price, plan.months);
+              const perMonth = plan.price / plan.months;
+              return (
+                <button
+                  key={plan.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => handleSelect(plan.id)}
+                  className={`group relative cursor-pointer rounded-2xl border p-[clamp(14px,2.4vh,24px)] text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "-translate-y-1 border-[#2563EB] bg-white shadow-[0_12px_32px_-12px_rgba(37,99,235,0.35)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"}`}
+                >
+                  {plan.badge && (
+                    <span className={`absolute -top-3 left-5 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${isSelected ? "bg-[#2563EB] text-white" : "bg-slate-800 text-white"}`}>
+                      <T>{plan.badge}</T>
+                    </span>
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-black text-[#0F172A] sm:text-lg"><T>{plan.name}</T></h2>
+                      <p className="mt-0.5 text-xs font-semibold text-slate-400"><T>{plan.duration}</T></p>
+                    </div>
+                    <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200 ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white group-hover:border-slate-400"}`}>
+                      <Check size={13} strokeWidth={3.5} className={`text-white transition-all duration-200 ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`} />
                     </span>
                   </div>
-                  <div className="mt-6">
-                    <h4 className="text-sm font-bold text-[#0F172A]">
-                      {<T>{item.title}</T>}
-                    </h4>
+                  <div className="mt-[clamp(8px,2.2vh,28px)]">
+                    <span className={`text-[clamp(26px,4.2vh,34px)] font-black leading-none tracking-tight transition-colors ${isSelected ? "text-[#2563EB]" : "text-[#0F172A]"}`}>{formatPrice(plan.price)}</span>
+                    <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                      {plan.months === 1 ? <T>{"Billed monthly"}</T> : <T>{`${formatPrice(perMonth)} / month`}</T>}
+                    </p>
                   </div>
-                </motion.div>);
-        })}
-          </motion.div>
+                  <div className="my-[clamp(8px,1.8vh,20px)] h-px bg-slate-100" />
+                  <div className="flex min-h-[24px] items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-slate-400"><T>{plan.note}</T></p>
+                    {savings > 0 && (
+                      <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${isSelected ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                        <T>{`Save ${savings}%`}</T>
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-[clamp(12px,2vh,24px)] shadow-sm">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-xs font-medium text-slate-500"><T>{"Your selection"}</T></p>
+                <p className="mt-0.5 text-lg font-black text-[#0F172A]">
+                  <T>{selected.name}</T>
+                  <span className="ml-2 text-sm font-semibold text-slate-400"><T>{selected.duration}</T></span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-6 sm:justify-end">
+                <div className="sm:text-right">
+                  <p className="text-xs font-medium text-slate-500"><T>{"Total"}</T></p>
+                  <p className="mt-0.5 text-2xl font-black text-[#0F172A]">{formatPrice(selected.price)}</p>
+                </div>
+                <button type="button" onClick={handleContinue} disabled={isProcessing} className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
+                  {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Continue with ${selected.name}`}</T>}
+                </button>
+              </div>
+            </div>
+            {showNotice && <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600"><T>{"Online payment is ready."}</T></p>}
+            {paymentError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"><T>{paymentError}</T></p>}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white px-5 py-[clamp(10px,1.8vh,20px)]">
+            <h2 className="text-sm font-black text-[#0F172A]"><T>{"Included with every plan"}</T></h2>
+            <div className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+              {features.map((feature) => (
+                <div key={feature} className="flex items-start gap-2 text-xs font-medium text-slate-600 sm:text-[13px]">
+                  <Check size={14} strokeWidth={3} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <span><T>{feature}</T></span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="flex justify-center pt-1">
+            <Link href="/sohoj-tools" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold text-[#2563EB] shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:underline">
+              <T>{"See all tools"}</T><ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
+
+        {/* Featured navigation tools plus the current free/paid Sohozkaj catalogue */}
+        <section className="mx-auto mt-10 mb-24 w-full max-w-[1240px] px-4 sm:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mb-8 flex flex-col items-center text-center"
+          >
+            <span className="mb-3 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold tracking-wide text-[#2563EB]">
+              <T>{"Paid and free tools"}</T>
+            </span>
+            <h2 className="mb-3 text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
+              <T>{"Explore the tools on Sohozkaj"}</T>
+            </h2>
+            <p className="max-w-2xl text-sm font-medium leading-6 text-slate-500 md:text-base">
+              <T>{"Your subscription unlocks paid tools. Manual Editor is free, while AI Editor, AI Template, Print Media, and Bulk Photo Edit require an active subscription."}</T>
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          >
+            {featuredToolLinks.map((item) => {
+              const IconComponent = item.icon;
+              const isPaid = item.access === "paid";
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={(event) => handleToolNavigation(event, item.href, item.access)}
+                  aria-label={`${item.title} — ${isPaid ? "Paid" : "Free"}`}
+                  className="group block cursor-pointer rounded-2xl outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/20"
+                >
+                  <motion.article
+                    variants={cardVariants}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className="flex min-h-[142px] flex-col justify-between rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all group-hover:border-blue-200 group-hover:shadow-md sm:p-5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105 ${item.bg} ${item.text}`}>
+                        <IconComponent size={21} strokeWidth={2.1} />
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold leading-none sm:text-[11px] ${isPaid ? "bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100" : "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100"}`}>
+                        <T>{isPaid ? "Paid" : "Free"}</T>
+                      </span>
+                    </div>
+                    <h3 className="mt-5 text-sm font-bold leading-snug text-[#0F172A] transition-colors group-hover:text-[#2563EB]">
+                      <T>{item.title}</T>
+                    </h3>
+                  </motion.article>
+                </Link>
+              );
+            })}
+
+            {toolsData.map((tool) => {
+              const IconComponent = tool.icon;
+              const isPaid = tool.access === "paid";
+              const toolHref = `/sohoj-tools/${getSlug(tool.name)}`;
+              return (
+                <Link
+                  key={`tool-${tool.id}`}
+                  href={toolHref}
+                  onClick={(event) => handleToolNavigation(event, toolHref, isPaid ? "paid" : "free")}
+                  aria-label={`${tool.name} — ${isPaid ? "Paid" : "Free"}`}
+                  className="group block cursor-pointer rounded-2xl outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/20"
+                >
+                  <motion.article
+                    variants={cardVariants}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className="flex min-h-[142px] h-full flex-col justify-between rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm transition-all group-hover:border-blue-200 group-hover:shadow-md sm:p-5"
+                  >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl ${tool.bgColor}`}>
+                      {IconComponent && <IconComponent size={40} className="text-white" />}
+                    </div>
+                    <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold sm:text-[11px] ${isPaid ? "bg-blue-50 text-[#2563EB]" : "bg-emerald-50 text-emerald-700"}`}>
+                      <T>{isPaid ? "Paid" : "Free"}</T>
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-sm font-bold leading-snug text-[#0F172A] transition-colors group-hover:text-[#2563EB]">
+                    <T>{tool.name}</T>
+                  </h3>
+                  </motion.article>
+                </Link>
+              );
+            })}
+          </motion.div>
+
+        </section>
       </main>
 
-      {/* FAQ Section */}
+      {/* Restored from the original Pricing page */}
       <FaqSection />
-
-      {/* CTA Banner Section */}
       <CtaBanner />
-
-      {/* Footer Section */}
       <Footer />
-    </div>);
+    </div>
+  );
 }

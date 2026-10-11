@@ -692,7 +692,12 @@ export default function RegisterPage() {
             }
             alert("Registration successful!");
             setIsOtpModalOpen(false);
-            router.push("/login");
+            const redirectParams = new URLSearchParams(window.location.search);
+            const requestedTarget = redirectParams.get("callbackUrl") || redirectParams.get("redirect") || "";
+            const safeTarget = requestedTarget.startsWith("/") && !requestedTarget.startsWith("//") && !requestedTarget.startsWith("/login")
+              ? requestedTarget
+              : "";
+            router.push(safeTarget ? `/login?callbackUrl=${encodeURIComponent(safeTarget)}` : "/login");
         }
         catch (error) {
             const errMessage = error instanceof Error ? error.message : "Registration failed!";

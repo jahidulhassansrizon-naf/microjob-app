@@ -1,3 +1,4 @@
+import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QuestionBank from "@/models/QuestionBank";
@@ -49,6 +50,13 @@ function escapeRegex(value: string): string {
 }
 
 export async function GET(request: Request) {
+  if (!hasVerifiedRequestSession(request)) {
+    return NextResponse.json(
+      { success: false, error: "Authentication required. Please log in to continue." },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
 

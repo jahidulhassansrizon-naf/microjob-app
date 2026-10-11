@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
 import ActivityTracker from "@/app/_components/ActivityTracker";
 import NavigationProgressBar from "./_components/NavigationProgressBar";
+import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from "@/lib/i18n";
@@ -23,6 +24,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const initialLocale: Locale = cookieLocale === "bn" ? "bn" : DEFAULT_LOCALE;
+  const showLoginSuccess = cookieStore.get("sohoj_login_success")?.value === "1";
 
   return (
     <html lang={initialLocale} data-locale={initialLocale} translate="no" suppressHydrationWarning>
@@ -35,6 +37,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <Navbar />
           </ConditionalSiteChrome>
           {children}
+          <LoginSuccessOverlay initialVisible={showLoginSuccess} />
         </I18nProvider>
       </body>
     </html>
