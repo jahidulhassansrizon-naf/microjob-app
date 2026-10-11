@@ -317,7 +317,10 @@ const NID_CROP_WIDTH = 704; // 88 x 8 px per mm
 const NID_CROP_HEIGHT = 1000; // 125 x 8 px per mm
 const NID_CROP_ASPECT_RATIO = NID_CROP_WIDTH / NID_CROP_HEIGHT;
 const CROP_MAX_SIDE_PX = 1000;
-/** Output size of a warped page: its own width/height, never stretched. */
+/** Output size of a warped page. The data page is always ICAO 125 x 88 mm,
+ *  so the crop is made at exactly that ratio (in the page's own orientation).
+ *  This removes the white bands that appeared when the crop's ratio drifted
+ *  from the box, and it also corrects small perspective errors. */
 function cropOutputSize(corners: CropPoint[]): {
   width: number;
   height: number;
@@ -326,11 +329,13 @@ function cropOutputSize(corners: CropPoint[]): {
   const dist = (p: CropPoint, q: CropPoint) => Math.hypot(q.x - p.x, q.y - p.y);
   const width = (dist(a, b) + dist(d, c)) / 2;
   const height = (dist(a, d) + dist(b, c)) / 2;
-  const scale = Math.min(1, CROP_MAX_SIDE_PX / Math.max(width, height, 1));
-  return {
-    width: Math.max(8, Math.round(width * scale)),
-    height: Math.max(8, Math.round(height * scale)),
-  };
+  const long = CROP_MAX_SIDE_PX;
+  const short = Math.round(
+    (CROP_MAX_SIDE_PX * ICAO_DATA_PAGE_SHORT_MM) / ICAO_DATA_PAGE_LONG_MM,
+  );
+  return width >= height
+    ? { width: long, height: short }
+    : { width: short, height: long };
 }
 // ============================================================================
 // PRINT / PDF ENGINE — shared by handlePrint and handleCreatePdf
