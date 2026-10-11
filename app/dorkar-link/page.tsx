@@ -540,9 +540,9 @@ const FAQ_DATA = [
         ans: "Yes, you can contact our support team to suggest new useful public services or links.",
     },
 ];
-function DorkarLinksContent() {
-    const searchParams = useSearchParams();
-    const categoryParam = searchParams.get("category");
+type SearchParamsLike = { get(name: string): string | null } | null;
+function DorkarLinksContent({ searchParams }: { searchParams: SearchParamsLike }) {
+    const categoryParam = searchParams?.get("category") ?? null;
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [categoryOpen, setCategoryOpen] = useState(false);
@@ -750,8 +750,13 @@ function DorkarLinksContent() {
       <Footer />
     </div>);
 }
+// Fallback is the real page (no params) instead of an empty box, so reload never shows a blank page.
+function SearchParamsBridge() {
+    const searchParams = useSearchParams();
+    return <DorkarLinksContent searchParams={searchParams}/>;
+}
 export default function DorkarLinksPage() {
-    return (<Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]"/>}>
-      <DorkarLinksContent />
+    return (<Suspense fallback={<DorkarLinksContent searchParams={null}/>}>
+      <SearchParamsBridge />
     </Suspense>);
 }

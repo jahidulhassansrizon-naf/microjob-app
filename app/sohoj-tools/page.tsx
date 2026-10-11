@@ -1,6 +1,6 @@
 "use client";
 import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { toolsData, ToolTile } from "@/app/_components/toolsData";
@@ -16,47 +16,15 @@ const categories = [
     { name: "General Tools", icon: Wrench },
     { name: "Educational Tools", icon: GraduationCap },
 ];
-// জুম-আউট / বড় স্ক্রিনে কন্টেন্ট ও ন্যাভবার একই অনুপাতে বড় হবে (ড্যাশবোর্ডের মতো)
-// DashboardNavbar-এর NAV_BASE_WIDTH / NAV_MAX_SCALE-এর সাথে একই মান রাখো
-const ZOOM_BASE_WIDTH = 1920; // px — এর চেয়ে চওড়া ভিউপোর্টে কন্টেন্ট আনুপাতিক বড় হবে
-const ZOOM_MAX_SCALE = 5; // সর্বোচ্চ কতগুণ বড় হবে
-// মোবাইল/ট্যাবলেটে আইকন বক্স ঘরের কত % নেবে (ড্যাশবোর্ডের সাথে একই)
-const TOUCH_TILE_SIZE_PERCENT = 88;
-const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
-function useZoomScale(): {
-    scale: number;
-    touch: boolean;
-} {
-    const [scale, setScale] = useState<number>(1);
-    // মোবাইল/ট্যাবলেট (টাচ ডিভাইস) হলে true — তখন ড্যাশবোর্ডের মতো ছোট কার্ড ও ৩ কলাম
-    const [touch, setTouch] = useState<boolean>(false);
-    useIsoLayoutEffect(() => {
-        // শুধু মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে; টাচ ডিভাইসে আগের মতো রেসপন্সিভ
-        const mq = window.matchMedia("(pointer: fine)");
-        const update = () => {
-            setTouch(!mq.matches);
-            if (!mq.matches) {
-                setScale(1);
-                return;
-            }
-            const w = document.documentElement.clientWidth;
-            const next = Math.min(ZOOM_MAX_SCALE, Math.max(1, w / ZOOM_BASE_WIDTH));
-            setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
-        };
-        update();
-        window.addEventListener("resize", update);
-        mq.addEventListener("change", update);
-        return () => {
-            window.removeEventListener("resize", update);
-            mq.removeEventListener("change", update);
-        };
-    }, []);
-    return { scale, touch };
-}
-function SohojToolsContent() {
+// জুম-আউট / বড় স্ক্রিনে কন্টেন্ট ও ন্যাভবার একই অনুপাতে বড় হয় — এখন পুরোটা CSS দিয়ে
+// (globals.css: html[data-nav-scaled] .page-zoom), মান বসায় PrePaintScript + DashboardNavbar,
+// তাই রিলোডে প্রথম ফ্রেমেই সঠিক মাপ; JS state-এর জন্য অপেক্ষা নেই।
+// মোবাইল/ট্যাবলেটে আইকন বক্স ঘরের কত % নেবে: ToolTile-এ (touchCompact) আছে
+type SearchParamsLike = { get(name: string): string | null } | null;
+function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike }) {
+    // subscribe to language changes so L("...") placeholders re-render (as the old page wrapper did)
+    useSohozI18n();
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const { scale: zoomScale, touch: isTouch } = useZoomScale();
     // Keep the tools UI immediately visible; auth is verified in the background.
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
@@ -96,7 +64,7 @@ function SohojToolsContent() {
     useEffect(() => {
         let mounted = true;
         let typingTimer: ReturnType<typeof setInterval> | null = null;
-        const searchFromUrl = searchParams.get("search");
+        const searchFromUrl = searchParams?.get("search") ?? null;
         void getClientSession().then((session) => {
             if (!mounted)
                 return;
@@ -196,7 +164,7 @@ function SohojToolsContent() {
     return (<div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar scaleWithZoom/>
 
-      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5" style={zoomScale > 1.001 ? { zoom: zoomScale } : undefined}>
+      <main className="page-zoom max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-5">
         {/* SohozTools search + filters */}
         <section className="flex flex-wrap items-stretch justify-between gap-2.5">
           {/* SohozTools-এর নিজস্ব সার্চ বার — ফিল্টার সারির একদম বামে সবসময় দৃশ্যমান */}
@@ -268,10 +236,8 @@ function SohojToolsContent() {
         </section>
 
         {/* Tools Grid Section */}
-        {filteredTools.length > 0 ? (<div ref={gridRef} className={`grid pt-3 ${isTouch
-                ? "grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8"
-                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-5 gap-y-7"}`}>
-            {filteredTools.map((tool) => (<ToolTile key={tool.id} tool={tool} boxPercent={isTouch ? TOUCH_TILE_SIZE_PERCENT : undefined}/>))}
+        {filteredTools.length > 0 ? (<div ref={gridRef} className="grid pt-3 grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 fit:grid-cols-2 fit:gap-x-5 fit:gap-y-7 fit:sm:grid-cols-3 fit:md:grid-cols-4 fit:lg:grid-cols-6 fit:xl:grid-cols-8">
+            {filteredTools.map((tool) => (<ToolTile key={tool.id} tool={tool} touchCompact/>))}
           </div>) : (
         /* No tools found - Empty State */
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white/50 rounded-2xl border border-dashed border-gray-200 my-4">
@@ -284,12 +250,16 @@ function SohojToolsContent() {
       </main>
     </div>);
 }
+// useSearchParams() makes Next bail out to client-only rendering up to the nearest <Suspense>, and
+// the old fallback was a "Loading tools..." spinner - so every reload showed a spinner page until
+// JS ran. The fallback is now the REAL page (rendered without search params), so the server HTML
+// is the final UI; the bridge below swaps in the live search params without changing the markup.
+function SearchParamsBridge() {
+    const searchParams = useSearchParams();
+    return <SohojToolsContent searchParams={searchParams}/>;
+}
 export default function SohojToolsPage() {
-    const { L } = useSohozI18n();
-    return (<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-            <Loader2 size={16} className="animate-spin text-[#2563EB]"/><T>{"Loading tools...\n          "}</T></div>
-        </div>}>
-      <SohojToolsContent />
+    return (<Suspense fallback={<SohojToolsContent searchParams={null}/>}>
+      <SearchParamsBridge />
     </Suspense>);
 }

@@ -1,7 +1,6 @@
 // app/page.tsx
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Hero from "@/components/Hero";
 import HeroFeatures from "@/components/HeroFeatures";
 import AiEditorSection from "@/components/AiEditorSection";
@@ -12,16 +11,10 @@ import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
 export default function Home() {
-    const [isChecking, setIsChecking] = useState(true);
-    useEffect(() => {
-        // লগইন করা ইউজারও হোম পেজ দেখতে পারবে; এখানে সেশন থাকলেই
-        // ড্যাশবোর্ডে স্বয়ংক্রিয় রিডাইরেক্ট করা হবে না।
-        setIsChecking(false);
-    }, []);
+    // There is nothing to check (logged-in users may also see the home page), so the page renders
+    // its real content immediately - no "Loading..." placeholder frame on reload.
     // Scroll Restoration (রিলোড দিলে ঠিক একই পজিশনে ধরে রাখার লজিক)
     useEffect(() => {
-        if (isChecking)
-            return;
         // ১. আগের সেভ থাকা স্ক্রোল পজিশনে ফিরিয়ে নিয়ে যাওয়া
         const savedScrollPos = sessionStorage.getItem("home_scroll_pos");
         if (savedScrollPos) {
@@ -40,13 +33,7 @@ export default function Home() {
         return () => {
             window.removeEventListener("scroll", handleScroll);
         };
-    }, [isChecking]);
-    // চেক করার সময় ফ্লিকার প্রতিরোধ করতে হালকা লোডিং
-    if (isChecking) {
-        return (<div className="min-h-screen bg-[#FAF7FD] flex items-center justify-center font-sans">
-        <p className="text-gray-500 font-medium"><T>{"Loading..."}</T></p>
-      </div>);
-    }
+    }, []);
     return (<div className="min-h-screen bg-[#FAF7FD] overflow-x-hidden">
       <Hero />
       <HeroFeatures />

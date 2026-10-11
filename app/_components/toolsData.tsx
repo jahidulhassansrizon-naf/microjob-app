@@ -765,8 +765,11 @@ function loadSubscriptionAccess() {
     }
     return subscriptionAccessPromise;
 }
-export function ToolTile({ tool, boxPercent, }: {
+export function ToolTile({ tool, boxPercent, touchCompact = false, }: {
     tool: ToolItem;
+    // true: compact (small box) layout on touch devices and the full-size layout on desktop,
+    // chosen purely by CSS (`fit:` = pointer: fine) so the server HTML already matches.
+    touchCompact?: boolean;
     // দিলে শুধু রঙিন বক্স (আইকন) এই % এ ছোট হবে; নাম পুরো ঘরের চওড়া পাবে ও ছোট লেখায় দেখাবে
     boxPercent?: number;
 }) {
@@ -815,7 +818,7 @@ export function ToolTile({ tool, boxPercent, }: {
             ? `${displayName} খুলুন`
             : `Open ${tool.name}`;
     return (<Link href={toolHref} prefetch onMouseEnter={() => router.prefetch(`/sohoj-tools/${slug}`)} onFocus={() => router.prefetch(`/sohoj-tools/${slug}`)} className="flex w-full flex-col items-center group cursor-pointer" aria-label={accessibleLabel}>
-      <div className={`relative aspect-square ${compact ? "rounded-[22px]" : "w-full rounded-[28px]"} ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`} style={compact ? { width: `${boxPercent}%` } : undefined}>
+      <div className={`relative aspect-square ${touchCompact ? "w-[88%] rounded-[22px] fit:w-full fit:rounded-[28px]" : compact ? "rounded-[22px]" : "w-full rounded-[28px]"} ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`} style={compact ? { width: `${boxPercent}%` } : undefined} data-tile-box={compact ? "" : undefined}>
         {tool.badge && (<span className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"}`}>
             {badgeLabel}
           </span>)}
@@ -825,10 +828,12 @@ export function ToolTile({ tool, boxPercent, }: {
 
         {tool.access === "free" && (<span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs bg-emerald-600"><T>{"free\n          "}</T></span>)}
 
-        {IconComponent && (<IconComponent size={compact ? 52 : 72} className="text-[#ffffff] stroke-[1.75]"/>)}
+        {IconComponent && (<IconComponent size={compact ? 52 : 72} className={`text-[#ffffff] stroke-[1.75]${touchCompact ? " h-[52px]! w-[52px]! fit:h-[72px]! fit:w-[72px]!" : ""}`}/>)}
       </div>
 
-      <span className={`text-center group-hover:text-[#2563EB] transition-colors ${compact
+      <span className={`text-center group-hover:text-[#2563EB] transition-colors ${touchCompact
+            ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2 fit:mt-2.5 fit:w-auto fit:px-0 fit:text-[15px] fit:font-medium fit:leading-normal fit:tracking-normal fit:text-[#0F172A] fit:line-clamp-1"
+            : compact
             ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2"
             : "mt-2.5 text-[15px] font-medium text-[#0F172A] line-clamp-1"}`}>
         {displayName}

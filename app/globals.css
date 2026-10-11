@@ -41,3 +41,73 @@ html[data-locale="bn"] input::placeholder,
 html[data-locale="bn"] textarea::placeholder { font-family: inherit; }
 
 /* Translation is owned by the React i18n layer; the browser must not mutate React-managed text. */
+
+/* ------------------------------------------------------------------ */
+/* Reload-without-flicker support                                      */
+/* A tiny script in <head> (app/_components/PrePaintScript.tsx) runs    */
+/* before the first paint and sets the html[data-*] attributes and      */
+/* --vars below, so the server HTML already has its FINAL layout.       */
+/* ------------------------------------------------------------------ */
+
+/* `fit:` = mouse/desktop devices (pointer: fine). Same as the old JS `fit` flag, but known to CSS
+   before hydration, so server HTML == final layout. */
+/* Selector (not :where) form on purpose: its higher specificity makes `fit:` always beat plain and
+   breakpoint utilities, independent of CSS ordering. */
+@custom-variant fit (html[data-fit="1"] &);
+
+/* Dashboard home: banner + tools scaled to fit one screen. Values come from --hv-* variables. */
+html[data-fit="1"] .home-fit-section {
+  min-height: calc(100svh - var(--hv-top, 64px));
+}
+html[data-fit="1"] .home-fit-outer {
+  position: relative;
+  flex-shrink: 0;
+  width: calc(var(--hv-w, 1232px) * var(--hv-s, 1));
+  height: calc(var(--hv-h, 600px) * var(--hv-s, 1));
+}
+html[data-fit="1"] .home-fit-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--hv-w, 1232px);
+  transform: scale(var(--hv-s, 1));
+  transform-origin: top left;
+}
+html[data-fit="1"] [data-tile-box] {
+  width: var(--tile-box-fit, 65%) !important;
+}
+
+/* Greeting ("Good morning" ...) is chosen from the visitor's clock by the head script. */
+.greet-variant { display: none; }
+html[data-greet="morning"] .greet-morning,
+html[data-greet="afternoon"] .greet-afternoon,
+html[data-greet="evening"] .greet-evening,
+html[data-greet="night"] .greet-night { display: inline; }
+html:not([data-greet]) .greet-morning { display: inline; }
+
+/* Page body zoom for wide screens (same factor as the navbar). Used by my-files / sohoj-tools. */
+html[data-nav-scaled] .page-zoom { zoom: var(--nav-s, 1); }
+html[data-nav-scaled] .page-zoom-fill {
+  flex: none;
+  height: calc((100vh - 64px * var(--nav-s, 1)) / var(--nav-s, 1));
+}
+
+/* Navbar zoom scale for wide screens (scaleWithZoom pages). */
+html[data-nav-scaled] .nav-zoom-wrap { height: calc(64px * var(--nav-s, 1)); }
+html[data-nav-scaled] .nav-zoom-header {
+  width: calc(100% / var(--nav-s, 1));
+  transform: scale(var(--nav-s, 1));
+  transform-origin: top left;
+}
+
+/* User-specific bits (avatar initials / photo / name) painted from cached values until React
+   has hydrated and renders the real thing in the same place. */
+.user-pre[data-k="0"]::before { content: var(--user-initials, ""); }
+.user-pre[data-k="1"]::before { content: none; }
+.user-avatar-bg { background-image: var(--user-photo, none); background-size: cover; background-position: center; }
+.user-name-pre[data-k="0"]::before { content: var(--user-name, "User Account"); }
+.user-sub-pre[data-k="0"]::before { content: var(--user-sub, "User"); }
+.user-name-pre[data-k="1"]::before,
+.user-sub-pre[data-k="1"]::before { content: none; }
+.first-name-pre[data-k="0"]::before { content: var(--user-first, ""); }
+.first-name-pre[data-k="1"]::before { content: none; }

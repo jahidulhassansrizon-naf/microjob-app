@@ -7,28 +7,58 @@ import ActivityTracker from "@/app/_components/ActivityTracker";
 import NavigationProgressBar from "./_components/NavigationProgressBar";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
+import PrePaintScript from "./_components/PrePaintScript";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from "@/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const banglaSans = Noto_Sans_Bengali({ variable: "--font-bangla", subsets: ["bengali", "latin"], weight: ["400", "500", "600", "700", "800"] });
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+const banglaSans = Noto_Sans_Bengali({
+  variable: "--font-bangla",
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "সহজ কাজ - All your digital tasks in one place",
   description: "Create documents, designs, and print media easily.",
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const initialLocale: Locale = cookieLocale === "bn" ? "bn" : DEFAULT_LOCALE;
-  const showLoginSuccess = cookieStore.get("sohoj_login_success")?.value === "1";
+  const showLoginSuccess =
+    cookieStore.get("sohoj_login_success")?.value === "1";
+  const rawLoginName = cookieStore.get("sohoj_login_name")?.value ?? "";
+  let loginFirstName = rawLoginName;
+  try {
+    loginFirstName = decodeURIComponent(rawLoginName);
+  } catch {
+    // keep the raw value
+  }
 
   return (
-    <html lang={initialLocale} data-locale={initialLocale} translate="no" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`} suppressHydrationWarning>
+    <html
+      lang={initialLocale}
+      data-locale={initialLocale}
+      translate="no"
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Restores cached layout values before first paint -> no UI pop-in on reload. */}
+        <PrePaintScript />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`}
+        suppressHydrationWarning
+      >
         <I18nProvider initialLocale={initialLocale}>
           <ActivityTracker />
           <ConditionalSiteChrome>
@@ -37,7 +67,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <Navbar />
           </ConditionalSiteChrome>
           {children}
-          <LoginSuccessOverlay initialVisible={showLoginSuccess} />
+          <LoginSuccessOverlay
+            initialVisible={showLoginSuccess}
+            initialName={showLoginSuccess ? loginFirstName : ""}
+          />
         </I18nProvider>
       </body>
     </html>

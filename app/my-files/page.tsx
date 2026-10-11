@@ -1,7 +1,7 @@
 "use client";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { translateText } from "@/lib/i18n";
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ImageIcon,
@@ -672,49 +672,9 @@ function ScanSkeletonList({ count = 6 }: { count?: number }) {
     </div>
   );
 }
-// জুম-আউট / বড় স্ক্রিনে ন্যাভবারের সাথে মিলিয়ে কন্টেন্ট আনুপাতিক বড় হবে
-// DashboardNavbar-এর NAV_BASE_WIDTH / NAV_MAX_SCALE / NAV_BASE_HEIGHT-এর সাথে একই মান
-const ZOOM_BASE_WIDTH = 1920;
-const ZOOM_MAX_SCALE = 5;
-const NAV_BASE_HEIGHT = 64;
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
-function useZoomScale(): {
-  scale: number;
-  viewH: number;
-} {
-  const [state, setState] = useState<{
-    scale: number;
-    viewH: number;
-  }>({
-    scale: 1,
-    viewH: 0,
-  });
-  useIsoLayoutEffect(() => {
-    // শুধু মাউসওয়ালা (ডেস্কটপ/ল্যাপটপ) ডিভাইসে; টাচ ডিভাইসে আগের মতো রেসপন্সিভ
-    const mq = window.matchMedia("(pointer: fine)");
-    const update = () => {
-      const w = document.documentElement.clientWidth;
-      const h = window.innerHeight;
-      const scale = mq.matches
-        ? Math.min(ZOOM_MAX_SCALE, Math.max(1, w / ZOOM_BASE_WIDTH))
-        : 1;
-      setState((prev) =>
-        Math.abs(prev.scale - scale) < 0.001 && prev.viewH === h
-          ? prev
-          : { scale, viewH: h },
-      );
-    };
-    update();
-    window.addEventListener("resize", update);
-    mq.addEventListener("change", update);
-    return () => {
-      window.removeEventListener("resize", update);
-      mq.removeEventListener("change", update);
-    };
-  }, []);
-  return state;
-}
+// জুম-আউট / বড় স্ক্রিনে ন্যাভবারের সাথে মিলিয়ে কন্টেন্ট আনুপাতিক বড় হয় — এখন CSS দিয়ে
+// (globals.css: html[data-nav-scaled] .page-zoom / .page-zoom-fill). মান বসায় PrePaintScript +
+// DashboardNavbar, তাই রিলোডে প্রথম ফ্রেমেই সঠিক মাপ, কোনো state/JS-এর জন্য অপেক্ষা নেই।
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
@@ -730,7 +690,6 @@ export default function MyFilesPage() {
   // ডান সাইডবার: SohozTools
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true); // ডেস্কটপে ডান পাশের প্যানেল
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false); // মোবাইলে ড্রয়ার
-  const { scale: zoomScale, viewH } = useZoomScale();
   const [toolGroup, setToolGroup] = useState<ToolGroupId>("all");
   const [toolSearch, setToolSearch] = useState<string>("");
   const [toolSort, setToolSort] = useState<SortOrder>("newest");
@@ -968,15 +927,6 @@ export default function MyFilesPage() {
     setMobileSidebarOpen(false);
     if (window.innerWidth >= 1024) setSidebarOpen(false);
   };
-  // জুম-আউটে main অংশ আনুপাতিক বড় হবে; উচ্চতা হাতে হিসাব করে দিচ্ছি যাতে ভিতরের স্ক্রল ঠিক থাকে
-  const isZoomed = zoomScale > 1.001 && viewH > 0;
-  const mainStyle = isZoomed
-    ? {
-        zoom: zoomScale,
-        flex: "none",
-        height: Math.max(0, (viewH - NAV_BASE_HEIGHT * zoomScale) / zoomScale),
-      }
-    : undefined;
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-slate-900">
@@ -996,8 +946,7 @@ export default function MyFilesPage() {
       <DashboardNavbar scaleWithZoom />
 
       <main
-        style={mainStyle}
-        className="flex w-full flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:min-h-0 lg:px-8 2xl:px-12"
+        className="page-zoom page-zoom-fill flex w-full flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:min-h-0 lg:px-8 2xl:px-12"
       >
         {/* Page header */}
         <header className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3 sm:mb-6 sm:gap-4">
