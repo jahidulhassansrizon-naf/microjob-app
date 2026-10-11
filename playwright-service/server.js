@@ -2,35 +2,28 @@ const express = require("express");
 const { chromium } = require("playwright");
 const multer = require("multer");
 const { spawn } = require("node:child_process");
-const { promises: fs, existsSync } = require("node:fs");
+const { promises: fs, existsSync, writeFileSync } = require("node:fs");
 const crypto = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
-
 const app = express();
-
-const PORT = Number(process.env.BOT_PORT) || 3000;
+const PORT = Number(process.env.SERVER_PORT || process.env.PORT || process.env.BOT_PORT) || 3000;
+const HOST =
+  process.env.HOST ||
+  (process.env.SERVER_PORT || process.env.PORT ? "0.0.0.0" : "127.0.0.1");
 const DISPLAY = process.env.DISPLAY || ":99";
-
 const VNC_PORT = 5900;
 const WEBSOCKIFY_PORT = 6080;
-
 const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
-
 const VNC_PASSWORD_FILE = "/tmp/vnc-password";
-
 process.env.DISPLAY = DISPLAY;
-
 let browserContext = null;
 let desktopStarted = false;
 const desktopProcesses = [];
-
 app.use(express.json({ limit: "10mb" }));
-
 // --------------------------------------------------
 // CORS
 // --------------------------------------------------
-
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -38,25 +31,19 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, x-api-key",
   );
-
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
   }
-
   next();
 });
-
 // --------------------------------------------------
 // Helpers
 // --------------------------------------------------
-
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 function startProcess(command, args, name) {
   console.log(`Starting ${name}...`);
-
   const child = spawn(command, args, {
     env: {
       ...process.env,
@@ -65,66 +52,49 @@ function startProcess(command, args, name) {
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
-
   child.stdout.on("data", (data) => {
     console.log(`[${name}] ${data.toString().trim()}`);
   });
-
   child.stderr.on("data", (data) => {
     console.error(`[${name}] ${data.toString().trim()}`);
   });
-
   child.on("error", (error) => {
     console.error(`${name} error:`, error);
   });
-
   child.on("exit", (code, signal) => {
     console.log(`${name} exited`, {
       code,
       signal,
     });
   });
-
   desktopProcesses.push(child);
-
   return child;
 }
-
 // --------------------------------------------------
 // Desktop
 // --------------------------------------------------
-
 async function startDesktop() {
   if (desktopStarted) {
     return;
   }
-
   desktopStarted = true;
-
   console.log("Starting cloud desktop...");
-
   const xauthFile = "/tmp/gemini-xauth";
   const cookie = crypto.randomBytes(16).toString("hex");
-
   // Create X11 authentication cookie.
   await fs
     .rm(xauthFile, {
       force: true,
     })
     .catch(() => {});
-
   spawn("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
     stdio: "inherit",
   });
-
   await sleep(1000);
-
   process.env.XAUTHORITY = xauthFile;
-
   // ----------------------------------------------
   // Xvfb
   // ----------------------------------------------
-
   startProcess(
     "Xvfb",
     [
@@ -141,41 +111,30 @@ async function startDesktop() {
     ],
     "Xvfb",
   );
-
   await sleep(1500);
-
   // ----------------------------------------------
   // Fluxbox
   // ----------------------------------------------
-
   startProcess("fluxbox", [], "fluxbox");
-
   await sleep(1500);
-
   // ----------------------------------------------
   // VNC password
   // ----------------------------------------------
-
   const vncPassword = process.env.NO_VNC_PASSWORD;
-
   if (!vncPassword) {
     throw new Error("NO_VNC_PASSWORD environment variable is required.");
   }
-
   if (vncPassword.length > 8) {
     throw new Error(
       "NO_VNC_PASSWORD must be 8 characters or fewer because of the VNC password protocol.",
     );
   }
-
   await fs.writeFile(VNC_PASSWORD_FILE, `${vncPassword}\n`, {
     mode: 0o600,
   });
-
   // ----------------------------------------------
   // x11vnc
   // ----------------------------------------------
-
   startProcess(
     "x11vnc",
     [
@@ -195,13 +154,10 @@ async function startDesktop() {
     ],
     "x11vnc",
   );
-
   await sleep(2500);
-
   // ----------------------------------------------
   // websockify
   // ----------------------------------------------
-
   startProcess(
     "websockify",
     [
@@ -213,35 +169,26 @@ async function startDesktop() {
     ],
     "websockify",
   );
-
   await sleep(2500);
-
   console.log("Cloud desktop is ready.");
 }
-
 // --------------------------------------------------
 // Chromium
 // --------------------------------------------------
-
 async function getBrowserContext() {
   if (browserContext) {
     return browserContext;
   }
-
   await fs.mkdir(BROWSER_DATA_DIR, {
     recursive: true,
   });
-
   console.log("Launching cloud Chromium...");
-
   browserContext = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
     headless: false,
-
     viewport: {
       width: 1440,
       height: 900,
     },
-
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -249,42 +196,31 @@ async function getBrowserContext() {
       "--start-maximized",
     ],
   });
-
   console.log("Cloud Chromium launched.");
-
   return browserContext;
 }
-
 async function getGeminiPage() {
   const context = await getBrowserContext();
-
   const pages = context.pages();
-
   let page = pages.find((item) => item.url().includes("gemini.google.com"));
-
   if (!page) {
     page = pages[0] || (await context.newPage());
-
     await page.goto("https://gemini.google.com/app", {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
   }
-
   return page;
 }
-
 // --------------------------------------------------
 // Gemini image editing helpers
 // --------------------------------------------------
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 15 * 1024 * 1024,
   },
 });
-
 function parseUpload(req, res, next) {
   upload.single("image")(req, res, (error) => {
     if (error) {
@@ -293,11 +229,9 @@ function parseUpload(req, res, next) {
         error: error instanceof Error ? error.message : String(error),
       });
     }
-
     next();
   });
 }
-
 function parseTemplateUpload(req, res, next) {
   upload.fields([
     {
@@ -315,103 +249,101 @@ function parseTemplateUpload(req, res, next) {
         error: error instanceof Error ? error.message : String(error),
       });
     }
-
     next();
   });
 }
-
-// Optional protection: if ASK_KEY is set in Render's Environment,
+// Optional protection: if ASK_KEY is set in the hosting environment,
 // every protected request must send the same value in the
 // "x-api-key" header. If ASK_KEY is not set, the route is open.
 function requireApiKey(req, res, next) {
   const requiredKey = process.env.ASK_KEY;
-
   if (!requiredKey) {
     return next();
   }
-
   if (req.get("x-api-key") !== requiredKey) {
     return res.status(401).json({
       success: false,
       error: "Invalid or missing API key.",
     });
   }
-
   next();
 }
-
 function findSessionFile() {
-  return [
+  // Prefer a host-mounted secret file, then an explicitly supplied file.
+  const existingFile = [
     "/etc/secrets/gemini-session.json",
+    process.env.GEMINI_SESSION_FILE,
     path.join(__dirname, "gemini-session.json"),
-  ].find((p) => existsSync(p));
+  ].filter(Boolean).find((p) => existsSync(p));
+
+  if (existingFile) return existingFile;
+
+  // Some hosts provide secrets as environment variables instead of mounted files.
+  // Store the session temporarily with private permissions; never log its contents.
+  const sessionJson = process.env.GEMINI_SESSION_JSON;
+  if (!sessionJson || !sessionJson.trim()) return null;
+
+  const tempSessionFile = path.join(os.tmpdir(), "gemini-session.json");
+  try {
+    JSON.parse(sessionJson);
+  } catch {
+    throw new Error("GEMINI_SESSION_JSON must contain valid Playwright storage-state JSON.");
+  }
+
+  if (!existsSync(tempSessionFile)) {
+    writeFileSync(tempSessionFile, sessionJson, { mode: 0o600, flag: "wx" });
+  }
+
+  return tempSessionFile;
 }
 
 function getMimeType(extension) {
   const normalized = String(extension || "").toLowerCase();
-
   if (normalized === ".jpg" || normalized === ".jpeg") {
     return "image/jpeg";
   }
-
   if (normalized === ".webp") {
     return "image/webp";
   }
-
   if (normalized === ".gif") {
     return "image/gif";
   }
-
   return "image/png";
 }
-
 function getExtension(mimeType) {
   const normalized = String(mimeType || "").toLowerCase();
-
   if (normalized.includes("jpeg") || normalized.includes("jpg")) {
     return ".jpg";
   }
-
   if (normalized.includes("webp")) {
     return ".webp";
   }
-
   if (normalized.includes("gif")) {
     return ".gif";
   }
-
   return ".png";
 }
-
-// Only one Gemini job runs at a time, because Render Free
-// has very little memory (512 MB).
+// Keep generation sequential initially to control Chromium memory usage.
+// Increase concurrency only after the hosting environment is tested.
 let editQueue = Promise.resolve();
-
 function runInEditQueue(job) {
   const result = editQueue.then(job, job);
-
   editQueue = result.then(
     () => {},
     () => {},
   );
-
   return result;
 }
-
 // --------------------------------------------------
 // Existing AI Editor Gemini generation
 // --------------------------------------------------
-
 async function generateWithGemini(imagePath, prompt, outputDir) {
   const sessionFile = findSessionFile();
-
   if (!sessionFile) {
     throw new Error("Session file not found on server.");
   }
-
   let browser = null;
   let page = null;
-
   try {
     browser = await chromium.launch({
       headless: true,
@@ -421,157 +353,117 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
         "--disable-dev-shm-usage",
       ],
     });
-
     const context = await browser.newContext({
       storageState: sessionFile,
       viewport: { width: 1440, height: 900 },
       acceptDownloads: true,
     });
-
     page = await context.newPage();
-
     // 1. Open Gemini
     await page.goto("https://gemini.google.com/app", {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
-
     // 2. Type the prompt
     const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
-
     await promptWrapper.waitFor({
       state: "visible",
       timeout: 45000,
     });
-
     const promptParagraph = promptWrapper.getByRole("paragraph").first();
-
     await promptParagraph.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await promptParagraph.click();
-
     await page.keyboard.insertText(String(prompt).trim());
-
     // 3. Open Upload & tools
     const uploadToolsButton = page.getByRole("button", {
       name: "Upload & tools",
     });
-
     await uploadToolsButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await uploadToolsButton.click();
-
     // 4. Click the local uploader and attach the image
     const uploaderButton = page.locator(
       '[data-test-id="local-images-files-uploader-button"]',
     );
-
     await uploaderButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     const chooserPromise = page
       .waitForEvent("filechooser", {
         timeout: 5000,
       })
       .catch(() => null);
-
     await uploaderButton.click();
-
     const fileChooser = await chooserPromise;
-
     if (fileChooser) {
       await fileChooser.setFiles(imagePath);
     } else {
       const fileInput = page.locator('input[name="Filedata"]');
-
       await fileInput.waitFor({
         state: "attached",
         timeout: 15000,
       });
-
       await fileInput.setInputFiles(imagePath);
     }
-
     // Give Gemini a moment to attach the image
     await page.waitForTimeout(3000);
-
     // 5. Send
     const sendButton = page.getByRole("button", {
       name: "Send message",
     });
-
     await sendButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await sendButton.click();
-
     // 6. Wait for the generated image
     const downloadButton = page
       .getByRole("button", {
         name: "Download full size image",
       })
       .last();
-
     await downloadButton.waitFor({
       state: "visible",
       timeout: 180000,
     });
-
     // 7. Download it
     const downloadPromise = page.waitForEvent("download", {
       timeout: 120000,
     });
-
     await downloadButton.click();
-
     const download = await downloadPromise;
-
     const suggestedFilename =
       download.suggestedFilename() || "gemini-generated-image.png";
-
     const extension = path.extname(suggestedFilename) || ".png";
-
     const outputPath = path.join(outputDir, `generated${extension}`);
-
     await download.saveAs(outputPath);
-
     const buffer = await fs.readFile(outputPath);
-
     if (!buffer.length) {
       throw new Error("Gemini returned an empty image.");
     }
-
     return {
       buffer,
       mimeType: getMimeType(extension),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-
     let pageInfo = "";
-
     if (page) {
       try {
         const bodyText = await page.locator("body").innerText({
           timeout: 3000,
         });
-
         pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
       } catch {
         pageInfo = ` [page: ${page.url()}]`;
       }
     }
-
     throw new Error(`${message}${pageInfo}`);
   } finally {
     if (browser) {
@@ -579,11 +471,9 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
     }
   }
 }
-
 // --------------------------------------------------
 // NEW AI Template Gemini generation
 // --------------------------------------------------
-
 async function generateTemplateWithGemini(
   templateImagePath,
   userImagePath,
@@ -591,14 +481,11 @@ async function generateTemplateWithGemini(
   outputDir,
 ) {
   const sessionFile = findSessionFile();
-
   if (!sessionFile) {
     throw new Error("Session file not found on server.");
   }
-
   let browser = null;
   let page = null;
-
   try {
     browser = await chromium.launch({
       headless: true,
@@ -608,7 +495,6 @@ async function generateTemplateWithGemini(
         "--disable-dev-shm-usage",
       ],
     });
-
     const context = await browser.newContext({
       storageState: sessionFile,
       viewport: {
@@ -617,46 +503,34 @@ async function generateTemplateWithGemini(
       },
       acceptDownloads: true,
     });
-
     page = await context.newPage();
-
     // 1. Open Gemini
     await page.goto("https://gemini.google.com/app", {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
-
     // 2. Type the template prompt
     const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
-
     await promptWrapper.waitFor({
       state: "visible",
       timeout: 45000,
     });
-
     const promptParagraph = promptWrapper.getByRole("paragraph").first();
-
     await promptParagraph.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await promptParagraph.click();
-
     await page.keyboard.insertText(String(prompt).trim());
-
     // 3. Open Upload & tools
     const uploadToolsButton = page.getByRole("button", {
       name: "Upload & tools",
     });
-
     await uploadToolsButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await uploadToolsButton.click();
-
     // 4. Attach BOTH images.
     //
     // First image  = template/reference
@@ -664,109 +538,81 @@ async function generateTemplateWithGemini(
     const uploaderButton = page.locator(
       '[data-test-id="local-images-files-uploader-button"]',
     );
-
     await uploaderButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     const filesToUpload = [templateImagePath, userImagePath];
-
     const chooserPromise = page
       .waitForEvent("filechooser", {
         timeout: 5000,
       })
       .catch(() => null);
-
     await uploaderButton.click();
-
     const fileChooser = await chooserPromise;
-
     if (fileChooser) {
       await fileChooser.setFiles(filesToUpload);
     } else {
       const fileInput = page.locator('input[name="Filedata"]');
-
       await fileInput.waitFor({
         state: "attached",
         timeout: 15000,
       });
-
       await fileInput.setInputFiles(filesToUpload);
     }
-
     // Give Gemini time to attach both images.
     await page.waitForTimeout(4000);
-
     // 5. Send
     const sendButton = page.getByRole("button", {
       name: "Send message",
     });
-
     await sendButton.waitFor({
       state: "visible",
       timeout: 15000,
     });
-
     await sendButton.click();
-
     // 6. Wait for generated image
     const downloadButton = page
       .getByRole("button", {
         name: "Download full size image",
       })
       .last();
-
     await downloadButton.waitFor({
       state: "visible",
       timeout: 180000,
     });
-
     // 7. Download generated image
     const downloadPromise = page.waitForEvent("download", {
       timeout: 120000,
     });
-
     await downloadButton.click();
-
     const download = await downloadPromise;
-
     const suggestedFilename =
       download.suggestedFilename() || "gemini-template-generated-image.png";
-
     const extension = path.extname(suggestedFilename) || ".png";
-
     const outputPath = path.join(outputDir, `generated${extension}`);
-
     await download.saveAs(outputPath);
-
     const buffer = await fs.readFile(outputPath);
-
     if (!buffer.length) {
       throw new Error("Gemini returned an empty image.");
     }
-
     return {
       buffer,
       mimeType: getMimeType(extension),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-
     let pageInfo = "";
-
     if (page) {
       try {
         const bodyText = await page.locator("body").innerText({
           timeout: 3000,
         });
-
         pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
       } catch {
         pageInfo = ` [page: ${page.url()}]`;
       }
     }
-
     throw new Error(`${message}${pageInfo}`);
   } finally {
     if (browser) {
@@ -774,26 +620,20 @@ async function generateTemplateWithGemini(
     }
   }
 }
-
 // --------------------------------------------------
 // API
 // --------------------------------------------------
-
 app.get("/health", (req, res) => {
   res.json({
     success: true,
     status: "healthy",
   });
 });
-
 app.get("/login", async (req, res) => {
   try {
     await startDesktop();
-
     const page = await getGeminiPage();
-
     await page.bringToFront();
-
     return res.json({
       success: true,
       message:
@@ -803,14 +643,12 @@ app.get("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login browser error:", error);
-
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     });
   }
 });
-
 app.get("/browser-status", async (req, res) => {
   try {
     if (!browserContext) {
@@ -821,9 +659,7 @@ app.get("/browser-status", async (req, res) => {
         pages: [],
       });
     }
-
     const pages = browserContext.pages();
-
     return res.json({
       success: true,
       browserRunning: true,
@@ -837,23 +673,16 @@ app.get("/browser-status", async (req, res) => {
     });
   }
 });
-
 app.get("/session-test", async (req, res) => {
   let browser = null;
-
   try {
-    const sessionFile = [
-      "/etc/secrets/gemini-session.json",
-      path.join(__dirname, "gemini-session.json"),
-    ].find((p) => existsSync(p));
-
+    const sessionFile = findSessionFile();
     if (!sessionFile) {
       return res.status(404).json({
         success: false,
         error: "Session file not found on server.",
       });
     }
-
     browser = await chromium.launch({
       headless: true,
       args: [
@@ -862,7 +691,6 @@ app.get("/session-test", async (req, res) => {
         "--disable-dev-shm-usage",
       ],
     });
-
     const context = await browser.newContext({
       storageState: sessionFile,
       viewport: {
@@ -870,23 +698,16 @@ app.get("/session-test", async (req, res) => {
         height: 900,
       },
     });
-
     const page = await context.newPage();
-
     await page.goto("https://gemini.google.com/app", {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
-
     await page.waitForTimeout(5000);
-
     const bodyText = await page.locator("body").innerText();
-
     const hasSignIn = /Sign in/i.test(bodyText);
-
     const hasPromptBox =
       (await page.locator('[data-test-id="textarea-wrapper"]').count()) > 0;
-
     return res.json({
       success: true,
       sessionFileFound: true,
@@ -906,29 +727,24 @@ app.get("/session-test", async (req, res) => {
     }
   }
 });
-
 // --------------------------------------------------
 // Existing AI Editor endpoint
 // --------------------------------------------------
-
 app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
   const prompt =
     typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
-
   if (!prompt) {
     return res.status(400).json({
       success: false,
       error: "No editing prompt was provided.",
     });
   }
-
   if (!req.file || !req.file.buffer || !req.file.buffer.length) {
     return res.status(400).json({
       success: false,
       error: "No source image was provided.",
     });
   }
-
   if (
     !String(req.file.mimetype || "")
       .toLowerCase()
@@ -939,23 +755,17 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
       error: "Uploaded source file is not an image.",
     });
   }
-
   let tempDir = null;
-
   try {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-edit-"));
-
     const sourcePath = path.join(
       tempDir,
       `source${getExtension(req.file.mimetype)}`,
     );
-
     await fs.writeFile(sourcePath, req.file.buffer);
-
     const result = await runInEditQueue(() =>
       generateWithGemini(sourcePath, prompt, tempDir),
     );
-
     return res.json({
       success: true,
       provider: "gemini-playwright-render",
@@ -963,7 +773,6 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
     });
   } catch (error) {
     console.error("edit-image error:", error);
-
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
@@ -979,11 +788,9 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
     }
   }
 });
-
 // --------------------------------------------------
 // NEW AI Template endpoint
 // --------------------------------------------------
-
 app.post(
   "/template-edit",
   requireApiKey,
@@ -991,40 +798,31 @@ app.post(
   async (req, res) => {
     const prompt =
       typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
-
     if (!prompt) {
       return res.status(400).json({
         success: false,
         error: "No template generation prompt was provided.",
       });
     }
-
     const files = req.files || {};
-
     const userFiles = Array.isArray(files.image) ? files.image : [];
-
     const templateFiles = Array.isArray(files.templateImage)
       ? files.templateImage
       : [];
-
     const userFile = userFiles[0];
-
     const templateFile = templateFiles[0];
-
     if (!userFile || !userFile.buffer || !userFile.buffer.length) {
       return res.status(400).json({
         success: false,
         error: "No user photo was provided.",
       });
     }
-
     if (!templateFile || !templateFile.buffer || !templateFile.buffer.length) {
       return res.status(400).json({
         success: false,
         error: "No template image was provided.",
       });
     }
-
     if (
       !String(userFile.mimetype || "")
         .toLowerCase()
@@ -1035,7 +833,6 @@ app.post(
         error: "Uploaded user photo is not an image.",
       });
     }
-
     if (
       !String(templateFile.mimetype || "")
         .toLowerCase()
@@ -1046,32 +843,24 @@ app.post(
         error: "Uploaded template file is not an image.",
       });
     }
-
     let tempDir = null;
-
     try {
       tempDir = await fs.mkdtemp(
         path.join(os.tmpdir(), "gemini-template-edit-"),
       );
-
       const templatePath = path.join(
         tempDir,
         `template${getExtension(templateFile.mimetype)}`,
       );
-
       const userPath = path.join(
         tempDir,
         `user${getExtension(userFile.mimetype)}`,
       );
-
       await fs.writeFile(templatePath, templateFile.buffer);
-
       await fs.writeFile(userPath, userFile.buffer);
-
       const result = await runInEditQueue(() =>
         generateTemplateWithGemini(templatePath, userPath, prompt, tempDir),
       );
-
       return res.json({
         success: true,
         provider: "gemini-playwright-template",
@@ -1079,7 +868,6 @@ app.post(
       });
     } catch (error) {
       console.error("template-edit error:", error);
-
       return res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -1096,14 +884,11 @@ app.post(
     }
   },
 );
-
 // --------------------------------------------------
 // Start Node API
 // --------------------------------------------------
-
-const server = app.listen(PORT, "127.0.0.1", async () => {
+const server = app.listen(PORT, HOST, async () => {
   console.log(`Node API running on internal port ${PORT}`);
-
   if (process.env.SKIP_DESKTOP !== "1") {
     try {
       await startDesktop();
@@ -1112,14 +897,11 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
     }
   }
 });
-
 // --------------------------------------------------
 // Shutdown
 // --------------------------------------------------
-
 async function shutdown(signal) {
   console.log(`Received ${signal}. Shutting down...`);
-
   try {
     if (browserContext) {
       await browserContext.close().catch(() => {});
@@ -1128,17 +910,13 @@ async function shutdown(signal) {
     for (const child of desktopProcesses) {
       child.kill("SIGTERM");
     }
-
     server.close(() => {
       process.exit(0);
     });
-
     setTimeout(() => {
       process.exit(0);
     }, 5000);
   }
 }
-
 process.on("SIGTERM", () => shutdown("SIGTERM"));
-
 process.on("SIGINT", () => shutdown("SIGINT"));
