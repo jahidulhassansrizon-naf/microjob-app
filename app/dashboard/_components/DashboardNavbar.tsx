@@ -199,7 +199,10 @@ const useIsoLayoutEffect =
 // Navbar zoom scale and the visible-item layout are restored before first paint by
 // app/_components/PrePaintScript.tsx (html[data-nav-scaled], --nav-s, --nav-w, --ni-N ...), so the
 // server HTML already has its final look and nothing is hidden/flipped after hydration.
-if (process.env.NODE_ENV !== "production" && NAV_ITEMS.length !== NAV_ITEM_COUNT) {
+if (
+  process.env.NODE_ENV !== "production" &&
+  NAV_ITEMS.length !== NAV_ITEM_COUNT
+) {
   console.warn(
     `[DashboardNavbar] NAV_ITEM_COUNT (${NAV_ITEM_COUNT}) in PrePaintScript.tsx must equal NAV_ITEMS.length (${NAV_ITEMS.length}).`,
   );
@@ -224,9 +227,10 @@ function UpcomingFlag() {
   );
 }
 const itemBase =
-  "group flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
-const itemActive = "bg-blue-50 text-[#1D4ED8]";
-const itemIdle = "text-slate-800 hover:bg-slate-100 hover:text-slate-950";
+  "group flex items-center gap-1.5 rounded-xl px-1.5 py-1.5 whitespace-nowrap transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
+const itemActive =
+  "bg-blue-50 text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(191,219,254,0.9)]";
+const itemIdle = "text-slate-700 hover:bg-slate-100/80 hover:text-slate-950";
 function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
   return (
     <>
@@ -326,12 +330,12 @@ function NavDropdown({
       </Link>
 
       {open && item.menu && (
-        <div className="absolute left-0 top-full z-[100] w-52 rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] font-medium shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
+        <div className="absolute left-0 top-full z-[100] w-52 rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] font-medium shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
           {item.menu.map((entry, index) => (
             <Link
               key={index}
               href={item.href}
-              className="block rounded-lg px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              className="block rounded-lg px-3 py-2 text-slate-600 transition-colors hover:bg-blue-50 hover:text-[#1D4ED8]"
             >
               {entry}
             </Link>
@@ -380,7 +384,7 @@ function MoreMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] font-medium shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
+        <div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] font-medium shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
           {items.map((item) => (
             <Link
               key={item.id}
@@ -464,7 +468,10 @@ export default function DashboardNavbar({
     const mq = window.matchMedia("(pointer: fine)");
     const update = () => {
       const next = mq.matches
-        ? Math.min(NAV_MAX_SCALE, Math.max(1, root.clientWidth / NAV_BASE_WIDTH))
+        ? Math.min(
+            NAV_MAX_SCALE,
+            Math.max(1, root.clientWidth / NAV_BASE_WIDTH),
+          )
         : 1;
       if (next > 1.001) {
         root.setAttribute("data-nav-scaled", "1");
@@ -719,7 +726,11 @@ export default function DashboardNavbar({
       if (fontsSettled) {
         setNavReady(true);
         // remember the settled layout so the next reload can paint it immediately
-        saveNavLayout(pathnameRef.current, { vc: count, w: Math.max(navW, 0), al: aligned });
+        saveNavLayout(pathnameRef.current, {
+          vc: count,
+          w: Math.max(navW, 0),
+          al: aligned,
+        });
       }
     };
     observer = new ResizeObserver(measure);
@@ -822,18 +833,20 @@ export default function DashboardNavbar({
   const menuSetter = (id: string) => (v: boolean) =>
     setOpenMenu((cur) => (v ? id : cur === id ? null : cur));
   const iconButton =
-    "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
+    "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
   const profileLinkClass =
     "flex items-center gap-2.5 rounded-lg px-3 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950";
   return (
     <>
       {/* স্কেল চালু থাকলে এই র‍্যাপার স্কেল-করা উচ্চতা ধরে রাখে ও sticky থাকে */}
       <div
-        className={scaleWithZoom ? "nav-zoom-wrap sticky top-0 z-50" : "contents"}
+        className={
+          scaleWithZoom ? "nav-zoom-wrap sticky top-0 z-50" : "contents"
+        }
       >
         <header
           ref={headerRef}
-          className={`${scaleWithZoom ? "nav-zoom-header " : ""}sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/80 bg-white/90 px-3 backdrop-blur-md sm:gap-3 sm:px-6`}
+          className={`${scaleWithZoom ? "nav-zoom-header " : ""}sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/70 bg-white/80 px-3 shadow-[0_1px_3px_rgba(15,23,42,0.04)] backdrop-blur-xl sm:gap-3 sm:px-6`}
         >
           {/* ------------------------------------------------------------ */}
           {/* Left: Logo                                                   */}
@@ -844,15 +857,15 @@ export default function DashboardNavbar({
             href="/"
             className="flex min-w-0 shrink items-center gap-2.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[15px] font-extrabold text-white shadow-sm ring-1 ring-inset ring-white/20">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-[15px] font-extrabold text-white shadow-[0_4px_12px_-2px_rgba(37,99,235,0.45)] ring-1 ring-inset ring-white/25">
               <DT>{"SK\n            "}</DT>
             </div>
 
             <div className="flex min-w-0 flex-col leading-none">
               <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
-                <DT>{"Sohoz"}</DT>
+                <DT>{"Sohoj"}</DT>
                 <span className="text-[#2563EB]">
-                  <DT>{"kaj"}</DT>
+                  <DT>{" Hub"}</DT>
                 </span>
               </span>
 
@@ -967,7 +980,7 @@ export default function DashboardNavbar({
             className="flex shrink-0 items-center gap-1.5 sm:gap-2"
           >
             {/* Language switcher */}
-            <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold min-[1900px]:inline-flex">
+            <div className="hidden shrink-0 items-center rounded-xl bg-slate-100/90 p-0.5 text-xs font-semibold ring-1 ring-inset ring-slate-200/60 min-[1900px]:inline-flex">
               <button
                 type="button"
                 onClick={() => changeLanguage("EN")}
@@ -1013,7 +1026,7 @@ export default function DashboardNavbar({
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 aria-haspopup="true"
                 aria-expanded={dropdownOpen}
-                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
               >
                 <div className="user-avatar-bg flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
                   {user?.profileImageUrl ? (
@@ -1067,7 +1080,7 @@ export default function DashboardNavbar({
               {/* -------------------------------------------------------- */}
 
               {dropdownOpen && (
-                <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200/80 bg-white p-1.5 text-[13px] shadow-[0_12px_40px_-12px_rgba(15,23,42,0.25)] animate-in fade-in duration-150">
+                <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
                   {/* User info */}
                   <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
                     <p className="truncate font-semibold text-[#0F172A]">
@@ -1200,7 +1213,7 @@ export default function DashboardNavbar({
             onClick={() => setIsSearchOpen(false)}
           />
 
-          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-12px_rgba(15,23,42,0.35)]">
+          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_30px_70px_-15px_rgba(15,23,42,0.4)]">
             {/* Input row */}
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
               <Search size={18} className="shrink-0 text-[#2563EB]" />

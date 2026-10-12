@@ -1,445 +1,892 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ChevronDown, LogIn, Sparkles, Edit3, Copy, FileCode, FileText, Printer, HelpCircle, Menu, X, Gift, ArrowRight, } from "lucide-react";
+import {
+  Star,
+  ChevronDown,
+  LogIn,
+  Sparkles,
+  Edit3,
+  Copy,
+  FileCode,
+  FileText,
+  Printer,
+  HelpCircle,
+  Menu,
+  X,
+  Gift,
+  ArrowRight,
+  Image as ImageIcon,
+  Type,
+  Video,
+  Wrench,
+} from "lucide-react";
 import { useI18n, T } from "@/components/i18n/I18nProvider";
-// Our Services ডেটা
+
+/* ----------------------------- Data ----------------------------- */
+
+// Our Services
 const serviceItems = [
-    {
-        label: "AI Photo Edit",
-        icon: Sparkles,
-        href: "/login?redirect=/ai-editor",
-    },
-    {
-        label: "Manual Photo Edit",
-        icon: Edit3,
-        href: "/login?redirect=/manual-editor",
-    },
-    {
-        label: "Bulk Photo Edit",
-        icon: Copy,
-        href: "/login?redirect=/bulk-photo-edit",
-    },
-    {
-        label: "AI Template",
-        icon: FileCode,
-        href: "/login?redirect=/ai-template",
-    },
-    { label: "Document Templates", icon: FileText, href: "/login" },
-    { label: "Print Media", icon: Printer, href: "/login?redirect=/print-media" },
-    {
-        label: "Questions Create",
-        icon: HelpCircle,
-        href: "/login?redirect=/questions-create/create",
-    },
+  {
+    label: "AI Photo Edit",
+    icon: Sparkles,
+    href: "/login?redirect=/ai-editor",
+  },
+  {
+    label: "Manual Photo Edit",
+    icon: Edit3,
+    href: "/login?redirect=/manual-editor",
+  },
+  {
+    label: "Bulk Photo Edit",
+    icon: Copy,
+    href: "/login?redirect=/bulk-photo-edit",
+  },
+  {
+    label: "AI Template",
+    icon: FileCode,
+    href: "/login?redirect=/ai-template",
+  },
+  { label: "Document Templates", icon: FileText, href: "/login" },
+  { label: "Print Media", icon: Printer, href: "/login?redirect=/print-media" },
+  {
+    label: "Questions Create",
+    icon: HelpCircle,
+    href: "/login?redirect=/questions-create/create",
+  },
 ];
-// SohozTools মেগা-মেনু বক্সের ভেতরের ডেটা
+
+// SohozTools mega menu
 const sohozToolsCategories = [
-    {
-        title: "PDF Tools",
-        count: "15 tools",
-        tools: [
-            { name: "Compress PDF", href: "/login?redirect=/sohoj-tools" },
-            { name: "Merge PDFs", href: "/login?redirect=/sohoj-tools" },
-            { name: "Create PDF", href: "/login?redirect=/sohoj-tools" },
-            { name: "Split PDF", href: "/login?redirect=/sohoj-tools" },
-            { name: "PDF to Image", href: "/login?redirect=/sohoj-tools" },
-            { name: "Lock / Unlock PDF", href: "/login?redirect=/sohoj-tools" },
-        ],
-        moreText: "+9 more >",
-    },
-    {
-        title: "Image Tools",
-        count: "18 tools",
-        tools: [
-            { name: "Image Size Reducer", href: "/login?redirect=/sohoj-tools" },
-            { name: "NID to PDF", href: "/login?redirect=/sohoj-tools" },
-            { name: "Remove Background", href: "/login?redirect=/sohoj-tools" },
-            {
-                name: "Govt Job Photo & Sign Resizer",
-                href: "/login?redirect=/sohoj-tools",
-            },
-            { name: "Passport to PDF", href: "/login?redirect=/sohoj-tools" },
-            { name: "Image Convert", href: "/login?redirect=/sohoj-tools" },
-        ],
-        moreText: "+12 more >",
-    },
-    {
-        title: "Text Tools",
-        count: "6 tools",
-        tools: [
-            { name: "Bijoy ↔ Unicode", href: "/login?redirect=/sohoj-tools" },
-            { name: "Banglish Typing", href: "/login?redirect=/sohoj-tools" },
-            { name: "Number to Words", href: "/login?redirect=/sohoj-tools" },
-            { name: "Image to Text", href: "/login?redirect=/sohoj-tools" },
-            { name: "Text Analyzer", href: "/login?redirect=/sohoj-tools" },
-            { name: "Date Format Converter", href: "/login?redirect=/sohoj-tools" },
-        ],
-    },
-    {
-        title: "Video Tools",
-        count: "10 tools",
-        tools: [
-            { name: "Compress Video", href: "/login?redirect=/sohoj-tools" },
-            { name: "Trim/Cut Video", href: "/login?redirect=/sohoj-tools" },
-            { name: "Merge Videos", href: "/login?redirect=/sohoj-tools" },
-            { name: "Video to Audio", href: "/login?redirect=/sohoj-tools" },
-            { name: "Add Watermark", href: "/login?redirect=/sohoj-tools" },
-            { name: "Audio Volume Booster", href: "/login?redirect=/sohoj-tools" },
-        ],
-        moreText: "+4 more >",
-    },
-    {
-        title: "General Tools",
-        count: "5 tools",
-        tools: [
-            { name: "Family Card Form", href: "/login?redirect=/sohoj-tools" },
-            { name: "Fuel Card Form", href: "/login?redirect=/sohoj-tools" },
-            { name: "ATS Friendly CV Maker", href: "/login?redirect=/sohoj-tools" },
-            { name: "Age Calculator", href: "/login?redirect=/sohoj-tools" },
-            { name: "EMI Calculator", href: "/login?redirect=/sohoj-tools" },
-        ],
-    },
+  {
+    title: "PDF Tools",
+    count: "15 tools",
+    icon: FileText,
+    accent: "bg-rose-50 text-rose-600",
+    tools: [
+      { name: "Compress PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Merge PDFs", href: "/login?redirect=/sohoj-tools" },
+      { name: "Create PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Split PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "PDF to Image", href: "/login?redirect=/sohoj-tools" },
+      { name: "Lock / Unlock PDF", href: "/login?redirect=/sohoj-tools" },
+    ],
+    moreText: "+9 more",
+  },
+  {
+    title: "Image Tools",
+    count: "18 tools",
+    icon: ImageIcon,
+    accent: "bg-emerald-50 text-emerald-600",
+    tools: [
+      { name: "Image Size Reducer", href: "/login?redirect=/sohoj-tools" },
+      { name: "NID to PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Remove Background", href: "/login?redirect=/sohoj-tools" },
+      {
+        name: "Govt Job Photo & Sign Resizer",
+        href: "/login?redirect=/sohoj-tools",
+      },
+      { name: "Passport to PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Image Convert", href: "/login?redirect=/sohoj-tools" },
+    ],
+    moreText: "+12 more",
+  },
+  {
+    title: "Text Tools",
+    count: "6 tools",
+    icon: Type,
+    accent: "bg-amber-50 text-amber-600",
+    tools: [
+      { name: "Bijoy ↔ Unicode", href: "/login?redirect=/sohoj-tools" },
+      { name: "Banglish Typing", href: "/login?redirect=/sohoj-tools" },
+      { name: "Number to Words", href: "/login?redirect=/sohoj-tools" },
+      { name: "Image to Text", href: "/login?redirect=/sohoj-tools" },
+      { name: "Text Analyzer", href: "/login?redirect=/sohoj-tools" },
+      { name: "Date Format Converter", href: "/login?redirect=/sohoj-tools" },
+    ],
+  },
+  {
+    title: "Video Tools",
+    count: "10 tools",
+    icon: Video,
+    accent: "bg-violet-50 text-violet-600",
+    tools: [
+      { name: "Compress Video", href: "/login?redirect=/sohoj-tools" },
+      { name: "Trim/Cut Video", href: "/login?redirect=/sohoj-tools" },
+      { name: "Merge Videos", href: "/login?redirect=/sohoj-tools" },
+      { name: "Video to Audio", href: "/login?redirect=/sohoj-tools" },
+      { name: "Add Watermark", href: "/login?redirect=/sohoj-tools" },
+      { name: "Audio Volume Booster", href: "/login?redirect=/sohoj-tools" },
+    ],
+    moreText: "+4 more",
+  },
+  {
+    title: "General Tools",
+    count: "5 tools",
+    icon: Wrench,
+    accent: "bg-sky-50 text-sky-600",
+    tools: [
+      { name: "Family Card Form", href: "/login?redirect=/sohoj-tools" },
+      { name: "Fuel Card Form", href: "/login?redirect=/sohoj-tools" },
+      { name: "ATS Friendly CV Maker", href: "/login?redirect=/sohoj-tools" },
+      { name: "Age Calculator", href: "/login?redirect=/sohoj-tools" },
+      { name: "EMI Calculator", href: "/login?redirect=/sohoj-tools" },
+    ],
+  },
 ];
-// Important Links ডেটা
+
+// Important Links
 const importantLinksItems = [
-    {
-        title: "Govt Websites & Links",
-        subtitle: "National essential services",
-        count: "14",
-        countBg: "bg-blue-100/80 text-blue-600",
-        href: "/dorkar-link?category=govt",
-    },
-    {
-        title: "Visa & International",
-        subtitle: "Visa, passport & expat services",
-        count: "15",
-        countBg: "bg-sky-100/80 text-sky-600",
-        href: "/dorkar-link?category=visa",
-    },
-    {
-        title: "Other Links",
-        subtitle: "Results & other useful sites",
-        count: "12",
-        countBg: "bg-indigo-100/80 text-indigo-600",
-        href: "/dorkar-link?category=other",
-    },
-    {
-        title: "Job Circular",
-        subtitle: "Latest job circulars",
-        href: "/login?redirect=/jobs",
-    },
-    {
-        title: "Important Articles",
-        subtitle: "Blog & helpful articles",
-        href: "https://blog.sohozkaj.com/",
-    },
-    {
-        title: "Contest",
-        subtitle: "Use SohojKaj & win prizes!",
-        isNew: true,
-        isFeatured: true,
-        href: "https://contest.sohozkaj.com/",
-    },
-    {
-        title: "Contact",
-        subtitle: "Get in touch with us",
-        href: "/contact",
-    },
+  {
+    title: "Govt Websites & Links",
+    subtitle: "National essential services",
+    count: "14",
+    countBg: "bg-blue-100/80 text-blue-600",
+    href: "/dorkar-link?category=govt",
+  },
+  {
+    title: "Visa & International",
+    subtitle: "Visa, passport & expat services",
+    count: "15",
+    countBg: "bg-sky-100/80 text-sky-600",
+    href: "/dorkar-link?category=visa",
+  },
+  {
+    title: "Other Links",
+    subtitle: "Results & other useful sites",
+    count: "12",
+    countBg: "bg-indigo-100/80 text-indigo-600",
+    href: "/dorkar-link?category=other",
+  },
+  {
+    title: "Job Circular",
+    subtitle: "Latest job circulars",
+    href: "/login?redirect=/jobs",
+  },
+  {
+    title: "Important Articles",
+    subtitle: "Blog & helpful articles",
+    href: "https://blog.sohozkaj.com/",
+  },
+  {
+    title: "Contest",
+    subtitle: "Use SohojKaj & win prizes!",
+    isNew: true,
+    isFeatured: true,
+    href: "https://contest.sohozkaj.com/",
+  },
+  {
+    title: "Contact",
+    subtitle: "Get in touch with us",
+    href: "/contact",
+  },
 ];
+
+// Pages where the navbar must NOT render
+const hiddenExact = [
+  "/login",
+  "/register",
+  "/my-files",
+  "/ai-editor",
+  "/subscription",
+  "/settings",
+  "/income-expenses",
+  "/customers-invoices",
+];
+const hiddenPrefixes = [
+  "/dashboard",
+  "/manual-editor",
+  "/bulk-photo-edit",
+  "/ai-template",
+  "/questions-create",
+  "/jobs",
+  "/print-media",
+  "/sohoj-tools",
+  "/profile",
+  "/tutorial-video",
+  "/whatsapp-support",
+  "/free-tools",
+  "/income-expenses/",
+  "/customers-invoices/",
+];
+
+/* --------------------------- Small helpers --------------------------- */
+
+const navTrigger = (active: boolean) =>
+  `relative flex h-9 items-center gap-1 rounded-full px-3.5 text-[14px] font-semibold transition-colors cursor-pointer ${
+    active
+      ? "bg-blue-50 text-blue-700"
+      : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+  }`;
+
+const Chevron = ({ open }: { open: boolean }) => (
+  <ChevronDown
+    size={14}
+    className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+  />
+);
+
+function LanguageToggle({
+  layoutId,
+  className = "",
+  size = "md",
+}: {
+  layoutId: string;
+  className?: string;
+  size?: "md" | "lg";
+}) {
+  const { locale, setLocale } = useI18n();
+  const options = [
+    { code: "bn" as const, label: "বাং" },
+    { code: "en" as const, label: "EN" },
+  ];
+  return (
+    <div
+      className={`relative items-center rounded-full border border-slate-200 bg-slate-100/80 p-0.5 text-[11px] font-bold ${className}`}
+    >
+      {options.map((o) => {
+        const active = locale === o.code;
+        return (
+          <button
+            key={o.code}
+            onClick={() => setLocale(o.code)}
+            className={`relative z-10 cursor-pointer rounded-full transition-colors ${
+              size === "lg" ? "px-4 py-1.5" : "px-3 py-1"
+            } ${active ? "text-white" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            {active && (
+              <motion.span
+                layoutId={layoutId}
+                className="absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-sm"
+                transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              />
+            )}
+            <T>{o.label}</T>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileAccordion({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border transition-colors ${
+        open ? "border-blue-100 bg-blue-50/30" : "border-slate-100 bg-white"
+      }`}
+    >
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-bold text-slate-800"
+      >
+        <span>
+          <T>{label}</T>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${
+            open ? "rotate-180 text-blue-600" : "text-slate-400"
+          }`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ------------------------------ Navbar ------------------------------ */
+
 export default function Navbar() {
-    const pathname = usePathname();
-    const [isServicesOpen, setIsServicesOpen] = useState(false);
-    const [isToolsOpen, setIsToolsOpen] = useState(false);
-    const [isImportantOpen, setIsImportantOpen] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
-    const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
-    const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
-    const { locale, setLocale } = useI18n();
-    const changeLanguage = (lang: "en" | "bn") => {
-        setLocale(lang);
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isImportantOpen, setIsImportantOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
+
+  // Shrink + add shadow after scrolling
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Close everything on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsServicesOpen(false);
+    setIsToolsOpen(false);
+    setIsImportantOpen(false);
+  }, [pathname]);
+
+  // Lock page scroll while the mobile drawer is open
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
     };
-    if (pathname === "/login" ||
-        pathname === "/register" ||
-        pathname.startsWith("/dashboard") ||
-        pathname === "/my-files" ||
-        pathname === "/ai-editor" ||
-        pathname.startsWith("/manual-editor") ||
-        pathname.startsWith("/bulk-photo-edit") ||
-        pathname.startsWith("/ai-template") ||
-        pathname.startsWith("/questions-create") ||
-        pathname.startsWith("/jobs") ||
-        pathname.startsWith("/print-media") ||
-        pathname.startsWith("/sohoj-tools") ||
-        pathname.startsWith("/profile") ||
-        pathname.startsWith("/tutorial-video") ||
-        pathname.startsWith("/whatsapp-support") ||
-        pathname.startsWith("/free-tools") ||
-        pathname === "/subscription" ||
-        pathname === "/settings" ||
-        pathname === "/income-expenses" ||
-        pathname.startsWith("/income-expenses/") ||
-        pathname === "/customers-invoices" ||
-        pathname.startsWith("/customers-invoices/")) {
-        return null;
-    }
-    return (<>
-      {/* Animated Top Navbar */}
-      <motion.header initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} className="sticky top-0 z-[999] w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs py-4 md:py-5">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
+  }, [isMobileMenuOpen]);
+
+  if (
+    hiddenExact.includes(pathname) ||
+    hiddenPrefixes.some((p) => pathname.startsWith(p))
+  ) {
+    return null;
+  }
+
+  const toolsActive = pathname.startsWith("/tools");
+  const importantActive = pathname.startsWith("/dorkar-link");
+
+  return (
+    <>
+      {/* ============ Top Navbar ============ */}
+      <motion.header
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className={`sticky top-0 z-[999] w-full border-b transition-all duration-300 ${
+          scrolled
+            ? "border-slate-200/70 bg-white/85 shadow-[0_10px_30px_-15px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+            : "border-transparent bg-white/70 backdrop-blur-md"
+        }`}
+      >
+        <div
+          className={`relative mx-auto flex max-w-[1400px] items-center justify-between px-4 transition-all duration-300 sm:px-6 md:px-12 ${
+            scrolled ? "h-14 md:h-16" : "h-16 md:h-[76px]"
+          }`}
+        >
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs px-2.5 py-2 rounded-xl shadow-xs"><T>{"SK\n            "}</T></motion.div>
-            <div>
-              <h2 className="text-base font-extrabold text-gray-900 leading-tight"><T>{"\u09B8\u09B9\u099C \u0995\u09BE\u099C\n              "}</T></h2>
-              <p className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase"><T>{"www.sohozkaj.com\n              "}</T></p>
+          <Link href="/" className="flex items-center gap-3">
+            <motion.div
+              whileHover={{ rotate: -4, scale: 1.06 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-[13px] font-black tracking-tight text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/20"
+            >
+              SH
+            </motion.div>
+            <div className="leading-none">
+              <h2 className="text-[19px] font-extrabold tracking-tight text-slate-900">
+                Sohoj{" "}
+                <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                  Hub
+                </span>
+              </h2>
+              <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                www.sohozkaj.com
+              </p>
             </div>
           </Link>
 
-          {/* Center: Navigation Links (Desktop Only) */}
-          <nav className="hidden lg:flex items-center gap-8 text-[14px] leading-[20px] font-semibold text-[#555555]">
-            {/* Our Services Dropdown */}
-            <div className="relative" onMouseEnter={() => setIsServicesOpen(true)} onMouseLeave={() => setIsServicesOpen(false)}>
-              <button onClick={() => setIsServicesOpen(!isServicesOpen)} className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"><T>{"Our Services"}</T>{<T>{" "}</T>}
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isServicesOpen ? "rotate-180" : ""}`}/>
+          {/* Center: Navigation (Desktop) */}
+          <nav className="hidden h-full items-center gap-1 lg:flex">
+            {/* Our Services */}
+            <div
+              className="relative flex h-full items-center"
+              onMouseEnter={() => setIsServicesOpen(true)}
+              onMouseLeave={() => setIsServicesOpen(false)}
+            >
+              <button
+                onClick={() => setIsServicesOpen(!isServicesOpen)}
+                className={navTrigger(isServicesOpen)}
+              >
+                <T>{"Our Services"}</T>
+                <Chevron open={isServicesOpen} />
               </button>
 
               <AnimatePresence>
-                {isServicesOpen && (<motion.div initial={{ opacity: 0, y: 12, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.96 }} transition={{ duration: 0.18, ease: "easeOut" }} className="absolute top-full left-0 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-[1000] flex flex-col gap-1">
-                    {serviceItems.map((item, index) => {
-                const IconComponent = item.icon;
-                return (<Link key={index} href={item.href} onClick={() => setIsServicesOpen(false)} className="flex items-center gap-3 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">
-                          <IconComponent size={16} className="text-gray-400"/>
-                          <span>{<T>{item.label}</T>}</span>
-                        </Link>);
-            })}
-                  </motion.div>)}
-              </AnimatePresence>
-            </div>
-
-            {/* SohozTools Mega Menu */}
-            <div className="relative" onMouseEnter={() => setIsToolsOpen(true)} onMouseLeave={() => setIsToolsOpen(false)}>
-              <Link href="/tools" onClick={() => setIsToolsOpen(false)} className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"><T>{"SohozTools"}</T>{<T>{" "}</T>}
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isToolsOpen ? "rotate-180" : ""}`}/>
-              </Link>
-
-              <AnimatePresence>
-                {isToolsOpen && (<motion.div initial={{ opacity: 0, y: 12, scale: 0.98, x: "-50%" }} animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }} exit={{ opacity: 0, y: 10, scale: 0.98, x: "-50%" }} transition={{ duration: 0.2, ease: "easeOut" }} className="absolute top-full left-1/2 w-[1050px] bg-white border border-gray-100 rounded-3xl shadow-2xl p-6 z-[1000] grid grid-cols-5 gap-4">
-                    {sohozToolsCategories.map((cat, idx) => (<div key={idx} className="flex flex-col gap-3">
-                        <div className="bg-gray-50/80 border border-gray-100 p-3 rounded-2xl flex flex-col gap-0.5">
-                          <span className="text-xs font-bold text-gray-900">
-                            {<T>{cat.title}</T>}
-                          </span>
-                          <span className="text-[10px] font-semibold text-gray-400">
-                            {cat.count}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          {cat.tools.map((tool, tIdx) => (<Link key={tIdx} href={tool.href} onClick={() => setIsToolsOpen(false)} className="text-[11px] font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 px-2.5 py-1.5 rounded-lg transition truncate">
-                              {<T>{tool.name}</T>}
-                            </Link>))}
-                          {cat.moreText && (<Link href="/login?redirect=/sohoj-tools" onClick={() => setIsToolsOpen(false)} className="text-[11px] font-bold text-blue-600 hover:underline px-2.5 py-1">
-                              {<T>{cat.moreText}</T>}
-                            </Link>)}
-                        </div>
-                      </div>))}
-
-                    <div className="col-span-5 pt-3 border-t border-gray-100 text-center">
-                      <Link href="/login?redirect=/sohoj-tools" onClick={() => setIsToolsOpen(false)} className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><T>{"View all tools &gt;\n                      "}</T></Link>
-                    </div>
-                  </motion.div>)}
-              </AnimatePresence>
-            </div>
-
-            {/* Important Links Dropdown */}
-            <div className="relative" onMouseEnter={() => setIsImportantOpen(true)} onMouseLeave={() => setIsImportantOpen(false)}>
-              <Link href="/dorkar-link" onClick={() => setIsImportantOpen(false)} className="flex items-center gap-1 hover:text-blue-600 transition py-2 cursor-pointer"><T>{"Important Links"}</T>{<T>{" "}</T>}
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isImportantOpen ? "rotate-180" : ""}`}/>
-              </Link>
-
-              <AnimatePresence>
-                {isImportantOpen && (<motion.div initial={{ opacity: 0, y: 12, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.96 }} transition={{ duration: 0.18, ease: "easeOut" }} className="absolute top-full left-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl p-2.5 z-[1000] flex flex-col gap-0.5">
-                    {importantLinksItems.map((item, index) => {
-                const isExternal = item.href.startsWith("http");
-                if (item.isFeatured) {
-                    return (<Link key={index} href={item.href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} onClick={() => setIsImportantOpen(false)} className="flex items-center justify-between p-2.5 my-1 bg-blue-50/70 border border-blue-200/80 rounded-xl transition hover:bg-blue-100/60 group cursor-pointer">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-                                <Gift size={16}/>
-                              </div>
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-gray-900 group-hover:text-blue-600">
-                                    {<T>{item.title}</T>}
-                                  </span>
-                                  {item.isNew && (<span className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider"><T>{"NEW\n                                    "}</T></span>)}
-                                </div>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  {<T>{item.subtitle}</T>}
-                                </span>
-                              </div>
-                            </div>
-                            <ArrowRight size={14} className="text-blue-600 group-hover:translate-x-0.5 transition-transform shrink-0"/>
-                          </Link>);
-                }
-                return (<Link key={index} href={item.href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} onClick={() => setIsImportantOpen(false)} className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-blue-50/50 transition group cursor-pointer">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600">
-                                {<T>{item.title}</T>}
-                              </span>
-                              {item.isNew && (<span className="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md"><T>{"NEW\n                                "}</T></span>)}
-                            </div>
-                            <span className="text-[10px] text-gray-400 font-medium">
-                              {<T>{item.subtitle}</T>}
+                {isServicesOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, x: "-50%" }}
+                    animate={{ opacity: 1, y: 0, x: "-50%" }}
+                    exit={{ opacity: 0, y: 6, x: "-50%" }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                  >
+                    <div className="w-64 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl shadow-slate-900/10">
+                      {serviceItems.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={index}
+                            href={item.href}
+                            onClick={() => setIsServicesOpen(false)}
+                            className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-blue-600 group-hover:text-white">
+                              <Icon size={16} />
                             </span>
-                          </div>
-                          {item.count && (<span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${item.countBg || "bg-gray-100 text-gray-400"}`}>
-                              {item.count}
-                            </span>)}
-                        </Link>);
-            })}
-                  </motion.div>)}
+                            <span>
+                              <T>{item.label}</T>
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
 
-            <Link href="/pricing" className="hover:text-blue-600 transition"><T>{"Package\n            "}</T></Link>
-            <Link href="/reviews" className="flex items-center gap-0.5 hover:text-blue-600 transition cursor-pointer">
-              <span><T>{"5"}</T></span>
-              <Star size={13} className="fill-amber-500 text-amber-500 inline"/>
-              <span><T>{"Review"}</T></span>
+            {/* SohozTools Mega Menu (positioned against the header, not the trigger) */}
+            <div
+              className="flex h-full items-center"
+              onMouseEnter={() => setIsToolsOpen(true)}
+              onMouseLeave={() => setIsToolsOpen(false)}
+            >
+              <Link
+                href="/tools"
+                onClick={() => setIsToolsOpen(false)}
+                className={navTrigger(isToolsOpen || toolsActive)}
+              >
+                <T>{"SohozTools"}</T>
+                <Chevron open={isToolsOpen} />
+              </Link>
+
+              <AnimatePresence>
+                {isToolsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, x: "-50%" }}
+                    animate={{ opacity: 1, y: 0, x: "-50%" }}
+                    exit={{ opacity: 0, y: 6, x: "-50%" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                  >
+                    <div className="w-[min(1100px,calc(100vw-3rem))] rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl shadow-slate-900/10">
+                      <div className="grid grid-cols-3 gap-5 xl:grid-cols-5">
+                        {sohozToolsCategories.map((cat, idx) => {
+                          const CatIcon = cat.icon;
+                          return (
+                            <div key={idx} className="flex flex-col gap-3">
+                              <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
+                                <span
+                                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${cat.accent}`}
+                                >
+                                  <CatIcon size={18} />
+                                </span>
+                                <div className="flex flex-col leading-tight">
+                                  <span className="text-[13px] font-bold text-slate-900">
+                                    <T>{cat.title}</T>
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-slate-400">
+                                    {cat.count}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-0.5">
+                                {cat.tools.map((tool, tIdx) => (
+                                  <Link
+                                    key={tIdx}
+                                    href={tool.href}
+                                    onClick={() => setIsToolsOpen(false)}
+                                    className="truncate rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-slate-600 transition hover:bg-blue-50 hover:pl-3.5 hover:text-blue-700"
+                                  >
+                                    <T>{tool.name}</T>
+                                  </Link>
+                                ))}
+                                {cat.moreText && (
+                                  <Link
+                                    href="/login?redirect=/sohoj-tools"
+                                    onClick={() => setIsToolsOpen(false)}
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-bold text-blue-600 hover:underline"
+                                  >
+                                    <T>{cat.moreText}</T>
+                                    <ArrowRight size={12} />
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-5 flex items-center justify-between rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50 px-5 py-3">
+                        <p className="text-xs font-semibold text-slate-600">
+                          <T>{"30+ smart tools, one simple place."}</T>
+                        </p>
+                        <Link
+                          href="/login?redirect=/sohoj-tools"
+                          onClick={() => setIsToolsOpen(false)}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
+                        >
+                          <T>{"View all tools"}</T>
+                          <ArrowRight size={13} />
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Important Links */}
+            <div
+              className="relative flex h-full items-center"
+              onMouseEnter={() => setIsImportantOpen(true)}
+              onMouseLeave={() => setIsImportantOpen(false)}
+            >
+              <Link
+                href="/dorkar-link"
+                onClick={() => setIsImportantOpen(false)}
+                className={navTrigger(isImportantOpen || importantActive)}
+              >
+                <T>{"Important Links"}</T>
+                <Chevron open={isImportantOpen} />
+              </Link>
+
+              <AnimatePresence>
+                {isImportantOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, x: "-50%" }}
+                    animate={{ opacity: 1, y: 0, x: "-50%" }}
+                    exit={{ opacity: 0, y: 6, x: "-50%" }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                  >
+                    <div className="flex w-[22rem] flex-col gap-0.5 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl shadow-slate-900/10">
+                      {importantLinksItems.map((item, index) => {
+                        const isExternal = item.href.startsWith("http");
+                        const ext = {
+                          target: isExternal ? "_blank" : undefined,
+                          rel: isExternal ? "noopener noreferrer" : undefined,
+                        };
+
+                        if (item.isFeatured) {
+                          return (
+                            <Link
+                              key={index}
+                              href={item.href}
+                              {...ext}
+                              onClick={() => setIsImportantOpen(false)}
+                              className="group my-1 flex items-center justify-between rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5 transition hover:from-blue-100/70 hover:to-indigo-100/70"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/25">
+                                  <Gift size={17} />
+                                </div>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[13px] font-bold text-slate-900">
+                                      <T>{item.title}</T>
+                                    </span>
+                                    {item.isNew && (
+                                      <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                                        <T>{"NEW"}</T>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[11px] font-medium text-slate-500">
+                                    <T>{item.subtitle}</T>
+                                  </span>
+                                </div>
+                              </div>
+                              <ArrowRight
+                                size={15}
+                                className="shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5"
+                              />
+                            </Link>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={index}
+                            href={item.href}
+                            {...ext}
+                            onClick={() => setIsImportantOpen(false)}
+                            className="group flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-50"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-[13px] font-bold text-slate-800 group-hover:text-blue-700">
+                                <T>{item.title}</T>
+                              </span>
+                              <span className="text-[11px] font-medium text-slate-400">
+                                <T>{item.subtitle}</T>
+                              </span>
+                            </div>
+                            {item.count && (
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                  item.countBg || "bg-slate-100 text-slate-400"
+                                }`}
+                              >
+                                {item.count}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <Link
+              href="/pricing"
+              className={navTrigger(pathname.startsWith("/pricing"))}
+            >
+              <T>{"Package"}</T>
+            </Link>
+
+            <Link
+              href="/reviews"
+              className={`${navTrigger(pathname.startsWith("/reviews"))} gap-1`}
+            >
+              <span>
+                <T>{"5"}</T>
+              </span>
+              <Star size={13} className="fill-amber-400 text-amber-400" />
+              <span>
+                <T>{"Review"}</T>
+              </span>
             </Link>
           </nav>
 
-          {/* Right: Language, Login & Mobile Hamburger Trigger */}
+          {/* Right: Language, Login, Hamburger */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Desktop Language Toggle Button */}
-            <div className="hidden sm:flex bg-[#F3F4F5] border border-gray-200/80 p-0.5 rounded-full items-center text-[11px] font-bold shadow-2xs">
-              <button onClick={() => changeLanguage("bn")} className={`px-2.5 py-1 rounded-full cursor-pointer transition ${locale === "bn"
-            ? "bg-blue-600 text-white shadow-2xs"
-            : "text-[#555555]"}`}><T>{"\u09AC\u09BE\u0982\n              "}</T></button>
-              <button onClick={() => changeLanguage("en")} className={`px-2.5 py-1 rounded-full cursor-pointer transition ${locale === "en"
-            ? "bg-blue-600 text-white shadow-2xs"
-            : "text-[#555555]"}`}><T>{"EN\n              "}</T></button>
-            </div>
+            <LanguageToggle
+              layoutId="lang-pill-desktop"
+              className="hidden sm:flex"
+            />
 
-            {/* Login Button */}
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/login" className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-800 text-white text-xs sm:text-[15px] font-medium px-4 sm:px-6 py-2 rounded-full flex items-center gap-1.5 sm:gap-2 shadow-xs hover:opacity-95 transition tracking-wide">
-                <LogIn size={16} strokeWidth={2.2}/><T>{"Login\n              "}</T></Link>
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2 text-xs font-semibold tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:shadow-xl hover:shadow-indigo-500/40 sm:gap-2 sm:px-6 sm:text-[14px]"
+              >
+                <LogIn size={16} strokeWidth={2.2} />
+                <T>{"Login"}</T>
+              </Link>
             </motion.div>
 
-            {/* Mobile Menu Open Button */}
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition cursor-pointer" aria-label="Open Mobile Menu">
-              <Menu size={20}/>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 lg:hidden"
+              aria-label="Open Mobile Menu"
+            >
+              <Menu size={20} />
             </motion.button>
           </div>
         </div>
       </motion.header>
 
-      {/* Mobile Drawer / Off-canvas Menu */}
+      {/* ============ Mobile Drawer ============ */}
       <AnimatePresence>
-        {isMobileMenuOpen && (<div className="fixed inset-0 z-[1100] lg:hidden flex">
-            {/* Backdrop */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setIsMobileMenuOpen(false)}/>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[1100] flex lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
 
-            {/* Drawer Content */}
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 220 }} className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 overflow-y-auto">
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 240 }}
+              className="relative z-10 ml-auto flex h-full w-full max-w-xs flex-col bg-white shadow-2xl"
+            >
               {/* Drawer Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs px-2 py-1.5 rounded-lg"><T>{"SK\n                  "}</T></div>
-                  <span className="font-extrabold text-gray-900 text-sm"><T>{"\u09B8\u09B9\u099C \u0995\u09BE\u099C\n                  "}</T></span>
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-xs font-black text-white shadow-md shadow-indigo-500/30">
+                    SH
+                  </div>
+                  <span className="text-base font-extrabold tracking-tight text-slate-900">
+                    Sohoj{" "}
+                    <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                      Hub
+                    </span>
+                  </span>
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition">
-                  <X size={20}/>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
+                  aria-label="Close Mobile Menu"
+                >
+                  <X size={20} />
                 </button>
               </div>
 
-              {/* Drawer Body Links */}
-              <div className="p-5 flex flex-col gap-4 text-sm font-semibold text-gray-700">
-                {/* Mobile Our Services Dropdown */}
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => setMobileServicesOpen(!mobileServicesOpen)} className="flex items-center justify-between w-full py-1.5 text-xs font-bold text-gray-800">
-                    <span><T>{"Our Services"}</T></span>
-                    <ChevronDown size={14} className={`transition-transform ${mobileServicesOpen ? "rotate-180" : ""}`}/>
-                  </button>
-                  {mobileServicesOpen && (<div className="flex flex-col gap-1 pl-3 border-l-2 border-blue-100 mt-1">
-                      {serviceItems.map((item, idx) => {
-                    const IconComp = item.icon;
-                    return (<Link key={idx} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 py-1.5 text-xs text-gray-600 hover:text-blue-600">
-                            <IconComp size={14} className="text-gray-400"/>
-                            <span>{<T>{item.label}</T>}</span>
-                          </Link>);
-                })}
-                    </div>)}
-                </div>
-
-                {/* Mobile SohozTools Link/Dropdown */}
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => setMobileToolsOpen(!mobileToolsOpen)} className="flex items-center justify-between w-full py-1.5 text-xs font-bold text-gray-800">
-                    <span><T>{"SohozTools"}</T></span>
-                    <ChevronDown size={14} className={`transition-transform ${mobileToolsOpen ? "rotate-180" : ""}`}/>
-                  </button>
-                  {mobileToolsOpen && (<div className="flex flex-col gap-1.5 pl-3 border-l-2 border-blue-100 mt-1 max-h-48 overflow-y-auto">
-                      <Link href="/tools" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-blue-600 py-1"><T>{"View All Tools &gt;\n                      "}</T></Link>
-                      {sohozToolsCategories.map((cat, cIdx) => (<div key={cIdx} className="flex flex-col gap-1 py-1">
-                          <span className="text-[11px] font-extrabold text-gray-900">
-                            {<T>{cat.title}</T>}
+              {/* Drawer Body */}
+              <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
+                <MobileAccordion
+                  label="Our Services"
+                  open={mobileServicesOpen}
+                  onToggle={() => setMobileServicesOpen(!mobileServicesOpen)}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    {serviceItems.map((item, idx) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={idx}
+                          href={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg py-2 text-[13px] font-medium text-slate-600 hover:text-blue-600"
+                        >
+                          <Icon size={15} className="text-slate-400" />
+                          <span>
+                            <T>{item.label}</T>
                           </span>
-                          {cat.tools.map((t, tIdx) => (<Link key={tIdx} href={t.href} onClick={() => setIsMobileMenuOpen(false)} className="text-[11px] text-gray-600 hover:text-blue-600 pl-2"><T>{"- "}</T>{t.name}
-                            </Link>))}
-                        </div>))}
-                    </div>)}
-                </div>
-
-                {/* Mobile Important Links Dropdown */}
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => setMobileImportantOpen(!mobileImportantOpen)} className="flex items-center justify-between w-full py-1.5 text-xs font-bold text-gray-800">
-                    <span><T>{"Important Links"}</T></span>
-                    <ChevronDown size={14} className={`transition-transform ${mobileImportantOpen ? "rotate-180" : ""}`}/>
-                  </button>
-                  {mobileImportantOpen && (<div className="flex flex-col gap-1 pl-3 border-l-2 border-blue-100 mt-1">
-                      {importantLinksItems.map((imp, iIdx) => {
-                    const isExternal = imp.href.startsWith("http");
-                    return (<Link key={iIdx} href={imp.href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between py-1.5 text-xs text-gray-600 hover:text-blue-600">
-                            <span>{<T>{imp.title}</T>}</span>
-                            {imp.count && (<span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${imp.countBg || "bg-gray-100"}`}>
-                                {imp.count}
-                              </span>)}
-                          </Link>);
-                })}
-                    </div>)}
-                </div>
-
-                <div className="border-t border-gray-100 pt-3 flex flex-col gap-2.5">
-                  <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-blue-600 text-xs font-bold text-gray-800"><T>{"Package\n                  "}</T></Link>
-                  <Link href="/reviews" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-1 hover:text-blue-600 text-xs font-bold text-gray-800">
-                    <span><T>{"Review (5"}</T></span>
-                    <Star size={12} className="fill-amber-500 text-amber-500"/>
-                    <span><T>{")"}</T></span>
-                  </Link>
-                </div>
-
-                {/* Mobile Language Toggle Button */}
-                <div className="border-t border-gray-100 pt-4 sm:hidden flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-bold"><T>{"Language\n                  "}</T></span>
-                  <div className="bg-[#F3F4F5] border border-gray-200 p-0.5 rounded-full flex items-center text-[11px] font-bold">
-                    <button onClick={() => changeLanguage("bn")} className={`px-3 py-1 rounded-full transition ${locale === "bn"
-                ? "bg-blue-600 text-white shadow-2xs"
-                : "text-[#555555]"}`}><T>{"\u09AC\u09BE\u0982\n                    "}</T></button>
-                    <button onClick={() => changeLanguage("en")} className={`px-3 py-1 rounded-full transition ${locale === "en"
-                ? "bg-blue-600 text-white shadow-2xs"
-                : "text-[#555555]"}`}><T>{"EN\n                    "}</T></button>
+                        </Link>
+                      );
+                    })}
                   </div>
-                </div>
+                </MobileAccordion>
+
+                <MobileAccordion
+                  label="SohozTools"
+                  open={mobileToolsOpen}
+                  onToggle={() => setMobileToolsOpen(!mobileToolsOpen)}
+                >
+                  <Link
+                    href="/tools"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600"
+                  >
+                    <T>{"View All Tools"}</T>
+                    <ArrowRight size={12} />
+                  </Link>
+                  <div className="flex flex-col gap-3">
+                    {sohozToolsCategories.map((cat, cIdx) => {
+                      const CatIcon = cat.icon;
+                      return (
+                        <div key={cIdx} className="flex flex-col gap-0.5">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span
+                              className={`flex h-6 w-6 items-center justify-center rounded-md ${cat.accent}`}
+                            >
+                              <CatIcon size={13} />
+                            </span>
+                            <span className="text-xs font-extrabold text-slate-900">
+                              <T>{cat.title}</T>
+                            </span>
+                          </div>
+                          {cat.tools.map((t, tIdx) => (
+                            <Link
+                              key={tIdx}
+                              href={t.href}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="py-1 pl-8 text-xs text-slate-600 hover:text-blue-600"
+                            >
+                              <T>{t.name}</T>
+                            </Link>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </MobileAccordion>
+
+                <MobileAccordion
+                  label="Important Links"
+                  open={mobileImportantOpen}
+                  onToggle={() => setMobileImportantOpen(!mobileImportantOpen)}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    {importantLinksItems.map((imp, iIdx) => {
+                      const isExternal = imp.href.startsWith("http");
+                      return (
+                        <Link
+                          key={iIdx}
+                          href={imp.href}
+                          target={isExternal ? "_blank" : undefined}
+                          rel={isExternal ? "noopener noreferrer" : undefined}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center justify-between py-2 text-[13px] font-medium text-slate-600 hover:text-blue-600"
+                        >
+                          <span>
+                            <T>{imp.title}</T>
+                          </span>
+                          {imp.count && (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                imp.countBg || "bg-slate-100"
+                              }`}
+                            >
+                              {imp.count}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </MobileAccordion>
+
+                <Link
+                  href="/pricing"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-2xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-blue-100 hover:text-blue-600"
+                >
+                  <T>{"Package"}</T>
+                </Link>
+                <Link
+                  href="/reviews"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-1.5 rounded-2xl border border-slate-100 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-blue-100 hover:text-blue-600"
+                >
+                  <span>
+                    <T>{"Review"}</T>
+                  </span>
+                  <span className="flex items-center gap-0.5 text-slate-500">
+                    (5
+                    <Star size={13} className="fill-amber-400 text-amber-400" />
+                    )
+                  </span>
+                </Link>
+              </div>
+
+              {/* Drawer Footer: Language (only where header toggle is hidden) */}
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 sm:hidden">
+                <span className="text-xs font-bold text-slate-500">
+                  <T>{"Language"}</T>
+                </span>
+                <LanguageToggle
+                  layoutId="lang-pill-mobile"
+                  size="lg"
+                  className="flex"
+                />
               </div>
             </motion.div>
-          </div>)}
+          </div>
+        )}
       </AnimatePresence>
-    </>);
+    </>
+  );
 }

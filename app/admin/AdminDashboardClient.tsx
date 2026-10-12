@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Activity,
@@ -25,6 +31,9 @@ import {
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 
 type TabKey = "overview" | "users" | "subscriptions";
+// useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 type AdminProfile = {
   fullName?: string;
   email?: string;
@@ -309,8 +318,13 @@ export default function AdminDashboardClient() {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("overview");
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
-  const [authorized, setAuthorized] = useState(false);
-  const [booting, setBooting] = useState(true);
+  // app/admin/page.tsx has ALREADY verified the admin token on the server before this component is
+  // rendered (it redirects otherwise), so the dashboard is rendered immediately. The old
+  // "Verifying administrator access..." card sat on a flat grey screen behind the "Login Successful"
+  // popup until /api/auth/me answered. The /api/auth/me check below still runs in the background
+  // and redirects away if the session turns out to be invalid.
+  const [authorized, setAuthorized] = useState(true);
+  const [booting, setBooting] = useState(false);
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [globalError, setGlobalError] = useState("");
@@ -447,6 +461,19 @@ export default function AdminDashboardClient() {
     },
     [authHeaders, appliedSubscriptionSearch, subscriptionStatus],
   );
+
+  // Fill the header (email / name) from the cached account before the first paint.
+  useIsoLayoutEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("user");
+      const cached = raw ? (JSON.parse(raw) as AdminProfile) : null;
+      if (cached && cached.role === "admin") {
+        setAdmin((current) => current ?? cached);
+      }
+    } catch {
+      // cached profile is optional
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;

@@ -1,196 +1,294 @@
 // components/Hero.tsx
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
-import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence, Variants } from "framer-motion";
-import { ArrowRight, Play, CheckCircle2, Check, X, Grid, Scissors, FileText, Printer, SlidersHorizontal, Download, User, Zap, } from "lucide-react";
-// Left Content Animation Variants
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.12,
-            delayChildren: 0.1,
-        },
-    },
-};
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.5, ease: "easeOut" },
-    },
-};
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Zap } from "lucide-react";
+import { T } from "@/components/i18n/I18nProvider";
+import {
+  toolsData,
+  getSlug,
+  REQUIRE_SUBSCRIPTION,
+} from "@/app/_components/toolsData";
+
+// ব্যানার ছবির (1672×941) ভেতরের মনিটরে যে ২৪টা টুল আছে, সেগুলোর উপর অদৃশ্য ক্লিক-এরিয়া।
+// মানগুলো ছবির সাইজের % — ছবি যেভাবেই স্কেল হোক, এরিয়াগুলো টুলের উপরেই থাকবে।
+// name অবশ্যই toolsData এর name এর সাথে হুবহু মিলতে হবে।
+const BANNER_HOTSPOTS: {
+  name: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}[] = [
+  { name: "Nid Joiner", left: 42.52, top: 24.12, width: 5.68, height: 12.54 },
+  {
+    name: "NID Information Correction Form",
+    left: 48.98,
+    top: 23.49,
+    width: 5.86,
+    height: 12.75,
+  },
+  {
+    name: "Document Scanner",
+    left: 55.5,
+    top: 22.74,
+    width: 6.16,
+    height: 13.18,
+  },
+  {
+    name: "Govt Job Photo & Sign Resizer",
+    left: 62.26,
+    top: 22.21,
+    width: 5.98,
+    height: 13.39,
+  },
+  {
+    name: "Remove Background",
+    left: 68.78,
+    top: 21.68,
+    width: 5.56,
+    height: 13.39,
+  },
+  {
+    name: "Lock / Unlock PDF",
+    left: 74.88,
+    top: 21.25,
+    width: 6.16,
+    height: 13.6,
+  },
+  { name: "PDF to Image", left: 81.52, top: 21.25, width: 6.88, height: 13.28 },
+  { name: "Compress PDF", left: 88.94, top: 21.25, width: 7.0, height: 12.75 },
+  { name: "Merge PDFs", left: 42.58, top: 37.51, width: 5.68, height: 12.86 },
+  {
+    name: "Image Size Reducer",
+    left: 48.98,
+    top: 37.3,
+    width: 5.98,
+    height: 12.96,
+  },
+  {
+    name: "Image Upscaler",
+    left: 55.62,
+    top: 37.09,
+    width: 6.1,
+    height: 13.07,
+  },
+  {
+    name: "ATS Friendly CV Maker",
+    left: 62.32,
+    top: 36.56,
+    width: 5.98,
+    height: 13.39,
+  },
+  {
+    name: "Family Card Form",
+    left: 68.84,
+    top: 36.24,
+    width: 5.62,
+    height: 13.6,
+  },
+  {
+    name: "Voter Migration Form",
+    left: 75.06,
+    top: 36.03,
+    width: 6.1,
+    height: 13.71,
+  },
+  {
+    name: "Voter Registration Form",
+    left: 81.7,
+    top: 35.71,
+    width: 6.76,
+    height: 13.92,
+  },
+  {
+    name: "Passport Joiner",
+    left: 89.06,
+    top: 35.39,
+    width: 6.94,
+    height: 14.13,
+  },
+  { name: "Crop Image", left: 42.64, top: 51.22, width: 5.68, height: 12.43 },
+  {
+    name: "Age Calculator",
+    left: 48.98,
+    top: 51.12,
+    width: 5.98,
+    height: 12.75,
+  },
+  {
+    name: "Reduce Video File Size",
+    left: 55.62,
+    top: 51.22,
+    width: 6.16,
+    height: 12.75,
+  },
+  { name: "Change Speed", left: 62.38, top: 51.22, width: 5.98, height: 12.96 },
+  {
+    name: "Add Watermark",
+    left: 68.84,
+    top: 51.12,
+    width: 5.68,
+    height: 13.18,
+  },
+  { name: "Images to PDF", left: 75.06, top: 51.01, width: 6.16, height: 13.5 },
+  { name: "Image Convert", left: 81.76, top: 51.01, width: 6.76, height: 13.6 },
+  { name: "Image to Text", left: 89.17, top: 50.9, width: 6.88, height: 13.92 },
+];
+
 export default function Hero() {
-    const [isVideoOpen, setIsVideoOpen] = useState(false);
-    return (<section className="w-full bg-transparent min-h-[calc(100vh-90px)] flex items-center py-8 lg:py-12 relative overflow-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-        {/* ================= LEFT COLUMN ================= */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="lg:col-span-6 xl:col-span-6 space-y-5 text-center lg:text-left flex flex-col items-center lg:items-start">
-          {/* Active Users Tag */}
-          <motion.div variants={itemVariants} className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200/80 text-blue-700 text-xs sm:text-[14px] font-semibold px-4 py-1.5 rounded-full shadow-xs">
-            <Zap size={14} className="fill-blue-600 text-blue-600"/><T>{"35,000+ Active Users\r\n          "}</T></motion.div>
+  // ToolTile এর মতোই: paid টুলে সাবস্ক্রিপশন না থাকলে /subscription এ যাবে
+  const [hasActiveSubscription, setHasActiveSubscription] = useState<
+    boolean | null
+  >(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/subscription/current", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(async (res) => {
+        if (!res.ok) return false;
+        const data = await res.json().catch(() => ({}));
+        const sub = data?.subscription;
+        const expiresAt = sub?.expiresAt
+          ? new Date(sub.expiresAt).getTime()
+          : 0;
+        return Boolean(
+          sub?.accessStatus === "ACTIVE" &&
+          sub?.paymentStatus === "COMPLETED" &&
+          expiresAt > Date.now(),
+        );
+      })
+      .catch(() => false)
+      .then((active) => {
+        if (!cancelled) setHasActiveSubscription(active);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-          {/* Main Heading */}
-          <motion.h1 variants={itemVariants} className="text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-tight sm:leading-tight lg:leading-[81px] font-black text-slate-900 tracking-tight">
-            <span className="whitespace-normal sm:whitespace-nowrap"><T>{"All your "}</T><span className="text-blue-600"><T>{"digital work"}</T></span>
-            </span>{<T>{" "}</T>}
-            <br className="hidden lg:inline"/>
-            <span className="text-indigo-600"><T>{"in one place,"}</T></span><T>{"simple"}</T>{<T>{" "}</T>}
-            <br className="hidden lg:inline"/><T>{"and secure\r\n          "}</T></motion.h1>
+  const hrefFor = (name: string) => {
+    const tool = toolsData.find((t) => t.name === name);
+    const needsSub =
+      tool?.access === "paid" &&
+      REQUIRE_SUBSCRIPTION &&
+      hasActiveSubscription === false;
+    return needsSub ? "/subscription" : `/sohoj-tools/${getSlug(name)}`;
+  };
 
-          {/* Subtitle */}
-          <motion.p variants={itemVariants} className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-semibold"><T>{"Photo edit, AI photo edit, manual edit and bulk edit, plus\r\n            documents, design and print media \u2014 use them all with ease.\r\n          "}</T></motion.p>
-
-          {/* Action Buttons */}
-          <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 w-full">
-            {/* Get Started Button */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-              <Link href="/login" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-95 transition shadow-lg shadow-blue-500/25 text-xs sm:text-sm cursor-pointer w-full sm:w-auto"><T>{"Get Started Now "}</T><ArrowRight size={16}/>
-              </Link>
-            </motion.div>
-
-            {/* Watch Demo Video Button */}
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setIsVideoOpen(true)} className="flex items-center justify-center gap-2 text-slate-700 bg-white border border-slate-200 px-6 py-3.5 rounded-full font-semibold text-xs sm:text-sm hover:bg-slate-50 transition shadow-xs cursor-pointer w-full sm:w-auto">
-              <Play size={14} className="text-blue-600 fill-blue-600"/><T>{"Watch\r\n              Demo Video\r\n            "}</T></motion.button>
-          </motion.div>
-
-          {/* Feature Bullets */}
-          <motion.div variants={itemVariants} className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-5 text-xs text-slate-600 pt-4 sm:pt-6 font-semibold">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500 shrink-0"/>{<T>{" "}</T>}<T>{"Photo edit in one click\r\n            "}</T></span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-blue-500 shrink-0"/><T>{"All\r\n              tools in one place\r\n            "}</T></span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-indigo-500 shrink-0"/>{<T>{" "}</T>}<T>{"Save time, reduce hassle\r\n            "}</T></span>
-          </motion.div>
-        </motion.div>
-
-        {/* ================= RIGHT COLUMN (HUMAN-MADE SAAS UI) ================= */}
-        <div className="lg:col-span-6 xl:col-span-6 relative w-full max-w-xl mx-auto lg:max-w-none px-2 sm:px-0 mt-6 lg:mt-0">
-          {/* Bento Grid Container */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 sm:gap-4">
-            {/* 1. A4 Print Sheet Layout Card (Top Left - 7 Cols) */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="sm:col-span-7 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
-                    <Grid size={15}/>
-                  </div>
-                  <span className="text-xs font-bold text-slate-800"><T>{"A4 Grid Layout\r\n                  "}</T></span>
-                </div>
-                <span className="text-[10px] font-mono bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded border border-slate-200"><T>{"300 DPI\r\n                "}</T></span>
-              </div>
-
-              {/* Real Photo Grid with Crop Lines */}
-              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 grid grid-cols-4 gap-1.5">
-                {[...Array(8)].map((_, i) => (<div key={i} className="aspect-[3/4] bg-white rounded border border-slate-300 relative flex flex-col items-center justify-center overflow-hidden">
-                    {/* Crop Mark Corners */}
-                    <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l border-blue-500"/>
-                    <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 border-t border-r border-blue-500"/>
-                    <div className="absolute bottom-0.5 left-0.5 w-1.5 h-1.5 border-b border-l border-blue-500"/>
-                    <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r border-blue-500"/>
-
-                    <div className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 mt-1">
-                      <User size={10}/>
-                    </div>
-                    <div className="w-5 h-2 bg-blue-100 rounded-t-sm mt-0.5"/>
-                  </div>))}
-              </div>
-
-              <div className="flex items-center justify-between mt-3 text-[11px] text-slate-500 font-medium">
-                <span><T>{"8 Copies \u2022 Passport"}</T></span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <Check size={13} strokeWidth={3}/><T>{"Auto-Fit\r\n                "}</T></span>
-              </div>
-            </motion.div>
-
-            {/* 2. Transparent Background Cutout Card (Top Right - 5 Cols) */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }} className="sm:col-span-5 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">
-                  <Scissors size={15}/>
-                </div>
-                <span className="text-xs font-bold text-slate-800"><T>{"Cutout Tool\r\n                "}</T></span>
-              </div>
-
-              {/* Photoshop-style Checkerboard BG */}
-              <div className="my-2 p-3 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:8px_8px] rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-sm mb-1.5">
-                  <User size={18}/>
-                </div>
-                <span className="text-[10px] font-bold bg-white text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 shadow-2xs"><T>{"BG Removed\r\n                "}</T></span>
-              </div>
-
-              <div className="text-[11px] font-medium text-slate-500 flex items-center justify-between">
-                <span><T>{"Edge Clean"}</T></span>
-                <span className="text-slate-800 font-mono font-bold"><T>{"100%"}</T></span>
-              </div>
-            </motion.div>
-
-            {/* 3. Exact Presets Card (Bottom Left - 6 Cols) */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.35 }} className="sm:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-md shadow-slate-200/50 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
-                    <FileText size={15}/>
-                  </div>
-                  <span className="text-xs font-bold text-slate-800"><T>{"Dimensions\r\n                  "}</T></span>
-                </div>
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold"><T>{"MM Scale\r\n                "}</T></span>
-              </div>
-
-              <div className="space-y-1.5 my-1">
-                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 text-[11px]">
-                  <span className="text-slate-600 font-medium"><T>{"NID Size"}</T></span>
-                  <span className="font-mono font-bold text-slate-800"><T>{"85.6 \u00D7 54 mm\r\n                  "}</T></span>
-                </div>
-                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 text-[11px]">
-                  <span className="text-slate-600 font-medium"><T>{"Passport"}</T></span>
-                  <span className="font-mono font-bold text-slate-800"><T>{"40 \u00D7 50 mm\r\n                  "}</T></span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* 4. Instant Output Export Card (Bottom Right - 6 Cols) */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45 }} className="sm:col-span-6 bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-slate-800 text-slate-200 rounded-lg border border-slate-700">
-                    <Printer size={15}/>
-                  </div>
-                  <span className="text-xs font-bold text-white"><T>{"Print Ready\r\n                  "}</T></span>
-                </div>
-                <div className="flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded">
-                  <SlidersHorizontal size={10}/><T>{"CMYK\r\n                "}</T></div>
-              </div>
-
-              <div className="my-2.5 flex items-center justify-between bg-slate-800/80 px-2.5 py-2 rounded-lg border border-slate-700/80">
-                <div className="flex items-center gap-2">
-                  <Download size={14} className="text-blue-400"/>
-                  <span className="text-[11px] font-medium text-slate-300"><T>{"File Output\r\n                  "}</T></span>
-                </div>
-                <span className="bg-blue-600 text-white font-mono font-bold px-2 py-0.5 rounded text-[10px]"><T>{"PDF / JPG\r\n                "}</T></span>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+  return (
+    <section className="relative isolate w-full overflow-hidden bg-white pb-16 pt-14 sm:pb-24 sm:pt-20">
+      {/* ================= BACKGROUND (grid + glow) ================= */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.06)_1px,transparent_1px)] [background-size:64px_64px] [-webkit-mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,#000_35%,transparent_100%)] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,#000_35%,transparent_100%)]" />
+        <div className="absolute left-1/2 top-[-14rem] h-[34rem] w-[70rem] max-w-none -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-500/25 via-indigo-500/20 to-violet-500/25 blur-3xl" />
       </div>
 
-      {/* Demo Video Popup Modal */}
-      <AnimatePresence>
-        {isVideoOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6" onClick={() => setIsVideoOpen(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} transition={{ duration: 0.25, ease: "easeOut" }} className="relative w-full max-w-4xl aspect-video bg-black rounded-xl shadow-2xl border border-white/10" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setIsVideoOpen(false)} className="absolute -top-10 right-0 z-50 text-white/90 hover:text-white transition cursor-pointer flex items-center gap-1" aria-label="Close video">
-                <X size={26}/>
-              </button>
+      {/* ================= HEADING ================= */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="mx-auto flex max-w-[1400px] flex-col items-center px-4 text-center sm:px-6 md:px-12"
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/80 px-4 py-1.5 text-xs font-semibold text-blue-700 shadow-sm sm:text-[13px]">
+          <Zap size={14} className="fill-blue-600 text-blue-600" />
+          <T>{"Trusted by 35,000+ users"}</T>
+        </div>
 
-              <iframe src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0" title="SohozKaj Demo Video" className="w-full h-full border-0 rounded-xl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
-            </motion.div>
-          </motion.div>)}
-      </AnimatePresence>
-    </section>);
+        <h1 className="mt-6 max-w-4xl text-balance text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[64px]">
+          <span>
+            <T>{"Everyday digital work,"}</T>
+          </span>{" "}
+          <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <T>{"done in seconds"}</T>
+          </span>
+        </h1>
+
+        <p className="mt-5 max-w-2xl text-balance text-base leading-relaxed text-slate-600 sm:text-lg">
+          <T>
+            {
+              "From photo editing and NID tools to PDFs and forms — 30+ smart tools, one simple place."
+            }
+          </T>
+        </p>
+
+        <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+          <Link
+            href="/dashboard"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:shadow-xl hover:shadow-indigo-500/40 sm:w-auto"
+          >
+            <T>{"Start for Free"}</T>
+            <ArrowRight
+              size={16}
+              className="transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </Link>
+          <Link
+            href="/login?redirect=/sohoj-tools"
+            className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-7 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
+          >
+            <T>{"View all tools"}</T>
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* ================= BANNER (framed, true aspect ratio, clickable tools) ================= */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+        className="relative mx-auto mt-12 w-full max-w-[1240px] px-4 sm:mt-16 sm:px-6"
+      >
+        {/* glow behind the frame */}
+        <div
+          aria-hidden
+          className="absolute inset-x-8 bottom-[-2.5rem] top-12 -z-10 rounded-[40px] bg-gradient-to-r from-blue-500/25 via-indigo-500/20 to-violet-500/25 blur-3xl"
+        />
+
+        <div className="rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-100/70 p-1.5 shadow-[0_30px_80px_-24px_rgba(30,41,99,0.40)] ring-1 ring-slate-900/10 sm:rounded-3xl sm:p-2">
+          {/* aspect ratio = image ratio → hotspots (in %) always sit exactly on the tools */}
+          <div className="relative aspect-[1672/941] w-full overflow-hidden rounded-xl bg-slate-900 sm:rounded-2xl">
+            <Image
+              src="/banner/banner1.png"
+              alt="Sohoz Hub - Your Creative Toolbox"
+              fill
+              priority
+              quality={90}
+              sizes="(min-width: 1280px) 1240px, 100vw"
+              className="select-none object-fill"
+              draggable={false}
+            />
+
+            {/* inner border + brand accent line */}
+            <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/15" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-600" />
+
+            {/* ক্লিকযোগ্য টুল এরিয়া (ছবির মনিটরের টুলগুলোর উপরে) */}
+            {BANNER_HOTSPOTS.map((spot) => (
+              <Link
+                key={spot.name}
+                href={hrefFor(spot.name)}
+                prefetch
+                aria-label={spot.name}
+                title={spot.name}
+                className="absolute z-10 cursor-pointer rounded-md outline-none transition duration-200 hover:bg-white/20 hover:shadow-lg hover:ring-2 hover:ring-white/80 focus-visible:ring-2 focus-visible:ring-white"
+                style={{
+                  left: `${spot.left}%`,
+                  top: `${spot.top}%`,
+                  width: `${spot.width}%`,
+                  height: `${spot.height}%`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </section>
+  );
 }

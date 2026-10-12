@@ -24,7 +24,7 @@ const banglaSans = Noto_Sans_Bengali({
 });
 
 export const metadata: Metadata = {
-  title: "সহজ কাজ - All your digital tasks in one place",
+  title: "Sohoj Hub - All your digital tasks in one place",
   description: "Create documents, designs, and print media easily.",
 };
 
