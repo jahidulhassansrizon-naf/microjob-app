@@ -477,7 +477,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [aiNotice, setAiNotice] = useState("");
 
-  const [aiProcessing, setAiProcessing] = useState<"upscale" | "face" | null>(null);
+  const [aiProcessing, setAiProcessing] = useState<"upscale" | "face" | null>(
+    null,
+  );
 
   const [aiProgress, setAiProgress] = useState(0);
 
@@ -726,11 +728,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   );
 
   const replacePhotoAtTarget = useCallback(
-    (
-      asset: PhotoAsset,
-      targetMode: PhotoMode,
-      targetSlot: 0 | 1,
-    ) => {
+    (asset: PhotoAsset, targetMode: PhotoMode, targetSlot: 0 | 1) => {
       if (targetMode === "dual") {
         setDualPhotos((current) => {
           const next = [...current] as [PhotoAsset | null, PhotoAsset | null];
@@ -1479,12 +1477,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       setAiNotice(`${names[tool]} is not connected yet.`);
     },
-    [
-      handleRemoveBackground,
-      resetObjectValues,
-      runFaceEnhance,
-      runUpscale,
-    ],
+    [handleRemoveBackground, resetObjectValues, runFaceEnhance, runUpscale],
   );
 
   const resetEditor = useCallback(() => {
@@ -1548,6 +1541,26 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadCloudHistory = useCallback(async () => {
+    const loadLocalHistory = () => {
+      try {
+        const storageKey = getManualHistoryStorageKey(currentUserId);
+        const fallback = JSON.parse(
+          storageKey ? localStorage.getItem(storageKey) || "[]" : "[]",
+        ) as unknown;
+
+        setGeneratedPhotos(
+          Array.isArray(fallback)
+            ? fallback
+                .filter((item): item is string => typeof item === "string")
+                .slice(0, 8)
+                .map((url) => ({ id: url, url }))
+            : [],
+        );
+      } catch {
+        setGeneratedPhotos([]);
+      }
+    };
+
     try {
       const response = await fetch("/api/ai-generations?source=manual-editor", {
         method: "GET",
@@ -1557,6 +1570,14 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         credentials: "include",
         cache: "no-store",
       });
+
+      // Manual Editor is a free tool. Cloud history is a subscriber-only
+      // feature, so for free / unsubscribed users (401/403) we quietly use
+      // the local history instead of treating it as an error.
+      if (response.status === 401 || response.status === 403) {
+        loadLocalHistory();
+        return;
+      }
 
       const result = await response.json().catch(() => null);
 
@@ -1629,28 +1650,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         );
       }
     } catch (error) {
-      console.error(
-        "Failed to load Manual Editor history from MongoDB:",
-        error,
-      );
+      console.warn("Failed to load Manual Editor history from MongoDB:", error);
 
-      try {
-        const storageKey = getManualHistoryStorageKey(currentUserId);
-        const fallback = JSON.parse(
-          storageKey ? localStorage.getItem(storageKey) || "[]" : "[]",
-        ) as unknown;
-
-        setGeneratedPhotos(
-          Array.isArray(fallback)
-            ? fallback
-                .filter((item): item is string => typeof item === "string")
-                .slice(0, 8)
-                .map((url) => ({ id: url, url }))
-            : [],
-        );
-      } catch {
-        setGeneratedPhotos([]);
-      }
+      loadLocalHistory();
     }
   }, [currentUserId, getAuthHeaders]);
 

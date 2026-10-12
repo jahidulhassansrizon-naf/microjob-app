@@ -141,13 +141,13 @@ export default function GeneratedPhotosPanel() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 lg:flex lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden lg:pb-1">
         {generatedPhotos.length
-            ? generatedPhotos.map((photo, idx) => (<button type="button" key={`${photo.id || photo.url.slice(0, 18)}-${idx}`} onClick={() => setPreviewPhoto(photo)} className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group" title={t("Click to preview")}>
+            ? generatedPhotos.map((photo, idx) => (<button type="button" key={`${photo.id || photo.url.slice(0, 18)}-${idx}`} onClick={() => setPreviewPhoto(photo)} className="aspect-[3/4] lg:h-[clamp(64px,11vh,120px)] lg:shrink-0 bg-[#E2E8F0] border border-[#E2E8F0] rounded-xl overflow-hidden relative shadow-sm hover:border-[#2563EB] hover:ring-2 hover:ring-[#2563EB]/20 transition-all cursor-pointer group" title={t("Click to preview")}>
                 <img src={photo.url} alt={t("Saved result")} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"/>
 
                 <span className="absolute inset-x-2 bottom-2 rounded-lg bg-[#0F172A]/85 text-white px-2 py-1.5 text-[9px] font-bold flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Eye size={11}/><T>{"Preview\r\n                "}</T></span>
               </button>))
-            : Array.from({ length: 8 }).map((_, idx) => (<div key={idx} className="aspect-[3/4] lg:h-[120px] lg:shrink-0 bg-[#E2E8F0]/50 border border-dashed border-[#E2E8F0] rounded-xl flex flex-col items-center justify-center text-slate-400 text-[10px] gap-1">
+            : Array.from({ length: 8 }).map((_, idx) => (<div key={idx} className="aspect-[3/4] lg:h-[clamp(64px,11vh,120px)] lg:shrink-0 bg-[#E2E8F0]/50 border border-dashed border-[#E2E8F0] rounded-xl flex flex-col items-center justify-center text-slate-400 text-[10px] gap-1">
                 <ImageIcon size={16}/>
                 <span><T>{"Empty slot"}</T></span>
               </div>))}

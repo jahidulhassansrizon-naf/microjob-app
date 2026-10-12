@@ -27,7 +27,7 @@ function ManualEditorScreen() {
       <DashboardNavbar />
       <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
-          <aside className="lg:col-span-3 bg-white border border-gray-200/80 rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
+          <aside className="me-left lg:col-span-3 bg-white border border-gray-200/80 rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
             <PhotoSizePanel />
             <BackgroundPanel />
             <AiToolsPanel />
@@ -35,7 +35,7 @@ function ManualEditorScreen() {
 
           <PhotoWorkspace />
 
-          <aside className="lg:col-span-3 flex flex-col gap-5 lg:gap-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
+          <aside className="me-right lg:col-span-3 flex flex-col gap-5 lg:gap-2 lg:h-full lg:min-h-0 lg:overflow-y-auto">
             <QrUploadPanel />
             <AdjustmentsPanel />
           </aside>
@@ -61,6 +61,26 @@ function ManualEditorScreen() {
         .manual-editor-root select,
         .manual-editor-root summary {
           cursor: pointer;
+        }
+
+        /* One-screen fit on desktop: tighter vertical rhythm on shorter viewports,
+           so every panel stays visible without inner scrolling. */
+        @media (min-width: 1024px) and (max-height: 900px) {
+          .manual-editor-root .me-left { gap: 0.6rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+          .manual-editor-root .me-left section { gap: 0.5rem; }
+          .manual-editor-root .me-left .lg\\:h-14 { height: 3rem; }
+          .manual-editor-root .me-left .lg\\:h-16 { height: 3.25rem; }
+          .manual-editor-root .me-left .lg\\:h-9 { height: 2rem; }
+          .manual-editor-root .me-right .mb-4,
+          .manual-editor-root .me-right .lg\\:mb-2 { margin-bottom: 0.4rem; }
+        }
+        @media (min-width: 1024px) and (max-height: 760px) {
+          .manual-editor-root .me-left .lg\\:h-14 { height: 2.6rem; }
+          .manual-editor-root .me-left .lg\\:h-16 { height: 2.8rem; }
+          .manual-editor-root .me-left .lg\\:h-9 { height: 1.75rem; }
+          .manual-editor-root .me-left .lg\\:h-14 svg,
+          .manual-editor-root .me-left .lg\\:h-16 svg { width: 1rem; height: 1rem; }
+          .manual-editor-root .me-right input[type="range"] { height: 0.9rem; }
         }
 
         .manual-editor-root button:disabled,

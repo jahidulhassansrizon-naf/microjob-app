@@ -3,13 +3,50 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QrUploadSession from "@/models/QrUploadSession";
-import { requireActiveSubscription } from "@/app/api/_lib/requireActiveSubscription";
+import { getUserIdFromToken, requireActiveSubscription } from "@/app/api/_lib/requireActiveSubscription";
 import { hashQrUploadToken, noStoreHeaders } from "../_lib";
 
 export const runtime = "nodejs";
 
+// Manual Editor is a free tool: its "Upload from phone" QR only needs a logged-in user.
+// Every other caller (AI Editor, AI Template, ...) still requires an active subscription.
+async function isFreeManualEditorRequest(request: Request): Promise<boolean> {
+  try {
+    const body = await request.clone().json();
+    return body?.scope === "manual-editor";
+  } catch {
+    return false;
+  }
+}
+
+function getLoggedInUserId(request: Request): string | null {
+  const authorization = request.headers.get("authorization");
+  let token: string | null = null;
+  if (authorization?.startsWith("Bearer ")) token = authorization.slice(7).trim() || null;
+  if (!token) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+    token = match ? decodeURIComponent(match[1]) : null;
+  }
+  return getUserIdFromToken(token);
+}
+
 export async function POST(request: Request) {
-  const access = await requireActiveSubscription(request);
+  let access: { ok: true; userId: string } | { ok: false; response: NextResponse };
+  if (await isFreeManualEditorRequest(request)) {
+    const userId = getLoggedInUserId(request);
+    access = userId
+      ? { ok: true, userId }
+      : {
+          ok: false,
+          response: NextResponse.json(
+            { success: false, code: "AUTH_REQUIRED", message: "Please log in to use phone upload." },
+            { status: 401, headers: noStoreHeaders() },
+          ),
+        };
+  } else {
+    access = await requireActiveSubscription(request);
+  }
   if (!access.ok) return access.response;
 
   try {

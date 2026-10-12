@@ -13,8 +13,8 @@ export default function QrUploadPanel() {
   }, [processFile]);
 
   return (
-    <div className="flex w-full shrink-0 flex-col gap-3">
-      <QrCodeSidebar onPhotoReceived={handlePhotoReceived} />
+    <div className="flex w-full shrink-0 flex-col gap-2">
+      <QrCodeSidebar freeAccess compact onPhotoReceived={handlePhotoReceived} />
       {activePhoto && (
         <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-[10px] font-semibold text-slate-500">
           <T>Photo already loaded</T>
