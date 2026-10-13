@@ -749,9 +749,14 @@ function loadSubscriptionAccess() {
             const expiresAt = subscription?.expiresAt
                 ? new Date(subscription.expiresAt).getTime()
                 : 0;
-            const active = subscription?.accessStatus === "ACTIVE" &&
+            const accessExpiresAt = data?.access?.expiresAt
+                ? new Date(data.access.expiresAt).getTime()
+                : 0;
+            const manualOrCombinedAccess = data?.access?.granted === true &&
+                accessExpiresAt > Date.now();
+            const active = manualOrCombinedAccess || (subscription?.accessStatus === "ACTIVE" &&
                 subscription?.paymentStatus === "COMPLETED" &&
-                expiresAt > Date.now();
+                expiresAt > Date.now());
             return Boolean(active);
         })
             .catch((error) => {

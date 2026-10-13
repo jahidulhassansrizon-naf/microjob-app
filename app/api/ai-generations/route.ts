@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import AIGeneration from "@/models/AIGeneration";
-import Subscription from "@/models/Subscription";
+import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -66,22 +66,9 @@ function getTokenFromRequest(request: Request): string | null {
 }
 
 async function requireActiveSubscription(userId: string) {
-  await connectDB();
-
-  const subscription = await Subscription.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    paymentStatus: "COMPLETED",
-    accessStatus: "ACTIVE",
-    expiresAt: { $gt: new Date() },
-  })
-    .sort({ expiresAt: -1, startedAt: -1 })
-    .lean();
-
-  if (!subscription) {
+  if (!(await hasActiveToolAccess(userId))) {
     throw new Error("SUBSCRIPTION_REQUIRED");
   }
-
-  return subscription;
 }
 
 function getUserIdFromRequest(request: Request): string {

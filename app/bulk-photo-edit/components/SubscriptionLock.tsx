@@ -22,10 +22,16 @@ export default function SubscriptionLock() {
                 const expiresAt = subscription?.expiresAt
                     ? new Date(subscription.expiresAt).getTime()
                     : 0;
-                const isActive = response.ok &&
+                const accessExpiresAt = data?.access?.expiresAt
+                    ? new Date(data.access.expiresAt).getTime()
+                    : 0;
+                const hasManualOrCombinedAccess = data?.access?.granted === true &&
+                    accessExpiresAt > Date.now();
+                const isActive = response.ok && (hasManualOrCombinedAccess || (
                     subscription?.paymentStatus === "COMPLETED" &&
                     subscription?.accessStatus === "ACTIVE" &&
-                    expiresAt > Date.now();
+                    expiresAt > Date.now()
+                ));
                 if (!cancelled) {
                     setStatus(isActive ? "active" : "locked");
                 }

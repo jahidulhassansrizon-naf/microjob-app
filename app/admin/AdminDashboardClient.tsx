@@ -51,6 +51,13 @@ type UserRow = {
   lastSeenAt?: string | null;
   loginCount: number;
   isOnline: boolean;
+  manualAccess?: {
+    enabled: boolean;
+    isActive: boolean;
+    expiresAt?: string | null;
+    grantedAt?: string | null;
+    grantedBy?: string;
+  };
   subscription: null | {
     planName: string;
     amount: number;
@@ -338,6 +345,11 @@ export default function AdminDashboardClient() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState("");
+  const [usersNotice, setUsersNotice] = useState("");
+  const [accessModalUser, setAccessModalUser] = useState<UserRow | null>(null);
+  const [accessDurationMonths, setAccessDurationMonths] = useState("6");
+  const [accessSaving, setAccessSaving] = useState(false);
+  const [accessError, setAccessError] = useState("");
   const [userPagination, setUserPagination] = useState<ApiPagination>({
     page: 1,
     limit: 20,
@@ -418,6 +430,48 @@ export default function AdminDashboardClient() {
     },
     [authHeaders, appliedUserSearch, userStatus],
   );
+
+  const updateManualAccess = async (action: "grant" | "revoke") => {
+    if (!accessModalUser || accessSaving) return;
+
+    setAccessSaving(true);
+    setAccessError("");
+    try {
+      const response = await fetch(
+        `/api/admin/users/${encodeURIComponent(accessModalUser.id)}/manual-access`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            ...authHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            action === "grant"
+              ? { action, months: Number(accessDurationMonths) }
+              : { action },
+          ),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not update manual access.");
+      }
+
+      setUsersNotice(data.message || "Manual access updated.");
+      setAccessModalUser(null);
+      await loadUsers(userPagination.page);
+    } catch (error) {
+      setAccessError(
+        error instanceof Error
+          ? error.message
+          : "Could not update manual access.",
+      );
+    } finally {
+      setAccessSaving(false);
+    }
+  };
 
   const loadSubscriptions = useCallback(
     async (
@@ -621,7 +675,7 @@ export default function AdminDashboardClient() {
     <>
       {/* Desktop table */}
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[720px] border-collapse text-left">
+        <table className="w-full min-w-[900px] border-collapse text-left">
           <thead>
             <tr className="border-y border-slate-100 bg-slate-50/70">
               <th className={TH}>User</th>
@@ -629,6 +683,7 @@ export default function AdminDashboardClient() {
               <th className={TH}>Status</th>
               <th className={TH}>Subscription</th>
               <th className={TH}>Last login</th>
+              {tab === "users" && <th className={TH}>Access control</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -666,18 +721,31 @@ export default function AdminDashboardClient() {
                   )}
                 </td>
                 <td className="px-5 py-3.5">
-                  {user.subscription ? (
-                    <div>
-                      <StatusPill label="Active" tone="indigo" />
-                      <p className="mt-1 text-xs text-slate-500">
-                        {user.subscription.planName}
-                      </p>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-slate-400">
-                      No active plan
-                    </span>
-                  )}
+                  <div className="space-y-2">
+                    {user.subscription ? (
+                      <div>
+                        <StatusPill label="Paid plan active" tone="indigo" />
+                        <p className="mt-1 text-xs text-slate-500">
+                          {user.subscription.planName}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-slate-400">
+                        {user.manualAccess?.isActive ? "No paid plan" : "No active plan"}
+                      </span>
+                    )}
+                    {user.manualAccess?.isActive && (
+                      <div>
+                        <StatusPill label="Admin access active" tone="green" />
+                        <p className="mt-1 text-xs text-slate-500">
+                          Until {formatDate(user.manualAccess.expiresAt)}
+                        </p>
+                      </div>
+                    )}
+                    {user.manualAccess?.enabled && !user.manualAccess.isActive && (
+                      <StatusPill label="Manual access expired" tone="amber" />
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-3.5">
                   <div className="text-sm text-slate-700">
@@ -688,6 +756,22 @@ export default function AdminDashboardClient() {
                     {user.loginCount === 1 ? "login" : "logins"}
                   </div>
                 </td>
+                {tab === "users" && (
+                  <td className="px-5 py-3.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAccessModalUser(user);
+                        setAccessDurationMonths("6");
+                        setAccessError("");
+                        setUsersNotice("");
+                      }}
+                      className="inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+                    >
+                      Manage access
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -724,6 +808,28 @@ export default function AdminDashboardClient() {
                   </span>
                   <span>Last login {formatDate(user.lastLoginAt, true)}</span>
                 </div>
+                {user.manualAccess?.isActive && (
+                  <div className="mt-2">
+                    <StatusPill label="Admin access active" tone="green" />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Until {formatDate(user.manualAccess.expiresAt)}
+                    </p>
+                  </div>
+                )}
+                {tab === "users" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAccessModalUser(user);
+                      setAccessDurationMonths("6");
+                      setAccessError("");
+                      setUsersNotice("");
+                    }}
+                    className="mt-3 inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+                  >
+                    Manage access
+                  </button>
+                )}
               </div>
             </div>
           </li>
@@ -1467,6 +1573,14 @@ export default function AdminDashboardClient() {
                   {usersError}
                 </div>
               )}
+              {usersNotice && (
+                <div
+                  role="status"
+                  className="mx-5 mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+                >
+                  {usersNotice}
+                </div>
+              )}
               {usersLoading ? (
                 <LoadingRows />
               ) : users.length ? (
@@ -1542,6 +1656,132 @@ export default function AdminDashboardClient() {
                 onGo={(page) => void loadSubscriptions(page)}
               />
             </section>
+          )}
+
+          {accessModalUser && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
+              onClick={() => {
+                if (!accessSaving) setAccessModalUser(null);
+              }}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="manual-access-title"
+                className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  aria-label="Close access management"
+                  disabled={accessSaving}
+                  onClick={() => setAccessModalUser(null)}
+                  className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                >
+                  <X size={18} />
+                </button>
+
+                <div className="pr-8">
+                  <h2 id="manual-access-title" className="text-lg font-semibold text-slate-900">
+                    Manage paid-tool access
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {accessModalUser.fullName || "Unnamed user"}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {accessModalUser.email || accessModalUser.phoneNumber || accessModalUser.id}
+                  </p>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  {accessModalUser.manualAccess?.isActive ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <StatusPill label="Manual access active" tone="green" />
+                      </div>
+                      <p className="mt-2 text-sm text-slate-700">
+                        Current access ends on <strong>{formatDate(accessModalUser.manualAccess.expiresAt, true)}</strong>.
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Granting more time adds the selected duration after the current expiry.
+                      </p>
+                    </>
+                  ) : accessModalUser.manualAccess?.enabled ? (
+                    <p className="text-sm text-amber-800">
+                      The previous manual access has expired. Granting access will start a new period from now.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      This user does not currently have an active manual access grant.
+                    </p>
+                  )}
+                </div>
+
+                <label htmlFor="manual-access-duration" className="mt-5 block text-sm font-medium text-slate-700">
+                  Access duration
+                </label>
+                <select
+                  id="manual-access-duration"
+                  value={accessDurationMonths}
+                  onChange={(event) => setAccessDurationMonths(event.target.value)}
+                  disabled={accessSaving}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                >
+                  <option value="1">1 month</option>
+                  <option value="3">3 months</option>
+                  <option value="6">6 months</option>
+                  <option value="12">1 year</option>
+                </select>
+
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  Manual access does not mark a payment as completed or create a subscription record. The user’s payment history and revenue totals remain unchanged.
+                </p>
+
+                {accessError && (
+                  <div role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {accessError}
+                  </div>
+                )}
+
+                <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+                  {accessModalUser.manualAccess?.enabled ? (
+                    <button
+                      type="button"
+                      disabled={accessSaving}
+                      onClick={() => void updateManualAccess("revoke")}
+                      className="rounded-xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {accessSaving ? "Saving…" : "Revoke manual access"}
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      disabled={accessSaving}
+                      onClick={() => setAccessModalUser(null)}
+                      className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={accessSaving}
+                      onClick={() => void updateManualAccess("grant")}
+                      className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {accessSaving
+                        ? "Saving…"
+                        : accessModalUser.manualAccess?.isActive
+                          ? `Extend ${accessDurationMonths} month${accessDurationMonths === "1" ? "" : "s"}`
+                          : `Grant ${accessDurationMonths} month${accessDurationMonths === "1" ? "" : "s"}`}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
           )}
 
           <footer className="flex flex-col gap-2 pt-8 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">

@@ -160,6 +160,31 @@ const UserSchema = new Schema(
       min: 0,
     },
 
+    // An administrator can grant paid-tool access without changing payment
+    // or subscription records. The grant automatically stops at its expiry.
+    manualAccessEnabled: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    manualAccessExpiresAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    manualAccessGrantedAt: {
+      type: Date,
+      default: null,
+    },
+
+    manualAccessGrantedBy: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     password: {
       type: String,
       required: [true, "Password is required"],

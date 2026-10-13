@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const [total, usersRaw] = await Promise.all([
       User.countDocuments(filter),
       User.find(filter)
-        .select("fullName email phoneNumber country district role createdAt lastLoginAt lastSeenAt loginCount")
+        .select("fullName email phoneNumber country district role createdAt lastLoginAt lastSeenAt loginCount manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt manualAccessGrantedBy")
         .sort({ lastLoginAt: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -91,6 +91,17 @@ export async function GET(request: Request) {
       lastSeenAt: user.lastSeenAt || null,
       loginCount: Number(user.loginCount || 0),
       isOnline: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeCutoff),
+      manualAccess: {
+        enabled: user.manualAccessEnabled === true,
+        isActive: Boolean(
+          user.manualAccessEnabled === true &&
+            user.manualAccessExpiresAt &&
+            new Date(user.manualAccessExpiresAt).getTime() > now.getTime(),
+        ),
+        expiresAt: user.manualAccessExpiresAt || null,
+        grantedAt: user.manualAccessGrantedAt || null,
+        grantedBy: user.manualAccessGrantedBy || "",
+      },
       subscription: subscriptionByUser.get(String(user._id))
         ? {
             planId: subscriptionByUser.get(String(user._id)).planId,

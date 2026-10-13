@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
+import User from "@/models/User";
 import {
   clearSubscriptionAccessCookie,
   setSubscriptionAccessCookie,
@@ -76,49 +77,84 @@ export async function GET(request: Request) {
 
     const now = new Date();
 
-    const subscription = await Subscription.findOne({
-      userId: decoded.userId,
-      paymentStatus: "COMPLETED",
-      accessStatus: "ACTIVE",
-      expiresAt: { $gt: now },
-    })
-      .sort({ expiresAt: -1, startedAt: -1 })
-      .lean();
+    const [subscription, user] = await Promise.all([
+      Subscription.findOne({
+        userId: decoded.userId,
+        paymentStatus: "COMPLETED",
+        accessStatus: "ACTIVE",
+        expiresAt: { $gt: now },
+      })
+        .sort({ expiresAt: -1, startedAt: -1 })
+        .lean(),
+      User.findById(decoded.userId)
+        .select("manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt")
+        .lean(),
+    ]);
 
-    if (!subscription) {
+    const manualExpiresAtMs = user?.manualAccessExpiresAt
+      ? new Date(user.manualAccessExpiresAt).getTime()
+      : 0;
+    const hasManualAccess =
+      user?.manualAccessEnabled === true && manualExpiresAtMs > now.getTime();
+    const subscriptionExpiresAtMs = subscription?.expiresAt
+      ? new Date(subscription.expiresAt).getTime()
+      : 0;
+    const effectiveAccessExpiresAtMs = Math.max(
+      subscriptionExpiresAtMs,
+      hasManualAccess ? manualExpiresAtMs : 0,
+    );
+    const hasAccess = effectiveAccessExpiresAtMs > now.getTime();
+
+    if (!hasAccess) {
       const response = NextResponse.json({
         success: true,
         subscription: null,
+        access: { granted: false, source: "none", expiresAt: null },
       });
       clearSubscriptionAccessCookie(response);
       return response;
     }
 
-    const startedAt = subscription.startedAt
+    const startedAt = subscription?.startedAt
       ? new Date(subscription.startedAt).toISOString()
       : null;
-    const expiresAt = subscription.expiresAt
+    const expiresAt = subscription?.expiresAt
       ? new Date(subscription.expiresAt).toISOString()
       : null;
 
     const response = NextResponse.json({
       success: true,
-      subscription: {
-        id: String(subscription._id),
-        planId: subscription.planId,
-        planName: subscription.planName,
-        amount: Number(subscription.amount),
-        months: Number(subscription.months || 0),
-        paymentStatus: subscription.paymentStatus,
-        accessStatus: subscription.accessStatus,
-        startedAt,
-        expiresAt,
+      subscription: subscription
+        ? {
+            id: String(subscription._id),
+            planId: subscription.planId,
+            planName: subscription.planName,
+            amount: Number(subscription.amount),
+            months: Number(subscription.months || 0),
+            paymentStatus: subscription.paymentStatus,
+            accessStatus: subscription.accessStatus,
+            startedAt,
+            expiresAt,
+          }
+        : null,
+      // Keep access authorization separate from payment/subscription records.
+      access: {
+        granted: true,
+        source:
+          subscription && hasManualAccess
+            ? "subscription+admin"
+            : hasManualAccess
+              ? "admin"
+              : "subscription",
+        expiresAt: new Date(effectiveAccessExpiresAtMs).toISOString(),
       },
     });
 
-    if (expiresAt) {
-      setSubscriptionAccessCookie(response, String(decoded.userId), expiresAt);
-    }
+    setSubscriptionAccessCookie(
+      response,
+      String(decoded.userId),
+      effectiveAccessExpiresAtMs,
+    );
 
     return response;
   } catch (error) {

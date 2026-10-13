@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import Subscription from "@/models/Subscription";
-import { connectDB } from "@/lib/db";
+import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -208,18 +207,7 @@ async function requireActiveSubscription(request: Request) {
       );
     }
 
-    await connectDB();
-
-    const subscription = await Subscription.findOne({
-      userId: new mongoose.Types.ObjectId(decoded.userId),
-      paymentStatus: "COMPLETED",
-      accessStatus: "ACTIVE",
-      expiresAt: { $gt: new Date() },
-    })
-      .sort({ expiresAt: -1, startedAt: -1 })
-      .lean();
-
-    if (!subscription) {
+    if (!(await hasActiveToolAccess(decoded.userId))) {
       return NextResponse.json(
         {
           success: false,

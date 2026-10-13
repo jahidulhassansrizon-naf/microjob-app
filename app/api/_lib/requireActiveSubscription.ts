@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
+import User from "@/models/User";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "";
@@ -151,16 +152,27 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 
   const now = new Date();
 
-  const subscription = await Subscription.findOne({
-    userId,
-    paymentStatus: "COMPLETED",
-    accessStatus: "ACTIVE",
-    expiresAt: { $gt: now },
-  })
-    .select("_id")
-    .lean();
+  const [subscription, user] = await Promise.all([
+    Subscription.findOne({
+      userId,
+      paymentStatus: "COMPLETED",
+      accessStatus: "ACTIVE",
+      expiresAt: { $gt: now },
+    })
+      .select("_id")
+      .lean(),
+    User.findById(userId)
+      .select("manualAccessEnabled manualAccessExpiresAt")
+      .lean(),
+  ]);
 
-  return Boolean(subscription);
+  const manualExpiry = user?.manualAccessExpiresAt
+    ? new Date(user.manualAccessExpiresAt).getTime()
+    : 0;
+  const hasManualAccess =
+    user?.manualAccessEnabled === true && manualExpiry > now.getTime();
+
+  return Boolean(subscription || hasManualAccess);
 }
 
 /**

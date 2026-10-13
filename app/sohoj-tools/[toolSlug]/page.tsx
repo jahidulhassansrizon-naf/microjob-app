@@ -3,9 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import {
   getUserIdFromToken,
-  getUserIdFromSubscriptionAccessToken,
   hasActiveSubscription,
-  getSubscriptionAccessCookieName,
 } from "../../api/_lib/requireActiveSubscription";
 import nextDynamic from "next/dynamic";
 import DashboardNavbar from "../../dashboard/_components/DashboardNavbar";
@@ -104,17 +102,11 @@ export default async function DynamicToolPage({
   }
 
   if (PAID_TOOL_SLUGS.has(toolSlug)) {
-    // The short-lived signed access cookie is refreshed by the auth/subscription
-    // endpoints. It avoids a MongoDB round-trip on every paid-tool navigation
-    // while keeping the server-side access decision cryptographically verified.
-    const accessCookie = cookieStore.get(getSubscriptionAccessCookieName())?.value ?? null;
-    const cachedUserId = getUserIdFromSubscriptionAccessToken(accessCookie);
-
-    if (cachedUserId !== userId) {
-      const activeSubscription = await hasActiveSubscription(userId);
-      if (!activeSubscription) {
-        redirect("/subscription");
-      }
+    // Always re-check the database so an administrator can revoke access
+    // immediately rather than waiting for the short-lived access cookie to expire.
+    const activeSubscription = await hasActiveSubscription(userId);
+    if (!activeSubscription) {
+      redirect("/subscription");
     }
   }
 

@@ -322,10 +322,16 @@ export default function PricingPage() {
         const expiresAt = subscription?.expiresAt
           ? new Date(subscription.expiresAt).getTime()
           : 0;
-        const hasActiveSubscription = response.ok &&
+        const accessExpiresAt = data?.access?.expiresAt
+          ? new Date(data.access.expiresAt).getTime()
+          : 0;
+        const hasManualOrCombinedAccess = data?.access?.granted === true &&
+          accessExpiresAt > Date.now();
+        const hasActiveSubscription = response.ok && (hasManualOrCombinedAccess || (
           subscription?.accessStatus === "ACTIVE" &&
           subscription?.paymentStatus === "COMPLETED" &&
-          expiresAt > Date.now();
+          expiresAt > Date.now()
+        ));
 
         if (!hasActiveSubscription) {
           router.push("/subscription");
