@@ -114,6 +114,8 @@ const UI_BN: Record<string, string> = {
   "Template image generation failed.": "টেমপ্লেটের ছবি তৈরি করা যায়নি।",
   "Generation took too long. Please try again in a moment.": "ছবি তৈরি করতে বেশি সময় লাগছে। কিছুক্ষণ পর আবার চেষ্টা করুন।",
   "Subscription required": "সাবস্ক্রিপশন প্রয়োজন",
+  "Premium access": "প্রিমিয়াম সুবিধা",
+  "Your subscription access is checked securely before paid actions are run.": "পেইড কাজ শুরু করার আগে আপনার সাবস্ক্রিপশনের অনুমতি নিরাপদভাবে যাচাই করা হয়।",
   "Checking access...": "অ্যাক্সেস যাচাই করা হচ্ছে...",
   "Locked": "লক করা",
   "Close": "বন্ধ করুন",

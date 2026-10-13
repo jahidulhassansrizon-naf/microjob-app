@@ -63,6 +63,8 @@ const BULK_PHOTO_BN: Record<string, string> = {
   "download": "ডাউনলোড",
   "retry": "আবার চেষ্টা করুন",
   "subscription required": "সাবস্ক্রিপশন প্রয়োজন",
+  "premium access": "প্রিমিয়াম সুবিধা",
+  "your subscription access is checked securely before paid actions are run.": "পেইড কাজ শুরু করার আগে আপনার সাবস্ক্রিপশনের অনুমতি নিরাপদভাবে যাচাই করা হয়।",
   "checking access...": "অ্যাক্সেস যাচাই করা হচ্ছে…",
   "locked": "লক করা আছে",
   "close": "বন্ধ করুন",

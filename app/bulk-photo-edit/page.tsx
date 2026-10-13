@@ -241,6 +241,7 @@ export default function BulkPhotoEditPage() {
         })));
         let successCount = 0;
         let failedCount = 0;
+        let subscriptionBlocked = false;
         for (let index = 0; index < photos.length; index += 1) {
             const photo = photos[index];
             updatePhoto(photo.id, {
@@ -261,6 +262,7 @@ export default function BulkPhotoEditPage() {
                     success?: boolean;
                     image?: string;
                     error?: string;
+                    code?: string;
                 } = {};
                 try {
                     data = JSON.parse(raw);
@@ -269,6 +271,10 @@ export default function BulkPhotoEditPage() {
                     throw new Error(`AI service returned an unreadable response (${response.status}).`);
                 }
                 if (!response.ok || !data.success || !data.image) {
+                    if (response.status === 403 && data.code === "SUBSCRIPTION_REQUIRED") {
+                        subscriptionBlocked = true;
+                        window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+                    }
                     throw new Error(data.error ||
                         `AI editing failed for photo ${index + 1} (${response.status}).`);
                 }
@@ -290,12 +296,23 @@ export default function BulkPhotoEditPage() {
                     error: errorMessage,
                 });
                 failedCount += 1;
+                if (subscriptionBlocked) {
+                    break;
+                }
             }
             finally {
                 setProcessedCount(index + 1);
             }
         }
         setIsProcessing(false);
+        if (subscriptionBlocked) {
+            const subscriptionMessage = "An active subscription is required to use this feature.";
+            setPhotos((current) => current.map((photo) => photo.status === "pending"
+                ? { ...photo, status: "error", resultUrl: null, error: subscriptionMessage }
+                : photo));
+            setMessage(subscriptionMessage);
+            return;
+        }
         if (failedCount === 0) {
             setMessage(`Completed successfully: ${successCount}/${photos.length} photos were AI edited.`);
         }
@@ -343,6 +360,7 @@ export default function BulkPhotoEditPage() {
                 success?: boolean;
                 image?: string;
                 error?: string;
+                code?: string;
             } = {};
             try {
                 data = JSON.parse(raw);
@@ -351,6 +369,9 @@ export default function BulkPhotoEditPage() {
                 throw new Error(`AI service returned an unreadable response (${response.status}).`);
             }
             if (!response.ok || !data.success || !data.image) {
+                if (response.status === 403 && data.code === "SUBSCRIPTION_REQUIRED") {
+                    window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+                }
                 throw new Error(data.error || `AI editing failed (${response.status}).`);
             }
             updatePhoto(photo.id, {

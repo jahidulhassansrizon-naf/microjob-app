@@ -343,6 +343,9 @@ export default function AITemplatePage() {
         signal: controller.signal,
       });
       const data = await response.json().catch(() => null);
+      if (response.status === 403 && data?.code === "SUBSCRIPTION_REQUIRED") {
+        window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+      }
       if (!response.ok || !data?.success || !data.image)
         throw new Error(data?.error || "Template image generation failed.");
       if (generationAbortRef.current !== controller) return;

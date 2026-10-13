@@ -446,6 +446,14 @@ export default function PhotoEditorPage() {
                 body: uploadBody,
             });
             const data = await res.json().catch(() => null);
+            if (res.status === 403 && data?.code === "SUBSCRIPTION_REQUIRED") {
+                // Upload preview is still allowed locally; the paid cloud upload and AI
+                // actions remain gated. Open the branded subscription dialog as a normal
+                // product state rather than surfacing the expected 403 as a console error.
+                window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+                setErrorMessage(null);
+                return null;
+            }
             if (!res.ok || !data?.success || !data?.url) {
                 throw new Error(data?.error ||
                     data?.message ||
@@ -799,6 +807,10 @@ export default function PhotoEditorPage() {
             });
             result = await response.json().catch(() => null);
             if (!response.ok || !result?.success || typeof result.image !== "string") {
+                if (response.status === 403 && result?.code === "SUBSCRIPTION_REQUIRED") {
+                    window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+                    throw new Error("SUBSCRIPTION_REQUIRED");
+                }
                 const message = result?.error || `AI image editing failed (${response.status}).`;
                 throw new Error(message);
             }
@@ -1007,10 +1019,17 @@ export default function PhotoEditorPage() {
             generationSucceeded = true;
         }
         catch (error) {
-            console.error("Generation error:", error);
-            setErrorMessage(error instanceof Error
-                ? error.message
-                : "Could not generate the photo. Please try again.");
+            const subscriptionRequired = error instanceof Error && error.message === "SUBSCRIPTION_REQUIRED";
+            if (subscriptionRequired) {
+                // The subscription dialog already explains the required next step.
+                // Do not render the guard response as a red application error.
+                setErrorMessage(null);
+            } else {
+                console.error("Generation error:", error);
+                setErrorMessage(error instanceof Error
+                    ? error.message
+                    : "Could not generate the photo. Please try again.");
+            }
         }
         finally {
             if (generationSucceeded) {

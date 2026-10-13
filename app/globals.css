@@ -111,3 +111,12 @@ html[data-nav-scaled] .nav-zoom-header {
 .user-sub-pre[data-k="1"]::before { content: none; }
 .first-name-pre[data-k="0"]::before { content: var(--user-first, ""); }
 .first-name-pre[data-k="1"]::before { content: none; }
+
+
+/* Consistent pointer affordance for native interactive controls. Utility classes can still override this. */
+:where(button:not(:disabled), a[href], [role="button"], [role="tab"], [role="option"], summary, label[for], select:not(:disabled), input[type="file"]:not(:disabled), input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled)) {
+  cursor: pointer;
+}
+:where(button:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+}

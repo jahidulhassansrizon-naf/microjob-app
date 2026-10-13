@@ -1,101 +1,165 @@
 "use client";
-import { AiT, useAiEditorText } from "./aiEditorI18n";
-import { useEffect, useState } from "react";
-import { LockKeyhole, ShieldCheck, X } from "lucide-react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { LockKeyhole, Crown, ShieldCheck, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
-type GateStatus = "checking" | "locked" | "active";
-export default function SubscriptionLock() {
-    const { t } = useAiEditorText();
-    const [status, setStatus] = useState<GateStatus>("checking");
-    const [showDialog, setShowDialog] = useState(false);
-    useEffect(() => {
-        let cancelled = false;
-        const checkSubscription = async () => {
-            try {
-                const response = await fetch("/api/subscription/current", {
-                    method: "GET",
-                    credentials: "include",
-                    cache: "no-store",
-                });
-                const data = await response.json().catch(() => ({}));
-                const subscription = data?.subscription;
-                const expiresAt = subscription?.expiresAt
-                    ? new Date(subscription.expiresAt).getTime()
-                    : 0;
-                const accessExpiresAt = data?.access?.expiresAt
-                    ? new Date(data.access.expiresAt).getTime()
-                    : 0;
-                const hasManualOrCombinedAccess = data?.access?.granted === true &&
-                    accessExpiresAt > Date.now();
-                const isActive = response.ok && (hasManualOrCombinedAccess || (
-                    subscription?.paymentStatus === "COMPLETED" &&
-                    subscription?.accessStatus === "ACTIVE" &&
-                    expiresAt > Date.now()
-                ));
-                if (!cancelled) {
-                    setStatus(isActive ? "active" : "locked");
-                }
-            }
-            catch (error) {
-                console.error("Subscription gate check failed:", error);
-                if (!cancelled) {
-                    setStatus("locked");
-                }
-            }
-        };
-        checkSubscription();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-    if (status === "active") {
-        return null;
-    }
-    const openDialog = (event?: React.SyntheticEvent) => {
-        event?.preventDefault();
-        event?.stopPropagation();
-        setShowDialog(true);
-    };
-    return (<>
-      {/* Transparent interaction shield: the page remains visible, but no tool activity can pass through. */}
-      <div className="fixed inset-0 z-[1900] cursor-not-allowed bg-transparent" onPointerDown={openDialog} onClick={openDialog} onContextMenu={openDialog} role="button" aria-label={t("Subscription required")} tabIndex={0} onKeyDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setShowDialog(true);
-        }}>
-        <button type="button" className="absolute right-4 top-20 flex items-center gap-2 rounded-full border border-amber-200 bg-white/95 px-3 py-2 text-xs font-black text-amber-800 shadow-lg backdrop-blur" onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-        }} onClick={openDialog} aria-label={t("Subscription required")}>
-          <LockKeyhole size={16} strokeWidth={2.5}/>
-          {status === "checking" ? <AiT>{"Checking access..."}</AiT> : <AiT>{"Locked"}</AiT>}
-        </button>
-      </div>
+import { useAiEditorText } from "./aiEditorI18n";
 
-      {showDialog && (<div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-[2px]" onClick={() => setShowDialog(false)}>
-          <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="subscription-required-title">
-            <button type="button" onClick={() => setShowDialog(false)} className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label={t("Close")}>
-              <X size={18}/>
+type GateStatus = "checking" | "locked" | "active";
+
+export default function SubscriptionLock() {
+  const { t } = useAiEditorText();
+  const [status, setStatus] = useState<GateStatus>("checking");
+  const [showDialog, setShowDialog] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkSubscription = async () => {
+      try {
+        const response = await fetch("/api/subscription/current", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => ({}));
+        const subscription = data?.subscription;
+        const expiresAt = subscription?.expiresAt
+          ? new Date(subscription.expiresAt).getTime()
+          : 0;
+        const accessExpiresAt = data?.access?.expiresAt
+          ? new Date(data.access.expiresAt).getTime()
+          : 0;
+        const hasManualOrCombinedAccess = data?.access?.granted === true && accessExpiresAt > Date.now();
+        const isActive = response.ok && (hasManualOrCombinedAccess || (
+          subscription?.paymentStatus === "COMPLETED" &&
+          subscription?.accessStatus === "ACTIVE" &&
+          expiresAt > Date.now()
+        ));
+        if (!cancelled) setStatus(isActive ? "active" : "locked");
+      } catch (error) {
+        console.error("Subscription gate check failed:", error);
+        if (!cancelled) setStatus("locked");
+      }
+    };
+    void checkSubscription();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const handleSubscriptionRequired = () => setShowDialog(true);
+    window.addEventListener("sohozkaj:subscription-required", handleSubscriptionRequired);
+    return () => window.removeEventListener("sohozkaj:subscription-required", handleSubscriptionRequired);
+  }, []);
+
+  useEffect(() => {
+    if (!showDialog) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowDialog(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showDialog]);
+
+  if (status === "active") return null;
+
+  const openDialog = (event?: ReactMouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    setShowDialog(true);
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className="fixed right-4 top-20 z-[1900] inline-flex items-center gap-2 rounded-full border border-amber-200/90 bg-[#fffdf5]/95 p-1.5 pr-3 text-xs font-bold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,0.12)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 cursor-pointer"
+        onClick={openDialog}
+        aria-label={t("Subscription required")}
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-amber-300 shadow-sm">
+          <LockKeyhole size={14} strokeWidth={2.4} />
+        </span>
+        <span>{status === "checking" ? t("Checking access...") : t("Locked")}</span>
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.12)]" />
+      </button>
+
+      {showDialog && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-xl cursor-pointer"
+          onClick={() => setShowDialog(false)}
+        >
+          <div
+            className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/70 bg-[#fffdf5] shadow-[0_28px_100px_rgba(2,6,23,0.38)] ring-1 ring-slate-900/5 cursor-default"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="subscription-required-title"
+          >
+            <div aria-hidden="true" className="h-1.5 w-full bg-gradient-to-r from-indigo-600 via-violet-500 to-amber-400" />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-indigo-200/30 blur-3xl" />
+            <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-14 h-44 w-44 rounded-full bg-amber-200/35 blur-3xl" />
+
+            <button
+              type="button"
+              onClick={() => setShowDialog(false)}
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/85 text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+              aria-label={t("Close")}
+            >
+              <X size={17} />
             </button>
 
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-              {status === "checking" ? (<ShieldCheck size={28}/>) : (<LockKeyhole size={28}/>)}
-            </div>
+            <div className="relative px-6 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-9">
+              <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-[24px] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50 to-amber-50 shadow-[0_12px_30px_rgba(79,70,229,0.12)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-800 to-indigo-600 text-amber-300 shadow-md">
+                  <LockKeyhole size={23} strokeWidth={2.1} />
+                </div>
+              </div>
 
-            <div className="mt-5 text-center">
-              <h2 id="subscription-required-title" className="text-xl font-black tracking-tight text-slate-900"><AiT>{"Subscription Required\n              "}</AiT></h2>
+              <div className="mt-5 flex justify-center">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-white/90 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.15em] text-amber-800 shadow-sm">
+                  <Crown size={13} strokeWidth={2.2} />
+                  {t("Premium access")}
+                </span>
+              </div>
 
-              <p className="mt-3 text-sm font-medium leading-6 text-slate-600"><AiT>{"\u098F\u0987 \u09AA\u09C7\u0987\u099C\u09C7\u09B0 AI features \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0 \u0995\u09B0\u09A4\u09C7 \u0986\u0997\u09C7 \u098F\u0995\u099F\u09BF active subscription\n                \u09A8\u09BF\u09A4\u09C7 \u09B9\u09AC\u09C7\u0964\n              "}</AiT></p>
+              <div className="mt-4 text-center">
+                <h2 id="subscription-required-title" className="text-[23px] font-extrabold tracking-tight text-slate-950 sm:text-[25px]">
+                  {t("Subscription Required")}
+                </h2>
+                <p className="mx-auto mt-3 max-w-[340px] text-sm font-medium leading-6 text-slate-600">
+                  {t("This page’s AI features require an active subscription before you can use them.")}
+                </p>
+              </div>
 
-              <p className="mt-2 text-xs font-semibold text-slate-400"><AiT>{"Subscription active \u09B9\u09B2\u09C7 \u098F\u0987 lock \u09A8\u09BF\u099C\u09C7 \u09A5\u09C7\u0995\u09C7\u0987 \u099A\u09B2\u09C7 \u09AF\u09BE\u09AC\u09C7 \u098F\u09AC\u0982 \u09AA\u09C7\u0987\u099C\u09C7\u09B0\n                \u09B8\u09AC feature \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0 \u0995\u09B0\u09A4\u09C7 \u09AA\u09BE\u09B0\u09AC\u09C7\u09A8\u0964\n              "}</AiT></p>
-            </div>
+              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-100/90 bg-white/80 p-3.5 text-left shadow-sm">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+                  <ShieldCheck size={19} strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-xs font-bold leading-5 text-slate-800">{t("When your subscription is active, this lock will disappear automatically and you can use all features on the page.")} </p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">{t("Your subscription access is checked securely before paid actions are run.")}</p>
+                </div>
+              </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/subscription" className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-blue-700"><AiT>{"View Subscription Plans\n              "}</AiT></Link>
-
-              <button type="button" onClick={() => setShowDialog(false)} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"><AiT>{"Close\n              "}</AiT></button>
+              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+                <Link
+                  href="/subscription"
+                  className="group inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 py-3 text-center text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(79,70,229,0.24)] transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-violet-700 hover:shadow-[0_12px_24px_rgba(79,70,229,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 cursor-pointer"
+                >
+                  {t("View Subscription Plans")}
+                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowDialog(false)}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 cursor-pointer"
+                >
+                  {t("Close")}
+                </button>
+              </div>
             </div>
           </div>
-        </div>)}
-    </>);
+        </div>
+      )}
+    </>
+  );
 }

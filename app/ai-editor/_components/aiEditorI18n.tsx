@@ -230,6 +230,8 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Left person": "বাম পাশের ব্যক্তি",
   "Right person": "ডান পাশের ব্যক্তি",
   "Subscription required": "সাবস্ক্রিপশন প্রয়োজন",
+  "Premium access": "প্রিমিয়াম সুবিধা",
+  "Your subscription access is checked securely before paid actions are run.": "পেইড কাজ শুরু করার আগে আপনার সাবস্ক্রিপশনের অনুমতি নিরাপদভাবে যাচাই করা হয়।",
   "Checking access...": "অ্যাক্সেস যাচাই করা হচ্ছে...",
   Locked: "লক করা",
   "Subscription Required": "সাবস্ক্রিপশন প্রয়োজন",

@@ -672,6 +672,7 @@ export default function AITemplateStyles() {
 
         .modal-backdrop {
           position: fixed;
+          cursor: pointer;
           inset: 0;
           z-index: 100;
           background: rgba(15, 23, 42, 0.62);
@@ -684,6 +685,7 @@ export default function AITemplateStyles() {
 
         .template-modal {
           position: relative;
+          cursor: default;
           width: min(1020px, 96vw);
           max-height: 92vh;
           overflow: hidden;
