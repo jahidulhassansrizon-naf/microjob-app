@@ -120,6 +120,9 @@ export function clearClientSession() {
 }
 
 export async function logoutClientSession() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("sohojhub:presence-stop"));
+  }
   try {
     await fetch("/api/auth/logout", {
       method: "POST",

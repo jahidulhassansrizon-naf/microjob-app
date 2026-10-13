@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { getRoleForEmail } from "@/lib/roles";
+import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   try {
     await connectDB();
     const now = new Date();
-    const activeCutoff = new Date(now.getTime() - 3 * 60 * 1000);
+    const activeCutoff = new Date(now.getTime() - PRESENCE_STALE_AFTER_MS);
     const activeSubscriptionFilter = {
       paymentStatus: "COMPLETED",
       accessStatus: "ACTIVE",

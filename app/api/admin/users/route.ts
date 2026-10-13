@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { getRoleForEmail } from "@/lib/roles";
+import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -27,11 +28,11 @@ export async function GET(request: Request) {
       filter.$or = [{ fullName: regex }, { email: regex }, { phoneNumber: regex }];
     }
     if (status === "online") {
-      filter.lastSeenAt = { $gte: new Date(now.getTime() - 3 * 60 * 1000) };
+      filter.lastSeenAt = { $gte: new Date(now.getTime() - PRESENCE_STALE_AFTER_MS) };
     } else if (status === "offline") {
       filter.$or = [
         ...(filter.$or || []),
-        { lastSeenAt: { $lt: new Date(now.getTime() - 3 * 60 * 1000) } },
+        { lastSeenAt: { $lt: new Date(now.getTime() - PRESENCE_STALE_AFTER_MS) } },
         { lastSeenAt: null },
         { lastSeenAt: { $exists: false } },
       ];
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
         .lean(),
     ]);
 
-    const activeCutoff = now.getTime() - 3 * 60 * 1000;
+    const activeCutoff = now.getTime() - PRESENCE_STALE_AFTER_MS;
     const activeUserIds = usersRaw.map((user: any) => user._id);
     const subscriptions = await Subscription.find({
       userId: { $in: activeUserIds },

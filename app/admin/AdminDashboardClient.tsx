@@ -5,6 +5,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -398,8 +399,13 @@ export default function AdminDashboardClient() {
   );
 
   const loadUsers = useCallback(
-    async (page = 1, search = appliedUserSearch, status = userStatus) => {
-      setUsersLoading(true);
+    async (
+      page = 1,
+      search = appliedUserSearch,
+      status = userStatus,
+      quiet = false,
+    ) => {
+      if (!quiet) setUsersLoading(true);
       setUsersError("");
       try {
         const params = new URLSearchParams({
@@ -425,7 +431,7 @@ export default function AdminDashboardClient() {
           error instanceof Error ? error.message : "Could not load users.",
         );
       } finally {
-        setUsersLoading(false);
+        if (!quiet) setUsersLoading(false);
       }
     },
     [authHeaders, appliedUserSearch, userStatus],
@@ -583,6 +589,149 @@ export default function AdminDashboardClient() {
     appliedSubscriptionSearch,
     subscriptionStatus,
     loadSubscriptions,
+  ]);
+
+  // Current page callbacks are kept in a ref so the admin WebSocket can stay
+  // connected while tabs, filters, and pagination change.
+  const livePresenceRefreshRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    livePresenceRefreshRef.current = () => {
+      void loadOverview(true);
+      if (tab === "users") {
+        void loadUsers(userPagination.page, appliedUserSearch, userStatus, true);
+      }
+    };
+  }, [
+    appliedUserSearch,
+    loadOverview,
+    loadUsers,
+    tab,
+    userPagination.page,
+    userStatus,
+  ]);
+
+  // Redis pub/sub broadcasts presence changes between separate Vercel Function
+  // instances. If Redis is not configured or briefly unavailable, the fallback
+  // refresh below still keeps the admin view current.
+  useEffect(() => {
+    if (!authorized) return;
+    let active = true;
+    let socket: WebSocket | null = null;
+    let reconnectTimer: number | null = null;
+    let keepaliveTimer: number | null = null;
+    let reconnectDelay = 1_000;
+    const sessionId = `admin-${window.crypto.randomUUID()}`;
+
+    const clearSocketTimers = () => {
+      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
+      if (keepaliveTimer !== null) window.clearInterval(keepaliveTimer);
+      reconnectTimer = null;
+      keepaliveTimer = null;
+    };
+
+    const scheduleReconnect = () => {
+      if (!active || reconnectTimer !== null) return;
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        void connect();
+      }, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, 15_000);
+    };
+
+    const connect = async () => {
+      if (!active) return;
+      try {
+        const response = await fetch("/api/auth/presence/ticket", {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            ...authHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!active) return;
+        // Push requires Redis pub/sub. The periodic database refresh handles
+        // deployments where REDIS_URL has not been configured yet.
+        if (!response.ok || data?.role !== "admin" || !data?.ticket || !data?.broadcastAvailable) {
+          return;
+        }
+
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const url = `${wsProtocol}//${window.location.host}/api/auth/presence/ws?ticket=${encodeURIComponent(data.ticket)}`;
+        const nextSocket = new WebSocket(url);
+        socket = nextSocket;
+
+        nextSocket.addEventListener("open", () => {
+          reconnectDelay = 1_000;
+          const ping = () => {
+            if (nextSocket.readyState === WebSocket.OPEN) nextSocket.send("ping");
+          };
+          ping();
+          keepaliveTimer = window.setInterval(ping, 15_000);
+        });
+
+        nextSocket.addEventListener("message", (event) => {
+          if (typeof event.data !== "string") return;
+          try {
+            const message = JSON.parse(event.data);
+            if (message?.type === "presence") {
+              livePresenceRefreshRef.current();
+            }
+          } catch {
+            // Ignore malformed or non-JSON messages.
+          }
+        });
+
+        nextSocket.addEventListener("close", () => {
+          if (socket === nextSocket) socket = null;
+          clearSocketTimers();
+          scheduleReconnect();
+        });
+
+        nextSocket.addEventListener("error", () => {
+          try {
+            nextSocket.close();
+          } catch {
+            // The close handler owns reconnect scheduling.
+          }
+        });
+      } catch {
+        scheduleReconnect();
+      }
+    };
+
+    void connect();
+    return () => {
+      active = false;
+      clearSocketTimers();
+      if (socket && socket.readyState < WebSocket.CLOSING) {
+        socket.close(1000, "Admin dashboard closed");
+      }
+    };
+  }, [authorized, authHeaders]);
+
+  // Fallback for a missed close event (for example, a sudden network outage)
+  // and for environments where Redis pub/sub is not configured.
+  useEffect(() => {
+    if (!authorized) return;
+    const interval = window.setInterval(() => {
+      void loadOverview(true);
+      if (tab === "users") {
+        void loadUsers(userPagination.page, appliedUserSearch, userStatus, true);
+      }
+    }, 5_000);
+    return () => window.clearInterval(interval);
+  }, [
+    appliedUserSearch,
+    authorized,
+    loadOverview,
+    loadUsers,
+    tab,
+    userPagination.page,
+    userStatus,
   ]);
 
   const displayName = admin?.fullName?.trim() || "Administrator";
@@ -1210,7 +1359,7 @@ export default function AdminDashboardClient() {
                   <StatCard
                     title="Users active now"
                     value={num(stats?.activeNow)}
-                    detail="Seen within the last 3 minutes"
+                    detail="Live connection status"
                     icon={Activity}
                     tint="bg-emerald-50 text-emerald-600"
                   />
@@ -1541,7 +1690,7 @@ export default function AdminDashboardClient() {
               <div className="p-5 pb-0 sm:px-6 sm:pt-6">
                 <PanelHeading
                   title="All users"
-                  description="Search by name, email or phone number. Online reflects activity in the last 3 minutes."
+                  description="Live online status updates automatically. A lost connection is marked offline when its heartbeat expires."
                   action={
                     <StatusPill
                       label={`${userPagination.total.toLocaleString("en-BD")} accounts`}

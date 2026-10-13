@@ -151,6 +151,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       } catch {
         // Storage cleanup is best-effort.
       }
+      window.dispatchEvent(new Event("sohojhub:presence-stop"));
       // The API also owns an HttpOnly cookie which JavaScript cannot clear.
       void fetch("/api/auth/logout", {
         method: "POST",
@@ -255,6 +256,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
           window.location.protocol === "https:" ? "; Secure" : "";
         document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
       }
+      window.dispatchEvent(new Event("sohojhub:auth-changed"));
       // Return directly to the requested page. A one-time UI cookie lets the
       // root layout render the Login Successful overlay over that page on its
       // very first response, instead of showing a separate /login-success screen.
