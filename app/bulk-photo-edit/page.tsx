@@ -1,5 +1,6 @@
 "use client";
-import { BulkT } from "./components/bulkPhotoI18n";
+import { BulkT, useBulkPhotoText } from "./components/bulkPhotoI18n";
+import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
@@ -90,6 +91,7 @@ async function persistBulkResult(image: string, name: string) {
     }
 }
 export default function BulkPhotoEditPage() {
+    const { t } = useBulkPhotoText();
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(false);
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -98,6 +100,11 @@ export default function BulkPhotoEditPage() {
     const [message, setMessage] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const [processedCount, setProcessedCount] = useState<number>(0);
+    const [cropSession, setCropSession] = useState<{ file: File; preview: string } | null>(null);
+    const cropSessionRef = useRef<{ file: File; preview: string } | null>(null);
+    const cropQueueRef = useRef<File[]>([]);
+    const cropResultsRef = useRef<File[]>([]);
+    const cropWarningRef = useRef<string>("");
     useEffect(() => {
         let mounted = true;
         void getClientSession().then((session) => {
@@ -121,9 +128,12 @@ export default function BulkPhotoEditPage() {
     useEffect(() => {
         return () => {
             photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.preview));
+            if (cropSessionRef.current?.preview) {
+                URL.revokeObjectURL(cropSessionRef.current.preview);
+            }
         };
     }, []);
-    const addPhotos = useCallback((files: File[]) => {
+    const commitPhotos = useCallback((files: File[]) => {
         setMessage("");
         const validFiles: File[] = [];
         let skippedInvalid = false;
@@ -170,6 +180,105 @@ export default function BulkPhotoEditPage() {
             setMessage("");
         }
     }, []);
+    const openCropSession = useCallback((file: File) => {
+        const session = { file, preview: URL.createObjectURL(file) };
+        cropSessionRef.current = session;
+        setCropSession(session);
+    }, []);
+
+    // Every upload source (sidebar, drag/drop and phone QR) passes through this crop queue.
+    const addPhotos = useCallback((files: File[]) => {
+        if (isProcessing) return;
+        if (cropSessionRef.current) {
+            setMessage("Finish the current crop before adding more photos.");
+            return;
+        }
+
+        const validFiles: File[] = [];
+        let skippedInvalid = false;
+        let skippedOversize = false;
+        for (const file of files) {
+            if (!file.type.toLowerCase().startsWith("image/")) {
+                skippedInvalid = true;
+                continue;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                skippedOversize = true;
+                continue;
+            }
+            validFiles.push(file);
+        }
+
+        const remainingSlots = Math.max(0, MAX_PHOTOS - photosRef.current.length);
+        const filesToCrop = validFiles.slice(0, remainingSlots);
+        const hitMaxPhotos = validFiles.length > filesToCrop.length;
+        const warnings = [
+            skippedInvalid ? "non-image files were skipped" : "",
+            skippedOversize ? "files over 15 MB were skipped" : "",
+            hitMaxPhotos ? `Only ${MAX_PHOTOS} photos can be kept in one batch` : "",
+        ].filter(Boolean);
+        cropWarningRef.current = warnings.length ? `${warnings.join(" and ")}.` : "";
+        setMessage("");
+
+        if (filesToCrop.length === 0) {
+            setMessage(cropWarningRef.current || `Only ${MAX_PHOTOS} photos can be kept in one batch.`);
+            cropWarningRef.current = "";
+            return;
+        }
+
+        cropQueueRef.current = filesToCrop.slice(1);
+        cropResultsRef.current = [];
+        openCropSession(filesToCrop[0]);
+    }, [isProcessing, openCropSession]);
+
+    const finishCurrentCrop = useCallback((result: File | null) => {
+        const current = cropSessionRef.current;
+        if (!current) return;
+        if (result) cropResultsRef.current.push(result);
+        URL.revokeObjectURL(current.preview);
+        cropSessionRef.current = null;
+
+        const nextFile = cropQueueRef.current.shift();
+        if (nextFile) {
+            openCropSession(nextFile);
+            return;
+        }
+
+        setCropSession(null);
+        const completedFiles = cropResultsRef.current.slice();
+        cropResultsRef.current = [];
+        const warning = cropWarningRef.current;
+        cropWarningRef.current = "";
+        if (completedFiles.length) commitPhotos(completedFiles);
+        if (warning) setMessage(warning);
+    }, [commitPhotos, openCropSession]);
+
+    const handleBulkCropApplied = useCallback((blob: Blob) => {
+        const current = cropSessionRef.current;
+        if (!current) return;
+        const baseName = current.file.name.replace(/\.[^.]+$/, "") || "photo";
+        const croppedFile = new File([blob], `${baseName}-cropped.jpg`, {
+            type: blob.type || "image/jpeg",
+            lastModified: Date.now(),
+        });
+        finishCurrentCrop(croppedFile);
+    }, [finishCurrentCrop]);
+
+    const handleBulkUseOriginal = useCallback((file: File) => {
+        finishCurrentCrop(file);
+    }, [finishCurrentCrop]);
+
+    const cancelCropBatch = useCallback(() => {
+        const current = cropSessionRef.current;
+        if (current?.preview) URL.revokeObjectURL(current.preview);
+        cropSessionRef.current = null;
+        cropQueueRef.current = [];
+        cropResultsRef.current = [];
+        cropWarningRef.current = "";
+        setCropSession(null);
+        setMessage("Photo crop cancelled. No new photos were added.");
+    }, []);
+
     const removePhoto = useCallback((id: string) => {
         if (isProcessing)
             return;
@@ -412,7 +521,11 @@ export default function BulkPhotoEditPage() {
           </div>
         );
     }
-    return (<div className="flex min-h-screen select-none flex-col bg-[#F8FAFC] font-sans text-[#0F172A]">
+    return (<div
+      className="flex min-h-screen select-none flex-col bg-[#F8FAFC] font-sans text-[#0F172A]"
+      aria-hidden={Boolean(cropSession)}
+      style={{ display: cropSession ? "none" : undefined }}
+    >
       <DashboardNavbar />
       <SubscriptionLock />
 
@@ -464,5 +577,16 @@ export default function BulkPhotoEditPage() {
 
         <PresetPanel selectedTools={selectedTools} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
       </div>
+      {cropSession && (
+        <PhotoCropWorkspace
+          key={cropSession.preview}
+          imageSrc={cropSession.preview}
+          originalFile={cropSession.file}
+          onCancel={cancelCropBatch}
+          onApply={handleBulkCropApplied}
+          onUseOriginal={handleBulkUseOriginal}
+          translate={t}
+        />
+      )}
     </div>);
 }

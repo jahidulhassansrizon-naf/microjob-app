@@ -159,6 +159,31 @@ export default function CropEditor() {
         return null;
     }
     return (<div className="fixed inset-0 z-[200] flex flex-col bg-black text-white">
+      <style>{`
+        .sohozkaj-crop-canvas .ReactCrop__crop-selection {
+          border: 2px solid #ffffff !important;
+          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+          cursor: move;
+          touch-action: none;
+        }
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle {
+          display: block !important;
+          opacity: 1 !important;
+          width: 16px !important;
+          height: 16px !important;
+          border: 2px solid #ffffff !important;
+          border-radius: 3px !important;
+          background: #2563eb !important;
+          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25) !important;
+          touch-action: none;
+        }
+        .sohozkaj-crop-canvas .ReactCrop__child-wrapper,
+        .sohozkaj-crop-canvas .ReactCrop__child-wrapper img {
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-user-drag: none;
+        }
+      `}</style>
       <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-b border-[#E2E8F0] flex items-center justify-between">
         <div className="h-full flex items-center">
           <div className="pl-5 pr-4 flex items-center gap-2">
@@ -187,7 +212,7 @@ export default function CropEditor() {
 
       <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-black">
         <div className="flex items-center justify-center origin-center transition-transform duration-75" style={{ transform: `scale(${zoom / 100})` }}>
-          {processedSrc ? (<ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(value) => setCompletedCrop(value)} className="max-w-[82vw] max-h-[72vh]">
+          {processedSrc ? (<ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(value) => setCompletedCrop(value)} className="sohozkaj-crop-canvas max-w-[82vw] max-h-[72vh]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img ref={imgRef} alt={t("Crop preview")} src={processedSrc} onLoad={onImageLoad} className="max-w-[82vw] max-h-[72vh] w-auto h-auto object-contain block"/>
             </ReactCrop>) : (<div className="text-sm text-white/60"><T>{"Preparing image\u2026"}</T></div>)}

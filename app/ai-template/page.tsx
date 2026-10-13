@@ -23,7 +23,8 @@ import { TemplateSidebar } from "./components/TemplateSidebar";
 import { TemplateToolbar } from "./components/TemplateToolbar";
 import { TemplateGrid } from "./components/TemplateGrid";
 import { TemplatePreviewModal } from "./components/TemplatePreviewModal";
-import { PhotoCropModal } from "./components/PhotoCropModal";
+import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
+import { useAiTemplateText } from "./components/aiTemplateI18n";
 import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
 
@@ -69,6 +70,7 @@ async function persistGeneratedFile(
 }
 
 export default function AITemplatePage() {
+  const { t } = useAiTemplateText();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [gender, setGender] = useState<Gender>("All");
@@ -83,12 +85,15 @@ export default function AITemplatePage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cropImageUrlRef = useRef<string | null>(null);
+  const userPhotoPreviewUrlRef = useRef<string | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [cropImage, setCropImage] = useState<string | null>(null);
+  const [cropOriginalFile, setCropOriginalFile] = useState<File | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const generationAbortRef = useRef<AbortController | null>(null);
 
@@ -232,11 +237,21 @@ export default function AITemplatePage() {
     setGenerationError("");
     setGeneratedImage(null);
     setUserPhoto(null);
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    cropImageUrlRef.current = null;
+    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+    userPhotoPreviewUrlRef.current = null;
     setIsCropOpen(false);
     setUserPhotoPreview(null);
     setCropImage(null);
+    setCropOriginalFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [selectedId]);
+
+  useEffect(() => () => {
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+  }, []);
 
   const openTemplate = useCallback(
     (template: { id: number }) => setSelectedId(template.id),
@@ -255,7 +270,11 @@ export default function AITemplatePage() {
     }
     setGenerationError("");
     setGeneratedImage(null);
-    setCropImage(URL.createObjectURL(file));
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    const imageUrl = URL.createObjectURL(file);
+    cropImageUrlRef.current = imageUrl;
+    setCropOriginalFile(file);
+    setCropImage(imageUrl);
     setIsCropOpen(true);
   }, []);
 
@@ -269,19 +288,42 @@ export default function AITemplatePage() {
   );
 
   const handleCropCancel = useCallback(() => {
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    cropImageUrlRef.current = null;
     setIsCropOpen(false);
     setCropImage(null);
+    setCropOriginalFile(null);
   }, []);
 
   const handleCropApplied = useCallback((blob: Blob) => {
     const croppedFile = new File([blob], "sohozkaj-cropped-photo.jpg", {
       type: "image/jpeg",
     });
+    const previewUrl = URL.createObjectURL(blob);
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    cropImageUrlRef.current = null;
+    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+    userPhotoPreviewUrlRef.current = previewUrl;
     setUserPhoto(croppedFile);
-    setUserPhotoPreview(URL.createObjectURL(blob));
+    setUserPhotoPreview(previewUrl);
     setGenerationError("");
     setIsCropOpen(false);
     setCropImage(null);
+    setCropOriginalFile(null);
+  }, []);
+
+  const handleUseOriginalPhoto = useCallback((file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    cropImageUrlRef.current = null;
+    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+    userPhotoPreviewUrlRef.current = previewUrl;
+    setUserPhoto(file);
+    setUserPhotoPreview(previewUrl);
+    setGenerationError("");
+    setIsCropOpen(false);
+    setCropImage(null);
+    setCropOriginalFile(null);
   }, []);
 
   const handleGeneratePhoto = useCallback(async () => {
@@ -420,7 +462,11 @@ export default function AITemplatePage() {
   }, [isAnyModalOpen, isCropOpen, closeModal, moveSelected]);
 
   return (
-    <div className="ai-page">
+    <div
+      className="ai-page"
+      aria-hidden={isCropOpen}
+      style={{ display: isCropOpen ? "none" : undefined }}
+    >
       <DashboardNavbar />
       <SubscriptionLock />
       <main className="main-content">
@@ -486,11 +532,14 @@ export default function AITemplatePage() {
         />
       )}
 
-      {isCropOpen && cropImage && (
-        <PhotoCropModal
+      {isCropOpen && cropImage && cropOriginalFile && (
+        <PhotoCropWorkspace
           imageSrc={cropImage}
+          originalFile={cropOriginalFile}
           onCancel={handleCropCancel}
           onApply={handleCropApplied}
+          onUseOriginal={handleUseOriginalPhoto}
+          translate={t}
         />
       )}
 

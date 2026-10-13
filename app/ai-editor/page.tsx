@@ -9,10 +9,25 @@ import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import RecentGenerations from "./_components/RecentGenerations";
 import ImagePreviewModal from "./_components/ImagePreviewModal";
-import ReactCrop from "react-image-crop";
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
+type MidpointCropHandle = "n" | "e" | "s" | "w";
+
+type MidpointResizeSession = {
+    direction: MidpointCropHandle;
+    startClientX: number;
+    startClientY: number;
+    imageWidth: number;
+    imageHeight: number;
+    cropX: number;
+    cropY: number;
+    cropWidth: number;
+    cropHeight: number;
+    latestCrop: { x: number; y: number; width: number; height: number };
+};
+
 export default function PhotoEditorPage() {
     const { t } = useAiEditorText();
     const router = useRouter();
@@ -65,6 +80,7 @@ export default function PhotoEditorPage() {
     const [selectedVisaSize, setSelectedVisaSize] = useState("35×45 mm");
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const imgRef = useRef<HTMLImageElement | null>(null);
+    const midpointResizeRef = useRef<MidpointResizeSession | null>(null);
     const visaPopupRef = useRef<HTMLDivElement | null>(null);
     const colorPickerRef = useRef<HTMLDivElement | null>(null);
     // Authentication + MongoDB recent-generation loading
@@ -335,6 +351,154 @@ export default function PhotoEditorPage() {
             return w / h;
         }
         return 35 / 45;
+    };
+
+    // The fixed-aspect ReactCrop intentionally hides native edge handles.
+    // Provide explicit midpoint handles that preserve the selected aspect while
+    // resizing from an edge, so all eight handles behave consistently.
+    const startMidpointResize = (direction: MidpointCropHandle) =>
+        (event: React.PointerEvent<HTMLButtonElement>) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const image = imgRef.current;
+            if (!image || !crop || !image.clientWidth || !image.clientHeight) return;
+
+            const imageWidth = image.clientWidth;
+            const imageHeight = image.clientHeight;
+            const initial = {
+                x: (Number(crop.x) / 100) * imageWidth,
+                y: (Number(crop.y) / 100) * imageHeight,
+                width: (Number(crop.width) / 100) * imageWidth,
+                height: (Number(crop.height) / 100) * imageHeight,
+            };
+            midpointResizeRef.current = {
+                direction,
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                imageWidth,
+                imageHeight,
+                cropX: initial.x,
+                cropY: initial.y,
+                cropWidth: initial.width,
+                cropHeight: initial.height,
+                latestCrop: initial,
+            };
+        };
+
+    useEffect(() => {
+        const clampValue = (value: number, min: number, max: number) => {
+            const safeMax = Math.max(0, max);
+            const safeMin = Math.min(min, safeMax);
+            return Math.min(safeMax, Math.max(safeMin, value));
+        };
+
+        const onPointerMove = (event: PointerEvent) => {
+            const session = midpointResizeRef.current;
+            if (!session) return;
+            event.preventDefault();
+
+            const dx = event.clientX - session.startClientX;
+            const dy = event.clientY - session.startClientY;
+            const {
+                direction,
+                imageWidth,
+                imageHeight,
+                cropX,
+                cropY,
+                cropWidth,
+                cropHeight,
+            } = session;
+            const minSize = Math.min(12, imageWidth, imageHeight);
+            let x = cropX;
+            let y = cropY;
+            let width = cropWidth;
+            let height = cropHeight;
+
+            // Edge handles must resize only the axis they sit on. The previous
+            // implementation recalculated width from height (and vice versa) to
+            // preserve the photo aspect ratio, which made a side drag appear to
+            // shrink the entire rectangle. Corner handles remain aspect-locked by
+            // ReactCrop itself; only these four custom midpoint handles are free.
+            if (direction === "n") {
+                const fixedBottom = cropY + cropHeight;
+                y = clampValue(cropY + dy, 0, Math.max(0, fixedBottom - minSize));
+                height = fixedBottom - y;
+            } else if (direction === "s") {
+                height = clampValue(cropHeight + dy, minSize, imageHeight - cropY);
+            } else if (direction === "w") {
+                const fixedRight = cropX + cropWidth;
+                x = clampValue(cropX + dx, 0, Math.max(0, fixedRight - minSize));
+                width = fixedRight - x;
+            } else {
+                width = clampValue(cropWidth + dx, minSize, imageWidth - cropX);
+            }
+
+            // Guard against tiny floating point overflows at the image edges.
+            x = clampValue(x, 0, imageWidth - width);
+            y = clampValue(y, 0, imageHeight - height);
+            width = Math.min(width, imageWidth - x);
+            height = Math.min(height, imageHeight - y);
+
+            session.latestCrop = { x, y, width, height };
+            setCrop({
+                unit: "%",
+                x: (x / imageWidth) * 100,
+                y: (y / imageHeight) * 100,
+                width: (width / imageWidth) * 100,
+                height: (height / imageHeight) * 100,
+            });
+        };
+
+        const onPointerUp = () => {
+            const session = midpointResizeRef.current;
+            if (!session) return;
+            setCompletedCrop({
+                unit: "px",
+                ...session.latestCrop,
+            });
+            midpointResizeRef.current = null;
+        };
+
+        document.addEventListener("pointermove", onPointerMove, { passive: false });
+        document.addEventListener("pointerup", onPointerUp);
+        document.addEventListener("pointercancel", onPointerUp);
+        return () => {
+            document.removeEventListener("pointermove", onPointerMove);
+            document.removeEventListener("pointerup", onPointerUp);
+            document.removeEventListener("pointercancel", onPointerUp);
+            midpointResizeRef.current = null;
+        };
+    }, [setCrop, setCompletedCrop]);
+
+    const handleCropImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+        const image = event.currentTarget;
+        const imageWidth = image.naturalWidth;
+        const imageHeight = image.naturalHeight;
+        if (!imageWidth || !imageHeight) return;
+
+        const targetAspect = isDualMode ? 45 / 55 : getSelectedTargetAspect();
+        const initialCrop = centerCrop(
+            makeAspectCrop(
+                { unit: "%", width: 80 },
+                targetAspect,
+                imageWidth,
+                imageHeight,
+            ),
+            imageWidth,
+            imageHeight,
+        );
+        setCrop(initialCrop);
+
+        const renderedWidth = image.clientWidth || image.width;
+        const renderedHeight = image.clientHeight || image.height;
+        setCompletedCrop({
+            unit: "px",
+            x: (initialCrop.x / 100) * renderedWidth,
+            y: (initialCrop.y / 100) * renderedHeight,
+            width: (initialCrop.width / 100) * renderedWidth,
+            height: (initialCrop.height / 100) * renderedHeight,
+        });
     };
     const getStyleFromAspect = (aspectStr: string) => {
         const [rawWidth, rawHeight] = aspectStr.split("/").map(Number);
@@ -1118,6 +1282,39 @@ export default function PhotoEditorPage() {
         </div>)}
 
       {showCropModal && (<div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
+          <style>{`
+        .sohozkaj-crop-canvas .ReactCrop__crop-selection {
+          border: 2px solid #ffffff !important;
+          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+          cursor: move;
+          touch-action: none;
+        }
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle {
+          display: block !important;
+          opacity: 1 !important;
+          width: 16px !important;
+          height: 16px !important;
+          border: 2px solid #ffffff !important;
+          border-radius: 3px !important;
+          background: #2563eb !important;
+          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25) !important;
+          touch-action: none;
+        }
+        /* Fixed aspect crops use custom side handles below so vertical/horizontal
+           midpoint drags resize along the pointer axis instead of silently failing. */
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-n,
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-e,
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-s,
+        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-w {
+          display: none !important;
+        }
+        .sohozkaj-crop-canvas .ReactCrop__child-wrapper,
+        .sohozkaj-crop-canvas .ReactCrop__child-wrapper img {
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-user-drag: none;
+        }
+      `}</style>
           {isCropping && (<div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3">
               <Loader2 className="w-10 h-10 animate-spin text-[#059669]"/>
               <p className="text-sm font-medium tracking-wide"><AiT>{"Saving..."}</AiT></p>
@@ -1146,8 +1343,46 @@ export default function PhotoEditorPage() {
 
           <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-auto relative bg-[#0c1017]">
             <div className="w-full h-full flex items-center justify-center">
-              <ReactCrop crop={crop} aspect={isDualMode ? 45 / 55 : getSelectedTargetAspect()} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(c) => setCompletedCrop(c)} className="max-h-[70vh]">
-                <img ref={imgRef} src={tempImageForCrop || undefined} alt={t("Crop Preview")} style={{
+              <ReactCrop
+                crop={crop}
+                aspect={isDualMode ? 45 / 55 : getSelectedTargetAspect()}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                renderSelectionAddon={() => (
+                  <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                    {(["n", "e", "s", "w"] as const).map((direction) => {
+                      const position: React.CSSProperties =
+                        direction === "n" ? { top: 0, left: "50%", transform: "translate(-50%, -50%)", cursor: "ns-resize" } :
+                        direction === "s" ? { bottom: 0, left: "50%", transform: "translate(-50%, 50%)", cursor: "ns-resize" } :
+                        direction === "w" ? { top: "50%", left: 0, transform: "translate(-50%, -50%)", cursor: "ew-resize" } :
+                        { top: "50%", right: 0, transform: "translate(50%, -50%)", cursor: "ew-resize" };
+                      return (
+                        <button
+                          key={direction}
+                          type="button"
+                          aria-label={`Resize crop from ${direction === "n" ? "top" : direction === "s" ? "bottom" : direction === "w" ? "left" : "right"} edge`}
+                          onPointerDown={startMidpointResize(direction)}
+                          style={{
+                            position: "absolute",
+                            ...position,
+                            width: 16,
+                            height: 16,
+                            padding: 0,
+                            border: "2px solid #ffffff",
+                            borderRadius: 3,
+                            background: "#2563eb",
+                            boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25)",
+                            zIndex: 20,
+                            pointerEvents: "auto",
+                            touchAction: "none",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                className="sohozkaj-crop-canvas max-h-[70vh]">
+                <img ref={imgRef} src={tempImageForCrop || undefined} alt={t("Crop Preview")} onLoad={handleCropImageLoad} style={{
                 transform: `scale(${zoom / 100}) rotate(${rotate}deg)`,
                 transition: "transform 0.2s ease-in-out",
             }} className="max-h-[70vh] object-contain select-none"/>
