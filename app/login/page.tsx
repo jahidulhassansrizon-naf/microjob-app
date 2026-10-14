@@ -1,6 +1,7 @@
 // app/login/page.tsx
 "use client";
-import { useState, useEffect, Suspense } from "react";
+
+import { useState, useEffect, Suspense, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -8,11 +9,11 @@ import {
   Lock,
   Eye,
   EyeOff,
-  MessageCircle,
   ArrowLeft,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
-import { useI18n, T } from "@/components/i18n/I18nProvider";
+import { useI18n } from "@/components/i18n/I18nProvider";
 
 /**
  * This is only a client-side fast-path hint, not authentication. Protected API
@@ -47,12 +48,46 @@ type SearchParamsLike = { get(name: string): string | null } | null;
 
 function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
   const router = useRouter();
-  // URL parameters detection
   const callbackUrl =
     searchParams?.get("callbackUrl") || searchParams?.get("redirect") || "";
-  // The login form is always rendered right away (server HTML == final UI). The existing-session
-  // check runs in the background and redirects if the visitor is already logged in.
   const [, setCheckingExistingSession] = useState(true);
+  const { locale, setLocale } = useI18n();
+  const isBn = locale === "bn";
+
+  const text = {
+    back: isBn ? "ফিরে যান" : "Back",
+    language: isBn ? "ভাষা" : "Language",
+    loginTitle: isBn ? "আপনার অ্যাকাউন্টে প্রবেশ করুন" : "Sign in to your account",
+    loginSubtitle: isBn
+      ? "আপনার Sohoj Hub অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন।"
+      : "Enter your details to access your Sohoj Hub account.",
+    identifier: isBn ? "ফোন নম্বর বা ইমেইল" : "Phone number or email",
+    identifierPlaceholder: isBn
+      ? "ফোন নম্বর বা ইমেইল লিখুন"
+      : "Enter your phone number or email",
+    password: isBn ? "পাসওয়ার্ড" : "Password",
+    passwordPlaceholder: isBn ? "আপনার পাসওয়ার্ড লিখুন" : "Enter your password",
+    rememberMe: isBn ? "আমাকে মনে রাখুন" : "Remember me",
+    forgotPassword: isBn ? "পাসওয়ার্ড ভুলে গেছেন?" : "Forgot password?",
+    signingIn: isBn ? "প্রবেশ করা হচ্ছে..." : "Signing in...",
+    signIn: isBn ? "লগইন করুন" : "Sign in",
+    noAccount: isBn ? "অ্যাকাউন্ট নেই?" : "Don't have an account?",
+    signUp: isBn ? "নতুন অ্যাকাউন্ট খুলুন" : "Create an account",
+    showPassword: isBn ? "পাসওয়ার্ড দেখান" : "Show password",
+    hidePassword: isBn ? "পাসওয়ার্ড লুকান" : "Hide password",
+    secureSignIn: isBn ? "নিরাপদ অ্যাকাউন্ট প্রবেশ" : "Secure account access",
+    invalidCredentials: isBn
+      ? "ফোন নম্বর/ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।"
+      : "The phone/email or password is incorrect. Please try again.",
+    loginFailed: isBn
+      ? "লগইন করা যায়নি। আপনার তথ্য যাচাই করে আবার চেষ্টা করুন।"
+      : "Unable to sign in. Please check your details and try again.",
+    connectionError: isBn
+      ? "সার্ভারের সঙ্গে সংযোগ করা যায়নি। ইন্টারনেট পরীক্ষা করে আবার চেষ্টা করুন।"
+      : "Could not connect to the server. Check your connection and try again.",
+    required: isBn ? "আবশ্যক" : "Required",
+  };
+
   useEffect(() => {
     let active = true;
 
@@ -91,11 +126,11 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         > | null;
         hasCachedIdentity = Boolean(
           cachedUser &&
-          typeof cachedUser === "object" &&
-          (cachedUser.id ||
-            cachedUser._id ||
-            cachedUser.phoneNumber ||
-            cachedUser.email),
+            typeof cachedUser === "object" &&
+            (cachedUser.id ||
+              cachedUser._id ||
+              cachedUser.phoneNumber ||
+              cachedUser.email),
         );
         if (
           cachedUser &&
@@ -112,17 +147,11 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     if (!requestedTarget && cachedRole === "admin") safeTargetUrl = "/admin";
 
     const token = localToken || readCookieToken();
-    // Even when no JS-readable token exists, check the HttpOnly session cookie.
-    // This is how the environment-configured Admin session remains inaccessible to JS.
-
-    // Fast path for the common Dashboard destination: a cached identity plus
-    // an unexpired JWT lets us navigate immediately. Other callback targets
-    // retain the original server-first check. This is only a UI hint; the
-    // dashboard refreshes the user in the background and APIs verify JWTs.
     const isDashboardTarget =
       safeTargetUrl === "/dashboard" ||
       safeTargetUrl.startsWith("/dashboard/") ||
       safeTargetUrl.startsWith("/dashboard?");
+
     if (isDashboardTarget && hasCachedIdentity && hasUnexpiredJwt(token)) {
       window.dispatchEvent(
         new CustomEvent("navigation-progress:start", {
@@ -135,7 +164,6 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       };
     }
 
-    // First-time/uncached sessions still use the server check before redirecting.
     const progressStartTimer = window.setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("navigation-progress:start", {
@@ -152,7 +180,6 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         // Storage cleanup is best-effort.
       }
       window.dispatchEvent(new Event("sohojhub:presence-stop"));
-      // The API also owns an HttpOnly cookie which JavaScript cannot clear.
       void fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
@@ -195,7 +222,6 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         window.dispatchEvent(new Event("navigation-progress:finish"));
       })
       .catch(() => {
-        // A network/server error should not destroy a potentially valid token.
         if (active) {
           setCheckingExistingSession(false);
           window.dispatchEvent(new Event("navigation-progress:finish"));
@@ -207,8 +233,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       window.clearTimeout(progressStartTimer);
     };
   }, [callbackUrl, router]);
+
   const [showPassword, setShowPassword] = useState(false);
-  const { locale, setLocale } = useI18n();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
@@ -216,50 +242,54 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     password: "",
     rememberMe: true,
   });
+
   const changeLanguage = (targetLang: "EN" | "BN") => {
     setLocale(targetLang === "BN" ? "bn" : "en");
   };
-  const handleBack = () => {
-    router.replace("/");
-  };
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleBack = () => router.replace("/");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
     setLoading(true);
+
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumber: formData.identifier,
           password: formData.password,
         }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        throw new Error(data.message || "Invalid credentials!");
+        if ([400, 401, 403].includes(response.status)) {
+          throw new Error(text.invalidCredentials);
+        }
+        throw new Error(text.loginFailed);
       }
+
       const isAdminLogin = data?.user?.role === "admin";
       if (isAdminLogin) {
         // The server sets an HttpOnly cookie for Admin; never persist its JWT in JS storage.
         localStorage.removeItem("token");
       } else if (data.token) {
-        // Preserve the existing user-session compatibility flow.
         localStorage.setItem("token", data.token);
       }
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+
       if (!isAdminLogin && data.token) {
         const maxAge = formData.rememberMe ? 86400 * 30 : 86400 * 7;
         const isSecure =
           window.location.protocol === "https:" ? "; Secure" : "";
         document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure}`;
       }
+
       window.dispatchEvent(new Event("sohojhub:auth-changed"));
-      // Return directly to the requested page. A one-time UI cookie lets the
-      // root layout render the Login Successful overlay over that page on its
-      // very first response, instead of showing a separate /login-success screen.
+
       const fallbackTarget =
         data?.user?.role === "admin" ? "/admin" : "/dashboard";
       const requestedTarget = callbackUrl.trim();
@@ -271,8 +301,6 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         );
       const targetUrl = isSafeLocalTarget ? requestedTarget : fallbackTarget;
 
-      // URL normalisation preserves the original tool/query target and also
-      // guards against unusual slash/backslash forms becoming external URLs.
       let target = new URL(targetUrl, window.location.origin);
       if (target.origin !== window.location.origin) {
         target = new URL(fallbackTarget, window.location.origin);
@@ -283,270 +311,245 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       const secureCookie =
         window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `sohoj_login_success=1; path=/; max-age=30; SameSite=Lax${secureCookie}`;
-      // First name for the popup, so the server HTML already says "Welcome back, <name>!"
-      const loginFirstName =
-        String(data?.user?.fullName ?? data?.user?.name ?? "")
-          .trim()
-          .split(/\s+/)[0] ?? "";
+      const loginFirstName = String(
+        data?.user?.fullName ?? data?.user?.name ?? "",
+      )
+        .trim()
+        .split(/\s+/)[0] ?? "";
       if (loginFirstName) {
         document.cookie = `sohoj_login_name=${encodeURIComponent(loginFirstName)}; path=/; max-age=30; SameSite=Lax${secureCookie}`;
       }
       window.location.replace(targetPath);
     } catch (error: unknown) {
-      if (error instanceof Error) {
+      if (error instanceof TypeError) {
+        setErrorMessage(text.connectionError);
+      } else if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("An unexpected error occurred.");
+        setErrorMessage(text.loginFailed);
       }
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <div className="min-h-screen w-full flex flex-col-reverse lg:flex-row bg-slate-50 font-sans overflow-x-hidden relative">
-      {/* Left Visual Banner */}
-      <div className="lg:w-1/2 bg-slate-900 py-10 px-6 lg:min-h-screen flex flex-col items-center justify-center lg:p-8 relative overflow-hidden">
-        <div className="relative w-full max-w-[450px] lg:max-w-[620px] aspect-square flex items-center justify-center">
-          <img
-            src="https://app.sohozkaj.com/images/authImage.svg"
-            alt="SohozKaj Workflow Illustration"
-            className="w-full h-full object-contain z-10 drop-shadow-2xl scale-100 lg:scale-105"
-          />
-        </div>
-
-        <div className="mt-4 text-center w-full max-w-[680px] z-10 px-2">
-          <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
-            <span className="block">
-              <T>
-                {
-                  "Create documents, designs, and print media with photo editing, AI\n              photo editing, manual editing, and bulk editing -\n            "
-                }
-              </T>
-            </span>
-            <span className="block mt-1">
-              <T>{"easy to use."}</T>
-            </span>
-          </p>
-        </div>
-      </div>
-
-      {/* Right Form Container */}
-      <div className="lg:w-1/2 min-h-[calc(100vh-300px)] lg:min-h-screen flex flex-col justify-between p-5 sm:p-10 lg:p-12 relative bg-white">
-        {/* Navigation & Language Selector */}
-        <div className="flex justify-between items-center w-full">
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 font-sans text-slate-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-8 sm:py-7">
+        <header className="flex w-full items-center justify-between">
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-blue-700"
           >
-            <ArrowLeft size={16} />
-            <span>
-              <T>{"Back"}</T>
-            </span>
+            <ArrowLeft size={17} />
+            <span>{text.back}</span>
           </button>
 
-          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-md text-xs font-semibold">
+          <div
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/90 p-1 shadow-sm"
+            aria-label={text.language}
+          >
             <button
               type="button"
               onClick={() => changeLanguage("EN")}
-              className={`px-3 py-1 rounded transition-all cursor-pointer ${
+              aria-pressed={locale === "en"}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 locale === "en"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <T>{"EN\n            "}</T>
+              EN
             </button>
             <button
               type="button"
               onClick={() => changeLanguage("BN")}
-              className={`px-3 py-1 rounded transition-all cursor-pointer ${
+              aria-pressed={locale === "bn"}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 locale === "bn"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <T>{"\u09AC\u09BE\u0982\n            "}</T>
+              বাংলা
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Form Body */}
-        <div className="w-full max-w-md mx-auto my-auto py-6">
-          <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="flex items-center gap-2 mb-1.5 group">
-              <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg tracking-wider shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                <T>{"SK\n              "}</T>
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-2xl font-black tracking-tight text-slate-900">
-                  <T>{"Sohoz"}</T>
-                  <span className="text-blue-600">
-                    <T>{"kaj"}</T>
+        <section className="flex flex-1 items-center justify-center py-10 sm:py-14">
+          <div className="w-full max-w-md">
+            <div className="mb-7 flex flex-col items-center text-center">
+              <Link href="/" className="group mb-6 inline-flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-lg font-black tracking-tight text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
+                  SH
+                </span>
+                <span className="flex flex-col items-start leading-none">
+                  <span className="text-2xl font-black tracking-tight text-slate-900">
+                    Sohoj <span className="text-blue-600">Hub</span>
+                  </span>
+                  <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-slate-400">
+                    SOHOJHUB.COM
                   </span>
                 </span>
-                <span className="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5">
-                  <T>{"WWW.SOHOZKAJ.COM\n                "}</T>
-                </span>
+              </Link>
+
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                <ShieldCheck size={14} />
+                <span>{text.secureSignIn}</span>
               </div>
-            </Link>
-            <p className="text-xs text-slate-500 font-medium">
-              <T>{"Login to your account\n            "}</T>
-            </p>
-          </div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                {text.loginTitle}
+              </h1>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                {text.loginSubtitle}
+              </p>
+            </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/80 p-5 sm:p-8">
-            {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg text-center font-medium">
-                {errorMessage}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">
-                  <T>{"Phone or Email "}</T>
-                  <span className="text-red-500">
-                    <T>{"*"}</T>
-                  </span>
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 text-slate-400">
-                    <Mail size={16} />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="username"
-                    placeholder="Enter phone or email"
-                    value={formData.identifier}
-                    onChange={(e) =>
-                      setFormData({ ...formData, identifier: e.target.value })
-                    }
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">
-                  <T>{"Password "}</T>
-                  <span className="text-red-500">
-                    <T>{"*"}</T>
-                  </span>
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 text-slate-400">
-                    <Lock size={16} />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
-                  <input
-                    type="checkbox"
-                    checked={formData.rememberMe}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        rememberMe: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                  />
-                  <span>
-                    <T>{"Remember me"}</T>
-                  </span>
-                </label>
-
-                <Link
-                  href="/forgot-password"
-                  className="text-blue-600 hover:underline font-semibold"
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
+              {errorMessage && (
+                <div
+                  role="alert"
+                  className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-sm font-medium text-red-700"
                 >
-                  <T>{"Forgot password?\n                "}</T>
-                </Link>
-              </div>
+                  {errorMessage}
+                </div>
+              )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.99] mt-2 cursor-pointer flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>
-                      <T>{"Signing in..."}</T>
-                    </span>
-                  </>
-                ) : (
-                  <span>
-                    <T>{"Sign in"}</T>
-                  </span>
-                )}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="login-identifier"
+                    className="block text-sm font-semibold text-slate-700"
+                  >
+                    {text.identifier} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <Mail
+                      size={17}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3.5 text-slate-400"
+                    />
+                    <input
+                      id="login-identifier"
+                      name="identifier"
+                      type="text"
+                      required
+                      autoComplete="username"
+                      placeholder={text.identifierPlaceholder}
+                      value={formData.identifier}
+                      onChange={(e) =>
+                        setFormData({ ...formData, identifier: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                    />
+                  </div>
+                </div>
 
-          <div className="text-center mt-6">
-            <p className="text-xs text-slate-600">
-              <T>{"Don't have an account?"}</T>
-              {<T> </T>}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="login-password"
+                    className="block text-sm font-semibold text-slate-700"
+                  >
+                    {text.password} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <Lock
+                      size={17}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3.5 text-slate-400"
+                    />
+                    <input
+                      id="login-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoComplete="current-password"
+                      placeholder={text.passwordPlaceholder}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="absolute right-3.5 rounded-md p-1 text-slate-400 transition-colors hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={showPassword ? text.hidePassword : text.showPassword}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 pt-1 text-sm">
+                  <label className="flex cursor-pointer select-none items-center gap-2 text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={formData.rememberMe}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          rememberMe: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                    />
+                    <span>{text.rememberMe}</span>
+                  </label>
+
+                  <Link
+                    href="/forgot-password"
+                    className="font-semibold text-blue-600 transition-colors hover:text-blue-800 hover:underline"
+                  >
+                    {text.forgotPassword}
+                  </Link>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-600/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={17} className="animate-spin" />
+                      <span>{text.signingIn}</span>
+                    </>
+                  ) : (
+                    text.signIn
+                  )}
+                </button>
+              </form>
+            </div>
+
+            <p className="mt-6 text-center text-sm text-slate-600">
+              {text.noAccount}{" "}
               <Link
                 href={
                   callbackUrl
                     ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
                     : "/register"
                 }
-                className="text-blue-600 font-bold hover:underline ml-0.5"
+                className="font-bold text-blue-600 transition-colors hover:text-blue-800 hover:underline"
               >
-                <T>{"Sign up\n              "}</T>
+                {text.signUp}
               </Link>
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* WhatsApp Support Button */}
-        <div className="fixed bottom-5 right-5 z-50">
-          <a
-            href="https://wa.me/8801700559595"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-12 h-12 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all"
-            title="Chat with Support"
-          >
-            <MessageCircle size={26} className="fill-current" />
-          </a>
-        </div>
+        <footer className="pb-2 text-center text-xs text-slate-400">
+          © {new Date().getFullYear()} Sohoj Hub. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }
-// useSearchParams() needs a <Suspense> boundary; its fallback used to be an empty box, so the page
-// was blank until JS ran. The fallback is now the real form (without params) and the bridge swaps
-// in the live params with identical markup.
+
+// useSearchParams() needs a Suspense boundary to prevent a blank page during hydration.
 function SearchParamsBridge() {
   const searchParams = useSearchParams();
   return <LoginContent searchParams={searchParams} />;
