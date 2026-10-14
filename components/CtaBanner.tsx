@@ -1,13 +1,10 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, X } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { motion, Variants } from "framer-motion";
 
 export default function CtaBanner() {
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
-
   const highlights = [
     "Create files in one click",
     "All tools in one place",
@@ -88,7 +85,7 @@ export default function CtaBanner() {
           >
             <T>
               {
-                "Join our platform today and make your daily work easier with SohozKaj.\r\n        "
+                "Join our platform today and make your daily work easier with Sohoj Hub.\r\n        "
               }
             </T>
           </motion.p>
@@ -110,13 +107,9 @@ export default function CtaBanner() {
               />
             </Link>
 
-            <button
-              type="button"
-              onClick={() => setIsVideoOpen(true)}
-              className="w-full cursor-pointer rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 sm:w-auto"
-            >
-              <T>{"Watch Demo Video\r\n          "}</T>
-            </button>
+            <span className="inline-flex w-full cursor-default items-center justify-center rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white/65 sm:w-auto">
+              <T>{"Video coming soon"}</T>
+            </span>
           </motion.div>
 
           <motion.div
@@ -131,51 +124,12 @@ export default function CtaBanner() {
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-medium text-white backdrop-blur-md"
               >
                 <CheckCircle2 size={14} className="shrink-0 text-white" />
-                <span>{item}</span>
+                <span><T>{item}</T></span>
               </motion.div>
             ))}
           </motion.div>
         </motion.div>
       </div>
-
-      {/* Video Modal Popup */}
-      <AnimatePresence>
-        {isVideoOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6"
-            onClick={() => setIsVideoOpen(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative aspect-video w-full max-w-4xl rounded-2xl border border-white/10 bg-black shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsVideoOpen(false)}
-                className="absolute -top-10 right-0 z-50 flex cursor-pointer items-center gap-1 text-white/90 transition hover:text-white"
-                aria-label="Close video"
-              >
-                <X size={26} />
-              </button>
-
-              <iframe
-                src="https://www.youtube.com/embed/NyGp0RiWXmM?autoplay=1&rel=0"
-                title="SohozKaj Demo Video"
-                className="h-full w-full rounded-2xl border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
+</section>
   );
 }

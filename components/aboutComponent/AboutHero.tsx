@@ -56,13 +56,13 @@ export default function AboutHero() {
 
         {/* Heading */}
         <motion.h1 variants={itemVariants} className="mt-7 text-[47px] font-extrabold leading-[1.04] tracking-[-0.04em] text-[#0F172A] sm:text-[49px]">
-          <span className="text-[#2563EB]"><T>{"About"}</T></span><T>{"us\r\n        "}</T></motion.h1>
+          <span className="text-[#2563EB]"><T>{"About us\r\n        "}</T></span></motion.h1>
 
         {/* Description */}
         <motion.div variants={itemVariants} className="mt-7 max-w-[850px]">
           <p className="text-[16px] leading-[1.45] tracking-[-0.01em] text-slate-600 sm:text-[17px]"><T>{"Our journey began in 2012, with the founding of BDThemes. With the\r\n            addition of new products and\r\n            "}</T><br className="hidden sm:block"/><T>{"services over time, in 2020, we built Sigmative \u2014 a technology-based\r\n            organization, where a skilled team\r\n            "}</T><br className="hidden sm:block"/><T>{"of 20+ members is working today.\r\n          "}</T></p>
 
-          <p className="mt-3 text-[13px] leading-5 text-slate-500"><T>{"Easy Task is a service of"}</T>{<T>{" "}</T>}
+          <p className="mt-3 text-[13px] leading-5 text-slate-500"><T>{"Sohoj Hub is a service of"}</T>{<T>{" "}</T>}
             <span className="font-semibold text-[#0F172A]"><T>{"Sigmative"}</T></span><T>{".\r\n          "}</T></p>
         </motion.div>
 

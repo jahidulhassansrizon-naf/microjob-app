@@ -1,6 +1,5 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
-import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutGrid,
@@ -9,13 +8,10 @@ import {
   ArrowRight,
   Printer,
   FolderDown,
-  X,
 } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 export default function PrintMediaSection() {
-  const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
-
   const cards = [
     {
       title: "Massive print-ready design library",
@@ -23,7 +19,6 @@ export default function PrintMediaSection() {
       icon: <LayoutGrid className="text-blue-600" size={20} />,
       iconBg: "bg-blue-50 ring-blue-100",
       btnColor: "text-blue-600",
-      videoStart: 0,
     },
     {
       title: "Replace text in a flash",
@@ -31,7 +26,6 @@ export default function PrintMediaSection() {
       icon: <FileEdit className="text-indigo-600" size={20} />,
       iconBg: "bg-indigo-50 ring-indigo-100",
       btnColor: "text-indigo-600",
-      videoStart: 62,
     },
     {
       title: "Replace logos, images and other photos",
@@ -39,7 +33,6 @@ export default function PrintMediaSection() {
       icon: <Image className="text-violet-600" size={20} />,
       iconBg: "bg-violet-50 ring-violet-100",
       btnColor: "text-violet-600",
-      videoStart: 73,
     },
     {
       title: "Create your file instantly",
@@ -47,7 +40,6 @@ export default function PrintMediaSection() {
       icon: <ArrowRight className="text-sky-600" size={20} />,
       iconBg: "bg-sky-50 ring-sky-100",
       btnColor: "text-sky-600",
-      videoStart: 118,
     },
     {
       title: "Share or email your created file",
@@ -55,7 +47,6 @@ export default function PrintMediaSection() {
       icon: <Printer className="text-emerald-600" size={20} />,
       iconBg: "bg-emerald-50 ring-emerald-100",
       btnColor: "text-emerald-600",
-      videoStart: null,
     },
     {
       title: "AI, PSD, PNG, CMYK, RGB — whatever you need",
@@ -63,7 +54,6 @@ export default function PrintMediaSection() {
       icon: <FolderDown className="text-amber-600" size={20} />,
       iconBg: "bg-amber-50 ring-amber-100",
       btnColor: "text-amber-600",
-      videoStart: 130,
     },
   ];
 
@@ -102,7 +92,7 @@ export default function PrintMediaSection() {
           </div>
 
           <h2 className="text-4xl font-bold leading-[1.15] tracking-tight text-slate-900 md:text-5xl">
-            <T>{"SohozKaj-Professional "}</T>
+            <T>{"Sohoj Hub-Professional "}</T>
             <br />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
               <T>{"Print Media"}</T>
@@ -148,38 +138,14 @@ export default function PrintMediaSection() {
                   {<T>{card.title}</T>}
                 </h3>
                 <p className="text-sm font-medium leading-relaxed text-slate-500">
-                  {card.desc}
+                  {<T>{card.desc}</T>}
                 </p>
               </div>
 
               <div className="pt-5">
-                {card.videoStart !== null ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoStart(card.videoStart)}
-                    className={`group inline-flex cursor-pointer items-center gap-1 text-xs font-semibold no-underline ${card.btnColor}`}
-                  >
-                    <span>
-                      <T>{"Learn more"}</T>
-                    </span>
-                    <ArrowRight
-                      size={13}
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    />
-                  </button>
-                ) : (
-                  <span
-                    className={`group inline-flex cursor-default select-none items-center gap-1 text-xs font-semibold no-underline ${card.btnColor}`}
-                  >
-                    <span>
-                      <T>{"Learn more"}</T>
-                    </span>
-                    <ArrowRight
-                      size={13}
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    />
-                  </span>
-                )}
+                <span className={`inline-flex cursor-default select-none items-center text-xs font-semibold ${card.btnColor} opacity-70`}>
+                  <T>{"Video coming soon"}</T>
+                </span>
               </div>
             </motion.div>
           ))}
@@ -208,7 +174,7 @@ export default function PrintMediaSection() {
           </div>
 
           <h2 className="relative mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight md:text-5xl">
-            <T>{"Start Today with SohozKaj - Completely Free\r\n          "}</T>
+            <T>{"Start Today with Sohoj Hub - Completely Free\r\n          "}</T>
           </h2>
 
           <p className="relative mb-8 max-w-xl text-sm font-medium text-slate-300 md:text-base">
@@ -233,45 +199,6 @@ export default function PrintMediaSection() {
           </Link>
         </motion.div>
       </div>
-
-      {/* Video Popup Modal */}
-      <AnimatePresence>
-        {activeVideoStart !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6"
-            onClick={() => setActiveVideoStart(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative aspect-video w-full max-w-4xl rounded-2xl border border-white/10 bg-black shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setActiveVideoStart(null)}
-                className="absolute -top-10 right-0 z-50 flex cursor-pointer items-center gap-1 text-white/90 transition hover:text-white"
-                aria-label="Close video"
-              >
-                <X size={26} />
-              </button>
-
-              <iframe
-                src={`https://www.youtube.com/embed/gDJK6EXjG4Q?autoplay=1&rel=0&start=${activeVideoStart}`}
-                title="SohozKaj Print Media Solution Tutorial"
-                className="h-full w-full rounded-2xl border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
+</section>
   );
 }

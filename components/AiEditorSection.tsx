@@ -1,6 +1,5 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
-import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -9,40 +8,28 @@ import {
   Shirt,
   Image,
   Share2,
-  X,
 } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 export default function AiEditorSection() {
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
-  const [videoStartTime, setVideoStartTime] = useState(0);
-
-  const handleOpenVideo = (startTime: number = 0) => {
-    setVideoStartTime(startTime);
-    setIsVideoOpen(true);
-  };
-
   const bottomCards = [
     {
       title: "Background & outfit changes",
       desc: "Change background color, hair color, and skin tone however you want with one click",
       icon: <Shirt size={22} />,
       chip: "bg-blue-50 text-blue-600 ring-blue-100",
-      startTime: 61,
     },
     {
       title: "Any size, any format, print ready",
       desc: "Save photos in specific sizes for passport, visa, NID, birth registration in JPG format",
       icon: <Image size={22} />,
       chip: "bg-violet-50 text-violet-600 ring-violet-100",
-      startTime: 256,
     },
     {
       title: "Share, print, download with ease",
-      desc: "On ShohozKaj, instantly download, share, or email your photos without any hassle.",
+      desc: "On Sohoj Hub, instantly download, share, or email your photos without any hassle.",
       icon: <Share2 size={22} />,
       chip: "bg-emerald-50 text-emerald-600 ring-emerald-100",
-      startTime: 212,
     },
   ];
 
@@ -67,9 +54,6 @@ export default function AiEditorSection() {
 
   const cardBase =
     "group relative flex flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60 sm:p-9";
-  const detailsBtn =
-    "mt-6 inline-flex w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-slate-900 transition hover:text-blue-600";
-
   return (
     <section className="overflow-hidden bg-white px-4 pb-20 pt-6 sm:px-6 md:px-12 md:pb-28">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-5 md:gap-6">
@@ -190,7 +174,7 @@ export default function AiEditorSection() {
                   <Sparkles size={24} />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold tracking-tight text-slate-900 sm:mb-3 sm:text-2xl">
-                  <T>{"ShohozKaj's Smart AI Editor.\r\n                "}</T>
+                  <T>{"Sohoj Hub's Smart AI Editor.\r\n                "}</T>
                 </h3>
                 <p className="max-w-lg text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
                   <T>
@@ -200,12 +184,7 @@ export default function AiEditorSection() {
                   </T>
                 </p>
               </div>
-              <button
-                onClick={() => handleOpenVideo(0)}
-                className={`relative ${detailsBtn}`}
-              >
-                <T>{"See details &rsaquo;\r\n              "}</T>
-              </button>
+              <span className="relative mt-6 inline-flex w-fit cursor-default items-center text-xs font-medium text-slate-400"><T>{"Video coming soon"}</T></span>
             </motion.div>
 
             {/* Card 2 */}
@@ -231,17 +210,12 @@ export default function AiEditorSection() {
                 <p className="max-w-lg text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
                   <T>
                     {
-                      "On ShohozKaj, easily edit your photos with blue, black, or\r\n                  gray suits, navy blazers, white shirts, polo shirts, as well\r\n                  as casual and traditional outfits.\r\n                "
+                      "On Sohoj Hub, easily edit your photos with blue, black, or\r\n                  gray suits, navy blazers, white shirts, polo shirts, as well\r\n                  as casual and traditional outfits.\r\n                "
                     }
                   </T>
                 </p>
               </div>
-              <button
-                onClick={() => handleOpenVideo(40)}
-                className={`relative ${detailsBtn} hover:text-violet-600`}
-              >
-                <T>{"See details &rsaquo;\r\n              "}</T>
-              </button>
+              <span className="relative mt-6 inline-flex w-fit cursor-default items-center text-xs font-medium text-slate-400"><T>{"Video coming soon"}</T></span>
             </motion.div>
           </div>
         </div>
@@ -271,58 +245,14 @@ export default function AiEditorSection() {
                   {<T>{card.title}</T>}
                 </h3>
                 <p className="text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
-                  {card.desc}
+                  {<T>{card.desc}</T>}
                 </p>
               </div>
-              <button
-                onClick={() => handleOpenVideo(card.startTime)}
-                className="mt-6 inline-flex w-fit cursor-pointer items-center gap-1 text-xs font-semibold text-slate-900 transition hover:text-blue-600"
-              >
-                <T>{"See details &rsaquo;\r\n              "}</T>
-              </button>
+              <span className="mt-6 inline-flex w-fit cursor-default items-center text-xs font-medium text-slate-400"><T>{"Video coming soon"}</T></span>
             </motion.div>
           ))}
         </motion.div>
       </div>
-
-      {/* Demo Video Popup Modal */}
-      <AnimatePresence>
-        {isVideoOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6"
-            onClick={() => setIsVideoOpen(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative aspect-video w-full max-w-4xl rounded-2xl border border-white/10 bg-black shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsVideoOpen(false)}
-                className="absolute -top-10 right-0 z-50 flex cursor-pointer items-center gap-1 text-white/90 transition hover:text-white"
-                aria-label="Close video"
-              >
-                <X size={26} />
-              </button>
-
-              <iframe
-                src={`https://www.youtube.com/embed/ssUbVT5-b10?autoplay=1&rel=0&start=${videoStartTime}`}
-                title="ShohozKaj AI Photo Edit Tutorial"
-                className="h-full w-full rounded-2xl border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
+</section>
   );
 }

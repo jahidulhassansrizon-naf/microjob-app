@@ -11,8 +11,8 @@ export default function FaqSection() {
   const faqs = [
       {
           id: "01",
-          question: "What is SohozKaj and how does it work?",
-          answer: "SohozKaj is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
+          question: "What is Sohoj Hub and how does it work?",
+          answer: "Sohoj Hub is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
       },
       {
           id: "02",
@@ -36,8 +36,8 @@ export default function FaqSection() {
       },
       {
           id: "06",
-          question: "Can SohozKaj be used on mobile?",
-          answer: "Yes, SohozKaj is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
+          question: "Can Sohoj Hub be used on mobile?",
+          answer: "Yes, Sohoj Hub is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
       },
       {
           id: "07",
@@ -66,7 +66,7 @@ export default function FaqSection() {
       },
       {
           id: "12",
-          question: "Do I need to create an account to use SohozKaj?",
+          question: "Do I need to create an account to use Sohoj Hub?",
           answer: "You can browse templates freely, but an account is required to save and download your generated documents.",
       },
       {
@@ -110,7 +110,7 @@ export default function FaqSection() {
           </h2>
 
           <p className="text-base leading-relaxed text-slate-600">
-            <T>{"Some common questions about SohozKaj.\r\n          "}</T>
+            <T>{"Some common questions about Sohoj Hub.\r\n          "}</T>
           </p>
         </motion.div>
 
@@ -141,7 +141,7 @@ export default function FaqSection() {
                       {faq.id}
                     </span>
                     <h3 className="text-sm font-semibold leading-snug text-slate-900 sm:text-[15px]">
-                      {faq.question}
+                      {<T>{faq.question}</T>}
                     </h3>
                   </div>
 
@@ -171,7 +171,7 @@ export default function FaqSection() {
                       className="overflow-hidden"
                     >
                       <div className="border-t border-slate-100 px-5 pb-5 pt-3 text-sm font-medium leading-relaxed text-slate-600 sm:px-6">
-                        {faq.answer}
+                        {<T>{faq.answer}</T>}
                       </div>
                     </motion.div>
                   )}

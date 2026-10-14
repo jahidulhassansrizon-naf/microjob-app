@@ -240,7 +240,7 @@ const AdditionalInfoTab: React.FC<AdditionalInfoTabProps> = ({ formData = {}, on
                 {q.id}
               </span>
               <p className="text-xs font-medium text-gray-700 leading-relaxed">
-                {q.label}
+                {<T>{q.label}</T>}
               </p>
             </div>
 

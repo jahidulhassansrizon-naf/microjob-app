@@ -107,7 +107,7 @@ export default function WhyChooseUs() {
                 {<T>{item.title}</T>}
               </h3>
               <p className="text-sm font-medium leading-relaxed text-slate-500">
-                {item.desc}
+                {<T>{item.desc}</T>}
               </p>
             </div>
           ))}

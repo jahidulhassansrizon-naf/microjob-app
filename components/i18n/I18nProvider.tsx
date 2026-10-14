@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { translateComponentText } from "@/components/i18n/componentTranslations";
 import {
   DEFAULT_LOCALE,
   persistLocale,
@@ -42,7 +43,13 @@ export function I18nProvider({
       setLocaleState(next);
       persistLocale(next);
     },
-    t: (value) => translateText(value, locale),
+    t: (value) => {
+      if (String(locale).toLowerCase().startsWith("bn")) {
+        const componentTranslation = translateComponentText(value);
+        if (componentTranslation !== undefined) return componentTranslation;
+      }
+      return translateText(value, locale);
+    },
   }), [locale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

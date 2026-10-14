@@ -1,3 +1,4 @@
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
 import React, { useState, useEffect, useRef } from "react";
@@ -261,6 +262,7 @@ const additionalQuestionsList = [
     { id: 52, label: "What is your Heavy Driving License Number?" },
 ];
 export default function FormsListTable({ formsList, searchQuery, isLoading, onOpenCreate, onEditForm, onDeleteForm, }: FormsListTableProps) {
+  const { t } = useI18n();
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [menuStyle, setMenuStyle] = useState<{
@@ -501,7 +503,7 @@ export default function FormsListTable({ formsList, searchQuery, isLoading, onOp
               {filteredForms.map((item) => (<tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-6 font-semibold text-gray-800 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200 overflow-hidden">
-                      {item.photoSignature?.photoUrl ? (<img src={item.photoSignature.photoUrl} alt="Photo" className="w-full h-full rounded-full object-cover"/>) : (<User className="w-4 h-4"/>)}
+                      {item.photoSignature?.photoUrl ? (<img src={item.photoSignature.photoUrl} alt={t("Photo")} className="w-full h-full rounded-full object-cover"/>) : (<User className="w-4 h-4"/>)}
                     </div>
                     <div>
                       <p>
@@ -516,7 +518,7 @@ export default function FormsListTable({ formsList, searchQuery, isLoading, onOp
                   <td className="py-4 px-6 text-gray-600">
                     <div className="flex items-center gap-1.5">
                       <span>{item.basic?.mobileNumber || "—"}</span>
-                      {item.basic?.mobileNumber && (<button type="button" onClick={() => handleCopyPhone(item.basic!.mobileNumber!, item.id)} className="text-gray-400 hover:text-gray-600 cursor-pointer" title="Copy phone">
+                      {item.basic?.mobileNumber && (<button type="button" onClick={() => handleCopyPhone(item.basic!.mobileNumber!, item.id)} className="text-gray-400 hover:text-gray-600 cursor-pointer" title={t("Copy phone")}>
                           {copiedId === item.id ? (<Check className="w-3.5 h-3.5 text-emerald-600"/>) : (<Copy className="w-3.5 h-3.5"/>)}
                         </button>)}
                     </div>
@@ -616,7 +618,7 @@ export default function FormsListTable({ formsList, searchQuery, isLoading, onOp
                 <div ref={pdfRef} className="bg-white rounded-lg border border-gray-300 w-full max-w-4xl p-3 sm:p-5 text-gray-800 space-y-4 shadow-sm font-sans h-fit text-[11px]">
                   <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
                     <div className="w-20 h-24 bg-gray-50 border border-gray-300 rounded-lg flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                      {previewItem.photoSignature?.photoUrl ? (<img src={previewItem.photoSignature.photoUrl} alt="Applicant Photo" className="w-full h-full object-cover"/>) : (<div className="text-center p-2 text-gray-400">
+                      {previewItem.photoSignature?.photoUrl ? (<img src={previewItem.photoSignature.photoUrl} alt={t("Applicant Photo")} className="w-full h-full object-cover"/>) : (<div className="text-center p-2 text-gray-400">
                           <User className="w-6 h-6 mx-auto mb-1 stroke-1"/>
                           <span className="text-[8px]"><T>{"No Photo"}</T></span>
                         </div>)}
@@ -1055,10 +1057,10 @@ export default function FormsListTable({ formsList, searchQuery, isLoading, onOp
                           {answeredAdditionalQuestions.map((q) => (<div key={q.id} className="flex items-start justify-between border-b border-gray-100 pb-1 last:border-none gap-2">
                               <p className="text-gray-700 pr-2">
                                 <span className="font-semibold text-gray-500 mr-1"><T>{"Q"}</T>{q.id}<T>{".\r\n                                "}</T></span>
-                                {q.label}
+                                {<T>{q.label}</T>}
                               </p>
                               <span className="font-bold text-amber-800 bg-[#fef3c7] px-1.5 py-[0.5] rounded text-[10px] shrink-0">
-                                {previewItem.additionalInfo![q.id]}
+                                {<T>{previewItem.additionalInfo![q.id]}</T>}
                               </span>
                             </div>))}
                         </div>
@@ -1078,7 +1080,7 @@ export default function FormsListTable({ formsList, searchQuery, isLoading, onOp
 
                     <div className="text-center">
                       <div className="w-32 h-10 border-b border-gray-400 mb-1 flex items-center justify-center overflow-hidden">
-                        {previewItem.photoSignature?.signatureUrl ? (<img src={previewItem.photoSignature.signatureUrl} alt="Signature" className="max-h-full object-contain"/>) : (<span className="text-[9px] text-gray-400 italic"><T>{"[ Signature ]\r\n                          "}</T></span>)}
+                        {previewItem.photoSignature?.signatureUrl ? (<img src={previewItem.photoSignature.signatureUrl} alt={t("Signature")} className="max-h-full object-contain"/>) : (<span className="text-[9px] text-gray-400 italic"><T>{"[ Signature ]\r\n                          "}</T></span>)}
                       </div>
                       <span className="font-semibold text-gray-700 block text-[10px]"><T>{"Applicant's Signature\r\n                      "}</T></span>
                     </div>

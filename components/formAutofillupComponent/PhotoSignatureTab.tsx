@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 import React, { useState, useRef } from "react";
 import { Upload, Camera, Image as ImageIcon, X, Sparkles, Trash2, Minus, Plus, RotateCcw, Check, Eye, } from "lucide-react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop, } from "react-image-crop";
@@ -22,6 +22,7 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
     }, aspect ?? 1, mediaWidth, mediaHeight), mediaWidth, mediaHeight);
 }
 const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaultData, onChange, }) => {
+    const { t } = useI18n();
     const [modalOpen, setModalOpen] = useState(false);
     const [activeType, setActiveType] = useState<"photo" | "signature">("photo");
     const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
@@ -118,7 +119,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
         <div className="border border-gray-200 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-20 h-24 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden relative group">
             {formData.photoUrl ? (<>
-                <img src={formData.photoUrl} alt="Uploaded Photo" className="w-full h-full object-cover"/>
+                <img src={formData.photoUrl} alt={t("Uploaded Photo")} className="w-full h-full object-cover"/>
                 <button type="button" onClick={() => {
                 setPreviewImageSrc(formData.photoUrl);
                 setPreviewOpen(true);
@@ -146,7 +147,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
                 <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, "photo")} className="hidden"/>
               </label>
 
-              {formData.photoUrl && (<button type="button" onClick={() => handleRemove("photo")} className="p-1.5 border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors cursor-pointer" title="Remove photo">
+              {formData.photoUrl && (<button type="button" onClick={() => handleRemove("photo")} className="p-1.5 border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors cursor-pointer" title={t("Remove photo")}>
                   <Trash2 className="w-4 h-4"/>
                 </button>)}
             </div>
@@ -157,7 +158,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
         <div className="border border-gray-200 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-28 h-16 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden relative group">
             {formData.signatureUrl ? (<>
-                <img src={formData.signatureUrl} alt="Uploaded Signature" className="w-full h-full object-contain"/>
+                <img src={formData.signatureUrl} alt={t("Uploaded Signature")} className="w-full h-full object-contain"/>
                 <button type="button" onClick={() => {
                 setPreviewImageSrc(formData.signatureUrl);
                 setPreviewOpen(true);
@@ -185,7 +186,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
                 <input type="file" accept="image/*" onChange={(e) => handleFileSelect(e, "signature")} className="hidden"/>
               </label>
 
-              {formData.signatureUrl && (<button type="button" onClick={() => handleRemove("signature")} className="p-1.5 border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors cursor-pointer" title="Remove signature">
+              {formData.signatureUrl && (<button type="button" onClick={() => handleRemove("signature")} className="p-1.5 border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors cursor-pointer" title={t("Remove signature")}>
                   <Trash2 className="w-4 h-4"/>
                 </button>)}
             </div>
@@ -200,7 +201,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
               <X className="w-4 h-4"/>
             </button>
             {previewImageSrc && (<div className="flex items-center justify-center">
-                <img src={previewImageSrc} alt="Full Preview" className="max-w-[85vw] max-h-[82vh] w-auto h-auto object-contain rounded-lg"/>
+                <img src={previewImageSrc} alt={t("Full Preview")} className="max-w-[85vw] max-h-[82vh] w-auto h-auto object-contain rounded-lg"/>
               </div>)}
           </div>
         </div>)}
@@ -241,7 +242,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
                 <button type="button" onClick={() => setZoom((prev) => Math.min(2.5, prev + 0.1))} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                   <Plus className="w-3.5 h-3.5"/>
                 </button>
-                <button type="button" onClick={() => setZoom(1)} className="text-gray-400 hover:text-gray-600 ml-1 cursor-pointer" title="Reset zoom">
+                <button type="button" onClick={() => setZoom(1)} className="text-gray-400 hover:text-gray-600 ml-1 cursor-pointer" title={t("Reset zoom")}>
                   <RotateCcw className="w-3.5 h-3.5"/>
                 </button>
               </div>
@@ -254,7 +255,7 @@ const PhotoSignatureTab: React.FC<PhotoSignatureTabProps> = ({ formData = defaul
                     transition: "transform 0.1s ease-out",
                 }}>
                   <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={aspect}>
-                    <img src={selectedImageSrc} alt="Crop preview" onLoad={onImageLoad} style={{ maxHeight: "300px", display: "block" }}/>
+                    <img src={selectedImageSrc} alt={t("Crop preview")} onLoad={onImageLoad} style={{ maxHeight: "300px", display: "block" }}/>
                   </ReactCrop>
                 </div>)}
             </div>

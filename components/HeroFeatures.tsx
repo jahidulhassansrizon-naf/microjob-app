@@ -42,7 +42,7 @@ export default function HeroFeatures() {
           <p className="mx-auto max-w-xl pt-1 text-base leading-relaxed text-slate-600 md:text-lg">
             <T>
               {
-                "Create professional photos from normal images in just a few seconds without Photoshop, using ShohozKaj."
+                "Create professional photos from normal images in just a few seconds without Photoshop, using Sohoj Hub."
               }
             </T>
           </p>

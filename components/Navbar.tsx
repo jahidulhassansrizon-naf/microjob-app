@@ -49,7 +49,6 @@ const serviceItems = [
     icon: FileCode,
     href: "/login?redirect=/ai-template",
   },
-  { label: "Document Templates", icon: FileText, href: "/login" },
   { label: "Print Media", icon: Printer, href: "/login?redirect=/print-media" },
   {
     label: "Questions Create",
@@ -58,8 +57,8 @@ const serviceItems = [
   },
 ];
 
-// SohozTools mega menu
-const sohozToolsCategories = [
+// Sohoj Hub Tools mega menu
+const sohojHubToolsCategories = [
   {
     title: "PDF Tools",
     count: "15 tools",
@@ -161,21 +160,10 @@ const importantLinksItems = [
     href: "/dorkar-link?category=other",
   },
   {
-    title: "Job Circular",
-    subtitle: "Latest job circulars",
-    href: "/login?redirect=/jobs",
-  },
-  {
-    title: "Important Articles",
-    subtitle: "Blog & helpful articles",
-    href: "https://blog.sohozkaj.com/",
-  },
-  {
     title: "Contest",
-    subtitle: "Use SohojKaj & win prizes!",
+    subtitle: "Use Sohoj Hub & win prizes!",
     isNew: true,
     isFeatured: true,
-    href: "https://contest.sohozkaj.com/",
   },
   {
     title: "Contact",
@@ -322,6 +310,7 @@ function MobileAccordion({
 /* ------------------------------ Navbar ------------------------------ */
 
 export default function Navbar() {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
@@ -401,7 +390,7 @@ export default function Navbar() {
                 </span>
               </h2>
               <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                www.sohozkaj.com
+                sohojhub.com
               </p>
             </div>
           </Link>
@@ -456,7 +445,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* SohozTools Mega Menu (positioned against the header, not the trigger) */}
+            {/* Sohoj Hub Tools Mega Menu (positioned against the header, not the trigger) */}
             <div
               className="flex h-full items-center"
               onMouseEnter={() => setIsToolsOpen(true)}
@@ -467,7 +456,7 @@ export default function Navbar() {
                 onClick={() => setIsToolsOpen(false)}
                 className={navTrigger(isToolsOpen || toolsActive)}
               >
-                <T>{"SohozTools"}</T>
+                <T>{"All Tools"}</T>
                 <Chevron open={isToolsOpen} />
               </Link>
 
@@ -482,7 +471,7 @@ export default function Navbar() {
                   >
                     <div className="w-[min(1100px,calc(100vw-3rem))] rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl shadow-slate-900/10">
                       <div className="grid grid-cols-3 gap-5 xl:grid-cols-5">
-                        {sohozToolsCategories.map((cat, idx) => {
+                        {sohojHubToolsCategories.map((cat, idx) => {
                           const CatIcon = cat.icon;
                           return (
                             <div key={idx} className="flex flex-col gap-3">
@@ -497,7 +486,7 @@ export default function Navbar() {
                                     <T>{cat.title}</T>
                                   </span>
                                   <span className="text-[10px] font-semibold text-slate-400">
-                                    {cat.count}
+                                    <T>{cat.count}</T>
                                   </span>
                                 </div>
                               </div>
@@ -574,7 +563,8 @@ export default function Navbar() {
                   >
                     <div className="flex w-[22rem] flex-col gap-0.5 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl shadow-slate-900/10">
                       {importantLinksItems.map((item, index) => {
-                        const isExternal = item.href.startsWith("http");
+                        const isExternal =
+                          !!item.href && item.href.startsWith("http");
                         const ext = {
                           target: isExternal ? "_blank" : undefined,
                           rel: isExternal ? "noopener noreferrer" : undefined,
@@ -582,12 +572,9 @@ export default function Navbar() {
 
                         if (item.isFeatured) {
                           return (
-                            <Link
+                            <div
                               key={index}
-                              href={item.href}
-                              {...ext}
-                              onClick={() => setIsImportantOpen(false)}
-                              className="group my-1 flex items-center justify-between rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5 transition hover:from-blue-100/70 hover:to-indigo-100/70"
+                              className="group my-1 flex items-center justify-between rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/25">
@@ -613,9 +600,11 @@ export default function Navbar() {
                                 size={15}
                                 className="shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5"
                               />
-                            </Link>
+                            </div>
                           );
                         }
+
+                        if (!item.href) return null;
 
                         return (
                           <Link
@@ -693,7 +682,7 @@ export default function Navbar() {
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMobileMenuOpen(true)}
               className="cursor-pointer rounded-xl border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 lg:hidden"
-              aria-label="Open Mobile Menu"
+              aria-label={t("Open Mobile Menu")}
             >
               <Menu size={20} />
             </motion.button>
@@ -737,7 +726,7 @@ export default function Navbar() {
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
-                  aria-label="Close Mobile Menu"
+                  aria-label={t("Close Mobile Menu")}
                 >
                   <X size={20} />
                 </button>
@@ -771,7 +760,7 @@ export default function Navbar() {
                 </MobileAccordion>
 
                 <MobileAccordion
-                  label="SohozTools"
+                  label="All Tools"
                   open={mobileToolsOpen}
                   onToggle={() => setMobileToolsOpen(!mobileToolsOpen)}
                 >
@@ -784,7 +773,7 @@ export default function Navbar() {
                     <ArrowRight size={12} />
                   </Link>
                   <div className="flex flex-col gap-3">
-                    {sohozToolsCategories.map((cat, cIdx) => {
+                    {sohojHubToolsCategories.map((cat, cIdx) => {
                       const CatIcon = cat.icon;
                       return (
                         <div key={cIdx} className="flex flex-col gap-0.5">
@@ -821,7 +810,20 @@ export default function Navbar() {
                 >
                   <div className="flex flex-col gap-0.5">
                     {importantLinksItems.map((imp, iIdx) => {
-                      const isExternal = imp.href.startsWith("http");
+                      const isExternal =
+                        !!imp.href && imp.href.startsWith("http");
+                      if (!imp.href) {
+                        return (
+                          <div
+                            key={iIdx}
+                            className="flex items-center justify-between py-2 text-[13px] font-medium text-slate-600"
+                          >
+                            <span>
+                              <T>{imp.title}</T>
+                            </span>
+                          </div>
+                        );
+                      }
                       return (
                         <Link
                           key={iIdx}

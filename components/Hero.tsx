@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 import {
   toolsData,
   getSlug,
@@ -139,6 +139,7 @@ const BANNER_HOTSPOTS: {
 ];
 
 export default function Hero() {
+  const { t } = useI18n();
   // ToolTile এর মতোই: paid টুলে সাবস্ক্রিপশন না থাকলে /subscription এ যাবে
   const [hasActiveSubscription, setHasActiveSubscription] = useState<
     boolean | null
@@ -256,7 +257,7 @@ export default function Hero() {
           <div className="relative aspect-[1672/941] w-full overflow-hidden rounded-xl bg-slate-900 sm:rounded-2xl">
             <Image
               src="/banner/banner1.png"
-              alt="Sohoz Hub - Your Creative Toolbox"
+              alt={t("Sohoj Hub - Your Creative Toolbox")}
               fill
               priority
               quality={90}
@@ -275,8 +276,8 @@ export default function Hero() {
                 key={spot.name}
                 href={hrefFor(spot.name)}
                 prefetch
-                aria-label={spot.name}
-                title={spot.name}
+                aria-label={t(spot.name)}
+                title={t(spot.name)}
                 className="absolute z-10 cursor-pointer rounded-md outline-none transition duration-200 hover:bg-white/20 hover:shadow-lg hover:ring-2 hover:ring-white/80 focus-visible:ring-2 focus-visible:ring-white"
                 style={{
                   left: `${spot.left}%`,

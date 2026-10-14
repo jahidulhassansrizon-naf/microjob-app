@@ -350,7 +350,6 @@ const PHRASES: Record<string, string> = {
   "Recharge Credit": "ক্রেডিট রিচার্জ করুন",
   "Redo": "আবার করুন",
   "Refresh": "রিফ্রেশ",
-  "Refund Policy": "রিফান্ড নীতি",
   "Register": "রেজিস্টার",
   "Remember me": "আমাকে মনে রাখুন",
   "Remove": "সরিয়ে দিন",

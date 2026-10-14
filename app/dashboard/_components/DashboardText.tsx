@@ -102,7 +102,6 @@ const DASHBOARD_BN: Record<string, string> = {
   "terms": "শর্তাবলি",
   "privacy policy": "প্রাইভেসি পলিসি",
   "copyright": "কপিরাইট",
-  "refund policy": "রিফান্ড পলিসি",
   "all rights reserved.": "সর্বস্বত্ব সংরক্ষিত।",
   "form auto fillup": "ফর্ম স্বয়ংক্রিয়ভাবে পূরণ",
   "image size reducer": "ছবির আকার কমান",

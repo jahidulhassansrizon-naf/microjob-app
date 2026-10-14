@@ -95,8 +95,10 @@ function translateSavedPaperText(
   if (pageMatch) return `পৃষ্ঠা ${pageMatch[1]} · `;
 
   const questionCount = /^(\d+) questions?$/i.exec(normalized);
-  if (questionCount)
-    return `${questionCount[1]} ${questionCount[1] === "1" ? "প্রশ্ন" : "প্রশ্ন"}`;
+  if (questionCount) {
+    const banglaCount = questionCount[1].replace(/[0-9]/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    return `${banglaCount}টি প্রশ্ন`;
+  }
 
   const pagesMatch = /^· (\d+) pages$/i.exec(normalized);
   if (pagesMatch) return `· ${pagesMatch[1]} পৃষ্ঠা`;

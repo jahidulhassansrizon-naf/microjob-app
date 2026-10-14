@@ -23,7 +23,7 @@ const NID_SETTINGS_TRANSLATIONS: Record<string, string> = {
   "new uploads are cropped automatically.":
     "নতুন আপলোড করা ছবিগুলো স্বয়ংক্রিয়ভাবে ক্রপ করা হবে।",
   "images stay original. use crop manually.":
-    "ছবিগুলো মূল অবস্থায় থাকবে। প্রয়োজনে নিজে Crop ব্যবহার করুন।",
+    "ছবিগুলো মূল অবস্থায় থাকবে। প্রয়োজনে নিজে ক্রপ করুন।",
   "auto crop is working — please wait":
     "স্বয়ংক্রিয় ক্রপ চলছে — অনুগ্রহ করে অপেক্ষা করুন",
   "auto crop active": "স্বয়ংক্রিয় ক্রপ চালু",

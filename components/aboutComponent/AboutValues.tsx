@@ -124,11 +124,11 @@ export default function AboutValues() {
               </div>
 
               <h3 className="m-0 text-[20px] leading-6 font-extrabold text-[#0F172A]">
-                {val.title}
+                {<T>{val.title}</T>}
               </h3>
 
               <p className="mt-4 mb-0 text-[16px] leading-[23px] text-slate-600 max-w-[310px]">
-                {val.desc}
+                {<T>{val.desc}</T>}
               </p>
             </motion.div>))}
         </motion.div>

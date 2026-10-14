@@ -1,6 +1,5 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
-import { useState } from "react";
 import {
   FileEdit,
   FileText,
@@ -9,13 +8,10 @@ import {
   FileCheck,
   Eye,
   Keyboard,
-  X,
 } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 export default function DocumentSection() {
-  const [activeVideoStart, setActiveVideoStart] = useState<number | null>(null);
-
   const cards = [
     {
       title: "Update information in a flash",
@@ -27,7 +23,6 @@ export default function DocumentSection() {
       btnColor: "text-blue-600",
       arrowBg: "bg-blue-600",
       glow: "from-transparent via-blue-500/70 to-transparent",
-      videoStart: 132,
     },
     {
       title: "Export files as PDF",
@@ -39,7 +34,6 @@ export default function DocumentSection() {
       btnColor: "text-indigo-600",
       arrowBg: "bg-indigo-600",
       glow: "from-transparent via-indigo-500/70 to-transparent",
-      videoStart: 230,
     },
     {
       title: "Share or email your document",
@@ -51,7 +45,6 @@ export default function DocumentSection() {
       btnColor: "text-violet-600",
       arrowBg: "bg-violet-600",
       glow: "from-transparent via-violet-500/70 to-transparent",
-      videoStart: null,
     },
   ];
 
@@ -114,7 +107,7 @@ export default function DocumentSection() {
           </div>
 
           <h2 className="text-4xl font-bold leading-[1.15] tracking-tight text-slate-900 md:text-5xl">
-            <T>{"In Sohozkaj contracts & documents"}</T>
+            <T>{"In Sohoj Hub contracts & documents"}</T>
             {<T>{" "}</T>}
             <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
@@ -162,7 +155,7 @@ export default function DocumentSection() {
                   <span
                     className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${card.badgeStyle}`}
                   >
-                    {card.badge}
+                    {<T>{card.badge}</T>}
                   </span>
                 </div>
 
@@ -170,40 +163,14 @@ export default function DocumentSection() {
                   {<T>{card.title}</T>}
                 </h3>
                 <p className="text-sm font-medium leading-relaxed text-slate-600">
-                  {card.desc}
+                  {<T>{card.desc}</T>}
                 </p>
               </div>
 
               <div className="pt-6">
-                {card.videoStart !== null ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoStart(card.videoStart)}
-                    className={`group/btn inline-flex cursor-pointer items-center gap-2 text-xs font-semibold transition ${card.btnColor}`}
-                  >
-                    <span>
-                      <T>{"Learn more"}</T>
-                    </span>
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-white transition group-hover/btn:translate-x-0.5 ${card.arrowBg}`}
-                    >
-                      <ArrowRight size={12} strokeWidth={3} />
-                    </div>
-                  </button>
-                ) : (
-                  <span
-                    className={`inline-flex cursor-default select-none items-center gap-2 text-xs font-semibold ${card.btnColor}`}
-                  >
-                    <span>
-                      <T>{"Learn more"}</T>
-                    </span>
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-white ${card.arrowBg}`}
-                    >
-                      <ArrowRight size={12} strokeWidth={3} />
-                    </div>
-                  </span>
-                )}
+                <span className={`inline-flex cursor-default select-none items-center text-xs font-semibold ${card.btnColor} opacity-70`}>
+                  <T>{"Video coming soon"}</T>
+                </span>
               </div>
             </motion.div>
           ))}
@@ -242,7 +209,7 @@ export default function DocumentSection() {
                       {<T>{item.title}</T>}
                     </h4>
                     <p className="mt-0.5 text-[11px] font-medium leading-tight text-slate-500">
-                      {item.desc}
+                      {<T>{item.desc}</T>}
                     </p>
                   </div>
                 </div>
@@ -257,45 +224,6 @@ export default function DocumentSection() {
           </div>
         </motion.div>
       </div>
-
-      {/* Video Popup Modal */}
-      <AnimatePresence>
-        {activeVideoStart !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6"
-            onClick={() => setActiveVideoStart(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative aspect-video w-full max-w-4xl rounded-2xl border border-white/10 bg-black shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setActiveVideoStart(null)}
-                className="absolute -top-10 right-0 z-50 flex cursor-pointer items-center gap-1 text-white/90 transition hover:text-white"
-                aria-label="Close video"
-              >
-                <X size={26} />
-              </button>
-
-              <iframe
-                src={`https://www.youtube.com/embed/HWwuSrGQmSw?autoplay=1&rel=0&start=${activeVideoStart}`}
-                title="SohozKaj Document Creation Tutorial"
-                className="h-full w-full rounded-2xl border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
+</section>
   );
 }

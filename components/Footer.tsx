@@ -1,9 +1,53 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
+import { useState } from "react";
 import Link from "next/link";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, ShieldCheck, CreditCard } from "lucide-react";
+
+const paymentMethods = [
+  { label: "VISA", tone: "text-indigo-300" },
+  { label: "Mastercard", tone: "text-rose-300" },
+  { label: "American Express", tone: "text-blue-300" },
+  { label: "Discover", tone: "text-slate-200" },
+  { label: "UnionPay", tone: "text-red-300" },
+  { label: "Diners Club", tone: "text-sky-300" },
+  { label: "JCB", tone: "text-cyan-300" },
+  { label: "Q-Cash", tone: "text-rose-300" },
+  { label: "NexusPay", tone: "text-amber-300" },
+  { label: "bKash", tone: "text-pink-300" },
+  { label: "Nagad", tone: "text-orange-300" },
+  { label: "Rocket", tone: "text-purple-300" },
+  { label: "upay", tone: "text-emerald-300" },
+  { label: "tap", tone: "text-blue-300" },
+  { label: "SureCash", tone: "text-teal-300" },
+  { label: "OK Wallet", tone: "text-red-300" },
+  { label: "mCash", tone: "text-green-300" },
+  { label: "MyCash", tone: "text-sky-300" },
+  { label: "CellFin", tone: "text-amber-300" },
+  { label: "Citytouch", tone: "text-cyan-300" },
+  { label: "BRAC Bank", tone: "text-emerald-300" },
+  { label: "City Bank", tone: "text-indigo-300" },
+  { label: "EBL", tone: "text-cyan-300" },
+  { label: "Bank Asia", tone: "text-rose-300" },
+  { label: "UCB", tone: "text-blue-300" },
+  { label: "Prime Bank", tone: "text-emerald-300" },
+  { label: "DBBL", tone: "text-sky-300" },
+  { label: "Islami Bank", tone: "text-green-300" },
+  { label: "Trust Bank", tone: "text-emerald-300" },
+  { label: "Dhaka Bank", tone: "text-blue-300" },
+  { label: "Southeast Bank", tone: "text-teal-300" },
+  { label: "Mutual Trust Bank", tone: "text-sky-300" },
+  { label: "AB Bank", tone: "text-red-300" },
+  { label: "One Bank", tone: "text-blue-300" },
+  { label: "Pubali Bank", tone: "text-emerald-300" },
+  { label: "Standard Chartered", tone: "text-teal-300" },
+  { label: "Internet Banking", tone: "text-sky-300" },
+  { label: "QR Pay", tone: "text-violet-300" },
+];
 
 export default function Footer() {
+  const { t } = useI18n();
+  const [showContestComingSoon, setShowContestComingSoon] = useState(false);
   const serviceLinks = [
     { title: "AI Photo Edit", href: "/login?redirect=/ai-editor" },
     { title: "Manual Photo Edit", href: "/login?redirect=/manual-editor" },
@@ -16,34 +60,24 @@ export default function Footer() {
       href: "/login?redirect=/questions-create/create",
     },
     { title: "Job Circular", href: "/login?redirect=/jobs" },
-    { title: "SohozTools", href: "/login?redirect=/sohoj-tools" },
+    { title: "Sohoj Hub Tools", href: "/login?redirect=/sohoj-tools" },
   ];
 
-  const pagesLinks = [
-    { title: "What is SohozKaj?", href: "/help" },
+  const pagesLinks: Array<{ title: string; href?: string; target?: string; comingSoon?: boolean }> = [
+    { title: "What is Sohoj Hub?", href: "/help" },
     { title: "About Us", href: "/about" },
     { title: "Our Team", href: "/our-team" },
-    {
-      title: "Important Articles",
-      href: "https://blog.sohozkaj.com/",
-      target: "_blank",
-    },
     { title: "Contact", href: "/contact" },
     { title: "Document Templates", href: "/dorkari-document" },
     { title: "AI Photo", href: "/ai-photo" },
     { title: "Package", href: "/pricing" },
-    {
-      title: "Contest",
-      href: "https://contest.sohozkaj.com/",
-      target: "_blank",
-    },
+    { title: "Contest", comingSoon: true },
   ];
 
   const supportLinks = [
     { title: "Terms of Service", href: "/terms" },
     { title: "Privacy Policy", href: "/privacy" },
     { title: "Copyright Policy", href: "/copyright" },
-    { title: "Refund Policy", href: "/refund" },
   ];
 
   const socials = [
@@ -99,7 +133,7 @@ export default function Footer() {
                   </span>
                 </span>
                 <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <T>{"WWW.SOHOZKAJ.COM\r\n                "}</T>
+                  <T>{"SOHOJHUB.COM\r\n                "}</T>
                 </span>
               </div>
             </Link>
@@ -107,7 +141,7 @@ export default function Footer() {
             <p className="max-w-sm text-sm leading-relaxed text-slate-400">
               <T>
                 {
-                  "SohozKaj Platform \u2014 document creation, design, print media, and AI\r\n              tools \u2014 all in one place.\r\n            "
+                  "Sohoj Hub Platform \u2014 document creation, design, print media, and AI\r\n              tools \u2014 all in one place.\r\n            "
                 }
               </T>
             </p>
@@ -164,7 +198,23 @@ export default function Footer() {
             <ul className="space-y-3 text-sm font-medium">
               {pagesLinks.map((page, index) => (
                 <li key={index}>
-                  {page.href ? (
+                  {page.comingSoon ? (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowContestComingSoon(true)}
+                        aria-expanded={showContestComingSoon}
+                        className={linkHoverStyle}
+                      >
+                        <T>{page.title}</T>
+                      </button>
+                      {showContestComingSoon && (
+                        <p role="status" className="text-xs font-semibold text-indigo-300">
+                          <T>{"Coming Soon"}</T>
+                        </p>
+                      )}
+                    </div>
+                  ) : page.href ? (
                     <Link
                       href={page.href}
                       className={linkHoverStyle}
@@ -175,7 +225,7 @@ export default function Footer() {
                           : undefined
                       }
                     >
-                      {page.title}
+                      <T>{page.title}</T>
                     </Link>
                   ) : (
                     <a
@@ -183,7 +233,7 @@ export default function Footer() {
                       onClick={(e) => e.preventDefault()}
                       className={linkHoverStyle}
                     >
-                      {page.title}
+                      <T>{page.title}</T>
                     </a>
                   )}
                 </li>
@@ -201,7 +251,7 @@ export default function Footer() {
                 <li key={index}>
                   {support.href ? (
                     <Link href={support.href} className={linkHoverStyle}>
-                      {support.title}
+                      <T>{support.title}</T>
                     </Link>
                   ) : (
                     <a
@@ -209,7 +259,7 @@ export default function Footer() {
                       onClick={(e) => e.preventDefault()}
                       className={linkHoverStyle}
                     >
-                      {support.title}
+                      <T>{support.title}</T>
                     </a>
                   )}
                 </li>
@@ -221,7 +271,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Socials */}
         <div className="mb-8 flex flex-col items-center justify-between gap-4 border-t border-slate-800/80 pt-8 text-xs text-slate-500 sm:flex-row">
           <p>
-            <T>{"\u00A9 2026 SohozKaj. All rights reserved."}</T>
+            <T>{"\u00A9 2026 Sohoj Hub. All rights reserved."}</T>
           </p>
 
           <div className="flex items-center gap-3">
@@ -242,14 +292,43 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Payment Gateway Strip */}
-        <div className="flex w-full items-center justify-center overflow-hidden rounded-xl bg-white py-1.5 ring-1 ring-white/10">
-          <img
-            src="https://files.sohozkaj.com/SSLCommerz-Pay-With-logo.webp"
-            alt="Payment Options (SSLCommerz)"
-            className="h-auto w-full object-contain"
-          />
-        </div>
+        {/* Custom payment strip — no third-party banner image or external asset URL */}
+        <section
+          aria-label={t("Accepted payment methods")}
+          className="relative w-full overflow-hidden rounded-2xl border border-slate-800/90 bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950/80 p-4 text-slate-100 shadow-[0_18px_60px_rgba(0,0,0,0.28)] ring-1 ring-white/5 sm:p-5"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
+          <div className="relative z-10 mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/90 text-indigo-300 shadow-inner shadow-black/20">
+                <CreditCard size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-bold leading-tight text-white">
+                  <T>{"Accepted payment methods"}</T>
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  <T>{"Cards, mobile wallets and bank payments"}</T>
+                </p>
+              </div>
+            </div>
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">
+              <ShieldCheck size={14} aria-hidden="true" />
+              <T>{"Secure payment"}</T>
+            </div>
+          </div>
+
+          <div className="relative z-10 flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {paymentMethods.map((method) => (
+              <span
+                key={method.label}
+                className={`inline-flex min-h-7 items-center justify-center rounded-lg border border-slate-700/80 bg-slate-900/75 px-2.5 py-1.5 text-[10px] font-bold leading-none shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-colors hover:border-slate-500 sm:text-[11px] ${method.tone}`}
+              >
+                {method.label}
+              </span>
+            ))}
+          </div>
+        </section>
       </div>
     </footer>
   );

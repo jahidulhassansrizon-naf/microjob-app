@@ -1,68 +1,63 @@
 "use client";
+
 import { T } from "@/components/i18n/I18nProvider";
-import * as React from "react";
-import Link from "next/link";
-import { Play } from "lucide-react";
 import { motion } from "framer-motion";
+import { ArrowUpRight, House, MapPin, Mail, Phone } from "lucide-react";
+
+const ADDRESS = "Bou Bazar Rd, Tongi 1230, Bangladesh";
+const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
+const PHONE = "017836666743";
+const EMAIL = "jahidulhassansrizon@gmail.com";
+
 export default function ContactMap() {
-    const handleMapClick = () => {
-        alert("Map location will be updated soon...");
-    };
-    return (<section className="relative min-h-[1000px] overflow-hidden bg-[#F8FAFC] px-4 pb-0 pt-[78px] sm:px-6 lg:px-8">
-      <div className="relative z-10 mx-auto w-full max-w-[1180px] text-center">
-        {/* Badge */}
-        <motion.span initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.1 }} className="inline-flex h-[42px] items-center rounded-full border border-[#2563EB]/20 bg-white px-[19px] text-[14px] font-medium text-[#2563EB] shadow-sm"><T>{"Address\r\n        "}</T></motion.span>
-
-        {/* Heading */}
-        <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }} className="mx-auto mt-[27px] max-w-[930px] text-[48px] font-extrabold leading-[1.17] tracking-[-2px] text-[#0F172A] sm:text-[54px] lg:text-[58px]"><T>{"Come to us. "}</T><span className="text-[#2563EB]"><T>{"In the office"}</T></span>
-        </motion.h2>
-
-        {/* Description */}
-        <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }} className="mt-[31px] text-[17px] font-normal leading-[1.5] text-[#64748B] italic"><T>{"Our office address will be updated soon...\r\n        "}</T></motion.p>
-
-        {/* Buttons */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }} className="mt-[51px] flex flex-wrap items-center justify-center gap-[15px]">
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} type="button" onClick={handleMapClick} className="inline-flex h-[58px] min-w-[248px] items-center justify-center gap-[10px] rounded-full bg-[#2563EB] px-7 text-[16px] font-semibold text-white shadow-[0_4px_14px_rgba(37,99,235,0.3)] transition hover:bg-[#1D4ED8] cursor-pointer">
-            <span><T>{"View location on map"}</T></span>
-            <span className="text-[25px] leading-none"><T>{"\u2192"}</T></span>
-          </motion.button>
-
-          <Link href="/help">
-            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} type="button" className="inline-flex h-[58px] min-w-[292px] items-center justify-center gap-[10px] rounded-full border border-[#E2E8F0] bg-white px-7 text-[16px] font-medium text-[#334155] shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition hover:bg-[#F1F5F9] cursor-pointer">
-              <span className="flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#64748B]">
-                <Play className="h-[8px] w-[8px] fill-[#64748B] text-[#64748B]"/>
-              </span>
-
-              <span><T>{"Watch the video tutorial"}</T></span>
-            </motion.button>
-          </Link>
+  return (
+    <section className="relative overflow-hidden bg-[#FFFBE7] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_12%_50%,rgba(81,99,224,0.09),transparent_35%),radial-gradient(ellipse_at_90%_20%,rgba(123,34,213,0.07),transparent_32%)]" />
+      <div className="relative mx-auto grid max-w-[1100px] items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#5965E8]/20 bg-white/75 px-4 py-2 text-[13px] font-semibold text-[#4354D9] shadow-sm"><House className="h-4 w-4" /><T>{"Home-based workspace"}</T></span>
+          <h2 className="mt-5 text-[33px] font-extrabold leading-tight tracking-[-0.9px] text-[#151B2A] sm:text-[42px]">
+            <T>{"A home workspace,"}</T><br /><span className="text-[#4359DC]"><T>{"built for a bigger idea."}</T></span>
+          </h2>
+          <p className="mt-5 max-w-[560px] text-[15px] leading-7 text-[#555D70] sm:text-[16px]">
+            <T>{"Sohoj Hub is an independently built digital platform, currently developed and managed from a home workspace in Tongi, Bangladesh. There is no separate walk-in office, so please get in touch before planning a visit."}</T>
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <a href={MAP_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#3F60DD] to-[#7215D5] px-5 py-3 text-[13px] font-bold text-white shadow-md transition hover:brightness-105">
+              <MapPin className="h-4 w-4" /><T>{"Find the area on Google Maps"}</T><ArrowUpRight className="h-4 w-4" />
+            </a>
+            <a href={`mailto:${EMAIL}`} className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#E4DEC9] bg-white/80 px-5 py-3 text-[13px] font-bold text-[#29324B] transition hover:border-[#8D97EC]">
+              <Mail className="h-4 w-4" /><T>{"Contact before visiting"}</T>
+            </a>
+          </div>
         </motion.div>
 
-        {/* World Map */}
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} className="relative mx-auto mt-[77px] w-full max-w-[1200px]">
-          <img src="https://sohozkaj.com/assets/global-map.svg" alt="World map" className="block h-auto w-full select-none object-contain" draggable={false}/>
-
-          {/* Location label placeholder */}
-          <motion.div initial={{ opacity: 0, y: -10, scale: 0.8 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{
-            duration: 0.5,
-            delay: 0.8,
-            type: "spring",
-            stiffness: 200,
-        }} className="pointer-events-none absolute left-[70.8%] top-[36%] z-20 -translate-x-1/2 -translate-y-full">
-            <motion.div animate={{ y: [0, -6, 0] }} transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut",
-        }} className="relative flex items-center gap-[10px] rounded-[6px] border border-[#E2E8F0] bg-white px-[14px] py-[9px] shadow-[0_5px_18px_rgba(15,23,42,0.08)]">
-              {/* Bangladesh Flag */}
-              <span aria-hidden="true" className="relative h-[14px] w-[21px] shrink-0 overflow-hidden rounded-[2px] bg-[#006a4e]">
-                <span className="absolute left-[7px] top-[2px] h-[10px] w-[10px] rounded-full bg-[#f42a41]"/>
-              </span>
-
-              <span className="whitespace-nowrap text-[14px] font-medium leading-none text-[#64748B] italic"><T>{"Location will be updated soon...\r\n              "}</T></span>
-            </motion.div>
-          </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.1 }} className="relative overflow-hidden rounded-[28px] border border-[#E6E0CD] bg-[#080B19] p-6 text-white shadow-[0_24px_70px_rgba(22,25,58,0.18)] sm:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(108,67,255,0.28),transparent_44%),linear-gradient(135deg,rgba(39,61,143,0.22),transparent_54%)]" />
+          <div className="relative">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-[#B9C5FF]"><MapPin className="h-7 w-7" /></div>
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#AAB5F5]"><T>{"Bangladesh · Tongi"}</T></p>
+                <h3 className="mt-1 text-[21px] font-bold sm:text-[24px]"><T>{"Home workspace"}</T></h3>
+              </div>
+            </div>
+            <div className="my-6 h-px bg-white/10" />
+            <p className="text-[16px] font-semibold leading-7 text-white"><T>{ADDRESS}</T></p>
+            <p className="mt-3 text-[13px] leading-6 text-slate-300"><T>{"This is a home-based working location, not a public reception or registered corporate office."}</T></p>
+            <div className="mt-6 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
+              <a href={`tel:${PHONE}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
+                <Phone className="h-4 w-4 shrink-0 text-emerald-300" />
+                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Phone"}</T></span><span className="mt-1 block truncate text-[12px] font-semibold">{PHONE}</span></span>
+              </a>
+              <a href={`mailto:${EMAIL}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
+                <Mail className="h-4 w-4 shrink-0 text-sky-300" />
+                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Email"}</T></span><span className="mt-1 block truncate text-[12px] font-semibold">{EMAIL}</span></span>
+              </a>
+            </div>
+          </div>
         </motion.div>
       </div>
-    </section>);
+    </section>
+  );
 }

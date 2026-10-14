@@ -1,4 +1,4 @@
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 import React from "react";
 import { User, MapPin, Award, Activity, GraduationCap, Briefcase, Plus, Calendar, Zap, } from "lucide-react";
 export interface DetailsData {
@@ -129,6 +129,7 @@ const defaultDetailsData: DetailsData = {
     jobDescription: "",
 };
 const DetailsTab: React.FC<DetailsTabProps> = ({ formData = defaultDetailsData, onChange, onSubmit, onCancel, onClear, isEditing = false, }) => {
+  const { t } = useI18n();
     const handleChange = (field: keyof DetailsData, value: any) => {
         if (onChange) {
             onChange(field, value);
@@ -199,7 +200,7 @@ const DetailsTab: React.FC<DetailsTabProps> = ({ formData = defaultDetailsData, 
             passingYear: "",
             registrationNumber: "1801005099",
             employedOn: "",
-            orgName: "SohozKaj Tech Ltd",
+            orgName: "Sohoj Hub Tech Ltd",
             designation: "Frontend Engineer",
             officeAddress: "Dhaka, Bangladesh",
             startDate: "01/01/2023",
@@ -214,7 +215,7 @@ const DetailsTab: React.FC<DetailsTabProps> = ({ formData = defaultDetailsData, 
     };
     return (<div className="space-y-6 pb-12 relative">
       {/* Clean Human-Designed Floating Button */}
-      <button type="button" onClick={handleAutoFillDummyData} className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-white hover:bg-amber-50 text-amber-700 border border-amber-200/80 shadow-md rounded-xl text-xs font-semibold transition-all hover:border-amber-300 cursor-pointer" title="Auto-fill dummy data for testing">
+      <button type="button" onClick={handleAutoFillDummyData} className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-white hover:bg-amber-50 text-amber-700 border border-amber-200/80 shadow-md rounded-xl text-xs font-semibold transition-all hover:border-amber-300 cursor-pointer" title={t("Auto-fill dummy data for testing")}>
         <Zap className="w-3.5 h-3.5 text-amber-600"/>
         <span><T>{"Auto Fill Data"}</T></span>
       </button>
