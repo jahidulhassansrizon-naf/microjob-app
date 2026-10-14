@@ -30,25 +30,25 @@ const PLANS = {
     name: "1 Month",
     months: 1,
     days: 30,
-    amount: 199,
+    amount: 350,
   },
   "3-month": {
     name: "3 Months",
     months: 3,
     days: 90,
-    amount: 499,
+    amount: 899,
   },
   "6-month": {
     name: "6 Months",
     months: 6,
     days: 180,
-    amount: 799,
+    amount: 1399,
   },
   "1-year": {
     name: "1 Year",
     months: 12,
     days: 365,
-    amount: 1299,
+    amount: 2299,
   },
 } as const;
 

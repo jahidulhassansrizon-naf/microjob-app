@@ -13,11 +13,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
-import {
-  toolsData,
-  ToolTile,
-  type ToolItem,
-} from "@/app/_components/toolsData";
+import { toolsData, ToolTile } from "@/app/_components/toolsData";
 import { prefetchMyFilesData } from "@/app/my-files/myFilesData";
 import { saveHomeLayout } from "@/app/_components/uiCache";
 // হোমে প্রথম কয়টা টুল দেখাবে (সব দেখাতে চাইলে toolsData.length দাও)
@@ -89,9 +85,7 @@ function PopularToolsSection() {
         </Link>
       </div>
 
-      <div
-        className="mt-5 grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 fit:grid-cols-8 fit:gap-x-5 fit:gap-y-6"
-      >
+      <div className="mt-5 grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 fit:grid-cols-8 fit:gap-x-5 fit:gap-y-6">
         {homeTools.map((tool) => (
           <ToolTile
             key={tool.id}
@@ -131,6 +125,230 @@ function getGreeting(date: Date = new Date()) {
         ? "Good evening"
         : "Good night";
 }
+// ---- Bilingual helper (EN / বাংলা) ---------------------------------------------------------
+// Picks the banner copy by the site's current language. Reads the I18n provider first and falls
+// back to <html lang>. Banner text lives in BANNER_COPY below, so it is always fully Bangla.
+function useIsBn() {
+  const i18n = useI18n() as unknown as Record<string, unknown> | undefined;
+  const fromProvider = [i18n?.lang, i18n?.locale, i18n?.language].find(
+    (v): v is string => typeof v === "string",
+  );
+  const [htmlLang, setHtmlLang] = useState<string | null>(null);
+  useEffect(() => {
+    if (fromProvider) return;
+    const read = () => setHtmlLang(document.documentElement.lang || null);
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["lang"],
+    });
+    return () => mo.disconnect();
+  }, [fromProvider]);
+  return (fromProvider ?? htmlLang ?? "").toLowerCase().startsWith("bn");
+}
+type Bi = { en: string; bn: string };
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+const toBnDigits = (n: number) =>
+  String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
+// বাংলা লেখা সুন্দর দেখানোর ফন্ট (Hind Siliguri না লোড হলে Noto Sans Bengali / সিস্টেম ফন্ট)
+const BANNER_FONT_URL =
+  "https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap";
+const BANNER_FONT = {
+  fontFamily:
+    'Inter, "Hind Siliguri", "Noto Sans Bengali", "Segoe UI", "Nirmala UI", system-ui, sans-serif',
+} as const;
+// ব্যানারের সব লেখা এখান থেকে বদলানো যাবে
+const BANNER_COPY = {
+  eyebrow: {
+    en: "Your computer shop, now online",
+    bn: "আপনার কম্পিউটার দোকান, এখন অনলাইনে",
+  } as Bi,
+  welcome: { en: "Welcome back,", bn: "আবার স্বাগতম," } as Bi,
+  lead: {
+    en: "NID, PDF, images and videos — every computer-shop service on one page. Our AI tools finish the job in minutes, and you don't need any editing skills.",
+    bn: "এনআইডি, পিডিএফ, ছবি ও ভিডিও — কম্পিউটার দোকানের সব কাজ এক পাতায়। এডিটিং না জানলেও আমাদের এআই টুলে মিনিটেই কাজ শেষ।",
+  } as Bi,
+  explore: { en: "Explore all tools", bn: "সব টুল দেখুন" } as Bi,
+  myFiles: { en: "My Files", bn: "আমার ফাইল" } as Bi,
+  freeTools: { en: "free tools", bn: "টি ফ্রি টুল" } as Bi,
+  noInstall: { en: "No installation", bn: "ইনস্টল ছাড়াই" } as Bi,
+  minutes: { en: "Done in minutes", bn: "মিনিটেই কাজ শেষ" } as Bi,
+  cardLabel: { en: "AI Editor", bn: "এআই এডিটর" } as Bi,
+  cardTitle: {
+    en: "Get it done in minutes, no editing needed",
+    bn: "এডিটিং ছাড়াই, মিনিটে কাজ শেষ",
+  } as Bi,
+  alsoLabel: { en: "Also at our shop", bn: "দোকানের আরও সেবা" } as Bi,
+  also: {
+    en: "Photo & print · Document scan · NID joining & copy · Photocopy · Voter registration",
+    bn: "ছবি তোলা ও প্রিন্ট · ডকুমেন্ট স্ক্যান · এনআইডি জয়েন ও কপি · ফটোকপি · ভোটার নিবন্ধন",
+  } as Bi,
+};
+// এআই এডিটর কার্ডের আইকন — হাতে আঁকা ফ্ল্যাট SVG, Popular Tools-এর আইকনের মতো একই ধাঁচ
+type AiKind = "passport" | "background" | "upscale" | "govt";
+function AiJobIcon({ kind, color }: { kind: AiKind; color: string }) {
+  return (
+    <svg viewBox="0 0 40 40" className="h-full w-full" fill="none">
+      {kind === "passport" && (
+        <>
+          <rect x="11" y="8" width="18" height="24" rx="3" fill="#fff" />
+          <circle cx="20" cy="17" r="3.6" fill={color} />
+          <path
+            d="M13.6 29c.6-4 3.3-6.2 6.4-6.2s5.8 2.2 6.4 6.2z"
+            fill={color}
+          />
+          <circle
+            cx="30"
+            cy="10"
+            r="5"
+            fill="#fff"
+            stroke={color}
+            strokeWidth="1.6"
+          />
+          <path
+            d="M27.6 10l1.8 1.8 3.2-3.4"
+            stroke={color}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {kind === "background" && (
+        <>
+          <rect
+            x="8"
+            y="8"
+            width="24"
+            height="24"
+            rx="4"
+            fill="#fff"
+            fillOpacity=".25"
+          />
+          <rect
+            x="16"
+            y="8"
+            width="8"
+            height="8"
+            fill="#fff"
+            fillOpacity=".3"
+          />
+          <rect
+            x="8"
+            y="16"
+            width="8"
+            height="8"
+            fill="#fff"
+            fillOpacity=".3"
+          />
+          <rect
+            x="24"
+            y="16"
+            width="8"
+            height="8"
+            fill="#fff"
+            fillOpacity=".3"
+          />
+          <rect
+            x="16"
+            y="24"
+            width="8"
+            height="8"
+            fill="#fff"
+            fillOpacity=".3"
+          />
+          <circle
+            cx="20"
+            cy="17"
+            r="4.2"
+            fill="#fff"
+            stroke={color}
+            strokeWidth="1.5"
+          />
+          <path
+            d="M12.5 32c.7-5.2 3.9-7.8 7.5-7.8s6.8 2.6 7.5 7.8z"
+            fill="#fff"
+            stroke={color}
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {kind === "upscale" && (
+        <>
+          <rect x="9" y="14" width="22" height="18" rx="3" fill="#fff" />
+          <circle cx="24.5" cy="19.5" r="2.2" fill={color} />
+          <path d="M11.5 29l5.2-6.4 4 4.6 2.8-2.8 4.6 4.6z" fill={color} />
+          <path
+            d="M26.5 9.5h5v5M31.5 9.5l-5.6 5.6"
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {kind === "govt" && (
+        <>
+          <rect x="8" y="8" width="17" height="19" rx="2.5" fill="#fff" />
+          <circle cx="16.5" cy="15" r="3" fill={color} />
+          <path
+            d="M10.8 25c.5-3.6 2.7-5.2 5.7-5.2s5.2 1.6 5.7 5.2z"
+            fill={color}
+          />
+          <path
+            d="M8 32c2.5-4 4 2 6.5-1.5s3.5 1.5 5.5-.5 3-1.5 5.5.5"
+            stroke="#fff"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M28 10l3.2 3.2-6 6-3.6.4.4-3.6z" fill="#fff" />
+        </>
+      )}
+    </svg>
+  );
+}
+// এআই এডিটর পেজ থেকে যা যা করা যায়
+const AI_JOBS: { kind: AiKind; color: string; title: Bi; sub: Bi }[] = [
+  {
+    kind: "passport",
+    color: "#3B63D4",
+    title: { en: "Passport-size photo", bn: "পাসপোর্ট সাইজ ছবি" },
+    sub: {
+      en: "Print-ready in a single step",
+      bn: "এক ধাপেই প্রিন্টের উপযোগী",
+    },
+  },
+  {
+    kind: "background",
+    color: "#2F9E44",
+    title: { en: "Background remove", bn: "ব্যাকগ্রাউন্ড রিমুভ" },
+    sub: {
+      en: "Clean white or blue background",
+      bn: "পরিষ্কার সাদা বা নীল ব্যাকগ্রাউন্ড",
+    },
+  },
+  {
+    kind: "upscale",
+    color: "#7C66D8",
+    title: { en: "Image upscale", bn: "ছবি আপস্কেল" },
+    sub: {
+      en: "Make small, blurry photos clearer",
+      bn: "ছোট ও ঝাপসা ছবি আরও পরিষ্কার",
+    },
+  },
+  {
+    kind: "govt",
+    color: "#8B2FC9",
+    title: { en: "Govt job photo & signature", bn: "সরকারি চাকরির ছবি ও সই" },
+    sub: {
+      en: "Exact size and KB for applications",
+      bn: "আবেদনের মাপ ও কেবি অনুযায়ী",
+    },
+  },
+];
 function WelcomeBanner({ userName }: { userName: string | null }) {
   // The greeting depends on the visitor's clock, so the head script sets html[data-greet] before
   // first paint and CSS shows the matching variant (no hydration mismatch, no flip, no flash).
@@ -138,21 +356,30 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
   // painted by CSS (--user-first) until React renders the real one in the same place.
   const nameKnown = userName !== null;
   const firstName = (userName ?? "User").trim().split(" ")[0] || "there";
-  // ডানে সাজানো তিনটা টুল (শুধু দেখানোর জন্য)
-  const showcase = ["Nid Joiner", "Compress PDF", "Image Upscaler"]
-    .map((name) => toolsData.find((t) => t.name === name))
-    .filter((t): t is ToolItem => Boolean(t));
+  const bn = useIsBn();
+  const L = (b: Bi) => (bn ? b.bn : b.en);
+  const toolCount = bn
+    ? toBnDigits(toolsData.length)
+    : String(toolsData.length);
   return (
     <section
-      className="mb-6 rounded-xl bg-[#2563EB] px-5 py-5 text-white sm:px-10 sm:py-7 fit:px-10 fit:py-6"
+      style={BANNER_FONT}
+      className="relative mb-6 overflow-hidden rounded-xl border border-[#1C376B] bg-[#0F2250] px-5 py-6 text-white shadow-[0_10px_30px_-12px_rgba(15,34,80,0.55)] sm:px-10 sm:py-8 fit:px-10 fit:py-7"
     >
-      <div
-        className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8 fit:flex-row fit:items-center fit:justify-between fit:gap-8"
-      >
-        <div className="max-w-xl">
-          <p
-            className="min-h-5 text-sm text-blue-100"
-          >
+      <link rel="stylesheet" href={BANNER_FONT_URL} />
+      <div className="flex flex-col gap-7 md:flex-row md:items-stretch md:justify-between md:gap-10 fit:flex-row fit:items-stretch fit:justify-between fit:gap-10">
+        {/* ---------- বাম পাশ ---------- */}
+        <div className="flex max-w-[33rem] flex-col justify-center">
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="h-[2px] w-8 bg-[#F2B93B]" />
+            <span
+              className={`text-[13px] font-medium text-[#F2B93B] ${bn ? "" : "uppercase tracking-[0.08em] text-[12px]"}`}
+            >
+              {L(BANNER_COPY.eyebrow)}
+            </span>
+          </div>
+
+          <p className="mt-4 min-h-5 text-sm text-[#B7C5E6]">
             <span className="greet-variant greet-morning">
               <DT>{"Good morning"}</DT>
             </span>
@@ -167,28 +394,29 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
             </span>
           </p>
           <h2
-            className="mt-0.5 text-2xl font-semibold sm:text-3xl fit:text-3xl"
+            className={`mt-1 text-[28px] font-bold sm:text-[38px] fit:text-[38px] ${bn ? "leading-[1.4]" : "leading-[1.15] tracking-[-0.015em]"}`}
           >
-            <DT>{"Welcome back, "}</DT>
-            <span className="first-name-pre" data-k={nameKnown ? 1 : 0}>
+            {L(BANNER_COPY.welcome)}{" "}
+            <span
+              className="first-name-pre text-[#F2B93B]"
+              data-k={nameKnown ? 1 : 0}
+            >
               {nameKnown ? firstName : null}
             </span>
           </h2>
 
-          <p className="mt-2 text-[15px] leading-6 text-blue-50">
-            <DT>
-              {
-                "NID, PDF, images and videos — all your everyday digital tasks are now in one place. Choose the tool you need and finish the job in minutes."
-              }
-            </DT>
+          <p
+            className={`mt-3 text-[15px] text-[#D5DFF5] ${bn ? "leading-[1.85]" : "leading-7"}`}
+          >
+            {L(BANNER_COPY.lead)}
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
               href="/sohoj-tools"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-[#2563EB] outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/50"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-[#0F2250] outline-none transition-colors hover:bg-[#EEF3FF] focus-visible:ring-2 focus-visible:ring-white/60"
             >
-              <DT>{"Explore all tools\n              "}</DT>
+              {L(BANNER_COPY.explore)}
               <ArrowRight size={14} />
             </Link>
             <Link
@@ -199,41 +427,81 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
               onTouchStart={() => prefetchMyFilesData(true)}
               onMouseDown={() => prefetchMyFilesData(true)}
               onClick={() => prefetchMyFilesData(true)}
-              className="inline-flex cursor-pointer items-center rounded-md border border-white/40 px-4 py-2 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"
+              className="inline-flex cursor-pointer items-center rounded-md border border-white/35 px-5 py-2.5 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"
             >
-              <DT>{"My Files\n            "}</DT>
+              {L(BANNER_COPY.myFiles)}
             </Link>
           </div>
 
-          <p className="mt-3 text-sm text-blue-100">
-            {toolsData.length}
-            <DT>{"free tools \u00B7 no installation needed\n          "}</DT>
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#B7C5E6]">
+            <span>
+              {toolCount}
+              {bn ? "" : " "}
+              {L(BANNER_COPY.freeTools)}
+            </span>
+            <span aria-hidden="true" className="h-3 w-px bg-white/25" />
+            <span>{L(BANNER_COPY.noInstall)}</span>
+            <span aria-hidden="true" className="h-3 w-px bg-white/25" />
+            <span>{L(BANNER_COPY.minutes)}</span>
           </p>
         </div>
 
-        <ul
+        {/* ---------- ডান পাশ: এআই এডিটর কার্ড ---------- */}
+        <div
           aria-hidden="true"
-          className="flex shrink-0 gap-3 md:gap-5 fit:gap-5"
+          className="w-full shrink-0 overflow-hidden rounded-lg bg-white text-slate-900 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.45)] md:w-[460px] fit:w-[480px]"
         >
-          {showcase.map((tool) => {
-            const Icon = tool.icon;
-            return (
+          <div className="px-5 pb-1 pt-4">
+            <p className="text-[12px] font-semibold text-[#2563EB]">
+              {L(BANNER_COPY.cardLabel)}
+            </p>
+            <p
+              className={`mt-0.5 text-[17px] font-bold text-[#0F2250] ${bn ? "leading-[1.5]" : "leading-snug"}`}
+            >
+              {L(BANNER_COPY.cardTitle)}
+            </p>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 fit:grid-cols-2">
+            {AI_JOBS.map((job, i) => (
               <li
-                key={tool.id}
-                className="w-[88px] text-center md:w-24 fit:w-24"
+                key={i}
+                className={`flex items-start gap-3 border-t border-slate-200 px-5 py-3 ${i % 2 === 0 ? "sm:border-r fit:border-r" : ""}`}
               >
-                <div
-                  className={`mx-auto flex h-14 w-14 items-center justify-center rounded-lg md:h-16 md:w-16 fit:h-16 fit:w-16 ${tool.bgColor}`}
-                >
-                  {Icon && <Icon size={30} className="text-white" />}
-                </div>
-                <p className="mt-2 truncate text-xs text-blue-50">
-                  {<DT>{tool.name}</DT>}
-                </p>
+                <span className="relative mt-0.5 shrink-0">
+                  <span
+                    className="block h-11 w-11 overflow-hidden rounded-xl shadow-sm"
+                    style={{ backgroundColor: job.color }}
+                  >
+                    <AiJobIcon kind={job.kind} color={job.color} />
+                  </span>
+                  <span className="absolute -left-1.5 -top-1.5 rounded bg-[#F2B93B] px-1 py-[2px] text-[8.5px] font-bold leading-none text-[#0F2250] shadow-sm">
+                    {bn ? "এআই" : "AI"}
+                  </span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-semibold leading-snug text-slate-900">
+                    {L(job.title)}
+                  </span>
+                  <span
+                    className={`mt-0.5 block text-[12px] text-slate-500 ${bn ? "leading-[1.6]" : "leading-snug"}`}
+                  >
+                    {L(job.sub)}
+                  </span>
+                </span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+          <div className="border-t border-slate-200 bg-[#F4F7FC] px-5 py-3">
+            <p className="text-[11.5px] font-semibold text-slate-500">
+              {L(BANNER_COPY.alsoLabel)}
+            </p>
+            <p
+              className={`mt-0.5 text-[12.5px] text-slate-700 ${bn ? "leading-[1.7]" : "leading-5"}`}
+            >
+              {L(BANNER_COPY.also)}
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -248,11 +516,7 @@ const FIT_MAX_SCALE = 6; // জুম-আউটে/বড় স্ক্রি�
 const FIT_MIN_SCALE = 0.2; // অনেক জুমে সর্বনিম্ন কতটা ছোট হবে
 const FIT_PAD_Y = 24; // উপরে-নিচের ফাঁকা (px)
 const FIT_PAD_X = 24; // দুই পাশের ফাঁকা (px)
-function HomeScreen({
-  userName,
-}: {
-  userName: string | null;
-}) {
+function HomeScreen({ userName }: { userName: string | null }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   // Desktop "fit": measure the real layout and write it to CSS variables on <html>. The variables

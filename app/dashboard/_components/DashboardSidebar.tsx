@@ -217,7 +217,7 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
               SK
             </span>
             <span className="text-[17px] font-bold tracking-tight text-slate-900">
-              Sohoz<span className="text-blue-600">kaj</span>
+              Sohoj<span className="text-blue-600"> Hub</span>
             </span>
           </Link>
           <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40">

@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
 const PLANS = {
-  "1-month": { name: "1 Month", months: 1, days: 30, amount: 199 },
-  "3-month": { name: "3 Months", months: 3, days: 90, amount: 499 },
-  "6-month": { name: "6 Months", months: 6, days: 180, amount: 799 },
-  "1-year": { name: "1 Year", months: 12, days: 365, amount: 1299 },
+  "1-month": { name: "1 Month", months: 1, days: 30, amount: 350 },
+  "3-month": { name: "3 Months", months: 3, days: 90, amount: 899 },
+  "6-month": { name: "6 Months", months: 6, days: 180, amount: 1399 },
+  "1-year": { name: "1 Year", months: 12, days: 365, amount: 2299 },
 } as const;
 
 type PlanId = keyof typeof PLANS;

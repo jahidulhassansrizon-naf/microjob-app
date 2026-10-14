@@ -12,10 +12,10 @@ import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
  * The existing checkout API continues to handle payment.
  */
 const plans = [
-  { id: "1-month", name: "1 Month", duration: "30 Days", months: 1, price: 199, note: "Flexible monthly access", badge: null },
-  { id: "3-month", name: "3 Months", duration: "90 Days", months: 3, price: 499, note: "For regular users", badge: null },
-  { id: "6-month", name: "6 Months", duration: "180 Days", months: 6, price: 799, note: "Longer access, less hassle", badge: "Most chosen" },
-  { id: "1-year", name: "1 Year", duration: "365 Days", months: 12, price: 1299, note: "Full-year access", badge: "Best value" },
+  { id: "1-month", name: "1 Month", duration: "30 Days", months: 1, price: 350, note: "Flexible monthly access", badge: null },
+  { id: "3-month", name: "3 Months", duration: "90 Days", months: 3, price: 899, note: "For regular users", badge: null },
+  { id: "6-month", name: "6 Months", duration: "180 Days", months: 6, price: 1399, note: "Longer access, less hassle", badge: "Most chosen" },
+  { id: "1-year", name: "1 Year", duration: "365 Days", months: 12, price: 2299, note: "Full-year access", badge: "Best value" },
 ] as const;
 
 const features = [

@@ -869,9 +869,6 @@ export default function DashboardNavbar({
                 </span>
               </span>
 
-              <span className="mt-1 hidden text-[10px] font-medium text-slate-500 sm:block">
-                <DT>{"www.sohozkaj.com\n              "}</DT>
-              </span>
             </div>
           </Link>
 
