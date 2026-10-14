@@ -1,6 +1,6 @@
 // app/reviews/page.tsx
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useState } from "react";
 import Footer from "@/components/Footer";
 import {
@@ -29,49 +29,65 @@ const videoReviewsData = [
   {
     id: 1,
     name: "অনম",
+    nameEn: "Anom",
     shop: "দোকান নং ১২৯, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া",
+    shopEn: "Shop 129, Saptapadi Market, 7 Matha, Bogura",
     youtubeId: "t-4E7lvZ-AE",
   },
   {
     id: 2,
     name: "নাহিদ হাসান",
+    nameEn: "Nahid Hasan",
     shop: "ফকির ইন্টারন্যাশনাল, জেলা পরিষদ, বগুড়া",
+    shopEn: "Fakir International, District Council, Bogura",
     youtubeId: "4DCxByiuKsE",
   },
   {
     id: 3,
     name: "ইমতিয়াজ হোসেন",
+    nameEn: "Imtiaz Hossain",
     shop: "তাজমা কম্পিউটার এন্ড সিস্টেম, সপ্তপদী মার্কেট, ৭ মাথা, বগুড়া",
+    shopEn: "Tajma Computer & System, Saptapadi Market, 7 Matha, Bogura",
     youtubeId: "7pfHV_1T3Xo",
   },
   {
     id: 4,
     name: "নাহিদ হাসান",
+    nameEn: "Nahid Hasan",
     shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া",
+    shopEn: "Saptapadi Market, 2nd Floor, 7 Matha, Bogura",
     youtubeId: "dVGVNzj86kQ",
   },
   {
     id: 5,
     name: "মো: সোহাগ",
+    nameEn: "Md. Sohag",
     shop: "মলি কম্পিউটার, সপ্তপদী মার্কেট, ২য় তলা, সাতমাথা, বগুড়া",
+    shopEn: "Moli Computer, Saptapadi Market, 2nd Floor, Satmatha, Bogura",
     youtubeId: "uJjuPlc5n68",
   },
   {
     id: 6,
     name: "আপেল মাহমুদ",
+    nameEn: "Apel Mahmud",
     shop: "সপ্তপদী মার্কেট, ২য় তলা, ৭ মাথা, বগুড়া",
+    shopEn: "Saptapadi Market, 2nd Floor, 7 Matha, Bogura",
     youtubeId: "dZMI2R-7dTQ",
   },
   {
     id: 7,
     name: "মাসুদ রানা",
+    nameEn: "Masud Rana",
     shop: "মিল্লাত প্লাজা, জজ কোর্ট সংলগ্ন, জেলা পরিষদ, বগুড়া",
+    shopEn: "Millat Plaza, near Judge Court, District Council, Bogura",
     youtubeId: "1oOrDZ6a3HI",
   },
   {
     id: 8,
     name: "মো: শাকিল মিয়া",
+    nameEn: "Md. Shakil Mia",
     shop: "পুলিশ সুপার কার্যালয়ের অপজিটে, বগুড়া সদর, বগুড়া",
+    shopEn: "Opposite the Police Superintendent’s Office, Bogura Sadar, Bogura",
     youtubeId: "4uPC1QAjmQY",
   },
 ];
@@ -79,83 +95,118 @@ const videoReviewsData = [
 const textReviews = [
   {
     quote:
-      "We use SohojKaj to create business cards, flyers and notices for our shop very quickly. We no longer depend on a designer — we finish the work ourselves in minutes.",
+      "We use Sohoj Hub to create business cards, flyers and notices for our shop very quickly. We no longer depend on a designer — we finish the work ourselves in minutes.",
+    quoteBn: "আমরা আমাদের দোকানের বিজনেস কার্ড, ফ্লায়ার ও নোটিশ খুব দ্রুত তৈরি করতে Sohoj Hub ব্যবহার করি। এখন আর ডিজাইনারের ওপর নির্ভর করতে হয় না—কয়েক মিনিটেই নিজেরা কাজ শেষ করতে পারি।",
     name: "Anom",
+    nameBn: "অনম",
     shop: "Shop 129, Saptapadi Market, 7th Mor, Bogura",
+    shopBn: "দোকান নং ১২৯, সপ্তপদী মার্কেট, সাতমাথা, বগুড়া",
   },
   {
     quote:
       "Having print media and document templates in one place has made our work much easier. The Bangla interface is easy to understand, so we can serve customers faster.",
+    quoteBn: "প্রিন্ট মিডিয়া ও ডকুমেন্ট টেমপ্লেট একই জায়গায় থাকায় আমাদের কাজ অনেক সহজ হয়েছে। বাংলা ইন্টারফেস সহজে বোঝা যায়, তাই আমরা গ্রাহকদের আরও দ্রুত সেবা দিতে পারি।",
     name: "Nahid Hasan",
+    nameBn: "নাহিদ হাসান",
     shop: "Fakir International, District Council, Bogura",
+    shopBn: "ফকির ইন্টারন্যাশনাল, জেলা পরিষদ, বগুড়া",
   },
   {
     quote:
-      "As a computer shop we often handle NID, passport and visiting card jobs. SohojKaj tools make photo resizing and PDF creation fast.",
+      "As a computer shop we often handle NID, passport and visiting card jobs. Sohoj Hub tools make photo resizing and PDF creation fast.",
+    quoteBn: "কম্পিউটার দোকান হিসেবে আমরা প্রায়ই NID, পাসপোর্ট ও ভিজিটিং কার্ডের কাজ করি। Sohoj Hub-এর টুল দিয়ে ছবি রিসাইজ ও PDF তৈরি দ্রুত করা যায়।",
     name: "Imtiaz Hossain",
+    nameBn: "ইমতিয়াজ হোসেন",
     shop: "Tajma Computer & System, Saptapadi Market, 7th Mor, Bogura",
+    shopBn: "তাজমা কম্পিউটার অ্যান্ড সিস্টেম, সপ্তপদী মার্কেট, সাতমাথা, বগুড়া",
   },
   {
     quote:
-      "SohojKaj truly saves time for our shop. We edit templates and get print-ready files — customers stay happy too.",
+      "Sohoj Hub truly saves time for our shop. We edit templates and get print-ready files — customers stay happy too.",
+    quoteBn: "Sohoj Hub সত্যিই আমাদের দোকানের সময় বাঁচায়। আমরা টেমপ্লেট সম্পাদনা করে প্রিন্টের জন্য প্রস্তুত ফাইল তৈরি করি—গ্রাহকরাও খুশি থাকেন।",
     name: "Moli Computer",
+    nameBn: "মলি কম্পিউটার",
     shop: "Saptapadi Market, 2nd Floor, Satmatha, Bogura",
+    shopBn: "সপ্তপদী মার্কেট, ২য় তলা, সাতমাথা, বগুড়া",
   },
   {
     quote:
-      "Our print shop gets many jobs daily. With ready-made designs on SohojKaj we just add details and deliver fast — revenue has grown too.",
+      "Our print shop gets many jobs daily. With ready-made designs on Sohoj Hub we just add details and deliver fast — revenue has grown too.",
+    quoteBn: "আমাদের প্রিন্টিং দোকানে প্রতিদিন অনেক কাজ আসে। Sohoj Hub-এর তৈরি ডিজাইনে শুধু তথ্য যোগ করেই দ্রুত কাজ ডেলিভারি দিতে পারি—আয়ও বেড়েছে।",
     name: "Rakibul Islam",
+    nameBn: "রাকিবুল ইসলাম",
     shop: "Rakib Printing & Stationery, Thanchania, Bogura",
+    shopBn: "রাকিব প্রিন্টিং অ্যান্ড স্টেশনারি, থানছানিয়া, বগুড়া",
   },
   {
     quote:
-      "SohojKaj is very useful for family cards, fuel forms and government documents. Live preview helps reduce mistakes.",
+      "Sohoj Hub is very useful for family cards, fuel forms and government documents. Live preview helps reduce mistakes.",
+    quoteBn: "পারিবারিক কার্ড, ফুয়েল ফর্ম ও সরকারি নথির কাজে Sohoj Hub খুবই উপকারী। লাইভ প্রিভিউ ভুল কমাতে সাহায্য করে।",
     name: "Salma Akter",
+    nameBn: "সালমা আক্তার",
     shop: "Smart Digital Center, Sherpur Road, Bogura",
+    shopBn: "স্মার্ট ডিজিটাল সেন্টার, শেরপুর রোড, বগুড়া",
   },
   {
     quote:
-      "SohojKaj is excellent and perfect for beautiful photo work. I would give it a hundred out of a hundred.",
+      "Sohoj Hub is excellent and perfect for beautiful photo work. I would give it a hundred out of a hundred.",
+    quoteBn: "সুন্দর ছবি সম্পাদনার জন্য Sohoj Hub চমৎকার ও দারুণ উপযোগী। আমি ১০০-এর মধ্যে ১০০ দেব।",
     name: "Masud Rana",
+    nameBn: "মাসুদ রানা",
     shop: "Millat Plaza, near Judge Court, Bogura",
+    shopBn: "মিল্লাত প্লাজা, জজ কোর্টের পাশে, বগুড়া",
   },
   {
     quote:
-      "Using SohojKaj.com I do various photo editing, ID cards, banners and many other tasks — and I really like it. So I want to thank everyone at SohojKaj.com.",
+      "Using Sohoj Hub I do various photo editing, ID cards, banners and many other tasks — and I really like it. So I want to thank everyone at Sohoj Hub.",
+    quoteBn: "Sohoj Hub ব্যবহার করে আমি ছবি সম্পাদনা, আইডি কার্ড, ব্যানারসহ নানা কাজ করি—আমার সত্যিই ভালো লাগে। Sohoj Hub-এর সবাইকে ধন্যবাদ জানাই।",
     name: "Apel Mahamud",
+    nameBn: "আপেল মাহমুদ",
     shop: "Saptapadi Market, 2nd Floor, Bogura",
+    shopBn: "সপ্তপদী মার্কেট, ২য় তলা, বগুড়া",
   },
   {
     quote:
-      "I use SohojKaj tools, I do photo editing work here. The photo editing gets done very fast.",
+      "I use Sohoj Hub tools, I do photo editing work here. The photo editing gets done very fast.",
+    quoteBn: "আমি Sohoj Hub-এর টুল ব্যবহার করে ছবি সম্পাদনার কাজ করি। এখানে ছবির সম্পাদনা খুব দ্রুত হয়ে যায়।",
     name: "Md Shakil Mia",
+    nameBn: "মোঃ শাকিল মিয়া",
     shop: "Opposite the Police Super's Office, Bogura",
+    shopBn: "পুলিশ সুপারের কার্যালয়ের বিপরীতে, বগুড়া",
   },
 ];
 
 const steps = [
   {
     icon: Wrench,
-    title: "Use SohojKaj",
+    title: "Use Sohoj Hub",
+    titleBn: "Sohoj Hub ব্যবহার করুন",
     text: "Try documents, tools or print media yourself first.",
+    textBn: "প্রথমে নিজে ডকুমেন্ট, টুল বা প্রিন্ট মিডিয়ার কাজ করে দেখুন।",
     tone: "bg-indigo-50 text-indigo-600 ring-indigo-100",
   },
   {
     icon: PenLine,
     title: "Write your feedback",
+    titleBn: "আপনার মতামত লিখুন",
     text: "Prepare a short written note or a one-minute video.",
+    textBn: "সংক্ষিপ্ত লিখিত মতামত অথবা এক মিনিটের একটি ভিডিও তৈরি করুন।",
     tone: "bg-violet-50 text-violet-600 ring-violet-100",
   },
   {
     icon: MessageCircle,
     title: "Send on WhatsApp",
+    titleBn: "WhatsApp-এ পাঠান",
     text: "Send on WhatsApp with your name, shop and area.",
+    textBn: "আপনার নাম, দোকান ও এলাকার তথ্যসহ WhatsApp-এ পাঠান।",
     tone: "bg-emerald-50 text-emerald-600 ring-emerald-100",
   },
   {
     icon: Globe,
     title: "We publish",
+    titleBn: "আমরা প্রকাশ করি",
     text: "We verify and publish it on this page.",
+    textBn: "যাচাই করার পর আমরা এই পেজে তা প্রকাশ করি।",
     tone: "bg-sky-50 text-sky-600 ring-sky-100",
   },
 ];
@@ -170,10 +221,13 @@ const avatarTones = [
 ];
 
 function Stars({ size = 14 }: { size?: number }) {
+  const { locale } = useI18n();
+  const isBn = String(locale ?? "en").toLowerCase().startsWith("bn");
+
   return (
     <div
       className="flex items-center gap-0.5 text-amber-400"
-      aria-label="5 out of 5 stars"
+      aria-label={isBn ? "পাঁচটির মধ্যে পাঁচটি তারকা" : "5 out of 5 stars"}
     >
       {[0, 1, 2, 3, 4].map((i) => (
         <Star key={i} size={size} fill="currentColor" strokeWidth={0} />
@@ -201,6 +255,16 @@ function Avatar({
 }
 
 export default function ReviewsPage() {
+  const { locale } = useI18n();
+  const isBn = String(locale ?? "en").toLowerCase().startsWith("bn");
+  const tx = (english: string, bangla: string) => (isBn ? bangla : english);
+  const formatNum = (value: number) =>
+    value.toLocaleString(isBn ? "bn-BD" : "en-US");
+  const whatsappMessage = isBn
+    ? "আসসালামু আলাইকুম, আমি Sohoj Hub সম্পর্কে আমার রিভিউ জমা দিতে চাই।"
+    : "Assalamu Alaikum, I want to submit a review about Sohoj Hub.";
+  const whatsappHref = `https://api.whatsapp.com/send/?phone=8801783666743&text=${encodeURIComponent(whatsappMessage)}&type=phone_number&app_absent=0`;
+
   const [selectedVideo, setSelectedVideo] = useState<
     (typeof videoReviewsData)[0] | null
   >(null);
@@ -219,22 +283,21 @@ export default function ReviewsPage() {
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#EFE3C8] text-indigo-700 text-xs sm:text-sm font-semibold shadow-sm mb-6">
               <BadgeCheck size={16} className="text-indigo-600" />
-              <T>{"Customer Reviews"}</T>
+              {tx("Customer Reviews", "গ্রাহকদের রিভিউ")}
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-[#1E1B3A]">
-              <T>{"What Our "}</T>
+              {tx("What Our ", "আমাদের গ্রাহকদের ")}
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                <T>{"Customers Say"}</T>
+                {tx("Customers Say", "মতামত")}
               </span>
             </h1>
 
             <p className="mt-5 text-sm sm:text-base text-slate-600 max-w-xl font-medium leading-relaxed">
-              <T>
-                {
-                  "Print shops, digital centers and shop owners across the country share their real experiences with SohojKaj."
-                }
-              </T>
+              {tx(
+                "Print shops, digital centers and shop owners across the country share their real experiences with Sohoj Hub.",
+                "দেশজুড়ে প্রিন্ট শপ, ডিজিটাল সেন্টার ও দোকানমালিকরা Sohoj Hub নিয়ে তাঁদের বাস্তব অভিজ্ঞতা শেয়ার করেন।",
+              )}
             </p>
           </div>
 
@@ -243,12 +306,12 @@ export default function ReviewsPage() {
             <div className="rounded-[28px] bg-white border border-[#EFE3C8] shadow-[0_20px_60px_-20px_rgba(79,70,229,0.25)] p-6 sm:p-8">
               <div className="flex items-end gap-4">
                 <span className="text-6xl sm:text-7xl font-black leading-none tracking-tight text-[#1E1B3A]">
-                  5.0
+                  {isBn ? "৫.০" : "5.0"}
                 </span>
                 <div className="pb-1.5">
                   <Stars size={18} />
                   <p className="mt-1 text-xs font-semibold text-slate-500">
-                    <T>{"Average rating"}</T>
+                    {tx("Average rating", "গড় রেটিং")}
                   </p>
                 </div>
               </div>
@@ -259,7 +322,7 @@ export default function ReviewsPage() {
                     key={n}
                     className="flex items-center gap-3 text-xs font-semibold text-slate-500"
                   >
-                    <span className="w-3 text-right">{n}</span>
+                    <span className="w-3 text-right">{formatNum(n)}</span>
                     <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
@@ -273,16 +336,16 @@ export default function ReviewsPage() {
               <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-2xl font-black text-[#1E1B3A]">
-                    {textReviews.length}
+                    {formatNum(textReviews.length)}
                   </p>
                   <p className="text-[11px] font-semibold text-slate-500">
-                    <T>{"Written reviews"}</T>
+                    {tx("Written reviews", "লিখিত রিভিউ")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-[#1E1B3A]">100%</p>
+                  <p className="text-2xl font-black text-[#1E1B3A]">{formatNum(100)}%</p>
                   <p className="text-[11px] font-semibold text-slate-500">
-                    <T>{"Verified by our team"}</T>
+                    {tx("Verified by our team", "আমাদের টিম দ্বারা যাচাইকৃত")}
                   </p>
                 </div>
               </div>
@@ -300,10 +363,10 @@ export default function ReviewsPage() {
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-extrabold text-[#1E1B3A] leading-tight">
-              <T>{"Video Reviews"}</T>
+              {tx("Video Reviews", "ভিডিও রিভিউ")}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              <T>{"Real customers, in their own words"}</T>
+              {tx("Real customers, in their own words", "প্রকৃত গ্রাহকদের নিজেদের ভাষায়")}
             </p>
           </div>
         </div>
@@ -323,7 +386,7 @@ export default function ReviewsPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-1 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-amber-400 border border-white/10">
                   <Star size={12} fill="currentColor" />
-                  <T>{"5.0 Rating"}</T>
+                  {tx("5.0 Rating", "৫.০ রেটিং")}
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center z-10">
                   <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/60 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
@@ -331,9 +394,9 @@ export default function ReviewsPage() {
                   </div>
                 </div>
                 <div className="z-10 flex flex-col">
-                  <h4 className="text-sm font-bold">{item.name}</h4>
+                  <h4 className="text-sm font-bold">{isBn ? item.name : item.nameEn}</h4>
                   <span className="text-[11px] text-gray-300 leading-tight">
-                    {item.shop}
+                    {isBn ? item.shop : item.shopEn}
                   </span>
                 </div>
               </button>
@@ -352,29 +415,28 @@ export default function ReviewsPage() {
                     <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 motion-safe:animate-ping" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-300" />
                   </span>
-                  <T>{"Coming Soon"}</T>
+                  {tx("Coming Soon", "শীঘ্রই আসছে")}
                 </span>
 
                 <h3 className="mt-5 text-3xl sm:text-4xl font-black leading-tight tracking-tight">
-                  <T>{"Video reviews are on the way"}</T>
+                  {tx("Video reviews are on the way", "ভিডিও রিভিউ শিগগিরই আসছে")}
                 </h3>
                 <p className="mt-4 text-sm sm:text-base text-indigo-100/90 font-medium leading-relaxed max-w-md">
-                  <T>
-                    {
-                      "We are recording short videos with shop owners who use SohojKaj every day. They will be published here very soon."
-                    }
-                  </T>
+                  {tx(
+                    "We are recording short videos with shop owners who use Sohoj Hub every day. They will be published here very soon.",
+                    "যেসব দোকানমালিক প্রতিদিন Sohoj Hub ব্যবহার করেন, তাঁদের সঙ্গে আমরা ছোট ভিডিও রেকর্ড করছি। খুব শিগগিরই সেগুলো এখানে প্রকাশ করা হবে।",
+                  )}
                 </p>
 
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <a
-                    href="https://api.whatsapp.com/send/?phone=8801700559595&text=Assalamu+Alaikum%2C+I+want+to+submit+a+review+about+SohozKaj.&type=phone_number&app_absent=0"
+                    href={whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs sm:text-sm px-6 py-3 shadow-lg transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     <Clapperboard size={16} />
-                    <T>{"Share your video review"}</T>
+                    {tx("Share your video review", "আপনার ভিডিও রিভিউ পাঠান")}
                   </a>
                 </div>
               </div>
@@ -408,7 +470,7 @@ export default function ReviewsPage() {
                     >
                       <div className="flex items-center gap-1 self-start rounded-full bg-black/20 px-2 py-0.5 text-[9px] font-bold text-amber-300">
                         <Star size={9} fill="currentColor" strokeWidth={0} />{" "}
-                        5.0
+                        {isBn ? "৫.০" : "5.0"}
                       </div>
                       <div className="self-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
                         <Play
@@ -436,11 +498,12 @@ export default function ReviewsPage() {
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-extrabold text-[#1E1B3A] leading-tight">
-              <T>{"Text Reviews"}</T>
+              {tx("Text Reviews", "লিখিত রিভিউ")}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              {textReviews.length}{" "}
-              <T>{"written reviews from real customers"}</T>
+              {isBn
+                ? `${formatNum(textReviews.length)}টি প্রকৃত গ্রাহকের লিখিত রিভিউ`
+                : `${formatNum(textReviews.length)} written reviews from real customers`}
             </p>
           </div>
         </div>
@@ -455,16 +518,16 @@ export default function ReviewsPage() {
           <div className="relative">
             <Stars size={18} />
             <blockquote className="mt-4 text-lg sm:text-2xl font-bold leading-snug text-[#1E1B3A] max-w-3xl">
-              &ldquo;{featured.quote}&rdquo;
+              &ldquo;{isBn ? featured.quoteBn : featured.quote}&rdquo;
             </blockquote>
             <figcaption className="mt-6 flex items-center gap-3">
-              <Avatar name={featured.name} index={0} size="w-12 h-12" />
+              <Avatar name={isBn ? featured.nameBn : featured.name} index={0} size="w-12 h-12" />
               <div>
                 <p className="text-sm font-bold text-[#1E1B3A]">
-                  {featured.name}
+                  {isBn ? featured.nameBn : featured.name}
                 </p>
                 <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                  <MapPin size={12} /> {featured.shop}
+                  <MapPin size={12} /> {isBn ? featured.shopBn : featured.shop}
                 </p>
               </div>
             </figcaption>
@@ -480,16 +543,16 @@ export default function ReviewsPage() {
             >
               <Stars />
               <blockquote className="mt-3 text-[13px] sm:text-sm leading-relaxed text-slate-700">
-                &ldquo;{rev.quote}&rdquo;
+                &ldquo;{isBn ? rev.quoteBn : rev.quote}&rdquo;
               </blockquote>
               <figcaption className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-3">
-                <Avatar name={rev.name} index={index + 1} />
+                <Avatar name={isBn ? rev.nameBn : rev.name} index={index + 1} />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-[#1E1B3A] truncate">
-                    {rev.name}
+                    {isBn ? rev.nameBn : rev.name}
                   </p>
                   <p className="text-[11px] text-slate-500 font-medium leading-snug">
-                    {rev.shop}
+                    {isBn ? rev.shopBn : rev.shop}
                   </p>
                 </div>
               </figcaption>
@@ -501,10 +564,10 @@ export default function ReviewsPage() {
         <section className="rounded-[32px] border border-[#EFE3C8] bg-white p-6 sm:p-10 md:p-14 shadow-[0_20px_60px_-30px_rgba(79,70,229,0.3)]">
           <div className="text-center max-w-xl mx-auto">
             <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-[#1E1B3A]">
-              <T>{"Share your review"}</T>
+              {tx("Share your review", "আপনার রিভিউ শেয়ার করুন")}
             </h3>
             <p className="mt-2 text-sm text-slate-500 font-medium">
-              <T>{"4 simple steps · text or video"}</T>
+              {tx("4 simple steps · text or video", "৪টি সহজ ধাপ · লিখিত বা ভিডিও")}
             </p>
           </div>
 
@@ -526,14 +589,14 @@ export default function ReviewsPage() {
                       <Icon size={24} />
                     </div>
                     <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#1E1B3A] text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white">
-                      {i + 1}
+                      {formatNum(i + 1)}
                     </span>
                   </div>
                   <h4 className="mt-5 text-sm font-bold text-[#1E1B3A]">
-                    <T>{s.title}</T>
+                    {tx(s.title, s.titleBn)}
                   </h4>
                   <p className="mt-1.5 text-xs text-slate-500 leading-relaxed max-w-[200px]">
-                    <T>{s.text}</T>
+                    {tx(s.text, s.textBn)}
                   </p>
                 </li>
               );
@@ -542,13 +605,13 @@ export default function ReviewsPage() {
 
           <div className="mt-10 flex justify-center">
             <a
-              href="https://api.whatsapp.com/send/?phone=8801700559595&text=Assalamu+Alaikum%2C+I+want+to+submit+a+review+about+SohozKaj.&type=phone_number&app_absent=0"
+              href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 rounded-full bg-[#25D366] hover:bg-[#1fb957] text-white font-bold text-sm px-8 py-3.5 shadow-lg shadow-emerald-200/70 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
               <MessageCircle size={18} fill="currentColor" />
-              <T>{"Send review on WhatsApp"}</T>
+              {tx("Send review on WhatsApp", "WhatsApp-এ রিভিউ পাঠান")}
             </a>
           </div>
 
@@ -558,13 +621,12 @@ export default function ReviewsPage() {
             </div>
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
               <strong className="font-bold text-amber-800">
-                <T>{"Monthly gift:"}</T>
+                {tx("Monthly gift:", "মাসিক উপহার:")}
               </strong>{" "}
-              <T>
-                {
-                  "Every month, 3 reviewers will be chosen by lottery to receive a T-shirt gift."
-                }
-              </T>
+              {tx(
+                "Every month, 3 reviewers will be chosen by lottery to receive a T-shirt gift.",
+                "প্রতি মাসে লটারির মাধ্যমে ৩ জন রিভিউদাতাকে একটি করে টি-শার্ট উপহার দেওয়া হবে।",
+              )}
             </p>
           </div>
         </section>
@@ -583,14 +645,14 @@ export default function ReviewsPage() {
             <button
               onClick={() => setSelectedVideo(null)}
               className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 flex items-center justify-center text-white transition cursor-pointer shadow-lg"
-              aria-label="Close modal"
+              aria-label={tx("Close modal", "পপআপ বন্ধ করুন")}
             >
               <X size={20} />
             </button>
 
             <iframe
               src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
-              title={selectedVideo.name}
+              title={isBn ? selectedVideo.name : selectedVideo.nameEn}
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -599,14 +661,14 @@ export default function ReviewsPage() {
             <div className="absolute bottom-0 left-0 right-0 z-20 p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none flex items-end justify-between">
               <div className="flex flex-col text-white max-w-[80%]">
                 <h4 className="text-sm font-bold leading-snug">
-                  {selectedVideo.name}
+                  {isBn ? selectedVideo.name : selectedVideo.nameEn}
                 </h4>
                 <p className="text-[11px] text-gray-200 leading-relaxed">
-                  {selectedVideo.shop}
+                  {isBn ? selectedVideo.shop : selectedVideo.shopEn}
                 </p>
               </div>
               <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-bold border border-white/10 shrink-0">
-                <T>{"Shorts"}</T>
+                {tx("Shorts", "শর্টস")}
               </div>
             </div>
           </div>

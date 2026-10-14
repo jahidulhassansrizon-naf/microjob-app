@@ -1,6 +1,6 @@
 "use client";
 import { AiT, useAiEditorText } from "./aiEditorI18n";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   RefreshCw,
@@ -11,7 +11,11 @@ import {
   ImageIcon,
   Loader2,
   Ban,
+  Search,
 } from "lucide-react";
+import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES } from "./editingGuides";
+import GuideIcon from "./GuideIcon";
+import { CLOTHING_NAMES } from "./clothingStyles";
 export interface PhotoSizeOption {
   id: string;
   label: string;
@@ -60,6 +64,16 @@ export interface GenerationSettingsProps {
   clearCustomInstructionSignal?: number;
   onResetSettings?: () => void;
 }
+const QUICK_EDITING_GUIDES = [
+  "Glow & Makeup",
+  "Smooth Skin",
+  "Brighten Image",
+  "Studio Lighting",
+  "Straighten Head",
+  "Keep Marks",
+  "Lipstick",
+  "Restore Old Photo",
+];
 const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
   { name: "Black", hex: "#1E1E1E" },
@@ -82,23 +96,47 @@ const CLOTHING_COLORS = [
   { name: "Magenta", hex: "#C026D3" },
   { name: "Cyan", hex: "#06B6D4" },
 ];
-const CLOTHING_NAMES = [
-  "Shirt",
-  "Polo",
-  "Suit",
-  "Blazer",
-  "Saree",
-  "Hijab",
-  "Panjabi",
-  "Dress",
-  "T-Shirt",
-  "Abaya",
-  "Burqa",
-  "Kameez",
-  "Kurti",
-  "Jacket",
-];
 const RECOLOR_PALETTE: Record<number, string[]> = {
+  14: ["#8FAFD6", "#BFD4EE"],
+  15: ["#0A0A0F", "#1B1B22"],
+  16: ["#374151", "#4B5563"],
+  17: ["#1F2937", "#374151"],
+  18: ["#4B5563", "#6B7280"],
+  19: ["#5B2323", "#7C3A3A"],
+  20: ["#6B563D", "#8B7355"],
+  21: ["#334155", "#475569"],
+  22: ["#3F5F94", "#5B7DB1"],
+  23: ["#18181B", "#27272A"],
+  24: ["#36402A", "#4D5A3A"],
+  25: ["#A88A5E", "#C9A87C"],
+  26: ["#27272A", "#3F3F46"],
+  27: ["#E39BB4", "#F3C4D4"],
+  28: ["#CBD5E1"],
+  29: ["#0F766E", "#14B8A6"],
+  30: ["#CBD5E1"],
+  31: ["#0F2744", "#1E3A5F"],
+  32: ["#111A33", "#1E2A4A"],
+  33: ["#7DD3FC", "#BAE6FD"],
+  34: ["#172554", "#1E3A8A"],
+  35: ["#111827", "#1F2937"],
+  36: ["#5A1220", "#7C1D2E"],
+  37: ["#D9C79F", "#F5E9D0"],
+  38: ["#4B5563", "#6B7280"],
+  39: ["#5F9276", "#8FB8A0"],
+  40: ["#1F3547", "#2F4B63"],
+  41: ["#1F6B6B", "#2E8B8B"],
+  42: ["#8E1244", "#C2185B"],
+  43: ["#5B21B6", "#7C3AED"],
+  44: ["#111111", "#1B1B1B"],
+  45: ["#94A3B8", "#64748B"],
+  46: ["#D1D5DB"],
+  47: ["#7F1D1D", "#B91C1C"],
+  48: ["#EC4899", "#F9A8D4"],
+  49: ["#991B1B", "#DC2626"],
+  50: ["#F59E0B", "#FDE68A"],
+  51: ["#D6C39A", "#F3E8D0"],
+  52: ["#0D9488", "#115E59"],
+  53: ["#9A3412", "#EA580C"],
   0: [
     "#A0B7D8",
     "#6F86AE",
@@ -418,6 +456,28 @@ export default function GenerationSettings({
   const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
   const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
   const [activeGuides, setActiveGuides] = useState<string[]>([]);
+  const [showEditingGuideLibrary, setShowEditingGuideLibrary] = useState(false);
+  const [guideSearch, setGuideSearch] = useState("");
+  const [guideCategory, setGuideCategory] = useState<string>("all");
+  const filteredEditingGuides = useMemo(() => {
+    const query = guideSearch.trim().toLocaleLowerCase();
+    return EDITING_GUIDES.filter((guide) => {
+      const category = EDITING_GUIDE_CATEGORIES.find(
+        (entry) => entry.id === guide.category,
+      );
+      const matchesCategory =
+        guideCategory === "all" || guide.category === guideCategory;
+      const searchableText = [
+        guide.label,
+        t(guide.label),
+        category?.label ?? "",
+        category ? t(category.label) : "",
+      ]
+        .join(" ")
+        .toLocaleLowerCase();
+      return matchesCategory && (!query || searchableText.includes(query));
+    });
+  }, [guideSearch, guideCategory, t]);
   const [showCustomInstructionModal, setShowCustomInstructionModal] =
     useState(false);
   const [customInstructionDraft, setCustomInstructionDraft] = useState("");
@@ -425,6 +485,7 @@ export default function GenerationSettings({
     clearCustomInstructionSignal,
   );
   const customInstructionTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const editingGuideSearchRef = useRef<HTMLInputElement>(null);
   const clothingColorPopupRef = useRef<HTMLDivElement>(null);
   const currentColor = setSelectedClothingColor
     ? selectedClothingColor
@@ -456,25 +517,34 @@ export default function GenerationSettings({
     setCustomInstructionDraft("");
   };
   useEffect(() => {
-    if (!showCustomInstructionModal) return;
+    if (!showCustomInstructionModal && !showEditingGuideLibrary) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleModalKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setShowCustomInstructionModal(false);
+        setShowEditingGuideLibrary(false);
       }
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      if (
+        event.key === "Enter" &&
+        (event.ctrlKey || event.metaKey) &&
+        showCustomInstructionModal
+      ) {
         event.preventDefault();
         handleCustomInstructionSubmit();
       }
     };
     document.addEventListener("keydown", handleModalKeyDown);
-    customInstructionTextareaRef.current?.focus();
+    if (showCustomInstructionModal) {
+      customInstructionTextareaRef.current?.focus();
+    } else if (showEditingGuideLibrary) {
+      editingGuideSearchRef.current?.focus();
+    }
     return () => {
       document.removeEventListener("keydown", handleModalKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [showCustomInstructionModal, customInstructionDraft]);
+  }, [showCustomInstructionModal, showEditingGuideLibrary, customInstructionDraft]);
   useEffect(() => {
     if (
       previousCustomInstructionClearSignalRef.current !==
@@ -508,8 +578,43 @@ export default function GenerationSettings({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Keep the whole settings panel inside the viewport on desktop (no inner scrolling).
+  const panelRootRef = useRef<HTMLDivElement | null>(null);
+  const fitPanelToViewport = () => {
+    const root = panelRootRef.current;
+    if (!root) return;
+    const kids = Array.from(root.children) as HTMLElement[];
+    kids.forEach((kid) => {
+      kid.style.zoom = "";
+    });
+    if (window.innerWidth < 1280) return;
+    const pad = 32;
+    const available = root.clientHeight - pad;
+    const needed = root.scrollHeight - pad;
+    if (needed > available + 1 && needed > 0) {
+      const zoom = Math.max(0.7, available / needed);
+      kids.forEach((kid) => {
+        kid.style.zoom = String(zoom);
+      });
+    }
+  };
+  useLayoutEffect(() => {
+    fitPanelToViewport();
+  });
+  useEffect(() => {
+    const onResize = () => fitPanelToViewport();
+    window.addEventListener("resize", onResize);
+    const root = panelRootRef.current;
+    const observer = root && typeof ResizeObserver !== "undefined" ? new ResizeObserver(onResize) : null;
+    if (root && observer) observer.observe(root);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      observer?.disconnect();
+    };
+  }, []);
   return (
-    <div className="w-full max-w-full lg:w-[320px] bg-[#F8FAFC] rounded-2xl p-4 shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#0F172A]">
+    <div ref={panelRootRef} className="w-full max-w-full lg:w-[320px] xl:w-[380px] bg-[#F8FAFC] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#0F172A]">
       <div>
         <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-sm text-[#0F172A] flex items-center gap-2">
@@ -627,7 +732,7 @@ export default function GenerationSettings({
                     key={idx}
                     type="button"
                     onClick={() => {
-                      setSelectedBg(idx);
+                      setSelectedBg(isSelected ? -1 : idx);
                       setShowColorPicker(false);
                     }}
                     title={t("Transparent background")}
@@ -658,8 +763,14 @@ export default function GenerationSettings({
                     key={idx}
                     type="button"
                     onClick={() => {
+                      if (isSelected && showColorPicker) {
+                        // Second click while the picker is open clears the choice.
+                        setSelectedBg(-1);
+                        setShowColorPicker(false);
+                        return;
+                      }
                       setSelectedBg(idx);
-                      setShowColorPicker((prev) => !prev);
+                      setShowColorPicker(true);
                     }}
                     style={{ backgroundColor: customBgColor }}
                     className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
@@ -683,7 +794,7 @@ export default function GenerationSettings({
                   key={idx}
                   type="button"
                   onClick={() => {
-                    setSelectedBg(idx);
+                    setSelectedBg(isSelected ? -1 : idx);
                     setShowColorPicker(false);
                   }}
                   className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`}
@@ -761,20 +872,20 @@ export default function GenerationSettings({
             </span>
 
             <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
-              <AiT>{"14/14\n            "}</AiT>
+              {CLOTHING_NAMES.length}/{CLOTHING_NAMES.length}
             </span>
           </div>
 
           <div className="relative rounded-2xl overflow-hidden p-0.5">
             {!isDualMode ? (
-              <div className="grid grid-cols-7 gap-1.5">
+              <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedClothing(-1);
                     setShowClothingColorPicker(false);
                   }}
-                  className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
+                  className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
                     selectedClothing === -1
                       ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                       : "border-[#E2E8F0]"
@@ -791,7 +902,7 @@ export default function GenerationSettings({
                       key={idx}
                       type="button"
                       onClick={() => handleClothingClick(idx)}
-                      className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                      className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                         isSelected
                           ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                           : "border-[#E2E8F0]"
@@ -821,13 +932,13 @@ export default function GenerationSettings({
                     <AiT>{"Left Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-7 gap-1.5">
+                  <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`left-${idx}`}
                         type="button"
                         onClick={() => setLeftClothing(idx)}
-                        className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           leftClothing === idx
                             ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                             : "border-[#E2E8F0]"
@@ -854,13 +965,13 @@ export default function GenerationSettings({
                     <AiT>{"Right Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-7 gap-1.5">
+                  <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`right-${idx}`}
                         type="button"
                         onClick={() => setRightClothing(idx)}
-                        className={`h-11 xl:h-[clamp(28px,4vh,44px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
                           rightClothing === idx
                             ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
                             : "border-[#E2E8F0]"
@@ -944,75 +1055,101 @@ export default function GenerationSettings({
         {/* EXTRA EDITING GUIDE */}
         <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative">
           <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
-            <span>
+            <span className="font-medium">
               <AiT>{"EXTRA EDITING GUIDE"}</AiT>
             </span>
-            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
-              {activeGuides.length}
-              <AiT>{"/8\n            "}</AiT>
+            <span
+              className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium tabular-nums"
+              title={t("Editing presets plus custom instruction")}
+            >
+              {activeGuides.length}/{EDITING_GUIDES.length + 1}
             </span>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden p-0.5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-2">
-              {[
-                "Glow & Makeup",
-                "Smooth Skin",
-                "Brighten Image",
-                "Studio Lighting",
-                "Straighten Head",
-                "Keep Marks",
-                "Lipstick",
-                "Custom Instruction",
-              ].map((item) => {
-                const active =
-                  item === "Custom Instruction"
-                    ? activeGuides.some((entry) =>
-                        entry.startsWith("Custom Instruction:"),
-                      )
-                    : activeGuides.includes(item);
+          <div className="rounded-2xl p-0.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 xl:gap-[clamp(4px,0.8vh,8px)]">
+              {QUICK_EDITING_GUIDES.map((item) => {
+                const active = activeGuides.includes(item);
                 return (
                   <button
                     key={item}
                     type="button"
-                    onClick={() => {
-                      if (item === "Custom Instruction") {
-                        if (active) {
-                          setActiveGuides((prev) =>
-                            prev.filter(
-                              (entry) =>
-                                !entry.startsWith("Custom Instruction:"),
-                            ),
-                          );
-                          return;
-                        }
-                        setCustomInstructionDraft("");
-                        setShowCustomInstructionModal(true);
-                        return;
-                      }
-                      toggleGuide(item);
-                    }}
-                    className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.6vh,8px)] rounded-xl border text-[9px] text-center transition-colors cursor-pointer ${
+                    aria-pressed={active}
+                    onClick={() => toggleGuide(item)}
+                    title={t(item)}
+                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.5vh,8px)] rounded-xl border text-[11px] xl:text-[clamp(11px,1.3vh,12.5px)] font-medium text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${
                       active
                         ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
                         : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
                     }`}
                   >
-                    <Sparkles
-                      size={14}
-                      className={`mb-1 ${active ? "text-[#2563EB]" : "text-slate-400"}`}
-                    />
-                    <span className="leading-tight">
-                      {item === "Custom Instruction" && active ? (
-                        <AiT>{"Custom added"}</AiT>
-                      ) : (
-                        item
-                      )}
+                    <span
+                      aria-hidden="true"
+                      className={`mb-0.5 flex h-11 w-11 xl:h-[clamp(24px,3.4vh,40px)] xl:w-[clamp(24px,3.4vh,40px)] items-center justify-center rounded-lg transition-colors ${
+                        active ? "bg-transparent" : "bg-transparent"
+                      }`}
+                    >
+                      <GuideIcon label={item} size="100%" />
                     </span>
+                    <span className="leading-[1.15] line-clamp-2">{t(item)}</span>
                   </button>
                 );
               })}
             </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button
+                type="button"
+                aria-pressed={activeGuides.some((entry) =>
+                  entry.startsWith("Custom Instruction:"),
+                )}
+                onClick={() => {
+                  const customActive = activeGuides.some((entry) =>
+                    entry.startsWith("Custom Instruction:"),
+                  );
+                  if (customActive) {
+                    setActiveGuides((prev) =>
+                      prev.filter(
+                        (entry) => !entry.startsWith("Custom Instruction:"),
+                      ),
+                    );
+                    return;
+                  }
+                  setCustomInstructionDraft("");
+                  setShowCustomInstructionModal(true);
+                }}
+                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${
+                  activeGuides.some((entry) =>
+                    entry.startsWith("Custom Instruction:"),
+                  )
+                    ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
+                    : "border-dashed border-[#94A3B8] bg-white text-[#334155] hover:bg-slate-50"
+                }`}
+              >
+                <Sparkles size={13} aria-hidden="true" />
+                {activeGuides.some((entry) =>
+                  entry.startsWith("Custom Instruction:"),
+                ) ? (
+                  <AiT>{"Custom added"}</AiT>
+                ) : (
+                  <AiT>{"Custom Instruction"}</AiT>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEditingGuideLibrary(true)}
+                className="min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8] text-[11px] font-medium transition-colors hover:bg-[#DBEAFE] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]"
+              >
+                <Search size={13} aria-hidden="true" />
+                <AiT>{"Browse all editing guides"}</AiT>
+                <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
+                  {EDITING_GUIDES.length}
+                </span>
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+              <AiT>{"Choose a few compatible edits for the best result."}</AiT>
+            </p>
           </div>
         </div>
       </div>
@@ -1042,6 +1179,161 @@ export default function GenerationSettings({
           )}
         </button>
       </div>
+      {showEditingGuideLibrary &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/60 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget)
+                setShowEditingGuideLibrary(false);
+            }}
+            role="presentation"
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="editing-guide-library-title"
+              aria-describedby="editing-guide-library-description"
+              className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+            >
+              <div className="flex items-start gap-4 border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <Sparkles size={20} aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2
+                    id="editing-guide-library-title"
+                    className="text-base sm:text-lg font-semibold tracking-tight text-slate-900"
+                  >
+                    <AiT>{"Editing Guide Library"}</AiT>
+                  </h2>
+                  <p
+                    id="editing-guide-library-description"
+                    className="mt-1 text-xs sm:text-sm leading-5 text-slate-500"
+                  >
+                    <AiT>{"Choose compatible edits to apply to your photo."}</AiT>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditingGuideLibrary(false)}
+                  aria-label={t("Close")}
+                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <X size={19} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:px-6">
+                <div className="relative">
+                  <Search
+                    size={15}
+                    aria-hidden="true"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    ref={editingGuideSearchRef}
+                    type="search"
+                    value={guideSearch}
+                    onChange={(event) => setGuideSearch(event.target.value)}
+                    placeholder={t("Search editing guides...")}
+                    aria-label={t("Search editing guides...")}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                  />
+                </div>
+                <select
+                  value={guideCategory}
+                  onChange={(event) => setGuideCategory(event.target.value)}
+                  aria-label={t("Filter editing guides by category")}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 cursor-pointer"
+                >
+                  {EDITING_GUIDE_CATEGORIES.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {t(category.label)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+                <div className="mb-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                  <span>
+                    {filteredEditingGuides.length} <AiT>{"presets shown"}</AiT>
+                  </span>
+                  <span className="tabular-nums">
+                    {activeGuides.length} <AiT>{"selected"}</AiT>
+                  </span>
+                </div>
+                {filteredEditingGuides.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {filteredEditingGuides.map((guide) => {
+                      const active = activeGuides.includes(guide.label);
+                      const category = EDITING_GUIDE_CATEGORIES.find(
+                        (entry) => entry.id === guide.category,
+                      );
+                      return (
+                        <button
+                          key={guide.label}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => toggleGuide(guide.label)}
+                          title={t(guide.label)}
+                          className={`flex min-h-[76px] flex-col items-start justify-between rounded-xl border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                            active
+                              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-100"
+                              : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="flex w-full items-start justify-between gap-2">
+                            <span className="flex min-w-0 items-start gap-2">
+                              <span
+                                aria-hidden="true"
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors`}
+                              >
+                                <GuideIcon label={guide.label} size={36} />
+                              </span>
+                              <span className={`min-w-0 text-xs sm:text-sm font-medium leading-5 ${active ? "text-blue-700" : "text-slate-800"}`}>
+                                {t(guide.label)}
+                              </span>
+                            </span>
+                            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"}`}>
+                              <Check size={10} strokeWidth={3} aria-hidden="true" />
+                            </span>
+                          </span>
+                          {category && (
+                            <span className="mt-2 text-[10px] leading-4 text-slate-500">
+                              {t(category.label)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-12 text-center text-sm text-slate-500">
+                    <AiT>{"No matching editing guides."}</AiT>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-[11px] leading-5 text-slate-500">
+                  <AiT>{"Choose a few compatible edits for the best result."}</AiT>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowEditingGuideLibrary(false)}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                >
+                  <Check size={16} aria-hidden="true" />
+                  <AiT>{"Done"}</AiT>
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
       {showCustomInstructionModal &&
         typeof document !== "undefined" &&
         createPortal(

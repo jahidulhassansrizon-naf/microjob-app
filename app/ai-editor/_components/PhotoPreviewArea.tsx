@@ -1,8 +1,10 @@
 import { AiT, useAiEditorText } from "./aiEditorI18n";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 export interface BoxInfo {
     text: string;
+    /** True when no photo size is selected: preview uses the photo's own ratio. */
+    isOriginal?: boolean;
     style: {
         width: string;
         height: string;
@@ -103,14 +105,49 @@ function getBackgroundStyle(background: string): React.CSSProperties {
    for it. On xl screens the holder becomes a size container, and the frame
    is capped by both the holder width and the holder height (keeping the
    photo aspect ratio). Below xl the original fixed-width behaviour is kept. */
-function FitFrame({ info, className = "", style, children, }: {
+function useNaturalRatio(src: string | null | undefined, enabled: boolean) {
+    const [ratio, setRatio] = useState<number | null>(null);
+    useEffect(() => {
+        if (!enabled || !src) {
+            setRatio(null);
+            return;
+        }
+        let cancelled = false;
+        const img = new window.Image();
+        img.onload = () => {
+            if (!cancelled && img.naturalWidth && img.naturalHeight) {
+                setRatio(img.naturalWidth / img.naturalHeight);
+            }
+        };
+        img.src = src;
+        return () => {
+            cancelled = true;
+        };
+    }, [src, enabled]);
+    return ratio;
+}
+function FitFrame({ info, imageSrc, className = "", style, children, }: {
     info: BoxInfo;
+    imageSrc?: string | null;
     className?: string;
     style?: React.CSSProperties;
     children: React.ReactNode;
 }) {
-    const w = parseFloat(info.style.width) || 290;
-    const h = parseFloat(info.style.height) || 372;
+    const naturalRatio = useNaturalRatio(imageSrc, !!info.isOriginal);
+    let w = parseFloat(info.style.width) || 290;
+    let h = parseFloat(info.style.height) || 372;
+    if (info.isOriginal) {
+        // No photo size selected: show the photo at its own ratio, as large as fits.
+        const ratio = naturalRatio || 4 / 5;
+        const maxW = 620;
+        const maxH = 680;
+        w = maxW;
+        h = w / ratio;
+        if (h > maxH) {
+            h = maxH;
+            w = h * ratio;
+        }
+    }
     return (<div className="flex min-h-0 w-full flex-1 items-center justify-center xl:[container-type:size]">
       <div className={`relative w-[min(var(--cw),100%)] xl:w-[min(var(--cw),100cqw,calc(100cqh*var(--cr)))] ${className}`} style={{
             "--cw": `${w}px`,
@@ -159,7 +196,7 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
         <AiT>{label}</AiT>
       </span>
 
-      <FitFrame info={boxInfo} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E2E8F0]" : ""}`} style={getBackgroundStyle(background)}>
+      <FitFrame info={boxInfo} imageSrc={image} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E2E8F0]" : ""}`} style={getBackgroundStyle(background)}>
         {image ? (<div className="group relative h-full w-full">
             <img src={image} alt={t(label)} className="h-full w-full object-contain"/>
 
@@ -168,7 +205,7 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
             </button>
 
             <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
-              {boxInfo.text}
+              <AiT>{boxInfo.text}</AiT>
             </div>
           </div>) : (<EmptyUploadBox title={`Upload ${label.toLowerCase()}`} onUpload={onRemove}/>)}
 
@@ -209,11 +246,11 @@ export default function PhotoPreviewArea({
         </div>)}
 
       {!isDualMode ? (<div className="flex w-full flex-col items-center justify-center gap-4 xl:min-h-0 xl:flex-1 xl:gap-3">
-          {isDualPreviewActive && originalImageForDual ? (<div className="grid w-full max-w-[760px] grid-cols-1 gap-6 md:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)] xl:gap-4">
+          {isDualPreviewActive && originalImageForDual ? (<div className="grid w-full max-w-[1000px] grid-cols-1 gap-6 md:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)] xl:gap-4">
               <PhotoCard image={originalImageForDual} label="Real Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={() => setOriginalImageForDual(null)} isScanning={isGenerating}/>
 
               <PhotoCard image={uploadedImage} label="Edited Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={handleRemoveSingle} isScanning={isGenerating}/>
-            </div>) : (<FitFrame info={activeBoxInfo} className={`overflow-hidden rounded-2xl shadow-xl ${uploadedImage
+            </div>) : (<FitFrame info={activeBoxInfo} imageSrc={uploadedImage} className={`overflow-hidden rounded-2xl shadow-xl ${uploadedImage
                     ? "border-2 border-transparent"
                     : "border-2 border-dashed border-[#2563EB]/40"}`}>
               {uploadedImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
@@ -233,12 +270,12 @@ export default function PhotoPreviewArea({
 
           {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]">
               <ImageIcon size={14} className="text-[#2563EB]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
-        </div>) : (<div className="flex w-full max-w-[760px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
+        </div>) : (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
               <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Left Person\n              "}</AiT></span>
 
-              <FitFrame info={activeBoxInfo} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
+              <FitFrame info={activeBoxInfo} imageSrc={leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
                 {leftImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>
 
@@ -254,7 +291,7 @@ export default function PhotoPreviewArea({
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
               <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Right Person\n              "}</AiT></span>
 
-              <FitFrame info={activeBoxInfo} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
+              <FitFrame info={activeBoxInfo} imageSrc={rightImage} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
                 {rightImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={rightImage} alt="Right person" className="h-full w-full object-contain"/>
 

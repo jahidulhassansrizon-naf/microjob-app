@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import SubscriptionLock from "./_components/SubscriptionLock";
 import GenerationSettings from "./_components/GenerationSettings";
+import { planEditingGuides } from "./_components/editingGuides";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import RecentGenerations from "./_components/RecentGenerations";
@@ -13,6 +14,8 @@ import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
+import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
+import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 type MidpointCropHandle = "n" | "e" | "s" | "w";
 
 type MidpointResizeSession = {
@@ -32,8 +35,9 @@ export default function PhotoEditorPage() {
     const { t } = useAiEditorText();
     const router = useRouter();
     const [authChecking, setAuthChecking] = useState(false);
-    const [selectedSize, setSelectedSize] = useState("Passport");
-    const [selectedBg, setSelectedBg] = useState(1);
+    const [selectedSize, setSelectedSize] = useState("");
+    // -1 = no background chosen: the photo's own background is kept as is.
+    const [selectedBg, setSelectedBg] = useState(-1);
     const [customBgColor, setCustomBgColor] = useState("#8B1E1E");
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [selectedClothing, setSelectedClothing] = useState(-1);
@@ -302,6 +306,33 @@ export default function PhotoEditorPage() {
             dpi: target.dpi,
         };
     };
+    const getImageRasterDimensions = (imageSrc: string): Promise<{ widthPx: number; heightPx: number }> =>
+        new Promise((resolve) => {
+            const image = new Image();
+            let settled = false;
+            let timeoutId: number | undefined;
+            const finish = (dimensions: { widthPx: number; heightPx: number }) => {
+                if (settled) return;
+                settled = true;
+                if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+                image.onload = null;
+                image.onerror = null;
+                resolve(dimensions);
+            };
+            timeoutId = window.setTimeout(
+                () => finish({ widthPx: 0, heightPx: 0 }),
+                5000,
+            );
+            image.onload = () => finish({
+                widthPx: image.naturalWidth || image.width || 0,
+                heightPx: image.naturalHeight || image.height || 0,
+            });
+            image.onerror = () => finish({ widthPx: 0, heightPx: 0 });
+            image.src = imageSrc;
+            if (image.complete && (image.naturalWidth || image.width)) {
+                finish({ widthPx: image.naturalWidth || image.width, heightPx: image.naturalHeight || image.height });
+            }
+        });
     const backgroundColors = [
         {
             type: "preset",
@@ -332,15 +363,20 @@ export default function PhotoEditorPage() {
         }
         return selectedOption?.value || "#FFFFFF";
     };
+    const isKeepOriginalBackground = () => selectedBg < 0 || !backgroundColors[selectedBg];
     const isTransparentBackground = () => backgroundColors[selectedBg]?.type === "transparent";
     const getCurrentSizeLabel = () => {
+        if (!selectedSize) return "Original Size";
         if (selectedSize === "Visa")
             return selectedVisaSize;
         const found = photoSizes.find((p) => p.id === selectedSize);
         return found ? found.dims : "35×45 mm";
     };
-    const getSelectedTargetAspect = (): number => {
-        let sizeLabel = getCurrentSizeLabel();
+    const getSelectedTargetAspect = (): number | undefined => {
+        // No selected document size means the user is editing a regular photo;
+        // keep cropping free-form instead of silently locking it to passport ratio.
+        if (!selectedSize) return undefined;
+        const sizeLabel = getCurrentSizeLabel();
         if (sizeLabel.includes("inch")) {
             return 1.0;
         }
@@ -350,7 +386,7 @@ export default function PhotoEditorPage() {
             const h = parseFloat(match[2]);
             return w / h;
         }
-        return 35 / 45;
+        return undefined;
     };
 
     // The fixed-aspect ReactCrop intentionally hides native edge handles.
@@ -478,16 +514,22 @@ export default function PhotoEditorPage() {
         if (!imageWidth || !imageHeight) return;
 
         const targetAspect = isDualMode ? 45 / 55 : getSelectedTargetAspect();
-        const initialCrop = centerCrop(
-            makeAspectCrop(
-                { unit: "%", width: 80 },
-                targetAspect,
+        const initialCrop = targetAspect
+            ? centerCrop(
+                makeAspectCrop(
+                    { unit: "%", width: 80 },
+                    targetAspect,
+                    imageWidth,
+                    imageHeight,
+                ),
                 imageWidth,
                 imageHeight,
-            ),
-            imageWidth,
-            imageHeight,
-        );
+            )
+            : centerCrop(
+                { unit: "%", width: 80, height: 80 },
+                imageWidth,
+                imageHeight,
+            );
         setCrop(initialCrop);
 
         const renderedWidth = image.clientWidth || image.width;
@@ -505,8 +547,8 @@ export default function PhotoEditorPage() {
         const ratio = Number.isFinite(rawWidth) && Number.isFinite(rawHeight) && rawHeight > 0
             ? rawWidth / rawHeight
             : 35 / 45;
-        const maxWidth = 290;
-        const maxHeight = 405;
+        const maxWidth = 460;
+        const maxHeight = 620;
         let width = maxWidth;
         let height = width / ratio;
         if (height > maxHeight) {
@@ -519,6 +561,15 @@ export default function PhotoEditorPage() {
         };
     };
     const getCurrentBoxDimensions = () => {
+        if (!selectedSize) {
+            return {
+                text: "Original Size",
+                isOriginal: true,
+                // A neutral square preview is used visually only; the actual image
+                // aspect ratio and pixel dimensions are preserved in normal-edit mode.
+                style: getStyleFromAspect("1/1"),
+            };
+        }
         if (selectedSize === "Visa") {
             const found = visaSizesList.find((v) => v.label === selectedVisaSize);
             return {
@@ -735,7 +786,7 @@ export default function PhotoEditorPage() {
             setOriginalLeftImage(sourceForLeft);
         }
     };
-    const exitDualMode = (nextSize = "Passport") => {
+    const exitDualMode = (nextSize = "") => {
         setIsDualMode(false);
         setSelectedSize(nextSize);
         setLeftImage(null);
@@ -747,19 +798,32 @@ export default function PhotoEditorPage() {
     };
     const handleSizeClick = (sizeId: string) => {
         if (sizeId === "Visa") {
+            // Clicking the already-selected Visa option clears the size constraint.
+            // To choose another visa format, click Visa again to reopen its size list.
+            if (!isDualMode && selectedSize === "Visa") {
+                setSelectedSize("");
+                setShowVisaPopup(false);
+                return;
+            }
             setShowVisaPopup((prev) => !prev);
             return;
         }
         setShowVisaPopup(false);
         if (sizeId === "Dual") {
+            if (isDualMode && selectedSize === "Dual") {
+                exitDualMode("");
+                return;
+            }
             enableDualMode();
             return;
         }
         if (isDualMode) {
-            exitDualMode(sizeId);
+            exitDualMode(selectedSize === sizeId ? "" : sizeId);
             return;
         }
-        setSelectedSize(sizeId);
+        // Size presets behave like a toggle: clicking the active preset again
+        // returns the editor to regular, unconstrained photo-editing mode.
+        setSelectedSize((current) => current === sizeId ? "" : sizeId);
     };
     const handleClothingSelectionChange = (clothing: number) => {
         setSelectedClothing(clothing);
@@ -820,22 +884,6 @@ export default function PhotoEditorPage() {
     // =========================================================
     // GEMINI IMAGE EDITING FLOW
     // =========================================================
-    const CLOTHING_NAMES = [
-        "Shirt",
-        "Polo",
-        "Suit",
-        "Blazer",
-        "Saree",
-        "Hijab",
-        "Panjabi",
-        "Dress",
-        "T-Shirt",
-        "Abaya",
-        "Burqa",
-        "Kameez",
-        "Kurti",
-        "Jacket",
-    ];
     const CLOTHING_COLOR_NAMES: Record<string, string> = {
         "#FFFFFF": "white",
         "#1E1E1E": "black",
@@ -877,65 +925,114 @@ export default function PhotoEditorPage() {
             type: blob.type || "image/jpeg",
         });
     };
+    // "Original Size" means no photo size was chosen, whatever sizeType a saved
+    // record happens to carry, so regenerate/export never force a passport size.
+    const resolvePayloadSizeType = (payload: Record<string, unknown>) => {
+        if (typeof payload.size === "string" && /^original size$/i.test(payload.size.trim())) {
+            return "";
+        }
+        return typeof payload.sizeType === "string" ? payload.sizeType.trim() : selectedSize;
+    };
     const buildAiEditingPrompt = (payload: Record<string, unknown>) => {
+        const sizeType = resolvePayloadSizeType(payload);
+        const hasSelectedPhotoSize = Boolean(sizeType);
+        const transparentBackground = payload.transparentBackground === true;
+        const keepOriginalBackground = payload.keepOriginalBackground === true && !transparentBackground;
+        const bgColor = typeof payload.bgColor === "string"
+            ? payload.bgColor.toUpperCase()
+            : "#FFFFFF";
+        const bgColorName = BACKGROUND_COLOR_NAMES[bgColor] ||
+            `the exact solid color represented by ${bgColor}`;
+        const side = typeof payload.side === "string" ? payload.side : "";
+        const rawGuides = Array.isArray(payload.editingGuides)
+            ? payload.editingGuides.filter((item): item is string => typeof item === "string")
+            : [];
+        // Presets that mention the backdrop get the real, current background choice.
+        const backgroundRef = transparentBackground
+            ? "the fully removed (transparent) background"
+            : keepOriginalBackground
+                ? "a plain, clean area in the photo's own dominant background color (plain white if there is none)"
+                : `a solid ${bgColorName} background (${bgColor})`;
+        const plan = planEditingGuides(rawGuides, { backgroundRef, side });
+        const { flags } = plan;
+
         const instructions = [
-            "Edit the provided portrait photo for a professional ID/passport-style result.",
-            "Preserve the person's facial identity, facial proportions, skin tone, hair, and natural features as faithfully as possible.",
-            "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
-            "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle.",
+            flags.restoration
+                ? hasSelectedPhotoSize
+                    ? "Restore the provided photograph, keeping its original composition, and make the result suitable for a professional ID/passport-style photo."
+                    : "Restore the provided photograph, keeping its original composition and aspect ratio."
+                : hasSelectedPhotoSize
+                    ? "Edit the provided portrait photo for a professional ID/passport-style result."
+                    : "Edit the provided image naturally, preserving its original composition and aspect ratio unless the requested edits require a change.",
+            flags.colorChange || flags.restoration
+                ? "Preserve the person's facial identity, facial proportions, hair, and natural features as faithfully as possible. Keep skin tones natural and believable for the person; only the color adjustments requested below may change the overall tint."
+                : "Preserve the person's facial identity, facial proportions, skin tone, hair, and natural features as faithfully as possible.",
+            flags.restoration
+                ? "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks. Keep every person who is already in the photo."
+                : "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
+            hasSelectedPhotoSize && !(flags.restoration && !flags.posePreset)
+                ? "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle."
+                : "Preserve the original framing, subject placement, pose, and camera angle unless the requested edit explicitly requires a change.",
             "Make only the requested edits and avoid unnecessary changes to the person's face.",
         ];
         const clothingIndex = typeof payload.clothing === "number" ? payload.clothing : -1;
         if (clothingIndex >= 0 && CLOTHING_NAMES[clothingIndex]) {
             const clothingName = CLOTHING_NAMES[clothingIndex];
+            const clothingPrompt = CLOTHING_STYLES[clothingIndex]?.prompt || `a ${clothingName.toLowerCase()}`;
             const colorHex = typeof payload.clothingColor === "string"
                 ? payload.clothingColor.toUpperCase()
                 : "";
             const colorName = CLOTHING_COLOR_NAMES[colorHex] ||
                 (colorHex ? `the selected color (${colorHex})` : "a natural color");
-            instructions.push(`Change only the visible clothing to a professional ${clothingName.toLowerCase()} in ${colorName}. Keep the face, hair, ears, neck, body proportions, and pose natural. Make the clothing edges realistic and properly fitted to the body.`);
+            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. Keep the face, hair, ears, neck, body proportions, and pose natural. Make the clothing edges realistic and properly fitted to the body.`);
         }
-        const transparentBackground = payload.transparentBackground === true;
-        const bgColor = typeof payload.bgColor === "string"
-            ? payload.bgColor.toUpperCase()
-            : "#FFFFFF";
-        if (transparentBackground) {
+        if (keepOriginalBackground) {
+            if (flags.alteringBackground) {
+                instructions.push("Keep the original background's overall scene, color, and layout. Do not replace it with a different scene or a new color; only apply the background clean-up requested below.");
+            }
+            else if (flags.wholeImage) {
+                instructions.push("Keep the original background scene, objects, and layout as they are. Do not remove, replace, or restyle it. The repair, tone, color, and clarity edits requested below may apply to the whole image, including the background.");
+            }
+            else {
+                instructions.push("Keep the original background exactly as it is. Do not remove, replace, recolor, blur, or alter the background in any way.");
+            }
+        }
+        else if (transparentBackground) {
             instructions.push("Remove the entire background cleanly and isolate the person from head to shoulders/upper torso. Do not leave halos, gray outlines, or background fragments. Keep the subject's edges natural.");
         }
+        else if (flags.monochrome) {
+            instructions.push(`Replace the background with a clean, uniform, solid background in the grayscale (neutral black-and-white) equivalent of ${bgColorName} (${bgColor}), because the final photo is black and white. Do not add scenery, gradients, patterns, shadows, or objects.`);
+        }
         else {
-            const colorName = BACKGROUND_COLOR_NAMES[bgColor] ||
-                `the exact solid color represented by ${bgColor}`;
-            instructions.push(`Replace the background with a clean, uniform studio-style solid ${colorName} background. Target background color: ${bgColor}. Do not add scenery, gradients, patterns, shadows, or objects.`);
-        }
-        const editingGuides = Array.isArray(payload.editingGuides)
-            ? payload.editingGuides.filter((item): item is string => typeof item === "string")
-            : [];
-        const guideInstructions: Record<string, string> = {
-            "Glow & Makeup": "Add subtle professional grooming and a healthy natural glow. Keep makeup realistic and age-appropriate.",
-            "Smooth Skin": "Reduce temporary blemishes and unevenness while preserving natural skin texture and facial detail. Do not make the skin plastic-looking.",
-            "Brighten Image": "Correct exposure and brighten the portrait gently without washing out skin tones or highlights.",
-            "Studio Lighting": "Use clean, soft professional studio lighting with natural facial shading and no harsh artificial highlights.",
-            "Straighten Head": "Correct the head angle so the face is naturally upright and looking toward the camera while preserving facial proportions.",
-            "Keep Marks": "Preserve natural identifying marks such as freckles, moles, scars, birthmarks, and other stable facial details.",
-            Lipstick: "Apply subtle natural-looking lipstick while preserving the person's original lip shape and facial identity.",
-        };
-        for (const guide of editingGuides) {
-            if (guide.startsWith("Custom Instruction:")) {
-                const customInstruction = guide
-                    .replace(/^Custom Instruction:\s*/i, "")
-                    .trim();
-                if (customInstruction) {
-                    instructions.push(`Follow this custom edit instruction: ${customInstruction}`);
-                }
-                continue;
+            instructions.push(`Replace the background with a clean, uniform studio-style solid ${bgColorName} background. Target background color: ${bgColor}. Do not add scenery, gradients, patterns, shadows, or objects.`);
+            if (flags.wholeImage) {
+                instructions.push("Keep the background exactly this solid color: do not let exposure, color, grain, glow, or lighting edits add tint, gradients, vignetting, shading, or texture to it.");
             }
-            const guideInstruction = guideInstructions[guide];
-            if (guideInstruction)
-                instructions.push(guideInstruction);
         }
-        const size = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
-        instructions.push(`Prepare the composition to suit the selected final document/photo size (${size}). The application will handle the exact pixel dimensions after generation, so do not add any text or size labels.`);
-        return instructions.join(" ");
+
+        const sections = [instructions.join(" ")];
+        if (plan.edits.length > 0) {
+            sections.push([
+                plan.edits.length > 1
+                    ? "Apply the following requested edits together as one coordinated edit, in the order listed (repair and technical corrections first, stylistic finish last). Keep every request, and never let any edit change the person's identity or anatomy:"
+                    : "Apply the following requested edit:",
+                ...plan.edits.map((edit, index) => `${index + 1}. ${edit}`),
+            ].join("\n"));
+        }
+        if (plan.constraints.length > 0) {
+            sections.push([
+                "Also follow these preservation rules:",
+                ...plan.constraints.map((rule) => `- ${rule}`),
+            ].join("\n"));
+        }
+        if (plan.customInstruction) {
+            sections.push(`Custom instruction from the user (apply it together with the edits above; if it conflicts with a preset above, follow the custom instruction, but never change the person's identity): ${plan.customInstruction}`);
+        }
+        if (hasSelectedPhotoSize) {
+            const size = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
+            sections.push(`Prepare the composition to suit the selected final document/photo size (${size}). The application will handle the exact pixel dimensions after generation, so do not add any text or size labels.`);
+        }
+        return sections.join("\n\n");
     };
     const callGenerateApi = async (payload: Record<string, unknown>) => {
         let image = typeof payload.image === "string" ? payload.image.trim() : "";
@@ -979,10 +1076,17 @@ export default function PhotoEditorPage() {
                 throw new Error(message);
             }
 
-            const currentSize = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
-            const transparentBackground = payload.transparentBackground === true;
-            normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground);
-            const cloudUrl = await uploadToCloudinary(normalized.dataUrl);
+            const sizeType = resolvePayloadSizeType(payload);
+            let cloudUrl: string | null;
+            if (sizeType) {
+                const currentSize = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
+                const transparentBackground = payload.transparentBackground === true;
+                normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground);
+                cloudUrl = await uploadToCloudinary(normalized.dataUrl);
+            } else {
+                // No photo preset selected: keep the generated image's natural pixel size.
+                cloudUrl = await uploadToCloudinary(result.image);
+            }
             if (!cloudUrl) {
                 throw new Error("Generated photo could not be uploaded to Cloudinary, so it was not saved.");
             }
@@ -1032,18 +1136,19 @@ export default function PhotoEditorPage() {
             const currentSizeLabel = getCurrentSizeLabel();
             const currentBgHex = getSelectedBgColorValue();
             const transparentBackground = isTransparentBackground();
-            const exactExport = getExactExportDimensions(currentSizeLabel);
+            const exactExport = selectedSize ? getExactExportDimensions(currentSizeLabel) : null;
             const basePayload = {
                 size: currentSizeLabel,
                 sizeType: selectedSize,
                 bgColor: currentBgHex,
                 transparentBackground,
+                keepOriginalBackground: isKeepOriginalBackground(),
                 clothing: selectedClothing,
                 clothingColor: selectedClothingColor,
                 editingGuides,
-                widthPx: exactExport.widthPx,
-                heightPx: exactExport.heightPx,
-                dpi: exactExport.dpi,
+                widthPx: exactExport?.widthPx ?? 0,
+                heightPx: exactExport?.heightPx ?? 0,
+                dpi: exactExport?.dpi ?? EXPORT_DPI,
             };
             if (isDualMode) {
                 const leftSource = originalLeftImage || leftImage!;
@@ -1065,15 +1170,16 @@ export default function PhotoEditorPage() {
                 setLeftImage(leftGenerated);
                 setRightImage(rightGenerated);
                 setOriginalImageForDual(originalLeftImage || leftImage);
+                const dualExport = exactExport ?? getExactExportDimensions("45×55 mm");
                 const docs = [
                     {
                         url: leftGenerated,
                         originalUrl: leftImage,
                         size: currentSizeLabel,
                         sizeType: selectedSize,
-                        widthPx: exactExport.widthPx,
-                        heightPx: exactExport.heightPx,
-                        dpi: exactExport.dpi,
+                        widthPx: dualExport.widthPx,
+                        heightPx: dualExport.heightPx,
+                        dpi: dualExport.dpi,
                         bgColor: currentBgHex,
                         clothingStyle: `Style ${leftClothing}`,
                         clothingColor: selectedClothingColor,
@@ -1086,9 +1192,9 @@ export default function PhotoEditorPage() {
                         originalUrl: rightImage,
                         size: currentSizeLabel,
                         sizeType: selectedSize,
-                        widthPx: exactExport.widthPx,
-                        heightPx: exactExport.heightPx,
-                        dpi: exactExport.dpi,
+                        widthPx: dualExport.widthPx,
+                        heightPx: dualExport.heightPx,
+                        dpi: dualExport.dpi,
                         bgColor: currentBgHex,
                         clothingStyle: `Style ${rightClothing}`,
                         clothingColor: selectedClothingColor,
@@ -1120,6 +1226,13 @@ export default function PhotoEditorPage() {
                 ...basePayload,
                 image: rawImage,
             });
+            let outputDimensions: { widthPx: number; heightPx: number; dpi?: number } | null = exactExport;
+            if (!outputDimensions) {
+                outputDimensions = await getImageRasterDimensions(generatedUrl);
+                if (!outputDimensions.widthPx || !outputDimensions.heightPx) {
+                    outputDimensions = await getImageRasterDimensions(rawImage);
+                }
+            }
             const finalOriginal = originalImageForDual || rawImage;
             setOriginalImageForDual(finalOriginal);
             setUploadedImage(generatedUrl);
@@ -1129,9 +1242,9 @@ export default function PhotoEditorPage() {
                 originalUrl: finalOriginal,
                 size: currentSizeLabel,
                 sizeType: selectedSize,
-                widthPx: exactExport.widthPx,
-                heightPx: exactExport.heightPx,
-                dpi: exactExport.dpi,
+                widthPx: outputDimensions?.widthPx ?? 0,
+                heightPx: outputDimensions?.heightPx ?? 0,
+                dpi: exactExport?.dpi ?? EXPORT_DPI,
                 bgColor: currentBgHex,
                 clothingStyle: `Style ${selectedClothing}`,
                 clothingColor: selectedClothingColor,
@@ -1206,12 +1319,16 @@ export default function PhotoEditorPage() {
             setIsGenerating(false);
         }
     };
-    const handleDeleteImage = async (imageToDelete: any) => {
+    const [deleteTarget, setDeleteTarget] = useState<any>(null);
+    const handleDeleteImage = (imageToDelete: any) => {
         if (!imageToDelete)
             return;
-        const confirmDelete = window.confirm(t("Are you sure you want to delete this photo?"));
-        if (!confirmDelete)
+        setDeleteTarget(imageToDelete);
+    };
+    const performDeleteImage = async (imageToDelete: any) => {
+        if (!imageToDelete)
             return;
+        setDeleteTarget(null);
         setPreviewModalImage(null);
         setIsDeleting(true);
         setErrorMessage(null);
@@ -1243,9 +1360,9 @@ export default function PhotoEditorPage() {
         }
     };
     const handleResetSettings = () => {
-        setSelectedSize("Passport");
+        setSelectedSize("");
         setSelectedVisaSize("35×45 mm");
-        setSelectedBg(1);
+        setSelectedBg(-1);
         setCustomBgColor("#8B1E1E");
         setSelectedClothing(-1);
         setSelectedClothingColor("#EF4444");
@@ -1339,7 +1456,11 @@ export default function PhotoEditorPage() {
             </button>
           </div>
 
-          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2"><AiT>{"For passport size photos, center your face in the crop area \u2014 this\n            gives the best result.\n          "}</AiT></div>
+          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2">
+            <AiT>{selectedSize
+                ? "Adjust the crop area to frame the subject for your selected photo size."
+                : "Adjust the crop freely. No fixed photo size is selected."}</AiT>
+          </div>
 
           <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-auto relative bg-[#0c1017]">
             <div className="w-full h-full flex items-center justify-center">
@@ -1442,5 +1563,6 @@ export default function PhotoEditorPage() {
 
         <RecentGenerations generations={recentList} onImageClick={(img) => setPreviewModalImage(img)} isLoading={isFetching}/>
       </div>
-    </div>);
+      <ConfirmDeleteModal open={!!deleteTarget} imageUrl={deleteTarget?.url} onCancel={() => setDeleteTarget(null)} onConfirm={() => performDeleteImage(deleteTarget)}/>
+      </div>);
 }

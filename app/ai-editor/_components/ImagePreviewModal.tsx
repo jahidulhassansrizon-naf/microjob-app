@@ -2,6 +2,8 @@
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { X, RotateCw, Download, Printer, Trash2, Edit3, Share2, Eye, Loader2, Save, Info, ChevronDown, FileImage, Grid, } from "lucide-react";
+import { CLOTHING_NAMES } from "./clothingStyles";
+import AiPrintStudioModal from "./AiPrintStudioModal";
 import ImageEditSidebar, { ASPECT_RATIOS, DEFAULT_FILTERS, FilterState, } from "./ImageEditSidebar";
 export interface PreviewImage {
     id?: string;
@@ -70,6 +72,9 @@ function parsePhysicalSizeLabel(label: string): PhysicalSize {
         height: 55,
         unit: "mm",
     };
+}
+function isOriginalSizeLabel(label: string) {
+    return /^original size$/i.test(String(label || "").trim());
 }
 function getExportPhysicalSize(label: string, aspectOption: string, aspectRatio?: number): PhysicalSize {
     const base = parsePhysicalSizeLabel(label);
@@ -277,6 +282,9 @@ export default function ImagePreviewModal({
     const [isComparing, setIsComparing] = useState(false);
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
+    const [printStudioOpen, setPrintStudioOpen] = useState(false);
+    const [printStudioImage, setPrintStudioImage] = useState<string | null>(null);
+    const [printStudioPreset, setPrintStudioPreset] = useState<{ id: string; label: string; widthMm: number; heightMm: number } | null>(null);
     const downloadMenuRef = useRef<HTMLDivElement>(null);
     const compareTimerRef = useRef<number | null>(null);
     const longPressRef = useRef(false);
@@ -334,7 +342,10 @@ export default function ImagePreviewModal({
     const photoSizeLabel = image.size || "35×45 mm";
     const bgHexColor = image.bgColor || "#FFFFFF";
     const isTransparentBackground = bgHexColor === "transparent";
-    const clothingInfo = image.clothingStyle || "Default Clothing";
+    const styleMatch = /^Style (\d+)$/.exec(image.clothingStyle || "");
+    const clothingInfo = styleMatch
+        ? (CLOTHING_NAMES[Number(styleMatch[1])] || "Default Clothing")
+        : (image.clothingStyle || "Default Clothing");
     const currentAspectOption = ASPECT_RATIOS.find((option) => option.value === selectedAspect);
     const handleResetAll = () => {
         setFilters(DEFAULT_FILTERS);
@@ -402,6 +413,24 @@ export default function ImagePreviewModal({
     };
     const renderCanvasToExactExportSize = async () => {
         const sourceCanvas = await generateEditedCanvas();
+        // "Original Size" means the user generated without choosing a photo size.
+        // Export exactly what they generated (its own pixels and ratio) instead of
+        // forcing it into a passport-size canvas. The label alone decides this,
+        // because a saved record may carry a non-empty sizeType.
+        if (isOriginalSizeLabel(photoSizeLabel)) {
+            const dpi = image.dpi || EXPORT_DPI;
+            return {
+                canvas: sourceCanvas,
+                widthPx: sourceCanvas.width,
+                heightPx: sourceCanvas.height,
+                dpi,
+                physical: {
+                    width: (sourceCanvas.width / dpi) * 25.4,
+                    height: (sourceCanvas.height / dpi) * 25.4,
+                    unit: "mm" as const,
+                },
+            };
+        }
         const target = getCurrentExportSize();
         const scale = Math.min(target.widthPx / sourceCanvas.width, target.heightPx / sourceCanvas.height);
         const drawWidth = Math.max(1, Math.round(sourceCanvas.width * scale));
@@ -562,6 +591,33 @@ export default function ImagePreviewModal({
         }
     };
     const handlePrint = async () => {
+        setActionError(null);
+        try {
+            const editedCanvas = await generateEditedCanvas();
+            const dataUrl = editedCanvas.toDataURL("image/png");
+            const dpi = Number(image?.dpi) || 0;
+            const wPx = Number(image?.widthPx) || 0;
+            const hPx = Number(image?.heightPx) || 0;
+            let widthMm: number;
+            let heightMm: number;
+            if (dpi > 0 && wPx > 0 && hPx > 0) {
+                widthMm = (wPx / dpi) * 25.4;
+                heightMm = (hPx / dpi) * 25.4;
+            }
+            else {
+                widthMm = 100;
+                heightMm = (100 * editedCanvas.height) / Math.max(1, editedCanvas.width);
+            }
+            setPrintStudioPreset({ id: "ai-photo", label: "Photo", widthMm, heightMm });
+            setPrintStudioImage(dataUrl);
+            setPrintStudioOpen(true);
+        }
+        catch (error) {
+            console.error("Opening print studio failed:", error);
+            setActionError(error instanceof Error ? error.message : "Could not open the print studio.");
+        }
+    };
+    const handlePrintSingle = async () => {
         setActionError(null);
         let printRoot: HTMLDivElement | null = null;
         let printStyle: HTMLStyleElement | null = null;
@@ -900,7 +956,7 @@ export default function ImagePreviewModal({
             <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
               <span className="text-slate-500"><AiT>{"Clothing:"}</AiT></span>
               <span className="font-medium text-[#0F172A] truncate max-w-[100px]">
-                {clothingInfo}
+                <AiT>{clothingInfo}</AiT>
               </span>
             </div>
           </div>
@@ -933,5 +989,6 @@ export default function ImagePreviewModal({
         </button>
         <button type="button" onClick={handleResetAll} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1 rounded text-[11px] transition ml-1 cursor-pointer"><AiT>{"Reset All\r\n        "}</AiT></button>
       </div>
+      <AiPrintStudioModal open={printStudioOpen} image={printStudioImage} preset={printStudioPreset} onClose={() => setPrintStudioOpen(false)} onPrintSingle={handlePrintSingle}/>
     </div>);
 }
