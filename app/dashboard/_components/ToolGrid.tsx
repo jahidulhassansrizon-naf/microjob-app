@@ -39,13 +39,6 @@ export default function ToolGrid() {
     // ২. মাঝের আইকনসমূহ (ব্যাজসহ)
     const secondaryTools = [
         {
-            title: "Form auto fillup",
-            icon: <Briefcase size={26} className="text-white"/>,
-            bg: "bg-[#8161FF]",
-            badge: "New",
-            badgeColor: "bg-emerald-500",
-        },
-        {
             title: "Image Size Reducer",
             icon: <ImageIcon size={26} className="text-white"/>,
             bg: "bg-[#10D03A]",
