@@ -195,12 +195,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const [toast, setToast] = useState<string | null>(null);
     const [history, setHistory] = useState<StudioItem[][]>([]);
     const [future, setFuture] = useState<StudioItem[][]>([]);
-    const sourcePreset = useMemo(() => {
+    const sourcePreset = useMemo<Preset>(() => {
         if (currentPreset?.widthMm && currentPreset?.heightMm) {
             const fit = Math.min(1, 190 / currentPreset.widthMm, 277 / currentPreset.heightMm);
             return {
-                id: currentPreset.id,
-                label: currentPreset.label,
+                id: currentPreset.id ?? "custom",
+                label: currentPreset.label ?? "Photo",
                 widthMm: Math.round(currentPreset.widthMm * fit * 10) / 10,
                 heightMm: Math.round(currentPreset.heightMm * fit * 10) / 10,
             };
