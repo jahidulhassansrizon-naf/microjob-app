@@ -77,6 +77,8 @@ function PointingHand({
   const labelRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const [layout, setLayout] = useState<HandLayout | null>(null);
   const [gone, setGone] = useState(false);
+  // The hand stays invisible until its position is measured, so it never flashes at the wrong spot.
+  const [ready, setReady] = useState(false);
 
   // Measure the chat box + message field relative to the wrapper.
   useEffect(() => {
@@ -133,9 +135,19 @@ function PointingHand({
       setGone(false);
       return;
     }
-    const timer = window.setTimeout(() => setGone(true), 350);
+    const timer = window.setTimeout(() => {
+      setGone(true);
+      setReady(false);
+    }, 350);
     return () => window.clearTimeout(timer);
   }, [dismissed]);
+
+  // Show the hand (fade in) only after the layout is measured and the page has settled.
+  useEffect(() => {
+    if (!layout || gone) return;
+    const timer = window.setTimeout(() => setReady(true), 500);
+    return () => window.clearTimeout(timer);
+  }, [layout, gone]);
 
   // Build the tour animation.
   useEffect(() => {
@@ -254,6 +266,8 @@ function PointingHand({
       W(p1.x, p1.y, 1, LEFT_TILT),
     ]);
     push(T, p1.x, p1.y, 1, 0, "linear", LEFT_TILT);
+    // Park the hand at its first position right away (before the animation starts).
+    hand.style.transform = tf(p1.x, p1.y, 1, 0, LEFT_TILT);
 
     const animations: Animation[] = [
       hand.animate(frames, { duration: T, iterations: Infinity }),
@@ -299,7 +313,10 @@ function PointingHand({
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-10 hidden fit:block"
-      style={{ opacity: dismissed ? 0 : 1, transition: "opacity 0.3s ease" }}
+      style={{
+        opacity: dismissed || !ready ? 0 : 1,
+        transition: "opacity 0.3s ease",
+      }}
     >
       {layout && (
         <>
