@@ -401,7 +401,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "11",
         name: "Document Scanner",
-        access: "paid",
+        access: "free",
         category: "General",
         bgColor: "bg-[#84cc16]",
         icon: DocumentScannerIcon,
@@ -410,7 +410,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "2",
         name: "Govt Job Photo & Sign Resizer",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#7c3aed]",
         icon: PhotoSignIcon,
@@ -418,7 +418,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "10",
         name: "Remove Background",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#16a34a]",
         icon: RemoveBackgroundIcon,
@@ -427,7 +427,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "20",
         name: "Lock / Unlock PDF",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#4338ca]",
         icon: LockUnlockPdfIcon,
@@ -435,7 +435,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "21",
         name: "PDF to Image",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#3b82f6]",
         icon: PdfToImageIcon,
@@ -443,7 +443,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "17",
         name: "Compress PDF",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#1cc2e6]",
         icon: CompressPdfIcon,
@@ -452,7 +452,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "18",
         name: "Merge PDFs",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#0eb2ed]",
         icon: MergePdfsIcon,
@@ -461,7 +461,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "12",
         name: "Image Size Reducer",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#4ade80]",
         icon: ImageSizeReducerIcon,
@@ -470,7 +470,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "27",
         name: "Image Upscaler",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#6366f1]",
         icon: ImageUpscalerIcon,
@@ -479,7 +479,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "25",
         name: "ATS Friendly CV Maker",
-        access: "paid",
+        access: "free",
         category: "General",
         bgColor: "bg-[#2563eb]",
         icon: AtsCvIcon,
@@ -509,7 +509,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "6",
         name: "Passport Joiner",
-        access: "paid",
+        access: "free",
         category: "General",
         bgColor: "bg-[#10b981]",
         icon: PassportJoinerIcon,
@@ -532,7 +532,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "9",
         name: "Reduce Video File Size",
-        access: "paid",
+        access: "free",
         category: "General",
         bgColor: "bg-[#7c3aed]",
         icon: ReduceVideoIcon,
@@ -542,7 +542,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "3",
         name: "Change Speed",
-        access: "paid",
+        access: "free",
         category: "Video",
         bgColor: "bg-[#10ca7e]",
         icon: ChangeSpeedIcon,
@@ -550,7 +550,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "4",
         name: "Add Watermark",
-        access: "paid",
+        access: "free",
         category: "Video",
         bgColor: "bg-[#06b6d4]",
         icon: AddWatermarkIcon,
@@ -558,7 +558,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "14",
         name: "Images to PDF",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#2563eb]",
         icon: ImagesToPdfIcon,
@@ -566,7 +566,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "15",
         name: "Image Convert",
-        access: "paid",
+        access: "free",
         category: "Image",
         bgColor: "bg-[#a855f7]",
         icon: ImageConvertIcon,
@@ -575,7 +575,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "16",
         name: "Image to Text",
-        access: "paid",
+        access: "free",
         category: "Text",
         bgColor: "bg-[#14b8a6]",
         icon: ImageToTextIcon,
@@ -584,7 +584,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "19",
         name: "Split PDF",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#2563eb]",
         icon: SplitPdfIcon,
@@ -592,7 +592,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "22",
         name: "Edit PDF",
-        access: "paid",
+        access: "free",
         category: "PDF",
         bgColor: "bg-[#2563EB]",
         icon: EditPdfIcon,
@@ -601,7 +601,7 @@ export const toolsData: ToolItem[] = [
     {
         id: "23",
         name: "Bijoy - Unicode",
-        access: "paid",
+        access: "free",
         category: "Text",
         bgColor: "bg-[#a3e635]",
         icon: BijoyUnicodeIcon,
@@ -708,7 +708,7 @@ function PremiumSeal({ compact = false }: { compact?: boolean }) {
         }}>
         <span className="seal-shine absolute inset-y-0 -left-full w-full bg-gradient-to-r from-transparent via-white/80 to-transparent"/>
         <span className="seal-glow absolute inset-0 rounded-full" style={{
-            background: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), transparent 60%)",
+            background: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.32), transparent 60%)",
         }}/>
       </span>
 
@@ -727,6 +727,45 @@ function PremiumSeal({ compact = false }: { compact?: boolean }) {
       <SealSparkle className={compact ? "-bottom-0.5 left-0.5" : "-bottom-1.5 left-0"} size={compact ? 4 : 7} delay="1.3s"/>
     </span>);
 }
+/* ------------------------------------------------------------------ */
+/*  FREE seal — ফ্রি টুলের জন্য স্পষ্ট, প্রিমিয়াম স্ট্যাম্প ব্যাজ          */
+/* ------------------------------------------------------------------ */
+function FreeSeal({ compact = false }: { compact?: boolean }) {
+    const { locale } = useI18n();
+    return (<span
+      title={locale === "bn" ? "ফ্রি টুল" : "Free tool"}
+      className={`absolute z-10 ${compact ? "right-1 top-1 h-8 w-8" : "right-2 top-2 h-10 w-10 sm:h-11 sm:w-11"}`}
+      style={{
+        transform: "rotate(9deg)",
+        filter: compact
+          ? "drop-shadow(0 1px 2px rgba(4,75,49,0.45)) drop-shadow(0 0 3px rgba(110,255,190,0.35))"
+          : "drop-shadow(0 2px 3px rgba(4,75,49,0.45)) drop-shadow(0 0 5px rgba(110,255,190,0.38))",
+      }}>
+      <span aria-hidden="true" className="absolute inset-0" style={{
+        clipPath: SEAL_CLIP,
+        background: "linear-gradient(145deg, #D1FAE5 0%, #34D399 27%, #047857 67%, #6EE7B7 100%)",
+      }}/>
+      <span aria-hidden="true" className={`absolute ${compact ? "inset-[2px]" : "inset-[2.5px]"} rounded-full`} style={{
+        background: "linear-gradient(145deg, #065F46 0%, #10B981 55%, #064E3B 100%)",
+      }}/>
+      <span aria-hidden="true" className={`absolute ${compact ? "inset-[4px]" : "inset-[4.5px]"} flex items-center justify-center overflow-hidden rounded-full`} style={{
+        background: "radial-gradient(circle at 30% 24%, #10B981 0%, #047857 54%, #064E3B 100%)",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.48), inset 0 -1px 2px rgba(2,44,34,0.45)",
+      }}>
+        <span aria-hidden="true" className="absolute inset-0 z-[1] flex items-center justify-center whitespace-nowrap font-black uppercase text-white" style={{
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: compact ? "7.6px" : "9.2px",
+          letterSpacing: compact ? "-0.015em" : "0.005em",
+          lineHeight: 1,
+          fontWeight: 900,
+          WebkitTextStroke: "0.28px #064E3B",
+          textShadow: "0 1px 0 #064E3B, 0 0 2px rgba(0,30,20,0.9)",
+        }}>FREE</span>
+      </span>
+      <span className="sr-only"><T>{"Free"}</T></span>
+    </span>);
+}
+
 // একই টাইল ডিজাইন দুই পেজেই ব্যবহার হবে
 // Subscription access is read once per browser session and cached for all tiles.
 let subscriptionAccessPromise: Promise<boolean> | null = null;
@@ -831,7 +870,7 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, }: {
         {/* The paid/premium seal disappears after an active subscription is detected. */}
         {showPaidSeal && <PremiumSeal compact={compact} />}
 
-        {tool.access === "free" && (<span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs bg-emerald-600"><T>{"free\n          "}</T></span>)}
+        {tool.access !== "paid" && <FreeSeal compact={compact} />}
 
         {IconComponent && (<IconComponent size={compact ? 52 : 72} className={`text-[#ffffff] stroke-[1.75]${touchCompact ? " h-[52px]! w-[52px]! fit:h-[72px]! fit:w-[72px]!" : ""}`}/>)}
       </div>

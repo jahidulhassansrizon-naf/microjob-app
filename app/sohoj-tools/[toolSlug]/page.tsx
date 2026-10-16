@@ -1,37 +1,11 @@
 import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import {
-  getUserIdFromToken,
-  hasActiveSubscription,
-} from "../../api/_lib/requireActiveSubscription";
+import { getUserIdFromToken } from "../../api/_lib/requireActiveSubscription";
 import nextDynamic from "next/dynamic";
 import DashboardNavbar from "../../dashboard/_components/DashboardNavbar";
 
 export const dynamic = "force-dynamic";
-
-const PAID_TOOL_SLUGS = new Set([
-  "document-scanner",
-  "govt-job-photo-sign-resizer",
-  "remove-background",
-  "lock-unlock-pdf",
-  "pdf-to-image",
-  "compress-pdf",
-  "merge-pdfs",
-  "image-size-reducer",
-  "image-upscaler",
-  "ats-friendly-cv-maker",
-  "passport-joiner",
-  "reduce-video-file-size",
-  "change-speed",
-  "add-watermark",
-  "images-to-pdf",
-  "image-convert",
-  "image-to-text",
-  "split-pdf",
-  "edit-pdf",
-  "bijoy-unicode",
-]);
 
 const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   "nid-joiner": nextDynamic(() => import("./_tools/NidToPdf")),
@@ -91,23 +65,13 @@ export default async function DynamicToolPage({
     notFound();
   }
 
-  // Every tool page requires a verified login, including tools marked free.
-  // The subscription check below remains limited to paid tools.
+  // Every tool page requires a verified login, but these 30 utility tools do not require a paid subscription.
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value ?? null;
   const userId = getUserIdFromToken(token);
 
   if (!userId) {
     redirect(`/login?callbackUrl=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
-  }
-
-  if (PAID_TOOL_SLUGS.has(toolSlug)) {
-    // Always re-check the database so an administrator can revoke access
-    // immediately rather than waiting for the short-lived access cookie to expire.
-    const activeSubscription = await hasActiveSubscription(userId);
-    if (!activeSubscription) {
-      redirect("/subscription");
-    }
   }
 
   const isNidCorrection = toolSlug === "nid-information-correction-form";

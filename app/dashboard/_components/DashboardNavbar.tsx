@@ -4,7 +4,6 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
 import {
   useEffect,
-  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -72,411 +71,129 @@ interface NavConfig {
     text: string;
     className: string;
   };
+  /** Round gold PRO badge (same look as the round FREE badge on tool cards). */
+  proBadge?: boolean;
   menu?: string[];
 }
 /* ------------------------------------------------------------------ */
-/* Custom navbar icons (illustrated, each one shows what the tool does) */
+/* Navbar icons: refined duotone line icons (24px grid, thin round    */
+/* strokes + a soft tinted fill). No colored boxes, no gradients -    */
+/* the restrained style premium products use.                         */
 /* ------------------------------------------------------------------ */
 type NavIcon = (props: { size?: number; className?: string }) => ReactElement;
 
-function useSvgId(prefix: string) {
-  return `${prefix}${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
-}
-
-function Grad({ id, from, to }: { id: string; from: string; to: string }) {
-  return (
-    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stopColor={from} />
-      <stop offset="1" stopColor={to} />
-    </linearGradient>
-  );
-}
-
-const SVG_COMMON = {
-  viewBox: "0 0 32 32",
+const GLYPH = {
+  viewBox: "0 0 24 24",
   fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
   "aria-hidden": true,
 } as const;
+/** Soft tinted fill used for the "second tone" of each icon. */
+const DUO = { fill: "currentColor", fillOpacity: 0.18 } as const;
+const DUO_STRONG = { fill: "currentColor", fillOpacity: 0.38 } as const;
 
-/* My Files - open folder with documents inside */
-const MyFilesIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("mf");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#F59E0B" to="#C2410C" />
-        <Grad id={`${u}f`} from="#FDE68A" to="#F59E0B" />
-      </defs>
-      <path
-        d="M3 8.5A2.5 2.5 0 0 1 5.5 6h6.6a2.5 2.5 0 0 1 1.8.75L16 9h10.5A2.5 2.5 0 0 1 29 11.5v13a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24.5v-16z"
-        fill={`url(#${u}b)`}
-      />
-      <rect
-        x="6.5"
-        y="8.5"
-        width="16"
-        height="11"
-        rx="1.5"
-        fill="#fff"
-        transform="rotate(-4 14.5 14)"
-      />
-      <rect x="9" y="7.5" width="16.5" height="11.5" rx="1.5" fill="#EFF6FF" />
-      <path
-        d="M12 10.6h9M12 12.9h6"
-        stroke="#93C5FD"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M3 17A2.5 2.5 0 0 1 5.5 14.5h21A2.5 2.5 0 0 1 29 17v7.5a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24.5V17z"
-        fill={`url(#${u}f)`}
-      />
-      <path d="M5.5 15.1h21" stroke="#fff" strokeOpacity=".6" />
-    </svg>
-  );
-};
+/* My Files - folder */
+const MyFilesIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path
+      {...DUO}
+      d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5z"
+    />
+    <path d="M3 11h18" />
+  </svg>
+);
 
-/* AI Editor - photo with magic sparkles */
-const AIEditorIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("ai");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#A78BFA" to="#6D28D9" />
-        <Grad id={`${u}g`} from="#FEF08A" to="#F59E0B" />
-      </defs>
-      <rect x="3" y="6" width="22" height="21" rx="4.5" fill={`url(#${u}b)`} />
-      <rect
-        x="5.5"
-        y="8.5"
-        width="17"
-        height="16"
-        rx="2.5"
-        fill="#fff"
-        fillOpacity=".16"
-      />
-      <circle cx="10.5" cy="14" r="2" fill="#FEF08A" />
-      <path
-        d="M5.5 24.5l6-7 4 4.2 3-3.2 4.5 6z"
-        fill="#fff"
-        fillOpacity=".92"
-      />
-      <path
-        d="M24 2.5l1.9 5.1 5.1 1.9-5.1 1.9L24 16.5l-1.9-5.1L17 9.5l5.1-1.9z"
-        fill={`url(#${u}g)`}
-        stroke="#fff"
-        strokeWidth=".8"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-};
+/* AI Editor - photo with a sparkle */
+const AIEditorIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path
+      {...DUO}
+      d="M20 12v5.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11A2.5 2.5 0 0 1 6.5 4H12"
+    />
+    <path d="m4 16 4.5-4.5 3.5 3.5 2-2 4.5 4.5" />
+    <circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
+    <path
+      fill="currentColor"
+      d="M18 2.6l.95 2.15 2.15.95-2.15.95L18 8.8l-.95-2.15-2.15-.95 2.15-.95z"
+    />
+  </svg>
+);
 
-/* Manual Editor - photo adjustments done by hand with a pencil */
-const ManualEditorIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("me");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}p`} from="#FB7185" to="#E11D48" />
-      </defs>
-      <rect
-        x="3"
-        y="5"
-        width="20"
-        height="21"
-        rx="3.5"
-        fill="#fff"
-        stroke="#E2E8F0"
-        strokeWidth="1.2"
-      />
-      <path
-        d="M7 11h12M7 17h12"
-        stroke="#E2E8F0"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <circle cx="15" cy="11" r="2.4" fill="#F43F5E" />
-      <circle cx="10" cy="17" r="2.4" fill="#F43F5E" />
-      <path
-        d="M7 22h6"
-        stroke="#E2E8F0"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <g transform="rotate(45 19 21)">
-        <rect x="16.5" y="6.8" width="5" height="2.2" rx="1" fill="#FDA4AF" />
-        <rect x="16.5" y="9" width="5" height="2.2" fill="#CBD5E1" />
-        <rect x="16.5" y="11.2" width="5" height="10.8" fill={`url(#${u}p)`} />
-        <path d="M16.5 22h5L19 29.5z" fill="#FDE2C0" />
-        <path d="M18 26.4h2L19 29.5z" fill="#334155" />
-      </g>
-    </svg>
-  );
-};
+/* Manual Editor - adjustment sliders */
+const ManualEditorIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path d="M4 7h8.6M17.4 7H20M4 17h2.6M11.4 17H20" />
+    <circle {...DUO_STRONG} cx="15" cy="7" r="2.4" />
+    <circle {...DUO_STRONG} cx="9" cy="17" r="2.4" />
+  </svg>
+);
 
-/* Bulk Photo Edit - a stack of many photos */
-const BulkPhotoIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("bp");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#34D399" to="#047857" />
-      </defs>
-      <rect
-        x="8"
-        y="3"
-        width="19"
-        height="15"
-        rx="3"
-        fill="#6EE7B7"
-        transform="rotate(8 17.5 10.5)"
-      />
-      <rect
-        x="5"
-        y="5.5"
-        width="19"
-        height="15"
-        rx="3"
-        fill="#A7F3D0"
-        transform="rotate(-6 14.5 13)"
-      />
-      <rect x="4" y="11" width="22" height="17" rx="3.5" fill={`url(#${u}b)`} />
-      <rect
-        x="6"
-        y="13"
-        width="18"
-        height="13"
-        rx="2"
-        fill="#fff"
-        fillOpacity=".18"
-      />
-      <circle cx="10.5" cy="17.5" r="1.8" fill="#FEF08A" />
-      <path
-        d="M6 26l5-6 3.5 3.5 2.5-3 6.5 5.5z"
-        fill="#fff"
-        fillOpacity=".92"
-      />
-      <circle cx="25.5" cy="24.5" r="4.6" fill="#fff" />
-      <circle cx="25.5" cy="24.5" r="3.6" fill="#10B981" />
-      <path
-        d="M25.5 22.7v3.6M23.7 24.5h3.6"
-        stroke="#fff"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
+/* Bulk Photo Edit - stack of photos */
+const BulkPhotoIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path d="M7 4.5h11.5A2.5 2.5 0 0 1 21 7v11.5" />
+    <rect {...DUO} x="3" y="7.5" width="15" height="13" rx="2.5" />
+    <circle cx="7.8" cy="12" r="1.2" fill="currentColor" stroke="none" />
+    <path d="m3.5 18 4.2-4 3 2.8 2.3-2.3 4.5 3.5" />
+  </svg>
+);
 
-/* AI Template - ready-made layout with sparkle */
-const AITemplateIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("at");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}h`} from="#818CF8" to="#4F46E5" />
-        <Grad id={`${u}g`} from="#FEF08A" to="#F59E0B" />
-      </defs>
-      <rect
-        x="4"
-        y="4"
-        width="22"
-        height="24"
-        rx="4"
-        fill="#fff"
-        stroke="#C7D2FE"
-        strokeWidth="1.2"
-      />
-      <path d="M4 8a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4v3H4z" fill={`url(#${u}h)`} />
-      <rect x="7" y="14" width="9" height="8" rx="1.5" fill="#E0E7FF" />
-      <path d="M7 22l3-3.5 2 2 1.5-1.5 2.5 3z" fill="#818CF8" />
-      <path
-        d="M19 14.5h4M19 17.5h4M7 25h10"
-        stroke="#C7D2FE"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M25 18.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"
-        fill={`url(#${u}g)`}
-        stroke="#fff"
-        strokeWidth=".8"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-};
+/* AI Template - ready-made layout */
+const AITemplateIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <rect {...DUO} x="3" y="3" width="18" height="18" rx="3" />
+    <path
+      {...DUO_STRONG}
+      stroke="none"
+      d="M3 9V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v3z"
+    />
+    <path d="M3 9h18M9.5 21V9" />
+  </svg>
+);
 
-/* Question Papers - exam paper with questions and options */
-const QuestionPaperIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("qp");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}r`} from="#F87171" to="#DC2626" />
-      </defs>
-      <path
-        d="M8 3h11.5L26 9.5V27a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
-        fill="#fff"
-        stroke="#E2E8F0"
-        strokeWidth="1.2"
-      />
-      <path d="M19.5 3v4.5a2 2 0 0 0 2 2H26z" fill="#FECACA" />
-      <circle cx="11.5" cy="13.5" r="3" fill={`url(#${u}r)`} />
-      <text
-        x="11.5"
-        y="15.6"
-        textAnchor="middle"
-        fontSize="5.2"
-        fontWeight="800"
-        fill="#fff"
-        fontFamily="Arial, sans-serif"
-      >
-        ?
-      </text>
-      <path
-        d="M17 12.5h6M17 15h4"
-        stroke="#CBD5E1"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <circle cx="11.5" cy="22" r="2.2" stroke="#F87171" strokeWidth="1.3" />
-      <path
-        d="M10.5 22l.8.9 1.5-1.7"
-        stroke="#DC2626"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 22h7"
-        stroke="#CBD5E1"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
+/* Question Papers - paper with a question mark */
+const QuestionPaperIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path
+      {...DUO}
+      d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z"
+    />
+    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+    <path d="M10 12.2a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.3" />
+    <path d="M12 17.8h.01" />
+  </svg>
+);
 
-/* Print Media - printer with paper coming out */
-const PrintMediaIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("pm");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#38BDF8" to="#0369A1" />
-      </defs>
-      <path
-        d="M9 3.5h11l3.5 3.5V12H9z"
-        fill="#fff"
-        stroke="#CBD5E1"
-        strokeWidth="1"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M11.5 7h6M11.5 9.5h8"
-        stroke="#CBD5E1"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-      <rect
-        x="3"
-        y="11"
-        width="26"
-        height="12.5"
-        rx="3.5"
-        fill={`url(#${u}b)`}
-      />
-      <rect
-        x="3"
-        y="11"
-        width="26"
-        height="4"
-        rx="3"
-        fill="#fff"
-        fillOpacity=".22"
-      />
-      <circle cx="24.5" cy="16.5" r="1.3" fill="#4ADE80" />
-      <rect
-        x="8"
-        y="19"
-        width="16"
-        height="10"
-        rx="1.5"
-        fill="#fff"
-        stroke="#CBD5E1"
-        strokeWidth="1"
-      />
-      <path
-        d="M11 22.5h10M11 25.5h6"
-        stroke="#93C5FD"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
+/* Print Media - printer */
+const PrintMediaIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path d="M7 9V3.5h10V9" />
+    <path
+      {...DUO}
+      d="M7 17H5.5A2.5 2.5 0 0 1 3 14.5v-3A2.5 2.5 0 0 1 5.5 9h13a2.5 2.5 0 0 1 2.5 2.5v3a2.5 2.5 0 0 1-2.5 2.5H17"
+    />
+    <rect x="7" y="14" width="10" height="6.5" rx="1" fill="#fff" />
+  </svg>
+);
 
 /* All Tools - toolbox */
-const AllToolsIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("at2");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#FB923C" to="#C2410C" />
-        <Grad id={`${u}l`} from="#FDBA74" to="#F97316" />
-      </defs>
-      <path
-        d="M11.5 11V8.5A2.5 2.5 0 0 1 14 6h4a2.5 2.5 0 0 1 2.5 2.5V11"
-        stroke="#9A3412"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <rect
-        x="3"
-        y="10.5"
-        width="26"
-        height="17"
-        rx="3.5"
-        fill={`url(#${u}b)`}
-      />
-      <path
-        d="M3 14a3.5 3.5 0 0 1 3.5-3.5h19A3.5 3.5 0 0 1 29 14v4H3z"
-        fill={`url(#${u}l)`}
-      />
-      <path d="M3 18h26" stroke="#9A3412" strokeOpacity=".35" />
-      <rect
-        x="12.5"
-        y="15.5"
-        width="7"
-        height="5.5"
-        rx="1.5"
-        fill="#FEF3C7"
-        stroke="#9A3412"
-        strokeWidth="1"
-      />
-      <circle cx="7.5" cy="23.5" r="1" fill="#FED7AA" />
-      <circle cx="24.5" cy="23.5" r="1" fill="#FED7AA" />
-    </svg>
-  );
-};
+const AllToolsIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <rect {...DUO} x="3" y="7.5" width="18" height="12.5" rx="2.5" />
+    <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5" />
+    <path d="M3 13h18M10.5 13v2h3v-2" />
+  </svg>
+);
 
 /* More - three dots */
-const MoreIcon: NavIcon = ({ size = 26, className }) => {
-  const u = useSvgId("mo");
-  return (
-    <svg {...SVG_COMMON} width={size} height={size} className={className}>
-      <defs>
-        <Grad id={`${u}b`} from="#94A3B8" to="#475569" />
-      </defs>
-      <rect x="3" y="3" width="26" height="26" rx="8" fill={`url(#${u}b)`} />
-      <circle cx="10" cy="16" r="2" fill="#fff" />
-      <circle cx="16" cy="16" r="2" fill="#fff" />
-      <circle cx="22" cy="16" r="2" fill="#fff" />
-    </svg>
-  );
-};
+const MoreIcon: NavIcon = ({ size = 22, className }) => (
+  <svg {...GLYPH} width={size} height={size} className={className}>
+    <path d="M6 12h.01M12 12h.01M18 12h.01" strokeWidth={3} />
+  </svg>
+);
 
 const aiTemplateItems = [
   "Motivational",
@@ -522,6 +239,7 @@ const NAV_ITEMS: NavConfig[] = [
     icon: AIEditorIcon,
     tone: "violet",
     match: "/ai-editor",
+    proBadge: true,
   },
   {
     id: "manual-editor",
@@ -543,6 +261,7 @@ const NAV_ITEMS: NavConfig[] = [
     icon: BulkPhotoIcon,
     tone: "emerald",
     match: "/bulk-photo-edit",
+    proBadge: true,
   },
   {
     id: "ai-template",
@@ -552,6 +271,7 @@ const NAV_ITEMS: NavConfig[] = [
     tone: "indigo",
     match: "/ai-template",
     menu: aiTemplateItems,
+    proBadge: true,
   },
   {
     id: "question-papers",
@@ -611,13 +331,25 @@ if (
 /* ------------------------------------------------------------------ */
 /* Small building blocks                                              */
 /* ------------------------------------------------------------------ */
+const ICON_TONES: Record<Tone, string> = {
+  blue: "text-blue-500",
+  violet: "text-violet-500",
+  pink: "text-pink-500",
+  emerald: "text-emerald-500",
+  indigo: "text-indigo-500",
+  red: "text-red-500",
+  amber: "text-amber-500",
+  cyan: "text-cyan-500",
+  orange: "text-orange-500",
+  slate: "text-slate-500",
+};
 function IconTile({ icon: Icon, tone }: { icon: NavIcon; tone: Tone }) {
   return (
     <span
       data-tone={tone}
-      className="flex h-[26px] w-[26px] shrink-0 items-center justify-center transition-transform duration-200 group-hover:scale-105"
+      className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center transition-transform duration-200 group-hover:scale-105 ${ICON_TONES[tone]}`}
     >
-      <Icon size={26} className="drop-shadow-[0_2px_2px_rgba(15,23,42,0.2)]" />
+      <Icon size={22} />
     </span>
   );
 }
@@ -640,17 +372,47 @@ function UpcomingFlag() {
     </span>
   );
 }
+
+/** Round gold PRO badge - same design as the round FREE badge on tool cards, in gold. */
+function ProBadge() {
+  return (
+    <span
+      role="img"
+      aria-label="Pro"
+      title="Pro"
+      className="relative inline-flex h-[24px] w-[24px] shrink-0 -rotate-[8deg] select-none items-center justify-center rounded-full shadow-[0_1px_3px_rgba(120,70,0,0.45)]"
+      style={{
+        background:
+          "radial-gradient(circle at 35% 25%, #E9B93F 0%, #B8800F 60%, #8A5A00 100%)",
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute inset-[1.5px] rounded-full border-[1.5px] border-dotted border-[#FFE9A0]"
+      />
+      <span
+        className="relative z-[1] text-[8px] font-black uppercase leading-none tracking-[0.02em] text-white"
+        style={{ textShadow: "0 1px 1px rgba(80,45,0,0.55)" }}
+      >
+        Pro
+      </span>
+    </span>
+  );
+}
 const itemBase =
   "group relative flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
 const itemActive =
-  "bg-blue-50 text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(191,219,254,0.9)]";
-const itemIdle = "text-slate-600 hover:bg-slate-50 hover:text-slate-900";
+  "bg-gradient-to-b from-[#3B82F6] via-[#2563EB] to-[#1D4ED8] text-white shadow-[inset_0_0_0_1px_rgba(233,185,63,0.55),inset_0_1px_0_rgba(255,255,255,0.28),0_8px_16px_-6px_rgba(29,78,216,0.55)] [&_[data-tone]]:text-white [&_.nav-chev]:text-blue-100 after:pointer-events-none after:absolute after:bottom-[2px] after:left-1/2 after:h-[2.5px] after:w-5 after:-translate-x-1/2 after:rounded-full after:bg-gradient-to-r after:from-[#F6D878] after:via-[#E9B93F] after:to-[#B8800F] after:content-['']";
+const itemIdle =
+  "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)]";
 function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
   return (
     <>
       <IconTile icon={item.icon} tone={item.tone} />
 
       <span>{<DT>{item.label}</DT>}</span>
+
+      {item.proBadge && <ProBadge />}
 
       {item.tag && (
         <span
@@ -671,7 +433,7 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
       {item.menu && (
         <ChevronDown
           size={13}
-          className={`-ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#1D4ED8]" : "text-slate-500"}`}
+          className={`nav-chev -ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-amber-300" : "text-slate-500"}`}
         />
       )}
     </>
@@ -793,7 +555,7 @@ function MoreMenu({
 
         <ChevronDown
           size={13}
-          className={`-ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#1D4ED8]" : "text-slate-500"}`}
+          className={`nav-chev -ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-amber-300" : "text-slate-500"}`}
         />
       </button>
 
@@ -830,6 +592,8 @@ function MoreMenu({
               <IconTile icon={item.icon} tone={item.tone} />
 
               <span className="flex-1">{<DT>{item.label}</DT>}</span>
+
+              {item.proBadge && <ProBadge />}
 
               {item.upcoming && (
                 <span className="rounded border-2 border-red-600 bg-white px-1.5 text-[10px] font-black uppercase leading-[14px] tracking-wider text-red-600">
@@ -949,7 +713,7 @@ export default function DashboardNavbar({
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   /* Responsive nav */
   const headerRef = useRef<HTMLElement>(null);
-  const leftRef = useRef<HTMLAnchorElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
@@ -1266,24 +1030,34 @@ export default function DashboardNavbar({
           {/* Left: Logo                                                   */}
           {/* ------------------------------------------------------------ */}
 
-          <Link
+          <div
             ref={leftRef}
-            href="/"
-            className="flex min-w-0 shrink items-center gap-2.5"
+            className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[14px] font-bold tracking-tight text-white">
-              SH
-            </div>
+            <Link href="/" className="flex min-w-0 shrink items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[14px] font-bold tracking-tight text-white">
+                SH
+              </div>
 
-            <div className="flex min-w-0 flex-col leading-none">
-              <span className="truncate text-[17px] font-bold tracking-tight text-slate-900 sm:text-[19px]">
-                <DT>{"Sohoj"}</DT>
-                <span className="text-[#2563EB]">
-                  <DT>{" Hub"}</DT>
+              <div className="flex min-w-0 flex-col leading-none">
+                <span className="truncate text-[17px] font-bold tracking-tight text-slate-900 sm:text-[19px]">
+                  <DT>{"Sohoj"}</DT>
+                  <span className="text-[#2563EB]">
+                    <DT>{" Hub"}</DT>
+                  </span>
                 </span>
-              </span>
-            </div>
-          </Link>
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard"
+              aria-label={t("Dashboard")}
+              title={t("Dashboard")}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 ${isActive("/dashboard") ? "border-blue-200 bg-blue-50 text-[#1D4ED8]" : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-[#1D4ED8]"}`}
+            >
+              <LayoutDashboard size={18} strokeWidth={2.1} />
+            </Link>
+          </div>
 
           {/* ------------------------------------------------------------ */}
           {/* Center: Navigation                                           */}
