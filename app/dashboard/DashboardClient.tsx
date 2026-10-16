@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
 import DashboardNavbar from "./_components/DashboardNavbar";
+import UserAdminChat from "./_components/UserAdminChat";
 import { getClientSession } from "@/lib/clientAuth";
 import { toolsData, ToolTile } from "@/app/_components/toolsData";
 import { prefetchMyFilesData } from "@/app/my-files/myFilesData";
@@ -445,6 +446,9 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
             <span>{L(BANNER_COPY.minutes)}</span>
           </p>
         </div>
+
+        {/* ---------- মাঝখান: সরাসরি অ্যাডমিনের সঙ্গে যোগাযোগ ---------- */}
+        <UserAdminChat />
 
         {/* ---------- ডান পাশ: এআই এডিটর কার্ড ---------- */}
         <div

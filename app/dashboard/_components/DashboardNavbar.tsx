@@ -2,29 +2,26 @@
 "use client";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  FolderOpen,
-  SlidersHorizontal,
-  PenTool,
-  Layers,
-  LayoutGrid,
-  FileText,
-  Printer,
-  Wrench,
   ChevronDown,
   Search,
   PanelRightOpen,
-  MoreHorizontal,
   LogOut,
   User as UserIcon,
   Settings,
   CreditCard,
   Command,
   LayoutDashboard,
-  type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "./DashboardSidebar";
 import { NAV_ITEM_COUNT } from "@/app/_components/PrePaintScript";
@@ -47,23 +44,23 @@ interface UserData {
 /* Config                                                             */
 /* ------------------------------------------------------------------ */
 const TONES = {
-  blue: "bg-blue-50 text-blue-600 ring-blue-100",
-  violet: "bg-violet-50 text-violet-600 ring-violet-100",
-  pink: "bg-pink-50 text-pink-600 ring-pink-100",
-  emerald: "bg-emerald-50 text-emerald-600 ring-emerald-100",
-  indigo: "bg-indigo-50 text-indigo-600 ring-indigo-100",
-  red: "bg-red-50 text-red-600 ring-red-100",
-  amber: "bg-amber-50 text-amber-600 ring-amber-100",
-  cyan: "bg-cyan-50 text-cyan-600 ring-cyan-100",
-  orange: "bg-orange-50 text-orange-600 ring-orange-100",
-  slate: "bg-slate-100 text-slate-600 ring-slate-200",
+  blue: "bg-blue-600 text-white",
+  violet: "bg-violet-600 text-white",
+  pink: "bg-pink-500 text-white",
+  emerald: "bg-emerald-600 text-white",
+  indigo: "bg-indigo-600 text-white",
+  red: "bg-red-500 text-white",
+  amber: "bg-amber-500 text-white",
+  cyan: "bg-cyan-600 text-white",
+  orange: "bg-orange-500 text-white",
+  slate: "bg-slate-500 text-white",
 } as const;
 type Tone = keyof typeof TONES;
 interface NavConfig {
   id: string;
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: NavIcon;
   tone: Tone;
   match: string;
   upcoming?: boolean;
@@ -77,6 +74,410 @@ interface NavConfig {
   };
   menu?: string[];
 }
+/* ------------------------------------------------------------------ */
+/* Custom navbar icons (illustrated, each one shows what the tool does) */
+/* ------------------------------------------------------------------ */
+type NavIcon = (props: { size?: number; className?: string }) => ReactElement;
+
+function useSvgId(prefix: string) {
+  return `${prefix}${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+}
+
+function Grad({ id, from, to }: { id: string; from: string; to: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stopColor={from} />
+      <stop offset="1" stopColor={to} />
+    </linearGradient>
+  );
+}
+
+const SVG_COMMON = {
+  viewBox: "0 0 32 32",
+  fill: "none",
+  "aria-hidden": true,
+} as const;
+
+/* My Files - open folder with documents inside */
+const MyFilesIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("mf");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#F59E0B" to="#C2410C" />
+        <Grad id={`${u}f`} from="#FDE68A" to="#F59E0B" />
+      </defs>
+      <path
+        d="M3 8.5A2.5 2.5 0 0 1 5.5 6h6.6a2.5 2.5 0 0 1 1.8.75L16 9h10.5A2.5 2.5 0 0 1 29 11.5v13a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24.5v-16z"
+        fill={`url(#${u}b)`}
+      />
+      <rect
+        x="6.5"
+        y="8.5"
+        width="16"
+        height="11"
+        rx="1.5"
+        fill="#fff"
+        transform="rotate(-4 14.5 14)"
+      />
+      <rect x="9" y="7.5" width="16.5" height="11.5" rx="1.5" fill="#EFF6FF" />
+      <path
+        d="M12 10.6h9M12 12.9h6"
+        stroke="#93C5FD"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M3 17A2.5 2.5 0 0 1 5.5 14.5h21A2.5 2.5 0 0 1 29 17v7.5a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24.5V17z"
+        fill={`url(#${u}f)`}
+      />
+      <path d="M5.5 15.1h21" stroke="#fff" strokeOpacity=".6" />
+    </svg>
+  );
+};
+
+/* AI Editor - photo with magic sparkles */
+const AIEditorIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("ai");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#A78BFA" to="#6D28D9" />
+        <Grad id={`${u}g`} from="#FEF08A" to="#F59E0B" />
+      </defs>
+      <rect x="3" y="6" width="22" height="21" rx="4.5" fill={`url(#${u}b)`} />
+      <rect
+        x="5.5"
+        y="8.5"
+        width="17"
+        height="16"
+        rx="2.5"
+        fill="#fff"
+        fillOpacity=".16"
+      />
+      <circle cx="10.5" cy="14" r="2" fill="#FEF08A" />
+      <path
+        d="M5.5 24.5l6-7 4 4.2 3-3.2 4.5 6z"
+        fill="#fff"
+        fillOpacity=".92"
+      />
+      <path
+        d="M24 2.5l1.9 5.1 5.1 1.9-5.1 1.9L24 16.5l-1.9-5.1L17 9.5l5.1-1.9z"
+        fill={`url(#${u}g)`}
+        stroke="#fff"
+        strokeWidth=".8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/* Manual Editor - photo adjustments done by hand with a pencil */
+const ManualEditorIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("me");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}p`} from="#FB7185" to="#E11D48" />
+      </defs>
+      <rect
+        x="3"
+        y="5"
+        width="20"
+        height="21"
+        rx="3.5"
+        fill="#fff"
+        stroke="#E2E8F0"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M7 11h12M7 17h12"
+        stroke="#E2E8F0"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="15" cy="11" r="2.4" fill="#F43F5E" />
+      <circle cx="10" cy="17" r="2.4" fill="#F43F5E" />
+      <path
+        d="M7 22h6"
+        stroke="#E2E8F0"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <g transform="rotate(45 19 21)">
+        <rect x="16.5" y="6.8" width="5" height="2.2" rx="1" fill="#FDA4AF" />
+        <rect x="16.5" y="9" width="5" height="2.2" fill="#CBD5E1" />
+        <rect x="16.5" y="11.2" width="5" height="10.8" fill={`url(#${u}p)`} />
+        <path d="M16.5 22h5L19 29.5z" fill="#FDE2C0" />
+        <path d="M18 26.4h2L19 29.5z" fill="#334155" />
+      </g>
+    </svg>
+  );
+};
+
+/* Bulk Photo Edit - a stack of many photos */
+const BulkPhotoIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("bp");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#34D399" to="#047857" />
+      </defs>
+      <rect
+        x="8"
+        y="3"
+        width="19"
+        height="15"
+        rx="3"
+        fill="#6EE7B7"
+        transform="rotate(8 17.5 10.5)"
+      />
+      <rect
+        x="5"
+        y="5.5"
+        width="19"
+        height="15"
+        rx="3"
+        fill="#A7F3D0"
+        transform="rotate(-6 14.5 13)"
+      />
+      <rect x="4" y="11" width="22" height="17" rx="3.5" fill={`url(#${u}b)`} />
+      <rect
+        x="6"
+        y="13"
+        width="18"
+        height="13"
+        rx="2"
+        fill="#fff"
+        fillOpacity=".18"
+      />
+      <circle cx="10.5" cy="17.5" r="1.8" fill="#FEF08A" />
+      <path
+        d="M6 26l5-6 3.5 3.5 2.5-3 6.5 5.5z"
+        fill="#fff"
+        fillOpacity=".92"
+      />
+      <circle cx="25.5" cy="24.5" r="4.6" fill="#fff" />
+      <circle cx="25.5" cy="24.5" r="3.6" fill="#10B981" />
+      <path
+        d="M25.5 22.7v3.6M23.7 24.5h3.6"
+        stroke="#fff"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
+
+/* AI Template - ready-made layout with sparkle */
+const AITemplateIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("at");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}h`} from="#818CF8" to="#4F46E5" />
+        <Grad id={`${u}g`} from="#FEF08A" to="#F59E0B" />
+      </defs>
+      <rect
+        x="4"
+        y="4"
+        width="22"
+        height="24"
+        rx="4"
+        fill="#fff"
+        stroke="#C7D2FE"
+        strokeWidth="1.2"
+      />
+      <path d="M4 8a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4v3H4z" fill={`url(#${u}h)`} />
+      <rect x="7" y="14" width="9" height="8" rx="1.5" fill="#E0E7FF" />
+      <path d="M7 22l3-3.5 2 2 1.5-1.5 2.5 3z" fill="#818CF8" />
+      <path
+        d="M19 14.5h4M19 17.5h4M7 25h10"
+        stroke="#C7D2FE"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M25 18.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"
+        fill={`url(#${u}g)`}
+        stroke="#fff"
+        strokeWidth=".8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+/* Question Papers - exam paper with questions and options */
+const QuestionPaperIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("qp");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}r`} from="#F87171" to="#DC2626" />
+      </defs>
+      <path
+        d="M8 3h11.5L26 9.5V27a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
+        fill="#fff"
+        stroke="#E2E8F0"
+        strokeWidth="1.2"
+      />
+      <path d="M19.5 3v4.5a2 2 0 0 0 2 2H26z" fill="#FECACA" />
+      <circle cx="11.5" cy="13.5" r="3" fill={`url(#${u}r)`} />
+      <text
+        x="11.5"
+        y="15.6"
+        textAnchor="middle"
+        fontSize="5.2"
+        fontWeight="800"
+        fill="#fff"
+        fontFamily="Arial, sans-serif"
+      >
+        ?
+      </text>
+      <path
+        d="M17 12.5h6M17 15h4"
+        stroke="#CBD5E1"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="11.5" cy="22" r="2.2" stroke="#F87171" strokeWidth="1.3" />
+      <path
+        d="M10.5 22l.8.9 1.5-1.7"
+        stroke="#DC2626"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 22h7"
+        stroke="#CBD5E1"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
+
+/* Print Media - printer with paper coming out */
+const PrintMediaIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("pm");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#38BDF8" to="#0369A1" />
+      </defs>
+      <path
+        d="M9 3.5h11l3.5 3.5V12H9z"
+        fill="#fff"
+        stroke="#CBD5E1"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11.5 7h6M11.5 9.5h8"
+        stroke="#CBD5E1"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <rect
+        x="3"
+        y="11"
+        width="26"
+        height="12.5"
+        rx="3.5"
+        fill={`url(#${u}b)`}
+      />
+      <rect
+        x="3"
+        y="11"
+        width="26"
+        height="4"
+        rx="3"
+        fill="#fff"
+        fillOpacity=".22"
+      />
+      <circle cx="24.5" cy="16.5" r="1.3" fill="#4ADE80" />
+      <rect
+        x="8"
+        y="19"
+        width="16"
+        height="10"
+        rx="1.5"
+        fill="#fff"
+        stroke="#CBD5E1"
+        strokeWidth="1"
+      />
+      <path
+        d="M11 22.5h10M11 25.5h6"
+        stroke="#93C5FD"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
+
+/* All Tools - toolbox */
+const AllToolsIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("at2");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#FB923C" to="#C2410C" />
+        <Grad id={`${u}l`} from="#FDBA74" to="#F97316" />
+      </defs>
+      <path
+        d="M11.5 11V8.5A2.5 2.5 0 0 1 14 6h4a2.5 2.5 0 0 1 2.5 2.5V11"
+        stroke="#9A3412"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <rect
+        x="3"
+        y="10.5"
+        width="26"
+        height="17"
+        rx="3.5"
+        fill={`url(#${u}b)`}
+      />
+      <path
+        d="M3 14a3.5 3.5 0 0 1 3.5-3.5h19A3.5 3.5 0 0 1 29 14v4H3z"
+        fill={`url(#${u}l)`}
+      />
+      <path d="M3 18h26" stroke="#9A3412" strokeOpacity=".35" />
+      <rect
+        x="12.5"
+        y="15.5"
+        width="7"
+        height="5.5"
+        rx="1.5"
+        fill="#FEF3C7"
+        stroke="#9A3412"
+        strokeWidth="1"
+      />
+      <circle cx="7.5" cy="23.5" r="1" fill="#FED7AA" />
+      <circle cx="24.5" cy="23.5" r="1" fill="#FED7AA" />
+    </svg>
+  );
+};
+
+/* More - three dots */
+const MoreIcon: NavIcon = ({ size = 26, className }) => {
+  const u = useSvgId("mo");
+  return (
+    <svg {...SVG_COMMON} width={size} height={size} className={className}>
+      <defs>
+        <Grad id={`${u}b`} from="#94A3B8" to="#475569" />
+      </defs>
+      <rect x="3" y="3" width="26" height="26" rx="8" fill={`url(#${u}b)`} />
+      <circle cx="10" cy="16" r="2" fill="#fff" />
+      <circle cx="16" cy="16" r="2" fill="#fff" />
+      <circle cx="22" cy="16" r="2" fill="#fff" />
+    </svg>
+  );
+};
+
 const aiTemplateItems = [
   "Motivational",
   "Creative Shots",
@@ -110,7 +511,7 @@ const NAV_ITEMS: NavConfig[] = [
     id: "my-files",
     href: "/my-files",
     label: "My Files",
-    icon: FolderOpen,
+    icon: MyFilesIcon,
     tone: "blue",
     match: "/my-files",
   },
@@ -118,7 +519,7 @@ const NAV_ITEMS: NavConfig[] = [
     id: "ai-editor",
     href: "/ai-editor",
     label: "AI Editor",
-    icon: SlidersHorizontal,
+    icon: AIEditorIcon,
     tone: "violet",
     match: "/ai-editor",
   },
@@ -126,20 +527,20 @@ const NAV_ITEMS: NavConfig[] = [
     id: "manual-editor",
     href: "/manual-editor",
     label: "Manual Editor",
-    icon: PenTool,
+    icon: ManualEditorIcon,
     tone: "pink",
     match: "/manual-editor",
     accessTag: {
       text: "Free",
       className:
-        "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100",
+        "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15",
     },
   },
   {
     id: "bulk-photo-edit",
     href: "/bulk-photo-edit",
     label: "Bulk Photo Edit",
-    icon: Layers,
+    icon: BulkPhotoIcon,
     tone: "emerald",
     match: "/bulk-photo-edit",
   },
@@ -147,7 +548,7 @@ const NAV_ITEMS: NavConfig[] = [
     id: "ai-template",
     href: "/ai-template",
     label: "AI Template",
-    icon: LayoutGrid,
+    icon: AITemplateIcon,
     tone: "indigo",
     match: "/ai-template",
     menu: aiTemplateItems,
@@ -156,24 +557,24 @@ const NAV_ITEMS: NavConfig[] = [
     id: "question-papers",
     href: "/questions-create/create",
     label: "Question Papers",
-    icon: FileText,
+    icon: QuestionPaperIcon,
     tone: "red",
     match: "/questions-create",
     tag: {
       text: "New",
-      className: "bg-blue-50 text-[#1D4ED8] ring-1 ring-inset ring-blue-100",
+      className: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15",
     },
     accessTag: {
       text: "Free",
       className:
-        "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100",
+        "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15",
     },
   },
   {
     id: "print-media",
     href: "/print-media",
     label: "Print Media",
-    icon: Printer,
+    icon: PrintMediaIcon,
     tone: "cyan",
     match: "/print-media",
     upcoming: true,
@@ -183,7 +584,7 @@ const NAV_ITEMS: NavConfig[] = [
     id: "sohoj-tools",
     href: "/sohoj-tools",
     label: "All Tools",
-    icon: Wrench,
+    icon: AllToolsIcon,
     tone: "orange",
     match: "/sohoj-tools",
   },
@@ -210,27 +611,40 @@ if (
 /* ------------------------------------------------------------------ */
 /* Small building blocks                                              */
 /* ------------------------------------------------------------------ */
-function IconTile({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
+function IconTile({ icon: Icon, tone }: { icon: NavIcon; tone: Tone }) {
   return (
     <span
-      className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md ring-1 ring-inset ${TONES[tone]}`}
+      data-tone={tone}
+      className="flex h-[26px] w-[26px] shrink-0 items-center justify-center transition-transform duration-200 group-hover:scale-105"
     >
-      <Icon size={13} strokeWidth={2.1} />
+      <Icon size={26} className="drop-shadow-[0_2px_2px_rgba(15,23,42,0.2)]" />
     </span>
   );
 }
 function UpcomingFlag() {
   return (
-    <span className="pointer-events-none absolute right-0 top-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-semibold leading-[14px] text-slate-600">
-      <DT>{"Upcoming\n    "}</DT>
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 -rotate-[12deg] select-none items-center justify-center rounded-full border-[2.5px] border-red-600 bg-white/95 text-red-600"
+    >
+      <span className="absolute inset-[3px] rounded-full border border-red-600/80" />
+      <span className="relative flex flex-col items-center leading-none">
+        <span className="text-[9px] font-black uppercase tracking-[0.04em]">
+          Coming
+        </span>
+        <span className="my-[2px] h-px w-6 bg-red-600/80" />
+        <span className="text-[14px] font-black uppercase tracking-[0.04em]">
+          Soon
+        </span>
+      </span>
     </span>
   );
 }
 const itemBase =
-  "group flex items-center gap-1.5 rounded-xl px-1.5 py-1.5 whitespace-nowrap transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
+  "group relative flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2.5 whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
 const itemActive =
   "bg-blue-50 text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(191,219,254,0.9)]";
-const itemIdle = "text-slate-700 hover:bg-slate-100/80 hover:text-slate-950";
+const itemIdle = "text-slate-600 hover:bg-slate-50 hover:text-slate-900";
 function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
   return (
     <>
@@ -240,7 +654,7 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
 
       {item.tag && (
         <span
-          className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
+          className={`rounded px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
         >
           {item.tag.text}
         </span>
@@ -248,7 +662,7 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
 
       {item.accessTag && (
         <span
-          className={`rounded-full px-1.5 text-[9px] font-bold uppercase leading-[14px] ${item.accessTag.className}`}
+          className={`rounded px-1.5 text-[9px] font-semibold uppercase leading-[14px] ${item.accessTag.className}`}
         >
           <DT>{item.accessTag.text}</DT>
         </span>
@@ -330,12 +744,12 @@ function NavDropdown({
       </Link>
 
       {open && item.menu && (
-        <div className="absolute left-0 top-full z-[100] w-52 rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] font-medium shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
+        <div className="absolute left-0 top-full z-[100] w-52 rounded-xl border border-slate-200 bg-white p-1.5 text-[13px] font-medium shadow-[0_10px_30px_-10px_rgba(15,23,42,0.18)] animate-in fade-in duration-150">
           {item.menu.map((entry, index) => (
             <Link
               key={index}
               href={item.href}
-              className="block rounded-lg px-3 py-2 text-slate-600 transition-colors hover:bg-blue-50 hover:text-[#1D4ED8]"
+              className="block rounded-lg px-3 py-2 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >
               {entry}
             </Link>
@@ -372,7 +786,7 @@ function MoreMenu({
         onClick={() => setOpen(!open)}
         className={`${itemBase} cursor-pointer ${active || open ? itemActive : itemIdle}`}
       >
-        <IconTile icon={MoreHorizontal} tone="slate" />
+        <IconTile icon={MoreIcon} tone="slate" />
         <span>
           <DT>{"More"}</DT>
         </span>
@@ -384,7 +798,7 @@ function MoreMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] font-medium shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
+        <div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-1.5 text-[13px] font-medium shadow-[0_10px_30px_-10px_rgba(15,23,42,0.18)] animate-in fade-in duration-150">
           {items.map((item) => (
             <Link
               key={item.id}
@@ -410,7 +824,7 @@ function MoreMenu({
               className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
                 isActive(item.match)
                   ? "bg-blue-50 text-[#1D4ED8]"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <IconTile icon={item.icon} tone={item.tone} />
@@ -418,14 +832,14 @@ function MoreMenu({
               <span className="flex-1">{<DT>{item.label}</DT>}</span>
 
               {item.upcoming && (
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-semibold leading-[14px] text-slate-500">
-                  <DT>{"Upcoming\n                "}</DT>
+                <span className="rounded border-2 border-red-600 bg-white px-1.5 text-[10px] font-black uppercase leading-[14px] tracking-wider text-red-600">
+                  <DT>{"Coming Soon"}</DT>
                 </span>
               )}
 
               {item.tag && (
                 <span
-                  className={`rounded-full px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
+                  className={`rounded px-1.5 text-[10px] font-semibold leading-[15px] ${item.tag.className}`}
                 >
                   {item.tag.text}
                 </span>
@@ -433,7 +847,7 @@ function MoreMenu({
 
               {item.accessTag && (
                 <span
-                  className={`rounded-full px-1.5 text-[9px] font-bold uppercase leading-[14px] ${item.accessTag.className}`}
+                  className={`rounded px-1.5 text-[9px] font-semibold uppercase leading-[14px] ${item.accessTag.className}`}
                 >
                   <DT>{item.accessTag.text}</DT>
                 </span>
@@ -833,9 +1247,9 @@ export default function DashboardNavbar({
   const menuSetter = (id: string) => (v: boolean) =>
     setOpenMenu((cur) => (v ? id : cur === id ? null : cur));
   const iconButton =
-    "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
+    "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 outline-none transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30";
   const profileLinkClass =
-    "flex items-center gap-2.5 rounded-lg px-3 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950";
+    "flex items-center gap-2.5 rounded-lg px-3 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900";
   return (
     <>
       {/* স্কেল চালু থাকলে এই র‍্যাপার স্কেল-করা উচ্চতা ধরে রাখে ও sticky থাকে */}
@@ -846,7 +1260,7 @@ export default function DashboardNavbar({
       >
         <header
           ref={headerRef}
-          className={`${scaleWithZoom ? "nav-zoom-header " : ""}sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200/70 bg-white/80 px-3 shadow-[0_1px_3px_rgba(15,23,42,0.04)] backdrop-blur-xl sm:gap-3 sm:px-6`}
+          className={`${scaleWithZoom ? "nav-zoom-header " : ""}sticky top-0 z-50 flex h-16 w-full items-center justify-between gap-2 border-b border-slate-200 bg-white/90 px-3 shadow-sm backdrop-blur-md sm:gap-3 sm:px-6`}
         >
           {/* ------------------------------------------------------------ */}
           {/* Left: Logo                                                   */}
@@ -857,18 +1271,17 @@ export default function DashboardNavbar({
             href="/"
             className="flex min-w-0 shrink items-center gap-2.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-[15px] font-extrabold text-white shadow-[0_4px_12px_-2px_rgba(37,99,235,0.45)] ring-1 ring-inset ring-white/25">
-              <DT>{"SK\n            "}</DT>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB] text-[14px] font-bold tracking-tight text-white">
+              SH
             </div>
 
             <div className="flex min-w-0 flex-col leading-none">
-              <span className="truncate text-[17px] font-extrabold tracking-tight text-[#0F172A] sm:text-[19px]">
+              <span className="truncate text-[17px] font-bold tracking-tight text-slate-900 sm:text-[19px]">
                 <DT>{"Sohoj"}</DT>
                 <span className="text-[#2563EB]">
                   <DT>{" Hub"}</DT>
                 </span>
               </span>
-
             </div>
           </Link>
 
@@ -909,7 +1322,7 @@ export default function DashboardNavbar({
 
                 <div className="flex shrink-0 items-center">
                   <div className={itemBase}>
-                    <IconTile icon={MoreHorizontal} tone="slate" />
+                    <IconTile icon={MoreIcon} tone="slate" />
 
                     <span>
                       <DT>{"More"}</DT>
@@ -977,13 +1390,13 @@ export default function DashboardNavbar({
             className="flex shrink-0 items-center gap-1.5 sm:gap-2"
           >
             {/* Language switcher */}
-            <div className="hidden shrink-0 items-center rounded-xl bg-slate-100/90 p-0.5 text-xs font-semibold ring-1 ring-inset ring-slate-200/60 min-[1900px]:inline-flex">
+            <div className="hidden shrink-0 items-center rounded-lg bg-slate-100 p-0.5 text-xs font-semibold min-[1900px]:inline-flex">
               <button
                 type="button"
                 onClick={() => changeLanguage("EN")}
                 className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
                   locale === "en"
-                    ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                    ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -995,7 +1408,7 @@ export default function DashboardNavbar({
                 onClick={() => changeLanguage("BN")}
                 className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
                   locale === "bn"
-                    ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                    ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -1023,7 +1436,7 @@ export default function DashboardNavbar({
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 aria-haspopup="true"
                 aria-expanded={dropdownOpen}
-                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white py-1 pl-1 pr-1 text-left shadow-sm outline-none transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white py-1 pl-1 pr-1 text-left outline-none transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:pr-2"
               >
                 <div className="user-avatar-bg flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold uppercase text-white">
                   {user?.profileImageUrl ? (
@@ -1077,7 +1490,7 @@ export default function DashboardNavbar({
               {/* -------------------------------------------------------- */}
 
               {dropdownOpen && (
-                <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200/70 bg-white p-2 text-[13px] shadow-[0_20px_50px_-15px_rgba(15,23,42,0.3)] ring-1 ring-black/[0.02] animate-in fade-in duration-150">
+                <div className="absolute right-0 z-[100] mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-1.5 text-[13px] shadow-[0_10px_30px_-10px_rgba(15,23,42,0.18)] animate-in fade-in duration-150">
                   {/* User info */}
                   <div className="mb-1 border-b border-slate-100 px-3 pb-2.5 pt-2">
                     <p className="truncate font-semibold text-[#0F172A]">
@@ -1101,7 +1514,7 @@ export default function DashboardNavbar({
                         onClick={() => changeLanguage("EN")}
                         className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
                           locale === "en"
-                            ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                            ? "bg-white text-slate-900 shadow-sm"
                             : "text-slate-600 hover:text-slate-900"
                         }`}
                       >
@@ -1113,7 +1526,7 @@ export default function DashboardNavbar({
                         onClick={() => changeLanguage("BN")}
                         className={`cursor-pointer rounded-md px-2.5 py-1 transition-all duration-150 ${
                           locale === "bn"
-                            ? "bg-white text-[#1D4ED8] shadow-sm ring-1 ring-slate-200/70"
+                            ? "bg-white text-slate-900 shadow-sm"
                             : "text-slate-600 hover:text-slate-900"
                         }`}
                       >
@@ -1210,7 +1623,7 @@ export default function DashboardNavbar({
             onClick={() => setIsSearchOpen(false)}
           />
 
-          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_30px_70px_-15px_rgba(15,23,42,0.4)]">
+          <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.35)]">
             {/* Input row */}
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
               <Search size={18} className="shrink-0 text-[#2563EB]" />

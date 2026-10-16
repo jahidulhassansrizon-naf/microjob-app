@@ -67,3 +67,6 @@ playwright-service/gemini-session.json
 # AI template ZIP files
 
 playwright-service/node_modules/public/ai-template-images/*.zip
+
+# Large local template archive
+/public/ai-template-images.zip

@@ -22,6 +22,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  MessageCircle,
   ReceiptText,
   RefreshCw,
   Search,
@@ -30,8 +31,9 @@ import {
   X,
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
+import AdminChatsPanel from "./_components/AdminChatsPanel";
 
-type TabKey = "overview" | "users" | "subscriptions";
+type TabKey = "overview" | "users" | "subscriptions" | "chats";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -339,6 +341,8 @@ export default function AdminDashboardClient() {
   const [refreshing, setRefreshing] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [hoverBar, setHoverBar] = useState<number | null>(null);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const [chatRefreshKey, setChatRefreshKey] = useState(0);
 
   const [userSearch, setUserSearch] = useState("");
   const [appliedUserSearch, setAppliedUserSearch] = useState("");
@@ -369,6 +373,31 @@ export default function AdminDashboardClient() {
     useState<ApiPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
 
   const authHeaders = useCallback(() => getClientAuthHeaders(), []);
+
+  useEffect(() => {
+    if (!authorized) return;
+    let active = true;
+    const refreshUnreadCount = async () => {
+      try {
+        const response = await fetch("/api/admin/chats?summary=1", {
+          credentials: "include",
+          cache: "no-store",
+          headers: authHeaders(),
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (active) setChatUnreadCount(Number(data?.unreadTotal || 0));
+      } catch {
+        // A missed badge refresh must not disrupt the admin dashboard.
+      }
+    };
+    void refreshUnreadCount();
+    const interval = window.setInterval(() => void refreshUnreadCount(), 10_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authorized, authHeaders]);
 
   const loadOverview = useCallback(
     async (quiet = false) => {
@@ -738,22 +767,31 @@ export default function AdminDashboardClient() {
   const activeCount = overview?.stats.activeNow || 0;
   const navItems = useMemo(
     () => [
-      { key: "overview" as const, label: "Overview", icon: LayoutDashboard },
-      { key: "users" as const, label: "Users", icon: Users },
+      { key: "overview" as const, label: "Overview", icon: LayoutDashboard, badgeCount: 0 },
+      { key: "users" as const, label: "Users", icon: Users, badgeCount: 0 },
       {
         key: "subscriptions" as const,
         label: "Subscriptions",
         icon: CreditCard,
+        badgeCount: 0,
+      },
+      {
+        key: "chats" as const,
+        label: "User Chats",
+        icon: MessageCircle,
+        badgeCount: chatUnreadCount,
       },
     ],
-    [],
+    [chatUnreadCount],
   );
   const pageTitle =
     tab === "overview"
       ? "Platform overview"
       : tab === "users"
         ? "User management"
-        : "Subscription management";
+        : tab === "subscriptions"
+          ? "Subscription management"
+          : "User chats";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -765,6 +803,7 @@ export default function AdminDashboardClient() {
     if (tab === "users") await loadUsers(userPagination.page);
     else if (tab === "subscriptions")
       await loadSubscriptions(subscriptionPagination.page);
+    else if (tab === "chats") setChatRefreshKey((current) => current + 1);
     else await loadOverview();
     setRefreshing(false);
   };
@@ -1215,7 +1254,7 @@ export default function AdminDashboardClient() {
             Workspace
           </div>
           <div className="space-y-0.5">
-            {navItems.map(({ key, label, icon: Icon }) => {
+            {navItems.map(({ key, label, icon: Icon, badgeCount }) => {
               const on = tab === key;
               return (
                 <button
@@ -1232,7 +1271,12 @@ export default function AdminDashboardClient() {
                     strokeWidth={1.8}
                     className={on ? "text-indigo-600" : "text-slate-400"}
                   />
-                  <span>{label}</span>
+                  <span className="min-w-0 flex-1">{label}</span>
+                  {badgeCount > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+                      {badgeCount > 99 ? "99+" : badgeCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -1806,6 +1850,8 @@ export default function AdminDashboardClient() {
               />
             </section>
           )}
+
+          {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
 
           {accessModalUser && (
             <div
