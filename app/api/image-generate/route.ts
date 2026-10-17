@@ -18,33 +18,12 @@ const RENDER_KEY = process.env.GEMINI_RENDER_KEY || "";
 
 const REQUEST_TIMEOUT_MS = 330_000;
 
-let geminiQueue: Promise<void> = Promise.resolve();
-
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
 
   return "Gemini image generation failed.";
-}
-
-// One job at a time (the Render server also queues, this just avoids piling up).
-async function withGeminiQueue<T>(job: () => Promise<T>): Promise<T> {
-  const previousJob = geminiQueue;
-
-  let release!: () => void;
-
-  geminiQueue = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-
-  await previousJob;
-
-  try {
-    return await job();
-  } finally {
-    release();
-  }
 }
 
 function extractCloudinaryPublicId(imageUrl: string): string | null {
@@ -326,9 +305,9 @@ export async function POST(req: Request) {
 
     const source = await getSourceImage(formData, userId);
 
-    const image = await withGeminiQueue(() =>
-      callRenderService(source.blob, source.filename, prompt),
-    );
+    // Let each authenticated request reach the render service immediately.
+    // Concurrency is handled by isolated browser contexts in that service.
+    const image = await callRenderService(source.blob, source.filename, prompt);
 
     return NextResponse.json({
       success: true,

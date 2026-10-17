@@ -383,19 +383,42 @@ function getExtension(mimeType) {
   return ".png";
 }
 
-// Only one Gemini job runs at a time, because Render Free
-// has very little memory (512 MB).
-let editQueue = Promise.resolve();
+// Reuse one Chromium process while giving every generation its own isolated
+// browser context. This avoids serializing unrelated users and is substantially
+// lighter than starting a new Chromium process for every request.
+let generationBrowser = null;
+let generationBrowserPromise = null;
 
-function runInEditQueue(job) {
-  const result = editQueue.then(job, job);
+async function getGenerationBrowser() {
+  if (generationBrowser && generationBrowser.isConnected()) {
+    return generationBrowser;
+  }
 
-  editQueue = result.then(
-    () => {},
-    () => {},
-  );
+  if (!generationBrowserPromise) {
+    generationBrowserPromise = chromium
+      .launch({
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+        ],
+      })
+      .then((browser) => {
+        generationBrowser = browser;
+        browser.on("disconnected", () => {
+          if (generationBrowser === browser) {
+            generationBrowser = null;
+          }
+        });
+        return browser;
+      })
+      .finally(() => {
+        generationBrowserPromise = null;
+      });
+  }
 
-  return result;
+  return generationBrowserPromise;
 }
 
 // --------------------------------------------------
@@ -409,20 +432,12 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
     throw new Error("Session file not found on server.");
   }
 
-  let browser = null;
+  let context = null;
   let page = null;
 
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-    });
-
-    const context = await browser.newContext({
+    const browser = await getGenerationBrowser();
+    context = await browser.newContext({
       storageState: sessionFile,
       viewport: { width: 1440, height: 900 },
       acceptDownloads: true,
@@ -574,8 +589,8 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
 
     throw new Error(`${message}${pageInfo}`);
   } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
+    if (context) {
+      await context.close().catch(() => {});
     }
   }
 }
@@ -596,20 +611,12 @@ async function generateTemplateWithGemini(
     throw new Error("Session file not found on server.");
   }
 
-  let browser = null;
+  let context = null;
   let page = null;
 
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-    });
-
-    const context = await browser.newContext({
+    const browser = await getGenerationBrowser();
+    context = await browser.newContext({
       storageState: sessionFile,
       viewport: {
         width: 1440,
@@ -769,8 +776,8 @@ async function generateTemplateWithGemini(
 
     throw new Error(`${message}${pageInfo}`);
   } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
+    if (context) {
+      await context.close().catch(() => {});
     }
   }
 }
@@ -952,9 +959,7 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
 
     await fs.writeFile(sourcePath, req.file.buffer);
 
-    const result = await runInEditQueue(() =>
-      generateWithGemini(sourcePath, prompt, tempDir),
-    );
+    const result = await generateWithGemini(sourcePath, prompt, tempDir);
 
     return res.json({
       success: true,
@@ -1068,8 +1073,11 @@ app.post(
 
       await fs.writeFile(userPath, userFile.buffer);
 
-      const result = await runInEditQueue(() =>
-        generateTemplateWithGemini(templatePath, userPath, prompt, tempDir),
+      const result = await generateTemplateWithGemini(
+        templatePath,
+        userPath,
+        prompt,
+        tempDir,
       );
 
       return res.json({
