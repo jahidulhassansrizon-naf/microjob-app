@@ -23,6 +23,7 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  MonitorPlay,
   ReceiptText,
   RefreshCw,
   Search,
@@ -32,8 +33,9 @@ import {
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
+import AdminLivePanel from "./_components/AdminLivePanel";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -343,6 +345,7 @@ export default function AdminDashboardClient() {
   const [hoverBar, setHoverBar] = useState<number | null>(null);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [chatRefreshKey, setChatRefreshKey] = useState(0);
+  const [liveRefreshKey, setLiveRefreshKey] = useState(0);
 
   const [userSearch, setUserSearch] = useState("");
   const [appliedUserSearch, setAppliedUserSearch] = useState("");
@@ -781,6 +784,12 @@ export default function AdminDashboardClient() {
         icon: MessageCircle,
         badgeCount: chatUnreadCount,
       },
+      {
+        key: "live" as const,
+        label: "Live",
+        icon: MonitorPlay,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -791,7 +800,9 @@ export default function AdminDashboardClient() {
         ? "User management"
         : tab === "subscriptions"
           ? "Subscription management"
-          : "User chats";
+          : tab === "chats"
+            ? "User chats"
+            : "Live screen activity";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -804,6 +815,7 @@ export default function AdminDashboardClient() {
     else if (tab === "subscriptions")
       await loadSubscriptions(subscriptionPagination.page);
     else if (tab === "chats") setChatRefreshKey((current) => current + 1);
+    else if (tab === "live") setLiveRefreshKey((current) => current + 1);
     else await loadOverview();
     setRefreshing(false);
   };
@@ -1852,6 +1864,7 @@ export default function AdminDashboardClient() {
           )}
 
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
+          {tab === "live" && <AdminLivePanel refreshKey={liveRefreshKey} />}
 
           {accessModalUser && (
             <div
