@@ -23,7 +23,6 @@ import {
   LogOut,
   Menu,
   MessageCircle,
-  MonitorPlay,
   ReceiptText,
   RefreshCw,
   Search,
@@ -623,130 +622,10 @@ export default function AdminDashboardClient() {
     loadSubscriptions,
   ]);
 
-  // Current page callbacks are kept in a ref so the admin WebSocket can stay
-  // connected while tabs, filters, and pagination change.
-  const livePresenceRefreshRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    livePresenceRefreshRef.current = () => {
-      void loadOverview(true);
-      if (tab === "users") {
-        void loadUsers(userPagination.page, appliedUserSearch, userStatus, true);
-      }
-    };
-  }, [
-    appliedUserSearch,
-    loadOverview,
-    loadUsers,
-    tab,
-    userPagination.page,
-    userStatus,
-  ]);
-
-  // Redis pub/sub broadcasts presence changes between separate Vercel Function
-  // instances. If Redis is not configured or briefly unavailable, the fallback
-  // refresh below still keeps the admin view current.
-  useEffect(() => {
-    if (!authorized) return;
-    let active = true;
-    let socket: WebSocket | null = null;
-    let reconnectTimer: number | null = null;
-    let keepaliveTimer: number | null = null;
-    let reconnectDelay = 1_000;
-    const sessionId = `admin-${window.crypto.randomUUID()}`;
-
-    const clearSocketTimers = () => {
-      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
-      if (keepaliveTimer !== null) window.clearInterval(keepaliveTimer);
-      reconnectTimer = null;
-      keepaliveTimer = null;
-    };
-
-    const scheduleReconnect = () => {
-      if (!active || reconnectTimer !== null) return;
-      reconnectTimer = window.setTimeout(() => {
-        reconnectTimer = null;
-        void connect();
-      }, reconnectDelay);
-      reconnectDelay = Math.min(reconnectDelay * 2, 15_000);
-    };
-
-    const connect = async () => {
-      if (!active) return;
-      try {
-        const response = await fetch("/api/auth/presence/ticket", {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            ...authHeaders(),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ sessionId }),
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!active) return;
-        // Push requires Redis pub/sub. The periodic database refresh handles
-        // deployments where REDIS_URL has not been configured yet.
-        if (!response.ok || data?.role !== "admin" || !data?.ticket || !data?.broadcastAvailable) {
-          return;
-        }
-
-        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const url = `${wsProtocol}//${window.location.host}/api/auth/presence/ws?ticket=${encodeURIComponent(data.ticket)}`;
-        const nextSocket = new WebSocket(url);
-        socket = nextSocket;
-
-        nextSocket.addEventListener("open", () => {
-          reconnectDelay = 1_000;
-          const ping = () => {
-            if (nextSocket.readyState === WebSocket.OPEN) nextSocket.send("ping");
-          };
-          ping();
-          keepaliveTimer = window.setInterval(ping, 15_000);
-        });
-
-        nextSocket.addEventListener("message", (event) => {
-          if (typeof event.data !== "string") return;
-          try {
-            const message = JSON.parse(event.data);
-            if (message?.type === "presence") {
-              livePresenceRefreshRef.current();
-            }
-          } catch {
-            // Ignore malformed or non-JSON messages.
-          }
-        });
-
-        nextSocket.addEventListener("close", () => {
-          if (socket === nextSocket) socket = null;
-          clearSocketTimers();
-          scheduleReconnect();
-        });
-
-        nextSocket.addEventListener("error", () => {
-          try {
-            nextSocket.close();
-          } catch {
-            // The close handler owns reconnect scheduling.
-          }
-        });
-      } catch {
-        scheduleReconnect();
-      }
-    };
-
-    void connect();
-    return () => {
-      active = false;
-      clearSocketTimers();
-      if (socket && socket.readyState < WebSocket.CLOSING) {
-        socket.close(1000, "Admin dashboard closed");
-      }
-    };
-  }, [authorized, authHeaders]);
-
-  // Fallback for a missed close event (for example, a sudden network outage)
-  // and for environments where Redis pub/sub is not configured.
+  // Portable polling replaces provider-specific WebSocket/Redis fan-out. The same
+  // authenticated API works in local Next.js, Vercel, and ordinary Node hosting.
+  // Refresh the overview from the current database-backed presence snapshot.
+  // Expired heartbeats disappear after the short lease window.
   useEffect(() => {
     if (!authorized) return;
     const interval = window.setInterval(() => {
@@ -787,7 +666,7 @@ export default function AdminDashboardClient() {
       {
         key: "live" as const,
         label: "Live",
-        icon: MonitorPlay,
+        icon: Activity,
         badgeCount: 0,
       },
     ],
@@ -802,7 +681,7 @@ export default function AdminDashboardClient() {
           ? "Subscription management"
           : tab === "chats"
             ? "User chats"
-            : "Live screen activity";
+            : "Live user activity";
 
   const selectTab = (next: TabKey) => {
     setTab(next);

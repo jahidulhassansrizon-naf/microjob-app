@@ -7,7 +7,7 @@ import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
-/** Returns current online browser sessions only; it does not create activity logs. */
+/** Returns online browser sessions and live-screen request state only; no activity details or history are returned. */
 export async function GET(request: Request) {
   const authorization = await requireAdmin(request);
   if (authorization.response) return authorization.response;
@@ -16,12 +16,26 @@ export async function GET(request: Request) {
     await connectDB();
     const now = new Date();
     const cutoff = new Date(now.getTime() - PRESENCE_STALE_AFTER_MS);
+
+    // Keep active user-approved LiveKit requests alive while the authenticated
+    // admin Live panel is polling. If the admin closes the panel, this lease
+    // stops refreshing and the user's share controller will disconnect it.
+    await PresenceSession.updateMany(
+      {
+        screenShareStatus: { $in: ["requested", "sharing"] },
+        screenShareAdminViewerId: { $ne: "" },
+        lastHeartbeatAt: { $gte: cutoff },
+        expiresAt: { $gt: now },
+      },
+      { $set: { screenShareLastViewerPingAt: now } },
+    );
+
     const sessions = await PresenceSession.find({
       lastHeartbeatAt: { $gte: cutoff },
       expiresAt: { $gt: now },
     })
       .sort({ lastHeartbeatAt: -1 })
-      .select("userId sessionId lastHeartbeatAt")
+      .select("userId sessionId lastHeartbeatAt screenShareStatus screenShareRequestId screenShareAdminViewerId")
       .limit(500)
       .lean();
 
@@ -45,6 +59,9 @@ export async function GET(request: Request) {
         phoneNumber: user.phoneNumber || "",
         profileImageUrl: user.profileImageUrl || "",
         lastHeartbeatAt: session.lastHeartbeatAt || null,
+        screenShareStatus: session.screenShareStatus || "idle",
+        screenShareRequestId: session.screenShareRequestId || "",
+        screenShareAdminViewerId: session.screenShareAdminViewerId || "",
       }];
     });
 

@@ -63,7 +63,13 @@
     "upscaler": "^1.0.0",
     "@vercel/functions": "^3.9.11",
     "ioredis": "^6.0.0",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-styles": "^1.2.0",
+    "livekit-client": "^2.23.0",
+    "livekit-server-sdk": "^2.19.1",
+    "@rrweb/record": "^2.1.7",
+    "@rrweb/replay": "^2.1.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
