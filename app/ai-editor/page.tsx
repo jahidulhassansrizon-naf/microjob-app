@@ -15,6 +15,7 @@ import CropStage from "./_components/CropStage";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
+import { submitAndWaitForAIImageJob } from "@/lib/aiImageJobClient";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 export default function PhotoEditorPage() {
@@ -914,7 +915,7 @@ export default function PhotoEditorPage() {
         let normalized: Awaited<ReturnType<typeof normalizeImageToExactPhysicalSize>> | null = null;
         const formData = new FormData();
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 180000);
+        const timeoutId = window.setTimeout(() => controller.abort(), 21 * 60 * 1000);
 
         try {
             prompt = buildAiEditingPrompt(payload);
@@ -927,21 +928,12 @@ export default function PhotoEditorPage() {
             }
             formData.append("prompt", prompt);
 
-            const response = await fetch("/api/image-generate", {
-                method: "POST",
-                body: formData,
-                signal: controller.signal,
-                cache: "no-store",
-            });
-            result = await response.json().catch(() => null);
-            if (!response.ok || !result?.success || typeof result.image !== "string") {
-                if (response.status === 403 && result?.code === "SUBSCRIPTION_REQUIRED") {
-                    window.dispatchEvent(new Event("sohozkaj:subscription-required"));
-                    throw new Error("SUBSCRIPTION_REQUIRED");
-                }
-                const message = result?.error || `AI image editing failed (${response.status}).`;
-                throw new Error(message);
-            }
+            const generatedImageUrl = await submitAndWaitForAIImageJob(
+                formData,
+                "ai-editor",
+                controller.signal,
+            );
+            result = { success: true, image: generatedImageUrl };
 
             const sizeType = resolvePayloadSizeType(payload);
             let cloudUrl: string | null;

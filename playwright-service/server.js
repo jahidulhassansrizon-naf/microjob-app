@@ -342,9 +342,11 @@ function requireApiKey(req, res, next) {
 
 function findSessionFile() {
   return [
+    process.env.GEMINI_SESSION_PATH,
     "/etc/secrets/gemini-session.json",
     path.join(__dirname, "gemini-session.json"),
-  ].find((p) => existsSync(p));
+    path.join(os.tmpdir(), "gemini-session.json"),
+  ].find((p) => p && existsSync(p));
 }
 
 function getMimeType(extension) {
@@ -849,10 +851,7 @@ app.get("/session-test", async (req, res) => {
   let browser = null;
 
   try {
-    const sessionFile = [
-      "/etc/secrets/gemini-session.json",
-      path.join(__dirname, "gemini-session.json"),
-    ].find((p) => existsSync(p));
+    const sessionFile = findSessionFile();
 
     if (!sessionFile) {
       return res.status(404).json({

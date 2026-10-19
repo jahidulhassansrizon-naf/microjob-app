@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/playwright:v1.63.0-noble
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+
+RUN npm ci --omit=dev
+
+COPY server.js worker.js ./
+
+ENV NODE_ENV=production
+ENV BOT_PORT=3000
+ENV DISPLAY=:99
+
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1440x900x24 -nolisten tcp >/tmp/xvfb.log 2>&1 & sleep 2; exec node worker.js"]

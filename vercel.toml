@@ -1,0 +1,8 @@
+#:schema https://openapi.vercel.sh/vercel.json
+
+[daemons.playwright]
+root = "playwright-service/"
+entrypoint = "Dockerfile"
+command = ["sh", "-c", "Xvfb :99 -screen 0 1440x900x24 -nolisten tcp >/tmp/xvfb.log 2>&1 & sleep 2; exec node worker.js"]
+instances.iad1 = 1
+terminationGracePeriodSeconds = 1800

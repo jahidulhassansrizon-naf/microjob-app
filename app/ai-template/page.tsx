@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "react-image-crop/dist/ReactCrop.css";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
+import { submitAndWaitForAIImageJob } from "@/lib/aiImageJobClient";
 import SubscriptionLock from "./components/SubscriptionLock";
 import {
   filterTemplates,
@@ -340,7 +341,7 @@ export default function AITemplatePage() {
     const timeoutId = window.setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, 180_000);
+    }, 21 * 60 * 1000);
 
     setIsGenerating(true);
     setGenerationError("");
@@ -379,21 +380,15 @@ export default function AITemplatePage() {
       ].join("\n");
       formData.append("prompt", templatePrompt);
 
-      const response = await fetch("/api/template-generate", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-      const data = await response.json().catch(() => null);
-      if (response.status === 403 && data?.code === "SUBSCRIPTION_REQUIRED") {
-        window.dispatchEvent(new Event("sohozkaj:subscription-required"));
-      }
-      if (!response.ok || !data?.success || !data.image)
-        throw new Error(data?.error || "Template image generation failed.");
+      const generatedImageUrl = await submitAndWaitForAIImageJob(
+        formData,
+        "ai-template",
+        controller.signal,
+      );
       if (generationAbortRef.current !== controller) return;
-      setGeneratedImage(data.image);
+      setGeneratedImage(generatedImageUrl);
       void persistGeneratedFile(
-        data.image,
+        generatedImageUrl,
         `${selectedTemplate.title || "AI Template"} · ${new Date().toISOString().slice(0, 10)}`,
         "ai-template-generated",
       );

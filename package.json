@@ -69,7 +69,8 @@
     "livekit-client": "^2.23.0",
     "livekit-server-sdk": "^2.19.1",
     "@rrweb/record": "^2.1.7",
-    "@rrweb/replay": "^2.1.7"
+    "@rrweb/replay": "^2.1.7",
+    "@vercel/queue": "^0.8.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

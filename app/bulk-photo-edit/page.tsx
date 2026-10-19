@@ -4,6 +4,7 @@ import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
+import { submitAndWaitForAIImageJob } from "@/lib/aiImageJobClient";
 import SubscriptionLock from "./components/SubscriptionLock";
 import BulkPhotoStage from "./components/BulkPhotoStage";
 import PhotoUploader from "./components/PhotoUploader";
@@ -44,14 +45,20 @@ const buildBulkPrompt = (selectedTools: SelectedTools) => {
         "Before returning the result, verify that every requested operation was applied and that no unselected edit was introduced.",
     ].join("\n");
 };
-const getDataUrlExtension = (dataUrl: string) => {
-    const match = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,/);
-    if (!match)
-        return "png";
-    const raw = match[1].toLowerCase();
-    if (raw === "jpeg")
-        return "jpg";
-    return raw === "webp" ? "webp" : "png";
+const getDataUrlExtension = (imageUrl: string) => {
+    const dataMatch = imageUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,/i);
+    let raw = dataMatch?.[1]?.toLowerCase() || "";
+    if (!raw) {
+        try {
+            const path = new URL(imageUrl, window.location.origin).pathname;
+            raw = path.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase() || "";
+        } catch {
+            raw = "";
+        }
+    }
+    if (raw === "jpeg") return "jpg";
+    if (["jpg", "png", "webp", "gif", "avif"].includes(raw)) return raw;
+    return "png";
 };
 const getBaseName = (fileName: string) => fileName.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-") || "photo";
 async function persistBulkResult(image: string, name: string) {
@@ -362,43 +369,26 @@ export default function BulkPhotoEditPage() {
                 const formData = new FormData();
                 formData.append("image", photo.file);
                 formData.append("prompt", prompt);
-                const response = await fetch("/api/image-generate", {
-                    method: "POST",
-                    body: formData,
-                });
-                const raw = await response.text();
-                let data: {
-                    success?: boolean;
-                    image?: string;
-                    error?: string;
-                    code?: string;
-                } = {};
-                try {
-                    data = JSON.parse(raw);
-                }
-                catch {
-                    throw new Error(`AI service returned an unreadable response (${response.status}).`);
-                }
-                if (!response.ok || !data.success || !data.image) {
-                    if (response.status === 403 && data.code === "SUBSCRIPTION_REQUIRED") {
-                        subscriptionBlocked = true;
-                        window.dispatchEvent(new Event("sohozkaj:subscription-required"));
-                    }
-                    throw new Error(data.error ||
-                        `AI editing failed for photo ${index + 1} (${response.status}).`);
-                }
+                const generatedImageUrl = await submitAndWaitForAIImageJob(
+                    formData,
+                    "bulk-photo-edit",
+                );
                 updatePhoto(photo.id, {
                     status: "success",
-                    resultUrl: data.image,
+                    resultUrl: generatedImageUrl,
                     error: null,
                 });
-                void persistBulkResult(data.image, `${getBaseName(photo.file.name)}-ai-edited`);
+                void persistBulkResult(generatedImageUrl, `${getBaseName(photo.file.name)}-ai-edited`);
                 successCount += 1;
             }
             catch (error) {
-                const errorMessage = error instanceof Error
+                const rawError = error instanceof Error
                     ? error.message
                     : "Unknown AI editing error.";
+                if (rawError === "SUBSCRIPTION_REQUIRED") subscriptionBlocked = true;
+                const errorMessage = subscriptionBlocked
+                    ? "An active subscription is required to use this feature."
+                    : rawError;
                 updatePhoto(photo.id, {
                     status: "error",
                     resultUrl: null,
@@ -435,16 +425,44 @@ export default function BulkPhotoEditPage() {
         selectedTools,
         updatePhoto,
     ]);
-    const downloadResult = useCallback((photo: PhotoItem) => {
-        if (!photo.resultUrl)
-            return;
+    const downloadResult = useCallback(async (photo: PhotoItem) => {
+        if (!photo.resultUrl) return;
+
         const extension = getDataUrlExtension(photo.resultUrl);
+        let downloadUrl = photo.resultUrl;
+        let objectUrl: string | null = null;
+
+        // Queue results are persisted Cloudinary URLs; fetch a blob when CORS permits
+        // so the requested filename is honored for cross-origin downloads.
+        if (/^https?:\/\//i.test(photo.resultUrl)) {
+            try {
+                const response = await fetch(photo.resultUrl, {
+                    cache: "no-store",
+                    mode: "cors",
+                });
+                if (response.ok) {
+                    objectUrl = URL.createObjectURL(await response.blob());
+                    downloadUrl = objectUrl;
+                }
+            } catch {
+                // Fallback below opens the stable image URL if cross-origin download is restricted.
+            }
+        }
+
         const anchor = document.createElement("a");
-        anchor.href = photo.resultUrl;
+        anchor.href = downloadUrl;
         anchor.download = `${getBaseName(photo.file.name)}-ai-edited.${extension}`;
+        if (!objectUrl) {
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+        }
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
+
+        if (objectUrl) {
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl!), 60_000);
+        }
     }, []);
     const retryFailedPhoto = useCallback(async (photoId: string) => {
         if (isProcessing || selectedTotal === 0)
@@ -460,41 +478,25 @@ export default function BulkPhotoEditPage() {
             const formData = new FormData();
             formData.append("image", photo.file);
             formData.append("prompt", prompt);
-            const response = await fetch("/api/image-generate", {
-                method: "POST",
-                body: formData,
-            });
-            const raw = await response.text();
-            let data: {
-                success?: boolean;
-                image?: string;
-                error?: string;
-                code?: string;
-            } = {};
-            try {
-                data = JSON.parse(raw);
-            }
-            catch {
-                throw new Error(`AI service returned an unreadable response (${response.status}).`);
-            }
-            if (!response.ok || !data.success || !data.image) {
-                if (response.status === 403 && data.code === "SUBSCRIPTION_REQUIRED") {
-                    window.dispatchEvent(new Event("sohozkaj:subscription-required"));
-                }
-                throw new Error(data.error || `AI editing failed (${response.status}).`);
-            }
+            const generatedImageUrl = await submitAndWaitForAIImageJob(
+                formData,
+                "bulk-photo-edit",
+            );
             updatePhoto(photo.id, {
                 status: "success",
-                resultUrl: data.image,
+                resultUrl: generatedImageUrl,
                 error: null,
             });
-            void persistBulkResult(data.image, `${getBaseName(photo.file.name)}-ai-edited`);
+            void persistBulkResult(generatedImageUrl, `${getBaseName(photo.file.name)}-ai-edited`);
             setMessage(`${photo.file.name} was edited successfully.`);
         }
         catch (error) {
-            const errorMessage = error instanceof Error
+            const rawError = error instanceof Error
                 ? error.message
                 : "Unknown AI editing error.";
+            const errorMessage = rawError === "SUBSCRIPTION_REQUIRED"
+                ? "An active subscription is required to use this feature."
+                : rawError;
             updatePhoto(photo.id, {
                 status: "error",
                 resultUrl: null,
