@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * heartbeat/polling, so tickets and provider-specific WebSocket upgrades are not needed.
  */
 export async function POST(_request: Request) {
-  const session = getVerifiedRequestSession(_request);
+  const session = getVerifiedRequestSession(request);
   if (!session) {
     return NextResponse.json({ success: false, message: "Please sign in." }, { status: 401 });
   }
