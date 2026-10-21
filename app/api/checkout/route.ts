@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
+import { SUBSCRIPTION_PLAN_BY_ID, type SubscriptionPlanId } from "@/app/_lib/subscriptionPlans";
 
 export const dynamic = "force-dynamic";
 
@@ -25,34 +26,7 @@ const APP_URL = (
   .trim()
   .replace(/\/+$/, "");
 
-const PLANS = {
-  "1-month": {
-    name: "1 Month",
-    months: 1,
-    days: 30,
-    amount: 350,
-  },
-  "3-month": {
-    name: "3 Months",
-    months: 3,
-    days: 90,
-    amount: 899,
-  },
-  "6-month": {
-    name: "6 Months",
-    months: 6,
-    days: 180,
-    amount: 1399,
-  },
-  "1-year": {
-    name: "1 Year",
-    months: 12,
-    days: 365,
-    amount: 2299,
-  },
-} as const;
-
-type PlanId = keyof typeof PLANS;
+type PlanId = SubscriptionPlanId;
 
 type JwtPayload = {
   userId: string;
@@ -106,7 +80,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const planId = body?.metadata?.plan_id as PlanId | undefined;
 
-    if (!planId || !(planId in PLANS)) {
+    if (!planId || !Object.prototype.hasOwnProperty.call(SUBSCRIPTION_PLAN_BY_ID, planId)) {
       return NextResponse.json(
         {
           success: false,
@@ -166,14 +140,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const plan = PLANS[planId];
+    const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
 
     const subscription = await Subscription.create({
       userId: user._id,
       planId,
       planName: plan.name,
       months: plan.months,
-      amount: plan.amount,
+      amount: plan.price,
       paymentStatus: "PENDING",
       accessStatus: "PENDING",
     });
@@ -185,7 +159,7 @@ export async function POST(request: Request) {
     const payload = {
       full_name: user.fullName,
       email: user.email,
-      amount: String(plan.amount),
+      amount: String(plan.price),
       metadata: {
         user_id: String(user._id),
         subscription_id: subscriptionId,
@@ -203,7 +177,7 @@ export async function POST(request: Request) {
     console.log("[Paymently] Checkout endpoint:", endpoint);
     console.log("[Paymently] Checkout plan:", {
       planId,
-      amount: plan.amount,
+      amount: plan.price,
       subscriptionId,
     });
 

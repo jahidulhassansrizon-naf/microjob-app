@@ -5,29 +5,13 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarCheck, CalendarClock, Check, Wallet } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import OfferVideo from "../_components/OfferVideo";
+import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
 
-/**
- * Subscription plans.
- * Update `price` and `months` to change pricing. Monthly cost and savings are calculated automatically.
- * The existing checkout API continues to handle payment.
- */
-const plans = [
-  { id: "1-month", name: "1 Month", duration: "30 Days", months: 1, price: 350, note: "Flexible monthly access", badge: null },
-  { id: "3-month", name: "3 Months", duration: "90 Days", months: 3, price: 899, note: "For regular users", badge: null },
-  { id: "6-month", name: "6 Months", duration: "180 Days", months: 6, price: 1399, note: "Longer access, less hassle", badge: "Most chosen" },
-  { id: "1-year", name: "1 Year", duration: "365 Days", months: 12, price: 2299, note: "Full-year access", badge: "Best value" },
-] as const;
-
-const features = [
-  "Access to all available paid tools",
-  "Use the same account across supported tools",
-  "Manage your subscription status from this page",
-  "Payment verification and subscription access are handled automatically",
-] as const;
-
-const BASE_MONTHLY = plans[0].price / plans[0].months;
+/* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
 const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
-const getSavings = (price: number, months: number) => Math.round((1 - price / (BASE_MONTHLY * months)) * 100);
+const getDiscount = (price: number, regularPrice: number) =>
+  Math.max(0, Math.round((1 - price / regularPrice) * 100));
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function getTiming(sub: { startedAt: string | null; expiresAt: string | null }) {
@@ -47,8 +31,16 @@ function getTiming(sub: { startedAt: string | null; expiresAt: string | null }) 
 const capitalize = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
 
 const SUBSCRIPTION_BN: Record<string, string> = {
+  "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
+  "launch offer: get 30 days of access to all paid tools at a special price. pay once; renew only when you want.": "লঞ্চ অফারে বিশেষ কম দামে ৩০ দিনের জন্য সব পেইড টুল ব্যবহার করুন। একবার পেমেন্ট করুন; চাইলে পরের মাসে নিজে থেকে নবায়ন করুন।",
+  "full access to all paid tools for 30 days": "৩০ দিনের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "regular price": "নিয়মিত মূল্য",
+  "/ 30 days": "/ ৩০ দিন",
+  "ai editor, ai template, and bulk photo edit are included": "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
+  "one-time payment": "একবারের পেমেন্ট",
+  "no auto-renewal": "স্বয়ংক্রিয় নবায়ন নেই",
+  "included with your subscription": "আপনার সাবস্ক্রিপশনে যা যা থাকছে",
   "choose your subscription plan": "আপনার সাবস্ক্রিপশনের প্ল্যান নির্বাচন করুন",
-  "pick the duration that suits you. the longer the plan, the lower your monthly cost.": "আপনার সুবিধামতো মেয়াদ বেছে নিন। মেয়াদ যত বেশি হবে, মাসিক খরচ তত কম হবে।",
   "current subscription": "বর্তমান সাবস্ক্রিপশন",
   "no active plan": "কোনো সক্রিয় প্ল্যান নেই",
   "choose a plan below to unlock all the paid tools.": "সব পেইড টুল ব্যবহার করতে নিচের যেকোনো একটি প্ল্যান বেছে নিন।",
@@ -59,7 +51,7 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "this plan ended on": "এই প্ল্যানের মেয়াদ শেষ হয়েছে",
   ". choose a plan below to renew.": "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
   "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
-  ". you can renew or switch to a longer plan anytime.": " পর্যন্ত। আপনি যেকোনো সময় নবায়ন করতে বা আরও দীর্ঘ মেয়াদের প্ল্যানে যেতে পারেন।",
+  ". you can renew for another month whenever you want.": " পর্যন্ত। চাইলে পরবর্তী মাসের জন্য আবার নবায়ন করতে পারবেন।",
   "amount paid": "পরিশোধিত অর্থ",
   started: "শুরুর তারিখ",
   ended: "মেয়াদ শেষ",
@@ -81,7 +73,6 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "billed monthly": "মাসিক বিল",
   "your selection": "আপনার নির্বাচন",
   total: "সর্বমোট",
-  "included with every plan": "প্রতিটি প্ল্যানে যা যা থাকছে",
   "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
   "use the same account across supported tools": "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
   "manage your subscription status from this page": "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
@@ -120,6 +111,18 @@ function translateSubscriptionText(
 
   let match = /^continue with (.+)$/i.exec(key);
   if (match) return `${translateSubscriptionText(match[1], locale, baseL)} নিয়ে এগিয়ে যান`;
+
+  match = /^save\s+(৳[\d,]+)\s*·\s*(\d+)%\s*off$/i.exec(key);
+  if (match) {
+    const banglaDigits = (value: string) => value.replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    return `${banglaDigits(match[1])} সাশ্রয় · ${banglaDigits(match[2])}% ছাড়`;
+  }
+
+  match = /^unlock 30-day access for (৳[\d,]+)$/i.exec(key);
+  if (match) {
+    const price = match[1].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    return `${price}-তে ৩০ দিনের অ্যাক্সেস নিন`;
+  }
 
   match = /^(৳[\d,]+)\s*\/\s*month$/i.exec(key);
   if (match) return `${match[1]} / মাস`;
@@ -166,7 +169,7 @@ export default function SubscriptionPage() {
   };
 
   const { t, locale } = useSubscriptionText();
-  const [selectedId, setSelectedId] = useState<string>("6-month");
+  const [selectedId, setSelectedId] = useState<string>("1-month");
   const [showNotice, setShowNotice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
@@ -254,13 +257,8 @@ export default function SubscriptionPage() {
       <DashboardNavbar />
       <main className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto">
         <div data-nav-content className="mx-auto my-auto flex w-full max-w-[1112px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]">
-          <section className="max-w-2xl">
-            <h1 className="text-[clamp(24px,3.8vh,36px)] font-semibold leading-tight tracking-tight text-[#0F172A]">
-              <T>{"Choose your subscription plan"}</T>
-            </h1>
-            <p className="mt-1.5 text-sm leading-6 text-slate-600 sm:text-[15px]">
-              <T>{"Pick the duration that suits you. The longer the plan, the lower your monthly cost."}</T>
-            </p>
+          <section aria-label={t("Subscription offer video")} className="w-full">
+            <OfferVideo src="/offervideo/offerwoman2.mp4" className="w-full" autoPlay />
           </section>
 
           <section aria-label={t("Current subscription")}>
@@ -330,7 +328,7 @@ export default function SubscriptionPage() {
                             <>
                               <T>{"Your access is active until"}</T>{" "}
                               <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
-                              <T>{". You can renew or switch to a longer plan anytime."}</T>
+                              <T>{". You can renew for another month whenever you want."}</T>
                             </>
                           )}
                         </p>
@@ -363,19 +361,22 @@ export default function SubscriptionPage() {
                   </div>
                 );
               })()
-            ) : (
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-semibold text-[#0F172A]"><T>{"No active plan"}</T></h2>
-                <p className="mt-1 text-sm text-slate-600"><T>{"Choose a plan below to unlock all the paid tools."}</T></p>
-              </div>
-            )}
+            ) : null}
           </section>
 
-          <section role="radiogroup" aria-label={t("Subscription plans")} className="grid grid-cols-1 gap-[clamp(10px,1.8vh,20px)] pt-3 sm:grid-cols-2 lg:grid-cols-4">
+          <section aria-label={t("Continue to payment")} className="flex w-full flex-col items-center justify-center gap-3 py-2 text-center">
+            <button type="button" onClick={handleContinue} disabled={isProcessing} className="inline-flex min-h-12 max-w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] px-8 py-3.5 text-center text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,0.8)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_rgba(37,99,235,0.85)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:px-10">
+              {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Unlock 30-day access for ${formatPrice(selected.price)}`}</T>}
+            </button>
+            {showNotice && <p className="w-full max-w-xl rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600"><T>{"Online payment is ready."}</T></p>}
+            {paymentError && <p role="alert" className="w-full max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"><T>{paymentError}</T></p>}
+          </section>
+
+          <section role="radiogroup" aria-label={t("Subscription plans")} className="mx-auto grid w-full max-w-[840px] grid-cols-1 pt-3">
             {plans.map((plan) => {
               const isSelected = plan.id === selectedId;
-              const savings = getSavings(plan.price, plan.months);
-              const perMonth = plan.price / plan.months;
+              const savings = getDiscount(plan.price, plan.regularPrice);
+              const savingsAmount = plan.regularPrice - plan.price;
               return (
                 <button
                   key={plan.id}
@@ -383,67 +384,56 @@ export default function SubscriptionPage() {
                   role="radio"
                   aria-checked={isSelected}
                   onClick={() => handleSelect(plan.id)}
-                  className={`group relative cursor-pointer rounded-2xl border p-[clamp(14px,2.4vh,24px)] text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "-translate-y-1 border-[#2563EB] bg-white shadow-[0_12px_32px_-12px_rgba(37,99,235,0.35)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"}`}
+                  className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "border-[#2563EB] bg-white shadow-[0_16px_44px_-18px_rgba(37,99,235,0.42)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"}`}
                 >
-                  {plan.badge && (
-                    <span className={`absolute -top-3 left-5 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${isSelected ? "bg-[#2563EB] text-white" : "bg-slate-800 text-white"}`}>
-                      <T>{plan.badge}</T>
-                    </span>
-                  )}
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-base font-black text-[#0F172A] sm:text-lg"><T>{plan.name}</T></h2>
-                      <p className="mt-0.5 text-xs font-semibold text-slate-400"><T>{plan.duration}</T></p>
+                  <span className="absolute -top-3 left-5 inline-flex items-center rounded-full border border-white/20 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#4F7DF3] px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_6px_18px_-5px_rgba(37,99,235,0.65)] ring-1 ring-[#2563EB]/20">
+                    <T>{plan.badge}</T>
+                  </span>
+                  <span className={`absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white"}`}>
+                    <Check size={13} strokeWidth={3.5} className={`text-white transition-all ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`} />
+                  </span>
+
+                  <div className="grid gap-5 p-5 pt-8 sm:p-7 sm:pt-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8">
+                    <div className="min-w-0 pr-8 sm:pr-10 md:pr-0">
+                      <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                        <h2 className="text-xl font-black tracking-tight text-[#0F172A] sm:text-2xl"><T>{plan.name}</T></h2>
+                        <span className="pb-0.5 text-xs font-semibold text-slate-400"><T>{plan.duration}</T></span>
+                      </div>
+                      <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600"><T>{plan.note}</T></p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                          <Check size={13} strokeWidth={3} /><T>{"AI Editor, AI Template, and Bulk Photo Edit are included"}</T>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                          <Check size={13} strokeWidth={3} /><T>{"One-time payment"}</T>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                          <Check size={13} strokeWidth={3} /><T>{"No auto-renewal"}</T>
+                        </span>
+                      </div>
                     </div>
-                    <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200 ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white group-hover:border-slate-400"}`}>
-                      <Check size={13} strokeWidth={3.5} className={`text-white transition-all duration-200 ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`} />
-                    </span>
-                  </div>
-                  <div className="mt-[clamp(8px,2.2vh,28px)]">
-                    <span className={`text-[clamp(26px,4.2vh,34px)] font-black leading-none tracking-tight transition-colors ${isSelected ? "text-[#2563EB]" : "text-[#0F172A]"}`}>{formatPrice(plan.price)}</span>
-                    <p className="mt-1.5 text-xs font-semibold text-slate-500">
-                      {plan.months === 1 ? <T>{"Billed monthly"}</T> : <T>{`${formatPrice(perMonth)} / month`}</T>}
-                    </p>
-                  </div>
-                  <div className="my-[clamp(8px,1.8vh,20px)] h-px bg-slate-100" />
-                  <div className="flex min-h-[24px] items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-slate-400"><T>{plan.note}</T></p>
-                    {savings > 0 && (
-                      <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${isSelected ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                        <T>{`Save ${savings}%`}</T>
+
+                    <div className="border-t border-slate-100 pt-4 md:min-w-[210px] md:border-l md:border-t-0 md:pl-8 md:pt-0 md:text-right">
+                      <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
+                        <T>{"Regular price"}</T>
+                        <span className="text-sm line-through decoration-slate-400">{formatPrice(plan.regularPrice)}</span>
+                      </p>
+                      <div className="mt-1 flex items-baseline gap-2 md:justify-end">
+                        <span className="text-4xl font-black leading-none tracking-tight text-[#2563EB] sm:text-5xl">{formatPrice(plan.price)}</span>
+                        <span className="text-xs font-semibold text-slate-500"><T>{"/ 30 days"}</T></span>
+                      </div>
+                      <span className="mt-3 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                        <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
                       </span>
-                    )}
+                    </div>
                   </div>
                 </button>
               );
             })}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-[clamp(12px,2vh,24px)] shadow-sm">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-              <div>
-                <p className="text-xs font-medium text-slate-500"><T>{"Your selection"}</T></p>
-                <p className="mt-0.5 text-lg font-black text-[#0F172A]">
-                  <T>{selected.name}</T>
-                  <span className="ml-2 text-sm font-semibold text-slate-400"><T>{selected.duration}</T></span>
-                </p>
-              </div>
-              <div className="flex items-center justify-between gap-6 sm:justify-end">
-                <div className="sm:text-right">
-                  <p className="text-xs font-medium text-slate-500"><T>{"Total"}</T></p>
-                  <p className="mt-0.5 text-2xl font-black text-[#0F172A]">{formatPrice(selected.price)}</p>
-                </div>
-                <button type="button" onClick={handleContinue} disabled={isProcessing} className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
-                  {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Continue with ${selected.name}`}</T>}
-                </button>
-              </div>
-            </div>
-            {showNotice && <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600"><T>{"Online payment is ready."}</T></p>}
-            {paymentError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"><T>{paymentError}</T></p>}
-          </section>
-
           <section className="rounded-2xl border border-slate-200 bg-white px-5 py-[clamp(10px,1.8vh,20px)]">
-            <h2 className="text-sm font-black text-[#0F172A]"><T>{"Included with every plan"}</T></h2>
+            <h2 className="text-sm font-black text-[#0F172A]"><T>{"Included with your subscription"}</T></h2>
             <div className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
               {features.map((feature) => (
                 <div key={feature} className="flex items-start gap-2 text-xs font-medium text-slate-600 sm:text-[13px]">

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { LockKeyhole, Crown, ShieldCheck, X, ArrowRight } from "lucide-react";
+import { LockKeyhole, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import OfferVideo from "../../_components/OfferVideo";
 import { useAiTemplateText } from "./aiTemplateI18n";
 
 type GateStatus = "checking" | "locked" | "active";
@@ -88,11 +89,11 @@ export default function SubscriptionLock() {
           onClick={() => setShowDialog(false)}
         >
           <div
-            className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/70 bg-[#fffdf5] shadow-[0_28px_100px_rgba(2,6,23,0.38)] ring-1 ring-slate-900/5 cursor-default"
+            className="relative w-full max-w-[620px] overflow-hidden rounded-[28px] border border-white/70 bg-[#fffdf5] shadow-[0_28px_100px_rgba(2,6,23,0.38)] ring-1 ring-slate-900/5 cursor-default"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="subscription-required-title"
+            aria-label={t("Subscription Required")}
           >
             <div aria-hidden="true" className="h-1.5 w-full bg-gradient-to-r from-indigo-600 via-violet-500 to-amber-400" />
             <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-indigo-200/30 blur-3xl" />
@@ -107,40 +108,10 @@ export default function SubscriptionLock() {
               <X size={17} />
             </button>
 
-            <div className="relative px-6 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-9">
-              <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-[24px] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50 to-amber-50 shadow-[0_12px_30px_rgba(79,70,229,0.12)]">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-800 to-indigo-600 text-amber-300 shadow-md">
-                  <LockKeyhole size={23} strokeWidth={2.1} />
-                </div>
-              </div>
+            <div className="relative px-5 pb-5 pt-7 sm:px-6 sm:pb-6 sm:pt-8">
+              <OfferVideo className="w-full" autoPlay />
 
-              <div className="mt-5 flex justify-center">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-white/90 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.15em] text-amber-800 shadow-sm">
-                  <Crown size={13} strokeWidth={2.2} />
-                  {t("Premium access")}
-                </span>
-              </div>
-
-              <div className="mt-4 text-center">
-                <h2 id="subscription-required-title" className="text-[23px] font-extrabold tracking-tight text-slate-950 sm:text-[25px]">
-                  {t("Subscription Required")}
-                </h2>
-                <p className="mx-auto mt-3 max-w-[340px] text-sm font-medium leading-6 text-slate-600">
-                  {t("Before using the AI features on this page, you need an active subscription.")}
-                </p>
-              </div>
-
-              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-100/90 bg-white/80 p-3.5 text-left shadow-sm">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
-                  <ShieldCheck size={19} strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-xs font-bold leading-5 text-slate-800">{t("Once your subscription is active, this lock will disappear automatically and you can use all features on the page.")} </p>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-500">{t("Your subscription access is checked securely before paid actions are run.")}</p>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <Link
                   href="/subscription"
                   className="group inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-5 py-3 text-center text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(79,70,229,0.24)] transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-violet-700 hover:shadow-[0_12px_24px_rgba(79,70,229,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 cursor-pointer"

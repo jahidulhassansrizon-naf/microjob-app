@@ -25,6 +25,8 @@ const BN: Record<string, string> = {
   "all tools": "সব টুল",
   "30+ smart tools, one simple place.": "৩০টিরও বেশি স্মার্ট টুল, একটিই সহজ ঠিকানা।",
   "view all tools": "সব টুল দেখুন",
+  "watch video": "ভিডিও দেখুন",
+  "replay video": "আবার দেখুন",
   "important links": "গুরুত্বপূর্ণ লিংক",
   "new": "নতুন",
   "package": "প্যাকেজ",

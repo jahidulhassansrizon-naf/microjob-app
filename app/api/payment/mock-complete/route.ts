@@ -3,19 +3,13 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
+import { SUBSCRIPTION_PLAN_BY_ID, type SubscriptionPlanId } from "@/app/_lib/subscriptionPlans";
 
 export const dynamic = "force-dynamic";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
-const PLANS = {
-  "1-month": { name: "1 Month", months: 1, days: 30, amount: 350 },
-  "3-month": { name: "3 Months", months: 3, days: 90, amount: 899 },
-  "6-month": { name: "6 Months", months: 6, days: 180, amount: 1399 },
-  "1-year": { name: "1 Year", months: 12, days: 365, amount: 2299 },
-} as const;
-
-type PlanId = keyof typeof PLANS;
+type PlanId = SubscriptionPlanId;
 
 function getToken(cookieHeader: string | null) {
   if (!cookieHeader) return null;
@@ -64,7 +58,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
     const planId = body?.plan_id as PlanId | undefined;
 
-    if (!planId || !(planId in PLANS)) {
+    if (!planId || !Object.prototype.hasOwnProperty.call(SUBSCRIPTION_PLAN_BY_ID, planId)) {
       return NextResponse.json(
         { success: false, message: "Invalid plan_id." },
         { status: 400 },
@@ -82,7 +76,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const plan = PLANS[planId];
+    const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
 
     const now = new Date();
     const subscription = await Subscription.create({
@@ -90,7 +84,7 @@ export async function POST(request: Request) {
       planId,
       planName: plan.name,
       months: plan.months,
-      amount: plan.amount,
+      amount: plan.price,
       paymentStatus: "COMPLETED",
       accessStatus: "ACTIVE",
       invoiceId: `MOCK-${Date.now()}`,
