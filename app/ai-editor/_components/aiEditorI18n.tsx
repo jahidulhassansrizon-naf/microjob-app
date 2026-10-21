@@ -10,6 +10,8 @@ import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
  * are intentionally left untouched unless they are explicitly displayed labels.
  */
 const AI_EDITOR_BN: Record<string, string> = {
+  "Watch video": "ভিডিও দেখুন",
+  "Replay video": "আবার দেখুন",
   "Generation settings": "ছবি তৈরির সেটিংস",
   Passport: "পাসপোর্ট",
   "Dual Photo Format": "দুই ছবির ফরম্যাট",

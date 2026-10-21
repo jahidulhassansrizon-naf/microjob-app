@@ -2,7 +2,7 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { LockKeyhole, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import OfferVideo from "../../_components/OfferVideo";
+import OfferVideoFrame from "../../_components/OfferVideoFrame";
 import { useBulkPhotoText } from "./bulkPhotoI18n";
 
 type GateStatus = "checking" | "locked" | "active";
@@ -109,7 +109,7 @@ export default function SubscriptionLock() {
             </button>
 
             <div className="relative px-5 pb-5 pt-7 sm:px-6 sm:pb-6 sm:pt-8">
-              <OfferVideo className="w-full" autoPlay />
+              <OfferVideoFrame src="/offervideo/offerwoman.mp4" compact playLabel={t("Watch video")} replayLabel={t("Replay video")} />
 
               <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <Link

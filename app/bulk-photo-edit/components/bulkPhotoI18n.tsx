@@ -11,6 +11,8 @@ import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
  * continue using the original English catalog names and AI prompts unchanged.
  */
 const BULK_PHOTO_BN: Record<string, string> = {
+  "watch video": "ভিডিও দেখুন",
+  "replay video": "আবার দেখুন",
   "bulk photo edit": "একসঙ্গে অনেক ছবি সম্পাদনা",
   "select 2 or more photos, choose exact ai operations, and apply the same selected operation set to each photo individually.": "২টি বা তার বেশি ছবি নির্বাচন করুন, প্রয়োজনীয় এআই কাজগুলো বেছে নিন এবং একই নির্বাচিত কাজ প্রতিটি ছবিতে আলাদাভাবে প্রয়োগ করুন।",
   "2 or more photos": "২টি বা তার বেশি ছবি",

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarCheck, CalendarClock, Check, Wallet } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
-import OfferVideo from "../_components/OfferVideo";
+import OfferVideoFrame from "../_components/OfferVideoFrame";
 import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
 
 /* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
@@ -82,6 +82,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
   "unable to create payment request.": "পেমেন্টের অনুরোধ তৈরি করা যায়নি।",
   "payment could not be started. please try again.": "পেমেন্ট শুরু করা যায়নি। আবার চেষ্টা করুন।",
+  "watch video": "ভিডিও দেখুন",
+  "replay video": "আবার দেখুন",
 };
 
 function normalizeSubscriptionText(value: string): string {
@@ -258,7 +260,11 @@ export default function SubscriptionPage() {
       <main className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto">
         <div data-nav-content className="mx-auto my-auto flex w-full max-w-[1112px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]">
           <section aria-label={t("Subscription offer video")} className="w-full">
-            <OfferVideo src="/offervideo/offerwoman2.mp4" className="w-full" autoPlay />
+            <OfferVideoFrame
+              src="/offervideo/offerwoman2.mp4"
+              playLabel={t("Watch video")}
+              replayLabel={t("Replay video")}
+            />
           </section>
 
           <section aria-label={t("Current subscription")}>

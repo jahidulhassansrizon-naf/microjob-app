@@ -4,6 +4,8 @@ import { useCallback, type ReactNode } from "react";
 import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 
 const UI_BN: Record<string, string> = {
+  "Watch video": "ভিডিও দেখুন",
+  "Replay video": "আবার দেখুন",
   "AI Template": "এআই টেমপ্লেট",
   "Pick a style you like, upload your photo, and we'll generate the same look for you in seconds.": "আপনার পছন্দের একটি স্টাইল বেছে নিয়ে নিজের ছবি আপলোড করুন—কয়েক সেকেন্ডের মধ্যে একই ধরনের ছবি তৈরি হবে।",
   "Newest first": "নতুনগুলো আগে",
