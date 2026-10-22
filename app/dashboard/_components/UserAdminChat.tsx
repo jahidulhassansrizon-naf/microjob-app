@@ -8,7 +8,7 @@ import {
   type FormEvent,
   type RefObject,
 } from "react";
-import { ChevronUp, LoaderCircle, MessageCircle, Send } from "lucide-react";
+import { ChevronUp, LoaderCircle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 
 // Admin avatar displayed to every user in the support chat header.
@@ -422,6 +422,8 @@ export default function UserAdminChat() {
   const [sending, setSending] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
+  const [chatNotice, setChatNotice] = useState("");
+  const [clearingChat, setClearingChat] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
@@ -555,6 +557,38 @@ export default function UserAdminChat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
+  const clearChatHistory = async () => {
+    if (clearingChat || sending) return;
+    if (!window.confirm("আপনি কি অ্যাডমিনের সঙ্গে সম্পূর্ণ চ্যাট হিস্ট্রি স্থায়ীভাবে ডিলিট করতে চান? আপনার ও অ্যাডমিনের সব মেসেজ ডাটাবেজ থেকেও মুছে যাবে। এই কাজ ফিরিয়ে নেওয়া যাবে না।")) return;
+
+    setClearingChat(true);
+    setError("");
+    setChatNotice("");
+    try {
+      const response = await fetch("/api/chat", {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+        headers: getClientAuthHeaders(),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "চ্যাট হিস্ট্রি ডিলিট করা যায়নি।");
+      }
+      knownMessageIdsRef.current.clear();
+      messageHistoryInitializedRef.current = true;
+      setMessages([]);
+      setHasMore(false);
+      setUnreadCount(0);
+      setChatNotice("আপনার চ্যাট হিস্ট্রি ডাটাবেজ থেকে ডিলিট হয়েছে।");
+      shouldScrollRef.current = true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "চ্যাট হিস্ট্রি ডিলিট করা যায়নি। আবার চেষ্টা করুন।");
+    } finally {
+      setClearingChat(false);
+    }
+  };
+
   const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = draft.trim();
@@ -562,6 +596,7 @@ export default function UserAdminChat() {
 
     setSending(true);
     setError("");
+    setChatNotice("");
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -663,7 +698,23 @@ export default function UserAdminChat() {
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => void clearChatHistory()}
+            disabled={clearingChat || sending}
+            aria-label="চ্যাট হিস্ট্রি ডিলিট করুন"
+            title="Delete chat history"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 text-[10px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {clearingChat ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            <span>{clearingChat ? "মুছছে…" : "চ্যাট মুছুন"}</span>
+          </button>
         </header>
+        {chatNotice && (
+          <div role="status" className="shrink-0 border-b border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[10px] font-medium text-emerald-800">
+            {chatNotice}
+          </div>
+        )}
 
         <div
           ref={messagesViewportRef}

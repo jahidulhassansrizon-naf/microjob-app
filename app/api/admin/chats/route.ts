@@ -80,6 +80,7 @@ export async function GET(request: Request) {
             isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 90_000),
           },
           unreadCount: 0,
+          hasConversation: fetched.length > 0,
           hasMore,
           messages: selected.reverse().map((message: any) => serializeMessage(
             message.senderRole === "user" ? { ...message, readByAdmin: true } : message,
@@ -123,7 +124,7 @@ export async function GET(request: Request) {
         lastMessageAt: conversation?.lastMessageAt || null,
         lastSenderRole: conversation?.lastSenderRole || null,
         unreadCount: Number(conversation?.unreadForAdmin || 0),
-        hasConversation: Boolean(conversation),
+        hasConversation: Boolean(conversation && (conversation.lastMessageAt || conversation.lastMessage)),
       };
     });
 
@@ -177,5 +178,101 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Admin chat send error:", error);
     return NextResponse.json({ success: false, message: "The message could not be sent. Please try again." }, { status: 500 });
+  }
+}
+
+
+/** Permanently deletes one chat message or clears a user's full chat history. */
+export async function DELETE(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
+
+  try {
+    const body = await request.json().catch(() => null);
+    const userId = typeof body?.userId === "string" ? body.userId.trim() : "";
+    const messageId = typeof body?.messageId === "string" ? body.messageId.trim() : "";
+    const action = body?.action;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return NextResponse.json({ success: false, message: "Select a valid user first." }, { status: 400 });
+    }
+    if (action !== "delete-message" && action !== "clear") {
+      return NextResponse.json({ success: false, message: "Choose whether to delete one message or clear the chat." }, { status: 400 });
+    }
+    if (action === "delete-message" && !mongoose.isValidObjectId(messageId)) {
+      return NextResponse.json({ success: false, message: "Invalid message ID." }, { status: 400 });
+    }
+
+    await connectDB();
+    const user = await User.findById(userId).select("_id role").lean();
+    if (!user || user.role === "admin") {
+      return NextResponse.json({ success: false, message: "That user could not be found." }, { status: 404 });
+    }
+
+    const conversation = await ChatConversation.findOne({ userId: user._id }).select("_id");
+    if (!conversation) {
+      if (action === "clear") {
+        // Also remove any orphaned/legacy messages if the conversation row is missing.
+        const orphaned = await ChatMessage.deleteMany({ userId: user._id });
+        return NextResponse.json({
+          success: true,
+          message: orphaned.deletedCount ? "All remaining chat messages were permanently deleted." : "This chat is already empty.",
+          deletedCount: Number(orphaned.deletedCount || 0),
+          lastMessage: "",
+          lastMessageAt: null,
+          lastSenderRole: null,
+          unreadCount: 0,
+        }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+      }
+      return NextResponse.json({ success: false, message: "The message could not be found in this user's chat." }, { status: 404 });
+    }
+
+    let deletedCount = 0;
+    let deletedMessageId = "";
+    if (action === "delete-message") {
+      const message = await ChatMessage.findOne({ _id: messageId, userId: user._id, conversationId: conversation._id }).select("_id").lean();
+      if (!message) {
+        return NextResponse.json({ success: false, message: "The message could not be found in this user's chat." }, { status: 404 });
+      }
+      await ChatMessage.deleteOne({ _id: message._id });
+      deletedCount = 1;
+      deletedMessageId = String(message._id);
+    } else {
+      const result = await ChatMessage.deleteMany({
+        $or: [{ conversationId: conversation._id }, { userId: user._id }],
+      });
+      deletedCount = Number(result.deletedCount || 0);
+    }
+
+    const [latest, unreadForAdmin, unreadForUser] = await Promise.all([
+      ChatMessage.findOne({ conversationId: conversation._id }).sort({ createdAt: -1, _id: -1 }).select("text createdAt senderRole").lean(),
+      ChatMessage.countDocuments({ conversationId: conversation._id, senderRole: "user", readByAdmin: false }),
+      ChatMessage.countDocuments({ conversationId: conversation._id, senderRole: "admin", readByUser: false }),
+    ]);
+    await ChatConversation.updateOne(
+      { _id: conversation._id },
+      { $set: {
+        lastMessage: latest?.text || "",
+        lastMessageAt: latest?.createdAt || null,
+        lastSenderRole: latest?.senderRole || "user",
+        unreadForAdmin,
+        unreadForUser,
+      } },
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: action === "clear" ? "All chat messages were permanently deleted." : "Message permanently deleted.",
+      action,
+      deletedCount,
+      deletedMessageId,
+      lastMessage: latest?.text || "",
+      lastMessageAt: latest?.createdAt || null,
+      lastSenderRole: latest?.senderRole || null,
+      unreadCount: unreadForAdmin,
+    }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+  } catch (error) {
+    console.error("Admin chat delete error:", error);
+    return NextResponse.json({ success: false, message: "Could not delete these chat messages." }, { status: 500 });
   }
 }

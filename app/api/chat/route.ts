@@ -136,3 +136,54 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: "Your message could not be sent. Please try again." }, { status: 500 });
   }
 }
+
+
+/** Deletes the authenticated user's full support-chat history from the database. */
+export async function DELETE(request: Request) {
+  const auth = await getUserSession(request);
+  if (auth.response) return auth.response;
+  if (!auth.session) {
+    return NextResponse.json({ success: false, message: "Please log in to use chat." }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
+    const user = await User.findById(auth.session.userId).select("_id role").lean();
+    if (!user) return NextResponse.json({ success: false, message: "User account was not found." }, { status: 404 });
+    if (user.role === "admin") {
+      return NextResponse.json({ success: false, message: "Admin accounts cannot use the user chat endpoint." }, { status: 403 });
+    }
+
+    const conversation = await ChatConversation.findOne({ userId: user._id }).select("_id").lean();
+    const messageFilters: Record<string, unknown>[] = [{ userId: user._id }];
+    if (conversation) messageFilters.push({ conversationId: conversation._id });
+    const deleted = await ChatMessage.deleteMany({ $or: messageFilters });
+
+    if (conversation) {
+      await ChatConversation.updateOne(
+        { _id: conversation._id, userId: user._id },
+        {
+          $set: {
+            lastMessage: "",
+            lastMessageAt: null,
+            lastSenderRole: "user",
+            unreadForAdmin: 0,
+            unreadForUser: 0,
+          },
+        },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        deletedCount: Number(deleted.deletedCount || 0),
+        message: "Your complete support-chat history was permanently deleted from the database.",
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    );
+  } catch (error) {
+    console.error("User chat history delete error:", error);
+    return NextResponse.json({ success: false, message: "Could not delete your chat history. Please try again." }, { status: 500 });
+  }
+}

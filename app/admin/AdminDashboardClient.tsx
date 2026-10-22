@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -363,6 +364,10 @@ export default function AdminDashboardClient() {
   const [accessDurationMonths, setAccessDurationMonths] = useState("6");
   const [accessSaving, setAccessSaving] = useState(false);
   const [accessError, setAccessError] = useState("");
+  const [confirmingUserDelete, setConfirmingUserDelete] = useState(false);
+  const [deleteUserConfirmationText, setDeleteUserConfirmationText] = useState("");
+  const [deleteUserError, setDeleteUserError] = useState("");
+  const [userDeleting, setUserDeleting] = useState(false);
   const [userPagination, setUserPagination] = useState<ApiPagination>({
     page: 1,
     limit: 20,
@@ -379,6 +384,8 @@ export default function AdminDashboardClient() {
   const [subscriptionsError, setSubscriptionsError] = useState("");
   const [reviewActionError, setReviewActionError] = useState("");
   const [reviewingSubscriptionId, setReviewingSubscriptionId] = useState("");
+  const [subscriptionActionBusyId, setSubscriptionActionBusyId] = useState("");
+  const [subscriptionDeleteBusyId, setSubscriptionDeleteBusyId] = useState("");
   const [subscriptionPagination, setSubscriptionPagination] =
     useState<ApiPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
 
@@ -518,6 +525,41 @@ export default function AdminDashboardClient() {
     }
   };
 
+  const deleteUserAccount = async () => {
+    const target = accessModalUser;
+    if (!target || userDeleting) return;
+    if (deleteUserConfirmationText !== "DELETE") {
+      setDeleteUserError('Type DELETE exactly to confirm permanent account deletion.');
+      return;
+    }
+
+    setUserDeleting(true);
+    setDeleteUserError("");
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(target.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+        headers: authHeaders(),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not permanently delete this account.");
+      }
+
+      setAccessModalUser(null);
+      setConfirmingUserDelete(false);
+      setDeleteUserConfirmationText("");
+      setUsersNotice(data.message || "The user account and associated database records were permanently deleted.");
+      const nextPage = Math.min(userPagination.page, Math.max(1, Math.ceil((userPagination.total - 1) / 20)));
+      await Promise.all([loadUsers(nextPage), loadOverview(true)]);
+    } catch (error) {
+      setDeleteUserError(error instanceof Error ? error.message : "Could not permanently delete this account.");
+    } finally {
+      setUserDeleting(false);
+    }
+  };
+
   const loadSubscriptions = useCallback(
     async (
       page = 1,
@@ -563,6 +605,7 @@ export default function AdminDashboardClient() {
 
   const reviewSubscription = useCallback(
     async (item: SubscriptionRow, action: "approve" | "reject") => {
+      if (reviewingSubscriptionId || subscriptionActionBusyId || subscriptionDeleteBusyId) return;
       let note = "";
       if (action === "approve") {
         if (!window.confirm(`Approve payment ${item.transactionId || item.id} for ${item.user?.fullName || "this user"}?`)) return;
@@ -593,21 +636,105 @@ export default function AdminDashboardClient() {
         setReviewingSubscriptionId("");
       }
     },
-    [authHeaders, loadSubscriptions, subscriptionPagination.page],
+    [authHeaders, loadSubscriptions, reviewingSubscriptionId, subscriptionActionBusyId, subscriptionDeleteBusyId, subscriptionPagination.page],
   );
 
+  const deactivateSubscription = useCallback(async (item: SubscriptionRow) => {
+    if (!subscriptionTones(item).active || reviewingSubscriptionId || subscriptionActionBusyId || subscriptionDeleteBusyId) return;
+    const name = item.user?.fullName || "this user";
+    if (!window.confirm(`Deactivate paid access for ${name} on this ${item.planName || item.planId} subscription? The payment record will be preserved.`)) return;
+
+    setSubscriptionActionBusyId(item.id);
+    setReviewActionError("");
+    try {
+      const response = await fetch(`/api/admin/subscriptions/${encodeURIComponent(item.id)}/access`, {
+        method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "deactivate" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) throw new Error(data?.message || "Could not deactivate this subscription.");
+      await Promise.all([
+        loadSubscriptions(subscriptionPagination.page),
+        loadOverview(true),
+        loadUsers(userPagination.page),
+      ]);
+    } catch (error) {
+      setReviewActionError(error instanceof Error ? error.message : "Could not deactivate this subscription.");
+    } finally {
+      setSubscriptionActionBusyId("");
+    }
+  }, [authHeaders, loadOverview, loadSubscriptions, loadUsers, reviewingSubscriptionId, subscriptionActionBusyId, subscriptionDeleteBusyId, subscriptionPagination.page, userPagination.page]);
+
+  const deleteSubscriptionRecord = useCallback(async (item: SubscriptionRow) => {
+    if (subscriptionDeleteBusyId || subscriptionActionBusyId || reviewingSubscriptionId) return;
+    const name = item.user?.fullName || "this user";
+    const active = subscriptionTones(item).active;
+    const consequence = active
+      ? " This may remove paid access if this is the user's only active subscription."
+      : "";
+    if (!window.confirm(`Permanently delete the ${item.paymentStatus.toLowerCase()} subscription/payment record for ${name}? This cannot be undone and removes the record from the database.${consequence}`)) return;
+
+    setSubscriptionDeleteBusyId(item.id);
+    setReviewActionError("");
+    try {
+      const response = await fetch(`/api/admin/subscriptions/${encodeURIComponent(item.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+        headers: authHeaders(),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) throw new Error(data?.message || "Could not delete this subscription record.");
+
+      const nextPage = subscriptions.length === 1 && subscriptionPagination.page > 1
+        ? subscriptionPagination.page - 1
+        : subscriptionPagination.page;
+      await Promise.all([
+        loadSubscriptions(nextPage),
+        loadOverview(true),
+        loadUsers(userPagination.page),
+      ]);
+    } catch (error) {
+      setReviewActionError(error instanceof Error ? error.message : "Could not delete this subscription record.");
+    } finally {
+      setSubscriptionDeleteBusyId("");
+    }
+  }, [authHeaders, loadOverview, loadSubscriptions, loadUsers, reviewingSubscriptionId, subscriptionActionBusyId, subscriptionDeleteBusyId, subscriptionPagination.page, subscriptions.length, userPagination.page]);
+
   const subscriptionReviewActions = (item: SubscriptionRow) => {
-    if (item.paymentStatus !== "PENDING" || !item.transactionId) return null;
-    const busy = reviewingSubscriptionId === item.id;
+    const canReview = item.paymentStatus === "PENDING" && Boolean(item.transactionId);
+    const active = subscriptionTones(item).active;
+    const reviewBusy = reviewingSubscriptionId === item.id;
+    const deactivateBusy = subscriptionActionBusyId === item.id;
+    const deleteBusy = subscriptionDeleteBusyId === item.id;
+    const busy = Boolean(reviewingSubscriptionId) || Boolean(subscriptionActionBusyId) || Boolean(subscriptionDeleteBusyId);
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "approve")}
-          className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
-          {busy ? "Please wait…" : "Approve"}
-        </button>
-        <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "reject")}
-          className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50">
-          Reject
+      <div className="flex min-w-[136px] flex-col items-start gap-1.5">
+        {canReview && (
+          <>
+            <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "approve")}
+              className="inline-flex max-w-full items-center justify-center rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+              {reviewBusy ? "Please wait…" : "Approve"}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "reject")}
+              className="inline-flex max-w-full items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
+              Reject
+            </button>
+          </>
+        )}
+        {active && (
+          <button type="button" disabled={busy} onClick={() => void deactivateSubscription(item)}
+            className="inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50">
+            <Trash2 size={13} /> {deactivateBusy ? "Deactivating…" : "Deactivate access"}
+          </button>
+        )}
+        <button type="button" disabled={busy} onClick={() => void deleteSubscriptionRecord(item)}
+          title="Permanently delete this subscription record"
+          className="inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
+          <Trash2 size={13} /> {deleteBusy ? "Deleting…" : "Delete record"}
         </button>
       </div>
     );
@@ -904,6 +1031,9 @@ export default function AdminDashboardClient() {
                         setAccessDurationMonths("6");
                         setAccessError("");
                         setUsersNotice("");
+                        setConfirmingUserDelete(false);
+                        setDeleteUserConfirmationText("");
+                        setDeleteUserError("");
                       }}
                       className="inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
                     >
@@ -963,6 +1093,9 @@ export default function AdminDashboardClient() {
                       setAccessDurationMonths("6");
                       setAccessError("");
                       setUsersNotice("");
+                      setConfirmingUserDelete(false);
+                      setDeleteUserConfirmationText("");
+                      setDeleteUserError("");
                     }}
                     className="mt-3 inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
                   >
@@ -989,7 +1122,7 @@ export default function AdminDashboardClient() {
               <th className={TH}>Payment</th>
               <th className={TH}>Access</th>
               <th className={TH}>Expires</th>
-              <th className={TH}>Review</th>
+              <th className={`${TH} min-w-[150px]`}>Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -1054,7 +1187,7 @@ export default function AdminDashboardClient() {
                       Started {formatDate(item.startedAt)}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">{subscriptionReviewActions(item) || <span className="text-xs text-slate-400">—</span>}</td>
+                  <td className="px-3 py-3 align-top">{subscriptionReviewActions(item)}</td>
                 </tr>
               );
             })}
@@ -1825,20 +1958,20 @@ export default function AdminDashboardClient() {
             <div
               className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
               onClick={() => {
-                if (!accessSaving) setAccessModalUser(null);
+                if (!accessSaving && !userDeleting) setAccessModalUser(null);
               }}
             >
               <section
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="manual-access-title"
-                className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
+                className="relative max-h-[calc(100dvh-3rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
                 onClick={(event) => event.stopPropagation()}
               >
                 <button
                   type="button"
                   aria-label="Close access management"
-                  disabled={accessSaving}
+                  disabled={accessSaving || userDeleting}
                   onClick={() => setAccessModalUser(null)}
                   className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                 >
@@ -1856,6 +1989,48 @@ export default function AdminDashboardClient() {
                     {accessModalUser.email || accessModalUser.phoneNumber || accessModalUser.id}
                   </p>
                 </div>
+
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/40 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><Trash2 size={17} /></span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-slate-900">Delete user account permanently</h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">Permanently removes this account and its subscription, chat history, saved files and other user-owned database records. This cannot be undone.</p>
+                    </div>
+                  </div>
+                  {!confirmingUserDelete ? (
+                    <button
+                      type="button"
+                      disabled={accessSaving || userDeleting}
+                      onClick={() => { setConfirmingUserDelete(true); setDeleteUserConfirmationText(""); setDeleteUserError(""); }}
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 size={15} /> Delete account and all associated data
+                    </button>
+                  ) : (
+                    <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/70 p-4">
+                      <p className="text-sm font-semibold text-rose-800">Confirm permanent deletion</p>
+                      <p className="mt-1 text-xs leading-5 text-rose-700">To continue, type <strong>DELETE</strong> below. Payment records and messages will also be removed.</p>
+                      <input
+                        value={deleteUserConfirmationText}
+                        onChange={(event) => { setDeleteUserConfirmationText(event.target.value); setDeleteUserError(""); }}
+                        autoComplete="off"
+                        disabled={userDeleting}
+                        aria-label="Type DELETE to confirm account deletion"
+                        placeholder="Type DELETE"
+                        className="mt-3 w-full rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 disabled:bg-slate-100"
+                      />
+                      {deleteUserError && <p role="alert" className="mt-2 text-xs font-medium text-rose-700">{deleteUserError}</p>}
+                      <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button type="button" disabled={userDeleting} onClick={() => { setConfirmingUserDelete(false); setDeleteUserConfirmationText(""); setDeleteUserError(""); }} className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+                        <button type="button" disabled={userDeleting || deleteUserConfirmationText !== "DELETE"} onClick={() => void deleteUserAccount()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+                          <Trash2 size={14} /> {userDeleting ? "Deleting account…" : "Permanently delete"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
 
                 <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   {accessModalUser.manualAccess?.isActive ? (
@@ -1888,7 +2063,7 @@ export default function AdminDashboardClient() {
                   id="manual-access-duration"
                   value={accessDurationMonths}
                   onChange={(event) => setAccessDurationMonths(event.target.value)}
-                  disabled={accessSaving}
+                  disabled={accessSaving || userDeleting || confirmingUserDelete}
                   className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
                 >
                   <option value="1">1 month</option>
@@ -1911,7 +2086,7 @@ export default function AdminDashboardClient() {
                   {accessModalUser.manualAccess?.enabled ? (
                     <button
                       type="button"
-                      disabled={accessSaving}
+                      disabled={accessSaving || userDeleting || confirmingUserDelete}
                       onClick={() => void updateManualAccess("revoke")}
                       className="rounded-xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -1923,7 +2098,7 @@ export default function AdminDashboardClient() {
                   <div className="flex flex-col-reverse gap-2 sm:flex-row">
                     <button
                       type="button"
-                      disabled={accessSaving}
+                      disabled={accessSaving || userDeleting}
                       onClick={() => setAccessModalUser(null)}
                       className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                     >
@@ -1931,7 +2106,7 @@ export default function AdminDashboardClient() {
                     </button>
                     <button
                       type="button"
-                      disabled={accessSaving}
+                      disabled={accessSaving || userDeleting || confirmingUserDelete}
                       onClick={() => void updateManualAccess("grant")}
                       className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >

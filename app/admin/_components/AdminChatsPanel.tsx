@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Search,
   Send,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
@@ -83,6 +84,8 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   const [messageLoading, setMessageLoading] = useState(false);
   const [olderLoading, setOlderLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState("");
+  const [clearingChat, setClearingChat] = useState(false);
   const [draft, setDraft] = useState("");
   const [messageError, setMessageError] = useState("");
   const selectedUserIdRef = useRef<string | null>(null);
@@ -135,9 +138,9 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
       else setMessages((current) => mergeMessages(current, incoming));
       if (!options?.silent) setHasMore(Boolean(data?.hasMore));
       if (data?.user) {
-        setSelectedUser((current) => current?.id === userId ? { ...current, ...data.user, hasConversation: true } : current);
+        setSelectedUser((current) => current?.id === userId ? { ...current, ...data.user, hasConversation: Boolean(data?.hasConversation) } : current);
       }
-      setUsers((current) => current.map((user) => user.id === userId ? { ...user, unreadCount: 0, hasConversation: true } : user));
+      setUsers((current) => current.map((user) => user.id === userId ? { ...user, unreadCount: 0, hasConversation: Boolean(data?.hasConversation) } : user));
       setMessageError("");
       if (!options?.before) shouldScrollRef.current = true;
     } catch (cause) {
@@ -202,9 +205,81 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
     setAppliedQuery(query.trim());
   };
 
+  const deleteMessage = async (message: ChatMessage) => {
+    const targetUser = selectedUser;
+    if (!targetUser || deletingMessageId || clearingChat) return;
+    if (!window.confirm("Permanently delete this message from the database? This cannot be undone.")) return;
+
+    setDeletingMessageId(message.id);
+    setMessageError("");
+    try {
+      const response = await fetch("/api/admin/chats", {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", ...getClientAuthHeaders() },
+        body: JSON.stringify({ action: "delete-message", userId: targetUser.id, messageId: message.id }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) throw new Error(data?.message || "Could not delete this message.");
+      if (selectedUserIdRef.current === targetUser.id) {
+        setMessages((current) => current.filter((item) => item.id !== message.id));
+      }
+      setUsers((current) => current.map((user) => user.id === targetUser.id ? {
+        ...user,
+        lastMessage: data.lastMessage || "",
+        lastMessageAt: data.lastMessageAt || null,
+        lastSenderRole: data.lastSenderRole || null,
+        unreadCount: Number(data.unreadCount || 0),
+        hasConversation: Boolean(data.lastMessageAt),
+      } : user));
+    } catch (cause) {
+      setMessageError(cause instanceof Error ? cause.message : "Could not delete this message.");
+    } finally {
+      setDeletingMessageId("");
+    }
+  };
+
+  const clearSelectedChat = async () => {
+    const targetUser = selectedUser;
+    if (!targetUser || clearingChat || deletingMessageId || sending) return;
+    if (!window.confirm(`Permanently delete every message in the chat with ${targetUser.fullName || "this user"}? This removes all loaded and older messages from the database and cannot be undone.`)) return;
+
+    setClearingChat(true);
+    setMessageError("");
+    try {
+      const response = await fetch("/api/admin/chats", {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", ...getClientAuthHeaders() },
+        body: JSON.stringify({ action: "clear", userId: targetUser.id }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) throw new Error(data?.message || "Could not clear this chat.");
+      if (selectedUserIdRef.current === targetUser.id) {
+        setMessages([]);
+        setHasMore(false);
+        setDraft("");
+      }
+      setUsers((current) => current.map((user) => user.id === targetUser.id ? {
+        ...user,
+        lastMessage: "",
+        lastMessageAt: null,
+        lastSenderRole: null,
+        unreadCount: 0,
+        hasConversation: false,
+      } : user));
+    } catch (cause) {
+      setMessageError(cause instanceof Error ? cause.message : "Could not clear this chat.");
+    } finally {
+      setClearingChat(false);
+    }
+  };
+
   const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedUser || !draft.trim() || sending) return;
+    if (!selectedUser || !draft.trim() || sending || clearingChat) return;
     const targetUser = selectedUser;
     const text = draft.trim();
     setSending(true);
@@ -323,6 +398,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
                   <h3 className="truncate text-sm font-semibold text-slate-900">{selectedUser.fullName}</h3>
                   <p className="truncate text-xs text-slate-500">{selectedUser.email}{selectedUser.phoneNumber ? ` · ${selectedUser.phoneNumber}` : ""}</p>
                 </div>
+                <button type="button" onClick={() => void clearSelectedChat()} disabled={clearingChat || deletingMessageId !== "" || sending} title="Permanently delete all messages in this chat" className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-2.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"><Trash2 size={14} /> <span>{clearingChat ? "Clearing…" : "Clear chat"}</span></button>
                 <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:inline-flex ${selectedUser.isOnline ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}><span className={`h-1.5 w-1.5 rounded-full ${selectedUser.isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />{selectedUser.isOnline ? "Online" : "Offline"}</span>
               </header>
 
@@ -335,13 +411,15 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
                   <div className="flex flex-1 items-center justify-center gap-2 text-sm text-slate-500"><LoaderCircle size={18} className="animate-spin" /> Loading messages…</div>
                 ) : messages.length ? messages.map((message) => {
                   const mine = message.senderRole === "admin";
+                  const deleting = deletingMessageId === message.id;
                   return (
-                    <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 shadow-sm sm:max-w-[78%] ${mine ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800"}`}>
+                    <div key={message.id} className={`group flex items-end gap-1.5 ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[calc(100%_-_2.5rem)] rounded-2xl px-3.5 py-2.5 shadow-sm sm:max-w-[78%] ${mine ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800"}`}>
                         {!mine && <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-600">{selectedUser.fullName}</p>}
                         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.text}</p>
                         <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[10px] ${mine ? "text-indigo-100" : "text-slate-400"}`}><span>{formatTime(message.createdAt, true)}</span>{mine && <span className="inline-flex items-center gap-0.5">{message.readByUser ? <CheckCheck size={12} /> : null}{message.readByUser ? "Seen" : "Sent"}</span>}</div>
                       </div>
+                      <button type="button" onClick={() => void deleteMessage(message)} disabled={Boolean(deletingMessageId) || clearingChat} aria-label="Delete message permanently" title="Delete message permanently" className="mb-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rose-100 bg-white text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus:bg-rose-50 focus:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40">{deleting ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />}</button>
                     </div>
                   );
                 }) : (
@@ -354,7 +432,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
               <form onSubmit={sendMessage} className="border-t border-slate-200 bg-white p-3 sm:p-4">
                 <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10">
                   <textarea value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={2000} rows={2} placeholder={`Message ${selectedUser.fullName.split(/\s+/)[0] || "user"}…`} aria-label="Message selected user" className="max-h-32 min-h-[44px] flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400" onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
-                  <button type="submit" disabled={!draft.trim() || sending} className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{sending ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={15} />}<span className="hidden sm:inline">Send</span></button>
+                  <button type="submit" disabled={!draft.trim() || sending || clearingChat} className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{sending ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={15} />}<span className="hidden sm:inline">Send</span></button>
                 </div>
                 <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-slate-400"><span>Enter to send · Shift + Enter for a new line</span><span>{draft.length}/2000</span></div>
               </form>
