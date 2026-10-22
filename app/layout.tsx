@@ -8,6 +8,8 @@ import LiveScreenShareController from "@/app/_components/LiveScreenShareControll
 import NavigationProgressBar from "./_components/NavigationProgressBar";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
+import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
+import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
 import PrePaintScript from "./_components/PrePaintScript";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from "@/lib/i18n";
@@ -67,9 +69,12 @@ export default async function RootLayout({
           <ConditionalSiteChrome>
             <PageBackgroundInitializer />
             <NavigationProgressBar />
-            <Navbar />
           </ConditionalSiteChrome>
+          <ConditionalSiteNavbar>
+            <Navbar />
+          </ConditionalSiteNavbar>
           {children}
+          <FloatingUserAdminChat />
           <LoginSuccessOverlay
             initialVisible={showLoginSuccess}
             initialName={showLoginSuccess ? loginFirstName : ""}

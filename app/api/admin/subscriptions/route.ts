@@ -30,6 +30,8 @@ export async function GET(request: Request) {
       filter.$or = [{ paymentStatus: "CANCELLED" }, { accessStatus: "CANCELLED" }];
     } else if (status === "error") {
       filter.paymentStatus = "ERROR";
+    } else if (status === "rejected") {
+      filter.paymentStatus = "REJECTED";
     }
 
     if (q) {
@@ -65,6 +67,12 @@ export async function GET(request: Request) {
       invoiceId: item.invoiceId || "",
       transactionId: item.transactionId || "",
       paymentMethod: item.paymentMethod || "",
+      senderNumber: item.senderNumber || "",
+      reviewStatus: item.reviewStatus || (item.paymentStatus === "COMPLETED" ? "APPROVED" : item.paymentStatus === "REJECTED" ? "REJECTED" : "PENDING"),
+      submittedAt: item.submittedAt || null,
+      reviewedAt: item.reviewedAt || null,
+      reviewedBy: item.reviewedBy || "",
+      reviewNote: item.reviewNote || "",
       paymentStatus: item.paymentStatus,
       accessStatus: item.accessStatus,
       startedAt: item.startedAt || null,

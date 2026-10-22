@@ -3,55 +3,82 @@
 import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarCheck, CalendarClock, Check, Wallet } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarCheck,
+  CalendarClock,
+  Check,
+  Clock3,
+  ShieldCheck,
+  ShoppingBag,
+  Users,
+  Wallet,
+  X,
+} from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import OfferVideoFrame from "../_components/OfferVideoFrame";
-import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
+import {
+  SUBSCRIPTION_PLANS as plans,
+  SUBSCRIPTION_PLAN_FEATURES as features,
+} from "@/app/_lib/subscriptionPlans";
 
 /* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
-const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
+const formatPrice = (value: number) =>
+  `৳${Math.round(value).toLocaleString("en-US")}`;
 const getDiscount = (price: number, regularPrice: number) =>
   Math.max(0, Math.round((1 - price / regularPrice) * 100));
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function getTiming(sub: { startedAt: string | null; expiresAt: string | null }) {
+function getTiming(sub: {
+  startedAt: string | null;
+  expiresAt: string | null;
+}) {
   const start = sub.startedAt ? Date.parse(sub.startedAt) : NaN;
   const end = sub.expiresAt ? Date.parse(sub.expiresAt) : NaN;
   const now = Date.now();
   const hasEnd = Number.isFinite(end);
   const msLeft = hasEnd ? end - now : null;
   const expired = msLeft !== null && msLeft <= 0;
-  const daysLeft = msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
-  const progress = Number.isFinite(start) && hasEnd && end > start
-    ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
-    : null;
+  const daysLeft =
+    msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
+  const progress =
+    Number.isFinite(start) && hasEnd && end > start
+      ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+      : null;
   return { expired, daysLeft, progress };
 }
 
-const capitalize = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
+const capitalize = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
 
 const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "launch offer: get 30 days of access to all paid tools at a special price. pay once; renew only when you want.": "লঞ্চ অফারে বিশেষ কম দামে ৩০ দিনের জন্য সব পেইড টুল ব্যবহার করুন। একবার পেমেন্ট করুন; চাইলে পরের মাসে নিজে থেকে নবায়ন করুন।",
-  "full access to all paid tools for 30 days": "৩০ দিনের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "launch offer: get 30 days of access to all paid tools at a special price. pay once; renew only when you want.":
+    "লঞ্চ অফারে বিশেষ কম দামে ৩০ দিনের জন্য সব পেইড টুল ব্যবহার করুন। একবার পেমেন্ট করুন; চাইলে পরের মাসে নিজে থেকে নবায়ন করুন।",
+  "full access to all paid tools for 30 days":
+    "৩০ দিনের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "regular price": "নিয়মিত মূল্য",
   "/ 30 days": "/ ৩০ দিন",
-  "ai editor, ai template, and bulk photo edit are included": "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
+  "ai editor, ai template, and bulk photo edit are included":
+    "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
   "one-time payment": "একবারের পেমেন্ট",
   "no auto-renewal": "স্বয়ংক্রিয় নবায়ন নেই",
   "included with your subscription": "আপনার সাবস্ক্রিপশনে যা যা থাকছে",
   "choose your subscription plan": "আপনার সাবস্ক্রিপশনের প্ল্যান নির্বাচন করুন",
   "current subscription": "বর্তমান সাবস্ক্রিপশন",
   "no active plan": "কোনো সক্রিয় প্ল্যান নেই",
-  "choose a plan below to unlock all the paid tools.": "সব পেইড টুল ব্যবহার করতে নিচের যেকোনো একটি প্ল্যান বেছে নিন।",
+  "choose a plan below to unlock all the paid tools.":
+    "সব পেইড টুল ব্যবহার করতে নিচের যেকোনো একটি প্ল্যান বেছে নিন।",
   expired: "মেয়াদ শেষ",
   active: "সক্রিয়",
   "day left": "দিন বাকি",
   "days left": "দিন বাকি",
   "this plan ended on": "এই প্ল্যানের মেয়াদ শেষ হয়েছে",
-  ". choose a plan below to renew.": "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
+  ". choose a plan below to renew.":
+    "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
   "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
-  ". you can renew for another month whenever you want.": " পর্যন্ত। চাইলে পরবর্তী মাসের জন্য আবার নবায়ন করতে পারবেন।",
+  ". you can renew for another month whenever you want.":
+    " পর্যন্ত। চাইলে পরবর্তী মাসের জন্য আবার নবায়ন করতে পারবেন।",
   "amount paid": "পরিশোধিত অর্থ",
   started: "শুরুর তারিখ",
   ended: "মেয়াদ শেষ",
@@ -74,16 +101,34 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "your selection": "আপনার নির্বাচন",
   total: "সর্বমোট",
   "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
-  "use the same account across supported tools": "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
-  "manage your subscription status from this page": "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
-  "payment verification and subscription access are handled automatically": "পেমেন্ট যাচাই ও সাবস্ক্রিপশন অ্যাক্সেস স্বয়ংক্রিয়ভাবে পরিচালিত হয়",
+  "use the same account across supported tools":
+    "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
+  "manage your subscription status from this page":
+    "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
+  "payment verification and subscription access are handled automatically":
+    "অ্যাডমিন যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
+  "admin reviews the payment before subscription access is activated":
+    "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "back to tools": "টুলসে ফিরে যান",
   "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
   "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
   "unable to create payment request.": "পেমেন্টের অনুরোধ তৈরি করা যায়নি।",
-  "payment could not be started. please try again.": "পেমেন্ট শুরু করা যায়নি। আবার চেষ্টা করুন।",
+  "payment could not be started. please try again.":
+    "পেমেন্ট শুরু করা যায়নি। আবার চেষ্টা করুন।",
   "watch video": "ভিডিও দেখুন",
   "replay video": "আবার দেখুন",
+  "recent subscription activity": "সাম্প্রতিক সাবস্ক্রিপশন",
+  "payment review in progress": "পেমেন্ট যাচাই চলছে",
+  "your payment details have been submitted. paid access starts after admin approval.":
+    "আপনার পেমেন্টের তথ্য জমা হয়েছে। অ্যাডমিন অনুমোদন দিলে পেইড অ্যাক্সেস চালু হবে।",
+  "transaction id": "ট্রানজেকশন আইডি",
+  "waiting for review": "যাচাইয়ের অপেক্ষায়",
+  "total buyers": "মোট ক্রেতা",
+  "bought today": "আজ কিনেছেন",
+  "bought just now": "এইমাত্র কিনেছেন",
+  "minutes ago": "মিনিট আগে",
+  "purchase notification": "ক্রয় নোটিফিকেশন",
+  "1 month plan": "১ মাসের প্যাকেজ",
 };
 
 function normalizeSubscriptionText(value: string): string {
@@ -112,17 +157,22 @@ function translateSubscriptionText(
   if (exact !== undefined) return exact;
 
   let match = /^continue with (.+)$/i.exec(key);
-  if (match) return `${translateSubscriptionText(match[1], locale, baseL)} নিয়ে এগিয়ে যান`;
+  if (match)
+    return `${translateSubscriptionText(match[1], locale, baseL)} নিয়ে এগিয়ে যান`;
 
   match = /^save\s+(৳[\d,]+)\s*·\s*(\d+)%\s*off$/i.exec(key);
   if (match) {
-    const banglaDigits = (value: string) => value.replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    const banglaDigits = (value: string) =>
+      value.replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
     return `${banglaDigits(match[1])} সাশ্রয় · ${banglaDigits(match[2])}% ছাড়`;
   }
 
   match = /^unlock 30-day access for (৳[\d,]+)$/i.exec(key);
   if (match) {
-    const price = match[1].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    const price = match[1].replace(
+      /\d/g,
+      (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)],
+    );
     return `${price}-তে ৩০ দিনের অ্যাক্সেস নিন`;
   }
 
@@ -134,6 +184,9 @@ function translateSubscriptionText(
 
   match = /^(\d+)\s+days? left$/i.exec(key);
   if (match) return `${match[1]} দিন বাকি`;
+
+  match = /^(\d+)\s+minutes? ago$/i.exec(key);
+  if (match) return `${match[1]} মিনিট আগে`;
 
   const translated = baseL(raw);
   if (translated && translated !== raw) {
@@ -148,7 +201,10 @@ function translateSubscriptionText(
 
 function useSubscriptionText() {
   const { locale, L: baseL } = useSohozI18n();
-  const t = useCallback((value: string) => translateSubscriptionText(value, locale, baseL), [locale, baseL]);
+  const t = useCallback(
+    (value: string) => translateSubscriptionText(value, locale, baseL),
+    [locale, baseL],
+  );
   return { t, locale };
 }
 
@@ -158,59 +214,405 @@ function T({ children }: { children: ReactNode }) {
   return <>{t(children)}</>;
 }
 
+const toBnDigits = (value: string | number) =>
+  String(value).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
 
-const toBnDigits = (value: string | number) => String(value).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
-
-function NagadPaymentGuide({ amount }: { amount: number }) {
+function ManualPaymentGuide({ amount }: { amount: number }) {
   const bnAmount = toBnDigits(amount);
   const steps: { title: string; body: ReactNode }[] = [
     {
       title: "আনলক বাটনে ক্লিক করুন",
-      body: <>উপরের নীল বাটনে চাপ দিন। পেমেন্টের পেজ খুলে যাবে।</>,
+      body: <>আপনার নিজের পেমেন্ট পেজ খুলবে।</>,
     },
     {
-      title: "নগদ বেছে নিয়ে পে করুন",
-      body: <><strong>Nagad Personal</strong> সিলেক্ট করুন, তারপর <strong>Pay {amount} BDT</strong> বাটনে চাপ দিন।</>,
+      title: "Nagad অথবা bKash বেছে নিন",
+      body: (
+        <>যে মোবাইল ফাইন্যান্সিয়াল সার্ভিস ব্যবহার করেন, সেটি নির্বাচন করুন।</>
+      ),
     },
     {
-      title: "আপনার নগদ নম্বর দিন",
-      body: <>যে নগদ নম্বর থেকে টাকা পাঠাবেন, সেই নম্বরটি লিখে <strong>Submit</strong> চাপুন।</>,
+      title: `ঠিক ${bnAmount} টাকা Send Money করুন`,
+      body: (
+        <>
+          পেমেন্ট পেজে দেওয়া নম্বর কপি করে সেই নম্বরে ঠিক{" "}
+          <strong>{bnAmount} টাকা</strong> পাঠান।
+        </>
+      ),
     },
     {
-      title: `নগদ অ্যাপ থেকে ঠিক ${bnAmount} টাকা পাঠান`,
-      body: <>পেমেন্ট পেজে যে নম্বর দেখাবে, নগদ অ্যাপে <strong>Send Money</strong> দিয়ে সেই নম্বরে ঠিক <strong>{bnAmount} টাকা</strong> পাঠান। নম্বর ও টাকার পাশের <strong>Copy</strong> বাটন ব্যবহার করলে ভুল হবে না।</>,
+      title: "TrxID ও প্রেরকের নম্বর জমা দিন",
+      body: (
+        <>
+          পেমেন্ট সফল হওয়ার পর SMS-এ পাওয়া TrxID এবং যে নম্বর থেকে টাকা
+          পাঠিয়েছেন সেটি লিখে জমা দিন।
+        </>
+      ),
     },
     {
-      title: "ট্রানজেকশন আইডি (TrxID) জমা দিন",
-      body: <>টাকা পাঠানো হয়ে গেলে নগদের মেসেজে একটি <strong>TrxID</strong> পাবেন। পেমেন্ট পেজের একদম নিচে <strong>&quot;Taking too long to verify? Submit Nagad Transaction ID&quot;</strong> লেখার নীল লিংকে ক্লিক করুন। তারপর ঘরে TrxID বসিয়ে <strong>Submit</strong> চাপুন।</>,
-    },
-    {
-      title: "অ্যাক্সেস চালু হয়ে যাবে",
-      body: <>পেমেন্ট যাচাই হলেই আপনার ৩০ দিনের অ্যাক্সেস চালু হবে।</>,
+      title: "অ্যাডমিন যাচাই করবেন",
+      body: (
+        <>
+          আপনার পেমেন্ট ম্যানুয়ালি যাচাই করা হবে। Approve হলেই ৩০ দিনের
+          অ্যাক্সেস চালু হবে।
+        </>
+      ),
     },
   ];
 
   return (
-    <section aria-label="নগদে পেমেন্ট করার নিয়ম" className="w-full rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-7">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-black text-[#0F172A] sm:text-2xl">নগদে পেমেন্ট করবেন যেভাবে</h2>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-100">ধাপে ধাপে গাইড</span>
+    <section
+      aria-label="ম্যানুয়াল পেমেন্ট করার নিয়ম"
+      className="relative isolate overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/80 p-5 shadow-[0_18px_46px_-28px_rgba(16,185,129,0.34)] sm:p-6"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-200/25 blur-3xl"
+      />
+      <div className="relative">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+              Sohoj Hub · Payment guide
+            </p>
+            <h2 className="mt-1.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+              পেমেন্ট করবেন যেভাবে
+            </h2>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-800 sm:text-sm">
+            <Check size={15} strokeWidth={3} /> ধাপে ধাপে গাইড
+          </span>
+        </div>
+        <ol className="mt-5 grid gap-3">
+          {steps.map((step, index) => (
+            <li
+              key={step.title}
+              className={`flex gap-3.5 rounded-2xl border p-4 sm:gap-4 sm:p-4 ${index === 4 ? "border-amber-200 bg-gradient-to-r from-amber-50 to-white" : "border-slate-200/90 bg-white/90 shadow-[0_4px_16px_-14px_rgba(15,23,42,0.38)]"}`}
+            >
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm sm:h-10 sm:w-10 sm:text-base ${index === 4 ? "bg-gradient-to-br from-amber-400 to-orange-500" : "bg-gradient-to-br from-blue-600 to-indigo-600"}`}
+              >
+                {toBnDigits(index + 1)}
+              </span>
+              <div className="min-w-0 pt-0.5">
+                <p className="text-base font-extrabold leading-7 text-slate-950 sm:text-lg">
+                  {step.title}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+                  {step.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-white px-4 py-3.5 text-sm font-bold leading-6 text-rose-800 sm:text-base sm:leading-7">
+          <ShieldCheck size={19} className="mt-0.5 shrink-0" />
+          মনে রাখবেন: শুধু TrxID জমা দিলে অ্যাক্সেস চালু হবে না। পেমেন্ট যাচাই
+          করে অ্যাডমিন Approve করার পরই অ্যাক্সেস চালু হবে।
+        </p>
       </div>
-      <ol className="mt-5 grid gap-3.5">
-        {steps.map((step, index) => (
-          <li key={step.title} className={`flex gap-4 rounded-xl border px-4 py-3.5 ${index === 4 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-slate-50/60"}`}>
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-black text-white ${index === 4 ? "bg-amber-500" : "bg-[#2563EB]"}`}>{toBnDigits(index + 1)}</span>
-            <div className="min-w-0">
-              <p className="text-base font-extrabold text-[#0F172A] sm:text-lg">{step.title}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600 sm:text-[15px] sm:leading-7">{step.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-700">
-        মনে রাখবেন: টাকা পাঠানোর পর TrxID জমা না দিলে অ্যাক্সেস চালু হতে দেরি হতে পারে। কোনো সমস্যা হলে আমাদের সাপোর্টে যোগাযোগ করুন।
-      </p>
     </section>
+  );
+}
+
+/**
+ * DEMO / PRACTICE ONLY.
+ * These are made-up names, not real purchases. The whole block renders only when
+ * NEXT_PUBLIC_DEMO_ACTIVITY="true". For production, feed it real subscription records instead.
+ */
+const DEMO_ACTIVITY_ENABLED = process.env.NEXT_PUBLIC_DEMO_ACTIVITY === "true";
+const DEMO_TOTAL_BUYERS = 43;
+const DEMO_BOUGHT_TODAY = 7;
+const DEMO_TOAST_INTERVAL_MS = 1500;
+const DEMO_TOAST_VISIBLE_MS = 60000;
+
+const DEMO_NAMES = [
+  "মোঃ সাকিব হাসান",
+  "তানজিলা আক্তার",
+  "আরিফুল ইসলাম",
+  "সুমাইয়া রহমান",
+  "রাকিব হোসেন",
+  "নুসরাত জাহান",
+  "ইমরান হোসেন",
+  "ফারজানা ইয়াসমিন",
+  "মেহেদী হাসান",
+  "সাদিয়া ইসলাম",
+  "শাহরিয়ার কবির",
+  "মিম আক্তার",
+  "তৌহিদুল ইসলাম",
+  "আফরিন সুলতানা",
+  "জুবায়ের আহমেদ",
+  "রিফাত রহমান",
+  "সুমন মিয়া",
+  "জান্নাতুল ফেরদৌস",
+  "নাঈম হাসান",
+  "মাহিয়া আক্তার",
+  "মোঃ রাকিবুল ইসলাম",
+  "সাব্বির আহমেদ",
+  "আয়েশা সিদ্দিকা",
+  "আব্দুল্লাহ আল মামুন",
+  "রুবিনা খাতুন",
+  "মাসুদ রানা",
+  "শারমিন আক্তার",
+  "হাসিবুল হাসান",
+  "কামরুল ইসলাম",
+  "পারভীন সুলতানা",
+  "ফয়সাল আহমেদ",
+  "লিমা আক্তার",
+  "জহিরুল ইসলাম",
+  "নাজমুল হুদা",
+  "রোকসানা পারভীন",
+  "তামিম ইকবাল",
+  "মৌসুমী আক্তার",
+  "আনোয়ার হোসেন",
+  "সোহেল রানা",
+  "নাসরিন সুলতানা",
+  "মোঃ শফিকুল ইসলাম",
+  "বিলকিস বেগম",
+  "রবিউল আউয়াল",
+  "মরিয়ম আক্তার",
+  "ইকবাল হোসেন",
+  "ফাহিম আহমেদ",
+  "তাসলিমা খাতুন",
+  "মেহরাব হোসেন",
+  "হালিমা আক্তার",
+  "সজীব হাসান",
+  "নুরুল ইসলাম",
+  "জেসমিন আক্তার",
+  "আশিকুর রহমান",
+  "রেহানা পারভীন",
+  "শামীম আহমেদ",
+  "সানজিদা ইসলাম",
+  "মিজানুর রহমান",
+  "ববিতা সুলতানা",
+  "ইয়াসিন আরাফাত",
+  "সুরাইয়া আক্তার",
+] as const;
+
+// Mixed "time ago" values (in minutes): just now, minutes, hours, days, weeks, months.
+const DEMO_AGO_MINUTES = [
+  0, 2, 5, 8, 10, 15, 20, 25, 30, 40, 45, 50, 60, 90, 120, 180, 240, 360, 480,
+  720, 960, 1440, 2160, 2880, 4320, 5760, 10080, 14400, 20160, 30240, 43200,
+] as const;
+
+function formatAgo(
+  totalMinutes: number,
+  isBn: boolean,
+  locale: string,
+): string {
+  const units: {
+    limit: number;
+    size: number;
+    bn: string;
+    en: [string, string];
+  }[] = [
+    { limit: 60, size: 1, bn: "মিনিট", en: ["minute", "minutes"] },
+    { limit: 1440, size: 60, bn: "ঘণ্টা", en: ["hour", "hours"] },
+    { limit: 10080, size: 1440, bn: "দিন", en: ["day", "days"] },
+    { limit: 43200, size: 10080, bn: "সপ্তাহ", en: ["week", "weeks"] },
+    { limit: Infinity, size: 43200, bn: "মাস", en: ["month", "months"] },
+  ];
+  const unit = units.find((u) => totalMinutes < u.limit) ?? units[0];
+  const value = Math.max(1, Math.floor(totalMinutes / unit.size));
+  const num = value.toLocaleString(locale);
+  return isBn
+    ? `${num} ${unit.bn} আগে`
+    : `${num} ${value === 1 ? unit.en[0] : unit.en[1]} ago`;
+}
+
+type DemoPurchase = { name: string; initials: string; minutes: number };
+
+const DEMO_PURCHASES: DemoPurchase[] = DEMO_NAMES.map((name, i) => {
+  const firstWord = name.replace(/^মোঃ\s*/, "").split(" ")[0];
+  return {
+    name,
+    initials: Array.from(firstWord).slice(0, 2).join(""),
+    minutes: DEMO_AGO_MINUTES[(i * 5) % DEMO_AGO_MINUTES.length],
+  };
+});
+
+const AVATAR_TONES = [
+  "from-blue-500 to-indigo-500",
+  "from-emerald-500 to-teal-500",
+  "from-violet-500 to-fuchsia-500",
+  "from-amber-500 to-orange-500",
+  "from-sky-500 to-cyan-500",
+  "from-rose-500 to-pink-500",
+];
+
+function RecentSubscriptionActivity() {
+  const { t, locale } = useSubscriptionText();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastDismissed, setToastDismissed] = useState(false);
+  const isBn = Boolean(locale?.toLowerCase().startsWith("bn"));
+  const numberLocale = isBn ? "bn-BD" : "en-US";
+
+  useEffect(() => {
+    if (!DEMO_ACTIVITY_ENABLED) return;
+    let hideTimer: number | undefined;
+    const showToast = () => {
+      setToastVisible(true);
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(
+        () => setToastVisible(false),
+        DEMO_TOAST_VISIBLE_MS,
+      );
+    };
+    const firstToast = window.setTimeout(showToast, 1500);
+    const cycle = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % DEMO_PURCHASES.length);
+      setToastDismissed(false);
+      showToast();
+    }, DEMO_TOAST_INTERVAL_MS);
+    return () => {
+      window.clearTimeout(firstToast);
+      window.clearTimeout(hideTimer);
+      window.clearInterval(cycle);
+    };
+  }, []);
+
+  if (!DEMO_ACTIVITY_ENABLED) return null;
+
+  const at = (offset: number) =>
+    DEMO_PURCHASES[
+      (activeIndex - offset + DEMO_PURCHASES.length) % DEMO_PURCHASES.length
+    ];
+  const activePurchase = at(0);
+  const timeLabel = (p: DemoPurchase) =>
+    p.minutes === 0
+      ? t("Bought just now")
+      : formatAgo(p.minutes, isBn, numberLocale);
+
+  return (
+    <>
+      <section
+        aria-label={t("Recent subscription activity")}
+        className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-blue-50/60 to-indigo-50/70 p-4 text-[#0F172A] shadow-[0_18px_40px_-22px_rgba(79,70,229,0.55)] sm:p-5"
+      >
+        <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-300/25 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-sky-300/25 blur-2xl" />
+
+        <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+          <div className="flex items-center gap-2.5 text-sm font-extrabold text-[#0F172A] sm:text-base">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#2563EB] to-indigo-600 text-white shadow-md shadow-blue-500/30">
+              <Users size={16} />
+            </span>
+            <span>{t("Recent subscription activity")}</span>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-bold text-emerald-700 backdrop-blur sm:text-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            {isBn ? "লাইভ আপডেট" : "Live updates"}
+          </span>
+        </div>
+
+        <div className="relative mt-2.5 grid grid-cols-2 gap-2">
+          <div className="rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
+            <p className="text-xs font-semibold text-slate-500 sm:text-sm">
+              {t("Total buyers")}
+            </p>
+            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-[#2563EB] sm:text-3xl">
+              {DEMO_TOTAL_BUYERS.toLocaleString(numberLocale)}
+              <span className="text-lg">+</span>
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
+            <p className="text-xs font-semibold text-slate-500 sm:text-sm">
+              {t("Bought today")}
+            </p>
+            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-emerald-600 sm:text-3xl">
+              {DEMO_BOUGHT_TODAY.toLocaleString(numberLocale)}
+            </p>
+          </div>
+        </div>
+
+        <ul className="relative mt-2 space-y-1.5" aria-live="off">
+          {[0].map((offset) => {
+            const p = at(offset);
+            const tone =
+              AVATAR_TONES[
+                (activeIndex - offset + DEMO_PURCHASES.length * 6) %
+                  AVATAR_TONES.length
+              ];
+            return (
+              <li
+                key={`${activeIndex - offset}`}
+                style={{
+                  opacity: offset === 0 ? 1 : offset === 1 ? 0.7 : 0.4,
+                  animation: "sub-feed-in 250ms ease-out",
+                }}
+                className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/80 px-3 py-3 backdrop-blur"
+              >
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-[11px] font-black text-white shadow-sm`}
+                >
+                  {p.initials}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-[#0F172A] sm:text-base">
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-slate-500 sm:text-sm">
+                    {t("1 Month plan")} · ৳১০০
+                  </p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 sm:text-sm">
+                  <Clock3 size={13} />
+                  {timeLabel(p)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="relative mt-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+          Data
+        </p>
+      </section>
+
+      <div
+        aria-live="polite"
+        aria-label={t("Purchase notification")}
+        className={`fixed bottom-4 left-4 z-[45] w-[min(330px,calc(100vw-32px))] transition-all duration-300 sm:bottom-5 sm:left-5 ${toastVisible && !toastDismissed ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
+      >
+        <div className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_16px_46px_-16px_rgba(15,23,42,0.28)]">
+          <div className="flex items-center justify-between gap-2 bg-[#2563EB] px-3 py-2 text-white">
+            <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide">
+              <ShoppingBag size={13} /> {t("Purchase notification")}
+            </span>
+            <button
+              type="button"
+              onClick={() => setToastDismissed(true)}
+              aria-label="Close purchase notification"
+              className="rounded-md p-0.5 text-blue-100 transition hover:bg-white/15 hover:text-white"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div
+            key={activePurchase.name}
+            className="flex items-center gap-3 p-3"
+            style={{ animation: "sub-feed-in 200ms ease-out" }}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-black text-[#2563EB] ring-1 ring-inset ring-blue-100">
+              {activePurchase.initials}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-extrabold text-[#0F172A]">
+                {activePurchase.name}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-600">
+                {t("1 Month plan")} · ৳১০০
+              </p>
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-700 sm:text-sm">
+                <Clock3 size={13} /> {timeLabel(activePurchase)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -225,13 +627,24 @@ export default function SubscriptionPage() {
     startedAt: string | null;
     expiresAt: string | null;
   };
+  type PendingSubscriptionStatus = {
+    id: string;
+    planName: string;
+    amount: number;
+    paymentMethod: string;
+    transactionId: string;
+    submittedAt: string | null;
+    reviewStatus: string;
+  };
 
   const { t, locale } = useSubscriptionText();
   const [selectedId, setSelectedId] = useState<string>("1-month");
-  const [showNotice, setShowNotice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
-  const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
+  const [currentSubscription, setCurrentSubscription] =
+    useState<SubscriptionStatus | null>(null);
+  const [pendingSubscription, setPendingSubscription] =
+    useState<PendingSubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
 
@@ -239,11 +652,14 @@ export default function SubscriptionPage() {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString(locale?.toLowerCase().startsWith("bn") ? "bn-BD" : "en-BD", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString(
+      locale?.toLowerCase().startsWith("bn") ? "bn-BD" : "en-BD",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      },
+    );
   };
 
   const loadCurrentSubscription = async () => {
@@ -257,12 +673,15 @@ export default function SubscriptionPage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         setCurrentSubscription(null);
+        setPendingSubscription(null);
         return;
       }
       setCurrentSubscription(data?.subscription ?? null);
+      setPendingSubscription(data?.pendingSubscription ?? null);
     } catch (error) {
       console.error("Failed to load current subscription:", error);
       setCurrentSubscription(null);
+      setPendingSubscription(null);
     } finally {
       setSubscriptionLoading(false);
     }
@@ -275,247 +694,444 @@ export default function SubscriptionPage() {
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
-    setShowNotice(false);
     setPaymentError("");
   };
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (isProcessing) return;
     setIsProcessing(true);
-    setShowNotice(false);
     setPaymentError("");
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: selected.price,
-          metadata: {
-            plan_id: selected.id,
-            plan_name: selected.name,
-            duration: selected.duration,
-            months: selected.months,
-          },
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.payment_url) {
-        throw new Error(data?.message || "Unable to create payment request.");
-      }
-      window.location.href = data.payment_url;
-    } catch (error) {
-      console.error("Checkout error:", error);
-      setPaymentError(error instanceof Error ? error.message : "Payment could not be started. Please try again.");
-      setIsProcessing(false);
-    }
+    window.location.href = `/payment/manual?plan=${encodeURIComponent(selected.id)}`;
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-[#0F172A] lg:h-dvh">
+    <div className="flex min-h-screen flex-col bg-[#F5F7FC] font-sans text-[#0F172A] lg:h-dvh lg:overflow-hidden">
       <DashboardNavbar />
-      <main className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto">
-        <div data-nav-content className="mx-auto my-auto grid w-full max-w-[1480px] items-start gap-6 px-4 py-[clamp(12px,3vh,40px)] lg:grid-cols-2 xl:gap-10">
-          <div className="flex min-w-0 flex-col gap-[clamp(10px,2vh,24px)]">
-          <section aria-label={t("Subscription offer video")} className="w-full">
-            <OfferVideoFrame
-              src="/offervideo/offerwoman2.mp4"
-              playLabel={t("Watch video")}
-              replayLabel={t("Replay video")}
-            />
-          </section>
+      <main className="font-bengali-ui flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-y-auto">
+        <div
+          data-nav-content
+          className="mx-auto grid w-full max-w-[1480px] items-start gap-3 px-3 py-3 sm:px-4 lg:h-auto lg:min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:gap-3 lg:py-2 xl:gap-5 [@media(max-height:800px)]:lg:h-auto [@media(max-height:800px)]:lg:py-3"
+        >
+          <div className="flex min-w-0 flex-col gap-2 lg:min-h-0">
+            <section
+              aria-label={t("Subscription offer video")}
+              className="w-full"
+            >
+              <OfferVideoFrame
+                src="/offervideo/offerwoman2.mp4"
+                playLabel={t("Watch video")}
+                replayLabel={t("Replay video")}
+                maxHeightDvh={30}
+              />
+            </section>
 
-          <section aria-label={t("Current subscription")}>
-            {subscriptionLoading ? (
-              <div aria-busy="true" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-                <div className="mt-4 h-6 w-36 animate-pulse rounded bg-slate-100" />
-                <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
-              </div>
-            ) : currentSubscription ? (
-              (() => {
-                const { expired, daysLeft, progress } = getTiming(currentSubscription);
-                const statusLabel = expired ? "Expired" : capitalize(currentSubscription.accessStatus) || "Active";
-                const isActive = statusLabel === "Active";
-                const RING_R = 52;
-                const RING_C = 2 * Math.PI * RING_R;
-                const remainingPct = expired ? 0 : progress === null ? null : 100 - progress;
-                const ringStroke = expired
-                  ? "stroke-slate-300"
-                  : remainingPct !== null && remainingPct < 10
-                    ? "stroke-amber-500"
-                    : "stroke-[#2563EB]";
-                const ringMain = expired ? "0" : daysLeft === null ? "—" : daysLeft === 0 ? "<1" : String(daysLeft);
-                const ringLabel = daysLeft === 1 || (daysLeft === 0 && !expired) ? "day left" : "days left";
+            <section aria-label={t("Current subscription")}>
+              {subscriptionLoading ? (
+                <div
+                  aria-busy="true"
+                  className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                >
+                  <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+                  <div className="mt-4 h-6 w-36 animate-pulse rounded bg-slate-100" />
+                  <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+                </div>
+              ) : currentSubscription ? (
+                (() => {
+                  const { expired, daysLeft, progress } =
+                    getTiming(currentSubscription);
+                  const statusLabel = expired
+                    ? "Expired"
+                    : capitalize(currentSubscription.accessStatus) || "Active";
+                  const isActive = statusLabel === "Active";
+                  const RING_R = 52;
+                  const RING_C = 2 * Math.PI * RING_R;
+                  const remainingPct = expired
+                    ? 0
+                    : progress === null
+                      ? null
+                      : 100 - progress;
+                  const ringStroke = expired
+                    ? "stroke-slate-300"
+                    : remainingPct !== null && remainingPct < 10
+                      ? "stroke-amber-500"
+                      : "stroke-[#2563EB]";
+                  const ringMain = expired
+                    ? "0"
+                    : daysLeft === null
+                      ? "—"
+                      : daysLeft === 0
+                        ? "<1"
+                        : String(daysLeft);
+                  const ringLabel =
+                    daysLeft === 1 || (daysLeft === 0 && !expired)
+                      ? "day left"
+                      : "days left";
 
-                return (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex flex-col items-center gap-4 p-[clamp(14px,2.6vh,32px)] sm:flex-row sm:gap-6">
-                      <div className="relative h-[clamp(84px,12vh,128px)] w-[clamp(84px,12vh,128px)] shrink-0">
-                        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden="true">
-                          <circle cx="60" cy="60" r={RING_R} fill="none" strokeWidth="9" className="stroke-slate-100" />
-                          {remainingPct !== null && remainingPct > 0 && (
+                  return (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="flex flex-col items-center gap-2 p-[clamp(8px,1.2vh,14px)] sm:flex-row sm:gap-4">
+                        <div className="relative h-[clamp(64px,9vh,92px)] w-[clamp(64px,9vh,92px)] shrink-0">
+                          <svg
+                            viewBox="0 0 120 120"
+                            className="h-full w-full -rotate-90"
+                            aria-hidden="true"
+                          >
                             <circle
                               cx="60"
                               cy="60"
                               r={RING_R}
                               fill="none"
                               strokeWidth="9"
-                              strokeLinecap="round"
-                              strokeDasharray={`${(RING_C * remainingPct) / 100} ${RING_C}`}
-                              className={`${ringStroke} transition-[stroke-dasharray] duration-700`}
+                              className="stroke-slate-100"
                             />
-                          )}
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">{ringMain}</span>
-                          <span className="mt-1 text-[11px] text-slate-500"><T>{ringLabel}</T></span>
+                            {remainingPct !== null && remainingPct > 0 && (
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={RING_R}
+                                fill="none"
+                                strokeWidth="9"
+                                strokeLinecap="round"
+                                strokeDasharray={`${(RING_C * remainingPct) / 100} ${RING_C}`}
+                                className={`${ringStroke} transition-[stroke-dasharray] duration-700`}
+                              />
+                            )}
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">
+                              {ringMain}
+                            </span>
+                            <span className="mt-1 text-[11px] text-slate-500">
+                              <T>{ringLabel}</T>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="min-w-0 flex-1 text-center sm:text-left">
+                          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
+                            <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]">
+                              <T>{currentSubscription.planName}</T>
+                            </h2>
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}
+                              />
+                              <T>{statusLabel}</T>
+                            </span>
+                          </div>
+                          <p className="mx-auto mt-1.5 max-w-md rounded-lg border-l-4 border-red-500 bg-red-50 px-3 py-1.5 text-left text-xs font-medium leading-4 text-red-700 sm:mx-0">
+                            {expired ? (
+                              <>
+                                <T>{"This plan ended on"}</T>{" "}
+                                <strong className="font-bold text-red-800">
+                                  {formatDate(currentSubscription.expiresAt)}
+                                </strong>
+                                <T>{". Choose a plan below to renew."}</T>
+                              </>
+                            ) : (
+                              <>
+                                <T>{"Your access is active until"}</T>{" "}
+                                <strong className="font-bold text-red-800">
+                                  {formatDate(currentSubscription.expiresAt)}
+                                </strong>
+                                <T>
+                                  {
+                                    ". You can renew for another month whenever you want."
+                                  }
+                                </T>
+                              </>
+                            )}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="min-w-0 flex-1 text-center sm:text-left">
-                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
-                          <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]"><T>{currentSubscription.planName}</T></h2>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
-                            <T>{statusLabel}</T>
+                      <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                        <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                            <Wallet size={15} />
                           </span>
+                          <div>
+                            <dt className="text-xs text-slate-500">
+                              <T>{"Amount paid"}</T>
+                            </dt>
+                            <dd className="text-sm font-semibold text-[#0F172A]">
+                              {formatPrice(currentSubscription.amount)}
+                            </dd>
+                          </div>
                         </div>
-                        <p className="mx-auto mt-2.5 max-w-md rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-2 text-left text-[13px] font-medium leading-5 text-red-700 sm:mx-0">
-                          {expired ? (
-                            <>
-                              <T>{"This plan ended on"}</T>{" "}
-                              <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
-                              <T>{". Choose a plan below to renew."}</T>
-                            </>
-                          ) : (
-                            <>
-                              <T>{"Your access is active until"}</T>{" "}
-                              <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
-                              <T>{". You can renew for another month whenever you want."}</T>
-                            </>
-                          )}
-                        </p>
-                      </div>
+                        <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                            <CalendarCheck size={15} />
+                          </span>
+                          <div>
+                            <dt className="text-xs text-slate-500">
+                              <T>{"Started"}</T>
+                            </dt>
+                            <dd className="text-sm font-semibold text-[#0F172A]">
+                              {formatDate(currentSubscription.startedAt)}
+                            </dd>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                            <CalendarClock size={15} />
+                          </span>
+                          <div>
+                            <dt className="text-xs text-slate-500">
+                              {expired ? <T>{"Ended"}</T> : <T>{"Expires"}</T>}
+                            </dt>
+                            <dd className="text-sm font-semibold text-[#0F172A]">
+                              {formatDate(currentSubscription.expiresAt)}
+                            </dd>
+                          </div>
+                        </div>
+                      </dl>
                     </div>
+                  );
+                })()
+              ) : null}
+            </section>
 
-                    <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><Wallet size={15} /></span>
-                        <div>
-                          <dt className="text-xs text-slate-500"><T>{"Amount paid"}</T></dt>
-                          <dd className="text-sm font-semibold text-[#0F172A]">{formatPrice(currentSubscription.amount)}</dd>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><CalendarCheck size={15} /></span>
-                        <div>
-                          <dt className="text-xs text-slate-500"><T>{"Started"}</T></dt>
-                          <dd className="text-sm font-semibold text-[#0F172A]">{formatDate(currentSubscription.startedAt)}</dd>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 px-5 py-[clamp(8px,1.5vh,16px)]">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200"><CalendarClock size={15} /></span>
-                        <div>
-                          <dt className="text-xs text-slate-500">{expired ? <T>{"Ended"}</T> : <T>{"Expires"}</T>}</dt>
-                          <dd className="text-sm font-semibold text-[#0F172A]">{formatDate(currentSubscription.expiresAt)}</dd>
-                        </div>
-                      </div>
-                    </dl>
-                  </div>
-                );
-              })()
-            ) : null}
-          </section>
-
-          <section aria-label={t("Continue to payment")} className="flex w-full flex-col items-center justify-center gap-3 py-2 text-center">
-            <button type="button" onClick={handleContinue} disabled={isProcessing} className="inline-flex min-h-12 max-w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] px-8 py-3.5 text-center text-sm font-bold text-white shadow-[0_10px_28px_-10px_rgba(37,99,235,0.8)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-10px_rgba(37,99,235,0.85)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:px-10">
-              {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Unlock 30-day access for ${formatPrice(selected.price)}`}</T>}
-            </button>
-            {showNotice && <p className="w-full max-w-xl rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600"><T>{"Online payment is ready."}</T></p>}
-            {paymentError && <p role="alert" className="w-full max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"><T>{paymentError}</T></p>}
-          </section>
-
-          <section role="radiogroup" aria-label={t("Subscription plans")} className="mx-auto grid w-full max-w-[840px] grid-cols-1 pt-3">
-            {plans.map((plan) => {
-              const isSelected = plan.id === selectedId;
-              const savings = getDiscount(plan.price, plan.regularPrice);
-              const savingsAmount = plan.regularPrice - plan.price;
-              return (
-                <button
-                  key={plan.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => handleSelect(plan.id)}
-                  className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "border-[#2563EB] bg-white shadow-[0_16px_44px_-18px_rgba(37,99,235,0.42)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"}`}
-                >
-                  <span className="absolute -top-3 left-5 inline-flex items-center rounded-full border border-white/20 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#4F7DF3] px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_6px_18px_-5px_rgba(37,99,235,0.65)] ring-1 ring-[#2563EB]/20">
-                    <T>{plan.badge}</T>
+            {pendingSubscription && (
+              <section
+                aria-label={t("Payment review in progress")}
+                aria-live="polite"
+                className="relative isolate overflow-hidden rounded-3xl border border-amber-200/90 bg-gradient-to-br from-[#FFF9E8] via-white to-[#FFF1D1] p-5 shadow-[0_20px_48px_-26px_rgba(180,83,9,0.42)] sm:p-6"
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-amber-300/25 blur-3xl"
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-14 left-1/3 h-32 w-32 rounded-full bg-orange-200/25 blur-3xl"
+                />
+                <div className="relative flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+                    <Clock3 size={24} strokeWidth={2.3} />
                   </span>
-                  <span className={`absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white"}`}>
-                    <Check size={13} strokeWidth={3.5} className={`text-white transition-all ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`} />
-                  </span>
-
-                  <div className="grid gap-5 p-5 pt-8 sm:p-7 sm:pt-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8">
-                    <div className="min-w-0 pr-8 sm:pr-10 md:pr-0">
-                      <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-                        <h2 className="text-xl font-black tracking-tight text-[#0F172A] sm:text-2xl"><T>{plan.name}</T></h2>
-                        <span className="pb-0.5 text-xs font-semibold text-slate-400"><T>{plan.duration}</T></span>
-                      </div>
-                      <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600"><T>{plan.note}</T></p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
-                          <Check size={13} strokeWidth={3} /><T>{"AI Editor, AI Template, and Bulk Photo Edit are included"}</T>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                          <Check size={13} strokeWidth={3} /><T>{"One-time payment"}</T>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                          <Check size={13} strokeWidth={3} /><T>{"No auto-renewal"}</T>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-4 md:min-w-[210px] md:border-l md:border-t-0 md:pl-8 md:pt-0 md:text-right">
-                      <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
-                        <T>{"Regular price"}</T>
-                        <span className="text-sm line-through decoration-slate-400">{formatPrice(plan.regularPrice)}</span>
-                      </p>
-                      <div className="mt-1 flex items-baseline gap-2 md:justify-end">
-                        <span className="text-4xl font-black leading-none tracking-tight text-[#2563EB] sm:text-5xl">{formatPrice(plan.price)}</span>
-                        <span className="text-xs font-semibold text-slate-500"><T>{"/ 30 days"}</T></span>
-                      </div>
-                      <span className="mt-3 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-                        <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h2 className="text-lg font-black tracking-tight text-amber-950 sm:text-xl">
+                        <T>{"Payment review in progress"}</T>
+                      </h2>
+                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/90 px-3 py-1.5 text-xs font-extrabold text-amber-800 shadow-sm sm:text-sm">
+                        <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]" />
+                        <T>{"Waiting for review"}</T>
                       </span>
                     </div>
+                    <p className="mt-2 max-w-2xl text-base leading-7 text-amber-950/90 sm:text-[17px] sm:leading-8">
+                      <T>
+                        {
+                          "Your payment details have been submitted. Paid access starts after admin approval."
+                        }
+                      </T>
+                    </p>
+                    <dl className="mt-5 grid gap-2 sm:grid-cols-2">
+                      <div className="min-w-0 rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
+                        <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                          প্ল্যান ও মূল্য
+                        </dt>
+                        <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                          {pendingSubscription.planName} ·{" "}
+                          {formatPrice(pendingSubscription.amount)}
+                        </dd>
+                      </div>
+                      {pendingSubscription.paymentMethod && (
+                        <div className="rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
+                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                            পেমেন্ট মাধ্যম
+                          </dt>
+                          <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                            {pendingSubscription.paymentMethod}
+                          </dd>
+                        </div>
+                      )}
+                      {pendingSubscription.transactionId && (
+                        <div className="min-w-0 rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
+                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                            <T>{"Transaction ID"}</T>
+                          </dt>
+                          <dd className="mt-1 break-all font-mono text-base font-extrabold tracking-wide text-slate-900 sm:text-[17px]">
+                            {pendingSubscription.transactionId}
+                          </dd>
+                        </div>
+                      )}
+                      {pendingSubscription.submittedAt && (
+                        <div className="rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
+                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                            জমা দেওয়ার তারিখ
+                          </dt>
+                          <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                            {formatDate(pendingSubscription.submittedAt)}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                    <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200/80 bg-amber-100/60 px-3.5 py-3 text-sm font-semibold leading-6 text-amber-950 sm:text-base sm:leading-7">
+                      <ShieldCheck size={19} className="mt-0.5 shrink-0" />
+                      অ্যাডমিন পেমেন্টের তথ্য যাচাই করে Approve করলেই আপনার পেইড
+                      অ্যাক্সেস চালু হবে।
+                    </p>
                   </div>
-                </button>
-              );
-            })}
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-white px-5 py-[clamp(10px,1.8vh,20px)]">
-            <h2 className="text-sm font-black text-[#0F172A]"><T>{"Included with your subscription"}</T></h2>
-            <div className="mt-2 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
-              {features.map((feature) => (
-                <div key={feature} className="flex items-start gap-2 text-xs font-medium text-slate-600 sm:text-[13px]">
-                  <Check size={14} strokeWidth={3} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <span><T>{feature}</T></span>
                 </div>
-              ))}
+              </section>
+            )}
+
+            <section
+              aria-label={t("Continue to payment")}
+              className="flex w-full flex-col items-center justify-center gap-2 py-0.5 text-center"
+            >
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={isProcessing}
+                className="inline-flex min-h-10 max-w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] px-6 py-2 text-center text-sm font-bold text-white shadow-[0_8px_22px_-10px_rgba(37,99,235,0.8)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(37,99,235,0.85)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:px-8"
+              >
+                {isProcessing ? (
+                  <T>{"Opening payment page..."}</T>
+                ) : (
+                  <T>{`Unlock 30-day access for ${formatPrice(selected.price)}`}</T>
+                )}
+              </button>
+              {paymentError && (
+                <p
+                  role="alert"
+                  className="w-full max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"
+                >
+                  <T>{paymentError}</T>
+                </p>
+              )}
+            </section>
+
+            <section
+              role="radiogroup"
+              aria-label={t("Subscription plans")}
+              className="mx-auto grid w-full max-w-[840px] grid-cols-1 pt-2"
+            >
+              {plans.map((plan) => {
+                const isSelected = plan.id === selectedId;
+                const savings = getDiscount(plan.price, plan.regularPrice);
+                const savingsAmount = plan.regularPrice - plan.price;
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => handleSelect(plan.id)}
+                    className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "border-[#2563EB] bg-white shadow-[0_16px_44px_-18px_rgba(37,99,235,0.42)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"}`}
+                  >
+                    <span className="absolute -top-2.5 left-4 inline-flex items-center rounded-full border border-white/20 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#4F7DF3] px-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.1em] text-white shadow-[0_6px_18px_-5px_rgba(37,99,235,0.65)] ring-1 ring-[#2563EB]/20">
+                      <T>{plan.badge}</T>
+                    </span>
+                    <span
+                      className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white"}`}
+                    >
+                      <Check
+                        size={13}
+                        strokeWidth={3.5}
+                        className={`text-white transition-all ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}
+                      />
+                    </span>
+
+                    <div className="grid gap-3 p-3 pt-6 sm:p-4 sm:pt-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5">
+                      <div className="min-w-0 pr-7 sm:pr-8 md:pr-0">
+                        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                          <h2 className="text-lg font-black tracking-tight text-[#0F172A] sm:text-xl">
+                            <T>{plan.name}</T>
+                          </h2>
+                          <span className="pb-0.5 text-xs font-semibold text-slate-400">
+                            <T>{plan.duration}</T>
+                          </span>
+                        </div>
+                        <p className="mt-1 max-w-lg text-xs leading-5 text-slate-600">
+                          <T>{plan.note}</T>
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-800 sm:text-[11px]">
+                            <Check size={13} strokeWidth={3} />
+                            <T>
+                              {
+                                "AI Editor, AI Template, and Bulk Photo Edit are included"
+                              }
+                            </T>
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:text-[11px]">
+                            <Check size={13} strokeWidth={3} />
+                            <T>{"One-time payment"}</T>
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:text-[11px]">
+                            <Check size={13} strokeWidth={3} />
+                            <T>{"No auto-renewal"}</T>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-100 pt-2 md:min-w-[170px] md:border-l md:border-t-0 md:pl-5 md:pt-0 md:text-right">
+                        <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
+                          <T>{"Regular price"}</T>
+                          <span className="text-sm line-through decoration-slate-400">
+                            {formatPrice(plan.regularPrice)}
+                          </span>
+                        </p>
+                        <div className="mt-1 flex items-baseline gap-2 md:justify-end">
+                          <span className="text-3xl font-black leading-none tracking-tight text-[#2563EB] sm:text-4xl">
+                            {formatPrice(plan.price)}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500">
+                            <T>{"/ 30 days"}</T>
+                          </span>
+                        </div>
+                        <span className="mt-2 inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100 sm:text-xs">
+                          <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <h2 className="text-xs font-black text-[#0F172A]">
+                <T>{"Included with your subscription"}</T>
+              </h2>
+              <div className="mt-1 grid gap-x-3 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
+                {features.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-start gap-1.5 text-[10px] font-medium leading-4 text-slate-600 sm:text-[11px]"
+                  >
+                    <Check
+                      size={14}
+                      strokeWidth={3}
+                      className="mt-0.5 shrink-0 text-emerald-600"
+                    />
+                    <span>
+                      <T>{feature}</T>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <div className="text-center">
+              <Link
+                href="/sohoj-tools"
+                className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
+              >
+                <ArrowLeft size={14} />
+                <T>{"Back to Tools"}</T>
+              </Link>
             </div>
-          </section>
-
-          <div className="text-center">
-            <Link href="/sohoj-tools" className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline">
-              <ArrowLeft size={14} /><T>{"Back to Tools"}</T>
-            </Link>
-          </div>
           </div>
 
-          <div className="min-w-0 lg:sticky lg:top-4">
-            <NagadPaymentGuide amount={selected.price} />
+          <div className="flex min-w-0 flex-col gap-2 lg:min-h-0">
+            <RecentSubscriptionActivity />
+            <ManualPaymentGuide amount={selected.price} />
           </div>
         </div>
       </main>

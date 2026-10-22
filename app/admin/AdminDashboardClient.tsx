@@ -77,6 +77,12 @@ type SubscriptionRow = {
   invoiceId: string;
   transactionId: string;
   paymentMethod: string;
+  senderNumber?: string;
+  reviewStatus?: string;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewedBy?: string;
+  reviewNote?: string;
   paymentStatus: string;
   accessStatus: string;
   startedAt?: string | null;
@@ -371,6 +377,8 @@ export default function AdminDashboardClient() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
   const [subscriptionsError, setSubscriptionsError] = useState("");
+  const [reviewActionError, setReviewActionError] = useState("");
+  const [reviewingSubscriptionId, setReviewingSubscriptionId] = useState("");
   const [subscriptionPagination, setSubscriptionPagination] =
     useState<ApiPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
 
@@ -552,6 +560,58 @@ export default function AdminDashboardClient() {
     },
     [authHeaders, appliedSubscriptionSearch, subscriptionStatus],
   );
+
+  const reviewSubscription = useCallback(
+    async (item: SubscriptionRow, action: "approve" | "reject") => {
+      let note = "";
+      if (action === "approve") {
+        if (!window.confirm(`Approve payment ${item.transactionId || item.id} for ${item.user?.fullName || "this user"}?`)) return;
+      } else {
+        const entered = window.prompt("Optional reason for rejecting this payment:", "");
+        if (entered === null) return;
+        note = entered.trim().slice(0, 500);
+      }
+
+      setReviewingSubscriptionId(item.id);
+      setReviewActionError("");
+      try {
+        const response = await fetch(`/api/admin/subscriptions/${encodeURIComponent(item.id)}/review`, {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ action, note }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.message || `Could not ${action} this payment.`);
+        }
+        await loadSubscriptions(subscriptionPagination.page);
+      } catch (error) {
+        setReviewActionError(error instanceof Error ? error.message : `Could not ${action} this payment.`);
+      } finally {
+        setReviewingSubscriptionId("");
+      }
+    },
+    [authHeaders, loadSubscriptions, subscriptionPagination.page],
+  );
+
+  const subscriptionReviewActions = (item: SubscriptionRow) => {
+    if (item.paymentStatus !== "PENDING" || !item.transactionId) return null;
+    const busy = reviewingSubscriptionId === item.id;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "approve")}
+          className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
+          {busy ? "Please wait…" : "Approve"}
+        </button>
+        <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "reject")}
+          className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50">
+          Reject
+        </button>
+      </div>
+    );
+  };
 
   // Fill the header (email / name) from the cached account before the first paint.
   useIsoLayoutEffect(() => {
@@ -920,7 +980,7 @@ export default function AdminDashboardClient() {
   const subscriptionRows = (rows: SubscriptionRow[]) => (
     <>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[760px] border-collapse text-left">
+        <table className="w-full min-w-[1040px] border-collapse text-left">
           <thead>
             <tr className="border-y border-slate-100 bg-slate-50/70">
               <th className={TH}>Customer</th>
@@ -929,6 +989,7 @@ export default function AdminDashboardClient() {
               <th className={TH}>Payment</th>
               <th className={TH}>Access</th>
               <th className={TH}>Expires</th>
+              <th className={TH}>Review</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -974,6 +1035,10 @@ export default function AdminDashboardClient() {
                       label={item.paymentStatus || "Unknown"}
                       tone={paymentTone}
                     />
+                    {item.paymentMethod && <div className="mt-1 text-xs font-semibold text-slate-700">{item.paymentMethod}</div>}
+                    {item.transactionId && <div className="mt-1 max-w-[190px] break-all text-xs text-slate-500">TrxID: {item.transactionId}</div>}
+                    {item.senderNumber && <div className="mt-1 text-xs text-slate-500">From: {item.senderNumber}</div>}
+                    {item.reviewNote && <div className="mt-1 max-w-[200px] text-xs text-rose-700">Note: {item.reviewNote}</div>}
                   </td>
                   <td className="px-5 py-3.5">
                     <StatusPill
@@ -989,6 +1054,7 @@ export default function AdminDashboardClient() {
                       Started {formatDate(item.startedAt)}
                     </div>
                   </td>
+                  <td className="px-5 py-3.5">{subscriptionReviewActions(item) || <span className="text-xs text-slate-400">—</span>}</td>
                 </tr>
               );
             })}
@@ -1032,6 +1098,15 @@ export default function AdminDashboardClient() {
                 Expires {formatDate(item.expiresAt)} · Started{" "}
                 {formatDate(item.startedAt)}
               </div>
+              {(item.paymentMethod || item.transactionId || item.senderNumber) && (
+                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                  {item.paymentMethod && <div>Method: <strong>{item.paymentMethod}</strong></div>}
+                  {item.transactionId && <div className="mt-1 break-all">TrxID: <strong>{item.transactionId}</strong></div>}
+                  {item.senderNumber && <div className="mt-1">Sender: <strong>{item.senderNumber}</strong></div>}
+                  {item.reviewNote && <div className="mt-1 text-rose-700">Note: {item.reviewNote}</div>}
+                </div>
+              )}
+              {subscriptionReviewActions(item) && <div className="mt-3">{subscriptionReviewActions(item)}</div>}
             </li>
           );
         })}
@@ -1712,15 +1787,16 @@ export default function AdminDashboardClient() {
                   ["pending", "Pending payment"],
                   ["cancelled", "Cancelled"],
                   ["error", "Payment errors"],
+                  ["rejected", "Rejected payments"],
                 ],
                 label: "Search",
               })}
-              {subscriptionsError && (
+              {(subscriptionsError || reviewActionError) && (
                 <div
                   role="alert"
                   className="mx-5 mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
                 >
-                  {subscriptionsError}
+                  {reviewActionError || subscriptionsError}
                 </div>
               )}
               {subscriptionsLoading ? (

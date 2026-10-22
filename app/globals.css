@@ -27,6 +27,16 @@ html[lang="bn"] body {
   line-height: 1.65;
 }
 
+/* Premium, predictable Bengali typography for the subscription and checkout flow. */
+.font-bengali-ui {
+  font-family: var(--font-bangla), "Noto Sans Bengali", "Hind Siliguri", "Nirmala UI", "SolaimanLipi", sans-serif;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+}
+.font-bengali-ui :where(h1, h2, h3, p, label, li, dd, dt, button, a) {
+  font-kerning: normal;
+}
+
 html[data-locale="bn"] button,
 html[data-locale="bn"] input,
 html[data-locale="bn"] textarea,
@@ -127,3 +137,8 @@ html[data-nav-scaled] .nav-zoom-header {
 .live-dom-replay .replayer-wrapper iframe { border: 0; background: #fff; }
 .live-dom-replay .replayer-mouse,
 .live-dom-replay .replayer-mouse-tail { z-index: 20; }
+
+@keyframes sub-feed-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

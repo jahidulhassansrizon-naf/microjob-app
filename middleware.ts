@@ -219,6 +219,6 @@ export const config = {
     "/income-expenses/:path*",
     "/dorkari-document/:path*",
     "/login-success/:path*",
-    "/payment/success/:path*",
+    "/payment/manual/:path*",
   ],
 };

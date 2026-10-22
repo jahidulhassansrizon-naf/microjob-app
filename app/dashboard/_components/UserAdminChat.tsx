@@ -413,6 +413,8 @@ export default function UserAdminChat() {
   // The conversation stays visible inside the dashboard banner; users do not need to
   // discover or open a separate modal before they can start typing.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const knownMessageIdsRef = useRef<Set<string>>(new Set());
+  const messageHistoryInitializedRef = useRef(false);
   const [draft, setDraft] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -477,8 +479,25 @@ export default function UserAdminChat() {
           ? data.messages
           : [];
         if (options?.before) {
+          for (const message of incoming) knownMessageIdsRef.current.add(message.id);
           setMessages((current) => mergeMessages(incoming, current));
         } else {
+          const newlyReceivedAdminMessage = options?.silent && messageHistoryInitializedRef.current
+            ? incoming.find(
+                (message) =>
+                  message.senderRole === "admin" &&
+                  !knownMessageIdsRef.current.has(message.id),
+              )
+            : undefined;
+          if (newlyReceivedAdminMessage && typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("sohoj-support-message", {
+                detail: { messageId: newlyReceivedAdminMessage.id },
+              }),
+            );
+          }
+          for (const message of incoming) knownMessageIdsRef.current.add(message.id);
+          messageHistoryInitializedRef.current = true;
           setMessages((current) => {
             if (
               options?.silent &&

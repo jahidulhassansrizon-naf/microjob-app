@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
     const now = new Date();
 
-    const [subscription, user] = await Promise.all([
+    const [subscription, user, pendingPayment] = await Promise.all([
       Subscription.findOne({
         userId: decoded.userId,
         paymentStatus: "COMPLETED",
@@ -89,7 +89,27 @@ export async function GET(request: Request) {
       User.findById(decoded.userId)
         .select("manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt")
         .lean(),
+      Subscription.findOne({
+        userId: decoded.userId,
+        paymentStatus: "PENDING",
+        accessStatus: "PENDING",
+        paymentMethod: { $in: ["Nagad", "bKash"] },
+        transactionId: { $ne: "" },
+      })
+        .sort({ createdAt: -1 })
+        .select("planName amount paymentMethod transactionId submittedAt reviewStatus createdAt")
+        .lean(),
     ]);
+
+    const pendingSubscription = pendingPayment ? {
+      id: String(pendingPayment._id),
+      planName: pendingPayment.planName || "1 Month",
+      amount: Number(pendingPayment.amount || 0),
+      paymentMethod: pendingPayment.paymentMethod || "",
+      transactionId: pendingPayment.transactionId || "",
+      submittedAt: pendingPayment.submittedAt || pendingPayment.createdAt || null,
+      reviewStatus: pendingPayment.reviewStatus || "PENDING",
+    } : null;
 
     const manualExpiresAtMs = user?.manualAccessExpiresAt
       ? new Date(user.manualAccessExpiresAt).getTime()
@@ -109,6 +129,7 @@ export async function GET(request: Request) {
       const response = NextResponse.json({
         success: true,
         subscription: null,
+        pendingSubscription,
         access: { granted: false, source: "none", expiresAt: null },
       });
       clearSubscriptionAccessCookie(response);
@@ -124,6 +145,7 @@ export async function GET(request: Request) {
 
     const response = NextResponse.json({
       success: true,
+      pendingSubscription,
       subscription: subscription
         ? {
             id: String(subscription._id),

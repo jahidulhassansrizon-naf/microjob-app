@@ -47,11 +47,60 @@ const SubscriptionSchema = new Schema(
     paymentMethod: {
       type: String,
       default: "",
+      trim: true,
+    },
+
+    // Sender details are provided by the user and must be checked by an admin.
+    senderNumber: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    submittedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    // Separate normalized value provides a race-safe duplicate TrxID constraint.
+    // Records created before this field existed are ignored by the sparse index.
+    transactionIdKey: {
+      type: String,
+      default: undefined,
+      unique: true,
+      sparse: true,
+      select: false,
+    },
+
+    reviewStatus: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "PENDING",
+      index: true,
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+
+    reviewedBy: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    reviewNote: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 500,
     },
 
     paymentStatus: {
       type: String,
-      enum: ["PENDING", "COMPLETED", "ERROR", "CANCELLED"],
+      enum: ["PENDING", "COMPLETED", "ERROR", "CANCELLED", "REJECTED"],
       default: "PENDING",
       index: true,
     },

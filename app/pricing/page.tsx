@@ -13,7 +13,7 @@ import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
 import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
 
-/* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
+/* Subscription plan details are shared with the manual payment page via app/_lib/subscriptionPlans.ts. */
 const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
 const getDiscount = (price: number, regularPrice: number) =>
   Math.max(0, Math.round((1 - price / regularPrice) * 100));
@@ -94,7 +94,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
   "use the same account across supported tools": "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
   "manage your subscription status from this page": "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
-  "payment verification and subscription access are handled automatically": "পেমেন্ট যাচাই ও সাবস্ক্রিপশন অ্যাক্সেস স্বয়ংক্রিয়ভাবে পরিচালিত হয়",
+  "payment verification and subscription access are handled automatically": "অ্যাডমিন যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
+  "admin reviews the payment before subscription access is activated": "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "back to tools": "টুলসে ফিরে যান",
   "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
   "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
@@ -273,7 +274,6 @@ export default function PricingPage() {
   const router = useRouter();
   const toolNavigationInFlightRef = useRef(false);
   const [selectedId, setSelectedId] = useState<string>("1-month");
-  const [showNotice, setShowNotice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
@@ -403,14 +403,12 @@ export default function PricingPage() {
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
-    setShowNotice(false);
     setPaymentError("");
   };
 
   const handleContinue = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
-    setShowNotice(false);
     setPaymentError("");
 
     const returnPath = `/pricing?plan=${encodeURIComponent(selected.id)}`;
@@ -440,29 +438,8 @@ export default function PricingPage() {
         throw new Error("Unable to verify your login session. Please try again.");
       }
 
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: selected.price,
-          metadata: {
-            plan_id: selected.id,
-            plan_name: selected.name,
-            duration: selected.duration,
-            months: selected.months,
-          },
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.payment_url) {
-        if ([401, 403].includes(response.status)) {
-          window.location.href = loginUrl;
-          return;
-        }
-        throw new Error(data?.message || "Unable to create payment request.");
-      }
-      window.location.href = data.payment_url;
+      window.location.href = `/payment/manual?plan=${encodeURIComponent(selected.id)}`;
+      return;
     } catch (error) {
       console.error("Checkout error:", error);
       setPaymentError(error instanceof Error ? error.message : "Payment could not be started. Please try again.");
@@ -677,7 +654,6 @@ export default function PricingPage() {
                 </button>
               </div>
             </div>
-            {showNotice && <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600"><T>{"Online payment is ready."}</T></p>}
             {paymentError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"><T>{paymentError}</T></p>}
           </section>
 
