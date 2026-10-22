@@ -438,18 +438,29 @@ export default function RegisterPage() {
 
       {/* OTP verification modal */}
       {isOtpModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="otp-title">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-7">
-            <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><ShieldCheck size={26} /></div>
-            <h3 id="otp-title" className="text-center text-lg font-extrabold">{tx("Verify your email", "আপনার ইমেইল যাচাই করুন")}</h3>
-            <p className="mt-2 text-center text-sm leading-6 text-slate-500">{tx("We sent a 6-digit verification code to", "আমরা ৬ সংখ্যার যাচাইকরণ কোড পাঠিয়েছি")} <span className="break-all font-semibold text-slate-800">{formData.email}</span></p>
-            {otpError && <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-medium text-red-700">{otpError}</div>}
-            <div className="my-5">
-              <label htmlFor="register-otp" className="mb-2 block text-xs font-semibold text-slate-700">{tx("Enter 6-digit code", "৬ সংখ্যার কোড লিখুন")}</label>
-              <input id="register-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="123456" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl font-bold tracking-[0.45em] text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="otp-title">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/80 bg-white p-6 shadow-2xl shadow-indigo-950/20 sm:p-8">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
+            <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
+            <div className="mb-5 flex justify-center">
+              <Link href="/" aria-label="Sohoj Hub home" className="inline-flex items-center gap-2.5 rounded-2xl px-3 py-2 transition hover:bg-slate-50">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20">SH</span>
+                <span className="text-left"><span className="block text-lg font-black tracking-tight text-slate-900">Sohoj <span className="text-indigo-600">Hub</span></span><span className="mt-0.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400">SOHOJHUB.COM</span></span>
+              </Link>
             </div>
-            <button type="button" onClick={handleVerifyAndRegister} disabled={loading} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/15 transition hover:bg-emerald-700 disabled:opacity-60">{loading ? tx("Verifying…", "যাচাই করা হচ্ছে…") : tx("Verify and create account", "যাচাই করে অ্যাকাউন্ট তৈরি করুন")}</button>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-violet-100 text-indigo-600 ring-1 ring-indigo-100"><ShieldCheck size={25} /></div>
+            <div className="mb-5 text-center">
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700"><ShieldCheck size={12} />{tx("Secure verification", "নিরাপদ যাচাইকরণ")}</div>
+              <h3 id="otp-title" className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">{tx("Verify your email", "আপনার ইমেইল যাচাই করুন")}</h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{tx("We sent a 6-digit verification code to", "আমরা ৬ সংখ্যার যাচাইকরণ কোড পাঠিয়েছি")} <span className="break-all font-semibold text-slate-800">{formData.email}</span></p>
+            </div>
+            {otpError && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-medium leading-5 text-red-700">{otpError}</div>}
+            <div className="mb-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-slate-50 to-indigo-50/70 p-4 sm:p-5">
+              <label htmlFor="register-otp" className="mb-2.5 block text-xs font-bold text-slate-700">{tx("Enter 6-digit code", "৬ সংখ্যার কোড লিখুন")}</label>
+              <input id="register-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="1 2 3 4 5 6" className="w-full rounded-xl border border-indigo-200 bg-white px-4 py-3.5 text-center text-xl font-extrabold tracking-[0.35em] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15" />
+              <p className="mt-2.5 text-center text-[11px] leading-5 text-slate-500">{tx("The code is valid for 5 minutes. Keep it private.", "কোডটি ৫ মিনিট পর্যন্ত কার্যকর। এটি গোপন রাখুন।")}</p>
+            </div>
+            <button type="button" onClick={handleVerifyAndRegister} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{loading ? tx("Verifying…", "যাচাই করা হচ্ছে…") : tx("Verify and create account", "যাচাই করে অ্যাকাউন্ট তৈরি করুন")}</button>
             <button type="button" onClick={handleSendOtp} disabled={loading} className="mt-3 w-full rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:text-indigo-600 disabled:opacity-50">{tx("Didn't receive the code? Resend", "কোড পাননি? আবার পাঠান")}</button>
           </div>
         </div>

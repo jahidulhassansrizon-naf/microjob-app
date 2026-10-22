@@ -158,6 +158,62 @@ function T({ children }: { children: ReactNode }) {
   return <>{t(children)}</>;
 }
 
+
+const toBnDigits = (value: string | number) => String(value).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+
+function NagadPaymentGuide({ amount }: { amount: number }) {
+  const bnAmount = toBnDigits(amount);
+  const steps: { title: string; body: ReactNode }[] = [
+    {
+      title: "আনলক বাটনে ক্লিক করুন",
+      body: <>উপরের নীল বাটনে চাপ দিন। পেমেন্টের পেজ খুলে যাবে।</>,
+    },
+    {
+      title: "নগদ বেছে নিয়ে পে করুন",
+      body: <><strong>Nagad Personal</strong> সিলেক্ট করুন, তারপর <strong>Pay {amount} BDT</strong> বাটনে চাপ দিন।</>,
+    },
+    {
+      title: "আপনার নগদ নম্বর দিন",
+      body: <>যে নগদ নম্বর থেকে টাকা পাঠাবেন, সেই নম্বরটি লিখে <strong>Submit</strong> চাপুন।</>,
+    },
+    {
+      title: `নগদ অ্যাপ থেকে ঠিক ${bnAmount} টাকা পাঠান`,
+      body: <>পেমেন্ট পেজে যে নম্বর দেখাবে, নগদ অ্যাপে <strong>Send Money</strong> দিয়ে সেই নম্বরে ঠিক <strong>{bnAmount} টাকা</strong> পাঠান। নম্বর ও টাকার পাশের <strong>Copy</strong> বাটন ব্যবহার করলে ভুল হবে না।</>,
+    },
+    {
+      title: "ট্রানজেকশন আইডি (TrxID) জমা দিন",
+      body: <>টাকা পাঠানো হয়ে গেলে নগদের মেসেজে একটি <strong>TrxID</strong> পাবেন। পেমেন্ট পেজের একদম নিচে <strong>&quot;Taking too long to verify? Submit Nagad Transaction ID&quot;</strong> লেখার নীল লিংকে ক্লিক করুন। তারপর ঘরে TrxID বসিয়ে <strong>Submit</strong> চাপুন।</>,
+    },
+    {
+      title: "অ্যাক্সেস চালু হয়ে যাবে",
+      body: <>পেমেন্ট যাচাই হলেই আপনার ৩০ দিনের অ্যাক্সেস চালু হবে।</>,
+    },
+  ];
+
+  return (
+    <section aria-label="নগদে পেমেন্ট করার নিয়ম" className="w-full rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-black text-[#0F172A] sm:text-2xl">নগদে পেমেন্ট করবেন যেভাবে</h2>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-100">ধাপে ধাপে গাইড</span>
+      </div>
+      <ol className="mt-5 grid gap-3.5">
+        {steps.map((step, index) => (
+          <li key={step.title} className={`flex gap-4 rounded-xl border px-4 py-3.5 ${index === 4 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-slate-50/60"}`}>
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-black text-white ${index === 4 ? "bg-amber-500" : "bg-[#2563EB]"}`}>{toBnDigits(index + 1)}</span>
+            <div className="min-w-0">
+              <p className="text-base font-extrabold text-[#0F172A] sm:text-lg">{step.title}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600 sm:text-[15px] sm:leading-7">{step.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-700">
+        মনে রাখবেন: টাকা পাঠানোর পর TrxID জমা না দিলে অ্যাক্সেস চালু হতে দেরি হতে পারে। কোনো সমস্যা হলে আমাদের সাপোর্টে যোগাযোগ করুন।
+      </p>
+    </section>
+  );
+}
+
 export default function SubscriptionPage() {
   type SubscriptionStatus = {
     id: string;
@@ -258,7 +314,8 @@ export default function SubscriptionPage() {
     <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-[#0F172A] lg:h-dvh">
       <DashboardNavbar />
       <main className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto">
-        <div data-nav-content className="mx-auto my-auto flex w-full max-w-[1112px] flex-col gap-[clamp(10px,2vh,24px)] px-4 py-[clamp(12px,3vh,40px)]">
+        <div data-nav-content className="mx-auto my-auto grid w-full max-w-[1480px] items-start gap-6 px-4 py-[clamp(12px,3vh,40px)] lg:grid-cols-2 xl:gap-10">
+          <div className="flex min-w-0 flex-col gap-[clamp(10px,2vh,24px)]">
           <section aria-label={t("Subscription offer video")} className="w-full">
             <OfferVideoFrame
               src="/offervideo/offerwoman2.mp4"
@@ -454,6 +511,11 @@ export default function SubscriptionPage() {
             <Link href="/sohoj-tools" className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline">
               <ArrowLeft size={14} /><T>{"Back to Tools"}</T>
             </Link>
+          </div>
+          </div>
+
+          <div className="min-w-0 lg:sticky lg:top-4">
+            <NagadPaymentGuide amount={selected.price} />
           </div>
         </div>
       </main>

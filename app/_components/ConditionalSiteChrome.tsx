@@ -8,7 +8,12 @@ export default function ConditionalSiteChrome({ children }: { children: ReactNod
   const pathname = usePathname();
   const isMobileQrUpload = pathname?.startsWith("/ai-editor/mobile-upload/") ?? false;
   const isAdminWorkspace = pathname === "/admin" || pathname?.startsWith("/admin/") || false;
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
 
-  if (isMobileQrUpload || isAdminWorkspace) return null;
+  // Keep authentication pages focused and consistent: they use their own branded headers.
+  if (isMobileQrUpload || isAdminWorkspace || isAuthPage) return null;
   return <>{children}</>;
 }
