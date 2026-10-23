@@ -75,7 +75,7 @@ export function ScanOverlay({ active = true }: { active?: boolean }) {
         className="pp-scan-grid absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(37,99,235,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.12) 1px, transparent 1px)",
+            "linear-gradient(rgba(220,38,38,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.12) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}
       />
@@ -88,9 +88,9 @@ export function ScanOverlay({ active = true }: { active?: boolean }) {
           className="absolute inset-x-[8%] top-1/2 h-[18px] -translate-y-1/2 rounded-full"
           style={{
             background:
-              "linear-gradient(180deg, rgba(37,99,235,0) 0%, rgba(37,99,235,0.10) 32%, rgba(16,185,129,0.18) 50%, rgba(37,99,235,0.10) 68%, rgba(37,99,235,0) 100%)",
+              "linear-gradient(180deg, rgba(220,38,38,0) 0%, rgba(220,38,38,0.10) 32%, rgba(248,113,113,0.18) 50%, rgba(220,38,38,0.10) 68%, rgba(220,38,38,0) 100%)",
             boxShadow:
-              "0 0 24px 8px rgba(37,99,235,0.12), 0 0 28px 6px rgba(16,185,129,0.10)",
+              "0 0 24px 8px rgba(220,38,38,0.12), 0 0 28px 6px rgba(248,113,113,0.10)",
           }}
         />
 
@@ -98,9 +98,9 @@ export function ScanOverlay({ active = true }: { active?: boolean }) {
           className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2"
           style={{
             background:
-              "linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.75) 18%, #10B981 50%, rgba(37,99,235,0.75) 82%, transparent 100%)",
+              "linear-gradient(90deg, transparent 0%, rgba(220,38,38,0.75) 18%, #F87171 50%, rgba(220,38,38,0.75) 82%, transparent 100%)",
             boxShadow:
-              "0 0 10px 2px rgba(37,99,235,0.34), 0 0 16px 3px rgba(16,185,129,0.18)",
+              "0 0 10px 2px rgba(220,38,38,0.34), 0 0 16px 3px rgba(248,113,113,0.18)",
           }}
         />
 
@@ -116,7 +116,7 @@ export function ScanOverlay({ active = true }: { active?: boolean }) {
       <div
         className="absolute inset-0"
         style={{
-          boxShadow: "inset 0 0 28px rgba(37,99,235,0.16)",
+          boxShadow: "inset 0 0 28px rgba(220,38,38,0.16)",
         }}
       />
     </div>

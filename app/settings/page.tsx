@@ -363,9 +363,9 @@ export default function SettingsPage() {
         }
     };
     if (loading && !user) {
-        return (<div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-xs">
-          <RefreshCw size={16} className="animate-spin text-[#2563EB]"/><T>{"Loading settings...\n        "}</T></div>
+        return (<div className="min-h-screen flex items-center justify-center bg-[#F6EEDB]">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#5A4A32] bg-[#FBF6E8] px-5 py-3 rounded-2xl border border-[#E3D6B8] shadow-xs">
+          <RefreshCw size={16} className="animate-spin text-[#DC2626]"/><T>{"Loading settings...\n        "}</T></div>
       </div>);
     }
     const sectionMeta = {
@@ -386,45 +386,56 @@ export default function SettingsPage() {
         description: string;
     }>;
     const ActiveIcon = sectionMeta[activeSection].icon;
-    return (<div className="min-h-screen bg-[#F8FAFC] text-gray-800 font-sans pb-12">
+    return (<div className="page-font min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] font-sans pb-12">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+      `}</style>
       <DashboardNavbar />
 
       <main className="max-w-[1120px] mx-auto px-4 py-7 sm:py-9">
         <div className="mb-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#2563EB]"><T>{"Account"}</T></p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900"><T>{"Settings"}</T></h1>
-          <p className="mt-1 text-sm text-slate-500"><T>{"Manage your personal information, password, and logged-in devices."}</T></p>
+          <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#DC2626]"><T>{"Account"}</T></p>
+          <h1 className="mt-1 text-3xl sm:text-3xl font-bold text-[#3B2F1E]"><T>{"Settings"}</T></h1>
+          <p className="mt-1 text-base text-[#6B5A40]"><T>{"Manage your personal information, password, and logged-in devices."}</T></p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] gap-5">
-          <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
+          <aside className="h-fit rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-2.5 shadow-sm">
             {(["Personal Information", "Change Password", "Devices Login"] as SettingSection[]).map((item) => {
             const Icon = sectionMeta[item].icon;
             const active = activeSection === item;
-            return (<button key={item} type="button" onClick={() => setActiveSection(item)} className={`w-full flex items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-blue-50 text-[#1D4ED8]" : "text-slate-700 hover:bg-slate-50"}`}>
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${active ? "bg-white text-[#2563EB] ring-1 ring-inset ring-blue-100" : "bg-slate-100 text-slate-500"}`}>
+            return (<button key={item} type="button" onClick={() => setActiveSection(item)} className={`w-full flex items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-[#F6D9A8] text-[#3B2F1E] ring-2 ring-[#DC2626]/40" : "text-[#5A4A32] hover:bg-[#EFE3C8]"}`}>
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${active ? "bg-[#FBF6E8] text-[#DC2626] ring-1 ring-inset ring-[#DC2626]/20" : "bg-[#F3E9D2] text-[#6B5A40]"}`}>
                     <Icon size={17}/>
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-xs font-bold truncate"><T>{item}</T></span>
-                    <span className="mt-0.5 block text-[10px] text-slate-400">{item === "Devices Login" ? t("Sessions") : item === "Change Password" ? t("Security") : t("Account details")}</span>
+                    <span className="block text-sm font-bold truncate"><T>{item}</T></span>
+                    <span className="mt-0.5 block text-[12px] text-[#7A6A50]">{item === "Devices Login" ? t("Sessions") : item === "Change Password" ? t("Security") : t("Account details")}</span>
                   </span>
                 </button>);
         })}
           </aside>
 
-          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
+          <section className="min-w-0 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 sm:p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3 border-b border-[#E3D6B8] pb-4 mb-5">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEE9E9] text-[#DC2626] ring-1 ring-inset ring-[#DC2626]/20">
                   <ActiveIcon size={18}/>
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-slate-900"><T>{activeSection}</T></h2>
-                  <p className="mt-0.5 text-xs text-slate-500"><T>{sectionMeta[activeSection].description}</T></p>
+                  <h2 className="text-lg font-bold text-[#3B2F1E]"><T>{activeSection}</T></h2>
+                  <p className="mt-0.5 text-sm text-[#6B5A40]"><T>{sectionMeta[activeSection].description}</T></p>
                 </div>
               </div>
-              <button type="button" onClick={() => void fetchProfile(false)} disabled={refreshing} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+              <button type="button" onClick={() => void fetchProfile(false)} disabled={refreshing} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2 text-sm font-semibold text-[#5A4A32] hover:bg-[#F6EEDB] disabled:opacity-60">
                 <RefreshCw size={13} className={refreshing ? "animate-spin" : ""}/><T>{"Refresh\n              "}</T></button>
             </div>
 
@@ -438,9 +449,9 @@ export default function SettingsPage() {
       </main>
 
       {toast && (<div className="fixed right-4 bottom-4 z-[60] max-w-sm">
-          <div className={`rounded-xl border px-4 py-3 shadow-lg flex items-start gap-2.5 bg-white ${toast.type === "success" ? "border-emerald-100" : "border-red-100"}`}>
+          <div className={`rounded-xl border px-4 py-3 shadow-lg flex items-start gap-2.5 bg-[#FBF6E8] ${toast.type === "success" ? "border-emerald-100" : "border-[#FBB6B6]"}`}>
             {toast.type === "success" ? (<CheckCircle2 size={17} className="text-emerald-500 shrink-0"/>) : (<AlertCircle size={17} className="text-red-500 shrink-0"/>)}
-            <p className={`text-xs font-semibold ${toast.type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+            <p className={`text-sm font-semibold ${toast.type === "success" ? "text-emerald-700" : "text-red-700"}`}>
               {t(toast.message)}
             </p>
           </div>

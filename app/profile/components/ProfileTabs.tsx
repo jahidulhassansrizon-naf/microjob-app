@@ -22,10 +22,10 @@ export default function ProfileTabs({
           key={tab}
           type="button"
           onClick={() => onChange(tab)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === tab
-              ? "bg-[#2563EB] text-white shadow-xs"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              ? "bg-[#DC2626] text-white shadow-xs"
+              : "bg-[#FBF6E8] text-[#5A4A32] border border-[#E3D6B8] hover:bg-[#F6EEDB]"
           }`}
         >
           <T>{tab}</T>

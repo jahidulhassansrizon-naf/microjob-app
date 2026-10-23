@@ -722,10 +722,10 @@ export default function PaperSheet({
           );
         }
       }}
-      className={`paper-screen-sheet ${paperClass} ${jointFixedClass} relative rounded-sm border bg-white shadow-[0_12px_30px_rgba(17,24,39,0.08)] ${padding} ${
+      className={`paper-screen-sheet ${paperClass} ${jointFixedClass} relative rounded-sm border bg-white shadow-[0_12px_30px_rgba(59,47,30,0.12)] ${padding} ${
         isActive
-          ? "border-[#2563EB] ring-2 ring-[#2563EB]/30"
-          : "border-[#E2E8F0]"
+          ? "border-[#DC2626] ring-2 ring-[#DC2626]/40"
+          : "border-[#E3D6B8]"
       } ${onActivate ? "cursor-pointer" : ""}`}
       style={{
         fontFamily:

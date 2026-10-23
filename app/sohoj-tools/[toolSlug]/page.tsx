@@ -89,8 +89,17 @@ export default async function DynamicToolPage({
     );
   }
 
+  // Tools already restyled with the "Warm Sand + Red" system get the sand page background.
+  const isWarmSand = toolSlug === "nid-joiner";
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
+    <div
+      className={`min-h-screen flex flex-col font-sans ${
+        isWarmSand
+          ? "bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]"
+          : "bg-[#F8FAFC] text-[#0F172A]"
+      }`}
+    >
       <DashboardNavbar />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
         <SelectedToolComponent />

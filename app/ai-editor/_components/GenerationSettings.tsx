@@ -408,11 +408,12 @@ function RawSvgClothingPreview({
     };
   }, [index, originalSrc, selected, color]);
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg bg-slate-50">
+    <div className="relative w-full h-full overflow-hidden rounded-lg bg-transparent">
       <img
         src={displaySrc}
         alt={alt}
-        className={`w-full h-full object-cover rounded-lg scale-105 transition-opacity duration-150 ${isReady ? "opacity-100" : "opacity-80"}`}
+        draggable={false}
+        className={`w-full h-full object-contain rounded-lg transition-opacity duration-150 ${isReady ? "opacity-100" : "opacity-80"}`}
       />
     </div>
   );
@@ -454,6 +455,16 @@ export default function GenerationSettings({
 }: GenerationSettingsProps) {
   const { t } = useAiEditorText();
   const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
+  // Where the colour popup sits: right next to the clothing tile that was clicked.
+  const [clothingPopupPos, setClothingPopupPos] = useState<{
+    left: number;
+    top?: number;
+    bottom?: number;
+    caretX: number;
+    above: boolean;
+  }>({ left: 0, top: 0, caretX: 24, above: false });
+  const clothingPopupRef = useRef<HTMLDivElement>(null);
+  const popupScrollTopRef = useRef(0);
   const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
   const [activeGuides, setActiveGuides] = useState<string[]>([]);
   const [showEditingGuideLibrary, setShowEditingGuideLibrary] = useState(false);
@@ -561,8 +572,31 @@ export default function GenerationSettings({
   useEffect(() => {
     onEditingGuidesChange?.(activeGuides);
   }, [activeGuides, onEditingGuidesChange]);
-  const handleClothingClick = (idx: number) => {
+  const handleClothingClick = (idx: number, tile?: HTMLElement | null) => {
     setSelectedClothing(idx);
+    const cont = clothingColorPopupRef.current?.getBoundingClientRect();
+    popupScrollTopRef.current =
+      (tile?.closest("[data-scroller]") as HTMLElement | null)?.scrollTop ?? 0;
+    if (tile && cont) {
+      const r = tile.getBoundingClientRect();
+      const panelRect = panelRootRef.current?.getBoundingClientRect();
+      const z = zoomRef.current || 1; // rects are visual px, popup styles are in zoomed px
+      const popupW = Math.min(280 * z, cont.width);
+      const popupH = 215 * z;
+      const spaceBelow = (panelRect ? panelRect.bottom : window.innerHeight) - r.bottom;
+      const spaceAbove = r.top - (panelRect ? panelRect.top : 0);
+      const above = spaceBelow < popupH + 12 && spaceAbove > spaceBelow;
+      const centerX = r.left - cont.left + r.width / 2;
+      const left = Math.max(0, Math.min(centerX - popupW / 2, cont.width - popupW));
+      setClothingPopupPos({
+        left: left / z,
+        caretX: Math.max(16, Math.min((centerX - left) / z, popupW / z - 16)),
+        above,
+        ...(above
+          ? { bottom: (cont.bottom - r.top + 8) / z }
+          : { top: (r.bottom - cont.top + 8) / z }),
+      });
+    }
     setShowClothingColorPicker(true);
   };
   useEffect(() => {
@@ -579,29 +613,104 @@ export default function GenerationSettings({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (showClothingColorPicker) {
+      clothingPopupRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [showClothingColorPicker, clothingPopupPos]);
+
+  // Drag-to-scroll (grab the panel with the mouse and pull up/down).
+  const dragRef = useRef({ active: false, moved: false, startY: 0, startTop: 0 });
+  const onPanelMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("input, textarea, select, [data-no-drag]")) return;
+    const root = target.closest("[data-scroller]") as HTMLElement | null;
+    if (!root || root.scrollHeight <= root.clientHeight) return;
+    // Don't hijack a drag on the native scrollbar itself.
+    if (e.clientX > root.getBoundingClientRect().right - 14) return;
+    // Stop the browser starting its own text/image drag, which would cancel ours.
+    e.preventDefault();
+    dragRef.current = { active: true, moved: false, startY: e.clientY, startTop: root.scrollTop };
+    const onMove = (ev: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d.active) return;
+      const dy = ev.clientY - d.startY;
+      if (!d.moved && Math.abs(dy) > 5) {
+        d.moved = true;
+        panelRootRef.current?.classList.add("ai-dragging");
+      }
+      if (d.moved) root.scrollTop = d.startTop - dy / (zoomRef.current || 1);
+    };
+    const onUp = () => {
+      const d = dragRef.current;
+      d.active = false;
+      panelRootRef.current?.classList.remove("ai-dragging");
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      if (d.moved) {
+        // A drag must not count as a click on whatever tile is under the cursor.
+        const block = (ev: Event) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+        };
+        window.addEventListener("click", block, { capture: true, once: true });
+        setTimeout(() => window.removeEventListener("click", block, true), 0);
+      }
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
   // Keep the whole settings panel inside the viewport on desktop (no inner scrolling).
   const panelRootRef = useRef<HTMLDivElement | null>(null);
+  // Fit-to-height: measure how tall everything needs to be (with the clothing list
+  // showing at least ~3.5 rows), then scale the whole panel by H / R so it fits.
+  // zoom = min(1, H / R); wrapper height = H / zoom  =>  clothing area never < CLOTHING_MIN_H.
+  const fitWrapRef = useRef<HTMLDivElement | null>(null);
+  const zoomRef = useRef(1);
+  const CLOTHING_MIN_H = 330;
   const fitPanelToViewport = () => {
     const root = panelRootRef.current;
-    if (!root) return;
-    const kids = Array.from(root.children) as HTMLElement[];
-    kids.forEach((kid) => {
-      kid.style.zoom = "";
-    });
-    if (window.innerWidth < 1280) return;
-    const pad = 32;
-    const available = root.clientHeight - pad;
-    const needed = root.scrollHeight - pad;
-    if (needed > available + 1 && needed > 0) {
-      const zoom = Math.max(0.7, available / needed);
-      kids.forEach((kid) => {
-        kid.style.zoom = String(zoom);
-      });
+    const wrap = fitWrapRef.current;
+    if (!root || !wrap) return;
+    const scroller = wrap.querySelector("[data-scroller]") as HTMLElement | null;
+    const savedScroll = scroller ? scroller.scrollTop : 0;
+    wrap.style.zoom = "";
+    wrap.style.height = "auto";
+    if (scroller) scroller.style.minHeight = "";
+    zoomRef.current = 1;
+    if (!window.matchMedia("(min-width: 1280px)").matches) {
+      wrap.style.height = "";
+      return;
     }
+    // flex-basis 0% resolves to content height in an auto-height parent, so pin the
+    // clothing list to its minimum while measuring.
+    if (scroller) {
+      scroller.style.flex = "0 0 auto";
+      scroller.style.height = `${CLOTHING_MIN_H}px`;
+    }
+    const cs = getComputedStyle(root);
+    const H =
+      root.clientHeight -
+      parseFloat(cs.paddingTop || "0") -
+      parseFloat(cs.paddingBottom || "0");
+    const R = wrap.getBoundingClientRect().height + 1;
+    if (scroller) {
+      scroller.style.flex = "";
+      scroller.style.height = "";
+      scroller.style.minHeight = `${CLOTHING_MIN_H}px`;
+    }
+    const z = Math.max(0.55, Math.min(1, H / R));
+    zoomRef.current = z;
+    if (z < 1) wrap.style.zoom = String(z);
+    wrap.style.height = `${H / z}px`;
+    // Measuring shrinks the list for a moment, which clamps its scroll position.
+    if (scroller && scroller.scrollTop !== savedScroll) scroller.scrollTop = savedScroll;
   };
   useLayoutEffect(() => {
     fitPanelToViewport();
-  });
+  }, [isDualMode]);
   useEffect(() => {
     const onResize = () => fitPanelToViewport();
     window.addEventListener("resize", onResize);
@@ -614,11 +723,24 @@ export default function GenerationSettings({
     };
   }, []);
   return (
-    <div ref={panelRootRef} className="w-full max-w-full lg:w-[320px] xl:w-[380px] bg-[#F8FAFC] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#0F172A]">
-      <div>
+    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="ai-scroll w-full max-w-full lg:w-[340px] xl:w-[420px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
+      <style>{`
+        .ai-scroll [data-grab], .ai-scroll [data-grab] * { cursor: grab; }
+        .ai-scroll input, .ai-scroll textarea { cursor: text; }
+        .ai-scroll [data-no-drag], .ai-scroll [data-no-drag] * { cursor: pointer; }
+        .ai-scroll.ai-dragging, .ai-scroll.ai-dragging * { cursor: grabbing !important; user-select: none; }
+        .ai-scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+        .ai-scroll::-webkit-scrollbar { width: 12px; }
+        .ai-scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+        .ai-scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        .ai-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+        .ai-scroll::-webkit-scrollbar-thumb:active { background: #991B1B; }
+      `}</style>
+      <div ref={fitWrapRef} className="flex flex-col">
+      <div className="xl:flex-1 xl:min-h-0 flex flex-col">
         <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
-          <span className="font-semibold text-sm text-[#0F172A] flex items-center gap-2">
-            <span className="w-1 h-4 bg-[#2563EB] rounded-full" />
+          <span className="font-semibold text-base text-[#3B2F1E] flex items-center gap-2">
+            <span className="w-1 h-4 bg-[#DC2626] rounded-full" />
             <AiT>{"Generation settings\n          "}</AiT>
           </span>
         </div>
@@ -628,7 +750,7 @@ export default function GenerationSettings({
           className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={visaPopupRef}
         >
-          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
             <span>
               <AiT>{"PHOTO SIZE"}</AiT>
             </span>
@@ -641,7 +763,7 @@ export default function GenerationSettings({
                 onResetSettings?.();
               }}
               title={t("Reset generation settings")}
-              className="text-[#2563EB] hover:rotate-180 transition-transform duration-300 cursor-pointer"
+              className="text-[#DC2626] hover:rotate-180 transition-transform duration-300 cursor-pointer"
             >
               <RefreshCw size={14} />
             </button>
@@ -656,13 +778,13 @@ export default function GenerationSettings({
                   onClick={() => handleSizeClick(size.id)}
                   title={size.tooltip ? t(size.tooltip) : undefined}
                   type="button"
-                  className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[10px] relative transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[12px] relative transition-all cursor-pointer ${
                     isActive
-                      ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
-                      : "border-[#E2E8F0] text-[#0F172A] hover:border-slate-300"
+                      ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626] font-medium"
+                      : "border-[#E3D6B8] text-[#3B2F1E] hover:border-stone-300"
                   }`}
                 >
-                  <div className="w-6 h-6 mb-1 rounded bg-slate-100 flex items-center justify-center text-slate-500">
+                  <div className="w-6 h-6 mb-1 rounded bg-stone-100 flex items-center justify-center text-stone-500">
                     <ImageIcon size={14} />
                   </div>
 
@@ -671,7 +793,7 @@ export default function GenerationSettings({
                   </span>
 
                   {isActive && (
-                    <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
+                    <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white rounded-full p-0.5">
                       <Check size={8} />
                     </span>
                   )}
@@ -681,8 +803,8 @@ export default function GenerationSettings({
           </div>
 
           {showVisaPopup && (
-            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
-              <h4 className="text-xs font-semibold text-[#0F172A] mb-3">
+            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+              <h4 className="text-sm font-semibold text-[#3B2F1E] mb-3">
                 <AiT>{"Visa Photo Size\n              "}</AiT>
               </h4>
 
@@ -699,11 +821,11 @@ export default function GenerationSettings({
                         exitDualMode("Visa");
                       }
                     }}
-                    className={`py-2 px-1 text-[11px] rounded-lg border text-center transition-all cursor-pointer ${
+                    className={`py-2 px-1 text-[13px] rounded-lg border text-center transition-all cursor-pointer ${
                       selectedVisaSize === vItem.label &&
                       selectedSize === "Visa"
-                        ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB] font-medium"
-                        : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
+                        ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626] font-medium"
+                        : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"
                     }`}
                   >
                     {vItem.label}
@@ -719,11 +841,11 @@ export default function GenerationSettings({
           className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={colorPickerRef}
         >
-          <div className="text-xs text-slate-500 mb-2">
+          <div className="text-sm text-stone-500 mb-2">
             <AiT>{"BACKGROUND"}</AiT>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {backgroundColors.map((bg, idx) => {
               const isSelected = selectedBg === idx;
               if (bg.type === "transparent") {
@@ -737,7 +859,7 @@ export default function GenerationSettings({
                     }}
                     title={t("Transparent background")}
                     aria-label={t("Transparent background")}
-                    className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-slate-300 ${isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`}
+                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-stone-300 ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]" : ""}`}
                     style={{
                       backgroundImage:
                         "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
@@ -746,11 +868,11 @@ export default function GenerationSettings({
                       backgroundColor: "#ffffff",
                     }}
                   >
-                    <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-sm">
+                    <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
                       <AiT>{"PNG\n                    "}</AiT>
                     </span>
                     {isSelected && (
-                      <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
+                      <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white rounded-full p-0.5">
                         <Check size={8} />
                       </span>
                     )}
@@ -773,16 +895,16 @@ export default function GenerationSettings({
                       setShowColorPicker(true);
                     }}
                     style={{ backgroundColor: customBgColor }}
-                    className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
+                    className={`h-9 rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
                       isSelected
-                        ? "ring-2 ring-[#2563EB] ring-offset-2"
-                        : "border border-slate-200"
+                        ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]"
+                        : "border border-stone-200"
                     }`}
                   >
                     <Palette size={16} className="text-white drop-shadow-md" />
 
                     {isSelected && (
-                      <span className="absolute -top-1 -right-1 bg-[#2563EB] text-white rounded-full p-0.5">
+                      <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white rounded-full p-0.5">
                         <Check size={8} />
                       </span>
                     )}
@@ -797,11 +919,11 @@ export default function GenerationSettings({
                     setSelectedBg(isSelected ? -1 : idx);
                     setShowColorPicker(false);
                   }}
-                  className={`h-9 xl:h-[clamp(22px,3.3vh,36px)] rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${isSelected ? "ring-2 ring-[#2563EB] ring-offset-2" : ""}`}
+                  className={`h-9 rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]" : ""}`}
                 >
                   {isSelected && (
-                    <span className="absolute bg-[#2563EB] text-white rounded-full p-0.5">
-                      <Check size={10} />
+                    <span className="absolute bg-[#DC2626] text-white rounded-full p-1 shadow">
+                      <Check size={14} strokeWidth={3} />
                     </span>
                   )}
                 </button>
@@ -810,16 +932,16 @@ export default function GenerationSettings({
           </div>
 
           {showColorPicker && (
-            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-50">
+            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-[#0F172A]">
+                <span className="text-sm font-semibold text-[#3B2F1E]">
                   <AiT>{"Custom Background Color\n                "}</AiT>
                 </span>
 
                 <button
                   type="button"
                   onClick={() => setShowColorPicker(false)}
-                  className="text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                  className="text-stone-400 hover:text-stone-600 cursor-pointer p-1"
                 >
                   <X size={14} />
                 </button>
@@ -833,7 +955,7 @@ export default function GenerationSettings({
                     onChange={(e) =>
                       setCustomBgColor(e.target.value.toUpperCase())
                     }
-                    className="w-12 h-10 rounded-lg cursor-pointer border border-slate-200 p-0 bg-transparent"
+                    className="w-12 h-10 rounded-lg cursor-pointer border border-stone-200 p-0 bg-transparent"
                   />
 
                   <input
@@ -852,7 +974,7 @@ export default function GenerationSettings({
                         setCustomBgColor("#8B1E1E");
                       }
                     }}
-                    className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono text-[#0F172A] uppercase focus:outline-none focus:border-[#2563EB]"
+                    className="flex-1 border border-stone-200 rounded-lg px-3 py-1.5 text-sm font-mono text-[#3B2F1E] uppercase focus:outline-none focus:border-[#DC2626]"
                     aria-label={t("Custom background hex color")}
                   />
                 </div>
@@ -863,36 +985,46 @@ export default function GenerationSettings({
 
         {/* CLOTHING STYLE SECTION */}
         <div
-          className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
+          className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative flex flex-col xl:flex-1 xl:min-h-0"
           ref={clothingColorPopupRef}
         >
-          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
             <span>
               <AiT>{"CLOTHING STYLE"}</AiT>
             </span>
 
-            <span className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium">
+            <span className="text-[12px] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-medium">
               {CLOTHING_NAMES.length}/{CLOTHING_NAMES.length}
             </span>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden p-0.5">
+          <div
+            data-scroller
+            data-grab
+            onScroll={(e) => {
+              if (Math.abs(e.currentTarget.scrollTop - popupScrollTopRef.current) > 6) {
+                setShowClothingColorPicker(false);
+              }
+            }}
+            className="ai-scroll cursor-grab relative rounded-2xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[340px] xl:max-h-none xl:flex-1 xl:min-h-[150px]"
+          >
             {!isDualMode ? (
-              <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedClothing(-1);
                     setShowClothingColorPicker(false);
                   }}
-                  className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 ${
+                  className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 ${
                     selectedClothing === -1
-                      ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                      : "border-[#E2E8F0]"
+                      ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                      : "border-[#E3D6B8]"
                   }`}
                   aria-label={t("No clothing")}
                 >
-                  <Ban size={18} className="text-slate-400" />
+                  <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
+                  <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
                 </button>
 
                 {CLOTHING_NAMES.map((name, idx) => {
@@ -901,24 +1033,24 @@ export default function GenerationSettings({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => handleClothingClick(idx)}
-                      className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                      onClick={(e) => handleClothingClick(idx, e.currentTarget)}
+                      className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 overflow-hidden ${
                         isSelected
-                          ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                          : "border-[#E2E8F0]"
+                          ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                          : "border-[#E3D6B8]"
                       }`}
                       aria-label={t(name)}
                     >
-                      <RawSvgClothingPreview
+                      <span className="block w-full aspect-square"><RawSvgClothingPreview
                         index={idx}
                         selected={isSelected}
                         color={isSelected ? currentColor : undefined}
                         alt={t(name)}
-                      />
+                      /></span>
 
                       {isSelected && (
-                        <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
-                          <Check size={8} strokeWidth={3} />
+                        <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                          <Check size={10} strokeWidth={3} />
                         </span>
                       )}
                     </button>
@@ -928,31 +1060,31 @@ export default function GenerationSettings({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <p className="text-[11px] font-medium text-slate-600 mb-1.5">
+                  <p className="text-[13px] font-medium text-stone-600 mb-1.5">
                     <AiT>{"Left Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`left-${idx}`}
                         type="button"
                         onClick={() => setLeftClothing(idx)}
-                        className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 overflow-hidden ${
                           leftClothing === idx
-                            ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                            : "border-[#E2E8F0]"
+                            ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                            : "border-[#E3D6B8]"
                         }`}
                       >
-                        <RawSvgClothingPreview
+                        <span className="block w-full aspect-square"><RawSvgClothingPreview
                           index={idx}
                           selected={false}
                           alt={t(`${name} left person`)}
-                        />
+                        /></span>
 
                         {leftClothing === idx && (
-                          <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
-                            <Check size={8} strokeWidth={3} />
+                          <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                            <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </button>
@@ -961,31 +1093,31 @@ export default function GenerationSettings({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-slate-600 mb-1.5">
+                  <p className="text-[13px] font-medium text-stone-600 mb-1.5">
                     <AiT>{"Right Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-8 xl:grid-cols-10 gap-1 xl:gap-[clamp(2px,0.45vh,5px)] justify-items-center">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`right-${idx}`}
                         type="button"
                         onClick={() => setRightClothing(idx)}
-                        className={`aspect-square w-full xl:aspect-auto xl:w-[clamp(20px,3.4vh,36px)] xl:h-[clamp(20px,3.4vh,36px)] rounded-xl border flex items-center justify-center relative bg-slate-50 cursor-pointer transition-all hover:bg-slate-100 p-0.5 overflow-hidden ${
+                        className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 overflow-hidden ${
                           rightClothing === idx
-                            ? "border-[#2563EB] ring-2 ring-[#2563EB]/50 bg-[#2563EB]/10"
-                            : "border-[#E2E8F0]"
+                            ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                            : "border-[#E3D6B8]"
                         }`}
                       >
-                        <RawSvgClothingPreview
+                        <span className="block w-full aspect-square"><RawSvgClothingPreview
                           index={idx}
                           selected={false}
                           alt={t(`${name} right person`)}
-                        />
+                        /></span>
 
                         {rightClothing === idx && (
-                          <span className="absolute bottom-0.5 right-0.5 bg-[#2563EB] text-white rounded-full p-0.5 shadow-sm z-10">
-                            <Check size={8} strokeWidth={3} />
+                          <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                            <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </button>
@@ -997,9 +1129,27 @@ export default function GenerationSettings({
           </div>
 
           {showClothingColorPicker && selectedClothing >= 0 && (
-            <div className="absolute left-0 top-12 w-full max-w-[280px] bg-white border-2 border-[#2563EB] rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150">
+            <div
+              ref={clothingPopupRef}
+              data-no-drag
+              style={{
+                left: clothingPopupPos.left,
+                top: clothingPopupPos.above ? undefined : clothingPopupPos.top,
+                bottom: clothingPopupPos.above ? clothingPopupPos.bottom : undefined,
+              }}
+              className="absolute w-full max-w-[280px] bg-[#F0DDB5] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-[60] animate-in fade-in zoom-in-95 duration-150"
+            >
+              <span
+                aria-hidden="true"
+                style={{ left: clothingPopupPos.caretX - 7 }}
+                className={`absolute h-3.5 w-3.5 rotate-45 bg-[#F0DDB5] border-[#DC2626] ${
+                  clothingPopupPos.above
+                    ? "-bottom-[9px] border-b-2 border-r-2"
+                    : "-top-[9px] border-t-2 border-l-2"
+                }`}
+              />
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-[#0F172A]">
+                <span className="text-sm font-semibold text-[#3B2F1E]">
                   <AiT>{CLOTHING_NAMES[selectedClothing] || "Clothing"}</AiT>
                   <AiT>
                     {"\u2014 Pick a\n                  Color\n                "}
@@ -1009,7 +1159,7 @@ export default function GenerationSettings({
                 <button
                   type="button"
                   onClick={() => setShowClothingColorPicker(false)}
-                  className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                  className="text-stone-400 hover:text-stone-600 cursor-pointer p-0.5"
                   aria-label={t("Close clothing color picker")}
                 >
                   <X size={14} />
@@ -1027,9 +1177,9 @@ export default function GenerationSettings({
                       onClick={() => handleColorChange(color.hex)}
                       title={t(color.name)}
                       style={{ backgroundColor: color.hex }}
-                      className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${
+                      className={`w-8 h-8 rounded-full border border-stone-400/40 shadow-sm flex items-center justify-center transition-transform hover:scale-110 cursor-pointer relative ${
                         isColorActive
-                          ? "ring-2 ring-[#2563EB] ring-offset-2"
+                          ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F0DDB5]"
                           : ""
                       }`}
                     >
@@ -1038,7 +1188,7 @@ export default function GenerationSettings({
                           size={12}
                           className={
                             color.hex === "#FFFFFF" || color.hex === "#E5E7EB"
-                              ? "text-slate-900"
+                              ? "text-stone-900"
                               : "text-white"
                           }
                           strokeWidth={3}
@@ -1054,12 +1204,12 @@ export default function GenerationSettings({
 
         {/* EXTRA EDITING GUIDE */}
         <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative">
-          <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
             <span className="font-medium">
               <AiT>{"EXTRA EDITING GUIDE"}</AiT>
             </span>
             <span
-              className="text-[10px] bg-[#E2E8F0] text-[#0F172A] px-1.5 py-0.5 rounded font-medium tabular-nums"
+              className="text-[12px] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-medium tabular-nums"
               title={t("Editing presets plus custom instruction")}
             >
               {activeGuides.length}/{EDITING_GUIDES.length + 1}
@@ -1077,10 +1227,10 @@ export default function GenerationSettings({
                     aria-pressed={active}
                     onClick={() => toggleGuide(item)}
                     title={t(item)}
-                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.5vh,8px)] rounded-xl border text-[11px] xl:text-[clamp(11px,1.3vh,12.5px)] font-medium text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${
+                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.5vh,8px)] rounded-xl border text-[13px] xl:text-[clamp(13px,1.5vh,14.5px)] font-medium text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                       active
-                        ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
-                        : "border-[#E2E8F0] text-[#0F172A] hover:bg-slate-50"
+                        ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
+                        : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"
                     }`}
                   >
                     <span
@@ -1118,12 +1268,12 @@ export default function GenerationSettings({
                   setCustomInstructionDraft("");
                   setShowCustomInstructionModal(true);
                 }}
-                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${
+                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[13px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                   activeGuides.some((entry) =>
                     entry.startsWith("Custom Instruction:"),
                   )
-                    ? "border-[#2563EB] bg-[#2563EB]/10 text-[#2563EB]"
-                    : "border-dashed border-[#94A3B8] bg-white text-[#334155] hover:bg-slate-50"
+                    ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
+                    : "border-dashed border-[#B0A080] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8]"
                 }`}
               >
                 <Sparkles size={13} aria-hidden="true" />
@@ -1138,7 +1288,7 @@ export default function GenerationSettings({
               <button
                 type="button"
                 onClick={() => setShowEditingGuideLibrary(true)}
-                className="min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8] text-[11px] font-medium transition-colors hover:bg-[#DBEAFE] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]"
+                className="min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] text-[#B91C1C] text-[13px] font-medium transition-colors hover:bg-[#F6D9A8] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]"
               >
                 <Search size={13} aria-hidden="true" />
                 <AiT>{"Browse all editing guides"}</AiT>
@@ -1147,7 +1297,7 @@ export default function GenerationSettings({
                 </span>
               </button>
             </div>
-            <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+            <p className="mt-1.5 text-[13px] leading-snug text-stone-500">
               <AiT>{"Choose a few compatible edits for the best result."}</AiT>
             </p>
           </div>
@@ -1159,10 +1309,10 @@ export default function GenerationSettings({
           type="button"
           onClick={onGenerate}
           disabled={isGenerating}
-          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${
+          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2 ${
             isGenerating
-              ? "bg-[#10B981]/70 text-white cursor-not-allowed opacity-90"
-              : "bg-[#10B981] hover:bg-[#059669] text-white cursor-pointer active:scale-[0.98]"
+              ? "bg-[#D42020]/70 text-white cursor-not-allowed opacity-90"
+              : "bg-[#D42020] hover:bg-[#AE1717] text-white cursor-pointer active:scale-[0.98]"
           }`}
         >
           {isGenerating ? (
@@ -1179,11 +1329,12 @@ export default function GenerationSettings({
           )}
         </button>
       </div>
+      </div>
       {showEditingGuideLibrary &&
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/60 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200"
+            className="ai-editor-font fixed inset-0 z-[1000] flex items-center justify-center bg-stone-950/60 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget)
                 setShowEditingGuideLibrary(false);
@@ -1195,22 +1346,22 @@ export default function GenerationSettings({
               aria-modal="true"
               aria-labelledby="editing-guide-library-title"
               aria-describedby="editing-guide-library-description"
-              className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+              className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
             >
-              <div className="flex items-start gap-4 border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <div className="flex items-start gap-4 border-b border-stone-100 px-5 py-4 sm:px-7 sm:py-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
                   <Sparkles size={20} aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2
                     id="editing-guide-library-title"
-                    className="text-base sm:text-lg font-semibold tracking-tight text-slate-900"
+                    className="text-lg sm:text-xl font-semibold tracking-tight text-stone-900"
                   >
                     <AiT>{"Editing Guide Library"}</AiT>
                   </h2>
                   <p
                     id="editing-guide-library-description"
-                    className="mt-1 text-xs sm:text-sm leading-5 text-slate-500"
+                    className="mt-1 text-sm sm:text-base leading-5 text-stone-500"
                   >
                     <AiT>{"Choose compatible edits to apply to your photo."}</AiT>
                   </p>
@@ -1219,18 +1370,18 @@ export default function GenerationSettings({
                   type="button"
                   onClick={() => setShowEditingGuideLibrary(false)}
                   aria-label={t("Close")}
-                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
                 >
                   <X size={19} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:px-6">
+              <div className="grid grid-cols-1 gap-2 border-b border-stone-100 bg-stone-50/70 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:px-6">
                 <div className="relative">
                   <Search
                     size={15}
                     aria-hidden="true"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
                   />
                   <input
                     ref={editingGuideSearchRef}
@@ -1239,14 +1390,14 @@ export default function GenerationSettings({
                     onChange={(event) => setGuideSearch(event.target.value)}
                     placeholder={t("Search editing guides...")}
                     aria-label={t("Search editing guides...")}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                    className="w-full rounded-xl border border-stone-200 bg-[#FBF6E8] py-2.5 pl-9 pr-3 text-base text-stone-900 placeholder:text-stone-400 outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-600/10"
                   />
                 </div>
                 <select
                   value={guideCategory}
                   onChange={(event) => setGuideCategory(event.target.value)}
                   aria-label={t("Filter editing guides by category")}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 cursor-pointer"
+                  className="w-full rounded-xl border border-stone-200 bg-[#FBF6E8] px-3 py-2.5 text-base text-stone-800 outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-600/10 cursor-pointer"
                 >
                   {EDITING_GUIDE_CATEGORIES.map((category) => (
                     <option key={category.id} value={category.id}>
@@ -1257,7 +1408,7 @@ export default function GenerationSettings({
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-                <div className="mb-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <div className="mb-3 flex items-center justify-between gap-3 text-sm text-stone-500">
                   <span>
                     {filteredEditingGuides.length} <AiT>{"presets shown"}</AiT>
                   </span>
@@ -1279,10 +1430,10 @@ export default function GenerationSettings({
                           aria-pressed={active}
                           onClick={() => toggleGuide(guide.label)}
                           title={t(guide.label)}
-                          className={`flex min-h-[76px] flex-col items-start justify-between rounded-xl border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                          className={`flex min-h-[76px] flex-col items-start justify-between rounded-xl border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 ${
                             active
-                              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-100"
-                              : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
+                              ? "border-red-600 bg-red-50 ring-1 ring-red-100"
+                              : "border-stone-200 bg-[#FBF6E8] hover:border-red-200 hover:bg-[#EFE3C8]"
                           }`}
                         >
                           <span className="flex w-full items-start justify-between gap-2">
@@ -1293,16 +1444,16 @@ export default function GenerationSettings({
                               >
                                 <GuideIcon label={guide.label} size={36} />
                               </span>
-                              <span className={`min-w-0 text-xs sm:text-sm font-medium leading-5 ${active ? "text-blue-700" : "text-slate-800"}`}>
+                              <span className={`min-w-0 text-sm sm:text-base font-medium leading-5 ${active ? "text-red-700" : "text-stone-800"}`}>
                                 {t(guide.label)}
                               </span>
                             </span>
-                            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"}`}>
+                            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-red-600 bg-red-600 text-white" : "border-stone-300 text-transparent"}`}>
                               <Check size={10} strokeWidth={3} aria-hidden="true" />
                             </span>
                           </span>
                           {category && (
-                            <span className="mt-2 text-[10px] leading-4 text-slate-500">
+                            <span className="mt-2 text-[12px] leading-4 text-stone-500">
                               {t(category.label)}
                             </span>
                           )}
@@ -1311,20 +1462,20 @@ export default function GenerationSettings({
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-12 text-center text-sm text-slate-500">
+                  <div className="rounded-2xl border border-dashed border-stone-300 px-4 py-12 text-center text-base text-stone-500">
                     <AiT>{"No matching editing guides."}</AiT>
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="text-[11px] leading-5 text-slate-500">
+              <div className="flex flex-col-reverse gap-3 border-t border-stone-100 bg-[#FBF6E8] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-[13px] leading-5 text-stone-500">
                   <AiT>{"Choose a few compatible edits for the best result."}</AiT>
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowEditingGuideLibrary(false)}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-base font-semibold text-white transition-colors hover:bg-red-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
                 >
                   <Check size={16} aria-hidden="true" />
                   <AiT>{"Done"}</AiT>
@@ -1338,7 +1489,7 @@ export default function GenerationSettings({
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+            className="ai-editor-font fixed inset-0 z-[1000] flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget)
                 setShowCustomInstructionModal(false);
@@ -1350,19 +1501,19 @@ export default function GenerationSettings({
               aria-modal="true"
               aria-labelledby="custom-instruction-title"
               aria-describedby="custom-instruction-description"
-              className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+              className="w-full max-w-lg overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
             >
-              <div className="flex items-start gap-4 border-b border-slate-100 px-6 pb-5 pt-6 sm:px-7">
+              <div className="flex items-start gap-4 border-b border-stone-100 px-6 pb-5 pt-6 sm:px-7">
                 <div className="min-w-0 flex-1 pt-0.5">
                   <h2
                     id="custom-instruction-title"
-                    className="text-lg font-semibold tracking-tight text-slate-900"
+                    className="text-xl font-semibold tracking-tight text-stone-900"
                   >
                     {t("Custom Editing Instruction")}
                   </h2>
                   <p
                     id="custom-instruction-description"
-                    className="mt-1.5 text-sm leading-6 text-slate-500"
+                    className="mt-1.5 text-base leading-6 text-stone-500"
                   >
                     {t("Describe the edit you want the AI to make.")}
                   </p>
@@ -1371,7 +1522,7 @@ export default function GenerationSettings({
                   type="button"
                   onClick={() => setShowCustomInstructionModal(false)}
                   aria-label={t("Close")}
-                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
                 >
                   <X size={19} />
                 </button>
@@ -1385,7 +1536,7 @@ export default function GenerationSettings({
               >
                 <label
                   htmlFor="custom-instruction-input"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="mb-2 block text-base font-medium text-stone-700"
                 >
                   {t("Your instruction")}
                 </label>
@@ -1398,29 +1549,29 @@ export default function GenerationSettings({
                   }
                   placeholder={t("Write your custom instruction here...")}
                   rows={5}
-                  className="block w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                  className="block w-full resize-y rounded-2xl border border-stone-200 bg-[#F6EEDB] px-4 py-3 text-base leading-6 text-stone-800 outline-none transition placeholder:text-stone-400 hover:border-stone-300 focus:border-red-600 focus:bg-[#FBF6E8] focus:ring-4 focus:ring-red-600/10"
                 />
-                <p className="mt-2 text-xs leading-5 text-slate-400">
+                <p className="mt-2 text-sm leading-5 text-stone-400">
                   {t(
                     "Your instruction will be used when generating the photo.",
                   )}
                 </p>
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs text-slate-400">
+                  <span className="text-sm text-stone-400">
                     {t("Press Esc to close")}
                   </span>
                   <div className="flex justify-end gap-2.5">
                     <button
                       type="button"
                       onClick={() => setShowCustomInstructionModal(false)}
-                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                      className="rounded-xl border border-stone-200 px-4 py-2.5 text-base font-medium text-stone-600 transition-colors hover:bg-[#F6EEDB] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300"
                     >
                       {t("Cancel")}
                     </button>
                     <button
                       type="submit"
                       disabled={!customInstructionDraft.trim()}
-                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-base font-semibold text-white shadow-md shadow-red-600/20 transition-all hover:bg-red-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-600/20 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
                     >
                       {t("Add Instruction")}
                     </button>

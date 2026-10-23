@@ -26,12 +26,12 @@ export default function BusinessInfoTab({ business, businessForm, setBusinessFor
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
     const { t } = useProfileText();
-    return (<form onSubmit={onSubmit} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-          <Store size={17} className="text-[#2563EB]"/><T>{"Shop / Business Information\n        "}</T></div>
+    return (<form onSubmit={onSubmit} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-xs space-y-4">
+      <div className="flex items-center justify-between border-b border-[#E3D6B8] pb-3">
+        <div className="flex items-center gap-2 text-base font-bold text-[#3B2F1E]">
+          <Store size={17} className="text-[#DC2626]"/><T>{"Shop / Business Information\n        "}</T></div>
 
-        <button type="submit" disabled={savingBusiness} className="bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+        <button type="submit" disabled={savingBusiness} className="bg-[#DC2626] hover:bg-[#DC2626] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
           {savingBusiness ? (<Loader2 size={12} className="animate-spin"/>) : (<Save size={12}/>)}
 
           {savingBusiness ? <T>{"Saving..."}</T> : <T>{"Save Changes"}</T>}
@@ -65,15 +65,15 @@ export default function BusinessInfoTab({ business, businessForm, setBusinessFor
         }))} placeholder="https://example.com" type="url"/>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-bold text-gray-700 mb-1.5"><T>{"Business Address\n          "}</T></label>
+          <label className="block text-sm font-bold text-[#5A4A32] mb-1.5"><T>{"Business Address\n          "}</T></label>
 
           <textarea rows={4} value={businessForm.businessAddress} onChange={(event) => setBusinessForm((previous) => ({
             ...previous,
             businessAddress: event.target.value,
-        }))} placeholder={t("Enter complete business address")} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"/>
+        }))} placeholder={t("Enter complete business address")} className="w-full resize-y rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2.5 text-sm outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"/>
         </div>
       </div>
 
-      {!business.businessName && (<p className="text-[11px] text-gray-400"><T>{"Business information is empty right now. Add your shop/business\n          details above.\n        "}</T></p>)}
+      {!business.businessName && (<p className="text-[13px] text-[#7A6A50]"><T>{"Business information is empty right now. Add your shop/business\n          details above.\n        "}</T></p>)}
     </form>);
 }

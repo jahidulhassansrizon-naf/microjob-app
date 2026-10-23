@@ -24,10 +24,10 @@ export default function SettingsTabs({
           key={tab}
           type="button"
           onClick={() => onChange(tab)}
-          className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all border text-left ${
+          className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all border text-left ${
             activeTab === tab
-              ? "bg-[#2563EB] text-white border-[#2563EB] shadow-xs"
-              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+              ? "bg-[#DC2626] text-white border-[#DC2626] shadow-xs"
+              : "bg-[#FBF6E8] text-[#5A4A32] border-[#E3D6B8] hover:bg-[#F6EEDB]"
           }`}
         >
           {t(tab)}

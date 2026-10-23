@@ -77,22 +77,33 @@ export default function ProfilePage() {
         };
         void loadProfile();
     }, [router]);
-    return (<div className="min-h-screen bg-[#F8FAFC] text-gray-800 font-sans pb-12">
+    return (<div className="page-font min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] font-sans pb-12">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+      `}</style>
       <DashboardNavbar />
 
       <main className="max-w-[1000px] mx-auto px-4 py-8 sm:py-10 space-y-5">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900"><T>{"My Profile"}</T></h1>
+            <h1 className="text-3xl font-bold text-[#3B2F1E]"><T>{"My Profile"}</T></h1>
           </div>
 
-          <p className="text-xs text-gray-400 font-medium mt-1"><T>{"Your profile and subscription overview.\n          "}</T></p>
+          <p className="text-sm text-[#7A6A50] font-medium mt-1"><T>{"Your profile and subscription overview.\n          "}</T></p>
         </div>
 
-        {error && (<div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+        {error && (<div className="bg-[#FEE9E9] border border-[#FBB6B6] rounded-2xl px-4 py-3 flex items-start gap-2.5">
             <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5"/>
 
-            <p className="text-xs text-red-600">{t(error)}</p>
+            <p className="text-sm text-red-600">{t(error)}</p>
           </div>)}
 
         <ProfileHeader user={user} onUserUpdated={handleUserUpdated}/>

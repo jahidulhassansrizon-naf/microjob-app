@@ -149,115 +149,115 @@ export default function SubscriptionCard() {
     const hasAmount = subscription?.amount != null;
     // ---------- Loading ----------
     if (loading) {
-        return (<section aria-busy="true" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="h-4 w-28 animate-pulse rounded bg-slate-100"/>
-        <div className="mt-4 h-7 w-40 animate-pulse rounded bg-slate-100"/>
-        <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100"/>
-        <div className="mt-6 h-12 w-full animate-pulse rounded bg-slate-100"/>
+        return (<section aria-busy="true" className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-6 shadow-sm">
+        <div className="h-4 w-28 animate-pulse rounded bg-[#F3E9D2]"/>
+        <div className="mt-4 h-7 w-40 animate-pulse rounded bg-[#F3E9D2]"/>
+        <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-[#F3E9D2]"/>
+        <div className="mt-6 h-12 w-full animate-pulse rounded bg-[#F3E9D2]"/>
       </section>);
     }
     // ---------- Error ----------
     if (error) {
-        return (<section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-900"><T>{"Subscription"}</T></h3>
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        return (<section className="rounded-2xl border border-[#FBB6B6] bg-[#FBF6E8] p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-[#3B2F1E]"><T>{"Subscription"}</T></h3>
+        <p role="alert" className="mt-2 text-base text-red-600">
           {error}
         </p>
-        <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"><T>{"Try again\n        "}</T></button>
+        <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-lg border border-[#D8C9A6] px-3.5 py-2 text-base font-medium text-[#5A4A32] transition-colors hover:bg-[#F6EEDB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2"><T>{"Try again\n        "}</T></button>
       </section>);
     }
     // ---------- No subscription ----------
     if (!subscription) {
-        return (<section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+        return (<section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-base font-medium text-[#6B5A40]">
           <CreditCard size={16}/><T>{"Subscription\n        "}</T></div>
-        <h3 className="mt-3 text-xl font-semibold text-slate-900"><T>{"No active plan\n        "}</T></h3>
-        <p className="mt-1 text-sm text-slate-500"><T>{"Pick a plan to unlock all the editing tools.\n        "}</T></p>
-        <Link href="/subscription" className="mt-5 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"><T>{"View plans\n        "}</T></Link>
+        <h3 className="mt-3 text-2xl font-semibold text-[#3B2F1E]"><T>{"No active plan\n        "}</T></h3>
+        <p className="mt-1 text-base text-[#6B5A40]"><T>{"Pick a plan to unlock all the editing tools.\n        "}</T></p>
+        <Link href="/subscription" className="mt-5 inline-flex items-center rounded-lg bg-[#DC2626] px-4 py-2.5 text-base font-semibold text-white transition-colors hover:bg-[#B91C1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2"><T>{"View plans\n        "}</T></Link>
       </section>);
     }
     // ---------- Active / expired ----------
-    return (<section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+    return (<section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-sm">
       <div className="p-6">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+          <div className="flex items-center gap-2 text-base font-medium text-[#6B5A40]">
             <CreditCard size={16}/><T>{"Subscription\n          "}</T></div>
 
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${isActive
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ${isActive
             ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
-            : "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200"}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}/>
+            : "bg-[#F3E9D2] text-[#5A4A32] ring-1 ring-inset ring-[#E3D6B8]"}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-[#B0A080]"}`}/>
             {isActive ? <T>{"Active"}</T> : <T>{"Expired"}</T>}
           </span>
         </div>
 
         <div className="mt-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
-            <h3 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h3 className="text-3xl font-semibold tracking-tight text-[#3B2F1E]">
               <T>{subscription.planName || "Your plan"}</T>
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-base text-[#6B5A40]">
               {isActive
         ? <T>{`Renew before ${formatDate(subscription.expiresAt, locale)} to keep your access.`}</T> : <T>{`Your plan ended on ${formatDate(subscription.expiresAt, locale)}.`}</T>}
             </p>
           </div>
 
           {remaining && (<div className="text-right">
-              <p className="text-2xl font-semibold tabular-nums text-slate-900">
+              <p className="text-3xl font-semibold tabular-nums text-[#3B2F1E]">
                 {remaining.main}
               </p>
-              <p className="text-xs tabular-nums text-slate-500">
+              <p className="text-sm tabular-nums text-[#6B5A40]">
                 {remaining.sub}
               </p>
             </div>)}
         </div>
 
         {progress !== null && (<div className="mt-5">
-            <div role="progressbar" aria-label={t("Subscription time used")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className={`h-full rounded-full transition-[width] duration-500 ${progress > 90 ? "bg-amber-500" : "bg-blue-600"}`} style={{ width: `${progress}%` }}/>
+            <div role="progressbar" aria-label={t("Subscription time used")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-2 w-full overflow-hidden rounded-full bg-[#F3E9D2]">
+              <div className={`h-full rounded-full transition-[width] duration-500 ${progress > 90 ? "bg-amber-500" : "bg-[#DC2626]"}`} style={{ width: `${progress}%` }}/>
             </div>
-            <div className="mt-2 flex justify-between text-xs text-slate-500">
+            <div className="mt-2 flex justify-between text-sm text-[#6B5A40]">
               <span>{formatDate(subscription.startedAt, locale)}</span>
               <span>{formatDate(subscription.expiresAt, locale)}</span>
             </div>
           </div>)}
       </div>
 
-      <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="grid grid-cols-1 divide-y divide-[#E3D6B8] border-t border-[#E3D6B8] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="px-6 py-4">
-          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+          <dt className="flex items-center gap-1.5 text-sm text-[#6B5A40]">
             <CalendarClock size={14}/><T>{"Started\n          "}</T></dt>
-          <dd className="mt-1 text-sm font-medium text-slate-900">
+          <dd className="mt-1 text-base font-medium text-[#3B2F1E]">
             {formatDate(subscription.startedAt, locale)}
-            <span className="ml-1.5 font-normal text-slate-500">
+            <span className="ml-1.5 font-normal text-[#6B5A40]">
               {formatTime(subscription.startedAt, locale)}
             </span>
           </dd>
         </div>
 
         <div className="px-6 py-4">
-          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+          <dt className="flex items-center gap-1.5 text-sm text-[#6B5A40]">
             <CalendarClock size={14}/><T>{"Expires\n          "}</T></dt>
-          <dd className="mt-1 text-sm font-medium text-slate-900">
+          <dd className="mt-1 text-base font-medium text-[#3B2F1E]">
             {formatDate(subscription.expiresAt, locale)}
-            <span className="ml-1.5 font-normal text-slate-500">
+            <span className="ml-1.5 font-normal text-[#6B5A40]">
               {formatTime(subscription.expiresAt, locale)}
             </span>
           </dd>
         </div>
 
         <div className="px-6 py-4">
-          <dt className="flex items-center gap-1.5 text-xs text-slate-500">
+          <dt className="flex items-center gap-1.5 text-sm text-[#6B5A40]">
             <Wallet size={14}/><T>{"Amount paid\n          "}</T></dt>
-          <dd className="mt-1 text-sm font-medium text-slate-900">
+          <dd className="mt-1 text-base font-medium text-[#3B2F1E]">
             {hasAmount
         ? <T>{`৳${Number(subscription.amount).toLocaleString()}`}</T> : <T>{"—"}</T>}
           </dd>
         </div>
       </dl>
 
-      <div className="flex justify-end border-t border-slate-100 px-6 py-4">
-        <Link href="/subscription" className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+      <div className="flex justify-end border-t border-[#E3D6B8] px-6 py-4">
+        <Link href="/subscription" className="inline-flex items-center rounded-lg bg-[#DC2626] px-4 py-2 text-base font-semibold text-white transition-colors hover:bg-[#B91C1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2">
           {isActive ? <T>{"Manage subscription"}</T> : <T>{"Renew plan"}</T>}
         </Link>
       </div>

@@ -23,7 +23,8 @@ const categories = [
 type SearchParamsLike = { get(name: string): string | null } | null;
 function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike }) {
     // subscribe to language changes so L("...") placeholders re-render (as the old page wrapper did)
-    useSohozI18n();
+    // hook-এর L ব্যবহার করছি (locale cookie থেকে আসে), তাই সার্ভার ও ক্লায়েন্টের HTML একই হয় — hydration error হয় না
+    const { L } = useSohozI18n();
     const router = useRouter();
     // Keep the tools UI immediately visible; auth is verified in the background.
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
@@ -151,44 +152,60 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
     });
     if (!isAuthenticated) {
         return (
-          <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-[#0F172A] font-sans">
+          <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] font-sans">
             <main className="flex items-center justify-center px-4">
-              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
-                <Loader2 size={18} className="animate-spin text-[#2563EB]" />
+              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-5 py-4 text-[15px] font-medium text-[#5A4A32] shadow-sm">
+                <Loader2 size={18} className="animate-spin text-[#DC2626]" />
                 <T>{"Verifying your login..."}</T>
               </div>
             </main>
           </div>
         );
     }
-    return (<div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
+    return (<div className="page-font min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] font-sans">
       <DashboardNavbar scaleWithZoom/>
 
-      <main className="page-zoom mx-auto w-full max-w-[1800px] space-y-5 px-4 py-5 sm:px-6 sm:py-6">
+      <main className="page-font page-zoom mx-auto w-full max-w-[1800px] space-y-5 px-4 py-5 sm:px-6 sm:py-6">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+          .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+            font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-optical-sizing: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+          }
+          .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+          .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+          .scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+          .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+          .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+          .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+        `}</style>
         {/* Premium centered search experience */}
         <section
           aria-labelledby="tool-search-heading"
-          className="relative isolate overflow-hidden rounded-[28px] border border-white bg-[radial-gradient(ellipse_at_top_left,rgba(219,234,254,0.78),transparent_44%),radial-gradient(ellipse_at_bottom_right,rgba(224,231,255,0.72),transparent_42%),linear-gradient(135deg,#FFFFFF_0%,#F8FAFF_52%,#EFF6FF_100%)] px-4 py-7 shadow-[0_12px_40px_-28px_rgba(37,99,235,0.34)] sm:px-8 sm:py-9"
+          className="relative isolate overflow-hidden rounded-[28px] border border-[#E3D6B8] bg-[radial-gradient(ellipse_at_top_left,rgba(251,182,182,0.30),transparent_44%),radial-gradient(ellipse_at_bottom_right,rgba(246,217,168,0.60),transparent_42%),linear-gradient(135deg,#FBF6E8_0%,#F2E8D2_100%)] px-4 py-7 shadow-[0_12px_40px_-28px_rgba(59,47,30,0.30)] sm:px-8 sm:py-9"
         >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-200/35 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-16 h-64 w-64 rounded-full bg-indigo-200/30 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#FBB6B6]/30 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-16 h-64 w-64 rounded-full bg-[#F6D9A8]/50 blur-3xl" />
 
           <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100/90 bg-white/85 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.17em] text-[#2563EB] shadow-sm shadow-blue-900/[0.04] sm:text-[11px]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[#DC2626] shadow-sm sm:text-[13px]">
               <T>{"Your everyday toolkit"}</T>
             </div>
 
-            <h1 id="tool-search-heading" className="mt-4 text-balance text-[25px] font-extrabold leading-tight tracking-[-0.035em] text-[#0F172A] sm:text-3xl lg:text-[2.35rem]">
+            <h1 id="tool-search-heading" className="mt-4 text-balance text-[25px] font-extrabold leading-tight tracking-[-0.035em] text-[#3B2F1E] sm:text-3xl lg:text-[2.35rem]">
               <T>{"Find the right tool for every task"}</T>
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-[15px]">
+            <p className="mt-2 max-w-xl text-base leading-7 text-[#6B5A40] sm:text-[17px]">
               <T>{"Search images, PDFs, documents and more in seconds."}</T>
             </p>
 
             <div className="group relative mt-6 w-full max-w-[760px] sm:mt-7">
-              <div aria-hidden="true" className="pointer-events-none absolute -inset-[3px] rounded-[23px] bg-gradient-to-r from-blue-300/20 via-indigo-300/15 to-cyan-200/20 opacity-30 blur-[6px] transition-opacity duration-300 group-focus-within:opacity-45" />
-              <div className="relative flex min-h-[62px] items-center gap-3 rounded-[20px] border border-slate-200/90 bg-white p-2 pl-2.5 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.28)] transition-all duration-300 group-focus-within:border-blue-200 group-focus-within:shadow-[0_14px_32px_-22px_rgba(37,99,235,0.20)] sm:min-h-[68px] sm:gap-3 sm:p-2.5 sm:pl-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20 sm:h-11 sm:w-11">
+              <div aria-hidden="true" className="pointer-events-none absolute -inset-[3px] rounded-[23px] bg-gradient-to-r from-[#FBB6B6]/30 via-[#F6D9A8]/30 to-[#FBB6B6]/20 opacity-30 blur-[6px] transition-opacity duration-300 group-focus-within:opacity-45" />
+              <div className="relative flex min-h-[62px] items-center gap-3 rounded-[20px] border border-[#E3D6B8] bg-[#FBF6E8] p-2 pl-2.5 shadow-[0_12px_30px_-20px_rgba(59,47,30,0.30)] transition-all duration-300 group-focus-within:border-[#DC2626] group-focus-within:ring-2 group-focus-within:ring-[#DC2626]/20 group-focus-within:shadow-[0_14px_32px_-22px_rgba(220,38,38,0.25)] sm:min-h-[68px] sm:gap-3 sm:p-2.5 sm:pl-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#D42020] text-white shadow-md shadow-[#D42020]/25 sm:h-11 sm:w-11">
                   <Search size={19} strokeWidth={2.3} />
                 </span>
                 <input
@@ -199,7 +216,7 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                   placeholder={L("What would you like to find today?")}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="h-full min-w-0 flex-1 bg-transparent py-3 text-[14px] font-medium text-[#0F172A] outline-none placeholder:font-normal placeholder:text-slate-400 sm:text-[15px]"
+                  className="h-full min-w-0 flex-1 bg-transparent py-3 text-[16px] font-medium text-[#3B2F1E] outline-none placeholder:font-normal placeholder:text-[#B0A080] sm:text-[17px]"
                 />
                 {searchQuery && (
                   <button
@@ -209,16 +226,16 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                       handleSearchChange("");
                       searchInputRef.current?.focus();
                     }}
-                    className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] transition-colors duration-150 hover:bg-[#EFE3C8] hover:text-[#3B2F1E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                   >
-                    <X size={16} />
+                    <X size={18} />
                   </button>
                 )}
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <span className="mr-0.5 text-[11px] font-semibold text-slate-400 sm:text-xs">
+              <span className="mr-0.5 text-[13px] font-semibold text-[#6B5A40] sm:text-sm">
                 <T>{"Popular searches"}</T>
               </span>
               {["PDF", "Image", "Document Scanner", "Remove Background"].map((suggestion) => (
@@ -229,9 +246,9 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                     handleSearchChange(suggestion);
                     searchInputRef.current?.focus();
                   }}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm shadow-slate-900/[0.02] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:text-[#2563EB] hover:shadow-md hover:shadow-blue-900/[0.06] active:translate-y-0 sm:text-xs"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#E3D6B8] bg-[#FBF6E8]/80 px-3.5 py-2 text-[13px] font-semibold text-[#5A4A32] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DC2626] hover:bg-[#FBF6E8] hover:text-[#DC2626] hover:shadow-md active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 sm:text-sm"
                 >
-                  <Search size={11} className="text-slate-400" />
+                  <Search size={14} className="text-[#7A6A50]" />
                   <T>{suggestion}</T>
                 </button>
               ))}
@@ -241,12 +258,12 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
 
         {/* Access and category filters */}
         <section className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="hidden items-center gap-2 text-sm font-semibold text-slate-500 sm:flex">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
+          <div className="hidden items-center gap-2 text-base font-semibold text-[#6B5A40] sm:flex">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#DC2626] shadow-[0_0_0_4px_rgba(220,38,38,0.12)]" />
             <T>{"Explore all tools"}</T>
           </div>
 
-          <div className="ml-auto inline-flex max-w-full items-center gap-0.5 rounded-xl border border-slate-200/90 bg-white/90 p-1 shadow-sm shadow-slate-900/[0.025]">
+          <div className="ml-auto inline-flex max-w-full items-center gap-0.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">
             <div role="tablist" aria-label={L("Filter tools by access")} className="inline-flex shrink-0 items-center gap-0.5">
               {([
                 { key: "All", label: "All Tools" },
@@ -260,9 +277,9 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`cursor-pointer rounded-lg px-3 py-2 text-center text-[12px] font-semibold transition-all sm:px-3.5 sm:text-[13px] ${isActive
-                      ? "bg-[#2563EB] text-white shadow-sm shadow-blue-600/20"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                    className={`cursor-pointer rounded-lg px-3.5 py-2.5 text-center text-[14px] font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] sm:px-4 sm:text-[15px] ${isActive
+                      ? "bg-[#DC2626] text-white shadow-sm hover:bg-[#B91C1C]"
+                      : "text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}
                   >
                     <T>{tab.label}</T>
                   </button>
@@ -270,7 +287,7 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
               })}
             </div>
 
-            <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-slate-200" />
+            <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-[#D8C9A6]" />
 
             <div ref={categoryRef} className="relative shrink-0">
               <button
@@ -278,20 +295,22 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                 aria-haspopup="listbox"
                 aria-expanded={categoryOpen}
                 onClick={() => setCategoryOpen((v) => !v)}
-                className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 sm:px-3.5 sm:text-[13px] ${selectedCategory !== "All"
-                  ? "bg-blue-50 text-[#2563EB]"
+                className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2.5 text-[14px] font-semibold outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] sm:px-4 sm:text-[15px] ${selectedCategory !== "All"
+                  ? "bg-[#F6D9A8] text-[#DC2626]"
                   : categoryOpen
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                    ? "bg-[#EFE3C8] text-[#3B2F1E]"
+                    : "text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}
               >
-                <span className="max-w-[7rem] truncate sm:max-w-[9rem]">
+                <span className="max-w-[8rem] truncate sm:max-w-[10rem]">
                   {selectedCategory === "All" ? <T>{"Category"}</T> : <T>{selectedCategoryItem.name}</T>}
                 </span>
-                <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${categoryOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={16} className={`shrink-0 transition-transform duration-200 ${categoryOpen ? "rotate-180" : ""}`} />
               </button>
 
               {categoryOpen && (
-                <div role="listbox" aria-label={L("Filter tools by category")} className="absolute right-0 top-full z-40 mt-2 max-h-80 w-52 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_12px_32px_-10px_rgba(15,23,42,0.20)] animate-in fade-in duration-150">
+                <>
+                <span aria-hidden="true" className="absolute right-6 top-full z-[41] mt-1 h-3 w-3 rotate-45 border-l-2 border-t-2 border-[#DC2626] bg-[#F0DDB5]" />
+                <div role="listbox" aria-label={L("Filter tools by category")} className="scroll absolute right-0 top-full z-40 mt-2.5 max-h-80 w-60 overflow-y-auto rounded-xl border-2 border-[#DC2626] bg-[#F0DDB5] p-1.5 shadow-xl animate-in fade-in duration-150">
                   {categories.map((cat) => {
                     const Icon = cat.icon;
                     const isSelected = selectedCategory === cat.name;
@@ -305,19 +324,20 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
                           setSelectedCategory(cat.name);
                           setCategoryOpen(false);
                         }}
-                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-[13px] font-medium transition-colors ${isSelected
-                          ? "bg-slate-100 text-slate-900"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[15px] font-medium transition-colors duration-150 ${isSelected
+                          ? "bg-[#F6D9A8] font-bold text-[#3B2F1E]"
+                          : "text-[#5A4A32] hover:bg-[#F6D9A8]/70 hover:text-[#3B2F1E]"}`}
                       >
-                        <Icon size={15} className={`shrink-0 ${isSelected ? "text-[#2563EB]" : "text-slate-400"}`} />
+                        <Icon size={17} className={`shrink-0 ${isSelected ? "text-[#DC2626]" : "text-[#6B5A40]"}`} />
                         <span className="flex-1 truncate">
                           {cat.name === "All" ? <T>{"All Categories"}</T> : <T>{cat.name}</T>}
                         </span>
-                        {isSelected && <Check size={15} className="shrink-0 text-[#2563EB]" />}
+                        {isSelected && <Check size={17} className="shrink-0 text-[#DC2626]" />}
                       </button>
                     );
                   })}
                 </div>
+                </>
               )}
             </div>
           </div>
@@ -325,15 +345,15 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
 
         {/* Tools Grid Section */}
         {filteredTools.length > 0 ? (<div ref={gridRef} className="grid pt-3 grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 fit:grid-cols-2 fit:gap-x-5 fit:gap-y-7 fit:sm:grid-cols-3 fit:md:grid-cols-4 fit:lg:grid-cols-6 fit:xl:grid-cols-8">
-            {filteredTools.map((tool) => (<ToolTile key={tool.id} tool={tool} touchCompact/>))}
+            {filteredTools.map((tool) => (<ToolTile key={tool.id} tool={tool} touchCompact warm/>))}
           </div>) : (
         /* No tools found - Empty State */
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white/50 rounded-2xl border border-dashed border-gray-200 my-4">
-            <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center mb-3">
-              <Search size={22}/>
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-[#FBF6E8]/60 rounded-2xl border-2 border-dashed border-[#B0A080] my-4">
+            <div className="w-14 h-14 bg-[#FEE9E9] border border-[#FBB6B6] text-[#DC2626] rounded-2xl flex items-center justify-center mb-3">
+              <Search size={26}/>
             </div>
-            <h3 className="text-sm font-bold text-[#0F172A]"><T>{"No tools found"}</T></h3>
-            <p className="text-xs text-gray-400 mt-1 max-w-xs"><T>{"We couldn't find any tool matching \""}</T>{searchQuery}<T>{"\". Try searching\n              for something else.\n            "}</T></p>
+            <h3 className="text-[17px] font-semibold text-[#3B2F1E]"><T>{"No tools found"}</T></h3>
+            <p className="text-[14px] leading-[1.6] text-[#6B5A40] mt-1 max-w-xs"><T>{"We couldn't find any tool matching \""}</T>{searchQuery}<T>{"\". Try searching\n              for something else.\n            "}</T></p>
           </div>)}
       </main>
     </div>);

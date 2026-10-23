@@ -124,66 +124,66 @@ export default function ImageEditSidebar({
         setFilters(DEFAULT_FILTERS);
         onReset();
     };
-    return (<aside className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#0F172A]/95 backdrop-blur-md border-l border-slate-700 text-white p-5 flex flex-col z-20 shadow-2xl" aria-label={t("Image editing tools")}>
+    return (<aside className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#3B2F1E]/95 backdrop-blur-md border-l border-stone-700 text-white p-5 flex flex-col z-20 shadow-2xl" aria-label={t("Image editing tools")}>
       <div className="overflow-y-auto pr-1">
-        <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-          <div className="flex gap-2 bg-slate-800/80 p-1 rounded-lg">
-            <button type="button" onClick={() => setActiveTab("adjust")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${activeTab === "adjust"
-            ? "bg-[#2563EB] text-white"
-            : "text-slate-400 hover:text-white"}`}>
+        <div className="flex items-center justify-between border-b border-stone-700 pb-3 mb-4">
+          <div className="flex gap-2 bg-stone-800/80 p-1 rounded-lg">
+            <button type="button" onClick={() => setActiveTab("adjust")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition cursor-pointer ${activeTab === "adjust"
+            ? "bg-[#DC2626] text-white"
+            : "text-stone-400 hover:text-white"}`}>
               <Sliders size={14}/><AiT>{"Adjustments\r\n            "}</AiT></button>
-            <button type="button" onClick={() => setActiveTab("crop")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${activeTab === "crop"
-            ? "bg-[#2563EB] text-white"
-            : "text-slate-400 hover:text-white"}`}>
+            <button type="button" onClick={() => setActiveTab("crop")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition cursor-pointer ${activeTab === "crop"
+            ? "bg-[#DC2626] text-white"
+            : "text-stone-400 hover:text-white"}`}>
               <Crop size={14}/><AiT>{"Aspect Ratio\r\n            "}</AiT></button>
           </div>
-          <button type="button" onClick={onClose} aria-label={t("Close image editor")} className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer">
+          <button type="button" onClick={onClose} aria-label={t("Close image editor")} className="text-stone-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition cursor-pointer">
             <X size={18}/>
           </button>
         </div>
 
         {activeTab === "adjust" ? (<>
             <div className="mb-5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2.5">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-stone-300 mb-2.5">
                 <Sparkles size={14} className="text-[#10B981]"/>
                 <span><AiT>{"Quick Presets"}</AiT></span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {PRESETS.map((preset) => {
                 const active = activePreset === preset.name;
-                return (<button key={preset.name} type="button" onClick={() => setFilters(preset.filters)} className={`text-xs py-2 px-1 rounded-lg border transition cursor-pointer font-medium text-center truncate ${active
-                        ? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB]"
-                        : "bg-white/5 border-slate-700 text-slate-300 hover:bg-white/10 hover:border-slate-600"}`}>
+                return (<button key={preset.name} type="button" onClick={() => setFilters(preset.filters)} className={`text-sm py-2 px-1 rounded-lg border transition cursor-pointer font-medium text-center truncate ${active
+                        ? "bg-[#DC2626]/20 border-[#DC2626] text-[#DC2626]"
+                        : "bg-white/5 border-stone-700 text-stone-300 hover:bg-white/10 hover:border-stone-600"}`}>
                       {preset.name}
                     </button>);
             })}
               </div>
             </div>
 
-            <div className="border-t border-slate-700/80 pt-4 mb-2">
-              <span className="text-xs font-medium text-slate-300 block mb-3"><AiT>{"Manual Controls\r\n              "}</AiT></span>
+            <div className="border-t border-stone-700/80 pt-4 mb-2">
+              <span className="text-sm font-medium text-stone-300 block mb-3"><AiT>{"Manual Controls\r\n              "}</AiT></span>
               <div className="space-y-4">
                 {CONTROLS.map((control) => (<label key={control.key} className="block space-y-1.5">
-                    <div className="flex justify-between text-xs text-slate-300">
+                    <div className="flex justify-between text-sm text-stone-300">
                       <span><AiT>{control.label}</AiT></span>
-                      <span className="font-mono text-slate-400">
+                      <span className="font-mono text-stone-400">
                         {filters[control.key]}
                         {control.unit}
                       </span>
                     </div>
-                    <input type="range" min={control.min} max={control.max} step={control.key === "blur" ? 0.5 : 1} value={filters[control.key]} onChange={(event) => handleChange(control.key, Number(event.target.value))} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"/>
+                    <input type="range" min={control.min} max={control.max} step={control.key === "blur" ? 0.5 : 1} value={filters[control.key]} onChange={(event) => handleChange(control.key, Number(event.target.value))} className="w-full h-1.5 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-[#DC2626]"/>
                   </label>))}
               </div>
             </div>
           </>) : (<div className="space-y-3 pt-2">
-            <span className="text-xs font-medium text-slate-300 block mb-2"><AiT>{"Select Aspect Ratio Crop\r\n            "}</AiT></span>
+            <span className="text-sm font-medium text-stone-300 block mb-2"><AiT>{"Select Aspect Ratio Crop\r\n            "}</AiT></span>
             <div className="grid grid-cols-2 gap-2.5">
               {ASPECT_RATIOS.map((item) => {
                 const selected = selectedAspect === item.value;
-                return (<button key={item.value} type="button" onClick={() => setSelectedAspect?.(item.value)} className={`p-3 rounded-xl border text-xs font-medium flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${selected
-                        ? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB]"
-                        : "bg-white/5 border-slate-700 text-slate-300 hover:bg-white/10 hover:border-slate-600"}`}>
-                    <Crop size={16} className={selected ? "text-[#2563EB]" : "text-slate-400"}/>
+                return (<button key={item.value} type="button" onClick={() => setSelectedAspect?.(item.value)} className={`p-3 rounded-xl border text-sm font-medium flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${selected
+                        ? "bg-[#DC2626]/20 border-[#DC2626] text-[#DC2626]"
+                        : "bg-white/5 border-stone-700 text-stone-300 hover:bg-white/10 hover:border-stone-600"}`}>
+                    <Crop size={16} className={selected ? "text-[#DC2626]" : "text-stone-400"}/>
                     <span><AiT>{item.label}</AiT></span>
                   </button>);
             })}
@@ -191,8 +191,8 @@ export default function ImageEditSidebar({
           </div>)}
       </div>
 
-      <div className="pt-4 border-t border-slate-700 flex gap-2">
-        <button type="button" onClick={handleReset} className="flex-1 bg-white/10 hover:bg-white/20 text-xs py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
+      <div className="pt-4 border-t border-stone-700 flex gap-2">
+        <button type="button" onClick={handleReset} className="flex-1 bg-white/10 hover:bg-white/20 text-sm py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
           <RotateCcw size={14}/><AiT>{"Reset All\r\n        "}</AiT></button>
       </div>
     </aside>);

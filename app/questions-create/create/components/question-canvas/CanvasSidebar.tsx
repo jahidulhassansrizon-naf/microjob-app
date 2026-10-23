@@ -13,15 +13,15 @@ export default function CanvasSidebar({ manager, demoMode, onExitDemo, displaySe
     displaySelectedQuestions: Question[];
 }) {
     const { selectedTab, setSelectedTab } = manager;
-    return (<aside className="screen-only flex w-full min-h-0 shrink-0 flex-col gap-3 lg:w-[315px] xl:w-[330px]">
-      <div className="flex rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
-        <button type="button" onClick={() => setSelectedTab("browse")} className={`flex-1 rounded-lg py-2 text-[11px] font-bold transition ${selectedTab === "browse"
-            ? "bg-[#E2E8F0] text-[#2563EB]"
-            : "text-[#0F172A]/70 hover:text-[#0F172A]"}`}><T>{"Browse &amp; pick\n        "}</T></button>
+    return (<aside className="screen-only page-font flex w-full min-h-0 shrink-0 flex-col gap-3 lg:w-[315px] xl:w-[330px]">
+      <div className="flex rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">
+        <button type="button" onClick={() => setSelectedTab("browse")} className={`flex-1 rounded-lg py-2.5 text-[15px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${selectedTab === "browse"
+            ? "border border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40"
+            : "text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}><T>{"Browse &amp; pick\n        "}</T></button>
 
-        <button type="button" onClick={() => setSelectedTab("auto")} className={`flex-1 rounded-lg py-2 text-[11px] font-bold transition ${selectedTab === "auto"
-            ? "bg-[#E2E8F0] text-[#2563EB]"
-            : "text-[#0F172A]/70 hover:text-[#0F172A]"}`}><T>{"Auto create\n        "}</T></button>
+        <button type="button" onClick={() => setSelectedTab("auto")} className={`flex-1 rounded-lg py-2.5 text-[15px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${selectedTab === "auto"
+            ? "border border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40"
+            : "text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}><T>{"Auto create\n        "}</T></button>
       </div>
 
       {selectedTab === "browse" ? (<>

@@ -819,18 +819,18 @@ export default function ImagePreviewModal({
             setIsComparing((previous) => !previous);
         }
     };
-    return (<div className="fixed inset-0 z-[999] bg-[#F8FAFC] text-[#0F172A] flex flex-col justify-between overflow-hidden select-none">
+    return (<div className="fixed inset-0 z-[999] bg-[#F2E8D2] text-[#3B2F1E] flex flex-col justify-between overflow-hidden select-none">
       {/* Header Toolbar */}
-      <div className="min-h-[56px] py-2 sm:py-0 sm:h-16 bg-[#E2E8F0] border-b border-slate-300 flex items-center justify-between px-2 sm:px-6 shrink-0 z-30 overflow-visible relative">
+      <div className="min-h-[56px] py-2 sm:py-0 sm:h-16 bg-[#E3D6B8] border-b border-stone-300 flex items-center justify-between px-2 sm:px-6 shrink-0 z-30 overflow-visible relative">
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           <button type="button" onPointerDown={startCompare} onPointerUp={endCompare} onPointerCancel={() => {
             if (compareTimerRef.current)
                 window.clearTimeout(compareTimerRef.current);
             setIsComparing(false);
             longPressRef.current = false;
-        }} className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer border ${isComparing
+        }} className={`px-2 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 sm:gap-1.5 transition cursor-pointer border ${isComparing
             ? "bg-[#10B981] text-white border-[#10B981] font-bold"
-            : "bg-slate-200 hover:bg-slate-300 text-[#0F172A] border-transparent"}`} title={t("Click to toggle original photo. Press and hold to preview it.")}>
+            : "bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] border-transparent"}`} title={t("Click to toggle original photo. Press and hold to preview it.")}>
             <Eye size={14}/>
             <span className="hidden sm:inline">
               {isComparing ? <AiT>{"Original Photo"}</AiT> : <AiT>{"Compare"}</AiT>}
@@ -838,14 +838,14 @@ export default function ImagePreviewModal({
             <span className="sm:hidden">{isComparing ? <AiT>{"Orig"}</AiT> : <AiT>{"Comp"}</AiT>}</span>
           </button>
 
-          <button type="button" onClick={() => setShowMobileInfo((previous) => !previous)} className="lg:hidden bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer" aria-label={t("Show image details")}>
+          <button type="button" onClick={() => setShowMobileInfo((previous) => !previous)} className="lg:hidden bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-2 py-1.5 rounded-lg text-sm flex items-center gap-1 transition cursor-pointer" aria-label={t("Show image details")}>
             <Info size={14}/>
           </button>
 
-          <button type="button" onClick={handleShare} className="hidden md:flex bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer">
+          <button type="button" onClick={handleShare} className="hidden md:flex bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-3 py-1.5 rounded-lg text-sm items-center gap-1.5 transition cursor-pointer">
             <Share2 size={14}/><AiT>{"Share\r\n          "}</AiT></button>
 
-          {onSaveImage && image.id && (<button type="button" onClick={handleSaveEditedImage} disabled={isSaving} className="bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
+          {onSaveImage && image.id && (<button type="button" onClick={handleSaveEditedImage} disabled={isSaving} className="bg-[#DC2626] hover:bg-red-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
               {isSaving ? (<Loader2 size={14} className="animate-spin"/>) : (<Save size={14}/>)}
               <span className="hidden sm:inline">
                 {isSaving ? <AiT>{"Saving..."}</AiT> : <AiT>{"Save Changes"}</AiT>}
@@ -853,7 +853,7 @@ export default function ImagePreviewModal({
               <span className="sm:hidden"><AiT>{"Save"}</AiT></span>
             </button>)}
 
-          {onRegenerate && (<button type="button" onClick={handleRegenerateClick} disabled={isRegenerating} className="bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
+          {onRegenerate && (<button type="button" onClick={handleRegenerateClick} disabled={isRegenerating} className="bg-[#DC2626] hover:bg-red-700 disabled:opacity-50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 sm:gap-1.5 transition cursor-pointer">
               {isRegenerating ? (<Loader2 size={14} className="animate-spin"/>) : (<RotateCw size={14}/>)}
               <span className="hidden sm:inline">
                 {isRegenerating ? <AiT>{"Processing..."}</AiT> : <AiT>{"Regenerate"}</AiT>}
@@ -863,57 +863,57 @@ export default function ImagePreviewModal({
 
           {/* Download Dropdown */}
           <div className="relative z-50" ref={downloadMenuRef}>
-            <button type="button" onClick={() => setShowDownloadMenu((previous) => !previous)} disabled={isDownloading} className="bg-[#10B981] hover:bg-emerald-600 disabled:opacity-50 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer shadow-md">
+            <button type="button" onClick={() => setShowDownloadMenu((previous) => !previous)} disabled={isDownloading} className="bg-[#10B981] hover:bg-emerald-600 disabled:opacity-50 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 transition cursor-pointer shadow-md">
               {isDownloading ? (<Loader2 size={14} className="animate-spin"/>) : (<Download size={14}/>)}
               <span>{isDownloading ? <AiT>{"Downloading..."}</AiT> : <AiT>{"Download"}</AiT>}</span>
               <ChevronDown size={14}/>
             </button>
 
-            {showDownloadMenu && (<div className="absolute left-0 top-full mt-2 w-60 sm:w-64 bg-[#F8FAFC] text-[#0F172A] rounded-xl shadow-2xl border border-slate-300 py-2 z-50 text-xs">
-                <div className="px-3 py-1.5 border-b border-slate-200 font-semibold text-slate-500 text-[10px] uppercase"><AiT>{"Select Format\r\n                "}</AiT></div>
-                <button type="button" onClick={() => handleDownloadFormat("jpg")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-slate-100 flex items-center gap-2.5 transition cursor-pointer">
+            {showDownloadMenu && (<div className="absolute left-0 top-full mt-2 w-60 sm:w-64 bg-[#F2E8D2] text-[#3B2F1E] rounded-xl shadow-2xl border border-stone-300 py-2 z-50 text-sm">
+                <div className="px-3 py-1.5 border-b border-stone-200 font-semibold text-stone-500 text-[12px] uppercase"><AiT>{"Select Format\r\n                "}</AiT></div>
+                <button type="button" onClick={() => handleDownloadFormat("jpg")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
                   <div className="p-1.5 bg-[#10B981]/20 text-[#10B981] rounded-lg shrink-0">
                     <FileImage size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><AiT>{"Standard JPG\r\n                    "}</AiT></div>
-                    <div className="text-[10px] text-slate-500"><AiT>{"Recommended for Passport &amp; Visa\r\n                    "}</AiT></div>
+                    <div className="font-semibold text-[#3B2F1E]"><AiT>{"Standard JPG\r\n                    "}</AiT></div>
+                    <div className="text-[12px] text-stone-500"><AiT>{"Recommended for Passport &amp; Visa\r\n                    "}</AiT></div>
                   </div>
                 </button>
-                <button type="button" onClick={() => handleDownloadFormat("png")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-slate-100 flex items-center gap-2.5 transition cursor-pointer">
-                  <div className="p-1.5 bg-[#2563EB]/20 text-[#2563EB] rounded-lg shrink-0">
+                <button type="button" onClick={() => handleDownloadFormat("png")} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
+                  <div className="p-1.5 bg-[#DC2626]/20 text-[#DC2626] rounded-lg shrink-0">
                     <FileImage size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><AiT>{"HD PNG Image\r\n                    "}</AiT></div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="font-semibold text-[#3B2F1E]"><AiT>{"HD PNG Image\r\n                    "}</AiT></div>
+                    <div className="text-[12px] text-stone-500">
                       {isTransparentBackground
             ? <AiT>{"Lossless PNG • keeps transparency"}</AiT> : <AiT>{"Lossless High Quality"}</AiT>}
                     </div>
                   </div>
                 </button>
-                <div className="my-1 border-t border-slate-200"/>
-                <button type="button" onClick={handleDownloadPrintSheet} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-slate-100 flex items-center gap-2.5 transition cursor-pointer">
-                  <div className="p-1.5 bg-[#2563EB]/20 text-[#2563EB] rounded-lg shrink-0">
+                <div className="my-1 border-t border-stone-200"/>
+                <button type="button" onClick={handleDownloadPrintSheet} className="w-full text-left px-3 sm:px-4 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
+                  <div className="p-1.5 bg-[#DC2626]/20 text-[#DC2626] rounded-lg shrink-0">
                     <Grid size={16}/>
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F172A]"><AiT>{"Print Sheet (4\u00D76&quot;)\r\n                    "}</AiT></div>
-                    <div className="text-[10px] text-slate-500"><AiT>{"8-copy grid layout\r\n                    "}</AiT></div>
+                    <div className="font-semibold text-[#3B2F1E]"><AiT>{"Print Sheet (4\u00D76&quot;)\r\n                    "}</AiT></div>
+                    <div className="text-[12px] text-stone-500"><AiT>{"8-copy grid layout\r\n                    "}</AiT></div>
                   </div>
                 </button>
               </div>)}
           </div>
 
-          <button type="button" onClick={handlePrint} className="hidden md:flex bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-3 py-1.5 rounded-lg text-xs items-center gap-1.5 transition cursor-pointer">
+          <button type="button" onClick={handlePrint} className="hidden md:flex bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-3 py-1.5 rounded-lg text-sm items-center gap-1.5 transition cursor-pointer">
             <Printer size={14}/><AiT>{"Print\r\n          "}</AiT></button>
 
-          <button type="button" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition cursor-pointer">
+          <button type="button" onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 transition cursor-pointer">
             <Trash2 size={14}/>
             <span className="hidden sm:inline"><AiT>{"Delete"}</AiT></span>
           </button>
 
-          <button type="button" onClick={() => setIsEditOpen((previous) => !previous)} className={`${isEditOpen ? "bg-[#2563EB] text-white" : "bg-slate-200 hover:bg-slate-300 text-[#0F172A]"} px-2.5 sm:px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer`}>
+          <button type="button" onClick={() => setIsEditOpen((previous) => !previous)} className={`${isEditOpen ? "bg-[#DC2626] text-white" : "bg-stone-200 hover:bg-stone-300 text-[#3B2F1E]"} px-2.5 sm:px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition cursor-pointer`}>
             <Edit3 size={14}/><AiT>{"Edit\r\n          "}</AiT></button>
         </div>
 
@@ -922,40 +922,40 @@ export default function ImagePreviewModal({
         </button>
       </div>
 
-      {actionError && (<div className="absolute top-20 left-1/2 z-[70] -translate-x-1/2 max-w-[min(92vw,680px)] rounded-xl border border-slate-300 bg-[#E2E8F0] px-4 py-2.5 text-xs font-medium text-[#0F172A] shadow-xl">
+      {actionError && (<div className="absolute top-20 left-1/2 z-[70] -translate-x-1/2 max-w-[min(92vw,680px)] rounded-xl border border-stone-300 bg-[#E3D6B8] px-4 py-2.5 text-sm font-medium text-[#3B2F1E] shadow-xl">
           {actionError}
         </div>)}
 
       {/* Main Preview Container */}
-      <div className="flex-1 w-full flex flex-col lg:flex-row items-center justify-between overflow-hidden relative bg-[#F8FAFC] p-2 sm:p-4 gap-3">
+      <div className="flex-1 w-full flex flex-col lg:flex-row items-center justify-between overflow-hidden relative bg-[#F2E8D2] p-2 sm:p-4 gap-3">
         {/* Info Sidebar */}
-        <div className={`w-full lg:w-64 bg-[#E2E8F0] border border-slate-300 rounded-xl p-3 sm:p-4 text-[#0F172A] flex-col gap-3 shadow-xl shrink-0 ${showMobileInfo ? "flex" : "hidden lg:flex"}`}>
-          <div className="flex items-center justify-between border-b border-slate-300 pb-2">
+        <div className={`w-full lg:w-64 bg-[#E3D6B8] border border-stone-300 rounded-xl p-3 sm:p-4 text-[#3B2F1E] flex-col gap-3 shadow-xl shrink-0 ${showMobileInfo ? "flex" : "hidden lg:flex"}`}>
+          <div className="flex items-center justify-between border-b border-stone-300 pb-2">
             <div className="flex items-center gap-2">
-              <Info size={16} className="text-[#2563EB]"/>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Generation Info\r\n              "}</AiT></h3>
+              <Info size={16} className="text-[#DC2626]"/>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Generation Info\r\n              "}</AiT></h3>
             </div>
-            <button type="button" onClick={() => setShowMobileInfo(false)} className="lg:hidden text-slate-500 hover:text-[#0F172A]">
+            <button type="button" onClick={() => setShowMobileInfo(false)} className="lg:hidden text-stone-500 hover:text-[#3B2F1E]">
               <X size={16}/>
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 text-xs text-slate-700">
-            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><AiT>{"Photo Size:"}</AiT></span>
-              <span className="font-bold text-[#2563EB]">{photoSizeLabel}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 text-sm text-stone-700">
+            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-stone-200">
+              <span className="text-stone-500"><AiT>{"Photo Size:"}</AiT></span>
+              <span className="font-bold text-[#DC2626]">{photoSizeLabel}</span>
             </div>
-            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><AiT>{"Background:"}</AiT></span>
+            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-stone-200">
+              <span className="text-stone-500"><AiT>{"Background:"}</AiT></span>
               <div className="flex items-center gap-1.5">
-                <span className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{ backgroundColor: bgHexColor }}/>
-                <span className="font-medium text-[#0F172A]">
+                <span className="w-3.5 h-3.5 rounded-full border border-stone-300" style={{ backgroundColor: bgHexColor }}/>
+                <span className="font-medium text-[#3B2F1E]">
                   {isTransparentBackground ? <AiT>{"Transparent"}</AiT> : bgHexColor}
                 </span>
               </div>
             </div>
-            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-slate-200">
-              <span className="text-slate-500"><AiT>{"Clothing:"}</AiT></span>
-              <span className="font-medium text-[#0F172A] truncate max-w-[100px]">
+            <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg border border-stone-200">
+              <span className="text-stone-500"><AiT>{"Clothing:"}</AiT></span>
+              <span className="font-medium text-[#3B2F1E] truncate max-w-[100px]">
                 <AiT>{clothingInfo}</AiT>
               </span>
             </div>
@@ -970,7 +970,7 @@ export default function ImagePreviewModal({
                 : { backgroundColor: bgHexColor }),
             transform: `scale(${previewZoom / 100}) rotate(${isComparing ? 0 : previewRotate}deg)`,
         }}>
-            {isComparing && (<div className="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] px-2.5 py-1 rounded-md z-10 uppercase tracking-wider font-bold border border-emerald-400 shadow-lg"><AiT>{"Original Photo\r\n              "}</AiT></div>)}
+            {isComparing && (<div className="absolute top-3 left-3 bg-[#10B981] text-white text-[12px] px-2.5 py-1 rounded-md z-10 uppercase tracking-wider font-bold border border-emerald-400 shadow-lg"><AiT>{"Original Photo\r\n              "}</AiT></div>)}
             <img src={isComparing ? displayOriginalUrl : image.url} alt={t("Full Preview")} className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150" style={{ filter: isComparing ? "none" : filterString(filters) }}/>
           </div>
         </div>
@@ -979,15 +979,15 @@ export default function ImagePreviewModal({
       </div>
 
       {/* Bottom Controls Bar */}
-      <div className="h-12 sm:h-14 bg-[#E2E8F0] border-t border-slate-300 flex items-center justify-center gap-2 sm:gap-3 shrink-0 text-[#0F172A] text-xs select-none z-10 px-2">
-        <button type="button" onClick={() => setPreviewZoom((previous) => Math.max(previous - 10, 50))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"-\r\n        "}</AiT></button>
-        <span className="w-10 text-center font-medium text-xs">
+      <div className="h-12 sm:h-14 bg-[#E3D6B8] border-t border-stone-300 flex items-center justify-center gap-2 sm:gap-3 shrink-0 text-[#3B2F1E] text-sm select-none z-10 px-2">
+        <button type="button" onClick={() => setPreviewZoom((previous) => Math.max(previous - 10, 50))} className="bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"-\r\n        "}</AiT></button>
+        <span className="w-10 text-center font-medium text-sm">
           {previewZoom}<AiT>{"%\r\n        "}</AiT></span>
-        <button type="button" onClick={() => setPreviewZoom((previous) => Math.min(previous + 10, 300))} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"+\r\n        "}</AiT></button>
-        <button type="button" onClick={() => setPreviewRotate((previous) => (previous + 90) % 360)} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] p-1.5 rounded transition cursor-pointer" title={t("Rotate")}>
+        <button type="button" onClick={() => setPreviewZoom((previous) => Math.min(previous + 10, 300))} className="bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-2.5 py-1 rounded font-bold transition cursor-pointer"><AiT>{"+\r\n        "}</AiT></button>
+        <button type="button" onClick={() => setPreviewRotate((previous) => (previous + 90) % 360)} className="bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] p-1.5 rounded transition cursor-pointer" title={t("Rotate")}>
           <RotateCw size={14}/>
         </button>
-        <button type="button" onClick={handleResetAll} className="bg-slate-200 hover:bg-slate-300 text-[#0F172A] px-2 py-1 rounded text-[11px] transition ml-1 cursor-pointer"><AiT>{"Reset All\r\n        "}</AiT></button>
+        <button type="button" onClick={handleResetAll} className="bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-2 py-1 rounded text-[13px] transition ml-1 cursor-pointer"><AiT>{"Reset All\r\n        "}</AiT></button>
       </div>
       <AiPrintStudioModal open={printStudioOpen} image={printStudioImage} preset={printStudioPreset} onClose={() => setPrintStudioOpen(false)} onPrintSingle={handlePrintSingle}/>
     </div>);

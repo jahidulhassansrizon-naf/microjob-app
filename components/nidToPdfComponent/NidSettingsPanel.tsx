@@ -8,6 +8,7 @@ import {
   Palette,
   Contrast,
   Printer,
+  Check,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -167,30 +168,30 @@ export default function NidSettingsPanel({
 }: NidSettingsPanelProps) {
   const { t } = useNidSettingsText();
   return (
-    <div className="lg:col-span-4 bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-4 text-[#0F172A]">
-      <h2 className="text-xs font-bold text-[#0F172A] border-b border-[#E2E8F0] pb-2">
+    <div className="lg:col-span-4 bg-[#F2E8D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4 text-[#3B2F1E]">
+      <h2 className="text-[17px] font-semibold text-[#3B2F1E] border-b border-[#E3D6B8] pb-2">
         <NidSettingsT>{"Settings\r\n      "}</NidSettingsT>
       </h2>
 
       {/* Auto crop Toggle */}
       <div
-        className={`rounded-xl border p-2.5 transition-all ${
+        className={`rounded-xl border p-2.5 transition-all duration-200 ${
           autoCrop
-            ? "bg-[#2563EB]/10 border-[#2563EB]/30"
-            : "bg-[#E2E8F0]/40 border-[#E2E8F0]"
+            ? "bg-[#DC2626]/10 border-[#DC2626]/30"
+            : "bg-[#F6EEDB] border-[#E3D6B8]"
         }`}
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#0F172A]">
+              <span className="text-[15px] font-bold text-[#3B2F1E]">
                 <NidSettingsT>{"Auto crop\r\n              "}</NidSettingsT>
               </span>
               <span
-                className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${
                   autoCrop
-                    ? "bg-[#10B981] text-white"
-                    : "bg-[#E2E8F0] text-[#0F172A]/70"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-[#E3D6B8] text-[#5A4A32]"
                 }`}
               >
                 {autoCrop ? (
@@ -200,7 +201,7 @@ export default function NidSettingsPanel({
                 )}
               </span>
             </div>
-            <span className="text-[10px] text-[#0F172A]/70 block mt-0.5 leading-relaxed">
+            <span className="text-[13px] text-[#6B5A40] block mt-0.5 leading-relaxed">
               {processingSide ? (
                 <NidSettingsT>{`Detecting ${processingSide === "front" ? "front" : "back"} card edges…`}</NidSettingsT>
               ) : autoCrop ? (
@@ -221,34 +222,34 @@ export default function NidSettingsPanel({
             title={t(autoCrop ? "Turn Auto crop off" : "Turn Auto crop on")}
             onClick={() => setAutoCrop(!autoCrop)}
             disabled={processingSide !== null}
-            className={`w-12 h-7 rounded-full transition-all p-0.5 flex items-center shrink-0 ${
+            className={`w-12 h-7 rounded-full transition-all duration-200 p-0.5 flex items-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               processingSide !== null
-                ? "opacity-60 cursor-not-allowed"
-                : "cursor-pointer"
+                ? "opacity-70 cursor-not-allowed"
+                : "cursor-pointer active:scale-[0.98]"
             } ${
               autoCrop
-                ? "bg-[#2563EB] justify-end shadow-sm"
-                : "bg-[#E2E8F0] justify-start"
+                ? "bg-[#DC2626] justify-end shadow-sm"
+                : "bg-[#D8C9A6] justify-start"
             }`}
           >
-            <div className="w-6 h-6 rounded-full bg-white shadow-md" />
+            <div className="w-6 h-6 rounded-full bg-[#FBF6E8] shadow-md" />
           </button>
         </div>
 
         <div
-          className={`mt-2 rounded-lg px-2 py-1.5 text-[10px] font-semibold flex items-center gap-1.5 ${
+          className={`mt-2 rounded-lg px-2 py-1.5 text-[13px] font-semibold flex items-center gap-1.5 ${
             processingSide
-              ? "bg-[#0F172A] text-white"
+              ? "bg-[#3B2F1E] text-white"
               : autoCrop
-                ? "bg-white text-[#2563EB] border border-[#2563EB]/20"
-                : "bg-white text-[#0F172A]/60 border border-[#E2E8F0]"
+                ? "bg-[#FBF6E8] text-[#DC2626] border border-[#DC2626]/20"
+                : "bg-[#FBF6E8] text-[#6B5A40] border border-[#E3D6B8]"
           }`}
         >
           {processingSide ? (
             <RotateCw size={11} className="animate-spin shrink-0" />
           ) : (
             <span
-              className={`w-1.5 h-1.5 rounded-full ${autoCrop ? "bg-[#10B981]" : "bg-gray-400"}`}
+              className={`w-1.5 h-1.5 rounded-full ${autoCrop ? "bg-emerald-600" : "bg-[#B0A080]"}`}
             />
           )}
           <span>
@@ -265,7 +266,7 @@ export default function NidSettingsPanel({
         </div>
 
         {processingError && (
-          <div className="mt-2 rounded-lg bg-red-50 border border-red-100 text-red-600 px-2 py-1.5 text-[10px] font-medium leading-relaxed">
+          <div className="mt-2 rounded-lg bg-[#FEE9E9] border border-[#FBB6B6] text-[#B91C1C] px-2 py-1.5 text-[13px] font-medium leading-relaxed">
             <NidSettingsT>{processingError}</NidSettingsT>
           </div>
         )}
@@ -273,41 +274,41 @@ export default function NidSettingsPanel({
 
       {/* Page settings */}
       <div className="space-y-1.5">
-        <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+        <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Page settings"}</NidSettingsT>
           </span>
-          <span className="text-[#0F172A]/50 text-[10px]">
+          <span className="text-[#6B5A40] text-[13px]">
             <NidSettingsT>{orientation.toUpperCase()}</NidSettingsT>
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-1.5 bg-[#E2E8F0]/40 p-1 rounded-xl border border-[#E2E8F0]">
+        <div className="grid grid-cols-3 gap-1.5 bg-[#F3E9D2] p-1 rounded-xl border border-[#E3D6B8]">
           <button
             onClick={() => setOrientation("portrait")}
-            className={`py-1.5 text-xs font-bold rounded-lg transition-all flex justify-center items-center cursor-pointer ${
+            className={`py-1.5 text-[15px] font-bold rounded-lg transition-all duration-200 flex justify-center items-center cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               orientation === "portrait"
-                ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                : "text-[#0F172A]/70 hover:text-[#0F172A]"
+                ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                : "text-[#5A4A32] hover:text-[#3B2F1E] hover:bg-[#EFE3C8]"
             }`}
           >
             <NidSettingsT>{"Auto\r\n          "}</NidSettingsT>
           </button>
           <button
             onClick={() => setOrientation("portrait")}
-            className={`py-1.5 text-xs font-bold rounded-lg transition-all flex justify-center items-center cursor-pointer ${
+            className={`py-1.5 text-[15px] font-bold rounded-lg transition-all duration-200 flex justify-center items-center cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               orientation === "portrait"
-                ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                : "text-[#0F172A]/70 hover:text-[#0F172A]"
+                ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                : "text-[#5A4A32] hover:text-[#3B2F1E] hover:bg-[#EFE3C8]"
             }`}
           >
             <div className="w-3 h-4 border-2 border-current rounded-xs" />
           </button>
           <button
             onClick={() => setOrientation("landscape")}
-            className={`py-1.5 text-xs font-bold rounded-lg transition-all flex justify-center items-center cursor-pointer ${
+            className={`py-1.5 text-[15px] font-bold rounded-lg transition-all duration-200 flex justify-center items-center cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               orientation === "landscape"
-                ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                : "text-[#0F172A]/70 hover:text-[#0F172A]"
+                ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                : "text-[#5A4A32] hover:text-[#3B2F1E] hover:bg-[#EFE3C8]"
             }`}
           >
             <div className="w-4 h-3 border-2 border-current rounded-xs" />
@@ -317,7 +318,7 @@ export default function NidSettingsPanel({
 
       {/* Layout */}
       <div className="space-y-1.5">
-        <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+        <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Layout"}</NidSettingsT>
           </span>
@@ -325,36 +326,36 @@ export default function NidSettingsPanel({
             onClick={() =>
               setLayout(layout === "side-by-side" ? "stacked" : "side-by-side")
             }
-            className="text-[10px] text-[#2563EB] font-bold hover:underline cursor-pointer"
+            className="text-[13px] text-[#DC2626] hover:text-[#B91C1C] font-bold hover:underline cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 rounded"
           >
             <NidSettingsT>{"Switch\r\n          "}</NidSettingsT>
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2 bg-[#E2E8F0]/40 p-1 rounded-xl border border-[#E2E8F0]">
+        <div className="grid grid-cols-2 gap-2 bg-[#F3E9D2] p-1 rounded-xl border border-[#E3D6B8]">
           <button
             onClick={() => setLayout("side-by-side")}
-            className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all cursor-pointer ${
+            className={`py-2 text-[15px] font-bold rounded-lg flex justify-center items-center gap-1 transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               layout === "side-by-side"
-                ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                : "text-[#0F172A]/70 hover:text-[#0F172A]"
+                ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                : "text-[#5A4A32] hover:text-[#3B2F1E] hover:bg-[#EFE3C8]"
             }`}
           >
             <div className="flex gap-0.5">
-              <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
-              <div className="w-3 h-4 bg-[#2563EB] rounded-xs" />
+              <div className="w-3 h-4 bg-[#DC2626] rounded-xs" />
+              <div className="w-3 h-4 bg-[#DC2626] rounded-xs" />
             </div>
           </button>
           <button
             onClick={() => setLayout("stacked")}
-            className={`py-2 text-xs font-bold rounded-lg flex justify-center items-center gap-1 transition-all cursor-pointer ${
+            className={`py-2 text-[15px] font-bold rounded-lg flex justify-center items-center gap-1 transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
               layout === "stacked"
-                ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                : "text-[#0F172A]/70 hover:text-[#0F172A]"
+                ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                : "text-[#5A4A32] hover:text-[#3B2F1E] hover:bg-[#EFE3C8]"
             }`}
           >
             <div className="flex flex-col gap-0.5">
-              <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
-              <div className="w-5 h-2 bg-[#2563EB] rounded-xs" />
+              <div className="w-5 h-2 bg-[#DC2626] rounded-xs" />
+              <div className="w-5 h-2 bg-[#DC2626] rounded-xs" />
             </div>
           </button>
         </div>
@@ -362,27 +363,27 @@ export default function NidSettingsPanel({
 
       {/* Rotate */}
       <div className="space-y-1.5">
-        <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+        <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Rotate"}</NidSettingsT>
           </span>
           <button
             onClick={() => setRotation((prev) => (prev + 90) % 360)}
-            className="text-[10px] text-[#2563EB] font-bold flex items-center gap-1 hover:underline cursor-pointer"
+            className="text-[13px] text-[#DC2626] hover:text-[#B91C1C] font-bold flex items-center gap-1 hover:underline cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 rounded"
           >
-            <RotateCw size={10} />
+            <RotateCw size={12} />
             <NidSettingsT>{"Rotate 90\u00B0\r\n          "}</NidSettingsT>
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-1 bg-[#E2E8F0]/40 p-1 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#0F172A]/80">
+        <div className="grid grid-cols-4 gap-1 bg-[#F3E9D2] p-1 rounded-xl border border-[#E3D6B8] text-[15px] font-bold text-[#5A4A32]">
           {[0, 90, 180, 270].map((deg) => (
             <button
               key={deg}
               onClick={() => setRotation(deg)}
-              className={`py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`py-1.5 rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
                 rotation === deg
-                  ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                  : "hover:bg-white/50"
+                  ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                  : "hover:bg-[#EFE3C8]"
               }`}
             >
               {deg}
@@ -394,18 +395,18 @@ export default function NidSettingsPanel({
 
       {/* Position on page */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-[#0F172A]/80 block">
+        <span className="text-[13px] font-bold text-[#5A4A32] block">
           <NidSettingsT>{"Position on page\r\n        "}</NidSettingsT>
         </span>
-        <div className="grid grid-cols-3 gap-1.5 bg-[#E2E8F0]/40 p-1 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#0F172A]/80">
+        <div className="grid grid-cols-3 gap-1.5 bg-[#F3E9D2] p-1 rounded-xl border border-[#E3D6B8] text-[15px] font-bold text-[#5A4A32]">
           {(["top", "center", "bottom"] as const).map((pos) => (
             <button
               key={pos}
               onClick={() => setPosition(pos)}
-              className={`py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
+              className={`py-1.5 rounded-lg capitalize transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
                 position === pos
-                  ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                  : "hover:bg-white/50"
+                  ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                  : "hover:bg-[#EFE3C8]"
               }`}
             >
               <NidSettingsT>{pos}</NidSettingsT>
@@ -416,18 +417,18 @@ export default function NidSettingsPanel({
 
       {/* Copies */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-[#0F172A]/80 block">
+        <span className="text-[13px] font-bold text-[#5A4A32] block">
           <NidSettingsT>{"Copies\r\n        "}</NidSettingsT>
         </span>
-        <div className="grid grid-cols-4 gap-1 bg-[#E2E8F0]/40 p-1 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#0F172A]/80">
+        <div className="grid grid-cols-4 gap-1 bg-[#F3E9D2] p-1 rounded-xl border border-[#E3D6B8] text-[15px] font-bold text-[#5A4A32]">
           {[1, 2, 3, 4].map((num) => (
             <button
               key={num}
               onClick={() => setCopies(num)}
-              className={`py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`py-1.5 rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
                 copies === num
-                  ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0]"
-                  : "hover:bg-white/50"
+                  ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626]"
+                  : "hover:bg-[#EFE3C8]"
               }`}
             >
               {num}
@@ -439,7 +440,7 @@ export default function NidSettingsPanel({
       {/* Rounded corners */}
       <div className="flex items-center justify-between pt-1">
         <div>
-          <span className="text-xs font-bold text-[#0F172A] block">
+          <span className="text-[15px] font-bold text-[#3B2F1E] block">
             <NidSettingsT>
               {"Rounded corners (14px)\r\n          "}
             </NidSettingsT>
@@ -447,20 +448,20 @@ export default function NidSettingsPanel({
         </div>
         <button
           onClick={() => setRoundedCorners(!roundedCorners)}
-          className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center cursor-pointer ${
+          className={`w-11 h-6 rounded-full transition-colors duration-200 p-0.5 flex items-center cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
             roundedCorners
-              ? "bg-[#2563EB] justify-end"
-              : "bg-[#E2E8F0] justify-start"
+              ? "bg-[#DC2626] justify-end"
+              : "bg-[#D8C9A6] justify-start"
           }`}
         >
-          <div className="w-5 h-5 rounded-full bg-white shadow-md" />
+          <div className="w-5 h-5 rounded-full bg-[#FBF6E8] shadow-md" />
         </button>
       </div>
 
       {/* Cleanup style Controls */}
-      <div className="space-y-4 border-t border-[#E2E8F0] pt-3">
+      <div className="space-y-4 border-t border-[#E3D6B8] pt-3">
         <div className="flex justify-between items-center">
-          <span className="text-xs font-bold text-[#0F172A]">
+          <span className="text-[15px] font-bold text-[#3B2F1E]">
             <NidSettingsT>{"Cleanup style\r\n          "}</NidSettingsT>
           </span>
           <button
@@ -471,14 +472,14 @@ export default function NidSettingsPanel({
               setSaturation(0);
               setTextDeepen(0);
             }}
-            className="text-xs text-[#2563EB] font-bold hover:underline cursor-pointer"
+            className="text-[15px] text-[#DC2626] hover:text-[#B91C1C] font-bold hover:underline cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 rounded"
           >
             <NidSettingsT>{"Reset\r\n          "}</NidSettingsT>
           </button>
         </div>
 
         {/* Preset Grid */}
-        <div className="bg-[#E2E8F0]/50 p-2 rounded-2xl grid grid-cols-2 gap-2">
+        <div className="bg-[#F3E9D2] p-2 rounded-2xl grid grid-cols-2 gap-2">
           {[
             { id: "plain", label: "Plain clean", icon: Wand2 },
             { id: "color", label: "Colour clean", icon: Sparkles },
@@ -514,17 +515,25 @@ export default function NidSettingsPanel({
                     setTextDeepen(50);
                   }
                 }}
-                className={`py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`relative py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
                   isActive
-                    ? "bg-white text-[#2563EB] shadow-xs border border-[#E2E8F0] font-semibold"
-                    : "text-[#0F172A]/70 hover:bg-white/60"
+                    ? "bg-[#F6D9A8] text-[#B91C1C] shadow-sm border border-[#DC2626] ring-2 ring-[#DC2626]/40 font-semibold"
+                    : "border border-transparent text-[#5A4A32] hover:bg-[#EFE3C8] hover:-translate-y-0.5 hover:shadow-sm"
                 }`}
               >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#DC2626] text-white flex items-center justify-center"
+                  >
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
                 <Icon
-                  size={16}
-                  className={isActive ? "text-[#2563EB]" : "text-[#0F172A]/70"}
+                  size={18}
+                  className={isActive ? "text-[#DC2626]" : "text-[#5A4A32]"}
                 />
-                <span className="text-[11px] font-semibold text-center leading-tight">
+                <span className="text-[15px] font-semibold text-center leading-tight">
                   <NidSettingsT>{preset.label}</NidSettingsT>
                 </span>
               </button>
@@ -533,17 +542,17 @@ export default function NidSettingsPanel({
         </div>
 
         {/* Fine tuning */}
-        <div className="space-y-3 pt-1 border-t border-[#E2E8F0]">
-          <span className="text-xs font-bold text-[#0F172A] block">
+        <div className="space-y-3 pt-1 border-t border-[#E3D6B8]">
+          <span className="text-[15px] font-bold text-[#3B2F1E] block">
             <NidSettingsT>{"Fine tuning\r\n          "}</NidSettingsT>
           </span>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+              <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
                 <span>
                   <NidSettingsT>{"Remove shadows and stains"}</NidSettingsT>
                 </span>
-                <span className="w-4 h-4 rounded bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/20 flex items-center justify-center text-[10px] font-bold">
+                <span className="min-w-[28px] h-6 px-1 rounded bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center text-[13px] font-bold">
                   {shadowRemoval}
                 </span>
               </div>
@@ -553,16 +562,16 @@ export default function NidSettingsPanel({
                 max="100"
                 value={shadowRemoval}
                 onChange={(e) => setShadowRemoval(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+              <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
                 <span>
                   <NidSettingsT>{"Increase blacks"}</NidSettingsT>
                 </span>
-                <span className="w-4 h-4 rounded bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/20 flex items-center justify-center text-[10px] font-bold">
+                <span className="min-w-[28px] h-6 px-1 rounded bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center text-[13px] font-bold">
                   {blackBoost}
                 </span>
               </div>
@@ -572,16 +581,16 @@ export default function NidSettingsPanel({
                 max="100"
                 value={blackBoost}
                 onChange={(e) => setBlackBoost(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+              <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
                 <span>
                   <NidSettingsT>{"Colour intensity"}</NidSettingsT>
                 </span>
-                <span className="w-4 h-4 rounded bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/20 flex items-center justify-center text-[10px] font-bold">
+                <span className="min-w-[28px] h-6 px-1 rounded bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center text-[13px] font-bold">
                   {saturation}
                 </span>
               </div>
@@ -591,16 +600,16 @@ export default function NidSettingsPanel({
                 max="100"
                 value={saturation}
                 onChange={(e) => setSaturation(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-bold text-[#0F172A]/80">
+              <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
                 <span>
                   <NidSettingsT>{"Deepen text"}</NidSettingsT>
                 </span>
-                <span className="w-4 h-4 rounded bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/20 flex items-center justify-center text-[10px] font-bold">
+                <span className="min-w-[28px] h-6 px-1 rounded bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center text-[13px] font-bold">
                   {textDeepen}
                 </span>
               </div>
@@ -610,18 +619,18 @@ export default function NidSettingsPanel({
                 max="100"
                 value={textDeepen}
                 onChange={(e) => setTextDeepen(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
               />
             </div>
           </div>
         </div>
 
-        {/* Print Button (CTA using Accent Emerald Green) */}
+        {/* Print Button (main call-to-action) */}
         <button
           onClick={handlePrint}
-          className="w-full py-2.5 bg-[#10B981] hover:bg-[#0d9668] text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          className="w-full py-2.5 bg-[#D42020] hover:bg-[#AE1717] text-white text-[15px] font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
         >
-          <Printer size={14} />
+          <Printer size={16} />
           <span>
             <NidSettingsT>{"Print"}</NidSettingsT>
           </span>

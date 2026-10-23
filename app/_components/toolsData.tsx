@@ -809,13 +809,15 @@ function loadSubscriptionAccess() {
     }
     return subscriptionAccessPromise;
 }
-export function ToolTile({ tool, boxPercent, touchCompact = false, }: {
+export function ToolTile({ tool, boxPercent, touchCompact = false, warm = false, }: {
     tool: ToolItem;
     // true: compact (small box) layout on touch devices and the full-size layout on desktop,
     // chosen purely by CSS (`fit:` = pointer: fine) so the server HTML already matches.
     touchCompact?: boolean;
     // দিলে শুধু রঙিন বক্স (আইকন) এই % এ ছোট হবে; নাম পুরো ঘরের চওড়া পাবে ও ছোট লেখায় দেখাবে
     boxPercent?: number;
+    // Warm Sand + Red label styling (used by the Sohoj Tools page only; default keeps the old look)
+    warm?: boolean;
 }) {
     const compact = typeof boxPercent === "number";
     const router = useRouter();
@@ -863,7 +865,7 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, }: {
             : `Open ${tool.name}`;
     return (<Link href={toolHref} prefetch onMouseEnter={() => router.prefetch(`/sohoj-tools/${slug}`)} onFocus={() => router.prefetch(`/sohoj-tools/${slug}`)} className="flex w-full flex-col items-center group cursor-pointer" aria-label={accessibleLabel}>
       <div className={`relative aspect-square ${touchCompact ? "w-[88%] rounded-[22px] fit:w-full fit:rounded-[28px]" : compact ? "rounded-[22px]" : "w-full rounded-[28px]"} ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`} style={compact ? { width: `${boxPercent}%` } : undefined} data-tile-box={compact ? "" : undefined}>
-        {tool.badge && (<span className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded-full shadow-xs ${tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"}`}>
+        {tool.badge && (<span className={`absolute top-2.5 left-2.5 ${warm ? "text-[11px] font-bold px-2 py-0.5" : "text-[8px] font-black px-1.5 py-0.5"} uppercase text-white rounded-full shadow-xs ${tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"}`}>
             {badgeLabel}
           </span>)}
 
@@ -875,10 +877,12 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, }: {
         {IconComponent && (<IconComponent size={compact ? 52 : 72} className={`text-[#ffffff] stroke-[1.75]${touchCompact ? " h-[52px]! w-[52px]! fit:h-[72px]! fit:w-[72px]!" : ""}`}/>)}
       </div>
 
-      <span className={`text-center group-hover:text-[#2563EB] transition-colors ${touchCompact
+      <span className={`text-center transition-colors ${warm ? "group-hover:text-[#DC2626]" : "group-hover:text-[#2563EB]"} ${warm && touchCompact
+            ? "mt-2 w-full px-1 text-[13px] font-medium leading-[1.35] tracking-[0.01em] text-[#5A4A32] line-clamp-2 fit:mt-2.5 fit:w-auto fit:px-0 fit:text-[16px] fit:font-medium fit:leading-normal fit:tracking-normal fit:text-[#3B2F1E] fit:line-clamp-1"
+            : touchCompact
             ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2 fit:mt-2.5 fit:w-auto fit:px-0 fit:text-[15px] fit:font-medium fit:leading-normal fit:tracking-normal fit:text-[#0F172A] fit:line-clamp-1"
             : compact
-            ? "mt-2 w-full px-1 text-[11px] font-medium leading-[1.3] tracking-[0.01em] text-slate-700 line-clamp-2"
+            ? "mt-2 w-full px-1 text-[13px] font-medium leading-[1.35] tracking-[0.01em] text-slate-700 line-clamp-2 fit:mt-2.5 fit:w-auto fit:px-0 fit:text-[16px] fit:leading-normal fit:tracking-normal fit:line-clamp-1"
             : "mt-2.5 text-[15px] font-medium text-[#0F172A] line-clamp-1"}`}>
         {displayName}
       </span>

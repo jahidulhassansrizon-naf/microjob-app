@@ -44,7 +44,7 @@ export function TemplateToolbar({ search, setSearch, sortType, setSortType, show
         </div>
       </div>
 
-      <div className="tag-row">
+      <div className="tag-row scroll">
         {HASHTAGS.map((tag) => (<button type="button" key={tag} className="tag-chip" onClick={() => onHashtagClick(tag)}>{t(tag)}</button>))}
         <button type="button" className="small-sort"><SlidersHorizontal size={13}/>{t("Sort")}<span><span>⌄</span></span></button>
       </div>

@@ -95,8 +95,8 @@ const PAGE_BN: Record<string, string> = {
   "Loading your files": "আপনার ফাইলগুলো লোড হচ্ছে",
   "Loading tool files": "টুলের ফাইলগুলো লোড হচ্ছে",
   "My Files": "আমার ফাইল",
-  "Everything you make with Sohozkaj — edited photos, templates, print designs and question papers — is saved here.":
-    "Sohozkaj-এ আপনার তৈরি করা সবকিছু—সম্পাদিত ছবি, টেমপ্লেট, প্রিন্ট ডিজাইন ও প্রশ্নপত্র—এখানে সংরক্ষিত থাকে।",
+  "Everything you make with Sohoj Hub — edited photos, templates, print designs and question papers — is saved here.":
+    "SohojHUb-এ আপনার তৈরি করা সবকিছু—সম্পাদিত ছবি, টেমপ্লেট, প্রিন্ট ডিজাইন ও প্রশ্নপত্র—এখানে সংরক্ষিত থাকে।",
   "Files are deleted automatically after 30 days, so download what you need before then.":
     "৩০ দিন পর ফাইলগুলো স্বয়ংক্রিয়ভাবে মুছে যায়। তাই প্রয়োজনীয় ফাইল তার আগেই ডাউনলোড করে নিন।",
   "SohozTools Files": "সহজটুলসের ফাইল",
@@ -354,11 +354,11 @@ function sortByDate<
 /* Shared styles & small pieces                                        */
 /* ------------------------------------------------------------------ */
 const fieldBase =
-  "h-9 rounded-md border border-slate-300 bg-white text-sm text-slate-800 outline-none transition-colors hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20";
+  "h-10 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] text-base text-[#3B2F1E] outline-none transition-colors duration-150 hover:border-[#B0A080] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20";
 const primaryBtn =
-  "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-blue-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40";
+  "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-4 text-base font-semibold text-white transition-all duration-150 hover:bg-[#B91C1C] active:bg-[#991B1B] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
 const secondaryBtn =
-  "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30";
+  "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-[#FBB6B6] bg-[#FBF6E8] px-4 text-base font-semibold text-[#B91C1C] transition-all duration-150 hover:bg-[#FEE9E9] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
 function SearchBox({
   value,
   onChange,
@@ -376,7 +376,7 @@ function SearchBox({
     <div className="relative min-w-0 flex-1">
       <Search
         size={15}
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7A6A50]"
       />
       <input
         type="text"
@@ -384,14 +384,14 @@ function SearchBox({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${fieldBase} w-full pl-9 pr-8 placeholder:text-slate-400`}
+        className={`${fieldBase} w-full pl-9 pr-8 placeholder:text-[#B0A080]`}
       />
       {value && (
         <button
           type="button"
           onClick={onClear}
           aria-label="সার্চ পরিষ্কার করুন"
-          className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-slate-400 hover:text-slate-700"
+          className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-[#7A6A50] hover:text-[#3B2F1E]"
         >
           <X size={14} />
         </button>
@@ -438,7 +438,7 @@ function ToolFilePreviewModal({
   const previewable = ["image", "pdf", "video", "text"].includes(kind);
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4 sm:p-6"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-[#2A2117]/75 p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-label={translatePageText(`Preview ${file.name}`, locale)}
@@ -446,16 +446,16 @@ function ToolFilePreviewModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+      <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[#F2E8D2] shadow-xl">
+        <div className="flex shrink-0 items-center gap-3 border-b border-[#E3D6B8] px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1">
             <p
-              className="truncate text-sm font-semibold text-slate-900"
+              className="truncate text-base font-semibold text-[#3B2F1E]"
               title={file.name}
             >
               {file.name}
             </p>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-sm text-[#7A6A50]">
               <T>{file.toolName}</T>
               <T>{"\u00B7 "}</T>
               {formatDate(file.createdAt, locale)}
@@ -476,7 +476,7 @@ function ToolFilePreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
             aria-label={translatePageText("Close preview", locale)}
             title={translatePageText("Close", locale)}
           >
@@ -484,7 +484,7 @@ function ToolFilePreviewModal({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-3 sm:p-6">
+        <div className="scroll flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#F3E9D2] p-3 sm:p-6">
           {kind === "image" && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -498,7 +498,7 @@ function ToolFilePreviewModal({
             <iframe
               src={file.url}
               title={file.name}
-              className="h-[calc(92vh-110px)] w-full rounded-md border border-slate-200 bg-white"
+              className="h-[calc(92vh-110px)] w-full rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]"
             />
           )}
 
@@ -507,7 +507,7 @@ function ToolFilePreviewModal({
               src={file.url}
               controls
               playsInline
-              className="max-h-[calc(92vh-110px)] max-w-full rounded-md bg-black"
+              className="max-h-[calc(92vh-110px)] max-w-full rounded-xl bg-black"
             />
           )}
 
@@ -515,21 +515,21 @@ function ToolFilePreviewModal({
             <iframe
               src={file.url}
               title={file.name}
-              className="h-[calc(92vh-110px)] w-full rounded-md border border-slate-200 bg-white"
+              className="h-[calc(92vh-110px)] w-full rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]"
             />
           )}
 
           {!previewable && (
-            <div className="w-full max-w-md rounded-lg border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+            <div className="w-full max-w-md rounded-lg border border-dashed border-[#B0A080] bg-[#FBF6E8] px-6 py-10 text-center">
               <FileText
                 size={28}
                 strokeWidth={1.5}
-                className="mx-auto text-slate-400"
+                className="mx-auto text-[#7A6A50]"
               />
-              <h3 className="mt-3 text-sm font-semibold text-slate-900">
+              <h3 className="mt-3 text-base font-semibold text-[#3B2F1E]">
                 <T>{"Preview not available\n              "}</T>
               </h3>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-base text-[#7A6A50]">
                 <T>
                   {
                     "This file type cannot be displayed directly in the browser.\n              "
@@ -582,6 +582,20 @@ function SortSelect({
 /* Scan animation (লোডিং-এর সময়) + zoom scale                          */
 /* ------------------------------------------------------------------ */
 const SCAN_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+.page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+.scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+.scroll::-webkit-scrollbar { width: 12px; }
+.scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+.scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+.scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
 @keyframes mf-scan { 0% { left: -200px; } 100% { left: 100%; } }
 @keyframes mf-wipe {
   from { clip-path: inset(0 100% 0 0); opacity: 0.35; }
@@ -597,16 +611,16 @@ function ScanOverlay() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg"
+      className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
     >
       <div
         className="mf-scan-bar absolute inset-y-0 w-[200px]"
         style={{
           left: -200,
           background:
-            "linear-gradient(to right, rgba(37,99,235,0) 0%, rgba(37,99,235,0.08) 65%, rgba(37,99,235,0.22) 100%)",
-          borderRight: "2px solid rgba(37,99,235,0.8)",
-          boxShadow: "6px 0 20px rgba(37,99,235,0.25)",
+            "linear-gradient(to right, rgba(220,38,38,0) 0%, rgba(220,38,38,0.08) 65%, rgba(220,38,38,0.22) 100%)",
+          borderRight: "2px solid rgba(220,38,38,0.8)",
+          boxShadow: "6px 0 20px rgba(220,38,38,0.25)",
           animation: "mf-scan 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite",
         }}
       />
@@ -621,25 +635,25 @@ function ScanSkeletonGrid({ count = 12 }: { count?: number }) {
       aria-label={translatePageText("Loading your files", locale)}
       className="relative"
     >
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-4">
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="overflow-hidden rounded-lg border border-slate-200 bg-white"
+            className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8]"
           >
             <div
-              className="flex aspect-[4/3] items-center justify-center bg-slate-100"
+              className="flex aspect-[4/3] items-center justify-center bg-[#F3E9D2]"
               style={{ animation: "mf-pulse 1.8s ease-in-out infinite" }}
             >
               <ImageIcon
                 size={26}
                 strokeWidth={1.4}
-                className="text-slate-300"
+                className="text-[#D8C9A6]"
               />
             </div>
             <div className="space-y-1.5 px-3 py-3">
-              <div className="h-3 w-3/4 rounded bg-slate-100" />
-              <div className="h-2.5 w-1/3 rounded bg-slate-100" />
+              <div className="h-3 w-3/4 rounded bg-[#F3E9D2]" />
+              <div className="h-2.5 w-1/3 rounded bg-[#F3E9D2]" />
             </div>
           </div>
         ))}
@@ -656,15 +670,15 @@ function ScanSkeletonList({ count = 6 }: { count?: number }) {
       aria-label={translatePageText("Loading tool files", locale)}
       className="relative"
     >
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-[#E3D6B8]">
         {Array.from({ length: count }).map((_, i) => (
           <li key={i} className="flex items-center gap-3 px-4 py-3">
-            <span className="h-9 w-9 shrink-0 rounded-md bg-slate-100" />
+            <span className="h-9 w-9 shrink-0 rounded-xl bg-[#F3E9D2]" />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="h-3 w-2/3 rounded bg-slate-100" />
-              <div className="h-2.5 w-1/2 rounded bg-slate-100" />
+              <div className="h-3 w-2/3 rounded bg-[#F3E9D2]" />
+              <div className="h-2.5 w-1/2 rounded bg-[#F3E9D2]" />
             </div>
-            <span className="h-6 w-6 shrink-0 rounded bg-slate-100" />
+            <span className="h-6 w-6 shrink-0 rounded bg-[#F3E9D2]" />
           </li>
         ))}
       </ul>
@@ -710,7 +724,9 @@ export default function MyFilesPage() {
     const applyData = (data: { files: unknown[]; toolFiles: unknown[] }) => {
       if (!mounted) return;
       setFiles(Array.isArray(data.files) ? (data.files as FileItem[]) : []);
-      setToolFiles(Array.isArray(data.toolFiles) ? (data.toolFiles as ToolFile[]) : []);
+      setToolFiles(
+        Array.isArray(data.toolFiles) ? (data.toolFiles as ToolFile[]) : [],
+      );
       setFilesLoading(false);
     };
 
@@ -729,7 +745,9 @@ export default function MyFilesPage() {
           // Show cached thumbnails immediately, then refresh in the background.
           void refreshMyFilesData()
             .then((freshData) => applyData(freshData))
-            .catch((error) => console.error("Failed to refresh My Files:", error));
+            .catch((error) =>
+              console.error("Failed to refresh My Files:", error),
+            );
           return;
         }
 
@@ -929,10 +947,15 @@ export default function MyFilesPage() {
   };
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-slate-900">
+      <div className="page-font flex min-h-screen items-center justify-center bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]">
+        <style>{SCAN_CSS}</style>
         <main className="flex items-center justify-center px-4">
-          <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
-            <Loader2 size={18} className="animate-spin text-[#2563EB]" />
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-5 py-4 text-base font-medium text-[#5A4A32] shadow-sm"
+          >
+            <Loader2 size={18} className="animate-spin text-[#DC2626]" />
             <T>{"Verifying your login..."}</T>
           </div>
         </main>
@@ -941,27 +964,25 @@ export default function MyFilesPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC] text-slate-900 lg:h-dvh">
+    <div className="page-font flex min-h-screen flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] leading-[1.45] lg:h-dvh">
       <style>{SCAN_CSS}</style>
       <DashboardNavbar scaleWithZoom />
 
-      <main
-        className="page-zoom page-zoom-fill flex w-full flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:min-h-0 lg:px-8 2xl:px-12"
-      >
+      <main className="page-zoom page-zoom-fill flex w-full flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:min-h-0 lg:px-8 2xl:px-12">
         {/* Page header */}
         <header className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3 sm:mb-6 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">
+            <h1 className="text-2xl font-semibold text-[#3B2F1E] sm:text-3xl">
               <T>{"My Files\n            "}</T>
             </h1>
-            <p className="mt-1 text-[13px] leading-5 text-slate-600 sm:text-sm">
+            <p className="mt-1 text-[15px] leading-6 text-[#5A4A32] sm:text-base">
               <T>
                 {
-                  "Everything you make with Sohozkaj \u2014 edited photos, templates,\n              print designs and question papers \u2014 is saved here.\n            "
+                  "Everything you make with Sohoj Hub \u2014 edited photos, templates,\n              print designs and question papers \u2014 is saved here.\n            "
                 }
               </T>
             </p>
-            <p className="mt-0.5 text-[13px] leading-5 text-slate-500 sm:text-sm">
+            <p className="mt-0.5 text-[15px] leading-6 text-[#7A6A50] sm:text-base">
               <T>
                 {
                   "Files are deleted automatically after 30 days, so download what\n              you need before then.\n            "
@@ -975,38 +996,38 @@ export default function MyFilesPage() {
             onClick={toggleSidebar}
             aria-expanded={sidebarOpen || mobileSidebarOpen}
             aria-controls="sohoztools-sidebar"
-            className={`${secondaryBtn} w-full justify-center sm:w-auto ${sidebarOpen ? "lg:bg-slate-100" : ""} ${mobileSidebarOpen ? "bg-slate-100" : ""}`}
+            className={`${secondaryBtn} w-full justify-center sm:w-auto ${sidebarOpen ? "lg:bg-[#FEE9E9]" : ""} ${mobileSidebarOpen ? "bg-[#FEE9E9]" : ""}`}
           >
-            <Wrench size={15} className="text-slate-500" />
+            <Wrench size={15} className="text-[#7A6A50]" />
             <T>{"SohozTools Files\n            "}</T>
             {sidebarOpen ? (
               <PanelRightClose
                 size={15}
-                className="hidden text-slate-400 lg:block"
+                className="hidden text-[#7A6A50] lg:block"
               />
             ) : (
               <PanelRightOpen
                 size={15}
-                className="hidden text-slate-400 lg:block"
+                className="hidden text-[#7A6A50] lg:block"
               />
             )}
-            <PanelRightOpen size={15} className="text-slate-400 lg:hidden" />
+            <PanelRightOpen size={15} className="text-[#7A6A50] lg:hidden" />
           </button>
         </header>
 
         <div
-          className={`grid items-start gap-4 sm:gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "grid-cols-1"}`}
+          className={`grid items-start gap-4 sm:gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`}
         >
           {/* ======================= My Files ======================= */}
           <section
             aria-label={translatePageText("My files", locale)}
-            className="flex min-h-[480px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white sm:min-h-[560px] lg:min-h-0 lg:overflow-hidden"
+            className="flex min-h-[480px] min-w-0 flex-col rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] sm:min-h-[560px] lg:min-h-0 lg:overflow-hidden"
           >
             {/* Tabs */}
             <div
               role="tablist"
               aria-label={translatePageText("File categories", locale)}
-              className="flex shrink-0 gap-5 overflow-x-auto border-b border-slate-200 px-4 [scrollbar-width:none] sm:gap-6 sm:px-5 [&::-webkit-scrollbar]:hidden"
+              className="flex shrink-0 gap-5 overflow-x-auto border-b border-[#E3D6B8] px-4 [scrollbar-width:none] sm:gap-6 sm:px-5 [&::-webkit-scrollbar]:hidden"
             >
               {CATEGORY_TABS.map((tab) => {
                 const active = tab.id === activeTab;
@@ -1025,15 +1046,15 @@ export default function MyFilesPage() {
                         behavior: "smooth",
                       });
                     }}
-                    className={`-mb-px shrink-0 cursor-pointer whitespace-nowrap border-b-2 py-3 text-sm font-medium outline-none transition-colors focus-visible:text-blue-700 ${
+                    className={`-mb-px shrink-0 cursor-pointer whitespace-nowrap border-b-2 py-3 text-base font-medium outline-none transition-colors focus-visible:text-[#B91C1C] ${
                       active
-                        ? "border-blue-600 text-blue-700"
-                        : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                        ? "border-[#DC2626] text-[#DC2626]"
+                        : "border-transparent text-[#5A4A32] hover:border-[#D8C9A6] hover:text-[#3B2F1E]"
                     }`}
                   >
                     {<T>{tab.label}</T>}
                     {count > 0 && (
-                      <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                      <span className="ml-1.5 rounded-lg bg-[#F3E9D2] px-1.5 py-0.5 text-sm text-[#5A4A32]">
                         {count}
                       </span>
                     )}
@@ -1065,9 +1086,9 @@ export default function MyFilesPage() {
             </div>
 
             {/* Results */}
-            <div className="flex flex-1 flex-col px-4 pb-4 sm:px-5 sm:pb-5 lg:min-h-0 lg:overflow-y-auto">
+            <div className="scroll flex flex-1 flex-col px-4 pb-4 sm:px-5 sm:pb-5 lg:min-h-0 lg:overflow-y-auto">
               {!filesLoading && switchNotice && (
-                <p role="status" className="mb-3 text-sm text-blue-700">
+                <p role="status" className="mb-3 text-base text-[#B91C1C]">
                   <T>{`Showing results from ${CATEGORY_TABS.find((t) => t.id === switchNotice)?.label ?? ""}`}</T>
                 </p>
               )}
@@ -1077,7 +1098,7 @@ export default function MyFilesPage() {
               ) : visibleFiles.length > 0 ? (
                 <div
                   aria-live="polite"
-                  className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] sm:gap-4"
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-4"
                 >
                   {visibleFiles.map((file, index) => {
                     const isImage =
@@ -1089,7 +1110,7 @@ export default function MyFilesPage() {
                     return (
                       <article
                         key={file.id}
-                        className="overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-400"
+                        className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B0A080] hover:bg-[#EFE3C8]"
                       >
                         <button
                           type="button"
@@ -1105,9 +1126,9 @@ export default function MyFilesPage() {
                               ? translatePageText("View", locale)
                               : undefined
                           }
-                          className={`group relative flex aspect-[4/3] w-full items-center justify-center bg-slate-100 ${
+                          className={`group relative flex aspect-[4/3] w-full items-center justify-center bg-[#F3E9D2] ${
                             isImage
-                              ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
+                              ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#DC2626]"
                               : "cursor-default"
                           }`}
                         >
@@ -1120,8 +1141,8 @@ export default function MyFilesPage() {
                                 className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                                 loading={index < 8 ? "eager" : "lazy"}
                               />
-                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/0 transition-colors duration-200 group-hover:bg-slate-900/20">
-                                <span className="flex h-10 w-10 scale-95 items-center justify-center rounded-full bg-white/95 text-slate-700 opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
+                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#3B2F1E]/0 transition-colors duration-200 group-hover:bg-[#3B2F1E]/20">
+                                <span className="flex h-10 w-10 scale-95 items-center justify-center rounded-full bg-[#FBF6E8]/95 text-[#5A4A32] opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
                                   <Eye size={18} />
                                 </span>
                               </span>
@@ -1130,7 +1151,7 @@ export default function MyFilesPage() {
                             <PlaceholderIcon
                               size={28}
                               strokeWidth={1.5}
-                              className="text-slate-400"
+                              className="text-[#7A6A50]"
                             />
                           )}
                         </button>
@@ -1156,12 +1177,12 @@ export default function MyFilesPage() {
                             }`}
                           >
                             <p
-                              className="truncate text-[13px] font-medium text-slate-900 sm:text-sm"
+                              className="truncate text-[15px] font-medium text-[#3B2F1E] sm:text-base"
                               title={file.name}
                             >
                               {file.name}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-sm text-[#7A6A50]">
                               {formatDate(file.createdAt, locale)}
                             </p>
                           </button>
@@ -1174,7 +1195,7 @@ export default function MyFilesPage() {
                                 locale,
                               )}
                               title={translatePageText("Download", locale)}
-                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40"
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#DC2626] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                             >
                               <Download size={16} />
                             </a>
@@ -1188,7 +1209,7 @@ export default function MyFilesPage() {
                               locale,
                             )}
                             title={translatePageText("Delete", locale)}
-                            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 disabled:cursor-wait disabled:opacity-60"
+                            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#FEE9E9] hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 disabled:cursor-wait disabled:opacity-60"
                           >
                             {deletingFileId === file.id ? (
                               <Loader2 size={16} className="animate-spin" />
@@ -1206,16 +1227,16 @@ export default function MyFilesPage() {
                   aria-live="polite"
                   className="flex flex-1 items-center justify-center py-6"
                 >
-                  <div className="w-full max-w-md rounded-lg border border-dashed border-slate-300 px-6 py-12 text-center">
+                  <div className="w-full max-w-md rounded-lg border border-dashed border-[#B0A080] px-6 py-12 text-center">
                     <EmptyIcon
                       size={28}
                       strokeWidth={1.5}
-                      className="mx-auto text-slate-400"
+                      className="mx-auto text-[#7A6A50]"
                     />
-                    <h3 className="mt-3 text-sm font-semibold text-slate-900">
+                    <h3 className="mt-3 text-base font-semibold text-[#3B2F1E]">
                       <T>{emptyTitle}</T>
                     </h3>
-                    <p className="mx-auto mt-1 max-w-xs text-sm text-slate-500">
+                    <p className="mx-auto mt-1 max-w-xs text-base text-[#7A6A50]">
                       <T>{emptyText}</T>
                     </p>
 
@@ -1250,7 +1271,7 @@ export default function MyFilesPage() {
             <div
               aria-hidden="true"
               onClick={() => setMobileSidebarOpen(false)}
-              className="fixed inset-0 z-[55] bg-slate-900/40 lg:hidden"
+              className="fixed inset-0 z-[55] bg-[#3B2F1E]/40 lg:hidden"
             />
           )}
 
@@ -1258,9 +1279,9 @@ export default function MyFilesPage() {
             <aside
               id="sohoztools-sidebar"
               aria-label={translatePageText("SohozTools files", locale)}
-              className={`flex-col border border-slate-200 bg-white lg:min-h-0 lg:overflow-hidden lg:rounded-lg ${
+              className={`flex-col border border-[#E3D6B8] bg-[#F2E8D2] lg:min-h-0 lg:overflow-hidden lg:rounded-2xl ${
                 mobileSidebarOpen
-                  ? "fixed inset-y-0 right-0 z-[60] flex w-[90vw] max-w-sm overflow-hidden rounded-l-xl shadow-2xl"
+                  ? "fixed inset-y-0 right-0 z-[60] flex w-[90vw] max-w-sm overflow-hidden rounded-l-2xl shadow-xl"
                   : "hidden"
               } ${
                 sidebarOpen
@@ -1268,12 +1289,12 @@ export default function MyFilesPage() {
                   : "lg:hidden"
               }`}
             >
-              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E3D6B8] px-4 py-3">
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-slate-900">
+                  <h2 className="text-base font-semibold text-[#3B2F1E]">
                     <T>{"SohozTools Files\n                  "}</T>
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm text-[#7A6A50]">
                     {filesLoading ? (
                       <T>{"Loading…"}</T>
                     ) : (
@@ -1288,14 +1309,14 @@ export default function MyFilesPage() {
                     "Close SohozTools sidebar",
                     locale,
                   )}
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               <div className="shrink-0 space-y-2.5 px-4 pt-3">
-                <p className="text-xs leading-5 text-slate-500">
+                <p className="text-sm leading-6 text-[#7A6A50]">
                   <T>
                     {
                       "Anything you save from a SohozTools tool \u2014 a scanned document,\n                  a compressed PDF, a resized photo \u2014 is stored here.\n                "
@@ -1334,11 +1355,11 @@ export default function MyFilesPage() {
                 </div>
               </div>
 
-              <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-slate-200">
+              <div className="scroll mt-3 min-h-0 flex-1 overflow-y-auto border-t border-[#E3D6B8]">
                 {filesLoading ? (
                   <ScanSkeletonList />
                 ) : visibleToolFiles.length > 0 ? (
-                  <ul className="divide-y divide-slate-100" aria-live="polite">
+                  <ul className="divide-y divide-[#E3D6B8]" aria-live="polite">
                     {visibleToolFiles.map((file) => {
                       const GroupIcon = (
                         TOOL_GROUPS.find((g) => g.id === file.group) ??
@@ -1347,7 +1368,7 @@ export default function MyFilesPage() {
                       return (
                         <li
                           key={file.id}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50"
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-[#EFE3C8]"
                         >
                           <button
                             type="button"
@@ -1365,21 +1386,21 @@ export default function MyFilesPage() {
                             }
                             className={`flex min-w-0 flex-1 items-center gap-3 text-left outline-none ${
                               file.url
-                                ? "cursor-pointer focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
+                                ? "cursor-pointer focus-visible:rounded-xl focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#DC2626]"
                                 : "cursor-default"
                             }`}
                           >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F3E9D2] text-[#7A6A50]">
                               <GroupIcon size={16} />
                             </span>
                             <div className="min-w-0 flex-1">
                               <p
-                                className="truncate text-sm font-medium text-slate-900"
+                                className="truncate text-base font-medium text-[#3B2F1E]"
                                 title={file.name}
                               >
                                 {file.name}
                               </p>
-                              <p className="truncate text-xs text-slate-500">
+                              <p className="truncate text-sm text-[#7A6A50]">
                                 <T>{file.toolName}</T>
                                 <T>{"\u00B7 "}</T>
                                 {formatDate(file.createdAt, locale)}
@@ -1396,7 +1417,7 @@ export default function MyFilesPage() {
                               )}
                               title={translatePageText("Download", locale)}
                               onClick={(e) => e.stopPropagation()}
-                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#DC2626]"
                             >
                               <Download size={16} />
                             </a>
@@ -1410,12 +1431,12 @@ export default function MyFilesPage() {
                     <ToolEmptyIcon
                       size={26}
                       strokeWidth={1.5}
-                      className="mx-auto text-slate-400"
+                      className="mx-auto text-[#7A6A50]"
                     />
-                    <h3 className="mt-3 text-sm font-semibold text-slate-900">
+                    <h3 className="mt-3 text-base font-semibold text-[#3B2F1E]">
                       <T>{toolEmptyTitle}</T>
                     </h3>
-                    <p className="mx-auto mt-1 max-w-[240px] text-sm text-slate-500">
+                    <p className="mx-auto mt-1 max-w-[280px] text-base text-[#7A6A50]">
                       <T>{toolEmptyText}</T>
                     </p>
                     {hasToolSearch ? (
@@ -1446,7 +1467,7 @@ export default function MyFilesPage() {
       {/* ===================== Image preview ===================== */}
       {previewFile?.url && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-4 sm:p-6"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#2A2117]/75 p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-label={translatePageText(`Preview ${previewFile.name}`, locale)}
@@ -1454,16 +1475,16 @@ export default function MyFilesPage() {
             if (e.target === e.currentTarget) setPreviewFile(null);
           }}
         >
-          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[#F2E8D2] shadow-xl">
+            <div className="flex shrink-0 items-center gap-3 border-b border-[#E3D6B8] px-4 py-3 sm:px-5">
               <div className="min-w-0 flex-1">
                 <p
-                  className="truncate text-sm font-semibold text-slate-900"
+                  className="truncate text-base font-semibold text-[#3B2F1E]"
                   title={previewFile.name}
                 >
                   {previewFile.name}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-[#7A6A50]">
                   {formatDate(previewFile.createdAt, locale)}
                 </p>
               </div>
@@ -1485,7 +1506,7 @@ export default function MyFilesPage() {
                   setPreviewFile(null);
                   openDeleteConfirm(previewFile);
                 }}
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#FEE9E9] hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
                 aria-label={translatePageText(
                   `Delete ${previewFile.name}`,
                   locale,
@@ -1498,7 +1519,7 @@ export default function MyFilesPage() {
               <button
                 type="button"
                 onClick={() => setPreviewFile(null)}
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                 aria-label={translatePageText("Close preview", locale)}
                 title={translatePageText("Close", locale)}
               >
@@ -1506,7 +1527,7 @@ export default function MyFilesPage() {
               </button>
             </div>
 
-            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-100 p-3 sm:p-6">
+            <div className="scroll flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#F3E9D2] p-3 sm:p-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewFile.url}
@@ -1529,25 +1550,25 @@ export default function MyFilesPage() {
       {/* ===================== Delete confirmation ===================== */}
       {deleteTarget && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 p-4"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2A2117]/45 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-file-title"
         >
-          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
+          <div className="w-full max-w-md rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-5 shadow-xl sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE9E9] text-red-600">
                 <Trash2 size={19} />
               </div>
               <div className="min-w-0">
                 <h2
                   id="delete-file-title"
-                  className="text-base font-semibold text-slate-900"
+                  className="text-lg font-semibold text-[#3B2F1E]"
                 >
                   <T>{"Delete this file?\n                "}</T>
                 </h2>
-                <p className="mt-1 break-words text-sm leading-5 text-slate-600">
-                  <span className="font-medium text-slate-800">
+                <p className="mt-1 break-words text-base leading-6 text-[#5A4A32]">
+                  <span className="font-medium text-[#3B2F1E]">
                     {deleteTarget.name}
                   </span>
                   <br />
@@ -1563,7 +1584,7 @@ export default function MyFilesPage() {
             {deleteError && (
               <p
                 role="alert"
-                className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                className="mt-4 rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-2 text-base text-red-700"
               >
                 {deleteError}
               </p>
@@ -1582,7 +1603,7 @@ export default function MyFilesPage() {
                 type="button"
                 onClick={handleDeleteFile}
                 disabled={Boolean(deletingFileId)}
-                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-red-600 px-3.5 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-red-600 px-4 text-base font-semibold text-white transition-all duration-150 hover:bg-red-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40 disabled:cursor-wait disabled:opacity-60"
               >
                 {deletingFileId ? (
                   <>

@@ -19,12 +19,12 @@ export default function ChangePasswordTab({ passwordForm, setPasswordForm, savin
     setShowConfirmPassword: Dispatch<SetStateAction<boolean>>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
-    return (<form onSubmit={onSubmit} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-5 max-w-2xl">
-      <div className="border-b border-gray-100 pb-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-          <LockKeyhole size={17} className="text-[#2563EB]"/><T>{"Change Password\n        "}</T></div>
+    return (<form onSubmit={onSubmit} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-xs space-y-5 max-w-2xl">
+      <div className="border-b border-[#E3D6B8] pb-3">
+        <div className="flex items-center gap-2 text-base font-bold text-[#3B2F1E]">
+          <LockKeyhole size={17} className="text-[#DC2626]"/><T>{"Change Password\n        "}</T></div>
 
-        <p className="text-[11px] text-gray-400 mt-1"><T>{"Use at least 8 characters for your new password.\n        "}</T></p>
+        <p className="text-[13px] text-[#7A6A50] mt-1"><T>{"Use at least 8 characters for your new password.\n        "}</T></p>
       </div>
 
       <PasswordField label="Current Password" value={passwordForm.currentPassword} onChange={(value) => setPasswordForm((previous) => ({
@@ -43,7 +43,7 @@ export default function ChangePasswordTab({ passwordForm, setPasswordForm, savin
         }))} visible={showConfirmPassword} onToggle={() => setShowConfirmPassword((previous) => !previous)}/>
 
       <div className="flex justify-end">
-        <button type="submit" disabled={savingPassword} className="bg-[#2563EB] hover:bg-[#2563EB] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+        <button type="submit" disabled={savingPassword} className="bg-[#DC2626] hover:bg-[#DC2626] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-2">
           {savingPassword ? (<Loader2 size={13} className="animate-spin"/>) : (<Save size={13}/>)}
 
           {savingPassword ? <T>{"Updating..."}</T> : <T>{"Update Password"}</T>}

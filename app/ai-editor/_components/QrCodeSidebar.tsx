@@ -38,7 +38,7 @@ function LocalQrCode({ value, label, sizeClass = "h-40 w-40" }: { value: string;
     }
   }, [value]);
 
-  if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-xs text-slate-500`}>QR code unavailable</div>;
+  if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-sm text-stone-500`}>QR code unavailable</div>;
   const extent = qr.count + 8;
   return (
     <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1`} shapeRendering="crispEdges">
@@ -215,7 +215,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   const placeholderMessage = uploadState === "creating" ? "Preparing secure upload..." : uploadState === "expired" ? "This QR code is no longer active. A new one is being prepared." : errorKey || "Could not create a secure upload. Check your connection and subscription, then try again.";
 
   const statusLine = (
-    <p role="status" aria-live="polite" className={`${compact ? "mb-2 min-h-0" : "mb-3 min-h-8"} text-center text-[11px] leading-4 text-slate-600`}>
+    <p role="status" aria-live="polite" className={`${compact ? "mb-2 min-h-0" : "mb-3 min-h-8"} text-center text-[13px] leading-4 text-stone-600`}>
       {uploadState === "creating" && <AiT>{justReceivedPhoto ? "Photo received. Preparing a new QR code..." : "Preparing secure upload..."}</AiT>}
       {uploadState === "waiting" && <AiT>{justReceivedPhoto ? "Photo received. A new QR code is ready for your next photo." : "Waiting for your phone..."}</AiT>}
       {uploadState === "receiving" && <AiT>Receiving photo...</AiT>}
@@ -226,26 +226,26 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   );
 
   const localHint = isLocalOrigin && uploadState === "waiting" && (
-    <p className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
+    <p className="mb-3 rounded-lg border border-stone-200 bg-[#F6EEDB] px-3 py-2 text-[12px] leading-4 text-stone-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
   );
-  const onceHint = uploadState === "waiting" && <p className={`${compact ? "mb-2" : "mb-3"} text-center text-[10px] leading-4 text-slate-400`}><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>;
+  const onceHint = uploadState === "waiting" && <p className={`${compact ? "mb-2" : "mb-3"} text-center text-[12px] leading-4 text-stone-400`}><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>;
 
   const actionButtons = (
     <>
       {uploadState === "waiting" && (
         <div className="flex gap-2">
-          <button type="button" onClick={copyLink} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs font-medium text-slate-800 transition hover:bg-slate-200">
+          <button type="button" onClick={copyLink} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-100 py-2.5 text-sm font-medium text-stone-800 transition hover:bg-stone-200">
             {copied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
             {copied ? <AiT>Copied</AiT> : <AiT>Copy upload link</AiT>}
           </button>
-          <button type="button" onClick={openUploadPage} className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50" title={t("Open upload page")} aria-label={t("Open upload page")}>
+          <button type="button" onClick={openUploadPage} className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 bg-[#FBF6E8] px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-[#F6EEDB]" title={t("Open upload page")} aria-label={t("Open upload page")}>
             <ExternalLink size={15} />
           </button>
         </div>
       )}
 
       {(uploadState === "expired" || uploadState === "error") && (
-        <button type="button" onClick={() => void createSession()} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <button type="button" onClick={() => void createSession()} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600">
           <RefreshCw size={14} /> <AiT>Create a new QR code</AiT>
         </button>
       )}
@@ -253,13 +253,13 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   );
 
   const header = (
-    <div className={`${compact ? "mb-2 p-2" : "mb-3 p-3"} flex items-center gap-3 rounded-xl border border-slate-100 bg-white text-slate-900`}>
-      <div className={`flex ${compact ? "h-8 w-8" : "h-10 w-10"} shrink-0 items-center justify-center rounded-xl bg-slate-100`}>
-        <Smartphone size={compact ? 18 : 22} className="text-slate-600" />
+    <div className={`${compact ? "mb-2 p-2" : "mb-3 p-3"} flex items-center gap-3 rounded-xl border border-stone-100 bg-[#FBF6E8] text-stone-900`}>
+      <div className={`flex ${compact ? "h-8 w-8" : "h-10 w-10"} shrink-0 items-center justify-center rounded-xl bg-stone-100`}>
+        <Smartphone size={compact ? 18 : 22} className="text-stone-600" />
       </div>
       <div className="min-w-0 flex-1">
-        <h4 className="text-xs font-semibold"><AiT>Upload from phone</AiT></h4>
-        <p className="mt-0.5 text-[10px] leading-4 text-slate-500"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
+        <h4 className="text-sm font-semibold"><AiT>Upload from phone</AiT></h4>
+        <p className="mt-0.5 text-[12px] leading-4 text-stone-500"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
       </div>
     </div>
   );
@@ -267,15 +267,15 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   if (compact) {
     return (
       <aside className="w-full">
-        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
           {header}
           <div className="flex items-center gap-3">
-            <div className="flex shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-2">
+            <div className="flex shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-2">
               {showQr ? (
                 <LocalQrCode value={mobileUrl} label={t("QR code")} sizeClass={qrSizeClass} />
               ) : (
-                <div className={`flex ${qrSizeClass} flex-col items-center justify-center text-slate-500`}>
-                  {uploadState === "creating" ? <Loader2 size={24} className="animate-spin text-blue-600" /> : <QrCode size={34} />}
+                <div className={`flex ${qrSizeClass} flex-col items-center justify-center text-stone-500`}>
+                  {uploadState === "creating" ? <Loader2 size={24} className="animate-spin text-red-600" /> : <QrCode size={34} />}
                 </div>
               )}
             </div>
@@ -293,16 +293,16 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
 
   return (
     <aside className="w-full max-w-[280px]">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+      <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
         {header}
 
-        <div className="mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-slate-200 bg-white p-3">
+        <div className="mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3">
           {showQr ? (
             <LocalQrCode value={mobileUrl} label={t("QR code")} />
           ) : (
-            <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 text-slate-500">
-              {uploadState === "creating" ? <Loader2 size={24} className="animate-spin text-blue-600" /> : <QrCode size={34} />}
-              <span className="text-center text-xs"><AiT>{placeholderMessage}</AiT></span>
+            <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 text-stone-500">
+              {uploadState === "creating" ? <Loader2 size={24} className="animate-spin text-red-600" /> : <QrCode size={34} />}
+              <span className="text-center text-sm"><AiT>{placeholderMessage}</AiT></span>
             </div>
           )}
         </div>

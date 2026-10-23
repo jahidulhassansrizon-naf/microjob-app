@@ -48,14 +48,14 @@ export default function ToolGrid() {
             icon: <FileType size={26} className="text-white"/>,
             bg: "bg-[#C026D3]",
             badge: "Hot",
-            badgeColor: "bg-rose-500",
+            badgeColor: "bg-[#DC2626]",
         },
         {
             title: "NID to PDF",
             icon: <FileCheck2 size={26} className="text-white"/>,
             bg: "bg-[#10D03A]",
             badge: "Hot",
-            badgeColor: "bg-rose-500",
+            badgeColor: "bg-[#DC2626]",
         },
         {
             title: "Passport to PDF",
@@ -121,7 +121,7 @@ export default function ToolGrid() {
         {
             title: "Settings",
             icon: <Settings size={26} className="text-white"/>,
-            bg: "bg-[#2563EB]",
+            bg: "bg-[#DC2626]",
         },
         {
             title: "Manage Shop",
@@ -136,49 +136,49 @@ export default function ToolGrid() {
             <div className={`w-24 h-24 sm:w-28 sm:h-28 ${tool.bg} rounded-[32px] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200`}>
               {tool.icon}
             </div>
-            <span className="text-xs sm:text-sm font-bold text-gray-800 mt-3 text-center max-w-[110px] leading-tight">
+            <span className="text-sm sm:text-base font-bold text-[#3B2F1E] mt-3 text-center max-w-[110px] leading-tight">
               {<DT>{tool.title}</DT>}
             </span>
           </div>))}
       </div>
 
       {/* 1st Horizontal Divider Line */}
-      <hr className="border-t border-gray-200/80 my-10"/>
+      <hr className="border-t border-[#E3D6B8]/80 my-10"/>
 
       {/* Row 2: Secondary Tools with Badges */}
       <div className="grid grid-cols-4 sm:grid-cols-8 gap-5 justify-items-center">
         {secondaryTools.map((tool, idx) => (<div key={idx} className="flex flex-col items-center cursor-pointer group">
             <div className="relative">
-              {tool.badge && (<span className={`absolute -top-2 -left-2 ${tool.badgeColor} text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-xs uppercase tracking-wider`}>
+              {tool.badge && (<span className={`absolute -top-2 -left-2 ${tool.badgeColor} text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-xs uppercase tracking-wider`}>
                   <DT>{tool.badge}</DT>
                 </span>)}
               <div className={`w-16 h-16 sm:w-20 sm:h-20 ${tool.bg} rounded-[24px] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200`}>
                 {tool.icon}
               </div>
             </div>
-            <span className="text-xs font-bold text-gray-700 mt-2.5 text-center max-w-[95px] leading-tight">
+            <span className="text-sm font-bold text-[#5A4A32] mt-2.5 text-center max-w-[95px] leading-tight">
               {<DT>{tool.title}</DT>}
             </span>
           </div>))}
       </div>
 
       {/* 2nd Horizontal Divider Line */}
-      <hr className="border-t border-gray-200/80 my-10"/>
+      <hr className="border-t border-[#E3D6B8]/80 my-10"/>
 
       {/* Row 3: Accounts & Settings */}
       <div>
-        <h3 className="text-sm font-bold text-gray-800 mb-6 pl-1"><DT>{"Accounts & Settings\r\n        "}</DT></h3>
+        <h3 className="text-base font-bold text-[#3B2F1E] mb-6 pl-1"><DT>{"Accounts & Settings\r\n        "}</DT></h3>
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-5 justify-items-center">
           {accountsTools.map((tool, idx) => (<div key={idx} className="flex flex-col items-center cursor-pointer group">
               <div className="relative">
-                {tool.badge && (<span className={`absolute -top-2 -left-2 ${tool.badgeColor} text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-xs uppercase tracking-wider`}>
+                {tool.badge && (<span className={`absolute -top-2 -left-2 ${tool.badgeColor} text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-xs uppercase tracking-wider`}>
                     <DT>{tool.badge}</DT>
                   </span>)}
                 <div className={`w-16 h-16 sm:w-20 sm:h-20 ${tool.bg} rounded-[24px] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200`}>
                   {tool.icon}
                 </div>
               </div>
-              <span className="text-xs font-bold text-gray-700 mt-2.5 text-center max-w-[95px] leading-tight">
+              <span className="text-sm font-bold text-[#5A4A32] mt-2.5 text-center max-w-[95px] leading-tight">
                 {<DT>{tool.title}</DT>}
               </span>
             </div>))}

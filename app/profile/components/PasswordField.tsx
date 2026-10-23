@@ -17,7 +17,7 @@ export default function PasswordField({
   const { t } = useProfileText();
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-700 mb-1.5">
+      <label className="block text-sm font-bold text-[#5A4A32] mb-1.5">
         {t(label)}
       </label>
 
@@ -26,13 +26,13 @@ export default function PasswordField({
           type={visible ? "text" : "password"}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 pr-10 text-xs outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+          className="w-full rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2.5 pr-10 text-sm outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
         />
 
         <button
           type="button"
           onClick={onToggle}
-          className="absolute inset-y-0 right-0 px-3 text-gray-400 hover:text-gray-700"
+          className="absolute inset-y-0 right-0 px-3 text-[#7A6A50] hover:text-[#5A4A32]"
           aria-label={t(visible ? "Hide password" : "Show password")}
         >
           {visible ? <EyeOff size={15} /> : <Eye size={15} />}

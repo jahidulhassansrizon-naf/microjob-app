@@ -159,7 +159,7 @@ function FabricRegionEditor({ pageIndex, disabled = false, regionSelectMode, onS
                     height: size.height,
                 });
                 canvas.selectionColor = "rgba(243,168,71,0.08)";
-                canvas.selectionBorderColor = "#2563EB";
+                canvas.selectionBorderColor = "#DC2626";
                 canvas.selectionLineWidth = 1;
                 canvas.defaultCursor = "default";
                 canvas.hoverCursor = "pointer";
@@ -912,7 +912,7 @@ export default function InteractiveQuestionCanvas({ manager, }: {
         setRegionSelectMode,
     ]);
     return (<>
-      <main className="flex flex-col gap-4 p-4 lg:flex-row lg:gap-4 xl:p-6">
+      <main className="page-font flex flex-col gap-4 p-4 lg:flex-row lg:gap-4 xl:p-6">
         <CanvasSidebar manager={manager} demoMode={demoMode} onExitDemo={() => {
             setDemoMode(false);
             setRegionSelectMode(false);
@@ -925,7 +925,7 @@ export default function InteractiveQuestionCanvas({ manager, }: {
             <div className="relative">
               <PrintDuplexLayout key={demoMode ? "demo-question-paper" : "live-question-paper"} manager={displayManager} renderPaper={renderPaper}/>
 
-              {!demoMode && regionSelectMode ? (<div className="pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#0F172A] px-4 py-2 text-[10px] font-bold text-white shadow-xl"><T>{"Select an area on the question paper\n                "}</T></div>) : null}
+              {!demoMode && regionSelectMode ? (<div className="ui-font pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#3B2F1E] px-5 py-2.5 text-[14px] font-bold text-[#FBF6E8] shadow-xl"><T>{"Select an area on the question paper\n                "}</T></div>) : null}
             </div>
           </div>
         </section>

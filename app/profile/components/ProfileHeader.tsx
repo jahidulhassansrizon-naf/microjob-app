@@ -146,24 +146,24 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
         }
     };
     const busy = uploading || deleting;
-    return (<section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+    return (<section className="bg-[#FBF6E8] rounded-3xl border border-[#E3D6B8]/80 shadow-sm p-6 sm:p-8">
       <div className="flex flex-col items-center justify-center text-center gap-4">
         <div className="relative">
-          <button type="button" onClick={openFilePicker} disabled={busy} className="group relative block h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-full bg-blue-50 text-[#2563EB] ring-1 ring-inset ring-blue-100 outline-none cursor-pointer focus-visible:ring-4 focus-visible:ring-[#2563EB]/20 disabled:cursor-wait" aria-label={t("Change profile photo")}>
+          <button type="button" onClick={openFilePicker} disabled={busy} className="group relative block h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-full bg-[#FEE9E9] text-[#DC2626] ring-1 ring-inset ring-[#DC2626]/20 outline-none cursor-pointer focus-visible:ring-4 focus-visible:ring-[#DC2626]/20 disabled:cursor-wait" aria-label={t("Change profile photo")}>
             {previewUrl ? (<img src={previewUrl} alt={`${user?.fullName || t("User")} ${t("profile photo")}`} className="h-full w-full object-cover"/>) : (<span className="flex h-full w-full items-center justify-center text-3xl sm:text-4xl font-extrabold tracking-tight">
                 {getInitials(user?.fullName)}
               </span>)}
 
-            <span className="absolute inset-0 flex items-center justify-center bg-slate-900/45 opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="absolute inset-0 flex items-center justify-center bg-[#3B2F1E]/45 opacity-0 transition-opacity group-hover:opacity-100">
               {busy ? (<Loader2 size={24} className="animate-spin text-white"/>) : (<Camera size={24} className="text-white"/>)}
             </span>
           </button>
 
-          <button type="button" onClick={openFilePicker} disabled={busy} className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#2563EB] text-white shadow-md transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-70" aria-label={t("Upload or change profile photo")} title={t("Upload or change photo")}>
+          <button type="button" onClick={openFilePicker} disabled={busy} className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#E3D6B8] bg-[#DC2626] text-white shadow-md transition hover:bg-[#B91C1C] disabled:cursor-wait disabled:opacity-70" aria-label={t("Upload or change profile photo")} title={t("Upload or change photo")}>
             {uploading ? (<Loader2 size={15} className="animate-spin"/>) : (<Camera size={15}/>)}
           </button>
 
-          {previewUrl && (<button type="button" onClick={handleDeletePhoto} disabled={busy} className="absolute bottom-0 left-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-md transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-70" aria-label={t("Delete profile photo")} title={t("Delete profile photo")}>
+          {previewUrl && (<button type="button" onClick={handleDeletePhoto} disabled={busy} className="absolute bottom-0 left-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#E3D6B8] bg-[#FBF6E8] text-[#DC2626] shadow-md transition hover:bg-[#FEE9E9] disabled:cursor-wait disabled:opacity-70" aria-label={t("Delete profile photo")} title={t("Delete profile photo")}>
               {deleting ? (<Loader2 size={15} className="animate-spin"/>) : (<Trash2 size={15}/>)}
             </button>)}
 
@@ -171,14 +171,14 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
         </div>
 
         <div>
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-[0.16em]">
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold text-[#7A6A50] uppercase tracking-[0.16em]">
             <UserRound size={13}/><T>{"Profile\n          "}</T></div>
 
-          <h2 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">
+          <h2 className="mt-1 text-3xl sm:text-3xl font-bold text-[#3B2F1E]">
             {user?.fullName || <T>{"User Account"}</T>}
           </h2>
 
-          <p className="mt-2 text-xs font-medium text-slate-400">
+          <p className="mt-2 text-sm font-medium text-[#7A6A50]">
             {uploading
         ? <T>{"Uploading your photo to Cloudinary..."}</T> : deleting
         ? <T>{"Deleting your profile photo..."}</T>
@@ -187,11 +187,11 @@ export default function ProfileHeader({ user, onUserUpdated, }: {
             : <T>{"Click your photo to upload a profile picture."}</T>}
           </p>
 
-          {uploadError && (<p className="mt-2 text-xs font-semibold text-red-600">
+          {uploadError && (<p className="mt-2 text-sm font-semibold text-red-600">
               {t(uploadError)}
             </p>)}
 
-          {deleteError && (<p className="mt-2 text-xs font-semibold text-red-600">
+          {deleteError && (<p className="mt-2 text-sm font-semibold text-red-600">
               {t(deleteError)}
             </p>)}
         </div>

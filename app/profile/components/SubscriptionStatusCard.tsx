@@ -96,42 +96,42 @@ export default function SubscriptionStatusCard({ user, }: {
         }).format(new Date(endMs));
     }, [endMs, locale]);
     const isExpired = endMs !== null && remainingMs === 0;
-    return (<div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-5">
+    return (<div className="bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-xs p-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#E3D6B8] text-[#DC2626] flex items-center justify-center shrink-0">
             <CreditCard size={18}/>
           </div>
 
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400"><T>{"Subscription\n            "}</T></p>
-            <h3 className="text-sm font-bold text-gray-900 truncate">
+            <p className="text-[12px] uppercase tracking-wider font-bold text-[#7A6A50]"><T>{"Subscription\n            "}</T></p>
+            <h3 className="text-base font-bold text-[#3B2F1E] truncate">
               <T>{plan || "Current plan"}</T>
             </h3>
           </div>
         </div>
 
-        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold shrink-0 ${isExpired
-            ? "bg-red-50 text-red-600"
+        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold shrink-0 ${isExpired
+            ? "bg-[#FEE9E9] text-red-600"
             : endMs !== null
                 ? "bg-emerald-50 text-emerald-700"
-                : "bg-gray-100 text-gray-500"}`}>
+                : "bg-[#F3E9D2] text-[#6B5A40]"}`}>
           <BadgeCheck size={11}/>
           {isExpired ? <T>{"Expired"}</T> : endMs !== null ? <T>{"Active"}</T> : <T>{"Not available"}</T>}
         </span>
       </div>
 
-      <div className="mt-4 rounded-xl bg-[#F8FAFC] border border-gray-100 p-4">
-        <div className="flex items-center gap-2 text-gray-500 text-[11px] font-semibold">
-          <CalendarClock size={14} className="text-[#2563EB]"/>
+      <div className="mt-4 rounded-xl bg-[#F6EEDB] border border-[#E3D6B8] p-4">
+        <div className="flex items-center gap-2 text-[#6B5A40] text-[13px] font-semibold">
+          <CalendarClock size={14} className="text-[#DC2626]"/>
           {formattedEnd ? <T>{`Ends ${formattedEnd}`}</T> : <T>{"Subscription end date is not available"}</T>}
         </div>
 
-        <div className="mt-2 text-2xl font-black tracking-tight text-gray-900">
+        <div className="mt-2 text-3xl font-black tracking-tight text-[#3B2F1E]">
           {remainingMs === null ? <T>{"—"}</T> : formatCountdown(remainingMs, locale)}
         </div>
 
-        <p className="text-[10px] text-gray-400 mt-1">
+        <p className="text-[12px] text-[#7A6A50] mt-1">
           {remainingMs === null
         ? <T>{"Your subscription expiry field is not present in the supplied profile data yet."}</T> : isExpired
         ? <T>{"Your subscription has expired."}</T>

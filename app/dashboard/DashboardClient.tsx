@@ -27,8 +27,24 @@ const TOOL_TILE_SIZE_PERCENT_TOUCH = 88;
 // "Popular Tools" হেডিং, সাবটাইটেল ও "View all" বাটনের ফন্ট (Inter থাকলে Inter, না থাকলে Segoe UI/সিস্টেম ফন্ট)
 const HEADING_FONT = {
   fontFamily:
-    'Inter, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans Bengali", system-ui, sans-serif',
+    '"Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
 } as const;
+const PAGE_FONT_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+.page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+.scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+.scroll::-webkit-scrollbar { width: 12px; }
+.scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+.scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+.scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+`;
 // useLayoutEffect on the client (runs before the browser paints), useEffect on the server.
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -49,18 +65,18 @@ function PopularToolsSection() {
           {/* ছোট নীল আকসেন্ট বার */}
           <span
             aria-hidden="true"
-            className="h-9 w-1 shrink-0 rounded-full bg-[#2563EB]"
+            className="h-9 w-1 shrink-0 rounded-full bg-[#DC2626]"
           />
           <div>
             <h2
               style={HEADING_FONT}
-              className={`font-semibold leading-tight tracking-[-0.01em] text-slate-900 text-lg sm:text-xl fit:text-xl`}
+              className={`font-semibold leading-tight tracking-[-0.01em] text-[#3B2F1E] text-xl sm:text-2xl fit:text-2xl`}
             >
               <DT>{"Popular Tools\n            "}</DT>
             </h2>
             <p
               style={HEADING_FONT}
-              className="mt-0.5 text-[13px] font-normal leading-snug text-slate-500"
+              className="mt-0.5 text-[15px] font-normal leading-snug text-[#7A6A50]"
             >
               <DT>{"Free tools to speed up your daily work.\n            "}</DT>
             </p>
@@ -70,7 +86,7 @@ function PopularToolsSection() {
         <Link
           href="/sohoj-tools"
           style={HEADING_FONT}
-          className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white py-1 pl-3 pr-1 text-[12.5px] font-medium text-slate-700 shadow-sm outline-none transition-all hover:border-[#2563EB] hover:text-[#2563EB] hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-300"
+          className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] py-1 pl-3 pr-1 text-[14.5px] font-medium text-[#5A4A32] shadow-sm outline-none transition-all hover:border-[#DC2626] hover:text-[#DC2626] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#FBB6B6]"
         >
           <span>
             <DT>{"View all\n            "}</DT>
@@ -80,7 +96,7 @@ function PopularToolsSection() {
               <DT>{"tools\n            "}</DT>
             </span>
           </span>
-          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#2563EB] text-white transition-transform duration-200 group-hover:translate-x-0.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#DC2626] text-white transition-transform duration-200 group-hover:translate-x-0.5">
             <ArrowRight size={12} />
           </span>
         </Link>
@@ -157,7 +173,7 @@ const BANNER_FONT_URL =
   "https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap";
 const BANNER_FONT = {
   fontFamily:
-    'Inter, "Hind Siliguri", "Noto Sans Bengali", "Segoe UI", "Nirmala UI", system-ui, sans-serif',
+    '"Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
 } as const;
 // ব্যানারের সব লেখা এখান থেকে বদলানো যাবে
 const BANNER_COPY = {
@@ -365,7 +381,7 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
   return (
     <section
       style={BANNER_FONT}
-      className="relative mb-6 overflow-hidden rounded-xl border border-[#1C376B] bg-[#0F2250] px-5 py-6 text-white shadow-[0_10px_30px_-12px_rgba(15,34,80,0.55)] sm:px-10 sm:py-8 fit:px-10 fit:py-7"
+      className="relative mb-6 overflow-hidden rounded-xl border border-[#5A4A32] bg-[#3B2F1E] px-5 py-6 text-white shadow-[0_10px_30px_-12px_rgba(59,47,30,0.30)] sm:px-10 sm:py-8 fit:px-10 fit:py-7"
     >
       <link rel="stylesheet" href={BANNER_FONT_URL} />
       <div className="flex flex-col gap-7 md:flex-row md:items-stretch md:justify-between md:gap-10 fit:flex-row fit:items-stretch fit:justify-between fit:gap-10">
@@ -374,13 +390,13 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="h-[2px] w-8 bg-[#F2B93B]" />
             <span
-              className={`text-[13px] font-medium text-[#F2B93B] ${bn ? "" : "uppercase tracking-[0.08em] text-[12px]"}`}
+              className={`text-[15px] font-medium text-[#F2B93B] ${bn ? "" : "uppercase tracking-[0.08em] text-[14px]"}`}
             >
               {L(BANNER_COPY.eyebrow)}
             </span>
           </div>
 
-          <p className="mt-4 min-h-5 text-sm text-[#B7C5E6]">
+          <p className="mt-4 min-h-5 text-base text-[#D8C9A6]">
             <span className="greet-variant greet-morning">
               <DT>{"Good morning"}</DT>
             </span>
@@ -407,7 +423,7 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
           </h2>
 
           <p
-            className={`mt-3 text-[15px] text-[#D5DFF5] ${bn ? "leading-[1.85]" : "leading-7"}`}
+            className={`mt-3 text-[17px] text-[#E9DDC3] ${bn ? "leading-[1.85]" : "leading-7"}`}
           >
             {L(BANNER_COPY.lead)}
           </p>
@@ -415,7 +431,7 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
               href="/sohoj-tools"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-[#0F2250] outline-none transition-colors hover:bg-[#EEF3FF] focus-visible:ring-2 focus-visible:ring-white/60"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[#DC2626] px-5 py-2.5 text-base font-semibold text-white outline-none transition-all duration-150 hover:bg-[#B91C1C] active:scale-[0.98] active:bg-[#991B1B] focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B2F1E]"
             >
               {L(BANNER_COPY.explore)}
               <ArrowRight size={14} />
@@ -428,21 +444,21 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
               onTouchStart={() => prefetchMyFilesData(true)}
               onMouseDown={() => prefetchMyFilesData(true)}
               onClick={() => prefetchMyFilesData(true)}
-              className="inline-flex cursor-pointer items-center rounded-md border border-white/35 px-5 py-2.5 text-sm font-medium text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"
+              className="inline-flex cursor-pointer items-center rounded-md border border-[#FBF6E8]/35 px-5 py-2.5 text-base font-medium text-white outline-none transition-colors hover:bg-[#FBF6E8]/10 focus-visible:ring-2 focus-visible:ring-[#FBF6E8]/50"
             >
               {L(BANNER_COPY.myFiles)}
             </Link>
           </div>
 
-          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#B7C5E6]">
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-[#D8C9A6]">
             <span>
               {toolCount}
               {bn ? "" : " "}
               {L(BANNER_COPY.freeTools)}
             </span>
-            <span aria-hidden="true" className="h-3 w-px bg-white/25" />
+            <span aria-hidden="true" className="h-3 w-px bg-[#FBF6E8]/25" />
             <span>{L(BANNER_COPY.noInstall)}</span>
-            <span aria-hidden="true" className="h-3 w-px bg-white/25" />
+            <span aria-hidden="true" className="h-3 w-px bg-[#FBF6E8]/25" />
             <span>{L(BANNER_COPY.minutes)}</span>
           </p>
         </div>
@@ -453,14 +469,14 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
         {/* ---------- ডান পাশ: এআই এডিটর কার্ড ---------- */}
         <div
           aria-hidden="true"
-          className="w-full shrink-0 overflow-hidden rounded-lg bg-white text-slate-900 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.45)] md:w-[460px] fit:w-[480px]"
+          className="w-full shrink-0 overflow-hidden rounded-lg bg-[#FBF6E8] text-[#3B2F1E] shadow-[0_8px_24px_-10px_rgba(59,47,30,0.45)] md:w-[460px] fit:w-[480px]"
         >
           <div className="px-5 pb-1 pt-4">
-            <p className="text-[12px] font-semibold text-[#2563EB]">
+            <p className="text-[14px] font-semibold text-[#DC2626]">
               {L(BANNER_COPY.cardLabel)}
             </p>
             <p
-              className={`mt-0.5 text-[17px] font-bold text-[#0F2250] ${bn ? "leading-[1.5]" : "leading-snug"}`}
+              className={`mt-0.5 text-[19px] font-bold text-[#3B2F1E] ${bn ? "leading-[1.5]" : "leading-snug"}`}
             >
               {L(BANNER_COPY.cardTitle)}
             </p>
@@ -469,7 +485,7 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
             {AI_JOBS.map((job, i) => (
               <li
                 key={i}
-                className={`flex items-start gap-3 border-t border-slate-200 px-5 py-3 ${i % 2 === 0 ? "sm:border-r fit:border-r" : ""}`}
+                className={`flex items-start gap-3 border-t border-[#E3D6B8] px-5 py-3 ${i % 2 === 0 ? "sm:border-r fit:border-r" : ""}`}
               >
                 <span className="relative mt-0.5 shrink-0">
                   <span
@@ -478,16 +494,16 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
                   >
                     <AiJobIcon kind={job.kind} color={job.color} />
                   </span>
-                  <span className="absolute -left-1.5 -top-1.5 rounded bg-[#F2B93B] px-1 py-[2px] text-[8.5px] font-bold leading-none text-[#0F2250] shadow-sm">
+                  <span className="absolute -left-1.5 -top-1.5 rounded bg-[#F2B93B] px-1 py-[2px] text-[11px] font-bold leading-none text-[#3B2F1E] shadow-sm">
                     {bn ? "এআই" : "AI"}
                   </span>
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[13.5px] font-semibold leading-snug text-slate-900">
+                  <span className="block text-[15.5px] font-semibold leading-snug text-[#3B2F1E]">
                     {L(job.title)}
                   </span>
                   <span
-                    className={`mt-0.5 block text-[12px] text-slate-500 ${bn ? "leading-[1.6]" : "leading-snug"}`}
+                    className={`mt-0.5 block text-[14px] text-[#7A6A50] ${bn ? "leading-[1.6]" : "leading-snug"}`}
                   >
                     {L(job.sub)}
                   </span>
@@ -495,12 +511,12 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
               </li>
             ))}
           </ul>
-          <div className="border-t border-slate-200 bg-[#F4F7FC] px-5 py-3">
-            <p className="text-[11.5px] font-semibold text-slate-500">
+          <div className="border-t border-[#E3D6B8] bg-[#F6EEDB] px-5 py-3">
+            <p className="text-[13.5px] font-semibold text-[#7A6A50]">
               {L(BANNER_COPY.alsoLabel)}
             </p>
             <p
-              className={`mt-0.5 text-[12.5px] text-slate-700 ${bn ? "leading-[1.7]" : "leading-5"}`}
+              className={`mt-0.5 text-[14.5px] text-[#5A4A32] ${bn ? "leading-[1.7]" : "leading-5"}`}
             >
               {L(BANNER_COPY.also)}
             </p>
@@ -565,15 +581,26 @@ function HomeScreen({ userName }: { userName: string | null }) {
         const denom = availH - slope * availW;
         const ideal =
           denom > 0 && base > 0 ? (base * availW) / denom : FIT_MAX_WIDTH;
-        const width = Math.round(
+        let width = Math.round(
           Math.min(FIT_MAX_WIDTH, Math.max(FIT_MIN_WIDTH, ideal)),
         );
-        const height = measure(width);
+        let height = measure(width);
+        if (!height) {
+          content.style.width = "";
+          return;
+        }
+        const raw = Math.min(availW / width, availH / height);
+        const scale = Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, raw));
+        // পুরো পেজ জুড়ে রাখতে: স্কেল ঠিক রেখে লেআউটকে স্ক্রিনের পুরো চওড়ায় ছড়িয়ে দিচ্ছি।
+        // চওড়া বাড়লে উচ্চতা কমে বা একই থাকে, তাই স্ক্রিনে এখনও আঁটবে।
+        const fillWidth = Math.round(availW / scale);
+        if (fillWidth > width) {
+          width = fillWidth;
+          height = measure(width);
+        }
         // leave the CSS (var(--hv-w)) in charge of the width again
         content.style.width = "";
         if (!height) return;
-        const raw = Math.min(availW / width, availH / height);
-        const scale = Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, raw));
         const st = root.style;
         const same =
           st.getPropertyValue("--hv-w") === `${width}px` &&
@@ -663,18 +690,18 @@ function PersonName({
 function CreditLine() {
   return (
     <footer
-      className="border-t border-slate-200 bg-white/60"
+      className="border-t border-[#E3D6B8] bg-[#F2E8D2]"
       style={{
         fontFamily:
-          '"Trebuchet MS", "Noto Sans Bengali", "Segoe UI", sans-serif',
+          '"Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
       }}
     >
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-5 text-sm text-slate-500 sm:px-6 md:flex-row md:justify-between">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-5 text-base text-[#7A6A50] sm:px-6 md:flex-row md:justify-between">
         <p>
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-[#3B2F1E]">
             <DT>{"srizon"}</DT>
           </span>
-          <span className="ml-2 text-slate-400">
+          <span className="ml-2 text-[#7A6A50]">
             <DT>{"\u00A9 "}</DT>
             {new Date().getFullYear()}
           </span>
@@ -696,19 +723,19 @@ function CreditLine() {
               <PersonName
                 name={CREATOR_NAME}
                 href={CREATOR_URL}
-                className="font-semibold text-[#2563EB]"
+                className="font-semibold text-[#DC2626]"
               />
             </p>
             <a
               href="tel:01783666743"
-              className="text-xs text-slate-500 hover:text-slate-700 hover:underline"
+              className="text-sm text-[#7A6A50] hover:text-[#5A4A32] hover:underline"
             >
               <DT>{"01783666743\n            "}</DT>
             </a>
           </div>
           <span
             aria-hidden="true"
-            className="hidden h-4 w-px bg-slate-300 sm:block"
+            className="hidden h-4 w-px bg-[#D8C9A6] sm:block"
           />
           <p>
             <DT>{"Inspired by"}</DT>
@@ -716,7 +743,7 @@ function CreditLine() {
             <PersonName
               name={INSPIRED_BY_NAME}
               href={INSPIRED_BY_URL}
-              className="font-semibold text-slate-800"
+              className="font-semibold text-[#3B2F1E]"
             />
           </p>
         </div>
@@ -729,13 +756,13 @@ function CreditLine() {
 function ContactCard() {
   const [photoFailed, setPhotoFailed] = useState(false);
   return (
-    <section className="border-t border-slate-200 bg-white/60">
+    <section className="border-t border-[#E3D6B8] bg-[#F2E8D2]">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-6 text-center sm:flex-row sm:gap-5 sm:px-6 sm:text-left">
         {photoFailed ? (
           <div
             role="img"
             aria-label={CONTACT_NAME}
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-blue-50 text-lg font-semibold text-[#2563EB] shadow-sm"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#E3D6B8] bg-[#FEE9E9] text-xl font-semibold text-[#DC2626] shadow-sm"
           >
             JS
           </div>
@@ -746,20 +773,20 @@ function ContactCard() {
             alt={CONTACT_NAME}
             referrerPolicy="no-referrer"
             onError={() => setPhotoFailed(true)}
-            className="h-16 w-16 shrink-0 rounded-full border border-slate-200 object-cover shadow-sm"
+            className="h-16 w-16 shrink-0 rounded-full border border-[#E3D6B8] object-cover shadow-sm"
           />
         )}
         <div>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-[#7A6A50]">
             <DT>{"Contact"}</DT>
           </p>
           <PersonName
             name={CONTACT_NAME}
             href={CONTACT_FACEBOOK_URL}
-            className="text-base font-semibold text-[#2563EB]"
+            className="text-lg font-semibold text-[#DC2626]"
           />
           {CONTACT_FACEBOOK_URL && (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-[#7A6A50]">
               <DT>{"Facebook"}</DT>
             </p>
           )}
@@ -780,9 +807,9 @@ function LoginProgress() {
     return () => clearTimeout(id);
   }, []);
   return (
-    <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+    <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-[#F3E9D2]">
       <div
-        className="h-full rounded-full bg-[#2563EB] transition-[width] ease-out"
+        className="h-full rounded-full bg-[#DC2626] transition-[width] ease-out"
         style={{ width: go ? "100%" : "0%", transitionDuration: "1500ms" }}
       />
     </div>
@@ -888,10 +915,11 @@ export default function DashboardClient({
   }, [router]);
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] font-sans">
+      <div className="page-font flex min-h-screen items-center justify-center bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] font-sans text-[#3B2F1E]">
+        <style>{PAGE_FONT_CSS}</style>
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent"></div>
-          <p className="text-xs font-semibold text-slate-600">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#DC2626] border-t-transparent"></div>
+          <p className="text-sm font-semibold text-[#5A4A32]">
             <DT>{"Checking authentication...\n          "}</DT>
           </p>
         </div>
@@ -899,7 +927,8 @@ export default function DashboardClient({
     );
   }
   return (
-    <div className="relative flex min-h-svh flex-col justify-between bg-[#F8FAFC] font-sans antialiased">
+    <div className="page-font relative flex min-h-svh flex-col justify-between bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] font-sans antialiased text-[#3B2F1E]">
+      <style>{PAGE_FONT_CSS}</style>
       <div>
         <DashboardNavbar scaleWithZoom />
 
@@ -915,12 +944,12 @@ export default function DashboardClient({
       </div>
 
       {showLoginSuccess && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#3B2F1E]/50 px-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="login-success-title"
-            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-7 text-center shadow-xl animate-in zoom-in-95 duration-300"
           >
             {/* লাল রঙের ক্লোজ বাটন */}
             <button
@@ -929,7 +958,7 @@ export default function DashboardClient({
                 setShowLoginSuccess(false);
                 router.replace("/dashboard");
               }}
-              className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-[#7A6A50] transition-colors hover:bg-[#F3E9D2] hover:text-[#5A4A32]"
               aria-label="Close modal"
             >
               <X size={16} />
@@ -945,14 +974,14 @@ export default function DashboardClient({
 
             <h3
               id="login-success-title"
-              className="text-lg font-semibold text-slate-900"
+              className="text-xl font-semibold text-[#3B2F1E]"
             >
               <DT>{"Login Successful!\n            "}</DT>
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-base text-[#7A6A50]">
               <DT>{"Welcome back,"}</DT>
               {<DT> </DT>}
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-[#3B2F1E]">
                 {userName ?? "User"}
               </span>
               <DT>{"!\n            "}</DT>

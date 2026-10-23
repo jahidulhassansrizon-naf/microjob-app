@@ -21,11 +21,11 @@ type Badge = "New" | "Free";
 type Tone = "blue" | "indigo" | "emerald" | "rose" | "slate";
 // আইকনের ছোট বক্সের রঙ — ইচ্ছা করেই কম সংখ্যক ও হালকা রাখা হয়েছে
 const TONES: Record<Tone, string> = {
-    blue: "bg-blue-50/70 text-blue-600/90 ring-blue-600/10",
-    indigo: "bg-indigo-50/70 text-indigo-600/90 ring-indigo-600/10",
+    blue: "bg-[#FEE9E9]/70 text-[#DC2626]/90 ring-[#DC2626]/10",
+    indigo: "bg-[#FEE9E9]/70 text-[#DC2626]/90 ring-[#DC2626]/10",
     emerald: "bg-emerald-50/70 text-emerald-600/90 ring-emerald-600/10",
-    rose: "bg-rose-50/70 text-rose-500 ring-rose-500/10",
-    slate: "bg-slate-100/80 text-slate-600 ring-slate-500/10",
+    rose: "bg-[#FEE9E9]/70 text-[#DC2626] ring-[#DC2626]/10",
+    slate: "bg-[#F3E9D2]/80 text-[#5A4A32] ring-[#7A6A50]/10",
 };
 function IconChip({ icon: Icon, tone }: {
     icon: LucideIcon;
@@ -148,8 +148,8 @@ function NavBadge({ type }: {
 }) {
     const styles = type === "Free"
         ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-        : "bg-blue-50 text-blue-700 ring-blue-600/20";
-    return (<span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none ring-1 ring-inset ${styles}`}>
+        : "bg-[#FEE9E9] text-[#B91C1C] ring-[#DC2626]/20";
+    return (<span className={`rounded-md px-1.5 py-0.5 text-[12px] font-bold leading-none ring-1 ring-inset ${styles}`}>
       {type}
     </span>);
 }
@@ -158,10 +158,10 @@ function NavLink({ item, active, onClick, }: {
     active: boolean;
     onClick: () => void;
 }) {
-    return (<Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[13.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 ${active
-            ? "bg-slate-100 text-slate-900"
-            : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"}`}>
-      {active && (<span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-600"/>)}
+    return (<Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[15.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${active
+            ? "bg-[#F6D9A8] text-[#3B2F1E]"
+            : "text-[#3B2F1E] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}>
+      {active && (<span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#DC2626]"/>)}
       <IconChip icon={item.icon} tone={item.tone}/>
       <span className="flex-1 truncate">{<DT>{item.label}</DT>}</span>
       {item.badge && <NavBadge type={item.badge}/>}
@@ -204,34 +204,34 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
     }, [pathname]);
     if (!isOpen)
         return null;
-    return (<div className="fixed inset-0 z-[999] flex justify-start antialiased">
+    return (<div className="navbar-font fixed inset-0 z-[999] flex justify-start antialiased">
       {/* Backdrop */}
-      <div className="fixed inset-0 cursor-pointer bg-slate-900/40 backdrop-blur-[1px]" onClick={onClose} aria-hidden/>
+      <div className="fixed inset-0 cursor-pointer bg-[#3B2F1E]/40 backdrop-blur-[1px]" onClick={onClose} aria-hidden/>
 
       {/* Drawer */}
-      <aside role="dialog" aria-modal="true" aria-label={t("Main navigation")} className="relative z-10 flex h-full w-[300px] max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-xl">
+      <aside role="dialog" aria-modal="true" aria-label={t("Main navigation")} className="relative z-10 flex h-full w-[300px] max-w-[85vw] flex-col border-r border-[#E3D6B8] bg-[#F2E8D2] shadow-xl">
         {/* Header */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#E3D6B8] px-4">
           <Link href="/dashboard" onClick={onClose} translate="no" className="flex cursor-pointer items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-[13px] font-bold tracking-tight text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DC2626] text-[15px] font-bold tracking-tight text-white">
               SK
             </span>
-            <span className="text-[17px] font-bold tracking-tight text-slate-900">
-              Sohoj<span className="text-blue-600"> Hub</span>
+            <span className="text-[19px] font-bold tracking-tight text-[#3B2F1E]">
+              Sohoj<span className="text-[#DC2626]"> Hub</span>
             </span>
           </Link>
-          <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40">
+          <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-[#7A6A50] transition-colors hover:bg-[#EFE3C8] hover:text-[#5A4A32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
             <X size={18} strokeWidth={1.75}/>
           </button>
         </div>
 
         {/* Scrollable body */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <Link href="/subscription" onClick={onClose} className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold tracking-[0.01em] text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2"><DT>{"Buy Subscription\n          "}</DT></Link>
+        <nav className="scroll flex-1 overflow-y-auto px-3 py-4">
+          <Link href="/subscription" onClick={onClose} className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-lg bg-[#DC2626] px-4 py-3 text-base font-semibold tracking-[0.01em] text-white shadow-sm transition-colors hover:bg-[#B91C1C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2"><DT>{"Buy Subscription\n          "}</DT></Link>
 
           <div className="space-y-6">
             {NAV_SECTIONS.map((section, i) => (<div key={section.title ?? `section-${i}`}>
-                {section.title && (<p className="mb-1.5 px-3 text-xs font-bold text-slate-500">
+                {section.title && (<p className="mb-1.5 px-3 text-sm font-bold text-[#7A6A50]">
                     {<DT>{section.title}</DT>}
                   </p>)}
                 <div className="space-y-0.5">
@@ -239,14 +239,14 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
 
                   {/* Language switcher — sits at the end of "Other" */}
                   {section.title === "Other" && (<div className="flex items-center justify-between rounded-lg px-2.5 py-1.5">
-                      <div className="flex items-center gap-3 text-[13.5px] font-semibold text-slate-800">
+                      <div className="flex items-center gap-3 text-[15.5px] font-semibold text-[#3B2F1E]">
                         <IconChip icon={Languages} tone="blue"/>
                         <span><DT>{"Language"}</DT></span>
                       </div>
-                      <div role="group" aria-label={t("Language")} className="flex rounded-md bg-slate-100 p-0.5 text-[11px] font-bold" translate="no">
+                      <div role="group" aria-label={t("Language")} className="flex rounded-md bg-[#F3E9D2] p-0.5 text-[13px] font-bold" translate="no">
                         {(["EN", "BN"] as const).map((code) => (<button key={code} onClick={() => changeLanguage(code)} aria-pressed={(locale === "bn" ? "BN" : "EN") === code} className={`cursor-pointer rounded px-2 py-1 transition-colors ${(locale === "bn" ? "BN" : "EN") === code
-                        ? "bg-white text-blue-700 shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"}`}>
+                        ? "bg-[#FBF6E8] text-[#B91C1C] shadow-sm"
+                        : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                             {code === "EN" ? "EN" : "বাংলা"}
                           </button>))}
                       </div>
@@ -257,20 +257,20 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
         </nav>
 
         {/* User footer */}
-        <div className="shrink-0 border-t border-slate-200 p-3">
+        <div className="shrink-0 border-t border-[#E3D6B8] p-3">
           <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/15" translate="no">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FEE9E9] text-sm font-semibold text-[#B91C1C] ring-1 ring-inset ring-[#DC2626]/15" translate="no">
               {getInitials(user?.fullName)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-slate-900">
+              <p className="truncate text-base font-bold text-[#3B2F1E]">
                 <DT>{user?.fullName || "Guest"}</DT>
               </p>
-              <p className="truncate text-xs font-medium text-slate-600">
+              <p className="truncate text-sm font-medium text-[#5A4A32]">
                 {user?.phoneNumber || user?.email || ""}
               </p>
             </div>
-            <button onClick={onLogout} aria-label={t("Log out")} title="Log out" className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
+            <button onClick={onLogout} aria-label={t("Log out")} title="Log out" className="cursor-pointer rounded-lg p-2 text-[#7A6A50] transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
               <LogOut size={17} strokeWidth={1.75}/>
             </button>
           </div>

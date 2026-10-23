@@ -48,41 +48,57 @@ export default function PrintMediaPage() {
         setSelectedSort("Featured order");
         setSelectedDateFilter("All time");
     };
-    return (<div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    return (<div className="min-h-screen flex flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]">
       {/* ড্যাশবোর্ড নেভবার */}
       <DashboardNavbar />
 
-      <div className="flex-1 p-3 sm:p-4 md:p-6 w-full space-y-4">
+      <div className="page-font flex-1 p-3 sm:p-4 md:p-6 w-full space-y-4">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+          .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+            font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-optical-sizing: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+          }
+          .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+          .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+          .scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+          .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+          .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+          .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+        `}</style>
         {/* ১. টপ হেডার (Print Media টাইটেল এবং ডানপাশের টপ বাটনগুলো) */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#E2E8F0]/60 pb-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#D8C9A6] pb-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#0F172A]"><T>{"Print Media\n            "}</T></h1>
-            <p className="text-xs text-[#64748B] font-medium mt-0.5"><T>{"Choose a template and customize it on the canvas.\n            "}</T></p>
+            <h1 className="text-[26px] sm:text-[28px] font-extrabold text-[#3B2F1E]"><T>{"Print Media\n            "}</T></h1>
+            <p className="text-[15px] text-[#6B5A40] font-medium mt-1"><T>{"Choose a template and customize it on the canvas.\n            "}</T></p>
           </div>
 
           {/* টপ রাইট অ্যাকশন বাটন সেকশন (রেসপন্সিভ স্ক্রোলযোগ্য) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full lg:w-auto no-scrollbar">
             {/* ১. প্রথম সিগমেন্টেড পিল */}
-            <div className="flex items-center bg-white border border-[#E2E8F0] rounded-2xl p-1 shadow-xs shrink-0">
-              <button className="flex items-center gap-1.5 bg-[#4F46E5] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition">
-                <ArrowUpDown size={13}/>
+            <div className="flex items-center bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-1 shadow-sm shrink-0">
+              <button className="flex items-center gap-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[15px] font-bold px-4 py-2 rounded-xl shadow-sm transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]">
+                <ArrowUpDown size={16}/>
                 <span><T>{"Featured order"}</T></span>
               </button>
-              <button className="flex items-center gap-1.5 text-[#334155] hover:text-[#0F172A] text-xs font-bold px-3 py-1.5 rounded-xl transition">
-                <Clock size={13} className="text-[#4F46E5]"/>
+              <button className="flex items-center gap-2 text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] text-[15px] font-bold px-4 py-2 rounded-xl transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]">
+                <Clock size={16} className="text-[#DC2626]"/>
                 <span><T>{"Newest first"}</T></span>
               </button>
             </div>
 
             {/* ২. দ্বিতীয় পিল (Sort: ASC) */}
-            <button className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
-              <SlidersHorizontal size={13} className="text-[#4F46E5]"/>
+            <button className="flex items-center gap-2 bg-[#FBF6E8] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8] text-[15px] font-bold px-4 py-2.5 rounded-2xl shadow-sm transition duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]">
+              <SlidersHorizontal size={16} className="text-[#DC2626]"/>
               <span><T>{"Sort: ASC"}</T></span>
             </button>
 
             {/* ৩. তৃতীয় পিল (My Favorites) */}
-            <button className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xs transition shrink-0">
-              <Heart size={13} className="text-[#4F46E5]"/>
+            <button className="flex items-center gap-2 bg-[#FBF6E8] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8] text-[15px] font-bold px-4 py-2.5 rounded-2xl shadow-sm transition duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]">
+              <Heart size={16} className="text-[#DC2626]"/>
               <span><T>{"My Favorites"}</T></span>
             </button>
           </div>
@@ -91,28 +107,28 @@ export default function PrintMediaPage() {
         {/* ২. মূল বডি (সাইডবার এবং মেইন কন্টেন্ট) */}
         <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
           {/* বাম দিকের কলাম: ফিল্টার সাইডবার */}
-          <aside className="w-full lg:w-64 shrink-0 bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl shadow-xs space-y-5 lg:sticky lg:top-6">
+          <aside className="w-full lg:w-72 shrink-0 bg-[#F2E8D2] border border-[#E3D6B8] p-4 sm:p-5 rounded-2xl shadow-sm space-y-5 lg:sticky lg:top-6">
             {/* ফিল্টার হেডার ও রিসেট বাটন */}
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-              <div className="flex items-center gap-2 font-black text-xs text-[#0F172A]">
-                <Filter size={14} className="text-[#2563EB]"/><T>{"Filter\n              "}</T></div>
-              <button onClick={handleResetFilter} className="flex items-center gap-1 text-[11px] font-bold text-[#94A3B8] hover:text-[#2563EB] transition-colors cursor-pointer">
-                <RotateCcw size={12}/><T>{"Reset\n              "}</T></button>
+            <div className="flex items-center justify-between border-b border-[#D8C9A6] pb-3">
+              <div className="flex items-center gap-2 font-bold text-[17px] text-[#3B2F1E]">
+                <Filter size={17} className="text-[#DC2626]"/><T>{"Filter\n              "}</T></div>
+              <button onClick={handleResetFilter} className="flex items-center gap-1.5 text-[14px] font-semibold text-[#6B5A40] hover:text-[#DC2626] transition-colors duration-150 cursor-pointer rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
+                <RotateCcw size={15}/><T>{"Reset\n              "}</T></button>
             </div>
 
             {/* ক্যাটাগরি সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider"><T>{"Category\n              "}</T></p>
-              <div className="space-y-1 max-h-48 sm:max-h-56 overflow-y-auto pr-1">
+              <p className="text-[13px] font-semibold text-[#6B5A40] uppercase tracking-wide"><T>{"Category\n              "}</T></p>
+              <div className="scroll space-y-1 max-h-56 sm:max-h-64 overflow-y-auto pr-1">
                 {categories.map((cat, idx) => {
             const isSelected = selectedCategory === cat.name;
-            return (<div key={idx} onClick={() => setSelectedCategory(cat.name)} className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all ${isSelected
-                    ? "bg-[#EEF2FF] text-[#2563EB] font-bold shadow-xs border border-indigo-100"
-                    : "text-[#475569] hover:bg-[#F1F5F9] font-semibold"}`}>
-                      <span className="text-xs truncate">{<T>{cat.name}</T>}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${isSelected
-                    ? "bg-indigo-200/60 text-[#2563EB]"
-                    : "bg-[#F1F5F9] text-[#94A3B8]"}`}>
+            return (<div key={idx} onClick={() => setSelectedCategory(cat.name)} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 ${isSelected
+                    ? "bg-[#F6D9A8] text-[#DC2626] font-bold shadow-sm border-[#DC2626]"
+                    : "border-transparent text-[#5A4A32] hover:bg-[#EFE3C8] font-semibold"}`}>
+                      <span className="text-[15px] truncate">{<T>{cat.name}</T>}</span>
+                      <span className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${isSelected
+                    ? "bg-[#DC2626] text-white"
+                    : "bg-[#F3E9D2] text-[#6B5A40]"}`}>
                         {cat.count}
                       </span>
                     </div>);
@@ -120,20 +136,20 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            <hr className="border-[#E2E8F0]"/>
+            <hr className="border-[#D8C9A6]"/>
 
             {/* প্রাইসিং সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider"><T>{"Pricing\n              "}</T></p>
+              <p className="text-[13px] font-semibold text-[#6B5A40] uppercase tracking-wide"><T>{"Pricing\n              "}</T></p>
               <div className="space-y-2">
-                {["All", "Free", "Paid"].map((type) => (<div key={type} onClick={() => setSelectedPricing(type)} className={`flex items-center px-3 py-2.5 rounded-xl cursor-pointer transition-all text-xs font-semibold ${selectedPricing === type
-                ? "bg-[#EEF2FF] text-[#2563EB] font-bold border border-indigo-100"
-                : "hover:bg-[#F1F5F9] text-[#334155]"}`}>
+                {["All", "Free", "Paid"].map((type) => (<div key={type} onClick={() => setSelectedPricing(type)} className={`flex items-center px-3 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 text-[15px] font-semibold ${selectedPricing === type
+                ? "bg-[#F6D9A8] text-[#DC2626] font-bold border-[#DC2626]"
+                : "border-transparent hover:bg-[#EFE3C8] text-[#5A4A32]"}`}>
                     <div className="flex items-center gap-2.5">
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${selectedPricing === type
-                ? "border-[#2563EB]"
-                : "border-[#CBD5E1]"}`}>
-                        {selectedPricing === type && (<span className="w-2 h-2 rounded-full bg-[#2563EB]"></span>)}
+                      <span className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center ${selectedPricing === type
+                ? "border-[#DC2626]"
+                : "border-[#D8C9A6]"}`}>
+                        {selectedPricing === type && (<span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]"></span>)}
                       </span>
                       <span>{type}</span>
                     </div>
@@ -141,23 +157,23 @@ export default function PrintMediaPage() {
               </div>
             </div>
 
-            <hr className="border-[#E2E8F0]"/>
+            <hr className="border-[#D8C9A6]"/>
 
             {/* সর্ট সেকশন */}
             <div className="space-y-3">
-              <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-wider"><T>{"Sort\n              "}</T></p>
+              <p className="text-[13px] font-semibold text-[#6B5A40] uppercase tracking-wide"><T>{"Sort\n              "}</T></p>
               <div className="space-y-1">
                 {[
-            { name: "Featured order", icon: <ArrowUpDown size={14}/> },
-            { name: "Popular", icon: <TrendingUp size={14}/> },
-            { name: "Newest first", icon: <Clock size={14}/> },
-            { name: "Oldest first", icon: <Clock size={14}/> },
-            { name: "By name", icon: <ArrowDownUp size={14}/> },
+            { name: "Featured order", icon: <ArrowUpDown size={16}/> },
+            { name: "Popular", icon: <TrendingUp size={16}/> },
+            { name: "Newest first", icon: <Clock size={16}/> },
+            { name: "Oldest first", icon: <Clock size={16}/> },
+            { name: "By name", icon: <ArrowDownUp size={16}/> },
         ].map((sortItem, idx) => {
             const isSelected = selectedSort === sortItem.name;
-            return (<div key={idx} onClick={() => setSelectedSort(sortItem.name)} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer transition-all text-xs ${isSelected
-                    ? "bg-[#EEF2FF] text-[#2563EB] font-bold shadow-xs border border-indigo-100"
-                    : "hover:bg-[#F1F5F9] text-[#334155] font-semibold"}`}>
+            return (<div key={idx} onClick={() => setSelectedSort(sortItem.name)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 text-[15px] ${isSelected
+                    ? "bg-[#F6D9A8] text-[#DC2626] font-bold shadow-sm border-[#DC2626]"
+                    : "border-transparent hover:bg-[#EFE3C8] text-[#5A4A32] font-semibold"}`}>
                       {sortItem.icon}
                       <span>{sortItem.name}</span>
                     </div>);
@@ -169,40 +185,41 @@ export default function PrintMediaPage() {
           {/* ডান দিকের কলাম: সার্চ বার + পিলস + কন্টেন্ট গ্রিড */}
           <main className="flex-1 space-y-4 min-w-0 w-full">
             {/* সার্চ বার */}
-            <div className="bg-white border border-[#E2E8F0] p-3.5 rounded-3xl shadow-xs flex items-center gap-4">
+            <div className="bg-[#F2E8D2] border border-[#E3D6B8] p-3.5 rounded-2xl shadow-sm flex items-center gap-4">
               <div className="relative w-full">
-                <Search size={16} className="absolute left-4 top-3 text-[#94A3B8]"/>
-                <input type="text" placeholder="Search print templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#F1F5F9] border border-[#E2E8F0] rounded-2xl pl-11 pr-4 py-2 text-xs font-semibold text-[#334155] outline-none focus:border-[#2563EB]"/>
+                <Search size={18} className="absolute left-4 top-3.5 text-[#6B5A40]"/>
+                <input type="text" placeholder="Search print templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl pl-11 pr-4 py-2.5 text-[15px] font-semibold text-[#3B2F1E] placeholder:text-[#B0A080] outline-none transition duration-150 focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"/>
               </div>
             </div>
 
             {/* ক্যাটাগরি পিলস + টেমপ্লেট কাউন্ট + সর্ট ড্রপডাউন */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
               {/* স্ক্রোলযোগ্য ক্যাটাগরি পিলস */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1 w-full">
-                {categories.map((cat, idx) => (<button key={idx} onClick={() => setSelectedCategory(cat.name)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${selectedCategory === cat.name
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#334155]"}`}>
+              <div className="scroll flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1 w-full">
+                {categories.map((cat, idx) => (<button key={idx} onClick={() => setSelectedCategory(cat.name)} className={`px-4 py-2 rounded-xl text-[15px] font-bold whitespace-nowrap transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${selectedCategory === cat.name
+                ? "bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-sm"
+                : "bg-[#FBF6E8] hover:bg-[#EFE3C8] border border-[#E3D6B8] text-[#5A4A32]"}`}>
                     {<T>{cat.name}</T>}
                   </button>))}
               </div>
 
               {/* কাউন্ট ও সর্ট বাটন */}
               <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                <span className="text-xs font-medium text-[#64748B] whitespace-nowrap">
+                <span className="text-[14px] font-medium text-[#6B5A40] whitespace-nowrap">
                   {TEMPLATE_IMAGE_URLS.length}<T>{"templates found\n                "}</T></span>
 
                 <div className="relative">
-                  <button onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)} className="flex items-center gap-1.5 bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] px-3 py-1.5 rounded-xl text-xs font-bold text-[#334155] shadow-xs transition cursor-pointer">
-                    <ArrowUpDown size={12} className="text-[#64748B]"/>
+                  <button onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)} className="flex items-center gap-2 bg-[#FBF6E8] hover:bg-[#EFE3C8] border border-[#E3D6B8] px-4 py-2 rounded-xl text-[15px] font-bold text-[#5A4A32] shadow-sm transition duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]">
+                    <ArrowUpDown size={15} className="text-[#6B5A40]"/>
                     <span><T>{"Sort"}</T></span>
-                    <ChevronDown size={12} className={`text-[#94A3B8] transition-transform duration-200 ${isSortDropdownOpen ? "rotate-180" : ""}`}/>
+                    <ChevronDown size={15} className={`text-[#6B5A40] transition-transform duration-200 ${isSortDropdownOpen ? "rotate-180" : ""}`}/>
                   </button>
 
                   {/* সর্ট ড্রপডাউন পপআপ */}
-                  {isSortDropdownOpen && (<div className="absolute right-0 top-full mt-2 w-52 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl z-50 p-2 space-y-3">
+                  {isSortDropdownOpen && (<div className="absolute right-0 top-full mt-3 w-64 bg-[#F0DDB5] border-2 border-[#DC2626] rounded-2xl shadow-xl z-50 p-2.5 space-y-3">
+                      <span aria-hidden="true" className="absolute -top-[9px] right-6 h-4 w-4 rotate-45 bg-[#F0DDB5] border-l-2 border-t-2 border-[#DC2626]"/>
                       <div>
-                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#94A3B8]"><T>{"Sort By\n                        "}</T></p>
+                        <p className="px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide text-[#6B5A40]"><T>{"Sort By\n                        "}</T></p>
                         <div className="space-y-0.5">
                           {[
                 "Featured order",
@@ -213,19 +230,19 @@ export default function PrintMediaPage() {
             ].map((option) => (<button key={option} onClick={() => {
                     setSelectedSort(option);
                     setIsSortDropdownOpen(false);
-                }} className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${selectedSort === option
-                    ? "bg-[#EEF2FF] text-[#2563EB]"
-                    : "text-[#334155] hover:bg-[#F1F5F9]"}`}>
+                }} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[15px] font-semibold transition duration-150 cursor-pointer ${selectedSort === option
+                    ? "bg-[#F6D9A8] text-[#DC2626] font-bold"
+                    : "text-[#3B2F1E] hover:bg-[#F6D9A8]/70"}`}>
                               <span>{option}</span>
-                              {selectedSort === option && <Check size={13}/>}
+                              {selectedSort === option && <Check size={16}/>}
                             </button>))}
                         </div>
                       </div>
 
-                      <hr className="border-[#E2E8F0]"/>
+                      <hr className="border-[#D8C9A6]"/>
 
                       <div>
-                        <p className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#94A3B8]"><T>{"Date\n                        "}</T></p>
+                        <p className="px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide text-[#6B5A40]"><T>{"Date\n                        "}</T></p>
                         <div className="space-y-0.5">
                           {[
                 "All time",
@@ -236,11 +253,11 @@ export default function PrintMediaPage() {
             ].map((timeOption) => (<button key={timeOption} onClick={() => {
                     setSelectedDateFilter(timeOption);
                     setIsSortDropdownOpen(false);
-                }} className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${selectedDateFilter === timeOption
-                    ? "bg-[#EEF2FF] text-[#2563EB]"
-                    : "text-[#334155] hover:bg-[#F1F5F9]"}`}>
+                }} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[15px] font-semibold transition duration-150 cursor-pointer ${selectedDateFilter === timeOption
+                    ? "bg-[#F6D9A8] text-[#DC2626] font-bold"
+                    : "text-[#3B2F1E] hover:bg-[#F6D9A8]/70"}`}>
                               <span>{timeOption}</span>
-                              {selectedDateFilter === timeOption && (<Check size={13}/>)}
+                              {selectedDateFilter === timeOption && (<Check size={16}/>)}
                             </button>))}
                         </div>
                       </div>
@@ -251,15 +268,15 @@ export default function PrintMediaPage() {
 
             {/* টেমপ্লেট কার্ড গ্রিড (রেসপন্সিভ ইমেজেস) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pt-1">
-              {TEMPLATE_IMAGE_URLS.map((imageUrl, idx) => (<div key={idx} className="bg-white border border-[#E2E8F0] rounded-3xl p-3.5 shadow-xs flex flex-col gap-3 hover:shadow-md transition group cursor-pointer">
-                  <div className="w-full h-44 bg-[#F1F5F9] rounded-2xl flex items-center justify-center relative overflow-hidden border border-[#E2E8F0]">
-                    <span className="absolute top-2.5 left-2.5 bg-[#059669] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs z-10"><T>{"Free\n                    "}</T></span>
+              {TEMPLATE_IMAGE_URLS.map((imageUrl, idx) => (<div key={idx} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-3.5 shadow-sm flex flex-col gap-3 hover:bg-[#EFE3C8] hover:-translate-y-0.5 hover:shadow-md transition duration-200 group cursor-pointer">
+                  <div className="w-full h-44 bg-[#F3E9D2] rounded-xl flex items-center justify-center relative overflow-hidden border border-[#E3D6B8]">
+                    <span className="absolute top-2.5 left-2.5 bg-[#059669] text-white text-[12px] font-bold px-2.5 py-0.5 rounded-lg shadow-sm z-10"><T>{"Free\n                    "}</T></span>
                     <img src={imageUrl} alt={`প্রিন্ট মিডিয়া টেমপ্লেট #${idx + 1}`} className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"/>
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-[#0F172A] truncate"><T>{"\u09AA\u09CD\u09B0\u09BF\u09A8\u09CD\u099F \u09AE\u09BF\u09A1\u09BF\u09DF\u09BE \u099F\u09C7\u09AE\u09AA\u09CD\u09B2\u09C7\u099F #"}</T>{idx + 1}
+                    <h3 className="text-[17px] font-semibold text-[#3B2F1E] truncate"><T>{"\u09AA\u09CD\u09B0\u09BF\u09A8\u09CD\u099F \u09AE\u09BF\u09A1\u09BF\u09DF\u09BE \u099F\u09C7\u09AE\u09AA\u09CD\u09B2\u09C7\u099F #"}</T>{idx + 1}
                     </h3>
-                    <p className="text-[10px] text-[#94A3B8] font-medium mt-0.5"><T>{"\u0995\u09BE\u09B8\u09CD\u099F\u09AE\u09BE\u0987\u099C \u0995\u09B0\u09C1\u09A8 \u0995\u09CD\u09AF\u09BE\u09A8\u09AD\u09BE\u09B8\u09C7\n                    "}</T></p>
+                    <p className="text-[13px] text-[#6B5A40] font-medium mt-0.5"><T>{"\u0995\u09BE\u09B8\u09CD\u099F\u09AE\u09BE\u0987\u099C \u0995\u09B0\u09C1\u09A8 \u0995\u09CD\u09AF\u09BE\u09A8\u09AD\u09BE\u09B8\u09C7\n                    "}</T></p>
                   </div>
                 </div>))}
             </div>

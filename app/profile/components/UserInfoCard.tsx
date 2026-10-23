@@ -14,11 +14,11 @@ type UserInfo = {
     postcode?: string;
     about?: string;
 };
-function renderField(label: string, value: string | number | undefined, className = "bg-gray-50/80 border-gray-100") {
+function renderField(label: string, value: string | number | undefined, className = "bg-[#F6EEDB]/80 border-[#E3D6B8]") {
     const standardValue = typeof value === "string" && ["male", "female", "other", "bangladesh"].includes(value.trim().toLowerCase());
     return (<div className={`p-2.5 rounded-xl border ${className}`}>
-      <p className="text-[10px] font-bold text-gray-400"><T>{label}</T></p>
-      <p className="font-semibold text-gray-800 mt-0.5 break-words">
+      <p className="text-[12px] font-bold text-[#7A6A50]"><T>{label}</T></p>
+      <p className="font-semibold text-[#3B2F1E] mt-0.5 break-words">
         {!value ? <T>{"Not provided"}</T> : standardValue ? <T>{String(value)}</T> : value}
       </p>
     </div>);
@@ -30,21 +30,21 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
     onEdit: () => void;
     onSendVerification: () => void;
 }) {
-    return (<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-4">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3 gap-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-700 min-w-0">
-          <User size={16} className="text-[#2563EB] shrink-0"/>
+    return (<div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-xs space-y-4">
+      <div className="flex items-center justify-between border-b border-[#E3D6B8] pb-3 gap-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#5A4A32] min-w-0">
+          <User size={16} className="text-[#DC2626] shrink-0"/>
 
           <span className="truncate">{user?.fullName || <T>{"Guest User"}</T>}</span>
         </div>
 
-        <button type="button" onClick={onEdit} className="bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0">
+        <button type="button" onClick={onEdit} className="bg-[#DC2626] hover:bg-[#DC2626] text-white text-sm font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0">
           <Edit size={12}/>
           <span><T>{"Edit"}</T></span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         {renderField("Full Name", user?.fullName)}
 
         {renderField("Phone Number", user?.phoneNumber)}
@@ -53,25 +53,25 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
 
         <div className={`p-2.5 rounded-xl border ${isEmailVerified
             ? "bg-emerald-50/50 border-emerald-100"
-            : "bg-red-50/50 border-red-100"}`}>
-          <p className="text-[10px] font-bold text-gray-400"><T>{"Email"}</T></p>
+            : "bg-[#FEE9E9]/50 border-[#FBB6B6]"}`}>
+          <p className="text-[12px] font-bold text-[#7A6A50]"><T>{"Email"}</T></p>
 
           <div className="flex items-center justify-between gap-2 mt-0.5">
-            <span className="font-semibold text-gray-800 break-all">
+            <span className="font-semibold text-[#3B2F1E] break-all">
               {user?.email || "Not provided"}
             </span>
 
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${isEmailVerified
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${isEmailVerified
             ? "bg-emerald-100 text-emerald-700"
-            : "bg-red-100 text-red-600"}`}>
+            : "bg-[#FBB6B6]/50 text-red-600"}`}>
               {isEmailVerified ? <T>{"Verified"}</T> : <T>{"Not verified"}</T>}
             </span>
           </div>
 
-          {!isEmailVerified && user?.email && (<div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-red-100/60">
-              <span className="text-[10px] text-red-500 font-medium"><T>{"Verify your email to earn the bonus\n              "}</T></span>
+          {!isEmailVerified && user?.email && (<div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-[#FBB6B6]/60">
+              <span className="text-[12px] text-red-500 font-medium"><T>{"Verify your email to earn the bonus\n              "}</T></span>
 
-              <button type="button" onClick={onSendVerification} disabled={verifyingEmail} className="bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed text-gray-700 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 shrink-0">
+              <button type="button" onClick={onSendVerification} disabled={verifyingEmail} className="bg-[#FBF6E8] border border-[#E3D6B8] hover:bg-[#F6EEDB] disabled:opacity-60 disabled:cursor-not-allowed text-[#5A4A32] text-[12px] font-bold px-2 py-1 rounded flex items-center gap-1 shrink-0">
                 {verifyingEmail ? (<Loader2 size={10} className="animate-spin"/>) : (<Mail size={10}/>)}
 
                 <span>{verifyingEmail ? <T>{"Sending..."}</T> : <T>{"Verify"}</T>}</span>
@@ -79,21 +79,21 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
             </div>)}
         </div>
 
-        {renderField("Profession / Designation", user?.profession, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Profession / Designation", user?.profession, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
-        {renderField("Gender", user?.gender, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Gender", user?.gender, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
-        {renderField("Date of Birth", user?.dob ? user.dob.slice(0, 10) : "", "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Date of Birth", user?.dob ? user.dob.slice(0, 10) : "", "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
-        {renderField("Address", user?.address, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Address", user?.address, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
         {renderField("District", user?.district)}
 
-        {renderField("Thana / Upazila", user?.thana, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Thana / Upazila", user?.thana, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
-        {renderField("Postcode", user?.postcode, "bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("Postcode", user?.postcode, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
 
-        {renderField("About yourself", user?.about, "md:col-span-2 bg-[#E2E8F0]/40 border-[#E2E8F0]/50")}
+        {renderField("About yourself", user?.about, "md:col-span-2 bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}
       </div>
     </div>);
 }

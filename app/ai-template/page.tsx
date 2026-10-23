@@ -463,7 +463,7 @@ export default function AITemplatePage() {
 
   return (
     <div
-      className="ai-page"
+      className="ai-page page-font"
       aria-hidden={isCropOpen}
       style={{ display: isCropOpen ? "none" : undefined }}
     >

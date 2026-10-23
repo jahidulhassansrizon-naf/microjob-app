@@ -10,10 +10,7 @@ import {
 } from "react";
 import { ChevronUp, LoaderCircle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
-
-// Admin avatar displayed to every user in the support chat header.
-const ADMIN_PROFILE_IMAGE_URL =
-  "https://scontent.fdac165-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFXk2DRYIMaT2rWUpeNS_QDO3oAE2SwZaw7egATZLBlrFuLbZxjfp2t1mEf0QSZ0qIfZc4Yht_g_s0X90DPJ-dn&_nc_ohc=V0QxUoSmOM4Q7kNvwGA029p&_nc_oc=AdqWhphBEz4E5jLphb64chRZxLyo_CkZDH0zsckT72KGkGTjFiXJL1xcfNrMr3C59QM&_nc_zt=23&_nc_ht=scontent.fdac165-1.fna&_nc_gid=cABDVM2sgWBbemyNF0MWmg&_nc_ss=7b2a8&oh=00_AQM4A6_U0NCz7Lq_E5LID7UkYFkZQVW28_JlZWhqaKQ-Aw&oe=6AD7D82F";
+import AdminAvatarImage from "@/app/_components/AdminAvatarImage";
 
 type ChatMessage = {
   id: string;
@@ -307,7 +304,7 @@ function PointingHand({
   if (gone) return null;
 
   const labelClass =
-    "absolute whitespace-nowrap rounded-full bg-[#F2B93B] px-2.5 py-1 text-[11px] font-bold leading-none text-[#0F2250] opacity-0 shadow-sm";
+    "absolute whitespace-nowrap rounded-full bg-[#F2B93B] px-2.5 py-1 text-[13px] font-bold leading-none text-[#3B2F1E] opacity-0 shadow-sm";
 
   return (
     <div
@@ -357,7 +354,7 @@ function PointingHand({
           viewBox="0 0 100 66"
           width={104}
           height={69}
-          className="drop-shadow-[0_3px_4px_rgba(0,0,0,0.35)]"
+          className="drop-shadow-[0_3px_4px_rgba(59,47,30,0.35)]"
           fill="none"
         >
           <g fill="#FFCB8E" stroke="#D99A5E" strokeWidth="1.4">
@@ -399,8 +396,8 @@ function PointingHand({
             width="14"
             height="38"
             rx="3.5"
-            fill="#2563EB"
-            stroke="#1D4ED8"
+            fill="#DC2626"
+            stroke="#B91C1C"
             strokeWidth="1"
           />
         </svg>
@@ -648,10 +645,10 @@ export default function UserAdminChat() {
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#F2B93B]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-bold leading-snug text-white sm:text-xs">
+          <span className="block text-[13px] font-bold leading-snug text-white sm:text-sm">
             যেকোনো সমস্যায় অ্যাডমিনের সাথে কথা বলুন
           </span>
-          <span className="mt-0.5 block text-[10px] leading-snug text-[#C8D5F0]">
+          <span className="mt-0.5 block text-[12px] leading-snug text-[#D8C9A6]">
             Need help? Chat with our admin anytime.
           </span>
         </span>
@@ -667,32 +664,27 @@ export default function UserAdminChat() {
         ref={chatSectionRef}
         onPointerDown={() => setChatTouched(true)}
         aria-labelledby="user-admin-chat-title"
-        className="flex h-[282px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-white shadow-[0_8px_24px_-10px_rgba(0,0,0,0.35)] sm:h-[294px] fit:h-[300px]"
+        className="flex h-[324px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#FBF6E8]/25 bg-[#FBF6E8] shadow-[0_8px_24px_-10px_rgba(59,47,30,0.35)] sm:h-[338px] fit:h-[345px]"
       >
-        <header className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-white px-3 py-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-50 ring-1 ring-inset ring-indigo-100">
-            <img
-              src={ADMIN_PROFILE_IMAGE_URL}
-              alt="Admin profile"
-              className="h-full w-full object-cover object-[center_24%]"
-              referrerPolicy="no-referrer"
-            />
+        <header className="flex shrink-0 items-center gap-2.5 border-b border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FEE9E9] ring-1 ring-inset ring-[#FBB6B6]">
+            <AdminAvatarImage alt="Admin profile" className="h-full w-full object-cover object-[center_24%]" />
           </span>
           <div className="min-w-0 flex-1">
             <h2
               id="user-admin-chat-title"
-              className="text-xs font-bold text-slate-900 sm:text-sm"
+              className="text-sm font-bold text-[#3B2F1E] sm:text-base"
             >
               অ্যাডমিন সাপোর্ট · Chat with Admin
             </h2>
-            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-500 sm:text-[11px]">
+            <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#7A6A50] sm:text-[13px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               আপনার মেসেজ এখানেই পাঠান
             </p>
           </div>
           {unreadCount > 0 && (
             <span
-              className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+              className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#DC2626] px-1.5 text-[12px] font-bold text-white"
               aria-label={`${unreadCount} unread messages`}
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -704,21 +696,21 @@ export default function UserAdminChat() {
             disabled={clearingChat || sending}
             aria-label="চ্যাট হিস্ট্রি ডিলিট করুন"
             title="Delete chat history"
-            className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 text-[10px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] px-2 text-[12px] font-semibold text-[#B91C1C] transition hover:bg-[#FDD5D5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {clearingChat ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />}
             <span>{clearingChat ? "মুছছে…" : "চ্যাট মুছুন"}</span>
           </button>
         </header>
         {chatNotice && (
-          <div role="status" className="shrink-0 border-b border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[10px] font-medium text-emerald-800">
+          <div role="status" className="shrink-0 border-b border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[12px] font-medium text-emerald-800">
             {chatNotice}
           </div>
         )}
 
         <div
           ref={messagesViewportRef}
-          className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 px-3 py-2.5"
+          className="scroll min-h-0 flex-1 space-y-2 overflow-y-auto bg-[#F6EEDB] px-3 py-2.5"
           aria-live="polite"
           aria-relevant="additions text"
         >
@@ -730,7 +722,7 @@ export default function UserAdminChat() {
                 onClick={() =>
                   void loadMessages({ before: messages[0]?.createdAt })
                 }
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-full border border-[#E3D6B8] bg-[#FBF6E8] px-2.5 py-1 text-[12px] font-medium text-[#5A4A32] hover:bg-[#EFE3C8] disabled:opacity-50"
               >
                 {olderLoading ? (
                   <LoaderCircle size={11} className="animate-spin" />
@@ -743,7 +735,7 @@ export default function UserAdminChat() {
           )}
 
           {loading && messages.length === 0 ? (
-            <div className="flex h-full min-h-[105px] items-center justify-center gap-2 text-xs text-slate-500">
+            <div className="flex h-full min-h-[120px] items-center justify-center gap-2 text-sm text-[#7A6A50]">
               <LoaderCircle size={15} className="animate-spin" /> Chat লোড
               হচ্ছে…
             </div>
@@ -756,13 +748,13 @@ export default function UserAdminChat() {
                   className={`flex ${mine ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] rounded-xl px-2.5 py-1.5 shadow-sm ${mine ? "rounded-br-sm bg-indigo-600 text-white" : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"}`}
+                    className={`max-w-[88%] rounded-xl px-2.5 py-1.5 shadow-sm ${mine ? "rounded-br-sm bg-[#DC2626] text-white" : "rounded-bl-sm border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E]"}`}
                   >
-                    <p className="whitespace-pre-wrap break-words text-[11px] leading-relaxed sm:text-xs">
+                    <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed sm:text-sm">
                       {message.text}
                     </p>
                     <div
-                      className={`mt-1 flex items-center justify-end gap-1.5 text-[9px] ${mine ? "text-indigo-100" : "text-slate-400"}`}
+                      className={`mt-1 flex items-center justify-end gap-1.5 text-[11px] ${mine ? "text-[#FEE9E9]" : "text-[#7A6A50]"}`}
                     >
                       <span>{timeLabel(message.createdAt)}</span>
                       {mine && (
@@ -776,14 +768,14 @@ export default function UserAdminChat() {
               );
             })
           ) : (
-            <div className="flex h-full min-h-[105px] flex-col items-center justify-center px-2 text-center">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200">
+            <div className="flex h-full min-h-[120px] flex-col items-center justify-center px-2 text-center">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FBF6E8] text-[#DC2626] shadow-sm ring-1 ring-[#E3D6B8]">
                 <MessageCircle size={17} />
               </span>
-              <p className="mt-2 text-[11px] font-semibold text-slate-800 sm:text-xs">
+              <p className="mt-2 text-[13px] font-semibold text-[#3B2F1E] sm:text-sm">
                 কীভাবে সাহায্য করতে পারি?
               </p>
-              <p className="mt-1 max-w-[250px] text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
+              <p className="mt-1 max-w-[250px] text-[12px] leading-relaxed text-[#7A6A50] sm:text-[13px]">
                 আপনার সমস্যা বা প্রশ্ন নিচে লিখে সরাসরি অ্যাডমিনকে পাঠান।
               </p>
             </div>
@@ -794,7 +786,7 @@ export default function UserAdminChat() {
         {error && (
           <p
             role="alert"
-            className="shrink-0 border-t border-rose-100 bg-rose-50 px-3 py-1.5 text-[10px] text-rose-700"
+            className="shrink-0 border-t border-[#FBB6B6] bg-[#FEE9E9] px-3 py-1.5 text-[12px] text-[#B91C1C]"
           >
             {error}
           </p>
@@ -802,11 +794,11 @@ export default function UserAdminChat() {
 
         <form
           onSubmit={sendMessage}
-          className="shrink-0 border-t border-slate-200 bg-white p-2"
+          className="shrink-0 border-t border-[#E3D6B8] bg-[#FBF6E8] p-2"
         >
           <div
             ref={chatInputWrapRef}
-            className="flex items-end gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1.5 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/10"
+            className="flex items-end gap-1.5 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] p-1.5 focus-within:border-[#DC2626] focus-within:ring-2 focus-within:ring-[#DC2626]/10"
           >
             <textarea
               value={draft}
@@ -820,7 +812,7 @@ export default function UserAdminChat() {
               rows={1}
               placeholder="এখানে মেসেজ লিখুন…"
               aria-label="Message to admin"
-              className="max-h-16 min-h-[34px] flex-1 resize-y bg-transparent px-1.5 py-1.5 text-xs text-slate-800 outline-none placeholder:text-slate-400"
+              className="max-h-20 min-h-[38px] flex-1 resize-y bg-transparent px-1.5 py-1.5 text-sm text-[#3B2F1E] outline-none placeholder:text-[#7A6A50]"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -832,7 +824,7 @@ export default function UserAdminChat() {
               type="submit"
               disabled={!draft.trim() || sending}
               aria-label="Send message"
-              className="flex h-8 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-8 w-9 shrink-0 items-center justify-center rounded-md bg-[#DC2626] text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {sending ? (
                 <LoaderCircle size={14} className="animate-spin" />
@@ -841,7 +833,7 @@ export default function UserAdminChat() {
               )}
             </button>
           </div>
-          <div className="mt-1 flex items-center justify-between px-1 text-[9px] text-slate-400">
+          <div className="mt-1 flex items-center justify-between px-1 text-[11px] text-[#7A6A50]">
             <span>Enter চাপলে মেসেজ যাবে</span>
             <span>{draft.length}/2000</span>
           </div>

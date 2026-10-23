@@ -390,7 +390,7 @@ export default function Navbar() {
                 </span>
               </h2>
               <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                sohojhub.com
+                sohojhub.vercel.app
               </p>
             </div>
           </Link>

@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import AdminAvatarImage from "./AdminAvatarImage";
 
 type ChatMessage = {
   id: string;
@@ -37,9 +38,6 @@ type ApiResponse = {
   hasMore?: boolean;
   user?: { role?: string };
 };
-
-const ADMIN_PROFILE_IMAGE_URL =
-  "https://scontent.fdac165-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFXk2DRYIMaT2rWUpeNS_QDO3oAE2SwZaw7egATZLBlrFuLbZxjfp2t1mEf0QSZ0qIfZc4Yht_g_s0X90DPJ-dn&_nc_ohc=V0QxUoSmOM4Q7kNvwGA029p&_nc_oc=AdqWhphBEz4E5jLphb64chRZxLyo_CkZDH0zsckT72KGkGTjFiXJL1xcfNrMr3C59QM&_nc_zt=23&_nc_ht=scontent.fdac165-1.fna&_nc_gid=cABDVM2sgWBbemyNF0MWmg&_nc_ss=7b2a8&oh=00_AQM4A6_U0NCz7Lq_E5LID7UkYFkZQVW28_JlZWhqaKQ-Aw&oe=6AD7D82F";
 
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
   const merged = new Map<string, ChatMessage>();
@@ -528,12 +526,7 @@ export default function FloatingUserAdminChat() {
         >
           <header className="flex shrink-0 items-center gap-3 bg-gradient-to-r from-rose-600 to-red-500 px-4 py-3.5 text-white">
             <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-white/70 bg-white/15">
-              <img
-                src={ADMIN_PROFILE_IMAGE_URL}
-                alt="Admin profile"
-                className="h-full w-full object-cover object-[center_24%]"
-                referrerPolicy="no-referrer"
-              />
+              <AdminAvatarImage alt="Admin profile" className="h-full w-full object-cover object-[center_24%]" />
               <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-rose-600 bg-emerald-400" />
             </span>
             <span className="min-w-0 flex-1">
@@ -631,12 +624,7 @@ export default function FloatingUserAdminChat() {
                   >
                     {!mine && (
                       <span className="mr-2 mt-auto flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                        <img
-                          src={ADMIN_PROFILE_IMAGE_URL}
-                          alt=""
-                          className="h-full w-full object-cover object-[center_24%]"
-                          referrerPolicy="no-referrer"
-                        />
+                        <AdminAvatarImage className="h-full w-full object-cover object-[center_24%]" />
                       </span>
                     )}
                     <div

@@ -561,12 +561,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             ctx.rotate((normalizeAngle(item.rotation) * Math.PI) / 180);
             drawCover(ctx, image, -width / 2, -height / 2, width, height);
             if (imageBorder) {
-                ctx.strokeStyle = "#0F172A";
+                ctx.strokeStyle = "#3B2F1E";
                 ctx.lineWidth = Math.max(1, 0.25 * scale);
                 ctx.strokeRect(-width / 2, -height / 2, width, height);
             }
             if (cuttingBorder) {
-                ctx.strokeStyle = "#475569";
+                ctx.strokeStyle = "#6B5A40";
                 ctx.lineWidth = Math.max(1, 0.18 * scale);
                 ctx.setLineDash([1.1 * scale, 1.1 * scale]);
                 ctx.strokeRect(-width / 2, -height / 2, width, height);
@@ -678,36 +678,36 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
     if (!mounted || !printStudioOpen || !printStudioImage)
         return null;
     const selectedItem = items.find((item) => item.id === selectedId) ?? null;
-    const modal = (<div className="fixed inset-0 z-[10000] bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans overflow-hidden">
-      <header className="h-14 shrink-0 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-4 sm:px-5 shadow-sm">
+    const modal = (<div className="fixed inset-0 z-[10000] bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden">
+      <header className="h-14 shrink-0 bg-[#FBF6E8] border-b border-[#E3D6B8] flex items-center justify-between px-4 sm:px-5 shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#DC2626] text-white flex items-center justify-center shrink-0">
             <ImageIcon size={16}/>
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-extrabold truncate text-[#0F172A]"><T>{"Print This Image\r\n            "}</T></h1>
-            <p className="text-[9px] text-[#0F172A]/60 truncate"><T>{"Photo Layout & Print Studio\r\n            "}</T></p>
+            <h1 className="text-base font-extrabold truncate text-[#3B2F1E]"><T>{"Print This Image\r\n            "}</T></h1>
+            <p className="text-[11px] text-[#3B2F1E]/60 truncate"><T>{"Photo Layout & Print Studio\r\n            "}</T></p>
           </div>
         </div>
-        <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] flex items-center justify-center cursor-pointer text-[#0F172A] transition-colors" aria-label={t("Close print studio")}>
+        <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] flex items-center justify-center cursor-pointer text-[#3B2F1E] transition-colors" aria-label={t("Close print studio")}>
           <X size={16}/>
         </button>
       </header>
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <aside className="w-[280px] shrink-0 bg-white border-r border-[#E2E8F0] overflow-y-auto flex flex-col">
-          <div className="p-4 border-b border-[#E2E8F0]">
+        <aside className="w-[320px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-y-auto flex flex-col">
+          <div className="p-4 border-b border-[#E3D6B8]">
             <div className="flex items-center gap-2 mb-3">
-              <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E2E8F0] bg-[#F8FAFC]"/>
+              <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
               <div className="min-w-0">
-                <p className="text-[10px] font-extrabold text-[#0F172A]"><T>{"Quick Add\r\n                "}</T></p>
-                <p className="text-[8px] text-[#0F172A]/60 mt-0.5 leading-relaxed"><T>{"Add multiple copies of the current photo in different sizes.\r\n                "}</T></p>
+                <p className="text-[12px] font-extrabold text-[#3B2F1E]"><T>{"Quick Add\r\n                "}</T></p>
+                <p className="text-[11px] text-[#3B2F1E]/60 mt-0.5 leading-relaxed"><T>{"Add multiple copies of the current photo in different sizes.\r\n                "}</T></p>
               </div>
             </div>
 
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5"><T>{"Units\r\n            "}</T></p>
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Units\r\n            "}</T></p>
             <div className="grid grid-cols-4 gap-1.5 mb-3">
-              {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[9px] font-extrabold cursor-pointer transition-colors" title={t(`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`)}>
+              {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-extrabold cursor-pointer transition-colors" title={t(`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`)}>
                     {quantity}<T>{"U\r\n                  "}</T></button>))}
             </div>
 
@@ -729,34 +729,34 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     });
             return (<div key={preset.id} className="grid grid-cols-[1fr_repeat(3,32px)] gap-1.5 items-center">
                     <div>
-                      <p className="text-[9px] font-bold text-[#0F172A]">
+                      <p className="text-[11px] font-bold text-[#3B2F1E]">
                         <T>{preset.label}</T>
                       </p>
-                      <p className="text-[8px] text-[#0F172A]/60">
+                      <p className="text-[11px] text-[#3B2F1E]/60">
                         {preset.widthMm}<T>{"\u00D7"}</T>{preset.heightMm}<T>{"mm\r\n                      "}</T></p>
                     </div>
-                    {[1, 4, 8].map((quantity) => (<button key={`${preset.id}-${quantity}`} type="button" onClick={() => addPreset(preset, quantity)} className="h-7 rounded-md bg-[#0F172A] hover:bg-[#1E293B] text-white text-[8px] font-extrabold cursor-pointer transition-colors">
+                    {[1, 4, 8].map((quantity) => (<button key={`${preset.id}-${quantity}`} type="button" onClick={() => addPreset(preset, quantity)} className="h-7 rounded-md bg-[#3B2F1E] hover:bg-[#1E293B] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
                         {quantity}<T>{"+\r\n                      "}</T></button>))}
                   </div>);
         })}
             </div>
 
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mt-4 mb-1.5"><T>{"Photo Sizes\r\n            "}</T></p>
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mt-4 mb-1.5"><T>{"Photo Sizes\r\n            "}</T></p>
             <div className="grid grid-cols-4 gap-1.5">
-              {PRESETS.filter((item) => ["2R", "3R", "4R", "5R", "6R", "8R"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[8px] font-extrabold cursor-pointer transition-colors">
+              {PRESETS.filter((item) => ["2R", "3R", "4R", "5R", "6R", "8R"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
                   <T>{preset.label}</T>
                 </button>))}
             </div>
 
             <div className="grid grid-cols-4 gap-1.5 mt-1.5">
-              {PRESETS.filter((item) => ["4B", "5B", "6B", "A4"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[8px] font-extrabold cursor-pointer transition-colors">
+              {PRESETS.filter((item) => ["4B", "5B", "6B", "A4"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
                   <T>{preset.label}</T>
                 </button>))}
             </div>
           </div>
 
-          <div className="p-4 border-b border-[#E2E8F0]">
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5"><T>{"Options\r\n            "}</T></p>
+          <div className="p-4 border-b border-[#E3D6B8]">
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Options\r\n            "}</T></p>
             <div className="space-y-1.5">
               {([
             {
@@ -774,20 +774,20 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 checked: imageBorder,
                 setChecked: setImageBorder,
             },
-        ] satisfies CheckboxOption[]).map(({ label, checked, setChecked }) => (<label key={label} className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E2E8F0] cursor-pointer transition-colors">
-                  <span className="text-[9px] font-semibold text-[#0F172A]">
+        ] satisfies CheckboxOption[]).map(({ label, checked, setChecked }) => (<label key={label} className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] cursor-pointer transition-colors">
+                  <span className="text-[11px] font-semibold text-[#3B2F1E]">
                     <T>{label}</T>
                   </span>
-                  <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="accent-[#2563EB] cursor-pointer"/>
+                  <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="accent-[#DC2626] cursor-pointer"/>
                 </label>))}
             </div>
 
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-1 text-[9px] font-bold text-[#0F172A]/70">
+              <div className="flex items-center justify-between mb-1 text-[11px] font-bold text-[#3B2F1E]/70">
                 <span><T>{"Image Gap (mm): "}</T>{gapMm}</span>
               </div>
-              <input type="range" min={0} max={10} step={0.5} value={gapMm} onChange={(event) => setGapMm(Number(event.target.value))} className="w-full accent-[#2563EB] cursor-pointer"/>
-              <div className="flex justify-between text-[8px] text-[#0F172A]/50 mt-0.5">
+              <input type="range" min={0} max={10} step={0.5} value={gapMm} onChange={(event) => setGapMm(Number(event.target.value))} className="w-full accent-[#DC2626] cursor-pointer"/>
+              <div className="flex justify-between text-[11px] text-[#3B2F1E]/50 mt-0.5">
                 <span><T>{"0"}</T></span>
                 <span><T>{"5"}</T></span>
                 <span><T>{"10"}</T></span>
@@ -795,41 +795,41 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="p-4 border-b border-[#E2E8F0]">
-            <p className="text-[9px] font-extrabold uppercase tracking-wide text-[#0F172A]/60 mb-1.5"><T>{"Page & Layout\r\n            "}</T></p>
+          <div className="p-4 border-b border-[#E3D6B8]">
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Page & Layout\r\n            "}</T></p>
 
-            <select value={pageSizeKey} onChange={(event) => setPage(event.target.value as PageSizeKey)} className="w-full h-8 rounded-lg border border-[#E2E8F0] bg-white text-[#0F172A] px-2 text-[9px] font-semibold cursor-pointer">
+            <select value={pageSizeKey} onChange={(event) => setPage(event.target.value as PageSizeKey)} className="w-full h-8 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] px-2 text-[11px] font-semibold cursor-pointer">
               {Object.entries(PAGE_SIZES).map(([key, page]) => (<option key={key} value={key}>
                   {page.label}
                 </option>))}
             </select>
 
             <div className="grid grid-cols-2 gap-1.5 mt-2">
-              <button type="button" onClick={() => setPageOrientation("portrait")} className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#2563EB] text-white" : "bg-[#E2E8F0] text-[#0F172A] hover:bg-[#cbd5e1]"}`}><T>{"Portrait\r\n              "}</T></button>
-              <button type="button" onClick={() => setPageOrientation("landscape")} className={`h-8 rounded-md text-[9px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#2563EB] text-white" : "bg-[#E2E8F0] text-[#0F172A] hover:bg-[#cbd5e1]"}`}><T>{"Landscape\r\n              "}</T></button>
+              <button type="button" onClick={() => setPageOrientation("portrait")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#cbd5e1]"}`}><T>{"Portrait\r\n              "}</T></button>
+              <button type="button" onClick={() => setPageOrientation("landscape")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#cbd5e1]"}`}><T>{"Landscape\r\n              "}</T></button>
             </div>
 
             <div className="grid grid-cols-3 gap-1.5 mt-2">
-              <button type="button" onClick={centerAlign} className="h-8 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1">
+              <button type="button" onClick={centerAlign} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
                 <AlignCenterHorizontal size={11}/><T>{"Center\r\n              "}</T></button>
-              <button type="button" onClick={rightAlign} className="h-8 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1">
+              <button type="button" onClick={rightAlign} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
                 <AlignRight size={11}/><T>{"Right\r\n              "}</T></button>
-              <button type="button" onClick={autoArrange} className="h-8 rounded-md bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[8px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors">
+              <button type="button" onClick={autoArrange} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors">
                 <Grid3X3 size={11}/><T>{"Auto\r\n              "}</T></button>
             </div>
 
             <div className="grid grid-cols-2 gap-1.5 mt-2">
-              <button type="button" onClick={undo} disabled={!history.length} className="h-8 rounded-md border border-[#E2E8F0] text-[#0F172A] text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
+              <button type="button" onClick={undo} disabled={!history.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
                 <Undo2 size={11}/><T>{"Undo\r\n              "}</T></button>
-              <button type="button" onClick={redo} disabled={!future.length} className="h-8 rounded-md border border-[#E2E8F0] text-[#0F172A] text-[8px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
+              <button type="button" onClick={redo} disabled={!future.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
                 <Redo2 size={11}/><T>{"Redo\r\n              "}</T></button>
             </div>
           </div>
 
-          <div className="mt-auto p-4 border-t border-[#E2E8F0]">
-            <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 mb-2.5">
-              <p className="text-[8px] uppercase font-bold text-[#0F172A]/50"><T>{"Total\r\n              "}</T></p>
-              <p className="text-[11px] font-extrabold text-[#0F172A] mt-0.5">
+          <div className="mt-auto p-4 border-t border-[#E3D6B8]">
+            <div className="rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-2 mb-2.5">
+              <p className="text-[11px] uppercase font-bold text-[#3B2F1E]/50"><T>{"Total\r\n              "}</T></p>
+              <p className="text-[13px] font-extrabold text-[#3B2F1E] mt-0.5">
                 {items.length} {items.length === 1 ? <T>{"photo"}</T> : <T>{"photos"}</T>}
               </p>
             </div>
@@ -837,39 +837,39 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
               <button type="button" onClick={() => commit([], items)} className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors" title={t("Remove all")}>
                 <Trash2 size={15}/>
               </button>
-              <button type="button" onClick={downloadPdf} disabled={!items.length || isExporting} className="h-10 rounded-lg bg-[#E2E8F0] hover:bg-[#cbd5e1] text-[#0F172A] text-[9px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors">
+              <button type="button" onClick={downloadPdf} disabled={!items.length || isExporting} className="h-10 rounded-lg bg-[#E3D6B8] hover:bg-[#cbd5e1] text-[#3B2F1E] text-[11px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors">
                 <Download size={13}/>
                 {isExporting ? <T>{"Preparing…"}</T> : <T>{"Download PDF"}</T>}
               </button>
             </div>
-            <button type="button" onClick={printLayout} disabled={!items.length || isExporting} className="w-full mt-2 h-11 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
+            <button type="button" onClick={printLayout} disabled={!items.length || isExporting} className="w-full mt-2 h-11 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
               <Printer size={15}/><T>{"Print\r\n            "}</T></button>
-            {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E2E8F0] hover:bg-[#cbd5e1] text-[#0F172A] text-[11px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
+            {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#cbd5e1] text-[#3B2F1E] text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
               <ImageIcon size={13}/><T>{"Print single photo"}</T></button>)}
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F8FAFC]">
-          <div className="h-11 shrink-0 bg-white/80 border-b border-[#E2E8F0] px-4 flex items-center justify-between">
-            <div className="text-[9px] font-bold text-[#0F172A]/70">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F2E8D2]">
+          <div className="h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-4 flex items-center justify-between">
+            <div className="text-[11px] font-bold text-[#3B2F1E]/70">
               {items.length}<T>{"items \u2022 "}</T>{pageWidthMm.toFixed(1)}<T>{"\u00D7\r\n              "}</T>{pageHeightMm.toFixed(1)}<T>{"mm\r\n            "}</T></div>
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => setZoom((value) => clamp(value - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] flex items-center justify-center cursor-pointer hover:bg-[#F8FAFC]">
+              <button type="button" onClick={() => setZoom((value) => clamp(value - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
                 <Minus size={12}/>
               </button>
-              <span className="w-12 text-center text-[9px] font-extrabold text-[#0F172A]">
+              <span className="w-12 text-center text-[11px] font-extrabold text-[#3B2F1E]">
                 {zoom}<T>{"%\r\n              "}</T></span>
-              <button type="button" onClick={() => setZoom((value) => clamp(value + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] flex items-center justify-center cursor-pointer hover:bg-[#F8FAFC]">
+              <button type="button" onClick={() => setZoom((value) => clamp(value + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
                 <Plus size={12}/>
               </button>
-              {[100, 120, 300].map((value) => (<button key={value} type="button" onClick={() => setZoom(value)} className="w-8 h-7 rounded-md bg-white border border-[#E2E8F0] text-[#0F172A] text-[8px] font-extrabold cursor-pointer hover:bg-[#F8FAFC]">
+              {[100, 120, 300].map((value) => (<button key={value} type="button" onClick={() => setZoom(value)} className="w-8 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-extrabold cursor-pointer hover:bg-[#F2E8D2]">
                   {value}
                 </button>))}
             </div>
           </div>
 
           <div ref={workspaceRef} className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-5 sm:p-6" onPointerDown={() => setSelectedId(null)}>
-            <div ref={pageRef} className="relative shrink-0 bg-white border border-[#E2E8F0] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
+            <div ref={pageRef} className="relative shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
             width: `${pageWidthMm * visualScale}px`,
             height: `${pageHeightMm * visualScale}px`,
         }} onPointerDown={(event) => event.stopPropagation()}>
@@ -889,10 +889,10 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     zIndex: selected ? 50 : 10,
                     touchAction: "none",
                 }} onPointerDown={(event) => beginInteraction(event, item.id, "drag")} onPointerMove={moveInteraction} onPointerUp={endInteraction} onPointerCancel={endInteraction}>
-                    <div className={`relative w-full h-full bg-white overflow-visible ${selected ? "ring-2 ring-[#2563EB] ring-offset-1" : ""}`}>
+                    <div className={`relative w-full h-full bg-[#FBF6E8] overflow-visible ${selected ? "ring-2 ring-[#DC2626] ring-offset-1" : ""}`}>
                       <img src={printStudioImage} alt={t(item.label)} draggable={false} className="block w-full h-full object-cover pointer-events-none select-none"/>
-                      {imageBorder && (<div className="absolute inset-0 border border-[#0F172A]/80 pointer-events-none"/>)}
-                      {cuttingBorder && (<div className="absolute inset-0 border border-dashed border-[#0F172A]/60 pointer-events-none"/>)}
+                      {imageBorder && (<div className="absolute inset-0 border border-[#3B2F1E]/80 pointer-events-none"/>)}
+                      {cuttingBorder && (<div className="absolute inset-0 border border-dashed border-[#3B2F1E]/60 pointer-events-none"/>)}
 
                       {selected && (<>
                           <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => {
@@ -902,15 +902,15 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                             <X size={10}/>
                           </button>
 
-                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "rotate")} className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" title={t("Rotate")}>
+                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "rotate")} className="absolute left-1/2 -top-7 -translate-x-1/2 w-6 h-6 rounded-full bg-[#DC2626] text-white border-2 border-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" title={t("Rotate")}>
                             <RotateCw size={10}/>
                           </button>
 
-                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "resize")} className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#2563EB] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize" title={t("Resize")}>
+                          <button type="button" onPointerDown={(event) => beginInteraction(event, item.id, "resize")} className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#DC2626] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize" title={t("Resize")}>
                             <Move size={10} className="rotate-45"/>
                           </button>
 
-                          <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-[#0F172A]/90 text-white px-1.5 py-1 text-[7px] font-bold whitespace-nowrap pointer-events-none">
+                          <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-[#3B2F1E]/90 text-white px-1.5 py-1 text-[11px] font-bold whitespace-nowrap pointer-events-none">
                             {<T>{item.label}</T>}<T>{"\u00B7 "}</T>{item.widthMm.toFixed(1)}<T>{"\u00D7\r\n                            "}</T>{item.heightMm.toFixed(1)}<T>{"mm\r\n                          "}</T></div>
                         </>)}
                     </div>
@@ -919,17 +919,17 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
 
               {!items.length && (<div className="absolute inset-0 flex items-center justify-center text-center pointer-events-none">
                   <div>
-                    <div className="w-11 h-11 rounded-xl bg-[#E2E8F0] flex items-center justify-center mx-auto mb-2 text-[#0F172A]/40">
+                    <div className="w-11 h-11 rounded-xl bg-[#E3D6B8] flex items-center justify-center mx-auto mb-2 text-[#3B2F1E]/40">
                       <Grid3X3 size={19}/>
                     </div>
-                    <p className="text-xs font-extrabold text-[#0F172A]/60"><T>{"Your print page is empty\r\n                    "}</T></p>
-                    <p className="text-[9px] text-[#0F172A]/40 mt-1"><T>{"Use Quick Add to place photos.\r\n                    "}</T></p>
+                    <p className="text-sm font-extrabold text-[#3B2F1E]/60"><T>{"Your print page is empty\r\n                    "}</T></p>
+                    <p className="text-[11px] text-[#3B2F1E]/40 mt-1"><T>{"Use Quick Add to place photos.\r\n                    "}</T></p>
                   </div>
                 </div>)}
             </div>
           </div>
 
-          <div className="h-9 shrink-0 bg-white/80 border-t border-[#E2E8F0] px-4 flex items-center justify-center gap-2 text-[8px] text-[#0F172A]/60">
+          <div className="h-9 shrink-0 bg-white/80 border-t border-[#E3D6B8] px-4 flex items-center justify-center gap-2 text-[11px] text-[#3B2F1E]/60">
             <Move size={11}/><T>{"Drag\r\n            "}</T><span><T>{"\u2022"}</T></span>
             <RotateCw size={10}/><T>{"Rotate\r\n            "}</T><span><T>{"\u2022"}</T></span>
             <Move size={10} className="rotate-45"/><T>{"Resize\r\n            "}</T>{selectedItem && (<>
@@ -939,17 +939,17 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
           </div>
         </main>
 
-        {toast && (<div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-white shadow-xl p-3">
-            <p className="text-[10px] font-extrabold text-[#0F172A]"><T>{"Page Full\r\n            "}</T></p>
-            <p className="text-[9px] text-[#0F172A]/70 mt-0.5 leading-relaxed">
+        {toast && (<div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-[#FBF6E8] shadow-xl p-3">
+            <p className="text-[12px] font-extrabold text-[#3B2F1E]"><T>{"Page Full\r\n            "}</T></p>
+            <p className="text-[11px] text-[#3B2F1E]/70 mt-0.5 leading-relaxed">
               <T>{toast}</T>
             </p>
           </div>)}
       </div>
 
-      <footer className="h-8 shrink-0 bg-white border-t border-[#E2E8F0] px-4 flex items-center justify-between text-[8px] text-[#0F172A]/50">
+      <footer className="h-8 shrink-0 bg-[#FBF6E8] border-t border-[#E3D6B8] px-4 flex items-center justify-between text-[11px] text-[#3B2F1E]/50">
         <span><T>{"Photo Layout & Print Studio"}</T></span>
-        <button type="button" onClick={rotateSelected} disabled={!selectedId} className="flex items-center gap-1 hover:text-[#0F172A] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+        <button type="button" onClick={rotateSelected} disabled={!selectedId} className="flex items-center gap-1 hover:text-[#3B2F1E] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
           <RotateCw size={10}/><T>{"Rotate selected 90\u00B0\r\n        "}</T></button>
       </footer>
     </div>);

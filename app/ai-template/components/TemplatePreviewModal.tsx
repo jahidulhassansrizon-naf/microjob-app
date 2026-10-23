@@ -54,7 +54,7 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
             </div>)}
         </div>
 
-        <div className="modal-details">
+        <div className="modal-details scroll">
           <span className="modal-category">{t(selectedTemplate.category)}</span>
           <h2>{t(selectedTemplate.title)}</h2>
           <p className="modal-lead">{t("Upload your photo and recreate this template while keeping your own identity.")}</p>

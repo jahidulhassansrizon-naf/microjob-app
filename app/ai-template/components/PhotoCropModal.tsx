@@ -183,25 +183,25 @@ export const PhotoCropModal = React.memo(function PhotoCropModal({
     <div className="fixed inset-0 z-[1200] flex flex-col overflow-hidden bg-black text-white" role="dialog" aria-modal="true" aria-label={t("Crop & Rotate Image")}>
       {isCropping && (
         <div className="absolute inset-0 z-[1300] flex flex-col items-center justify-center gap-3 bg-black/70 text-white backdrop-blur-sm">
-          <LoaderCircle className="h-10 w-10 animate-spin text-emerald-400" />
-          <p className="text-sm font-medium tracking-wide">{t("Preparing...")}</p>
+          <LoaderCircle className="h-10 w-10 animate-spin text-[#F87171]" />
+          <p className="text-base font-medium tracking-wide">{t("Preparing...")}</p>
         </div>
       )}
 
-      <header className="flex h-[50px] shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 text-slate-900">
+      <header className="flex h-[56px] shrink-0 items-center justify-between border-b border-[#E3D6B8] bg-[#F2E8D2] text-[#3B2F1E]">
         <div className="flex h-full min-w-0 items-center gap-3 px-3 sm:px-5">
-          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black leading-none text-white">SK</div>
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-base font-bold leading-none text-white">SK</div>
           <div className="hidden leading-none sm:block">
-            <div className="text-[14px] font-black tracking-tight">Sohoj Hub</div>
-            <div className="mt-[3px] text-[7px] uppercase tracking-[0.16em] text-slate-500">www.sohozkaj.com</div>
+            <div className="text-[17px] font-bold tracking-tight">Sohoj Hub</div>
+            <div className="mt-[3px] text-[12px] uppercase tracking-[0.12em] text-[#6B5A40]">www.sohozkaj.com</div>
           </div>
-          <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
-          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl bg-slate-200 text-blue-600">
+          <div className="mx-1 hidden h-7 w-px bg-[#E3D6B8] sm:block" />
+          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl bg-[#F3E9D2] text-[#DC2626]">
             <CropIcon size={16} strokeWidth={2.3} />
           </div>
           <div className="flex min-w-0 flex-col">
-            <div className="truncate text-[12px] font-black tracking-tight text-slate-900 sm:text-[14px]">{t("Crop & Rotate Image")}</div>
-            <div className="hidden text-[8px] font-bold text-slate-500 sm:block">{t("Independent photo crop • canvas fit after crop")}</div>
+            <div className="truncate text-[16px] font-bold tracking-tight text-[#3B2F1E] sm:text-[17px]">{t("Crop & Rotate Image")}</div>
+            <div className="hidden text-[13px] font-medium text-[#6B5A40] sm:block">{t("Independent photo crop • canvas fit after crop")}</div>
           </div>
         </div>
         <button
@@ -209,7 +209,7 @@ export const PhotoCropModal = React.memo(function PhotoCropModal({
           aria-label={t("Close crop editor")}
           onClick={handleCancel}
           disabled={isCropping}
-          className="flex h-[50px] w-[50px] shrink-0 cursor-pointer items-center justify-center bg-red-500 text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[54px]"
+          className="flex h-[56px] w-[56px] shrink-0 cursor-pointer items-center justify-center bg-[#DC2626] text-white transition-colors duration-200 hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:cursor-not-allowed disabled:opacity-70 sm:w-[60px]"
         >
           <X size={22} strokeWidth={2.2} />
         </button>
@@ -238,39 +238,39 @@ export const PhotoCropModal = React.memo(function PhotoCropModal({
               />
             </ReactCrop>
           ) : (
-            <div className="text-sm text-white/60">{t("Preparing image…")}</div>
+            <div className="text-base text-white/60">{t("Preparing image…")}</div>
           )}
         </div>
       </main>
 
       {errorMessage && (
-        <p role="alert" className="shrink-0 border-t border-red-200 bg-red-50 px-4 py-2 text-center text-xs font-semibold text-red-700 sm:text-sm">
+        <p role="alert" className="shrink-0 border-t border-red-200 bg-red-50 px-4 py-2 text-center text-sm font-semibold text-red-700 sm:text-base">
           {t(errorMessage)}
         </p>
       )}
 
-      <footer className="flex shrink-0 flex-col justify-between border-t border-slate-200 bg-slate-50 text-slate-900 shadow-lg sm:h-[50px] sm:flex-row sm:items-stretch">
-        <div className="flex h-[48px] shrink-0 items-stretch gap-0.5 overflow-x-auto sm:h-full sm:gap-0">
-          <button type="button" aria-label={t("Zoom out")} onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} disabled={isCropping} className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]">
+      <footer className="flex shrink-0 flex-col justify-between border-t border-[#E3D6B8] bg-[#F2E8D2] text-[#3B2F1E] shadow-lg sm:h-[56px] sm:flex-row sm:items-stretch">
+        <div className="flex h-[52px] shrink-0 items-stretch gap-0.5 scroll overflow-x-auto sm:h-full sm:gap-0">
+          <button type="button" aria-label={t("Zoom out")} onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} disabled={isCropping} className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-[#DC2626] text-white transition-colors duration-200 hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:cursor-not-allowed disabled:opacity-70 sm:w-[52px]">
             <Minus size={17} strokeWidth={2.2} />
           </button>
-          <div className="flex w-[42px] shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-[11px] font-black tabular-nums sm:w-[48px] sm:text-[12px]">{zoom}%</div>
-          <button type="button" aria-label={t("Zoom in")} onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} disabled={isCropping} className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]">
+          <div className="flex w-[48px] shrink-0 items-center justify-center border-r border-[#E3D6B8] bg-[#F2E8D2] text-[15px] font-bold tabular-nums sm:w-[56px]">{zoom}%</div>
+          <button type="button" aria-label={t("Zoom in")} onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} disabled={isCropping} className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-[#DC2626] text-white transition-colors duration-200 hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:cursor-not-allowed disabled:opacity-70 sm:w-[52px]">
             <Plus size={17} strokeWidth={2.2} />
           </button>
-          <button type="button" aria-label={t("Rotate image")} onClick={() => setRotation((value) => (value + 90) % 360)} disabled={isCropping} className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-blue-600 px-2 text-[11px] font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]">
+          <button type="button" aria-label={t("Rotate image")} onClick={() => setRotation((value) => (value + 90) % 360)} disabled={isCropping} className="flex min-w-[96px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-[#DC2626] px-3 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[116px]">
             <RotateCcw size={15} strokeWidth={2} /><span>{t("Rotate")}</span>
           </button>
-          <button type="button" aria-label={t("Mirror image")} onClick={() => setFlipX((value) => !value)} disabled={isCropping} className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-blue-600 px-2 text-[11px] font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]">
+          <button type="button" aria-label={t("Mirror image")} onClick={() => setFlipX((value) => !value)} disabled={isCropping} className="flex min-w-[96px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-[#DC2626] px-3 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[116px]">
             <FlipHorizontal2 size={15} strokeWidth={2} /><span>{t("Mirror")}</span>
           </button>
         </div>
 
-        <div className="flex h-[44px] shrink-0 items-stretch gap-1.5 px-2 pb-2 sm:h-full sm:gap-0 sm:px-0 sm:pb-0">
-          <button type="button" onClick={() => !isCropping && onUseOriginal(originalFile)} disabled={isCropping || !processedSrc} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-200 px-2 text-[10px] font-black text-slate-900 transition-colors hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[150px] sm:flex-none sm:rounded-none sm:text-[11px]">
-            <ScanLine size={15} strokeWidth={2} className="shrink-0 text-slate-700" /><span>{t("No Crop Needed")}</span>
+        <div className="flex h-[48px] shrink-0 items-stretch gap-1.5 px-2 pb-2 sm:h-full sm:gap-0 sm:px-0 sm:pb-0">
+          <button type="button" onClick={() => !isCropping && onUseOriginal(originalFile)} disabled={isCropping || !processedSrc} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#FBB6B6] bg-[#FBF6E8] px-2 text-[15px] font-semibold text-[#B91C1C] transition-colors duration-200 hover:bg-[#FEE9E9] disabled:cursor-not-allowed disabled:opacity-70 sm:w-[180px] sm:flex-none sm:rounded-none">
+            <ScanLine size={15} strokeWidth={2} className="shrink-0 text-[#B91C1C]" /><span>{t("No Crop Needed")}</span>
           </button>
-          <button type="button" onClick={() => void handleApplyCrop()} disabled={isCropping || !processedSrc || !completedCrop} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-[11px] font-black text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[125px] sm:flex-none sm:rounded-none sm:text-[12px]">
+          <button type="button" onClick={() => void handleApplyCrop()} disabled={isCropping || !processedSrc || !completedCrop} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#D42020] px-3 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#AE1717] disabled:cursor-not-allowed disabled:opacity-70 sm:w-[150px] sm:flex-none sm:rounded-none">
             <Check size={15} strokeWidth={2.4} /><span>{isCropping ? t("Cropping…") : t("Crop")}</span>
           </button>
         </div>

@@ -262,23 +262,23 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
   return (
     <section
       aria-label="ম্যানুয়াল পেমেন্ট করার নিয়ম"
-      className="relative isolate overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/80 p-5 shadow-[0_18px_46px_-28px_rgba(16,185,129,0.34)] sm:p-6"
+      className="relative isolate overflow-hidden rounded-3xl border border-[#E3D6B8] bg-gradient-to-br from-[#FBF6E8] via-[#FBF6E8] to-[#F6EEDB] p-5 shadow-sm sm:p-6"
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-200/25 blur-3xl"
+        className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#FBB6B6]/25 blur-3xl"
       />
       <div className="relative">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+            <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#B91C1C]">
               Sohoj Hub · Payment guide
             </p>
-            <h2 className="mt-1.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+            <h2 className="mt-1.5 text-2xl font-black tracking-tight text-[#3B2F1E] sm:text-3xl">
               পেমেন্ট করবেন যেভাবে
             </h2>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-800 sm:text-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-2 text-sm font-extrabold text-[#B91C1C] sm:text-base">
             <Check size={15} strokeWidth={3} /> ধাপে ধাপে গাইড
           </span>
         </div>
@@ -286,25 +286,25 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className={`flex gap-3.5 rounded-2xl border p-4 sm:gap-4 sm:p-4 ${index === 4 ? "border-amber-200 bg-gradient-to-r from-amber-50 to-white" : "border-slate-200/90 bg-white/90 shadow-[0_4px_16px_-14px_rgba(15,23,42,0.38)]"}`}
+              className={`flex gap-3.5 rounded-2xl border p-4 sm:gap-4 sm:p-4 ${index === 4 ? "border-[#FBB6B6] bg-[#FEE9E9]" : "border-[#E3D6B8] bg-[#FBF6E8] shadow-sm"}`}
             >
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm sm:h-10 sm:w-10 sm:text-base ${index === 4 ? "bg-gradient-to-br from-amber-400 to-orange-500" : "bg-gradient-to-br from-blue-600 to-indigo-600"}`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base font-black text-white shadow-sm sm:h-10 sm:w-10 sm:text-lg ${index === 4 ? "bg-[#B91C1C]" : "bg-[#DC2626]"}`}
               >
                 {toBnDigits(index + 1)}
               </span>
               <div className="min-w-0 pt-0.5">
-                <p className="text-base font-extrabold leading-7 text-slate-950 sm:text-lg">
+                <p className="text-lg font-extrabold leading-7 text-[#3B2F1E] sm:text-xl">
                   {step.title}
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+                <p className="mt-1 text-base leading-6 text-[#5A4A32] sm:text-lg sm:leading-7">
                   {step.body}
                 </p>
               </div>
             </li>
           ))}
         </ol>
-        <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-white px-4 py-3.5 text-sm font-bold leading-6 text-rose-800 sm:text-base sm:leading-7">
+        <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-3.5 text-base font-bold leading-6 text-[#B91C1C] sm:text-lg sm:leading-7">
           <ShieldCheck size={19} className="mt-0.5 shrink-0" />
           মনে রাখবেন: শুধু TrxID জমা দিলে অ্যাক্সেস চালু হবে না। পেমেন্ট যাচাই
           করে অ্যাডমিন Approve করার পরই অ্যাক্সেস চালু হবে।
@@ -431,12 +431,12 @@ const DEMO_PURCHASES: DemoPurchase[] = DEMO_NAMES.map((name, i) => {
 });
 
 const AVATAR_TONES = [
-  "from-blue-500 to-indigo-500",
-  "from-emerald-500 to-teal-500",
-  "from-violet-500 to-fuchsia-500",
-  "from-amber-500 to-orange-500",
-  "from-sky-500 to-cyan-500",
-  "from-rose-500 to-pink-500",
+  "from-[#DC2626] to-[#B91C1C]",
+  "from-[#8B5E34] to-[#5A4A32]",
+  "from-[#EF4444] to-[#DC2626]",
+  "from-[#C8923F] to-[#A9741F]",
+  "from-[#6B5A40] to-[#3B2F1E]",
+  "from-[#B91C1C] to-[#991B1B]",
 ];
 
 function RecentSubscriptionActivity() {
@@ -487,19 +487,19 @@ function RecentSubscriptionActivity() {
     <>
       <section
         aria-label={t("Recent subscription activity")}
-        className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-blue-50/60 to-indigo-50/70 p-4 text-[#0F172A] shadow-[0_18px_40px_-22px_rgba(79,70,229,0.55)] sm:p-5"
+        className="relative overflow-hidden rounded-2xl border border-[#E3D6B8] bg-gradient-to-br from-[#FBF6E8] via-[#F6EEDB] to-[#F3E9D2] p-4 text-[#3B2F1E] shadow-sm sm:p-5"
       >
-        <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-300/25 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-sky-300/25 blur-2xl" />
+        <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#FBB6B6]/25 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-[#F6D9A8]/50 blur-2xl" />
 
         <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-          <div className="flex items-center gap-2.5 text-sm font-extrabold text-[#0F172A] sm:text-base">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#2563EB] to-indigo-600 text-white shadow-md shadow-blue-500/30">
+          <div className="flex items-center gap-2.5 text-base font-extrabold text-[#3B2F1E] sm:text-lg">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#DC2626] text-white shadow-sm">
               <Users size={16} />
             </span>
             <span>{t("Recent subscription activity")}</span>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-bold text-emerald-700 backdrop-blur sm:text-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-[#FBF6E8]/80 px-3 py-1.5 text-sm font-bold text-emerald-700 backdrop-blur sm:text-base">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -509,20 +509,20 @@ function RecentSubscriptionActivity() {
         </div>
 
         <div className="relative mt-2.5 grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
-            <p className="text-xs font-semibold text-slate-500 sm:text-sm">
+          <div className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]/80 px-3 py-2 shadow-sm backdrop-blur">
+            <p className="text-sm font-semibold text-[#6B5A40] sm:text-base">
               {t("Total buyers")}
             </p>
-            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-[#2563EB] sm:text-3xl">
+            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-[#DC2626] sm:text-3xl">
               {DEMO_TOTAL_BUYERS.toLocaleString(numberLocale)}
-              <span className="text-lg">+</span>
+              <span className="text-xl">+</span>
             </p>
           </div>
-          <div className="rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
-            <p className="text-xs font-semibold text-slate-500 sm:text-sm">
+          <div className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]/80 px-3 py-2 shadow-sm backdrop-blur">
+            <p className="text-sm font-semibold text-[#6B5A40] sm:text-base">
               {t("Bought today")}
             </p>
-            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-emerald-600 sm:text-3xl">
+            <p className="mt-0.5 text-3xl font-black leading-none tabular-nums text-[#DC2626] sm:text-3xl">
               {DEMO_BOUGHT_TODAY.toLocaleString(numberLocale)}
             </p>
           </div>
@@ -543,22 +543,22 @@ function RecentSubscriptionActivity() {
                   opacity: offset === 0 ? 1 : offset === 1 ? 0.7 : 0.4,
                   animation: "sub-feed-in 250ms ease-out",
                 }}
-                className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/80 px-3 py-3 backdrop-blur"
+                className="flex items-center gap-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]/80 px-3 py-3 backdrop-blur"
               >
                 <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-[11px] font-black text-white shadow-sm`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-[13px] font-black text-white shadow-sm`}
                 >
                   {p.initials}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-[#0F172A] sm:text-base">
+                  <p className="truncate text-base font-extrabold text-[#3B2F1E] sm:text-lg">
                     {p.name}
                   </p>
-                  <p className="text-xs text-slate-500 sm:text-sm">
+                  <p className="text-sm text-[#6B5A40] sm:text-base">
                     {t("1 Month plan")} · ৳১০০
                   </p>
                 </div>
-                <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 sm:text-sm">
+                <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#B91C1C] sm:text-base">
                   <Clock3 size={13} />
                   {timeLabel(p)}
                 </span>
@@ -566,7 +566,7 @@ function RecentSubscriptionActivity() {
             );
           })}
         </ul>
-        <p className="relative mt-2 text-right text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+        <p className="relative mt-2 text-right text-[12px] font-semibold uppercase tracking-wider text-[#7A6A50] sm:text-sm">
           Data
         </p>
       </section>
@@ -576,16 +576,16 @@ function RecentSubscriptionActivity() {
         aria-label={t("Purchase notification")}
         className={`fixed bottom-4 left-4 z-[45] w-[min(330px,calc(100vw-32px))] transition-all duration-300 sm:bottom-5 sm:left-5 ${toastVisible && !toastDismissed ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
       >
-        <div className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_16px_46px_-16px_rgba(15,23,42,0.28)]">
-          <div className="flex items-center justify-between gap-2 bg-[#2563EB] px-3 py-2 text-white">
-            <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide">
+        <div className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-xl">
+          <div className="flex items-center justify-between gap-2 bg-[#DC2626] px-3 py-2 text-white">
+            <span className="flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-wide">
               <ShoppingBag size={13} /> {t("Purchase notification")}
             </span>
             <button
               type="button"
               onClick={() => setToastDismissed(true)}
               aria-label="Close purchase notification"
-              className="rounded-md p-0.5 text-blue-100 transition hover:bg-white/15 hover:text-white"
+              className="rounded-md p-0.5 text-[#FBB6B6] transition hover:bg-white/15 hover:text-white"
             >
               <X size={14} />
             </button>
@@ -595,17 +595,17 @@ function RecentSubscriptionActivity() {
             className="flex items-center gap-3 p-3"
             style={{ animation: "sub-feed-in 200ms ease-out" }}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-black text-[#2563EB] ring-1 ring-inset ring-blue-100">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE9E9] text-sm font-black text-[#DC2626] ring-1 ring-inset ring-[#FBB6B6]">
               {activePurchase.initials}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-extrabold text-[#0F172A]">
+              <p className="truncate text-base font-extrabold text-[#3B2F1E]">
                 {activePurchase.name}
               </p>
-              <p className="mt-0.5 text-xs text-slate-600">
+              <p className="mt-0.5 text-sm text-[#5A4A32]">
                 {t("1 Month plan")} · ৳১০০
               </p>
-              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-700 sm:text-sm">
+              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#B91C1C] sm:text-base">
                 <Clock3 size={13} /> {timeLabel(activePurchase)}
               </p>
             </div>
@@ -705,9 +705,25 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F7FC] font-sans text-[#0F172A] lg:h-dvh lg:overflow-hidden">
+    <div className="page-font flex min-h-screen flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] font-sans text-[#3B2F1E] lg:h-dvh lg:overflow-hidden">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+        .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+        .scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+        .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+        .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+      `}</style>
       <DashboardNavbar />
-      <main className="font-bengali-ui flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-y-auto">
+      <main className="font-bengali-ui scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-y-auto">
         <div
           data-nav-content
           className="mx-auto grid w-full max-w-[1480px] items-start gap-3 px-3 py-3 sm:px-4 lg:h-auto lg:min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:gap-3 lg:py-2 xl:gap-5 [@media(max-height:800px)]:lg:h-auto [@media(max-height:800px)]:lg:py-3"
@@ -729,11 +745,11 @@ export default function SubscriptionPage() {
               {subscriptionLoading ? (
                 <div
                   aria-busy="true"
-                  className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                  className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-6 shadow-sm"
                 >
-                  <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-                  <div className="mt-4 h-6 w-36 animate-pulse rounded bg-slate-100" />
-                  <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-[#F3E9D2]" />
+                  <div className="mt-4 h-6 w-36 animate-pulse rounded bg-[#F3E9D2]" />
+                  <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-[#F3E9D2]" />
                 </div>
               ) : currentSubscription ? (
                 (() => {
@@ -751,10 +767,10 @@ export default function SubscriptionPage() {
                       ? null
                       : 100 - progress;
                   const ringStroke = expired
-                    ? "stroke-slate-300"
+                    ? "stroke-[#D8C9A6]"
                     : remainingPct !== null && remainingPct < 10
-                      ? "stroke-amber-500"
-                      : "stroke-[#2563EB]";
+                      ? "stroke-[#B91C1C]"
+                      : "stroke-[#DC2626]";
                   const ringMain = expired
                     ? "0"
                     : daysLeft === null
@@ -768,9 +784,9 @@ export default function SubscriptionPage() {
                       : "days left";
 
                   return (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-sm">
                       <div className="flex flex-col items-center gap-2 p-[clamp(8px,1.2vh,14px)] sm:flex-row sm:gap-4">
-                        <div className="relative h-[clamp(64px,9vh,92px)] w-[clamp(64px,9vh,92px)] shrink-0">
+                        <div className="relative h-[clamp(76px,10.5vh,104px)] w-[clamp(76px,10.5vh,104px)] shrink-0">
                           <svg
                             viewBox="0 0 120 120"
                             className="h-full w-full -rotate-90"
@@ -782,7 +798,7 @@ export default function SubscriptionPage() {
                               r={RING_R}
                               fill="none"
                               strokeWidth="9"
-                              className="stroke-slate-100"
+                              className="stroke-[#E3D6B8]"
                             />
                             {remainingPct !== null && remainingPct > 0 && (
                               <circle
@@ -798,10 +814,10 @@ export default function SubscriptionPage() {
                             )}
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#0F172A]">
+                            <span className="text-[clamp(20px,3.2vh,30px)] font-semibold leading-none tabular-nums text-[#3B2F1E]">
                               {ringMain}
                             </span>
-                            <span className="mt-1 text-[11px] text-slate-500">
+                            <span className="mt-1 text-[13px] text-[#6B5A40]">
                               <T>{ringLabel}</T>
                             </span>
                           </div>
@@ -809,19 +825,19 @@ export default function SubscriptionPage() {
 
                         <div className="min-w-0 flex-1 text-center sm:text-left">
                           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
-                            <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#0F172A]">
+                            <h2 className="text-[clamp(18px,2.8vh,24px)] font-semibold tracking-tight text-[#3B2F1E]">
                               <T>{currentSubscription.planName}</T>
                             </h2>
                             <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-[#F3E9D2] text-[#5A4A32] ring-[#E3D6B8]"}`}
                             >
                               <span
-                                className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}
+                                className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-[#B0A080]"}`}
                               />
                               <T>{statusLabel}</T>
                             </span>
                           </div>
-                          <p className="mx-auto mt-1.5 max-w-md rounded-lg border-l-4 border-red-500 bg-red-50 px-3 py-1.5 text-left text-xs font-medium leading-4 text-red-700 sm:mx-0">
+                          <p className="mx-auto mt-1.5 max-w-md rounded-lg border-l-4 border-red-500 bg-[#FEE9E9] px-3 py-1.5 text-left text-sm font-medium leading-4 text-red-700 sm:mx-0">
                             {expired ? (
                               <>
                                 <T>{"This plan ended on"}</T>{" "}
@@ -847,42 +863,42 @@ export default function SubscriptionPage() {
                         </div>
                       </div>
 
-                      <dl className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      <dl className="grid grid-cols-1 divide-y divide-[#E3D6B8] border-t border-[#E3D6B8] bg-[#F6EEDB]/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                         <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FBF6E8] text-[#DC2626] ring-1 ring-[#E3D6B8]">
                             <Wallet size={15} />
                           </span>
                           <div>
-                            <dt className="text-xs text-slate-500">
+                            <dt className="text-sm text-[#6B5A40]">
                               <T>{"Amount paid"}</T>
                             </dt>
-                            <dd className="text-sm font-semibold text-[#0F172A]">
+                            <dd className="text-base font-semibold text-[#3B2F1E]">
                               {formatPrice(currentSubscription.amount)}
                             </dd>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FBF6E8] text-[#DC2626] ring-1 ring-[#E3D6B8]">
                             <CalendarCheck size={15} />
                           </span>
                           <div>
-                            <dt className="text-xs text-slate-500">
+                            <dt className="text-sm text-[#6B5A40]">
                               <T>{"Started"}</T>
                             </dt>
-                            <dd className="text-sm font-semibold text-[#0F172A]">
+                            <dd className="text-base font-semibold text-[#3B2F1E]">
                               {formatDate(currentSubscription.startedAt)}
                             </dd>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 px-3 py-[clamp(5px,0.8vh,10px)] sm:px-4">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#2563EB] ring-1 ring-slate-200">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FBF6E8] text-[#DC2626] ring-1 ring-[#E3D6B8]">
                             <CalendarClock size={15} />
                           </span>
                           <div>
-                            <dt className="text-xs text-slate-500">
+                            <dt className="text-sm text-[#6B5A40]">
                               {expired ? <T>{"Ended"}</T> : <T>{"Expires"}</T>}
                             </dt>
-                            <dd className="text-sm font-semibold text-[#0F172A]">
+                            <dd className="text-base font-semibold text-[#3B2F1E]">
                               {formatDate(currentSubscription.expiresAt)}
                             </dd>
                           </div>
@@ -898,31 +914,31 @@ export default function SubscriptionPage() {
               <section
                 aria-label={t("Payment review in progress")}
                 aria-live="polite"
-                className="relative isolate overflow-hidden rounded-3xl border border-amber-200/90 bg-gradient-to-br from-[#FFF9E8] via-white to-[#FFF1D1] p-5 shadow-[0_20px_48px_-26px_rgba(180,83,9,0.42)] sm:p-6"
+                className="relative isolate overflow-hidden rounded-3xl border border-[#D8C9A6] bg-gradient-to-br from-[#FFF9E8] via-[#FBF6E8] to-[#FFF1D1] p-5 shadow-sm sm:p-6"
               >
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-amber-300/25 blur-3xl"
+                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#FBB6B6]/25 blur-3xl"
                 />
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-14 left-1/3 h-32 w-32 rounded-full bg-orange-200/25 blur-3xl"
+                  className="pointer-events-none absolute -bottom-14 left-1/3 h-32 w-32 rounded-full bg-[#F6D9A8]/50 blur-3xl"
                 />
                 <div className="relative flex items-start gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#DC2626] text-white shadow-sm">
                     <Clock3 size={24} strokeWidth={2.3} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-lg font-black tracking-tight text-amber-950 sm:text-xl">
+                      <h2 className="text-xl font-black tracking-tight text-[#3B2F1E] sm:text-2xl">
                         <T>{"Payment review in progress"}</T>
                       </h2>
-                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/90 px-3 py-1.5 text-xs font-extrabold text-amber-800 shadow-sm sm:text-sm">
-                        <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]" />
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[#FBB6B6] bg-[#FBF6E8]/90 px-3 py-1.5 text-sm font-extrabold text-[#B91C1C] shadow-sm sm:text-base">
+                        <span className="h-2 w-2 rounded-full bg-[#DC2626] shadow-[0_0_0_3px_rgba(220,38,38,0.15)]" />
                         <T>{"Waiting for review"}</T>
                       </span>
                     </div>
-                    <p className="mt-2 max-w-2xl text-base leading-7 text-amber-950/90 sm:text-[17px] sm:leading-8">
+                    <p className="mt-2 max-w-2xl text-lg leading-7 text-[#3B2F1E]/90 sm:text-[19px] sm:leading-8">
                       <T>
                         {
                           "Your payment details have been submitted. Paid access starts after admin approval."
@@ -930,47 +946,47 @@ export default function SubscriptionPage() {
                       </T>
                     </p>
                     <dl className="mt-5 grid gap-2 sm:grid-cols-2">
-                      <div className="min-w-0 rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
-                        <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                      <div className="min-w-0 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8]/85 px-4 py-3 shadow-sm">
+                        <dt className="text-sm font-bold text-[#6B5A40] sm:text-base">
                           প্ল্যান ও মূল্য
                         </dt>
-                        <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                        <dd className="mt-1 text-lg font-extrabold text-[#3B2F1E] sm:text-[19px]">
                           {pendingSubscription.planName} ·{" "}
                           {formatPrice(pendingSubscription.amount)}
                         </dd>
                       </div>
                       {pendingSubscription.paymentMethod && (
-                        <div className="rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
-                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                        <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8]/85 px-4 py-3 shadow-sm">
+                          <dt className="text-sm font-bold text-[#6B5A40] sm:text-base">
                             পেমেন্ট মাধ্যম
                           </dt>
-                          <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                          <dd className="mt-1 text-lg font-extrabold text-[#3B2F1E] sm:text-[19px]">
                             {pendingSubscription.paymentMethod}
                           </dd>
                         </div>
                       )}
                       {pendingSubscription.transactionId && (
-                        <div className="min-w-0 rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
-                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                        <div className="min-w-0 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8]/85 px-4 py-3 shadow-sm">
+                          <dt className="text-sm font-bold text-[#6B5A40] sm:text-base">
                             <T>{"Transaction ID"}</T>
                           </dt>
-                          <dd className="mt-1 break-all font-mono text-base font-extrabold tracking-wide text-slate-900 sm:text-[17px]">
+                          <dd className="mt-1 break-all font-mono text-lg font-extrabold tracking-wide text-[#3B2F1E] sm:text-[19px]">
                             {pendingSubscription.transactionId}
                           </dd>
                         </div>
                       )}
                       {pendingSubscription.submittedAt && (
-                        <div className="rounded-2xl border border-amber-100 bg-white/85 px-4 py-3 shadow-sm">
-                          <dt className="text-xs font-bold text-slate-500 sm:text-sm">
+                        <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8]/85 px-4 py-3 shadow-sm">
+                          <dt className="text-sm font-bold text-[#6B5A40] sm:text-base">
                             জমা দেওয়ার তারিখ
                           </dt>
-                          <dd className="mt-1 text-base font-extrabold text-slate-900 sm:text-[17px]">
+                          <dd className="mt-1 text-lg font-extrabold text-[#3B2F1E] sm:text-[19px]">
                             {formatDate(pendingSubscription.submittedAt)}
                           </dd>
                         </div>
                       )}
                     </dl>
-                    <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200/80 bg-amber-100/60 px-3.5 py-3 text-sm font-semibold leading-6 text-amber-950 sm:text-base sm:leading-7">
+                    <p className="mt-4 flex items-start gap-2 rounded-xl border border-[#D8C9A6] bg-[#F6EEDB] px-3.5 py-3 text-base font-semibold leading-6 text-[#3B2F1E] sm:text-lg sm:leading-7">
                       <ShieldCheck size={19} className="mt-0.5 shrink-0" />
                       অ্যাডমিন পেমেন্টের তথ্য যাচাই করে Approve করলেই আপনার পেইড
                       অ্যাক্সেস চালু হবে।
@@ -988,7 +1004,7 @@ export default function SubscriptionPage() {
                 type="button"
                 onClick={handleContinue}
                 disabled={isProcessing}
-                className="inline-flex min-h-10 max-w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] px-6 py-2 text-center text-sm font-bold text-white shadow-[0_8px_22px_-10px_rgba(37,99,235,0.8)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(37,99,235,0.85)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:px-8"
+                className="inline-flex min-h-10 max-w-full items-center justify-center rounded-xl bg-[#D42020] hover:bg-[#AE1717] px-6 py-2 text-center text-base font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
               >
                 {isProcessing ? (
                   <T>{"Opening payment page..."}</T>
@@ -999,7 +1015,7 @@ export default function SubscriptionPage() {
               {paymentError && (
                 <p
                   role="alert"
-                  className="w-full max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"
+                  className="w-full max-w-xl rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-2.5 text-sm font-semibold text-red-700"
                 >
                   <T>{paymentError}</T>
                 </p>
@@ -1022,13 +1038,13 @@ export default function SubscriptionPage() {
                     role="radio"
                     aria-checked={isSelected}
                     onClick={() => handleSelect(plan.id)}
-                    className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "border-[#2563EB] bg-white shadow-[0_16px_44px_-18px_rgba(37,99,235,0.42)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"}`}
+                    className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${isSelected ? "border-[#DC2626] bg-[#F6D9A8] shadow-sm ring-2 ring-[#DC2626]/40" : "border-[#E3D6B8] bg-[#FBF6E8] hover:-translate-y-0.5 hover:border-[#D8C9A6] hover:bg-[#EFE3C8] hover:shadow-sm"}`}
                   >
-                    <span className="absolute -top-2.5 left-4 inline-flex items-center rounded-full border border-white/20 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#4F7DF3] px-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.1em] text-white shadow-[0_6px_18px_-5px_rgba(37,99,235,0.65)] ring-1 ring-[#2563EB]/20">
+                    <span className="absolute -top-2.5 left-4 inline-flex items-center rounded-full bg-[#DC2626] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white shadow-sm">
                       <T>{plan.badge}</T>
                     </span>
                     <span
-                      className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white"}`}
+                      className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#DC2626] bg-[#DC2626]" : "border-[#D8C9A6] bg-[#FBF6E8]"}`}
                     >
                       <Check
                         size={13}
@@ -1040,18 +1056,18 @@ export default function SubscriptionPage() {
                     <div className="grid gap-3 p-3 pt-6 sm:p-4 sm:pt-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5">
                       <div className="min-w-0 pr-7 sm:pr-8 md:pr-0">
                         <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-                          <h2 className="text-lg font-black tracking-tight text-[#0F172A] sm:text-xl">
+                          <h2 className="text-xl font-black tracking-tight text-[#3B2F1E] sm:text-2xl">
                             <T>{plan.name}</T>
                           </h2>
-                          <span className="pb-0.5 text-xs font-semibold text-slate-400">
+                          <span className="pb-0.5 text-sm font-semibold text-[#7A6A50]">
                             <T>{plan.duration}</T>
                           </span>
                         </div>
-                        <p className="mt-1 max-w-lg text-xs leading-5 text-slate-600">
+                        <p className="mt-1 max-w-lg text-sm leading-5 text-[#5A4A32]">
                           <T>{plan.note}</T>
                         </p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-800 sm:text-[11px]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-2 py-1 text-[12px] font-semibold text-[#B91C1C] sm:text-[13px]">
                             <Check size={13} strokeWidth={3} />
                             <T>
                               {
@@ -1059,33 +1075,33 @@ export default function SubscriptionPage() {
                               }
                             </T>
                           </span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:text-[11px]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#E3D6B8] bg-[#F6EEDB] px-2 py-1 text-[12px] font-semibold text-[#5A4A32] sm:text-[13px]">
                             <Check size={13} strokeWidth={3} />
                             <T>{"One-time payment"}</T>
                           </span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:text-[11px]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#E3D6B8] bg-[#F6EEDB] px-2 py-1 text-[12px] font-semibold text-[#5A4A32] sm:text-[13px]">
                             <Check size={13} strokeWidth={3} />
                             <T>{"No auto-renewal"}</T>
                           </span>
                         </div>
                       </div>
 
-                      <div className="border-t border-slate-100 pt-2 md:min-w-[170px] md:border-l md:border-t-0 md:pl-5 md:pt-0 md:text-right">
-                        <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
+                      <div className="border-t border-[#E3D6B8] pt-2 md:min-w-[170px] md:border-l md:border-t-0 md:pl-5 md:pt-0 md:text-right">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-[#7A6A50] md:justify-end">
                           <T>{"Regular price"}</T>
-                          <span className="text-sm line-through decoration-slate-400">
+                          <span className="text-base line-through decoration-[#7A6A50]">
                             {formatPrice(plan.regularPrice)}
                           </span>
                         </p>
                         <div className="mt-1 flex items-baseline gap-2 md:justify-end">
-                          <span className="text-3xl font-black leading-none tracking-tight text-[#2563EB] sm:text-4xl">
+                          <span className="text-3xl font-black leading-none tracking-tight text-[#DC2626] sm:text-4xl">
                             {formatPrice(plan.price)}
                           </span>
-                          <span className="text-xs font-semibold text-slate-500">
+                          <span className="text-sm font-semibold text-[#6B5A40]">
                             <T>{"/ 30 days"}</T>
                           </span>
                         </div>
-                        <span className="mt-2 inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100 sm:text-xs">
+                        <span className="mt-2 inline-flex rounded-lg bg-[#FEE9E9] px-2.5 py-1 text-[12px] font-extrabold text-[#B91C1C] ring-1 ring-inset ring-[#FBB6B6] sm:text-sm">
                           <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
                         </span>
                       </div>
@@ -1095,20 +1111,20 @@ export default function SubscriptionPage() {
               })}
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-              <h2 className="text-xs font-black text-[#0F172A]">
+            <section className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2">
+              <h2 className="text-sm font-black text-[#3B2F1E]">
                 <T>{"Included with your subscription"}</T>
               </h2>
               <div className="mt-1 grid gap-x-3 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
                 {features.map((feature) => (
                   <div
                     key={feature}
-                    className="flex items-start gap-1.5 text-[10px] font-medium leading-4 text-slate-600 sm:text-[11px]"
+                    className="flex items-start gap-1.5 text-[12px] font-medium leading-5 text-[#5A4A32] sm:text-[13px]"
                   >
                     <Check
                       size={14}
                       strokeWidth={3}
-                      className="mt-0.5 shrink-0 text-emerald-600"
+                      className="mt-0.5 shrink-0 text-[#DC2626]"
                     />
                     <span>
                       <T>{feature}</T>
@@ -1121,7 +1137,7 @@ export default function SubscriptionPage() {
             <div className="text-center">
               <Link
                 href="/sohoj-tools"
-                className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
+                className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-bold text-[#DC2626] hover:underline"
               >
                 <ArrowLeft size={14} />
                 <T>{"Back to Tools"}</T>

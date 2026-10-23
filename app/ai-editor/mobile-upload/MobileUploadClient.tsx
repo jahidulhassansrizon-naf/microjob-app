@@ -165,40 +165,40 @@ export default function MobileUploadClient({ token }: { token: string }) {
   const locked = status === "validating" || status === "preparing" || status === "sending" || status === "sent" || status === "expired" || status === "used";
 
   return (
-    <main data-mobile-upload-page="true" className="min-h-[100dvh] w-full bg-white px-4 py-5 text-slate-900 sm:px-6 sm:py-8">
+    <main data-mobile-upload-page="true" className="min-h-[100dvh] w-full bg-[#FBF6E8] px-4 py-5 text-stone-900 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-xl">
-        <div className="mb-5 flex items-center justify-center gap-3 text-slate-800">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm"><Smartphone size={23} /></div>
-          <div><p className="text-xs font-medium text-slate-500">Sohozkaj</p><h1 className="text-lg font-bold"><span>{t("Upload a photo from your phone")}</span></h1></div>
+        <div className="mb-5 flex items-center justify-center gap-3 text-stone-800">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm"><Smartphone size={23} /></div>
+          <div><p className="text-sm font-medium text-stone-500">Sohozkaj</p><h1 className="text-xl font-bold"><span>{t("Upload a photo from your phone")}</span></h1></div>
         </div>
 
-        <section className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none sm:rounded-3xl">
-          <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
-            <p className="text-sm leading-6 text-slate-600">{t("Choose a photo from your gallery, then send it to the computer showing this QR code.")}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-400">{t("Your phone must stay on this page until the photo is sent.")}</p>
+        <section className="w-full overflow-hidden rounded-2xl border border-stone-100 bg-[#FBF6E8] shadow-none sm:rounded-3xl">
+          <div className="border-b border-stone-100 px-5 py-5 sm:px-6">
+            <p className="text-base leading-6 text-stone-600">{t("Choose a photo from your gallery, then send it to the computer showing this QR code.")}</p>
+            <p className="mt-2 text-sm leading-5 text-stone-400">{t("Your phone must stay on this page until the photo is sent.")}</p>
           </div>
 
           <form onSubmit={sendPhoto} className="space-y-4 px-5 py-5 sm:px-6">
             {previewUrl ? (
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-[#F6EEDB]">
                 <img src={previewUrl} alt={t("Select an image from your phone's gallery.")} className="max-h-72 w-full object-contain" />
               </div>
             ) : (
-              <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-center">
-                <ImageUp size={34} className="mb-3 text-blue-600" />
-                <p className="text-sm font-semibold text-slate-800">{t("Choose photo")}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{t("Select an image from your phone's gallery.")}</p>
+              <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-[#F6EEDB] px-5 py-6 text-center">
+                <ImageUp size={34} className="mb-3 text-red-600" />
+                <p className="text-base font-semibold text-stone-800">{t("Choose photo")}</p>
+                <p className="mt-1 text-sm leading-5 text-stone-500">{t("Select an image from your phone's gallery.")}</p>
               </div>
             )}
 
             <input ref={inputRef} type="file" accept="image/*" onChange={choosePhoto} className="sr-only" aria-label={t("Choose photo")} disabled={locked && status !== "preparing"} />
             {status !== "sent" && status !== "expired" && status !== "used" && (
-              <button type="button" onClick={() => inputRef.current?.click()} disabled={status === "validating" || status === "preparing" || status === "sending"} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="button" onClick={() => inputRef.current?.click()} disabled={status === "validating" || status === "preparing" || status === "sending"} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 px-4 py-3 text-base font-semibold text-stone-700 transition hover:bg-[#F6EEDB] disabled:cursor-not-allowed disabled:opacity-60">
                 <ImageUp size={18} /> {t(previewUrl ? "Change photo" : "Choose photo")}
               </button>
             )}
 
-            <p className="text-xs leading-5 text-slate-400">{t("Choose a JPG, PNG, or WebP image. Images are resized securely before sending.")}</p>
+            <p className="text-sm leading-5 text-stone-400">{t("Choose a JPG, PNG, or WebP image. Images are resized securely before sending.")}</p>
 
             {status === "validating" && <StatusLine icon={<Loader2 className="animate-spin" size={18} />} text={t("Preparing secure upload...")} />}
             {status === "preparing" && <StatusLine icon={<Loader2 className="animate-spin" size={18} />} text={t("Preparing photo...")} />}
@@ -209,18 +209,18 @@ export default function MobileUploadClient({ token }: { token: string }) {
             {error && <StatusLine icon={<AlertCircle size={18} />} text={t(error)} error />}
 
             {status !== "sent" && status !== "expired" && status !== "used" && (
-              <button type="submit" disabled={!selectedFile || status !== "ready"} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+              <button type="submit" disabled={!selectedFile || status !== "ready"} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-stone-300">
                 <ImageUp size={18} /> {t("Send photo")}
               </button>
             )}
           </form>
         </section>
-        <p className="mt-4 text-center text-[11px] leading-5 text-slate-500">{t("Your phone must stay on this page until the photo is sent.")}</p>
+        <p className="mt-4 text-center text-[13px] leading-5 text-stone-500">{t("Your phone must stay on this page until the photo is sent.")}</p>
       </div>
     </main>
   );
 }
 
 function StatusLine({ icon, text, success = false, error = false }: { icon: React.ReactNode; text: string; success?: boolean; error?: boolean }) {
-  return <div role="status" aria-live="polite" className={`flex items-start gap-2 rounded-xl px-3 py-3 text-xs leading-5 ${success ? "bg-emerald-50 text-emerald-700" : error ? "bg-rose-50 text-rose-700" : "bg-slate-50 text-slate-600"}`}><span className="mt-0.5 shrink-0">{icon}</span><span>{text}</span></div>;
+  return <div role="status" aria-live="polite" className={`flex items-start gap-2 rounded-xl px-3 py-3 text-sm leading-5 ${success ? "bg-emerald-50 text-emerald-700" : error ? "bg-rose-50 text-rose-700" : "bg-[#F6EEDB] text-stone-600"}`}><span className="mt-0.5 shrink-0">{icon}</span><span>{text}</span></div>;
 }

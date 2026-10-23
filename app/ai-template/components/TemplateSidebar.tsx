@@ -22,7 +22,7 @@ type Props = {
 export function TemplateSidebar(props: Props) {
     const { category, setCategory, gender, setGender, imageCount, setImageCount, orientation, setOrientation, selectedColor, setSelectedColor, sortType, setSortType, resetFilters, } = props;
     const { t } = useAiTemplateText();
-    return (<aside className="sidebar">
+    return (<aside className="sidebar scroll">
       <div className="sidebar-heading">
         <span>{t("Filter")}</span>
         <button type="button" onClick={resetFilters}>
@@ -30,7 +30,7 @@ export function TemplateSidebar(props: Props) {
       </div>
 
       <div className="filter-section-title">{t("CATEGORY")}</div>
-      <div className="category-list">
+      <div className="category-list scroll">
         {CATEGORY_OPTIONS.map((item) => (<button type="button" key={item} onClick={() => setCategory(item)} className={`category-row ${category === item ? "active" : ""}`}>
             <span>{t(item)}</span>
             <b>{(CATEGORY_COUNTS[item] || 0).toLocaleString("en-US")}</b>

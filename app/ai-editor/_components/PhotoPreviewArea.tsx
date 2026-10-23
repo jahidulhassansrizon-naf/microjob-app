@@ -280,7 +280,7 @@ function GateOverlay({ active, image, background }: {
                 background: "linear-gradient(180deg, transparent, rgba(125,211,252,0.10), transparent)",
                 animation: "pp-gate-beam 5.5s ease-in-out infinite",
             }}/>
-          {[12, 27, 42, 58, 73, 88].map((left, i) => (<span key={left} className="pp-gate-loop absolute bottom-10 h-[3px] w-[3px] rounded-full bg-sky-200/70" style={{
+          {[12, 27, 42, 58, 73, 88].map((left, i) => (<span key={left} className="pp-gate-loop absolute bottom-10 h-[3px] w-[3px] rounded-full bg-red-200/70" style={{
                     left: `${left}%`,
                     animation: `pp-gate-dust ${3.4 + (i % 3) * 0.7}s ease-out ${i * 0.55}s infinite`,
                 }}/>))}
@@ -289,9 +289,9 @@ function GateOverlay({ active, image, background }: {
       {/* Processing HUD */}
       {showHud && (<div className="absolute inset-0 flex flex-col items-center justify-between px-3 pb-3 pt-3" style={{ animation: hudAnimation }}>
           {/* Title */}
-          <div className="flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 backdrop-blur-sm">
+          <div className="flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-stone-950/70 px-3 py-1.5 backdrop-blur-sm">
             <span className="pp-gate-loop h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" style={{ animation: "pp-gate-pulse 1.4s ease-in-out infinite", boxShadow: "0 0 6px #67e8f9" }}/>
-            <span className="pp-gate-loop text-center text-[10px] font-semibold leading-tight sm:text-[11px]" style={{
+            <span className="pp-gate-loop text-center text-[12px] font-semibold leading-tight sm:text-[13px]" style={{
                 backgroundImage: "linear-gradient(90deg, #94a3b8, #ffffff, #7dd3fc, #ffffff, #94a3b8)",
                 backgroundSize: "200% 100%",
                 WebkitBackgroundClip: "text",
@@ -318,7 +318,7 @@ function GateOverlay({ active, image, background }: {
               {/* orbiting dots */}
               <div className="pp-gate-loop absolute inset-[5%]" style={{ animation: "pp-gate-spin 7s linear infinite" }}>
                 <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-cyan-200" style={{ boxShadow: "0 0 8px 1px #67e8f9" }}/>
-                <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-sky-300/80"/>
+                <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-red-300/80"/>
               </div>
               {/* dashed counter-rotating ring */}
               <div className="pp-gate-loop absolute inset-[11%] rounded-full" style={{ border: "1px dashed rgba(125,211,252,0.4)", animation: "pp-gate-spin 16s linear infinite reverse" }}/>
@@ -341,20 +341,20 @@ function GateOverlay({ active, image, background }: {
             </div>
 
             {/* Compact current stage (shown when the frame is small) */}
-            <span key={stage} className="pp-gate-line max-w-full px-2 text-center text-[10px] leading-tight text-sky-100/90" style={{ animation: "pp-gate-line 500ms ease-out both" }}>
+            <span key={stage} className="pp-gate-line max-w-full px-2 text-center text-[12px] leading-tight text-red-100/90" style={{ animation: "pp-gate-line 500ms ease-out both" }}>
               {t(GATE_STAGES[stage])}...
             </span>
           </div>
 
           {/* Stage checklist + progress */}
           <div className="flex w-full flex-col items-center gap-2">
-            <div className="pp-gate-list w-[86%] max-w-[260px] flex-col gap-1 rounded-lg border border-white/10 bg-slate-950/60 px-3 py-2 backdrop-blur-sm">
+            <div className="pp-gate-list w-[86%] max-w-[260px] flex-col gap-1 rounded-lg border border-white/10 bg-stone-950/60 px-3 py-2 backdrop-blur-sm">
               {GATE_STAGES.map((label, i) => {
                 const done = i < stage;
                 const current = i === stage;
-                return (<div key={label} className="flex items-center gap-2 text-[10px] leading-tight" style={{ color: current ? "#f1f5f9" : done ? "#94a3b8" : "#475569" }}>
+                return (<div key={label} className="flex items-center gap-2 text-[12px] leading-tight" style={{ color: current ? "#f1f5f9" : done ? "#94a3b8" : "#6B5A40" }}>
                     <span className="flex h-3 w-3 shrink-0 items-center justify-center">
-                      {done ? (<svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="#34d399" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="5" strokeOpacity="0.5"/><path d="M3.6 6.2l1.7 1.7 3.1-3.4"/></svg>) : current ? (<span className="pp-gate-loop block h-3 w-3 rounded-full border-[1.5px] border-sky-300/30 border-t-sky-300" style={{ animation: "pp-gate-spin 0.9s linear infinite" }}/>) : (<span className="block h-1.5 w-1.5 rounded-full bg-slate-600"/>)}
+                      {done ? (<svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="#34d399" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="5" strokeOpacity="0.5"/><path d="M3.6 6.2l1.7 1.7 3.1-3.4"/></svg>) : current ? (<span className="pp-gate-loop block h-3 w-3 rounded-full border-[1.5px] border-red-300/30 border-t-red-300" style={{ animation: "pp-gate-spin 0.9s linear infinite" }}/>) : (<span className="block h-1.5 w-1.5 rounded-full bg-stone-600"/>)}
                     </span>
                     <span>{t(label)}</span>
                   </div>);
@@ -369,7 +369,7 @@ function GateOverlay({ active, image, background }: {
                 transition: "width 150ms linear",
             }}/>
               </div>
-              <span className="w-7 text-right text-[9px] tabular-nums text-sky-200/80">{Math.round(pct)}%</span>
+              <span className="w-7 text-right text-[11px] tabular-nums text-red-200/80">{Math.round(pct)}%</span>
             </div>
           </div>
         </div>)}
@@ -445,18 +445,18 @@ function EmptyUploadBox({ title, subtitle, onUpload, }: {
     onUpload: () => void;
 }) {
     const { t } = useAiEditorText();
-    return (<div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E2E8F0] p-4 text-center xl:min-h-0 xl:p-2">
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F8FAFC] text-[#2563EB]">
+    return (<div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E3D6B8] p-4 text-center xl:min-h-0 xl:p-2">
+      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E8D2] text-[#DC2626]">
         <Upload size={18}/>
       </div>
 
-      <h3 className="mb-1 text-xs font-medium text-[#0F172A]"><AiT>{title}</AiT></h3>
+      <h3 className="mb-1 text-sm font-medium text-[#3B2F1E]"><AiT>{title}</AiT></h3>
 
-      {subtitle && (<p className="mb-3 text-[10px] leading-tight text-[#0F172A]/70">
+      {subtitle && (<p className="mb-3 text-[12px] leading-tight text-[#3B2F1E]/70">
           <AiT>{subtitle}</AiT>
         </p>)}
 
-      <button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-[11px] font-medium text-white shadow-md transition hover:bg-[#2563EB]/90 active:scale-95">
+      <button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-3.5 py-1.5 text-[13px] font-medium text-white shadow-md transition hover:bg-[#DC2626]/90 active:scale-95">
         <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>
     </div>);
 }
@@ -471,19 +471,19 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
 }) {
     const { t } = useAiEditorText();
     return (<div className="flex min-w-0 flex-col items-center gap-1.5 xl:min-h-0">
-      <span className="max-w-full shrink-0 truncate text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
+      <span className="max-w-full shrink-0 truncate text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]">
         <AiT>{label}</AiT>
       </span>
 
-      <FitFrame info={boxInfo} imageSrc={image} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E2E8F0]" : ""}`} style={getBackgroundStyle(background)}>
+      <FitFrame info={boxInfo} imageSrc={image} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E3D6B8]" : ""}`} style={getBackgroundStyle(background)}>
         {image ? (<div className="group relative h-full w-full">
             <img src={image} alt={t(label)} className="h-full w-full object-contain"/>
 
-            <button type="button" onClick={onRemove} aria-label={t(`Remove ${label}`)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100">
+            <button type="button" onClick={onRemove} aria-label={t(`Remove ${label}`)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100">
               <X size={14}/>
             </button>
 
-            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#3B2F1E]/70 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm">
               <AiT>{boxInfo.text}</AiT>
             </div>
           </div>) : (<EmptyUploadBox title={`Upload ${label.toLowerCase()}`} onUpload={onRemove}/>)}
@@ -507,16 +507,16 @@ export default function PhotoPreviewArea({
         setOriginalImageForDual(null);
         setIsDualPreviewActive(false);
     };
-    return (<div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 shadow-lg sm:p-6 xl:max-h-none xl:min-h-0 xl:overflow-hidden xl:p-4">
+    return (<div className="relative flex max-h-[85vh] min-h-[540px] flex-1 flex-col items-center justify-center overflow-y-auto rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] p-4 shadow-lg sm:p-6 xl:max-h-none xl:min-h-0 xl:overflow-hidden xl:p-4">
       {/* Deleting keeps the simple overlay. Generating uses the door animation on the photo frame. */}
-      {isDeleting && (<div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-[#F8FAFC]/90 p-4 text-center backdrop-blur-md">
+      {isDeleting && (<div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-[#F2E8D2]/90 p-4 text-center backdrop-blur-md">
           <div className="mb-5 h-16 w-16 animate-spin rounded-full border-4 border-red-500/20 border-t-red-500"/>
 
-          <h3 className="mb-1 text-base font-semibold tracking-wide text-[#0F172A]"><AiT>{"Deleting Photo...\n          "}</AiT></h3>
+          <h3 className="mb-1 text-lg font-semibold tracking-wide text-[#3B2F1E]"><AiT>{"Deleting Photo...\n          "}</AiT></h3>
 
-          <p className="max-w-xs text-xs leading-relaxed text-[#0F172A]/70"><AiT>{"Removing your photo, please wait...\n          "}</AiT></p>
+          <p className="max-w-xs text-sm leading-relaxed text-[#3B2F1E]/70"><AiT>{"Removing your photo, please wait...\n          "}</AiT></p>
 
-          <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-[#E2E8F0] bg-[#E2E8F0]">
+          <div className="mt-5 h-1.5 w-48 overflow-hidden rounded-full border border-[#E3D6B8] bg-[#E3D6B8]">
             <div className="h-full w-full animate-pulse rounded-full bg-red-500"/>
           </div>
         </div>)}
@@ -528,15 +528,15 @@ export default function PhotoPreviewArea({
               <PhotoCard image={uploadedImage} label="Edited Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={handleRemoveSingle} isScanning={isGenerating}/>
             </div>) : (<FitFrame info={activeBoxInfo} imageSrc={uploadedImage} className={`overflow-hidden rounded-2xl shadow-xl ${uploadedImage
                     ? "border-2 border-transparent"
-                    : "border-2 border-dashed border-[#2563EB]/40"}`}>
+                    : "border-2 border-dashed border-[#DC2626]/40"}`}>
               {uploadedImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                   <img src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain"/>
 
-                  <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#0F172A]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label={t("Remove current photo")}>
+                  <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label={t("Remove current photo")}>
                     <X size={14}/>
                   </button>
 
-                  <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0F172A]/70 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+                  <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#3B2F1E]/70 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
                 </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")}/>)}
@@ -544,14 +544,14 @@ export default function PhotoPreviewArea({
               <GateOverlay active={isGenerating} image={uploadedImage} background={currentBgColorValue}/>
             </FitFrame>)}
 
-          {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#E2E8F0]/60 px-4 py-2 text-xs font-medium text-[#0F172A] shadow-sm transition hover:bg-[#E2E8F0]">
-              <ImageIcon size={14} className="text-[#2563EB]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
+          {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#E3D6B8]/60 px-4 py-2 text-sm font-medium text-[#3B2F1E] shadow-sm transition hover:bg-[#E3D6B8]">
+              <ImageIcon size={14} className="text-[#DC2626]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
         </div>) : (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
-              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Left Person\n              "}</AiT></span>
+              <span className="shrink-0 text-center text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Left Person\n              "}</AiT></span>
 
-              <FitFrame info={activeBoxInfo} imageSrc={leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
+              <FitFrame info={activeBoxInfo} imageSrc={leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
                 {leftImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>
 
@@ -565,9 +565,9 @@ export default function PhotoPreviewArea({
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
-              <span className="shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-[#0F172A]"><AiT>{"Right Person\n              "}</AiT></span>
+              <span className="shrink-0 text-center text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Right Person\n              "}</AiT></span>
 
-              <FitFrame info={activeBoxInfo} imageSrc={rightImage} className="overflow-hidden rounded-2xl border-2 border-[#E2E8F0] shadow-xl">
+              <FitFrame info={activeBoxInfo} imageSrc={rightImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
                 {rightImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
                     <img src={rightImage} alt="Right person" className="h-full w-full object-contain"/>
 
@@ -585,7 +585,7 @@ export default function PhotoPreviewArea({
             <button type="button" onClick={() => {
                 setLeftImage(rightImage);
                 setRightImage(leftImage);
-            }} className="cursor-pointer rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-2 text-[#0F172A] transition hover:bg-[#E2E8F0]/80" title="Swap images" aria-label={t("Swap images")}>
+            }} className="cursor-pointer rounded-xl border border-[#E3D6B8] bg-[#E3D6B8] p-2 text-[#3B2F1E] transition hover:bg-[#E3D6B8]/80" title="Swap images" aria-label={t("Swap images")}>
               <ArrowLeftRight size={16}/>
             </button>
 
@@ -593,7 +593,7 @@ export default function PhotoPreviewArea({
                 setLeftImage(null);
                 setRightImage(null);
                 exitDualMode();
-            }} className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100">
+            }} className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100">
               <RefreshCw size={14}/><AiT>{"Exit dual mode\n            "}</AiT></button>
           </div>
         </div>)}

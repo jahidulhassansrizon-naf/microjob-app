@@ -321,7 +321,7 @@ export default function PhotoEditorPage() {
     const backgroundColors = [
         {
             type: "preset",
-            className: "bg-white border border-[#E2E8F0]",
+            className: "bg-white border border-[#CBD5E1]",
             value: "#FFFFFF",
         },
         { type: "preset", className: "bg-blue-500", value: "#3B82F6" },
@@ -755,7 +755,7 @@ export default function PhotoEditorPage() {
         "#FFFFFF": "white",
         "#1E1E1E": "black",
         "#EF4444": "red",
-        "#3B82F6": "blue",
+        "#EF4444": "blue",
         "#22C55E": "green",
         "#1E3A8A": "navy blue",
         "#6B7280": "gray",
@@ -775,10 +775,10 @@ export default function PhotoEditorPage() {
     };
     const BACKGROUND_COLOR_NAMES: Record<string, string> = {
         "#FFFFFF": "white",
-        "#3B82F6": "blue",
+        "#EF4444": "blue",
         "#38BDF8": "sky blue",
         "#9CA3AF": "gray",
-        "#2563EB": "royal blue",
+        "#DC2626": "royal blue",
         "#0F766E": "teal",
         "#FEF3C7": "soft warm cream",
     };
@@ -1255,13 +1255,24 @@ export default function PhotoEditorPage() {
                 URL.revokeObjectURL(tempImageForCrop);
         };
     }, [tempImageForCrop]);
-    return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-[#F8FAFC] flex flex-col relative select-none">
+    return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .ai-editor-font.ai-editor-font, .ai-editor-font.ai-editor-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans","Hind Siliguri","Noto Sans Bengali",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .ai-editor-font h1, .ai-editor-font h2, .ai-editor-font h3, .ai-editor-font h4 { letter-spacing: -0.01em; }
+      `}</style>
       <DashboardNavbar />
       <SubscriptionLock />
 
       <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden"/>
 
-      {errorMessage && (<div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-medium text-red-700 shadow-xl">
+      {errorMessage && (<div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-red-700 shadow-xl">
           {errorMessage}
         </div>)}
 
@@ -1301,15 +1312,15 @@ export default function PhotoEditorPage() {
       `}</style>
           {isCropping && (<div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3">
               <Loader2 className="w-10 h-10 animate-spin text-[#059669]"/>
-              <p className="text-sm font-medium tracking-wide"><AiT>{"Saving..."}</AiT></p>
+              <p className="text-base font-medium tracking-wide"><AiT>{"Saving..."}</AiT></p>
             </div>)}
 
-          <div className="h-14 bg-white flex items-center justify-between pl-6 pr-0 shadow-md shrink-0">
+          <div className="h-14 bg-[#FBF6E8] flex items-center justify-between pl-6 pr-0 shadow-md shrink-0">
             <div className="flex items-center gap-3">
-              <span className="bg-[#4F46E5] text-white p-1 rounded-lg">
+              <span className="bg-[#D42020] text-white p-1 rounded-lg">
                 <ImageIcon size={16}/>
               </span>
-              <h2 className="text-sm font-semibold text-[#0F172A]"><AiT>{"Crop & Rotate Image\n              "}</AiT></h2>
+              <h2 className="text-base font-semibold text-[#3B2F1E]"><AiT>{"Crop & Rotate Image\n              "}</AiT></h2>
             </div>
             <button onClick={() => {
                 if (isCropping)
@@ -1318,12 +1329,12 @@ export default function PhotoEditorPage() {
                     URL.revokeObjectURL(tempImageForCrop);
                 setTempImageForCrop(null);
                 setShowCropModal(false);
-            }} className="h-14 w-16 bg-[#4F46E5] text-white flex items-center justify-center cursor-pointer hover:bg-[#4338CA] transition">
+            }} className="h-14 w-16 bg-[#D42020] text-white flex items-center justify-center cursor-pointer hover:bg-[#AE1717] transition">
               <X size={18}/>
             </button>
           </div>
 
-          <div className="bg-[#151c28] text-[#CBD5E1] text-xs py-2 text-center border-b border-[#334155] shrink-0 px-2">
+          <div className="bg-[#151c28] text-[#D8C9A6] text-sm py-2 text-center border-b border-[#5A4A32] shrink-0 px-2">
             <AiT>{selectedSize
                 ? "Adjust the crop area to frame the subject for your selected photo size."
                 : "Adjust the crop freely. No fixed photo size is selected."}</AiT>
@@ -1335,15 +1346,15 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <div className="h-16 bg-white border-t border-[#E2E8F0] flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
+          <div className="h-16 bg-[#FBF6E8] border-t border-[#E3D6B8] flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
             <div className="flex items-center gap-1">
               <div className="flex items-center rounded-lg overflow-hidden shadow-sm">
-                <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"-\n                "}</AiT></button>
-                <div className="bg-white text-[#0F172A] font-semibold text-xs px-3 py-2">
+                <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-base font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"-\n                "}</AiT></button>
+                <div className="bg-[#FBF6E8] text-[#3B2F1E] font-semibold text-sm px-3 py-2">
                   {zoom}<AiT>{"%\n                "}</AiT></div>
-                <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-sm font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"+\n                "}</AiT></button>
+                <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-base font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"+\n                "}</AiT></button>
               </div>
-              <button onClick={() => setRotate((prev) => (prev + 90) % 360)} disabled={isCropping} className="ml-2 bg-[#059669] text-white px-3 py-2 rounded-lg text-xs flex items-center gap-1 cursor-pointer hover:bg-[#047857] transition disabled:opacity-50">
+              <button onClick={() => setRotate((prev) => (prev + 90) % 360)} disabled={isCropping} className="ml-2 bg-[#059669] text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 cursor-pointer hover:bg-[#047857] transition disabled:opacity-50">
                 <RotateCw size={14}/><AiT>{"Rotate\n              "}</AiT></button>
             </div>
 
@@ -1355,8 +1366,8 @@ export default function PhotoEditorPage() {
                     URL.revokeObjectURL(tempImageForCrop);
                 setTempImageForCrop(null);
                 setShowCropModal(false);
-            }} disabled={isCropping} className="bg-[#F1F5F9] text-[#334155] px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-[#E2E8F0] transition disabled:opacity-50"><AiT>{"Cancel\n              "}</AiT></button>
-              <button onClick={() => handleConfirmCrop(imgRef.current)} disabled={isCropping} className="h-16 bg-[#059669] text-white px-6 text-xs flex items-center gap-2 cursor-pointer hover:bg-[#047857] transition font-semibold disabled:opacity-50">
+            }} disabled={isCropping} className="bg-[#F3E9D2] text-[#5A4A32] px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-[#E3D6B8] transition disabled:opacity-50"><AiT>{"Cancel\n              "}</AiT></button>
+              <button onClick={() => handleConfirmCrop(imgRef.current)} disabled={isCropping} className="h-16 bg-[#059669] text-white px-6 text-sm flex items-center gap-2 cursor-pointer hover:bg-[#047857] transition font-semibold disabled:opacity-50">
                 {isCropping ? (<>
                     <Loader2 size={16} className="animate-spin"/><AiT>{"Saving...\n                  "}</AiT></>) : (<>
                     <Check size={16}/><AiT>{"Crop\n                  "}</AiT></>)}

@@ -386,72 +386,72 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
         : [];
     const totalSheets = pageSize === "Joint" ? Math.ceil(visibleJointPageIndices.length / 2) : 1;
     return (<>
-      <div className="paper-stage relative rounded-xl border border-[#E2E8F0] bg-[#E2E8F0] p-3 shadow-sm">
-        <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-2.5 py-2 shadow-sm">
+      <div className="paper-stage page-font relative rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] p-3 shadow-sm">
+        <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 shadow-sm">
           <div className="flex min-w-0 items-center gap-2">
-            <SquareDashedMousePointer size={11} className={regionSelectMode ? "text-[#2563EB]" : "text-[#0F172A]/55"}/>
+            <SquareDashedMousePointer size={16} className={regionSelectMode ? "text-[#DC2626]" : "text-[#6B5A40]"}/>
 
-            <span className="truncate text-[9px] font-semibold text-[#0F172A]">
+            <span className="truncate text-[14px] font-semibold text-[#3B2F1E]">
               {regionSelectMode
         ? <T>{"Drag anywhere on the paper to mark a custom text region"}</T> : <T>{"Select an area to place custom inline text"}</T>}
             </span>
           </div>
 
-          <button type="button" onClick={() => setRegionSelectMode(!regionSelectMode)} className={`shrink-0 rounded-lg border px-2.5 py-1 text-[8px] font-bold ${regionSelectMode
-            ? "border-[#2563EB] bg-[#E2E8F0] text-[#2563EB]"
-            : "border-[#E2E8F0] text-[#0F172A] hover:bg-[#E2E8F0]"}`}>
+          <button type="button" onClick={() => setRegionSelectMode(!regionSelectMode)} className={`shrink-0 rounded-lg border px-3 py-1.5 text-[13px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${regionSelectMode
+            ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626]"
+            : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}>
             {regionSelectMode ? <T>{"Cancel area"}</T> : <T>{"Select area"}</T>}
           </button>
         </div>
 
-        {pageSize === "Joint" ? (<div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-2.5 py-2 shadow-sm">
+        {pageSize === "Joint" ? (<div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 shadow-sm">
             <div className="flex items-center gap-2">
-              <Move size={11} className="text-[#2563EB]"/>
+              <Move size={16} className="text-[#DC2626]"/>
 
-              <span className="text-[9px] font-semibold text-[#0F172A]">
+              <span className="text-[14px] font-semibold text-[#3B2F1E]">
                 {jointLayoutMode === "manual"
             ? <T>{"Manual page distribution"}</T> : <T>{"Auto-balanced distribution"}</T>}
               </span>
 
-              {overflowJointPages.length ? (<span className="rounded-full bg-red-50 px-2 py-0.5 text-[8px] font-extrabold text-red-500"><T>{"Overflow:"}</T>{<T>{" "}</T>}
+              {overflowJointPages.length ? (<span className="rounded-full bg-red-50 px-2 py-0.5 text-[13px] font-bold text-red-500"><T>{"Overflow:"}</T>{<T>{" "}</T>}
                   {overflowJointPages.map((page) => page + 1).join(", ")}
                 </span>) : null}
             </div>
 
             <div className="flex items-center gap-1">
-              <button type="button" onClick={handleAutoBalanceJoint} className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-[8px] font-bold text-[#0F172A] hover:border-[#2563EB] hover:text-[#2563EB]"><T>{"Auto balance\n              "}</T></button>
+              <button type="button" onClick={handleAutoBalanceJoint} className="rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-1.5 text-[13px] font-bold text-[#3B2F1E] hover:border-[#DC2626] hover:text-[#DC2626] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]"><T>{"Auto balance\n              "}</T></button>
 
-              <button type="button" onClick={addJointPage} className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-[8px] font-bold text-[#0F172A] hover:bg-[#E2E8F0]"><T>{"+ Page\n              "}</T></button>
+              <button type="button" onClick={addJointPage} className="rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-1.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]"><T>{"+ Page\n              "}</T></button>
 
-              <button type="button" onClick={removeLastJointPage} disabled={jointPageCount <= 2} className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-[8px] font-bold text-[#0F172A] hover:bg-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-30"><T>{"\u2212 Page\n              "}</T></button>
+              <button type="button" onClick={removeLastJointPage} disabled={jointPageCount <= 2} className="rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-1.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-70 transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]"><T>{"\u2212 Page\n              "}</T></button>
             </div>
           </div>) : null}
 
-        {selectedQuestions.length ? (<div className="screen-only mb-2 flex items-center gap-2 text-[9px] font-medium text-[#0F172A]/55">
-            <GripVertical size={11}/>
+        {selectedQuestions.length ? (<div className="screen-only mb-2 flex items-center gap-2 text-[13px] font-medium text-[#6B5A40]">
+            <GripVertical size={15}/>
 
             {regionSelectMode
             ? <T>{"Drag across any page area to create a custom inline text box"}</T> : <T>{"Drag questions to reorder them within a section or move them between pages"}</T>}
           </div>) : null}
 
-        <div className="paper-print-root overflow-auto bg-white py-1">
+        <div className="scroll paper-print-root overflow-auto bg-[#F6EEDB] py-1">
           {selectedQuestions.length === 0 ? (<div className="flex min-h-[590px] items-center justify-center">
               <div className="text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#2563EB] shadow-sm">
-                  <FileText size={18}/>
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] text-[#DC2626] shadow-sm">
+                  <FileText size={22}/>
                 </div>
 
-                <p className="text-[11px] font-bold text-[#0F172A]/70"><T>{"No questions selected yet\n                "}</T></p>
+                <p className="text-[17px] font-semibold text-[#3B2F1E]"><T>{"No questions selected yet\n                "}</T></p>
 
-                <p className="mt-1 max-w-xs text-[9px] leading-relaxed text-[#0F172A]/55"><T>{"Filter and pick questions from the left \u2014 they will appear\n                  here as a paper.\n                "}</T></p>
+                <p className="mt-1 max-w-xs text-[14px] italic leading-[1.6] text-[#6B5A40]"><T>{"Filter and pick questions from the left \u2014 they will appear\n                  here as a paper.\n                "}</T></p>
               </div>
             </div>) : pageSize === "Joint" ? (<div className="flex w-full min-w-[1050px] flex-col gap-10 pt-2">
-              <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
+              <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">
                 {jointPageIndices
                 .filter((pageIndex) => pageIndex < jointPageCount)
-                .map((pageIndex) => (<button key={`joint-page-tab-${pageIndex}`} type="button" onClick={() => setActiveJointPage(pageIndex)} className={`shrink-0 rounded-lg px-3 py-1.5 text-[9px] font-bold transition ${activeJointPage === pageIndex
-                    ? "bg-[#2563EB] text-white"
-                    : "text-[#0F172A]/70 hover:bg-[#E2E8F0]"}`}><T>{"Page "}</T>{pageIndex + 1}<T>{"\u00B7"}</T>{<T>{" "}</T>}
+                .map((pageIndex) => (<button key={`joint-page-tab-${pageIndex}`} type="button" onClick={() => setActiveJointPage(pageIndex)} className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${activeJointPage === pageIndex
+                    ? "bg-[#DC2626] text-white hover:bg-[#B91C1C]"
+                    : "text-[#5A4A32] hover:bg-[#EFE3C8]"}`}><T>{"Page "}</T>{pageIndex + 1}<T>{"\u00B7"}</T>{<T>{" "}</T>}
                       {(jointQuestionsByPage[pageIndex] || []).length}
                     </button>))}
               </div>
@@ -462,7 +462,7 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
                 const firstVisibleIndex = spreadIndex * 2;
                 const spreadPageIndices = visibleJointPageIndices.slice(firstVisibleIndex, firstVisibleIndex + 2);
                 return (<div key={`joint-spread-${spreadIndex}`} className="duplex-spread relative flex w-full items-start justify-center gap-3" data-duplex-sheet={Math.floor(spreadIndex / 2) + 1} data-duplex-side={spreadIndex % 2 === 0 ? "front" : "back"}>
-                      <div className="screen-only pointer-events-none absolute left-1/2 top-[-18px] -translate-x-1/2 rounded-full bg-[#E2E8F0] px-2.5 py-1 text-[8px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]/70"><T>{"Sheet "}</T>{Math.floor(spreadIndex / 2) + 1}<T>{"\u00B7"}</T>{<T>{" "}</T>}
+                      <div className="screen-only pointer-events-none absolute left-1/2 top-[-18px] -translate-x-1/2 rounded-full border border-[#D8C9A6] bg-[#F3E9D2] px-3 py-1 text-[12px] font-bold uppercase tracking-wide text-[#5A4A32]"><T>{"Sheet "}</T>{Math.floor(spreadIndex / 2) + 1}<T>{"\u00B7"}</T>{<T>{" "}</T>}
                         {spreadIndex % 2 === 0 ? <T>{"Front"}</T> : <T>{"Back / Flip"}</T>}
                       </div>
 
@@ -535,10 +535,10 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
         .field-label {
           display: block;
           margin-bottom: 6px;
-          color: #0F172A;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
+          color: #6B5A40;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
         }
 

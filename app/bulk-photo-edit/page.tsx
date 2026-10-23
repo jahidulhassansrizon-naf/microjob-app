@@ -10,6 +10,22 @@ import PhotoUploader from "./components/PhotoUploader";
 import PresetPanel from "./components/PresetPanel";
 import { TOOL_PRESETS } from "./components/toolCatalog";
 import type { PhotoItem, PhotoProcessingStatus, SelectedTools, } from "./components/types";
+const PAGE_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+.page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+.scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+.scroll::-webkit-scrollbar { width: 12px; }
+.scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
+.scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+.scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+`;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const MAX_PHOTOS = 20;
 const buildBulkPrompt = (selectedTools: SelectedTools) => {
@@ -511,10 +527,11 @@ export default function BulkPhotoEditPage() {
     const failedCount = photos.filter((photo) => photo.status === "error").length;
     if (!isAuthenticated) {
         return (
-          <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] font-sans text-[#0F172A]">
+          <div className="page-font flex min-h-screen items-center justify-center bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]">
+            <style>{PAGE_STYLES}</style>
             <main className="flex items-center justify-center px-4">
-              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
-                <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-[#2563EB] border-t-transparent" />
+              <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-5 py-4 text-base font-medium text-[#5A4A32] shadow-sm">
+                <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-[#DC2626] border-t-transparent" />
                 <BulkT>{"Verifying your login..."}</BulkT>
               </div>
             </main>
@@ -522,10 +539,11 @@ export default function BulkPhotoEditPage() {
         );
     }
     return (<div
-      className="flex min-h-screen select-none flex-col bg-[#F8FAFC] font-sans text-[#0F172A]"
+      className="page-font flex min-h-screen select-none flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]"
       aria-hidden={Boolean(cropSession)}
       style={{ display: cropSession ? "none" : undefined }}
     >
+      <style>{PAGE_STYLES}</style>
       <DashboardNavbar />
       <SubscriptionLock />
 
@@ -533,42 +551,42 @@ export default function BulkPhotoEditPage() {
         <PhotoUploader photos={photos} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} onClearPhotos={clearPhotos} disabled={isProcessing}/>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="border-b border-[#E2E8F0] bg-white px-4 py-3 sm:px-6">
+          <div className="border-b border-[#E3D6B8] bg-[#F2E8D2] px-4 py-3 sm:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h1 className="text-base font-black tracking-tight text-[#0F172A]"><BulkT>{"Bulk Photo Edit\n                "}</BulkT></h1>
-                <p className="mt-1 max-w-2xl text-[10px] leading-relaxed text-[#64748B]"><BulkT>{"Select 2 or more photos, choose exact AI operations, and apply\n                  the same selected operation set to each photo individually.\n                "}</BulkT></p>
+                <h1 className="text-2xl font-bold tracking-[-0.01em] text-[#3B2F1E]"><BulkT>{"Bulk Photo Edit\n                "}</BulkT></h1>
+                <p className="mt-1 max-w-2xl text-[14px] leading-[1.7] text-[#6B5A40]"><BulkT>{"Select 2 or more photos, choose exact AI operations, and apply\n                  the same selected operation set to each photo individually.\n                "}</BulkT></p>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-[9px] font-black ${photos.length >= 2
-            ? "bg-emerald-50 text-emerald-700"
-            : "bg-amber-50 text-amber-700"}`}>
+                <span className={`rounded-full border px-3 py-1 text-[13px] font-bold ${photos.length >= 2
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-amber-200 bg-amber-50 text-amber-700"}`}>
                   <BulkT>{`${photos.length} photos`}</BulkT></span>
 
-                <span className="rounded-full bg-[#EFF6FF] px-2.5 py-1 text-[9px] font-black text-[#2563EB]">
+                <span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-1 text-[13px] font-bold text-[#B91C1C]">
                   <BulkT>{`${selectedTotal} AI tools`}</BulkT></span>
 
-                {isProcessing && (<span className="rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black text-blue-700">
+                {isProcessing && (<span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-1 text-[13px] font-bold text-[#B91C1C]">
                     <BulkT>{`${processedCount}/${photos.length} processed`}</BulkT></span>)}
 
-                {!isProcessing && completedCount > 0 && (<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black text-emerald-700">
+                {!isProcessing && completedCount > 0 && (<span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[13px] font-bold text-emerald-700">
                     <BulkT>{`${completedCount} ready`}</BulkT></span>)}
 
-                {!isProcessing && failedCount > 0 && (<span className="rounded-full bg-red-50 px-2.5 py-1 text-[9px] font-black text-red-700">
+                {!isProcessing && failedCount > 0 && (<span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[13px] font-bold text-red-700">
                     <BulkT>{`${failedCount} failed`}</BulkT></span>)}
 
-                {processingCount > 0 && !isProcessing && (<span className="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black text-amber-700">
+                {processingCount > 0 && !isProcessing && (<span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[13px] font-bold text-amber-700">
                     <BulkT>{`${processingCount} processing`}</BulkT></span>)}
               </div>
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="scroll flex min-h-0 flex-1 flex-col overflow-auto">
             <BulkPhotoStage photos={photos} onAddPhotos={addPhotos} onDownloadResult={downloadResult} onRetryPhoto={retryFailedPhoto} isProcessing={isProcessing}/>
 
             {message && (<div className="px-4 pb-4 sm:px-8">
-                <div className="mx-auto w-full max-w-5xl rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5 text-[9px] font-semibold leading-relaxed text-blue-700">
+                <div className="mx-auto w-full max-w-5xl rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-3 text-[14px] font-medium leading-[1.6] text-[#B91C1C]">
                   <BulkT>{message}</BulkT>
                 </div>
               </div>)}

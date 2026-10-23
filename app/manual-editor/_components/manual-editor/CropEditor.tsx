@@ -184,28 +184,28 @@ export default function CropEditor() {
           -webkit-user-drag: none;
         }
       `}</style>
-      <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-b border-[#E2E8F0] flex items-center justify-between">
+      <div className="h-[56px] shrink-0 bg-[#F2E8D2] text-[#3B2F1E] border-b border-[#E3D6B8] flex items-center justify-between">
         <div className="h-full flex items-center">
           <div className="pl-5 pr-4 flex items-center gap-2">
-            <div className="h-[30px] w-[30px] rounded-full bg-[#2563EB] text-white flex items-center justify-center font-black text-sm leading-none"><T>{"X\r\n            "}</T></div>
+            <div className="h-[30px] w-[30px] rounded-full bg-[#DC2626] text-white flex items-center justify-center font-extrabold text-base leading-none"><T>{"X\r\n            "}</T></div>
             <div className="leading-none">
-              <div className="text-[14px] font-black tracking-tight text-[#0F172A]"><T>{"\u09B8\u09B9\u099C\u0995\u09BE\u099C\r\n              "}</T></div>
-              <div className="text-[7px] uppercase tracking-[0.16em] text-[#0F172A]/60 mt-[2px]"><T>{"WWW.SHOHOZKAJ.COM\r\n              "}</T></div>
+              <div className="text-[16px] font-extrabold tracking-tight text-[#3B2F1E]"><T>{"\u09B8\u09B9\u099C\u0995\u09BE\u099C\r\n              "}</T></div>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[#6B5A40] mt-[2px]"><T>{"WWW.SHOHOZKAJ.COM\r\n              "}</T></div>
             </div>
           </div>
-          <div className="h-7 w-px bg-[#E2E8F0]"/>
+          <div className="h-7 w-px bg-[#D8C9A6]"/>
           <div className="ml-3 flex items-center gap-3">
-            <div className="h-[34px] w-[34px] rounded-xl bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center">
+            <div className="h-[34px] w-[34px] rounded-xl bg-[#FEE9E9] text-[#DC2626] flex items-center justify-center">
               <CropIcon size={16} strokeWidth={2.3}/>
             </div>
             <div className="flex flex-col">
-              <div className="text-[14px] font-black tracking-tight text-[#0F172A]"><T>{"Crop &amp; Rotate Image\r\n              "}</T></div>
-              <div className="text-[8px] text-[#0F172A]/60 font-bold"><T>{"Independent photo crop \u2022 canvas fit after crop\r\n              "}</T></div>
+              <div className="text-[16px] font-extrabold tracking-tight text-[#3B2F1E]"><T>{"Crop &amp; Rotate Image\r\n              "}</T></div>
+              <div className="text-[11px] text-[#6B5A40] font-bold"><T>{"Independent photo crop \u2022 canvas fit after crop\r\n              "}</T></div>
             </div>
           </div>
         </div>
 
-        <button type="button" aria-label={t("Close crop editor")} onClick={closeCrop} className="h-[50px] w-[54px] bg-[#ef4044] hover:bg-[#dc3034] text-white flex items-center justify-center transition-colors cursor-pointer">
+        <button type="button" aria-label={t("Close crop editor")} onClick={closeCrop} className="h-[56px] w-[60px] bg-[#D42020] hover:bg-[#AE1717] text-white flex items-center justify-center transition-colors cursor-pointer">
           <X size={22} strokeWidth={2.2}/>
         </button>
       </div>
@@ -215,30 +215,30 @@ export default function CropEditor() {
           {processedSrc ? (<ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(value) => setCompletedCrop(value)} className="sohozkaj-crop-canvas max-w-[82vw] max-h-[72vh]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img ref={imgRef} alt={t("Crop preview")} src={processedSrc} onLoad={onImageLoad} className="max-w-[82vw] max-h-[72vh] w-auto h-auto object-contain block"/>
-            </ReactCrop>) : (<div className="text-sm text-white/60"><T>{"Preparing image\u2026"}</T></div>)}
+            </ReactCrop>) : (<div className="text-base text-white/60"><T>{"Preparing image\u2026"}</T></div>)}
         </div>
       </div>
 
-      <div className="h-[50px] shrink-0 bg-[#F8FAFC] text-[#0F172A] border-t border-[#E2E8F0] flex items-stretch justify-between">
+      <div className="h-[56px] shrink-0 bg-[#F2E8D2] text-[#3B2F1E] border-t border-[#E3D6B8] flex items-stretch justify-between">
         <div className="flex items-stretch">
-          <button type="button" aria-label={t("Zoom out")} onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Zoom out")} onClick={() => setZoom((value) => clamp(value - 10, 100, 300))} className="w-[55px] bg-[#DC2626] text-white flex items-center justify-center hover:bg-[#B91C1C] transition-colors cursor-pointer">
             <Minus size={17} strokeWidth={2.2}/>
           </button>
-          <div className="w-[48px] bg-[#F8FAFC] flex items-center justify-center text-[12px] font-black border-r border-[#E2E8F0] text-[#0F172A]">
+          <div className="w-[56px] bg-[#F6EEDB] flex items-center justify-center text-[14px] font-extrabold border-r border-[#E3D6B8] text-[#3B2F1E]">
             {zoom}<T>{"%\r\n          "}</T></div>
-          <button type="button" aria-label={t("Zoom in")} onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} className="w-[55px] bg-[#2563EB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Zoom in")} onClick={() => setZoom((value) => clamp(value + 10, 100, 300))} className="w-[55px] bg-[#DC2626] text-white flex items-center justify-center hover:bg-[#B91C1C] transition-colors cursor-pointer">
             <Plus size={17} strokeWidth={2.2}/>
           </button>
-          <button type="button" aria-label={t("Rotate image")} onClick={handleRotate} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Rotate image")} onClick={handleRotate} className="w-[116px] bg-[#DC2626] text-white flex items-center justify-center gap-2 text-[14px] font-extrabold hover:bg-[#B91C1C] transition-colors cursor-pointer">
             <RotateCcw size={15} strokeWidth={2}/><T>{"Rotate\r\n          "}</T></button>
-          <button type="button" aria-label={t("Mirror image")} onClick={handleMirror} className="w-[100px] bg-[#2563EB] text-white flex items-center justify-center gap-2 text-[12px] font-black hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+          <button type="button" aria-label={t("Mirror image")} onClick={handleMirror} className="w-[116px] bg-[#DC2626] text-white flex items-center justify-center gap-2 text-[14px] font-extrabold hover:bg-[#B91C1C] transition-colors cursor-pointer">
             <FlipHorizontal2 size={15} strokeWidth={2}/><T>{"Mirror\r\n          "}</T></button>
         </div>
 
         <div className="flex items-stretch ml-auto">
-          <button type="button" onClick={closeCrop} className="w-[155px] px-4 bg-[#E2E8F0] text-[#0F172A] flex items-center justify-center gap-2 text-[12px] font-black border-l border-[#E2E8F0] hover:bg-[#cbd5e1] transition-colors cursor-pointer">
-            <ScanLine size={15} strokeWidth={2} className="text-[#0F172A]/70"/><T>{"No Crop Needed\r\n          "}</T></button>
-          <button type="button" disabled={busy || !completedCrop} onClick={() => void applyCrop()} className="w-[172px] bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[12px] font-black transition-colors cursor-pointer disabled:cursor-not-allowed">
+          <button type="button" onClick={closeCrop} className="w-[176px] px-4 bg-[#FBF6E8] text-[#3B2F1E] flex items-center justify-center gap-2 text-[14px] font-extrabold border-l border-[#E3D6B8] hover:bg-[#EFE3C8] transition-colors cursor-pointer">
+            <ScanLine size={15} strokeWidth={2} className="text-[#5A4A32]"/><T>{"No Crop Needed\r\n          "}</T></button>
+          <button type="button" disabled={busy || !completedCrop} onClick={() => void applyCrop()} className="w-[196px] bg-[#D42020] hover:bg-[#AE1717] active:scale-[0.98] disabled:opacity-60 text-white flex items-center justify-center gap-2 text-[14px] font-extrabold transition-colors cursor-pointer disabled:cursor-not-allowed">
             <Check size={14} strokeWidth={2.4}/>
             {busy ? <T>{"Cropping…"}</T> : <T>{"Crop"}</T>}
           </button>

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import type { ToolPreset } from "./types";
 
-const iconClass = "h-5 w-5 text-[#2563EB]";
+const iconClass = "h-5 w-5 text-[#DC2626]";
 
 function icon(Icon: LucideIcon) {
   return <Icon className={iconClass} />;
@@ -35,7 +35,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "face-enhance",
     name: "Face Enhance",
     description: "AI retouching for face, skin and facial details.",
-    icon: <ScanFace className="h-6 w-6 text-[#2563EB]" />,
+    icon: <ScanFace className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Skin Smoothing",
@@ -83,7 +83,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "photo-color",
     name: "Photo Color",
     description: "AI color correction, recovery and color balance.",
-    icon: <Palette className="h-6 w-6 text-[#2563EB]" />,
+    icon: <Palette className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Auto Color",
@@ -126,7 +126,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "photo-light",
     name: "Photo Light",
     description: "AI exposure, lighting and tonal corrections.",
-    icon: <Lightbulb className="h-6 w-6 text-[#2563EB]" />,
+    icon: <Lightbulb className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Exposure Fix",
@@ -164,7 +164,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "dress-style",
     name: "Dress Style",
     description: "AI clothing edits while preserving the person.",
-    icon: <Shirt className="h-6 w-6 text-[#2563EB]" />,
+    icon: <Shirt className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Outfit Color Change",
@@ -192,7 +192,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "photo-background",
     name: "Photo Background",
     description: "AI background separation, replacement and cleanup.",
-    icon: <ImageIcon className="h-6 w-6 text-[#2563EB]" />,
+    icon: <ImageIcon className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Background Remove",
@@ -225,7 +225,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "old-photo-to-new",
     name: "Old Photo to New",
     description: "Restore damaged, faded and low-detail old photos.",
-    icon: <Sparkles className="h-6 w-6 text-[#2563EB]" />,
+    icon: <Sparkles className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Scratch Repair",
@@ -258,7 +258,7 @@ export const TOOL_PRESETS: ToolPreset[] = [
     id: "studio-image",
     name: "Studio Image",
     description: "AI studio lighting and professional portrait finishing.",
-    icon: <Award className="h-6 w-6 text-[#2563EB]" />,
+    icon: <Award className="h-6 w-6 text-[#DC2626]" />,
     tools: [
       {
         name: "Studio Light",

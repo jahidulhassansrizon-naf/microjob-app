@@ -89,7 +89,7 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
             ? t("Enhancing Face...")
             : t("Removing Background...");
     const progressPercent = Math.max(8, Math.min(100, Math.round(progress * 100)));
-    return (<div className="absolute z-40 overflow-hidden rounded-2xl border border-cyan-200/30 bg-slate-950/18 backdrop-blur-[1.5px] pointer-events-auto" style={style} aria-live="polite" aria-busy="true">
+    return (<div className="absolute z-40 overflow-hidden rounded-2xl border border-[#FCA5A5]/30 bg-[#2A2117]/18 backdrop-blur-[1.5px] pointer-events-auto" style={style} aria-live="polite" aria-busy="true">
       <style>{`
         @keyframes manual-editor-photo-scan-sweep {
           0% {
@@ -132,50 +132,50 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
         }
       `}</style>
 
-      {onCancel && (<button type="button" onClick={onCancel} className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-slate-950/60 text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/80 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200/70" title={t("Cancel processing")} aria-label={t("Cancel processing")}>
+      {onCancel && (<button type="button" onClick={onCancel} className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-[#2A2117]/60 text-white shadow-lg backdrop-blur-md transition hover:bg-[#2A2117]/80 hover:text-[#FEE9E9] focus:outline-none focus:ring-2 focus:ring-[#FCA5A5]/70" title={t("Cancel processing")} aria-label={t("Cancel processing")}>
           <X className="h-3.5 w-3.5" strokeWidth={2.2}/>
         </button>)}
 
-      <div className="absolute inset-0 bg-gradient-to-b from-cyan-300/5 via-cyan-200/10 to-blue-500/5"/>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F87171]/5 via-[#FCA5A5]/10 to-[#DC2626]/5"/>
 
-      <div className="absolute inset-x-0 top-0 h-[14%] bg-gradient-to-b from-transparent via-cyan-200/85 to-transparent" style={{
+      <div className="absolute inset-x-0 top-0 h-[14%] bg-gradient-to-b from-transparent via-[#FCA5A5]/85 to-transparent" style={{
             animation: "manual-editor-photo-scan-sweep 1.55s cubic-bezier(.4,0,.2,1) infinite alternate",
-            boxShadow: "0 0 18px rgba(103,232,249,0.65), 0 0 42px rgba(59,130,246,0.28)",
+            boxShadow: "0 0 18px rgba(248,113,113,0.65), 0 0 42px rgba(220,38,38,0.28)",
             willChange: "transform",
         }}/>
 
-      <div className="absolute inset-3 rounded-xl border border-cyan-200/25" style={{ animation: "manual-editor-photo-scan-pulse 1.6s ease-in-out infinite" }}/>
+      <div className="absolute inset-3 rounded-xl border border-[#FCA5A5]/25" style={{ animation: "manual-editor-photo-scan-pulse 1.6s ease-in-out infinite" }}/>
 
       <div className="absolute inset-4 rounded-lg" style={{
             animation: "manual-editor-photo-scan-corners 1.35s ease-in-out infinite",
         }}>
-        <div className="absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2 border-cyan-200/95"/>
-        <div className="absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2 border-cyan-200/95"/>
-        <div className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2 border-cyan-200/95"/>
-        <div className="absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2 border-cyan-200/95"/>
+        <div className="absolute left-0 top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2 border-[#FCA5A5]/95"/>
+        <div className="absolute right-0 top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2 border-[#FCA5A5]/95"/>
+        <div className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2 border-[#FCA5A5]/95"/>
+        <div className="absolute bottom-0 right-0 h-6 w-6 rounded-br-md border-b-2 border-r-2 border-[#FCA5A5]/95"/>
       </div>
 
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-xl border border-white/15 bg-slate-950/45 px-4 py-2.5 text-white shadow-lg backdrop-blur-md">
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-xl border border-white/15 bg-[#2A2117]/45 px-4 py-2.5 text-white shadow-lg backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <ScanLine className="h-4 w-4 text-cyan-200" strokeWidth={1.8}/>
-          <span className="text-[11px] font-black tracking-wide whitespace-nowrap">
+          <ScanLine className="h-4 w-4 text-[#FCA5A5]" strokeWidth={1.8}/>
+          <span className="text-[13px] font-extrabold tracking-wide whitespace-nowrap">
             {label}
           </span>
         </div>
-        <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70"><T>{"AI scan in progress\n        "}</T></span>
+        <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FEE9E9]/70"><T>{"AI scan in progress\n        "}</T></span>
 
-        {firstRunMessage && (<span className="mt-1.5 max-w-[230px] text-center text-[8px] font-semibold leading-tight text-white/85">
+        {firstRunMessage && (<span className="mt-1.5 max-w-[230px] text-center text-[11px] font-semibold leading-tight text-white/85">
             <T>{firstRunMessage}</T>
           </span>)}
       </div>
 
       {mode === "background" ? (<div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15
           ">
-          <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400" style={{
+          <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-[#FCA5A5] via-[#EF4444] to-[#DC2626]" style={{
                 animation: "manual-editor-photo-scan-sweep 1.35s cubic-bezier(.4,0,.2,1) infinite alternate",
             }}/>
         </div>) : (<div className="absolute bottom-3 left-3 right-3 h-1 overflow-hidden rounded-full bg-white/15">
-          <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 transition-[width] duration-300 ease-out" style={{ width: `${progressPercent}%` }}/>
+          <div className="h-full rounded-full bg-gradient-to-r from-[#FCA5A5] via-[#EF4444] to-[#DC2626] transition-[width] duration-300 ease-out" style={{ width: `${progressPercent}%` }}/>
         </div>)}
     </div>);
 }
@@ -494,31 +494,31 @@ export default function PhotoWorkspace() {
         : 1;
     const presetSizeText = `${currentPreset.widthMm} × ${currentPreset.heightMm} mm`;
     return (<>
-      <main className="lg:col-span-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl p-5 md:p-6 lg:p-4 flex flex-col items-center justify-center relative min-h-[520px] lg:min-h-0 lg:h-full lg:overflow-y-auto [--canvas-max:400px] lg:[--canvas-max:min(440px,46vh)] shadow-lg text-[#0F172A]">
+      <main className="lg:col-span-6 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-5 md:p-6 lg:p-4 flex flex-col items-center justify-center relative min-h-[520px] lg:min-h-0 lg:h-full lg:overflow-y-auto [--canvas-max:400px] lg:[--canvas-max:min(440px,46vh)] shadow-lg text-[#3B2F1E]">
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileInput} className="hidden"/>
 
-        {!activePhoto && photoMode !== "dual" ? (<div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 bg-[#E2E8F0]/40 cursor-pointer transition ${isDragging
-                ? "border-[#2563EB] ring-2 ring-[#2563EB]/30"
-                : "border-slate-300 hover:border-[#2563EB]"}`} style={getResponsiveCanvasStyle(presetRatio)} onClick={openFilePicker} onDragEnter={(event) => {
+        {!activePhoto && photoMode !== "dual" ? (<div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 bg-[#F6EEDB] cursor-pointer transition ${isDragging
+                ? "border-[#DC2626] ring-2 ring-[#DC2626]/40"
+                : "border-[#D8C9A6] hover:border-[#DC2626]"}`} style={getResponsiveCanvasStyle(presetRatio)} onClick={openFilePicker} onDragEnter={(event) => {
                 event.preventDefault();
                 setIsDragging(true);
             }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => {
                 event.preventDefault();
                 setIsDragging(false);
             }} onDrop={handleDrop}>
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#0F172A] border border-[#E2E8F0] shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-[#FBF6E8] flex items-center justify-center text-[#3B2F1E] border border-[#E3D6B8] shadow-sm">
               <ImageIcon size={22}/>
             </div>
 
             <div>
-              <h3 className="text-[#0F172A] text-base font-bold">
+              <h3 className="text-[#3B2F1E] text-lg font-bold">
                 {isDragging ? <T>{"Drop your photo here"}</T> : <T>{"Upload a Photo"}</T>}
               </h3>
-              <p className="text-slate-500 text-xs mt-1"><T>{"Click or drag &amp; drop to upload\n              "}</T></p>
-              <div className="mt-2 inline-flex px-3 py-1 rounded-full bg-white border border-[#E2E8F0] text-[11px] font-semibold text-[#0F172A] shadow-sm">
+              <p className="text-[#6B5A40] text-sm mt-1"><T>{"Click or drag &amp; drop to upload\n              "}</T></p>
+              <div className="mt-2 inline-flex px-3 py-1 rounded-full bg-[#FBF6E8] border border-[#E3D6B8] text-[13px] font-semibold text-[#3B2F1E] shadow-sm">
                 {currentPreset.label}
               </div>
-              <div className="mt-1 text-[9px] text-slate-500 font-semibold">
+              <div className="mt-1 text-[11px] text-[#6B5A40] font-semibold">
                 {presetSizeText}
               </div>
             </div>
@@ -526,19 +526,19 @@ export default function PhotoWorkspace() {
             <button type="button" onClick={(event) => {
                 event.stopPropagation();
                 openFilePicker();
-            }} className="bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition">
+            }} className="bg-[#DC2626] hover:bg-[#B91C1C] text-white font-extrabold text-sm px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition">
               <Upload size={14}/><T>{"Upload Photo\n            "}</T></button>
 
-            <div className="border border-[#E2E8F0] bg-white px-2.5 py-0.5 rounded-md text-[10px] font-mono text-slate-600 shadow-sm"><T>{"Ctrl+U\n            "}</T></div>
-            <p className="text-[9px] text-slate-500"><T>{"JPG, PNG, WEBP \u2022 Max 10 MB\n            "}</T></p>
+            <div className="border border-[#E3D6B8] bg-[#FBF6E8] px-2.5 py-0.5 rounded-md text-[12px] font-mono text-[#5A4A32] shadow-sm"><T>{"Ctrl+U\n            "}</T></div>
+            <p className="text-[11px] text-[#6B5A40]"><T>{"JPG, PNG, WEBP \u2022 Max 10 MB\n            "}</T></p>
           </div>) : (<div className="relative flex h-full w-full flex-col items-center justify-center gap-4">
             {photoMode === "dual" ? (<>
-                <div className="w-full max-w-[760px] rounded-2xl border border-[#E2E8F0] bg-[#E2E8F0]/30 p-4">
+                <div className="w-full max-w-[760px] rounded-2xl border border-[#E3D6B8] bg-[#F6EEDB] p-4">
                   <div className="text-center mb-3">
-                    <div className="text-[11px] font-black text-[#0F172A]">
+                    <div className="text-[13px] font-extrabold text-[#3B2F1E]">
                       {currentPreset.label}
                     </div>
-                    <div className="text-[9px] text-slate-500 mt-0.5">
+                    <div className="text-[11px] text-[#6B5A40] mt-0.5">
                       {presetSizeText}
                     </div>
                   </div>
@@ -547,48 +547,48 @@ export default function PhotoWorkspace() {
                     {[0, 1].map((index) => {
                     const photo = dualPhotos[index as 0 | 1];
                     return (<div key={index} onClick={() => setActiveDualSlot(index as 0 | 1)} className={`relative w-full overflow-hidden rounded-xl border-2 ${activeDualSlot === index
-                            ? "border-[#2563EB]"
-                            : "border-[#E2E8F0]"} bg-white flex items-center justify-center cursor-pointer transition shadow-sm`} style={{
+                            ? "border-[#DC2626]"
+                            : "border-[#E3D6B8]"} bg-[#FBF6E8] flex items-center justify-center cursor-pointer transition shadow-sm`} style={{
                             aspectRatio: presetRatio,
                             boxSizing: "border-box",
                             transition: "aspect-ratio 180ms ease",
                         }}>
-                          {photo ? (<img src={photo.url} alt={`Photo ${index + 1}`} className="block w-full h-full object-contain"/>) : (<div className="text-xs text-slate-400 text-center">
-                              <div className="font-bold text-slate-600"><T>{"Empty "}</T>{index === 0 ? <T>{"Left"}</T> : <T>{"Right"}</T>}<T>{"Slot\n                              "}</T></div>
-                              <div className="text-[9px] text-slate-400 mt-1">
+                          {photo ? (<img src={photo.url} alt={`Photo ${index + 1}`} className="block w-full h-full object-contain"/>) : (<div className="text-sm text-[#7A6A50] text-center">
+                              <div className="font-bold text-[#5A4A32]"><T>{"Empty "}</T>{index === 0 ? <T>{"Left"}</T> : <T>{"Right"}</T>}<T>{"Slot\n                              "}</T></div>
+                              <div className="text-[11px] text-[#7A6A50] mt-1">
                                 {presetSizeText}
                               </div>
                             </div>)}
 
-                          {activeDualSlot === index && (<div className="absolute left-2 top-2 rounded-full bg-[#10B981] text-white px-2 py-1 text-[8px] font-black shadow-sm"><T>{"ACTIVE\n                            "}</T></div>)}
+                          {activeDualSlot === index && (<div className="absolute left-2 top-2 rounded-full bg-[#10B981] text-white px-2 py-1 text-[11px] font-extrabold shadow-sm"><T>{"ACTIVE\n                            "}</T></div>)}
                         </div>);
                 })}
                   </div>
                 </div>
 
                 <div className="flex gap-2 flex-wrap justify-center">
-                  <button type="button" onClick={() => setActiveDualSlot(0)} className={`px-4 py-2 rounded-xl text-xs font-black transition ${activeDualSlot === 0
-                    ? "bg-[#2563EB] text-white shadow-md"
-                    : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"}`}><T>{"Left\n                  "}</T></button>
-                  <button type="button" onClick={() => setActiveDualSlot(1)} className={`px-4 py-2 rounded-xl text-xs font-black transition ${activeDualSlot === 1
-                    ? "bg-[#2563EB] text-white shadow-md"
-                    : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"}`}><T>{"Right\n                  "}</T></button>
-                  <button type="button" onClick={swapDualPhotos} className="px-4 py-2 rounded-xl bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex gap-2 items-center transition">
+                  <button type="button" onClick={() => setActiveDualSlot(0)} className={`px-4 py-2 rounded-xl text-sm font-extrabold transition ${activeDualSlot === 0
+                    ? "bg-[#DC2626] text-white shadow-md"
+                    : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}><T>{"Left\n                  "}</T></button>
+                  <button type="button" onClick={() => setActiveDualSlot(1)} className={`px-4 py-2 rounded-xl text-sm font-extrabold transition ${activeDualSlot === 1
+                    ? "bg-[#DC2626] text-white shadow-md"
+                    : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}><T>{"Right\n                  "}</T></button>
+                  <button type="button" onClick={swapDualPhotos} className="px-4 py-2 rounded-xl bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex gap-2 items-center transition">
                     <ArrowLeftRight size={14}/><T>{"Swap\n                  "}</T></button>
-                  <button type="button" onClick={openFilePicker} className="px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-black transition shadow-sm">
+                  <button type="button" onClick={openFilePicker} className="px-4 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-extrabold transition shadow-sm">
                     <Upload size={14} className="inline mr-1"/><T>{"Upload slot\n                  "}</T></button>
                 </div>
               </>) : (<>
                 <div className="flex flex-col items-center gap-2">
-                  <div className="text-[11px] font-black text-[#0F172A]">
+                  <div className="text-[13px] font-extrabold text-[#3B2F1E]">
                     <T>{currentPreset.label}</T>
                   </div>
-                  <div className="text-[9px] text-slate-500">
+                  <div className="text-[11px] text-[#6B5A40]">
                     {presetSizeText}
                   </div>
                 </div>
 
-                <div ref={previewHostRef} className={`relative overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-xl flex items-center justify-center ${canPan ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""}`} onPointerDown={handlePanPointerDown} onPointerMove={handlePanPointerMove} onPointerUp={finishPan} onPointerCancel={finishPan} style={{
+                <div ref={previewHostRef} className={`relative overflow-hidden rounded-2xl border border-[#E3D6B8] shadow-xl flex items-center justify-center ${canPan ? (isPanning ? "cursor-grabbing" : "cursor-grab") : ""}`} onPointerDown={handlePanPointerDown} onPointerMove={handlePanPointerMove} onPointerUp={finishPan} onPointerCancel={finishPan} style={{
                     ...getResponsiveCanvasStyle(presetRatio),
                     backgroundColor: activeBackground,
                     touchAction: canPan ? "none" : undefined,
@@ -618,14 +618,14 @@ export default function PhotoWorkspace() {
                     }} draggable={false}/>
                         </div>
 
-                        <div className="pointer-events-none absolute inset-y-0 w-[2px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.18),0_0_18px_rgba(34,211,238,0.65)]" style={{ left: `calc(${comparePosition}% - 1px)` }}>
-                          <div className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-slate-950/80 text-white shadow-xl backdrop-blur-sm">
+                        <div className="pointer-events-none absolute inset-y-0 w-[2px] bg-white shadow-[0_0_0_1px_rgba(59,47,30,0.18),0_0_18px_rgba(248,113,113,0.65)]" style={{ left: `calc(${comparePosition}% - 1px)` }}>
+                          <div className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-[#2A2117]/80 text-white shadow-xl backdrop-blur-sm">
                             <ArrowLeftRight className="h-4 w-4" strokeWidth={2.4}/>
                           </div>
                         </div>
 
-                        <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-slate-950/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Edited\n                        "}</T></div>
-                        <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-slate-950/65 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Original\n                        "}</T></div>
+                        <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/70 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Edited\n                        "}</T></div>
+                        <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/65 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Original\n                        "}</T></div>
                       </div>) : (<img src={activePhoto!.url} alt={t("Uploaded")} className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
                         filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
                     }}/>)}
@@ -644,42 +644,42 @@ export default function PhotoWorkspace() {
 
                   {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (<ObjectMaskCanvas />)}
 
-                  {!aiProcessing && !compareOpen && (<button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={removeActivePhoto} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center z-40 transition" title={t("Remove photo")}>
+                  {!aiProcessing && !compareOpen && (<button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={removeActivePhoto} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-[#3B2F1E]/60 hover:bg-[#3B2F1E]/80 text-white flex items-center justify-center z-40 transition" title={t("Remove photo")}>
                       <X size={14}/>
                     </button>)}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title={t("Zoom out")}>
+                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-9 w-9 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom out")}>
                     <ZoomOut size={14}/>
                   </button>
-                  <span className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] flex items-center text-xs font-black">
+                  <span className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] flex items-center text-sm font-extrabold">
                     {zoom}<T>{"%\n                  "}</T></span>
-                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-9 w-9 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 flex items-center justify-center transition" title={t("Zoom in")}>
+                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-9 w-9 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom in")}>
                     <ZoomIn size={14}/>
                   </button>
-                  <button type="button" onClick={() => setRotation((rotation - 90 + 360) % 360)} className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition">
+                  <button type="button" onClick={() => setRotation((rotation - 90 + 360) % 360)} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
                     <RotateCcw size={13}/><T>{"Rotate\n                  "}</T></button>
-                  <button type="button" onClick={() => setRotation((rotation + 90) % 360)} className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition">
+                  <button type="button" onClick={() => setRotation((rotation + 90) % 360)} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
                     <RotateCw size={13}/><T>{"Rotate\n                  "}</T></button>
-                  <button type="button" onClick={() => setFlipX(!flipX)} className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 transition ${flipX
-                    ? "bg-[#2563EB] text-white shadow-md"
-                    : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"}`}>
+                  <button type="button" onClick={() => setFlipX(!flipX)} className={`h-9 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${flipX
+                    ? "bg-[#DC2626] text-white shadow-md"
+                    : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}>
                     <FlipHorizontal2 size={13}/><T>{"Mirror\n                  "}</T></button>
-                  {hasComparison && (<button type="button" disabled={Boolean(aiProcessing)} onClick={() => setCompareOpen((current) => !current)} className={`h-9 px-3 rounded-lg text-xs font-black flex items-center gap-1 transition ${compareOpen
-                        ? "bg-[#2563EB] text-white shadow-md"
-                        : "bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300"} disabled:cursor-not-allowed disabled:opacity-50`} title={t("Compare edited and original")} aria-pressed={compareOpen}>
+                  {hasComparison && (<button type="button" disabled={Boolean(aiProcessing)} onClick={() => setCompareOpen((current) => !current)} className={`h-9 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${compareOpen
+                        ? "bg-[#DC2626] text-white shadow-md"
+                        : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"} disabled:cursor-not-allowed disabled:opacity-50`} title={t("Compare edited and original")} aria-pressed={compareOpen}>
                       <ArrowLeftRight size={13}/><T>{"Compare\n                    "}</T></button>)}
                   <button type="button" onClick={() => {
                     setZoom(100);
                     setRotation(0);
                     setFlipX(false);
-                }} className="h-9 px-3 rounded-lg bg-[#E2E8F0] text-[#0F172A] hover:bg-slate-300 text-xs font-black flex items-center gap-1 transition">
+                }} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
                     <Maximize2 size={13}/><T>{"Reset\n                  "}</T></button>
                 </div>
               </>)}
 
-            {uploadError && (<div className="absolute bottom-3 left-4 right-4 rounded-xl border border-red-500/30 bg-red-50 px-4 py-2 text-center text-[10px] font-semibold text-red-600 shadow-sm">
+            {uploadError && (<div className="absolute bottom-3 left-4 right-4 rounded-xl border border-red-500/30 bg-red-50 px-4 py-2 text-center text-[12px] font-semibold text-red-600 shadow-sm">
                 <T>{uploadError}</T>
               </div>)}
           </div>)}
