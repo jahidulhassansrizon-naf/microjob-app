@@ -755,7 +755,7 @@ export default function PhotoEditorPage() {
         "#FFFFFF": "white",
         "#1E1E1E": "black",
         "#EF4444": "red",
-        "#EF4444": "blue",
+        "#3B82F6": "blue",
         "#22C55E": "green",
         "#1E3A8A": "navy blue",
         "#6B7280": "gray",
@@ -775,10 +775,10 @@ export default function PhotoEditorPage() {
     };
     const BACKGROUND_COLOR_NAMES: Record<string, string> = {
         "#FFFFFF": "white",
-        "#EF4444": "blue",
+        "#3B82F6": "blue",
         "#38BDF8": "sky blue",
         "#9CA3AF": "gray",
-        "#DC2626": "royal blue",
+        "#2563EB": "royal blue",
         "#0F766E": "teal",
         "#FEF3C7": "soft warm cream",
     };
