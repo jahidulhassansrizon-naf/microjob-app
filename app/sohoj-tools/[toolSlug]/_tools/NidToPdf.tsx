@@ -26,10 +26,8 @@ import {
   ArrowLeftRight,
   Copy,
   RefreshCw,
-  FileText,
   Crop,
   X,
-  Minimize2,
   ChevronRight,
   Eye,
   CheckCircle2,
@@ -109,16 +107,6 @@ const NID_TRANSLATIONS: Record<string, string> = {
   reset: "রিসেট করুন",
   "creating...": "তৈরি করা হচ্ছে...",
   "create pdf": "PDF তৈরি করুন",
-  "tools in the same category": "একই বিভাগের অন্যান্য টুল",
-  "image size reducer": "ছবির আকার কমানো",
-  "shrink jpg, png, and webp photos in your browser.":
-    "ব্রাউজারেই JPG, PNG ও WebP ছবির আকার কমিয়ে দিন।",
-  "remove background": "ব্যাকগ্রাউন্ড সরান",
-  "erase portrait, product, or logo backgrounds easily.":
-    "মানুষ, পণ্য বা লোগোর ছবির ব্যাকগ্রাউন্ড সহজেই মুছে দিন।",
-  "passport joiner": "পাসপোর্ট ছবি সংযুক্তকারী",
-  "turn passport photos into a clean a4 pdf.":
-    "পাসপোর্টের ছবি একত্র করে পরিষ্কার A4 PDF তৈরি করুন।",
   "close manual crop": "ম্যানুয়াল ক্রপ বন্ধ করুন",
   "crop target": "ক্রপ করার ছবি",
   "close crop preview": "ক্রপের পূর্বরূপ বন্ধ করুন",
@@ -333,6 +321,126 @@ const NID_PAGE_CSS = `
 .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
 .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
 .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+
+/* NID Joiner: keep the complete desktop page inside one viewport. */
+.nid-joiner-fit-screen {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.nid-joiner-fit-screen > div { min-width: 0; }
+.nid-joiner-breadcrumb { flex: 0 0 auto; min-height: 18px; line-height: 1.2; }
+.nid-joiner-hero { flex: 0 0 auto; }
+.nid-joiner-main { min-width: 0; }
+.nid-joiner-settings { min-width: 0; min-height: 0; }
+.nid-joiner-preview { min-width: 0; min-height: 0; }
+.nid-preview-stage { min-width: 0; min-height: 0; }
+.nid-sheet-fit-wrap { position: relative; display: block; flex: 0 0 auto; }
+.nid-sheet-fit-wrap > #printable-sheet { position: absolute; top: 0; left: 0; }
+.nid-joiner-status { flex: 0 0 auto; }
+
+/* Compact settings while keeping every control available. */
+.nid-joiner-settings .p-5 { padding: 0.7rem !important; }
+.nid-joiner-settings .p-4 { padding: 0.55rem !important; }
+.nid-joiner-settings .px-4 { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
+.nid-joiner-settings .py-3 { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
+.nid-joiner-settings .gap-4 { gap: 0.5rem !important; }
+.nid-joiner-settings .gap-3 { gap: 0.4rem !important; }
+.nid-joiner-settings .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.55rem !important; }
+.nid-joiner-settings .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.4rem !important; }
+.nid-joiner-settings .mt-4 { margin-top: 0.5rem !important; }
+.nid-joiner-settings .mt-3 { margin-top: 0.4rem !important; }
+.nid-joiner-settings .text-\\[10px\\],
+.nid-joiner-settings .text-\\[11px\\] { font-size: 12px !important; }
+.nid-joiner-settings button { transition-duration: 150ms; }
+
+@media (min-width: 1200px) and (min-height: 760px) {
+  .nid-joiner-fit-screen {
+    width: min(96vw, 1440px) !important;
+    max-width: none !important;
+    margin-left: calc((100% - min(96vw, 1440px)) / 2) !important;
+    height: calc(100dvh - 80px);
+    max-height: calc(100dvh - 80px);
+    min-height: 0;
+    overflow: hidden;
+    gap: 8px;
+  }
+  .nid-joiner-fit-screen > div { margin-block: 0 !important; }
+  .nid-joiner-breadcrumb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .nid-joiner-hero { padding: 10px 14px !important; }
+  .nid-joiner-hero .w-12.h-12 { width: 2.25rem; height: 2.25rem; }
+  .nid-joiner-main { flex: 1 1 0%; min-height: 0; max-height: 100%; gap: 12px !important; }
+
+  /* The settings no longer have their own scrollbar on the desktop target. */
+  .nid-joiner-settings { grid-column: span 4 / span 4; height: 100%; overflow: hidden; }
+  .nid-joiner-settings > * { min-height: 0; }
+  .nid-settings-panel {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 6px 8px !important;
+    height: 100%;
+    padding: 8px !important;
+    overflow: hidden;
+  }
+  .nid-joiner-settings .nid-settings-panel.space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; }
+  .nid-settings-heading,
+  .nid-settings-auto-crop,
+  .nid-settings-cleanup,
+  .nid-settings-print { grid-column: 1 / -1; min-width: 0; }
+  .nid-settings-heading { padding-bottom: 4px !important; font-size: 14px !important; }
+  .nid-settings-auto-crop { padding: 7px !important; }
+  .nid-settings-auto-crop .mt-2 { margin-top: 4px !important; }
+  .nid-settings-auto-crop .text-\\[15px\\] { font-size: 12px !important; }
+  .nid-settings-auto-crop .text-\\[13px\\] { font-size: 11px !important; line-height: 1.25 !important; }
+  .nid-settings-panel .nid-settings-page,
+  .nid-settings-panel .nid-settings-layout,
+  .nid-settings-panel .nid-settings-rotate,
+  .nid-settings-panel .nid-settings-position,
+  .nid-settings-panel .nid-settings-copies,
+  .nid-settings-panel .nid-settings-rounded { min-width: 0; margin-top: 0 !important; }
+  .nid-settings-panel .nid-settings-page > div:first-child,
+  .nid-settings-panel .nid-settings-layout > div:first-child,
+  .nid-settings-panel .nid-settings-rotate > div:first-child { font-size: 11px !important; }
+  .nid-settings-panel .nid-settings-page button,
+  .nid-settings-panel .nid-settings-layout button,
+  .nid-settings-panel .nid-settings-rotate button,
+  .nid-settings-panel .nid-settings-position button,
+  .nid-settings-panel .nid-settings-copies button { padding-top: 4px !important; padding-bottom: 4px !important; font-size: 11px !important; }
+  .nid-settings-panel .nid-settings-rounded { padding-top: 0 !important; }
+  .nid-settings-rounded > div > span { font-size: 11px !important; }
+  .nid-settings-rounded button { width: 36px !important; height: 20px !important; }
+  .nid-settings-rounded button > div { width: 16px !important; height: 16px !important; }
+
+  .nid-settings-cleanup { padding-top: 6px !important; border-top-width: 1px; }
+  .nid-settings-cleanup > div:first-child { margin-bottom: 4px; }
+  .nid-settings-cleanup > div:first-child > span { font-size: 12px !important; }
+  .nid-settings-cleanup .nid-settings-presets { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 4px !important; padding: 4px !important; }
+  .nid-settings-cleanup .nid-settings-presets button { padding: 6px 3px !important; gap: 4px !important; min-width: 0; }
+  .nid-settings-cleanup .nid-settings-presets button > span:last-child { font-size: 10px !important; overflow-wrap: anywhere; }
+  .nid-settings-cleanup .nid-settings-presets svg { width: 14px; height: 14px; }
+  .nid-settings-fine-tuning { padding-top: 5px !important; margin-top: 5px !important; }
+  .nid-settings-fine-tuning > span { font-size: 12px !important; margin-bottom: 4px; }
+  .nid-settings-cleanup .nid-settings-range-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 10px !important; }
+  .nid-joiner-settings .nid-settings-range-grid.space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; }
+  .nid-settings-range-grid > div { min-width: 0; }
+  .nid-settings-range-grid > div > div:first-child { gap: 4px; font-size: 10px !important; line-height: 1.2; }
+  .nid-settings-range-grid input[type="range"] { height: 5px; }
+  .nid-settings-print { padding-top: 6px !important; padding-bottom: 6px !important; margin-top: 0 !important; }
+
+  .nid-joiner-preview { grid-column: span 8 / span 8; height: 100%; padding: 10px !important; overflow: hidden; }
+  .nid-joiner-preview > :first-child { flex: 0 0 auto; padding-bottom: 7px !important; }
+  .nid-preview-stage { flex: 1 1 0%; margin: 7px 0 !important; padding: 10px !important; overflow: hidden; align-items: center !important; }
+  .nid-joiner-status { padding: 8px 10px !important; gap: 8px !important; }
+  .nid-joiner-status button { padding-top: 6px !important; padding-bottom: 6px !important; }
+}
+
+@media (max-width: 1199px), (max-height: 759px) {
+  .nid-joiner-settings { overflow: visible; }
+  .nid-joiner-main { flex: initial; }
+}
 `;
 
 type SheetOrientation = "portrait" | "landscape";
@@ -1803,6 +1911,8 @@ export default function NidToPdf() {
   const [frontRotation, setFrontRotation] = useState<number>(0);
   const [backRotation, setBackRotation] = useState<number>(0);
   const [zoom, setZoom] = useState<number>(100);
+  const previewStageRef = useRef<HTMLDivElement>(null);
+  const [previewFitScale, setPreviewFitScale] = useState<number>(1);
   const [filterPreset, setFilterPreset] = useState<
     "plain" | "color" | "scan" | "bw"
   >("plain");
@@ -2159,6 +2269,32 @@ export default function NidToPdf() {
       cardGap: CARD_GAP_MM * PREVIEW_PX_PER_MM,
     };
   }, [orientation]);
+  // Fit the A4 preview to the available panel height so the whole sheet is visible.
+  useEffect(() => {
+    const stage = previewStageRef.current;
+    if (!stage) return;
+
+    const updateFitScale = () => {
+      const availableWidth = Math.max(1, stage.clientWidth - 24);
+      const availableHeight = Math.max(1, stage.clientHeight - 24);
+      const nextScale = Math.min(
+        availableWidth / sheetPx.width,
+        availableHeight / sheetPx.height,
+        1,
+      );
+      if (Number.isFinite(nextScale) && nextScale > 0) {
+        setPreviewFitScale((current) =>
+          Math.abs(current - nextScale) > 0.003 ? nextScale : current,
+        );
+      }
+    };
+
+    updateFitScale();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateFitScale);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [sheetPx.height, sheetPx.width]);
   // Page count for the preview badge when many copies overflow.
   const sheetLayout = useMemo(
     () =>
@@ -2225,7 +2361,7 @@ export default function NidToPdf() {
     }
   };
   return (
-    <div className="w-full space-y-5 text-[#3B2F1E] font-sans page-font">
+    <div className="nid-joiner-fit-screen w-full text-[#3B2F1E] font-sans page-font">
       <style>{NID_PAGE_CSS}</style>
       {croppingSide === "front" && frontImage && (
         <CropModal
@@ -2430,7 +2566,7 @@ export default function NidToPdf() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-[15px] text-[#7A6A50]">
+      <div className="nid-joiner-breadcrumb flex items-center gap-2 text-[15px] text-[#7A6A50]">
         <Link
           href="/sohoj-tools"
           className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors"
@@ -2454,7 +2590,7 @@ export default function NidToPdf() {
         </span>
       </div>
 
-      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex items-center justify-between">
+      <div className="nid-joiner-hero bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
             <CreditCard size={24} />
@@ -2488,7 +2624,8 @@ export default function NidToPdf() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="nid-joiner-main grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="nid-joiner-settings lg:col-span-4 scroll">
         <NidSettingsPanel
           autoCrop={autoCrop}
           setAutoCrop={handleAutoCropToggle}
@@ -2526,8 +2663,9 @@ export default function NidToPdf() {
           setTextDeepen={setTextDeepen}
           handlePrint={handlePrint}
         />
+        </div>
 
-        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between">
+        <div className="nid-joiner-preview lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between border-b border-[#E3D6B8] pb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-[17px] font-bold text-[#3B2F1E]">
@@ -2611,7 +2749,14 @@ export default function NidToPdf() {
             </div>
           )}
 
-          <div className="relative bg-[#F3E9D2] border border-[#E3D6B8]/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-[620px] overflow-auto scroll [background-image:radial-gradient(#B0A080_1.2px,transparent_1.2px)] [background-size:16px_16px]">
+          <div ref={previewStageRef} className="nid-preview-stage relative bg-[#F3E9D2] border border-[#E3D6B8]/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-0 overflow-auto scroll [background-image:radial-gradient(#B0A080_1.2px,transparent_1.2px)] [background-size:16px_16px]">
+            <div
+              className="nid-sheet-fit-wrap shrink-0"
+              style={{
+                width: sheetPx.width * previewFitScale * (zoom / 100),
+                height: sheetPx.height * previewFitScale * (zoom / 100),
+              }}
+            >
             <div
               id="printable-sheet"
               className="bg-white shadow-[0_10px_30px_rgba(59,47,30,0.12)] border border-[#E3D6B8]/60 transition-all duration-300 flex flex-col items-center shrink-0"
@@ -2626,8 +2771,8 @@ export default function NidToPdf() {
                     : position === "center"
                       ? "center"
                       : "flex-end",
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: "top center",
+                transform: `scale(${(zoom / 100) * previewFitScale})`,
+                transformOrigin: "top left",
               }}
             >
               <div
@@ -3042,11 +3187,12 @@ export default function NidToPdf() {
                 ))}
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="nid-joiner-status bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[15px] font-medium text-[#5A4A32]">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${frontImage && backImage ? "bg-emerald-600" : "bg-red-500"}`}
@@ -3097,72 +3243,6 @@ export default function NidToPdf() {
         </div>
       </div>
 
-      <div className="pt-3 space-y-3">
-        <h3 className="text-[17px] font-bold text-[#3B2F1E]">
-          <NidT>{"Tools in the same category\n        "}</NidT>
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/sohoj-tools/image-size-reducer"
-            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:bg-[#EFE3C8] hover:-translate-y-0.5 hover:shadow-sm hover:border-[#D8C9A6] transition-all flex flex-col gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform">
-              <Minimize2 size={16} />
-            </div>
-            <div>
-              <h4 className="text-[17px] font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
-                <NidT>{"Image Size Reducer\n              "}</NidT>
-              </h4>
-              <p className="text-[15px] text-[#7A6A50] mt-1 leading-relaxed">
-                <NidT>
-                  {
-                    "Shrink JPG, PNG, and WebP photos in your browser.\n              "
-                  }
-                </NidT>
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/sohoj-tools/remove-background"
-            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:bg-[#EFE3C8] hover:-translate-y-0.5 hover:shadow-sm hover:border-[#D8C9A6] transition-all flex flex-col gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform"></div>
-            <div>
-              <h4 className="text-[17px] font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
-                <NidT>{"Remove Background\n              "}</NidT>
-              </h4>
-              <p className="text-[15px] text-[#7A6A50] mt-1 leading-relaxed">
-                <NidT>
-                  {
-                    "Erase portrait, product, or logo backgrounds easily.\n              "
-                  }
-                </NidT>
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/sohoj-tools/passport-joiner"
-            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:bg-[#EFE3C8] hover:-translate-y-0.5 hover:shadow-sm hover:border-[#D8C9A6] transition-all flex flex-col gap-3 group"
-          >
-            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform">
-              <FileText size={16} />
-            </div>
-            <div>
-              <h4 className="text-[17px] font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
-                <NidT>{"Passport Joiner\n              "}</NidT>
-              </h4>
-              <p className="text-[15px] text-[#7A6A50] mt-1 leading-relaxed">
-                <NidT>
-                  {"Turn passport photos into a clean A4 PDF.\n              "}
-                </NidT>
-              </p>
-            </div>
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

@@ -403,7 +403,7 @@ const FONT_HREF = "https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wg
 /** Font used inside the A4 paper (preview, print and PDF). */
 const PRINT_FONT = '"Noto Sans Bengali", "Hind Siliguri", "Kalpurush", "SolaimanLipi", "Nirmala UI", "Vrinda", sans-serif';
 /** Font used for the app UI: keeps your Latin font, adds Bangla fallbacks. */
-const UI_FONT = 'ui-sans-serif, system-ui, "Segoe UI", "Noto Sans Bengali", "Hind Siliguri", "Nirmala UI", sans-serif';
+const UI_FONT = '"Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 function ensureBanglaFont() {
     if (typeof document === "undefined")
         return;
@@ -818,19 +818,19 @@ function FieldLabel({ no, children, hint, }: {
     children: ReactNode;
     hint?: string;
 }) {
-    return (<div className="mb-1.5 flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#0F172A]">
+    return (<div className="mb-1.5 flex items-center justify-between gap-2 text-[13.5px] font-semibold text-[#3B2F1E]">
       <span className="flex min-w-0 items-center gap-1.5">
-        {no ? (<span className="inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded bg-[#EFF6FF] px-1 text-[9.5px] font-bold text-[#2563EB]">
+        {no ? (<span className="inline-flex h-[22px] min-w-[22px] shrink-0 items-center justify-center rounded-lg bg-[#FEE9E9] px-1 text-[12px] font-bold text-[#DC2626]">
             {toBnDigits(String(no))}
           </span>) : null}
         <span className="truncate">{children}</span>
       </span>
-      {hint ? (<span className="shrink-0 text-[9.5px] font-normal text-[#64748B]">
+      {hint ? (<span className="shrink-0 text-[12px] font-normal text-[#7A6A50]">
           {hint}
         </span>) : null}
     </div>);
 }
-const INPUT_BASE = "h-10 w-full rounded-md border bg-white px-3 text-[12px] text-[#0F172A] outline-none transition placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:ring-2 focus:ring-[#DBEAFE]";
+const INPUT_BASE = "h-11 w-full rounded-xl border bg-[#FBF6E8] px-3 text-[15px] text-[#3B2F1E] outline-none transition duration-200 placeholder:text-[#B0A080] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20";
 function TextField({ no, label, hint, value, placeholder, onChange, inputMode, maxLength, suffix, validate, }: {
     no?: number;
     label: string;
@@ -854,12 +854,12 @@ function TextField({ no, label, hint, value, placeholder, onChange, inputMode, m
       <div className="relative">
         <input type="text" value={value} maxLength={maxLength} placeholder={placeholder} inputMode={inputMode} autoComplete="off" spellCheck={false} aria-invalid={showError} onBlur={() => setTouched(true)} onChange={(event) => onChange(event.target.value)} className={cx(INPUT_BASE, suffix && "pr-14", showError
             ? "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#FEE2E2]"
-            : "border-[#CBD5E1]")}/>
-        {suffix ? (<span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10.5px] font-medium text-[#64748B]">
+            : "border-[#E3D6B8]")}/>
+        {suffix ? (<span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12.5px] font-medium text-[#7A6A50]">
             {suffix}
           </span>) : null}
       </div>
-      {showError ? (<p role="alert" className="mt-1 text-[10px] leading-3 text-[#B91C1C]">
+      {showError ? (<p role="alert" className="mt-1 text-[12px] leading-3 text-[#B91C1C]">
           {translateFuelUiText(message, locale, L)}
         </p>) : null}
     </label>);
@@ -881,13 +881,13 @@ function SelectField({ no, label, hint, value, placeholder, options, onChange, }
         {label}
       </FieldLabel>
       <div className="relative">
-        <select value={value} onChange={(event) => onChange(event.target.value)} className={cx(INPUT_BASE, "cursor-pointer appearance-none pr-8", "border-[#CBD5E1]")}>
+        <select value={value} onChange={(event) => onChange(event.target.value)} className={cx(INPUT_BASE, "cursor-pointer appearance-none pr-8", "border-[#E3D6B8]")}>
           <option value="">{placeholder}</option>
           {options.map((option) => (<option key={option.value} value={option.value}>
               {<T>{option.label}</T>}
             </option>))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#64748B]"/>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#7A6A50]"/>
       </div>
     </label>);
 }
@@ -903,9 +903,9 @@ function FuelTypeField({ no, value, onChange, }: {
         {FUEL_TYPES.map((type) => {
             const active = value === type;
             return (<button key={type} type="button" role="radio" aria-checked={active} onClick={() => onChange(type)} className={cx("flex h-11 flex-col items-center justify-center rounded-md border leading-tight transition", active
-                    ? "border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8] ring-2 ring-[#DBEAFE]"
-                    : "border-[#CBD5E1] bg-white text-[#475569] hover:bg-[#F8FAFC]")}>
-              <span className="text-[12px] font-semibold">{isFuelBanglaLocale(locale) ? FUEL_BN[type] : type}</span>
+                    ? "border-[#DC2626] bg-[#F6D9A8] text-[#B91C1C] ring-2 ring-[#DC2626]/40"
+                    : "border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#F6EEDB]")}>
+              <span className="text-[14px] font-semibold">{isFuelBanglaLocale(locale) ? FUEL_BN[type] : type}</span>
             </button>);
         })}
       </div>
@@ -917,16 +917,16 @@ function SectionCard({ number, title, subtitle, children, }: {
     subtitle: string;
     children: ReactNode;
 }) {
-    return (<section className="rounded-xl border border-[#BFDBFE] bg-white p-4 shadow-[0_3px_12px_rgba(15,23,42,0.05)]">
-      <div className="mb-3.5 flex items-center gap-2.5 border-b border-[#EFF6FF] pb-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#2563EB] text-[12px] font-bold text-white">
+    return (<section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-sm">
+      <div className="mb-3.5 flex items-center gap-2.5 border-b border-[#D8C9A6] pb-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DC2626] text-[14px] font-bold text-white">
           {toBnDigits(String(number))}
         </span>
         <div className="min-w-0">
-          <h2 className="text-[13px] font-bold leading-tight text-[#0F172A]">
+          <h2 className="text-[15px] font-bold leading-tight text-[#3B2F1E]">
             {title}
           </h2>
-          <p className="text-[10px] leading-tight text-[#64748B]">{subtitle}</p>
+          <p className="text-[12px] leading-tight text-[#7A6A50]">{subtitle}</p>
         </div>
       </div>
       {children}
@@ -945,22 +945,22 @@ function PreviewToolbar({ zoom, onZoomBy, onZoom100, onFit, hasData, live, onLiv
     onBnDigits: (value: boolean) => void;
 }) {
     const { locale, L } = useSohozI18n();
-    const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md border border-[#CBD5E1] bg-white text-[#64748B] hover:text-[#0F172A]";
-    return (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#E2E8F0] px-3 py-2">
+    const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md border border-[#E3D6B8] bg-[#FBF6E8] text-[#7A6A50] hover:text-[#3B2F1E]";
+    return (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#E3D6B8] px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <span className="text-[11px] font-semibold text-[#475569]"><T>{"Preview\n        "}</T></span>
-        <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-medium text-[#475569]">
-          <input type="checkbox" checked={live} onChange={(event) => onLive(event.target.checked)} className="accent-[#2563EB]"/><T>{"Live preview\n        "}</T></label>
-        {!live ? (<button type="button" onClick={onRefresh} className="rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-1 text-[9.5px] font-semibold text-[#1D4ED8] hover:bg-[#DBEAFE]"><T>{"Update preview\n          "}</T></button>) : null}
-        <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-medium text-[#475569]">
-          <input type="checkbox" checked={bnDigits} onChange={(event) => onBnDigits(event.target.checked)} className="accent-[#2563EB]"/><T>{"Bangla digits (\u09E6\u09E7\u09E8\u09E9)\n        "}</T></label>
+        <span className="text-[13px] font-semibold text-[#5A4A32]"><T>{"Preview\n        "}</T></span>
+        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[#5A4A32]">
+          <input type="checkbox" checked={live} onChange={(event) => onLive(event.target.checked)} className="accent-[#DC2626]"/><T>{"Live preview\n        "}</T></label>
+        {!live ? (<button type="button" onClick={onRefresh} className="rounded-md border border-[#E3D6B8] bg-[#F6D9A8] px-2 py-1 text-[12px] font-semibold text-[#B91C1C] hover:bg-[#FEE9E9]"><T>{"Update preview\n          "}</T></button>) : null}
+        <label className="flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[#5A4A32]">
+          <input type="checkbox" checked={bnDigits} onChange={(event) => onBnDigits(event.target.checked)} className="accent-[#DC2626]"/><T>{"Bangla digits (\u09E6\u09E7\u09E8\u09E9)\n        "}</T></label>
       </div>
 
       <div className="flex items-center gap-1.5">
         <button type="button" aria-label={translateFuelUiText("Zoom out", locale, L)} onClick={() => onZoomBy(-0.1)} className={iconBtn}>
           <Minus className="h-3.5 w-3.5"/>
         </button>
-        <span className="min-w-[44px] text-center text-[10px] font-semibold text-[#475569]">
+        <span className="min-w-[44px] text-center text-[12px] font-semibold text-[#5A4A32]">
           {Math.round(zoom * 100)}<T>{"%\n        "}</T></span>
         <button type="button" aria-label={translateFuelUiText("Zoom in", locale, L)} onClick={() => onZoomBy(0.1)} className={iconBtn}>
           <Plus className="h-3.5 w-3.5"/>
@@ -971,9 +971,9 @@ function PreviewToolbar({ zoom, onZoomBy, onZoom100, onFit, hasData, live, onLiv
         <button type="button" aria-label={translateFuelUiText("Fit to width", locale, L)} title={translateFuelUiText("Fit to width", locale, L)} onClick={onFit} className={iconBtn}>
           <Maximize className="h-3.5 w-3.5"/>
         </button>
-        <span className={cx("ml-1 rounded-full px-2 py-1 text-[9px] font-bold", hasData
+        <span className={cx("ml-1 rounded-full px-2 py-1 text-[12px] font-bold", hasData
             ? "bg-[#D1FAE5] text-[#047857]"
-            : "bg-[#E2E8F0] text-[#475569]")}>
+            : "bg-[#F6EEDB] text-[#5A4A32]")}>
           {hasData ? <T>{"Filled"}</T> : <T>{"Empty"}</T>}
         </span>
       </div>
@@ -1296,8 +1296,32 @@ export default function FuelCardForm() {
         minHeight: 460,
         cursor: dragging ? "grabbing" : "grab",
     };
-    return (<div className="-mx-4 -mt-6 min-h-[calc(100vh-72px)] bg-[#F8FAFC] px-4 pb-28 pt-5 text-[#0F172A] print:bg-white" style={{ marginBottom: "-24px", fontFamily: UI_FONT }}>
+    return (<div id="fuel-card-form-page" className="page-font relative isolate -mx-4 -mt-6 min-h-[calc(100vh-72px)] bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] px-4 pb-28 pt-5 text-[#3B2F1E] print:bg-white" style={{ marginBottom: "-24px", fontFamily: UI_FONT }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        #fuel-card-form-page { position: relative; isolation: isolate; background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%); }
+        #fuel-card-form-page::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%); }
+        @media screen {
+          html:has(#fuel-card-form-page), body:has(#fuel-card-form-page) { background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%) !important; }
+        }
+        .page-font.page-font,
+        .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+        #fuel-card-form-page button { transition-property: color, background-color, border-color, box-shadow, transform; transition-duration: 180ms; }
+        #fuel-card-form-page button:active:not(:disabled) { transform: scale(0.98); }
+        #fuel-card-form-page button:disabled { cursor: not-allowed; opacity: 0.7; }
+        #fuel-card-form-page button:focus-visible, #fuel-card-form-page input:focus-visible, #fuel-card-form-page select:focus-visible { outline: 2px solid rgba(220, 38, 38, 0.4); outline-offset: 2px; }
+        .fuel-preview-scroll { scrollbar-width: thin; scrollbar-color: #DC2626 rgba(148, 113, 67, 0.12); }
+        .fuel-preview-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+        .fuel-preview-scroll::-webkit-scrollbar-track { background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0; }
+        .fuel-preview-scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #F87171, #DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        .fuel-preview-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #EF4444, #B91C1C); }
         /* Off-screen on screen; the PDF capture repositions it inside html2canvas' clone. */
         #fuel-print-root {
           position: fixed;
@@ -1342,37 +1366,37 @@ export default function FuelCardForm() {
       `}</style>
 
       <div className="mx-auto max-w-[1320px]">
-        <div className="mb-2 flex items-center gap-2 px-1 text-[9px] text-[#64748B]">
+        <div className="mb-2 flex items-center gap-2 px-1 text-[12px] text-[#7A6A50]">
           <span><T>{"\u2302"}</T></span>
           <span><T>{"/"}</T></span>
           <span><T>{"Sohoz Tools"}</T></span>
           <span><T>{"/"}</T></span>
           <span><T>{"General Tools"}</T></span>
           <span><T>{"/"}</T></span>
-          <span className="font-semibold text-[#475569]"><T>{"Fuel Card Form"}</T></span>
+          <span className="font-semibold text-[#5A4A32]"><T>{"Fuel Card Form"}</T></span>
         </div>
 
         <div className="mb-4 flex items-start justify-between gap-4 px-1">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#DBEAFE] text-[#2563EB]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#FEE9E9] text-[#DC2626]">
                 <FileText className="h-4 w-4"/>
               </span>
-              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#0F172A]"><T>{"Fuel Card Form\n              "}</T></h1>
-              <span className="rounded-full bg-[#D1FAE5] px-2 py-1 text-[9px] font-bold text-[#047857]"><T>{"Free\n              "}</T></span>
-              <span className="text-[9px] text-[#64748B]"><T>{"\u2713 Used "}</T>{usedCount} {usedCount === 1 ? <T>{"time"}</T> : <T>{"times"}</T>}
+              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#3B2F1E]"><T>{"Fuel Card Form\n              "}</T></h1>
+              <span className="rounded-full bg-[#D1FAE5] px-2 py-1 text-[12px] font-bold text-[#047857]"><T>{"Free\n              "}</T></span>
+              <span className="text-[12px] text-[#7A6A50]"><T>{"\u2713 Used "}</T>{usedCount} {usedCount === 1 ? <T>{"time"}</T> : <T>{"times"}</T>}
               </span>
             </div>
-            <p className="mt-1 pl-10 text-[10px] text-[#475569]"><T>{"Fill in your details on the left \u2014 see the application letter on\n              the right and download it as PDF.\n            "}</T></p>
+            <p className="mt-1 pl-10 text-[12px] text-[#5A4A32]"><T>{"Fill in your details on the left \u2014 see the application letter on\n              the right and download it as PDF.\n            "}</T></p>
           </div>
 
           <div className="flex items-center gap-2 pt-1">
-            <button type="button" title={favorite ? FL("Remove from favorites") : FL("Add to favorites")} aria-pressed={favorite} onClick={toggleFavorite} className={cx("flex h-9 w-9 items-center justify-center rounded-lg border bg-white transition", favorite
-            ? "border-[#93C5FD] text-[#2563EB]"
-            : "border-[#CBD5E1] text-[#64748B] hover:bg-[#F8FAFC]")}>
+            <button type="button" title={favorite ? FL("Remove from favorites") : FL("Add to favorites")} aria-pressed={favorite} onClick={toggleFavorite} className={cx("flex h-9 w-9 items-center justify-center rounded-lg border bg-[#FBF6E8] transition", favorite
+            ? "border-[#DC2626] text-[#DC2626]"
+            : "border-[#E3D6B8] text-[#7A6A50] hover:bg-[#F6EEDB]")}>
               <Star className={cx("h-4 w-4", favorite && "fill-current")}/>
             </button>
-            <button type="button" title={FL("Share")} aria-label={FL("Share")} onClick={share} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white text-[#64748B] transition hover:bg-[#F8FAFC]">
+            <button type="button" title={FL("Share")} aria-label={FL("Share")} onClick={share} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] text-[#7A6A50] transition hover:bg-[#F6EEDB]">
               <Share2 className="h-4 w-4"/>
             </button>
           </div>
@@ -1381,13 +1405,13 @@ export default function FuelCardForm() {
         <div className="grid items-start gap-3.5 lg:grid-cols-[380px_minmax(0,1fr)]">
           {/* ───────────── Left: form panel ───────────── */}
           <div className="space-y-3.5">
-            <div className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-[0_3px_12px_rgba(15,23,42,0.05)]">
-              <div className="mb-1.5 flex items-center justify-between text-[10.5px] font-semibold text-[#475569]">
+            <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-3 shadow-sm">
+              <div className="mb-1.5 flex items-center justify-between text-[12.5px] font-semibold text-[#5A4A32]">
                 <span><T>{"Form progress"}</T></span>
                 <span>
                   {filledCount}<T>{"/ "}</T>{FIELD_KEYS.length}<T>{"fields\n                "}</T></span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[#E2E8F0]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-[#F6EEDB]">
                 <div className="h-full rounded-full bg-[#10B981] transition-all" style={{
             width: `${(filledCount / FIELD_KEYS.length) * 100}%`,
         }}/>
@@ -1429,13 +1453,13 @@ export default function FuelCardForm() {
           </div>
 
           {/* ───────────── Right: live preview ───────────── */}
-          <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0_3px_12px_rgba(15,23,42,0.05)] lg:sticky lg:top-3">
+          <div className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] shadow-sm lg:sticky lg:top-3">
             <PreviewToolbar zoom={zoom} onZoomBy={zoomBy} onZoom100={zoom100} onFit={fitPreview} hasData={hasData} live={live} onLive={onLiveChange} onRefresh={() => setFrozen(form)} bnDigits={bnDigits} onBnDigits={setBnDigits}/>
 
             <div className="relative">
-              <div className="pointer-events-none absolute right-5 top-3 z-10 rounded-full bg-[#0F172A] px-3 py-1.5 text-[9px] font-bold text-white shadow"><T>{"Page 1 of 1\n              "}</T></div>
+              <div className="pointer-events-none absolute right-5 top-3 z-10 rounded-full bg-[#3B2F1E] px-3 py-1.5 text-[12px] font-bold text-white shadow"><T>{"Page 1 of 1\n              "}</T></div>
 
-              <div ref={viewportRef} className="relative overflow-auto bg-[#334155] select-none touch-none" style={viewportStyle} onPointerDown={onPreviewPointerDown} onPointerMove={onPreviewPointerMove} onPointerUp={onPreviewPointerUp} onPointerCancel={onPreviewPointerUp}>
+              <div ref={viewportRef} className="fuel-preview-scroll relative overflow-auto bg-[#4A3B26] select-none touch-none" style={viewportStyle} onPointerDown={onPreviewPointerDown} onPointerMove={onPreviewPointerMove} onPointerUp={onPreviewPointerUp} onPointerCancel={onPreviewPointerUp}>
                 <div style={{
             width: "max-content",
             minWidth: "100%",
@@ -1458,48 +1482,48 @@ export default function FuelCardForm() {
                 </div>
               </div>
 
-              {dragging ? (<div className="pointer-events-none absolute inset-0 border-2 border-[#60A5FA]"/>) : null}
+              {dragging ? (<div className="pointer-events-none absolute inset-0 border-2 border-[#DC2626]"/>) : null}
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-[#E2E8F0] px-3 py-2">
-              <span className="text-[9.5px] text-[#64748B]"><T>{"A4 \u00B7 210 \u00D7 297 mm \u2014 print &amp; PDF use this exact layout\n              "}</T></span>
-              <button type="button" onClick={fitPreview} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-white px-3 text-[10px] font-semibold text-[#475569] hover:bg-[#F8FAFC]">
+            <div className="flex items-center justify-between gap-2 border-t border-[#E3D6B8] px-3 py-2">
+              <span className="text-[12px] text-[#7A6A50]"><T>{"A4 \u00B7 210 \u00D7 297 mm \u2014 print &amp; PDF use this exact layout\n              "}</T></span>
+              <button type="button" onClick={fitPreview} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] px-3 text-[12px] font-semibold text-[#5A4A32] hover:bg-[#F6EEDB]">
                 <RotateCcw className="h-3.5 w-3.5"/><T>{"Reset view\n              "}</T></button>
             </div>
           </div>
         </div>
 
-        <section className="mt-3.5 rounded-xl border border-[#34D399] bg-white p-4 shadow-[0_3px_12px_rgba(15,23,42,0.05)]">
-          <h2 className="text-[11px] font-bold text-[#065F46]"><T>{"Important Information and Instructions:\n          "}</T></h2>
-          <div className="my-3 border-t border-[#A7F3D0]"/>
-          <p className="text-[10px] leading-5 text-[#334155]"><T>{"The following documents must be attached:\n          "}</T></p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-[10px] leading-5 text-[#334155]">
+        <section className="mt-3.5 rounded-2xl border border-[#D8C9A6] bg-[#F2E8D2] p-4 shadow-sm">
+          <h2 className="text-[15px] font-bold text-[#3B2F1E]"><T>{"Important Information and Instructions:\n          "}</T></h2>
+          <div className="my-3 border-t border-[#D8C9A6]"/>
+          <p className="text-[12px] leading-5 text-[#5A4A32]"><T>{"The following documents must be attached:\n          "}</T></p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[12px] leading-5 text-[#5A4A32]">
             <li><T>{"Attach a passport-size photo to the application with glue or\n              stapler.\n            "}</T></li>
             <li><T>{"Submit a photocopy of National ID (NID) or trade license."}</T></li>
             <li><T>{"Attach copies of required organization/equipment documents."}</T></li>
             <li><T>{"An active mobile number must be provided."}</T></li>
           </ul>
-          <p className="mt-4 text-[10px] leading-5 text-[#DC2626]"><T>{"Fill in all information correctly and accurately. The application\n            may be cancelled for incorrect information.\n          "}</T></p>
-          <p className="mt-4 text-[10px] leading-5 text-[#0F766E]"><T>{"After printing, obtain signature and approval from a respectable\n            person, ward representative or relevant officer before submitting at\n            the pump.\n          "}</T></p>
-          <p className="mt-4 text-[10px] leading-5 text-[#047857]"><T>{"Collect only the approved quantity of fuel oil as per distribution\n            policy; apply again for additional quantity.\n          "}</T></p>
+          <p className="mt-4 text-[12px] leading-5 text-[#DC2626]"><T>{"Fill in all information correctly and accurately. The application\n            may be cancelled for incorrect information.\n          "}</T></p>
+          <p className="mt-4 text-[12px] leading-5 text-[#5A4A32]"><T>{"After printing, obtain signature and approval from a respectable\n            person, ward representative or relevant officer before submitting at\n            the pump.\n          "}</T></p>
+          <p className="mt-4 text-[12px] leading-5 text-[#5A4A32]"><T>{"Collect only the approved quantity of fuel oil as per distribution\n            policy; apply again for additional quantity.\n          "}</T></p>
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E2E8F0] bg-white/95 px-4 py-2 backdrop-blur print:hidden">
-        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-[9px] text-[#64748B]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E3D6B8] bg-[#F2E8D2]/95 px-4 py-2 backdrop-blur print:hidden">
+        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-[12px] text-[#7A6A50]">
             <span className={cx("h-1.5 w-1.5 rounded-full", hasData ? "bg-[#10B981]" : "bg-[#94A3B8]")}/>
             {hasData
         ? <T>{`${filledCount} of ${FIELD_KEYS.length} fields filled`}</T> : <T>{"Add an input to get started"}</T>}
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={clearAll} disabled={!hasData} className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold text-[#94A3B8] hover:bg-[#F8FAFC] disabled:cursor-not-allowed">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button type="button" onClick={clearAll} disabled={!hasData} className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[12px] font-semibold text-[#B0A080] hover:bg-[#F6EEDB] disabled:cursor-not-allowed">
               <X className="h-3.5 w-3.5"/><T>{"Clear all\n            "}</T></button>
-            <button type="button" onClick={restoreLast} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-white px-3 text-[10px] font-semibold text-[#475569] hover:bg-[#F8FAFC]">
+            <button type="button" onClick={restoreLast} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] px-3 text-[12px] font-semibold text-[#5A4A32] hover:bg-[#F6EEDB]">
               <RotateCcw className="h-3.5 w-3.5"/><T>{"Restore last form\n            "}</T></button>
-            <button type="button" disabled={pdfBusy} onClick={print} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-white px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#F8FAFC] disabled:cursor-wait disabled:opacity-60">
+            <button type="button" disabled={pdfBusy} onClick={print} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] px-3 text-[12px] font-semibold text-[#3B2F1E] hover:bg-[#F6EEDB] disabled:cursor-wait disabled:opacity-60">
               <Printer className="h-3.5 w-3.5"/><T>{"Print\n            "}</T></button>
-            <button type="button" disabled={pdfBusy} onClick={downloadPdf} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#10B981] px-3.5 text-[10px] font-bold text-white shadow-sm hover:bg-[#059669] disabled:cursor-wait disabled:opacity-70">
+            <button type="button" disabled={pdfBusy} onClick={downloadPdf} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#D42020] px-4 text-[14px] font-bold text-white shadow-sm transition duration-200 hover:bg-[#AE1717] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70">
               <FileDown className="h-3.5 w-3.5"/>
               {pdfBusy ? <T>{"Processing..."}</T> : <T>{"Download PDF"}</T>}
             </button>
@@ -1508,21 +1532,21 @@ export default function FuelCardForm() {
       </div>
 
       <div className="pointer-events-none fixed right-4 top-20 z-[60] flex w-[min(320px,calc(100vw-2rem))] flex-col gap-2 print:hidden" aria-live="polite">
-        {toasts.map((toast) => (<div key={toast.id} role="status" className={cx("pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-lg", toast.kind === "success" && "border-[#A7F3D0] bg-[#ECFDF5]", toast.kind === "info" && "border-[#CBD5E1] bg-[#F8FAFC]", toast.kind === "error" && "border-[#FCA5A5] bg-[#FEF2F2]")}>
+        {toasts.map((toast) => (<div key={toast.id} role="status" className={cx("pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-lg", toast.kind === "success" && "border-[#A7F3D0] bg-[#ECFDF5]", toast.kind === "info" && "border-[#E3D6B8] bg-[#F6EEDB]", toast.kind === "error" && "border-[#FCA5A5] bg-[#FEF2F2]")}>
             {toast.kind === "success" ? (<Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#059669]"/>) : null}
             <div className="min-w-0 flex-1">
-              <p className={cx("text-[10px] font-bold", toast.kind === "success"
+              <p className={cx("text-[12px] font-bold", toast.kind === "success"
                 ? "text-[#047857]"
                 : toast.kind === "error"
                     ? "text-[#B91C1C]"
-                    : "text-[#475569]")}>
+                    : "text-[#5A4A32]")}>
                 {toast.title}
               </p>
-              <p className="mt-0.5 text-[9.5px] leading-4 text-[#475569]">
+              <p className="mt-0.5 text-[12px] leading-4 text-[#5A4A32]">
                 {toast.message}
               </p>
             </div>
-            <button type="button" aria-label={FL("Dismiss")} onClick={() => dismissToast(toast.id)} className="text-[#64748B] hover:text-[#0F172A]">
+            <button type="button" aria-label={FL("Dismiss")} onClick={() => dismissToast(toast.id)} className="text-[#7A6A50] hover:text-[#3B2F1E]">
               <X className="h-3 w-3"/>
             </button>
           </div>))}

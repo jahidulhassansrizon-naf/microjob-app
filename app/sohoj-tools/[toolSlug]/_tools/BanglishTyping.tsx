@@ -378,37 +378,56 @@ export default function BanglishTyping() {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
-    return (<div className="w-full text-[#0F172A] font-sans pb-16">
-      <div className="w-full space-y-6">
+    return (<div className="relative isolate min-h-screen w-full text-[#3B2F1E] font-sans pb-16 page-font">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .page-font.page-font,
+        .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+        .page-font .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+        .page-font .scroll::-webkit-scrollbar { width: 12px; }
+        .page-font .scroll::-webkit-scrollbar-track { background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0; }
+        .page-font .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #F87171, #DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        .page-font .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #EF4444, #B91C1C); }
+
+      `}</style>
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]" />
+      <div className="relative w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={BL("Go back")}>
+            <div className="flex items-center gap-2 text-sm text-[#7A6A50] font-medium mb-2">
+              <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40" title={BL("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><BanglishTypingText locale={locale}>{"Sohoj Tools\n              "}</BanglishTypingText></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><BanglishTypingText locale={locale}>{"Sohoj Tools\n              "}</BanglishTypingText></Link>
               <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><BanglishTypingText locale={locale}>{"Text Tools\n              "}</BanglishTypingText></span>
+              <span className="hover:text-[#3B2F1E] cursor-pointer"><BanglishTypingText locale={locale}>{"Text Tools\n              "}</BanglishTypingText></span>
               <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>
-              <span className="text-[#0F172A] font-semibold"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></span>
+              <span className="text-[#3B2F1E] font-semibold"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></span>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-lime-100 text-lime-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#F6D9A8] text-[#DC2626] rounded-lg flex items-center justify-center font-bold shadow-sm">
                 <Keyboard size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><BanglishTypingText locale={locale}>{"Free\n              "}</BanglishTypingText></span>
+              <h1 className="text-2xl font-bold text-[#3B2F1E] tracking-tight"><BanglishTypingText locale={locale}>{"Banglish Typing\n              "}</BanglishTypingText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[13px] font-bold px-2 py-0.5 rounded-full"><BanglishTypingText locale={locale}>{"Free\n              "}</BanglishTypingText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><BanglishTypingText locale={locale}>{"Type Bangla with an English keyboard \u2014 live Banglish to Bangla and\n              Bangla to Banglish conversion in your browser.\n            "}</BanglishTypingText></p>
+            <p className="text-sm text-[#7A6A50] font-medium mt-1"><BanglishTypingText locale={locale}>{"Type Bangla with an English keyboard \u2014 live Banglish to Bangla and\n              Bangla to Banglish conversion in your browser.\n            "}</BanglishTypingText></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} title={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} aria-label={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#2563EB] transition-all shadow-2xs">
-              <Star size={16} className={isFavorite ? "fill-amber-400 text-[#2563EB]" : ""}/>
+            <button onClick={() => setIsFavorite(!isFavorite)} title={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} aria-label={BL(isFavorite ? "Remove from favorites" : "Add to favorites")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#7A6A50] hover:text-[#DC2626] hover:border-[#DC2626] transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 shadow-sm">
+              <Star size={16} className={isFavorite ? "fill-[#DC2626] text-[#DC2626]" : ""}/>
             </button>
-            <button title={BL("Share this tool")} aria-label={BL("Share this tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button title={BL("Share this tool")} aria-label={BL("Share this tool")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#7A6A50] hover:text-[#3B2F1E] transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 shadow-sm">
               <Share size={16}/>
             </button>
           </div>
@@ -419,23 +438,23 @@ export default function BanglishTyping() {
           {/* LEFT COLUMN: CONTROLS & INPUT */}
           <div className="lg:col-span-4 space-y-4">
             {/* Conversion Mode Card */}
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-              <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase block"><BanglishTypingText locale={locale}>{"Type here\n              "}</BanglishTypingText></span>
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-sm space-y-3">
+              <span className="text-sm font-bold text-[#3B2F1E] tracking-wide uppercase block"><BanglishTypingText locale={locale}>{"Type here\n              "}</BanglishTypingText></span>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-semibold text-gray-500 block"><BanglishTypingText locale={locale}>{"Conversion mode\n                "}</BanglishTypingText></span>
+                <span className="text-[13px] font-semibold text-[#7A6A50] block"><BanglishTypingText locale={locale}>{"Conversion mode\n                "}</BanglishTypingText></span>
 
                 <div className="space-y-2">
-                  <button onClick={() => handleModeChange("banglishToBangla")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${mode === "banglishToBangla"
-            ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
-            : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
+                  <button onClick={() => handleModeChange("banglishToBangla")} className={`w-full py-2.5 px-3 rounded-xl border text-sm font-bold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 flex items-center justify-center gap-2 ${mode === "banglishToBangla"
+            ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40"
+            : "border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#F6EEDB]"}`}>
                     <ArrowLeftRight size={14}/>
                     <span><BanglishTypingText locale={locale}>{"Banglish to Bangla"}</BanglishTypingText></span>
                   </button>
 
-                  <button onClick={() => handleModeChange("banglaToBanglish")} className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${mode === "banglaToBanglish"
-            ? "border-sky-500 bg-sky-50/50 text-sky-600 ring-1 ring-sky-500"
-            : "border-gray-200 bg-white text-[#0F172A] hover:bg-gray-50"}`}>
+                  <button onClick={() => handleModeChange("banglaToBanglish")} className={`w-full py-2.5 px-3 rounded-xl border text-sm font-bold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 flex items-center justify-center gap-2 ${mode === "banglaToBanglish"
+            ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40"
+            : "border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#F6EEDB]"}`}>
                     <ArrowLeftRight size={14}/>
                     <span><BanglishTypingText locale={locale}>{"Bangla to Banglish"}</BanglishTypingText></span>
                   </button>
@@ -444,9 +463,9 @@ export default function BanglishTyping() {
             </div>
 
             {/* Input Text Box */}
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-sm space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-[#0F172A] tracking-wide uppercase">
+                <span className="text-sm font-bold text-[#3B2F1E] tracking-wide uppercase">
                   {mode === "banglishToBangla"
         ? <BanglishTypingText locale={locale}>{"Banglish — type here"}</BanglishTypingText> : <BanglishTypingText locale={locale}>{"Bangla — paste here"}</BanglishTypingText>}
                 </span>
@@ -454,13 +473,13 @@ export default function BanglishTyping() {
 
               <textarea rows={9} aria-label={BL(mode === "banglishToBangla" ? "Banglish input text" : "Bangla input text")} placeholder={mode === "banglishToBangla"
             ? BL("Type in Banglish using English letters...")
-            : BL("Write or paste Bangla text here...")} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 placeholder:text-gray-400 leading-relaxed resize-none"/>
+            : BL("Write or paste Bangla text here...")} value={inputText} onChange={(e) => handleConversion(e.target.value)} className="w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl p-3 text-sm font-medium text-[#3B2F1E] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] placeholder:text-[#B0A080] leading-relaxed resize-none transition-colors duration-200 focus-visible:outline-none"/>
 
               <div className="flex items-center justify-between">
-                {conversionError ? (<span className="text-[10px] font-semibold text-red-500">
+                {conversionError ? (<span className="text-[12px] font-semibold text-red-500">
                     {BL(conversionError)}
                   </span>) : (<span />)}
-                <span className="text-[10px] font-medium text-gray-400">
+                <span className="text-[12px] font-medium text-[#7A6A50]">
                   {inputText.length}<BanglishTypingText locale={locale}>{"chars \u2022"}</BanglishTypingText>{<BanglishTypingText locale={locale}>{" "}</BanglishTypingText>}
                   {inputText.trim() ? inputText.trim().split(/\s+/).length : 0}{<BanglishTypingText locale={locale}>{" "}</BanglishTypingText>}<BanglishTypingText locale={locale}>{"words\n                "}</BanglishTypingText></span>
               </div>
@@ -469,28 +488,28 @@ export default function BanglishTyping() {
 
           {/* RIGHT COLUMN: OUTPUT DISPLAY */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between min-h-[380px]">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-sm flex flex-col justify-between min-h-[380px]">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><BanglishTypingText locale={locale}>{"Converted text\n                  "}</BanglishTypingText></span>
-                  {convertedText ? (<span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Ready \u00B7 "}</BanglishTypingText>{convertedText.length}<BanglishTypingText locale={locale}>{"characters\n                    "}</BanglishTypingText></span>) : (<span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Empty\n                    "}</BanglishTypingText></span>)}
+                <div className="flex items-center justify-between pb-3 border-b border-[#E3D6B8]/70">
+                  <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider"><BanglishTypingText locale={locale}>{"Converted text\n                  "}</BanglishTypingText></span>
+                  {convertedText ? (<span className="text-[13px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Ready \u00B7 "}</BanglishTypingText>{convertedText.length}<BanglishTypingText locale={locale}>{"characters\n                    "}</BanglishTypingText></span>) : (<span className="text-[13px] font-semibold text-[#7A6A50] bg-[#F3E9D2] px-2 py-0.5 rounded-md"><BanglishTypingText locale={locale}>{"Empty\n                    "}</BanglishTypingText></span>)}
                 </div>
 
                 <div className="pt-4">
                   {!convertedText ? (<div className="flex flex-col items-center justify-center py-20 text-center">
-                      <div className="w-12 h-12 bg-sky-50 text-sky-500 rounded-xl flex items-center justify-center mb-3">
+                      <div className="w-12 h-12 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center mb-3">
                         <Keyboard size={24}/>
                       </div>
-                      <h3 className="text-xs font-bold text-[#0F172A] mb-1"><BanglishTypingText locale={locale}>{"Start typing to convert\n                      "}</BanglishTypingText></h3>
-                      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed"><BanglishTypingText locale={locale}>{"Choose a mode, type in the left panel, and the converted\n                        text appears instantly.\n                      "}</BanglishTypingText></p>
-                    </div>) : (<div className="p-3 bg-[#FDFCFB] border border-gray-200/60 rounded-xl text-xs text-[#0F172A] leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
+                      <h3 className="text-sm font-bold text-[#3B2F1E] mb-1"><BanglishTypingText locale={locale}>{"Start typing to convert\n                      "}</BanglishTypingText></h3>
+                      <p className="text-[13px] text-[#7A6A50] max-w-xs leading-relaxed"><BanglishTypingText locale={locale}>{"Choose a mode, type in the left panel, and the converted\n                        text appears instantly.\n                      "}</BanglishTypingText></p>
+                    </div>) : (<div className="p-3 bg-[#FBF6E8] border border-[#E3D6B8]/70 rounded-xl text-sm text-[#3B2F1E] leading-relaxed min-h-[220px] whitespace-pre-wrap break-words font-medium">
                       {convertedText}
                     </div>)}
                 </div>
               </div>
 
-              {convertedText && (<div className="pt-4 border-t border-gray-100 flex justify-end">
-                  <button onClick={handleCopy} className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-2xs">
+              {convertedText && (<div className="pt-4 border-t border-[#E3D6B8]/70 flex justify-end">
+                  <button onClick={handleCopy} className="px-4 py-2 bg-[#D42020] hover:bg-[#AE1717] text-white font-bold text-sm rounded-xl transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 flex items-center gap-2 shadow-sm">
                     {copied ? <Check size={14}/> : <Copy size={14}/>}
                     <span>{copied ? <BanglishTypingText locale={locale}>{"Copied!"}</BanglishTypingText> : <BanglishTypingText locale={locale}>{"Copy Converted Text"}</BanglishTypingText>}</span>
                   </button>
@@ -500,27 +519,27 @@ export default function BanglishTyping() {
         </div>
 
         {/* QUICK REFERENCE SECTION */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-          <h2 className="text-xs font-bold text-[#0F172A] tracking-wide uppercase"><BanglishTypingText locale={locale}>{"Quick reference\n          "}</BanglishTypingText></h2>
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-sm space-y-3">
+          <h2 className="text-sm font-bold text-[#3B2F1E] tracking-wide uppercase"><BanglishTypingText locale={locale}>{"Quick reference\n          "}</BanglishTypingText></h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-            {quickReferences.map((ref, idx) => (<div key={idx} className="bg-[#F8FAFC] border border-gray-200/60 rounded-xl p-2 flex items-center justify-between text-[11px]">
-                <span className="text-[#0F172A] font-semibold truncate pr-1">
+            {quickReferences.map((ref, idx) => (<div key={idx} className="bg-[#F6EEDB] border border-[#E3D6B8]/70 rounded-xl p-2 flex items-center justify-between text-[13px]">
+                <span className="text-[#3B2F1E] font-semibold truncate pr-1">
                   {ref.en}
                 </span>
-                <span className="text-[#0F172A] font-bold">{ref.bn}</span>
+                <span className="text-[#3B2F1E] font-bold">{ref.bn}</span>
               </div>))}
           </div>
-          <p className="text-[11px] text-gray-500 pt-1"><BanglishTypingText locale={locale}>{"This tool supports pure Banglish. Examples: sonar &rarr; \u09B8\u09CB\u09A8\u09BE\u09B0, amil\n            valo achi &rarr; \u0986\u09AE\u09BF \u09AD\u09BE\u09B2\u09CB \u0986\u099B\u09BF. Common words like onek and ekhon work\n            directly.\n          "}</BanglishTypingText></p>
+          <p className="text-[13px] text-[#7A6A50] pt-1"><BanglishTypingText locale={locale}>{"This tool supports pure Banglish. Examples: sonar &rarr; \u09B8\u09CB\u09A8\u09BE\u09B0, amil\n            valo achi &rarr; \u0986\u09AE\u09BF \u09AD\u09BE\u09B2\u09CB \u0986\u099B\u09BF. Common words like onek and ekhon work\n            directly.\n          "}</BanglishTypingText></p>
         </div>
 
         {/* BOTTOM ACTION BAR */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-[#7A6A50]">
             <span className={`w-2 h-2 rounded-full ${conversionError
             ? "bg-red-400"
             : convertedText
                 ? "bg-emerald-400"
-                : "bg-[#2563EB]"}`}></span>
+                : "bg-[#DC2626]"}`}></span>
             <span>
               {conversionError
             ? BL(conversionError)
@@ -533,34 +552,34 @@ export default function BanglishTyping() {
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <button onClick={handleReset} className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#0F172A] font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+            <button onClick={handleReset} className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] font-bold text-sm transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 flex items-center justify-center gap-1.5">
               <RotateCcw size={13}/>
               <span><BanglishTypingText locale={locale}>{"Reset"}</BanglishTypingText></span>
             </button>
 
-            <button onClick={handleConvertClick} disabled={!inputText.trim()} className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
+            <button onClick={handleConvertClick} disabled={!inputText.trim()} className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-[#D42020] hover:bg-[#AE1717] disabled:bg-[#E3D6B8] disabled:text-[#7A6A50] disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors flex items-center justify-center gap-1.5 shadow-sm">
               <span><BanglishTypingText locale={locale}>{"Convert text"}</BanglishTypingText></span>
             </button>
           </div>
         </div>
 
         {/* PRIVACY NOTICE */}
-        <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
+        <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-sm text-emerald-800 font-medium">
           <ShieldCheck size={16} className="text-emerald-600 shrink-0"/>
           <span><BanglishTypingText locale={locale}>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</BanglishTypingText></span>
         </div>
 
         {/* HOW TO USE DROPDOWN */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
-          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors">
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl overflow-hidden shadow-sm">
+          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-sm text-[#3B2F1E] hover:bg-[#EFE3C8] transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D42020]"></span>
               <span><BanglishTypingText locale={locale}>{"How to use"}</BanglishTypingText></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
-          {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
+          {showHowToUse && (<div className="p-4 pt-0 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8]/70 font-medium leading-relaxed">
               <p><BanglishTypingText locale={locale}>{"1. Select the conversion mode (Banglish to Bangla or Bangla to\n                Banglish).\n              "}</BanglishTypingText></p>
               <p><BanglishTypingText locale={locale}>{"2. Type phonetically in the input text area using your English\n                keyboard.\n              "}</BanglishTypingText></p>
               <p><BanglishTypingText locale={locale}>{"3. Review the live converted Bangla or Banglish output on the\n                right.\n              "}</BanglishTypingText></p>
@@ -570,19 +589,19 @@ export default function BanglishTyping() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><BanglishTypingText locale={locale}>{"Tools in the same category\n          "}</BanglishTypingText></h2>
+          <h2 className="text-base font-bold text-[#3B2F1E] tracking-tight"><BanglishTypingText locale={locale}>{"Tools in the same category\n          "}</BanglishTypingText></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
             const ToolIcon = tool.icon;
-            return (<Link key={idx} href={tool.href} className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-sky-300 transition-all flex flex-col justify-between group">
+            return (<Link key={idx} href={tool.href} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#DC2626]/50 transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
                   <div>
-                    <div className="w-9 h-9 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-sky-100 transition-colors">
+                    <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#FEE9E9] transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
                       <ToolIcon size={18}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-sky-600 transition-colors">
+                    <h3 className="text-sm font-bold text-[#3B2F1E] mb-1 group-hover:text-[#DC2626] transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
                       {<BanglishTypingText locale={locale}>{tool.title}</BanglishTypingText>}
                     </h3>
-                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                    <p className="text-[13px] text-[#7A6A50] font-medium leading-relaxed">
                       {<BanglishTypingText locale={locale}>{tool.description}</BanglishTypingText>}
                     </p>
                   </div>

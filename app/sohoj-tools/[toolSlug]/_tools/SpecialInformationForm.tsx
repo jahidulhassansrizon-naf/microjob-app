@@ -642,10 +642,10 @@ function FieldLabel({
 }) {
   const { tx } = useSpecialTranslator();
   return (
-    <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] font-semibold text-[#0F172A]">
+    <div className="mb-1.5 flex items-center justify-between gap-2 text-[15px] font-semibold text-[#3B2F1E]">
       <span>{typeof children === "string" ? tx(children) : children}</span>
       {hint ? (
-        <span className="font-normal text-[10px] text-[#64748B]">
+        <span className="font-normal text-[14px] text-[#7A6A50]">
           {tx(hint)}
         </span>
       ) : null}
@@ -653,14 +653,14 @@ function FieldLabel({
   );
 }
 const INPUT_CLASS =
-  "h-9 w-full rounded-md border bg-white/60 px-3 text-[11px] text-[#0F172A] outline-none transition placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50";
-const INPUT_OK = "border-[#CBD5E1] focus:border-[#2563EB] focus:ring-[#BFDBFE]";
+  "h-10 w-full rounded-xl border bg-[#FBF6E8] px-3 text-[17px] text-[#3B2F1E] outline-none transition placeholder:text-[#B0A080] focus:bg-[#FBF6E8] focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50";
+const INPUT_OK = "border-[#E3D6B8] focus:border-[#DC2626] focus:ring-[#DC2626]/20";
 const INPUT_BAD =
   "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#FECACA]";
 function FieldError({ message }: { message: string }) {
   const { tx } = useSpecialTranslator();
   return (
-    <p role="alert" className="mt-1 text-[9.5px] leading-3 text-[#B91C1C]">
+    <p role="alert" className="mt-1 text-[13.5px] leading-5 text-[#B91C1C]">
       {tx(message)}
     </p>
   );
@@ -756,7 +756,7 @@ function DateField({
           type="button"
           onClick={openPicker}
           aria-label={tx("Open calendar")}
-          className="absolute left-2 top-2 z-10 text-[#94A3B8] hover:text-[#2563EB]"
+          className="absolute left-2 top-2 z-10 text-[#B0A080] hover:text-[#DC2626]"
         >
           <CalendarDays className="h-4 w-4" />
         </button>
@@ -812,10 +812,10 @@ function ChoicePill({
       onClick={onClick}
       aria-pressed={active}
       className={cx(
-        "rounded-md border px-3 py-2 text-[10px] font-medium transition",
+        "rounded-xl border px-3 py-2 text-[15px] font-medium transition",
         active
-          ? "border-[#2563EB] bg-[#DBEAFE] text-[#1D4ED8]"
-          : "border-[#CBD5E1] bg-white/60 text-[#334155] hover:border-[#94A3B8] hover:bg-white",
+          ? "border-[#DC2626] bg-[#F6D9A8] text-[#B91C1C] ring-2 ring-[#DC2626]/40"
+          : "border-[#D8C9A6] bg-[#FBF6E8]/60 text-[#5A4A32] hover:border-[#B0A080] hover:bg-[#EFE3C8]",
       )}
     >
       {children}
@@ -838,15 +838,15 @@ function CheckBox({
       role="checkbox"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 text-left text-[10px] text-[#334155]"
+      className="flex items-center gap-2 text-left text-[15px] text-[#5A4A32]"
     >
       <span
         className={cx(
-          "flex h-4 w-4 shrink-0 items-center justify-center rounded border bg-white transition",
-          checked ? "border-[#2563EB] bg-[#DBEAFE]" : "border-[#CBD5E1]",
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border bg-[#FBF6E8] transition",
+          checked ? "border-[#DC2626] bg-[#F6D9A8]" : "border-[#D8C9A6]",
         )}
       >
-        {checked ? <Check className="h-3 w-3 text-[#2563EB]" /> : null}
+        {checked ? <Check className="h-3 w-3 text-[#DC2626]" /> : null}
       </span>
       {label}
     </button>
@@ -865,15 +865,15 @@ function SectionCard({
 }) {
   const { tx } = useSpecialTranslator();
   return (
-    <section className="rounded-xl border border-[#E2E8F0] bg-white p-3.5 shadow-[0_3px_12px_rgba(15,23,42,0.06)]">
+    <section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-sm">
       <div className="mb-3">
-        <h2 className="text-[12px] font-bold text-[#2563EB]">
+        <h2 className="text-[16px] font-bold text-[#DC2626]">
           {number}
           <T>{". "}</T>
           {tx(title)}
         </h2>
         {description ? (
-          <p className="mt-1 text-[9.5px] leading-4 text-[#475569]">
+          <p className="mt-1 text-[13.5px] leading-5 text-[#5A4A32]">
             {tx(description)}
           </p>
         ) : null}
@@ -1005,7 +1005,7 @@ function RelativeInputs({
   const get = (name: string) => String(form[key(name)] ?? "");
   return (
     <div className="space-y-3">
-      <p className="text-[10px] font-semibold text-[#475569]">
+      <p className="text-[14px] font-semibold text-[#5A4A32]">
         <T>{title}</T>
       </p>
       <TextField
@@ -2584,7 +2584,7 @@ function ScaledPaper({
     <div
       ref={ref}
       data-special-paper={`page-${page}`}
-      className="w-full overflow-hidden rounded-[2px] shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+      className="w-full overflow-hidden rounded-[2px] shadow-[0_2px_10px_rgba(59,47,30,0.25)]"
       style={{ aspectRatio: `${PAPER_W}/${PAPER_H}`, background: PAPER }}
     >
       {width > 0 ? (
@@ -2695,24 +2695,24 @@ function PreviewFrame({
     setPage(target);
   };
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-[0_5px_20px_rgba(15,23,42,0.08)]">
+    <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-sm">
       <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-[12px] font-semibold text-[#0F172A]">
+        <span className="text-[16px] font-semibold text-[#3B2F1E]">
           <T>{"Preview\n        "}</T>
         </span>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#CBD5E1] bg-white/70">
+          <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#D8C9A6] bg-[#FBF6E8]/70">
             <button
               type="button"
               title={tx("Zoom out")}
               aria-label={tx("Zoom out")}
               disabled={zoom <= ZOOM_MIN}
               onClick={() => nudgeZoom(-ZOOM_STEP)}
-              className="h-full px-2 text-[#64748B] hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <span className="min-w-11 text-center text-[10px] font-semibold text-[#475569]">
+            <span className="min-w-11 text-center text-[14px] font-semibold text-[#5A4A32]">
               {zoom}
               <T>{"%\n            "}</T>
             </span>
@@ -2722,7 +2722,7 @@ function PreviewFrame({
               aria-label={tx("Zoom in")}
               disabled={zoom >= ZOOM_MAX}
               onClick={() => nudgeZoom(ZOOM_STEP)}
-              className="h-full px-2 text-[#64748B] hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -2732,36 +2732,36 @@ function PreviewFrame({
               aria-label={tx("Reset zoom to 100%")}
               disabled={zoom === 100}
               onClick={() => setZoom(100)}
-              className="h-full border-l border-[#CBD5E1] px-2 text-[#64748B] hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full border-l border-[#D8C9A6] px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Search className="h-3.5 w-3.5" />
             </button>
           </div>
           <span
             className={cx(
-              "rounded-md px-2.5 py-1.5 text-[9px] font-semibold",
+              "rounded-md px-2.5 py-1.5 text-[13px] font-semibold",
               hasData
-                ? "bg-[#DBEAFE] text-[#1D4ED8]"
-                : "bg-white text-[#475569]",
+                ? "bg-[#F6D9A8] text-[#B91C1C]"
+                : "bg-[#FBF6E8] text-[#5A4A32]",
             )}
           >
             {hasData ? <T>{"Preview"}</T> : <T>{"Empty"}</T>}
           </span>
         </div>
       </div>
-      <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] text-[#475569]">
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-[#CBD5E1] bg-white">
-          <Check className="h-2.5 w-2.5 text-[#64748B]" />
+      <div className="mb-2 flex items-center gap-1.5 px-1 text-[14px] text-[#5A4A32]">
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-[#D8C9A6] bg-[#FBF6E8]">
+          <Check className="h-2.5 w-2.5 text-[#7A6A50]" />
         </span>
         <T>{"Live preview\n      "}</T>
       </div>
-      <div className="relative rounded-lg bg-[#1E293B] p-3.5 shadow-inner">
+      <div className="relative rounded-2xl bg-[#4A3B26] p-3.5 shadow-inner">
         <div className="absolute right-6 top-6 z-20">
           <button
             type="button"
             onClick={() => jumpToPage(page === 1 ? 2 : 1)}
             title={tx(page === 1 ? "Go to page 2" : "Go to page 1")}
-            className="flex items-center gap-1 rounded-full bg-[#0F172A] px-2.5 py-1.5 text-[9px] font-semibold text-white shadow-lg"
+            className="flex items-center gap-1 rounded-full bg-[#3B2F1E] px-2.5 py-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <T>{"Page "}</T>
             {page}
@@ -2780,7 +2780,7 @@ function PreviewFrame({
             event.preventDefault()
           }
           className={cx(
-            "relative max-h-[calc(100vh-250px)] min-h-[420px] select-none overflow-auto rounded-md bg-[#334155] px-3 py-3.5 sm:min-h-[620px] sm:px-8",
+            "relative max-h-[calc(100vh-250px)] min-h-[420px] select-none overflow-auto rounded-xl bg-[#6B5A40] px-3 py-3.5 sm:min-h-[620px] sm:px-8",
             panning ? "cursor-grabbing" : "cursor-grab",
           )}
         >
@@ -3111,13 +3111,40 @@ export default function SpecialInformationForm() {
   };
   return (
     <div
-      className="relative -mx-4 -mt-6 min-h-[calc(100vh-72px)] px-4 pb-28 pt-5 text-[#0F172A] [clip-path:inset(0_-100vmax)] print:bg-white print:shadow-none"
-      style={{ backgroundColor: "#F8FAFC", boxShadow: "0 0 0 100vmax #F8FAFC" }}
+      className="special-information-page relative isolate -mx-4 -mt-6 min-h-[calc(100vh-72px)] px-4 pb-36 pt-5 text-[#3B2F1E] print:bg-white print:shadow-none"
+      style={{ background: "linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%)" }}
     >
       <style>
-        {PRINT_CSS +
-          `
-html, body { background: #F8FAFC; }
+        {`@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+` + PRINT_CSS + `
+html:has(.special-information-page),
+body:has(.special-information-page) {
+  background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%) !important;
+}
+.special-information-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+}
+@media print {
+  html:has(.special-information-page),
+  body:has(.special-information-page) { background: #FFFFFF !important; }
+  .special-information-page::before { display: none !important; }
+}
+.special-information-page {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.special-information-page h1, .special-information-page h2, .special-information-page h3, .special-information-page h4 { letter-spacing: -0.01em; }
+.special-information-page button { transition-duration: 180ms; }
+.special-information-page button:active:not(:disabled) { transform: scale(0.98); }
+.special-information-page button:focus-visible, .special-information-page input:focus-visible { outline: 2px solid rgba(220,38,38,0.35); outline-offset: 2px; }
 `}
       </style>
       <datalist id="special-district-list">
@@ -3126,7 +3153,7 @@ html, body { background: #F8FAFC; }
         ))}
       </datalist>
       <div className="mx-auto max-w-[1180px]">
-        <div className="mb-2 flex items-center gap-2 px-1 text-[9px] text-[#64748B]">
+        <div className="mb-2 flex items-center gap-2 px-1 text-[13px] text-[#7A6A50]">
           <span>
             <T>{"\u2302"}</T>
           </span>
@@ -3145,29 +3172,29 @@ html, body { background: #F8FAFC; }
           <span>
             <T>{"/"}</T>
           </span>
-          <span className="font-semibold text-[#475569]">
+          <span className="font-semibold text-[#5A4A32]">
             <T>{"Special Information Form\n          "}</T>
           </span>
         </div>
         <div className="mb-4 flex items-start justify-between gap-4 px-1">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#DBEAFE] text-[#2563EB]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#F6D9A8] text-[#DC2626]">
                 <ClipboardList className="h-4 w-4" />
               </span>
-              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#0F172A]">
+              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#3B2F1E]">
                 <T>{"Special Information Form\n              "}</T>
               </h1>
-              <span className="rounded-full bg-[#D1FAE5] px-2 py-1 text-[9px] font-bold text-[#047857]">
+              <span className="rounded-full bg-[#F6EEDB] px-2 py-1 text-[13px] font-bold text-[#5A4A32]">
                 <T>{"Free\n              "}</T>
               </span>
-              <span className="text-[9px] text-[#64748B]">
+              <span className="text-[13px] text-[#7A6A50]">
                 <T>{"\u2713 Used "}</T>
                 {usedCount}{" "}
                 {usedCount === 1 ? <T>{"time"}</T> : <T>{"times"}</T>}
               </span>
             </div>
-            <p className="mt-1 pl-10 text-[10px] text-[#475569]">
+            <p className="mt-1 pl-10 text-[14px] text-[#5A4A32]">
               <T>
                 {
                   "Fill in your details on the left \u2014 see the live form on the right\n              and download it as PDF.\n            "
@@ -3184,10 +3211,10 @@ html, body { background: #F8FAFC; }
               aria-pressed={favorite}
               onClick={toggleFavorite}
               className={cx(
-                "flex h-9 w-9 items-center justify-center rounded-lg border bg-white/60 transition",
+                "flex h-9 w-9 items-center justify-center rounded-lg border bg-[#FBF6E8]/60 transition",
                 favorite
-                  ? "border-[#93C5FD] text-[#2563EB]"
-                  : "border-[#CBD5E1] text-[#64748B] hover:bg-white",
+                  ? "border-[#DC2626] text-[#DC2626]"
+                  : "border-[#D8C9A6] text-[#7A6A50] hover:bg-[#EFE3C8]",
               )}
             >
               <Star className={cx("h-4 w-4", favorite && "fill-current")} />
@@ -3197,14 +3224,14 @@ html, body { background: #F8FAFC; }
               title={tx("Share")}
               aria-label={tx("Share")}
               onClick={share}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white/60 text-[#64748B] transition hover:bg-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D8C9A6] bg-[#FBF6E8]/60 text-[#7A6A50] transition hover:bg-[#EFE3C8]"
             >
               <Share2 className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <div className="grid items-start gap-3.5 lg:grid-cols-[295px_minmax(0,1fr)]">
+        <div className="grid items-start gap-3.5 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="space-y-3.5">
             <SectionCard number={1} title={tx("Applicant")}>
               <div className="space-y-3">
@@ -3592,17 +3619,17 @@ html, body { background: #F8FAFC; }
         </div>
 
         <section
-          className="mt-5 rounded-xl border border-[#93C5FD] bg-[#F8FAFC] px-5 py-5 shadow-[0_3px_12px_rgba(37,99,235,0.06)] print:hidden"
+          className="mt-5 rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] px-5 py-5 shadow-sm print:hidden"
           aria-labelledby="special-information-important-notes"
         >
           <h2
             id="special-information-important-notes"
-            className="text-[13px] font-bold text-[#2563EB]"
+            className="text-[17px] font-bold text-[#DC2626]"
           >
             <T>{"Important notes:\n          "}</T>
           </h2>
-          <div className="my-4 border-t border-[#BFDBFE]" />
-          <div className="space-y-3 text-[10px] leading-5 text-[#0F172A]">
+          <div className="my-4 border-t border-[#FBB6B6]" />
+          <div className="space-y-3 text-[14px] leading-5 text-[#3B2F1E]">
             <p>
               <T>{"Attach the following with the form:"}</T>
             </p>
@@ -3637,7 +3664,7 @@ html, body { background: #F8FAFC; }
                 }
               </T>
             </p>
-            <p className="pt-1 text-[#475569]">
+            <p className="pt-1 text-[#5A4A32]">
               <T>
                 {
                   "Print the filled form, sign it, and submit it with Form-2 at your\n              upazila / thana election office.\n            "
@@ -3648,13 +3675,13 @@ html, body { background: #F8FAFC; }
         </section>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-[#CBD5E1] bg-white/95 shadow-[0_-6px_24px_rgba(15,23,42,0.08)] backdrop-blur print:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-[#D8C9A6] bg-[#FBF6E8]/95 shadow-[0_-6px_24px_rgba(59,47,30,0.12)] backdrop-blur print:hidden">
         <div className="pointer-events-auto mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-[9px] font-medium text-[#0F172A]">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[#3B2F1E]">
             <span
               className={cx(
                 "h-2 w-2 rounded-full",
-                hasData ? "bg-[#10B981]" : "bg-[#94A3B8]",
+                hasData ? "bg-[#10B981]" : "bg-[#B0A080]",
               )}
             />
             {hasData ? (
@@ -3668,7 +3695,7 @@ html, body { background: #F8FAFC; }
               type="button"
               disabled={!hasData}
               onClick={clearAll}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[#FBB6B6] bg-[#FBF6E8] px-3 py-1.5 text-[15px] font-semibold text-[#B91C1C] hover:bg-[#FEE9E9] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-[#FBF6E8]"
             >
               <X className="h-3.5 w-3.5" />
               <T>{"Clear all\n            "}</T>
@@ -3676,7 +3703,7 @@ html, body { background: #F8FAFC; }
             <button
               type="button"
               onClick={restoreLast}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#FFFFFF] px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#F1F5F9]"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[#FBB6B6] bg-[#FBF6E8] px-3 py-1.5 text-[15px] font-semibold text-[#B91C1C] hover:bg-[#FEE9E9]"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <T>{"Restore last form\n            "}</T>
@@ -3685,7 +3712,7 @@ html, body { background: #F8FAFC; }
               type="button"
               disabled={pdfBusy}
               onClick={print}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#FFFFFF] px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#F1F5F9] disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[#FBB6B6] bg-[#FBF6E8] px-3 py-1.5 text-[15px] font-semibold text-[#B91C1C] hover:bg-[#FEE9E9] disabled:cursor-wait disabled:opacity-70"
             >
               <Printer className="h-3.5 w-3.5" />
               <T>{"Print\n            "}</T>
@@ -3694,7 +3721,7 @@ html, body { background: #F8FAFC; }
               type="button"
               disabled={pdfBusy}
               onClick={downloadPdf}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#10B981] px-3.5 text-[10px] font-bold text-white shadow-sm hover:bg-[#059669] disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#D42020] px-3.5 py-1.5 text-[15px] font-bold text-white shadow-sm hover:bg-[#AE1717] active:bg-[#991B1B] disabled:cursor-wait disabled:opacity-70"
             >
               <FileDown className="h-3.5 w-3.5" />
               {pdfBusy ? <T>{"Processing..."}</T> : <T>{"Download PDF"}</T>}
@@ -3714,7 +3741,7 @@ html, body { background: #F8FAFC; }
             className={cx(
               "pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-lg",
               toast.kind === "success" && "border-[#A7F3D0] bg-[#ECFDF5]",
-              toast.kind === "info" && "border-[#CBD5E1] bg-[#F8FAFC]",
+              toast.kind === "info" && "border-[#D8C9A6] bg-[#F6EEDB]",
               toast.kind === "error" && "border-[#FCA5A5] bg-[#FEF2F2]",
             )}
           >
@@ -3724,17 +3751,17 @@ html, body { background: #F8FAFC; }
             <div className="min-w-0 flex-1">
               <p
                 className={cx(
-                  "text-[10px] font-bold",
+                  "text-[14px] font-bold",
                   toast.kind === "success"
                     ? "text-[#047857]"
                     : toast.kind === "error"
                       ? "text-[#B91C1C]"
-                      : "text-[#4B5563]",
+                      : "text-[#5A4A32]",
                 )}
               >
                 {tx(toast.title)}
               </p>
-              <p className="mt-0.5 text-[9.5px] leading-4 text-[#475569]">
+              <p className="mt-0.5 text-[13.5px] leading-5 text-[#5A4A32]">
                 {tx(toast.message)}
               </p>
             </div>
@@ -3742,7 +3769,7 @@ html, body { background: #F8FAFC; }
               type="button"
               aria-label={tx("Dismiss")}
               onClick={() => dismissToast(toast.id)}
-              className="text-[#64748B] hover:text-[#4B5563]"
+              className="text-[#7A6A50] hover:text-[#5A4A32]"
             >
               <X className="h-3 w-3" />
             </button>

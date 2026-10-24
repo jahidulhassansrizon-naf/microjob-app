@@ -656,18 +656,18 @@ type FieldProps = {
 };
 function Field({ label, value, placeholder, required, type = "text", onChange, icon, error, disabled = false, }: FieldProps) {
     return (<label className="block space-y-1.5">
-      <span className="flex items-center justify-between gap-2 text-[10px] font-semibold text-[#0F172A]">
+      <span className="flex items-center justify-between gap-2 text-[12px] font-semibold text-[#3B2F1E]">
         <span>
-          {L(label)} {required ? <span className="text-rose-500"><AtsCvText>{"*"}</AtsCvText></span> : null}
+          {L(label)} {required ? <span className="text-[#DC2626]"><AtsCvText>{"*"}</AtsCvText></span> : null}
         </span>
       </span>
       <div className={`relative ${error ? "" : ""}`}>
-        {icon ? (<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+        {icon ? (<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7A6A50]">
             {icon}
           </span>) : null}
-        <input type={type} value={/section title/i.test(label) ? L(value) : value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} disabled={disabled} className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0] ${icon ? "pl-9" : ""} ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-[#E2E8F0]"}`}/>
+        <input type={type} value={/section title/i.test(label) ? L(value) : value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} disabled={disabled} className={`w-full rounded-lg border bg-[#FBF6E8] px-3 py-2 text-[13px] text-[#3B2F1E] outline-none transition focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 ${icon ? "pl-9" : ""} ${error ? "border-rose-300 ring-1 ring-rose-100" : "border-[#E3D6B8]"}`}/>
       </div>
-      {error ? (<span className="text-[9px] font-medium text-rose-500">{L(error)}</span>) : null}
+      {error ? (<span className="text-[11px] font-medium text-[#DC2626]">{L(error)}</span>) : null}
     </label>);
 }
 function TextAreaField({ label, value, placeholder, onChange, rows = 5, }: {
@@ -678,8 +678,8 @@ function TextAreaField({ label, value, placeholder, onChange, rows = 5, }: {
     rows?: number;
 }) {
     return (<label className="block space-y-1.5">
-      <span className="text-[10px] font-semibold text-[#0F172A]">{L(label)}</span>
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} rows={rows} className="w-full resize-y rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-[11px] leading-relaxed text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#E2E8F0]"/>
+      <span className="text-[12px] font-semibold text-[#3B2F1E]">{L(label)}</span>
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder ? L(placeholder) : undefined} rows={rows} className="w-full resize-y rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2 text-[13px] leading-relaxed text-[#3B2F1E] outline-none transition focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"/>
     </label>);
 }
 function PrimaryButton({ children, onClick, type = "button", disabled, className = "", title, }: {
@@ -690,7 +690,7 @@ function PrimaryButton({ children, onClick, type = "button", disabled, className
     className?: string;
     title?: string;
 }) {
-    return (<button type={type} onClick={onClick} disabled={disabled} title={title ? L(title) : undefined} className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#2563EB] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}>
+    return (<button type={type} onClick={onClick} disabled={disabled} title={title ? L(title) : undefined} className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#D42020] px-3 py-2 text-[12px] font-bold text-white shadow-sm transition hover:bg-[#AE1717] disabled:cursor-not-allowed disabled:opacity-70 ${className}`}>
       {children}
     </button>);
 }
@@ -700,7 +700,7 @@ function SecondaryButton({ children, onClick, disabled, className = "", }: {
     disabled?: boolean;
     className?: string;
 }) {
-    return (<button type="button" onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}>
+    return (<button type="button" onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2 text-[12px] font-semibold text-[#5A4A32] transition hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-70 ${className}`}>
       {children}
     </button>);
 }
@@ -710,13 +710,13 @@ function SectionCard({ title, description, children, action, }: {
     children: ReactNode;
     action?: ReactNode;
 }) {
-    return (<section className="space-y-3 rounded-xl border border-[#E2E8F0]/80 bg-white p-4">
+    return (<section className="space-y-3 rounded-xl border border-[#E3D6B8]/80 bg-[#FBF6E8] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[11px] font-extrabold uppercase tracking-wide text-[#2563EB]">
+          <h3 className="text-[13px] font-extrabold uppercase tracking-wide text-[#DC2626]">
             {L(title)}
           </h3>
-          {description ? (<p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+          {description ? (<p className="mt-1 text-[12px] leading-relaxed text-[#5A4A32]">
               {L(description)}
             </p>) : null}
         </div>
@@ -732,15 +732,15 @@ function IconButton({ label, onClick, children, active, }: {
     active?: boolean;
 }) {
     return (<button type="button" title={L(label)} aria-label={L(label)} onClick={onClick} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${active
-            ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
-            : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-[#0F172A]"}`}>
+            ? "border-[#DC2626] bg-[#F6EEDB] text-[#DC2626]"
+            : "border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}>
       {children}
     </button>);
 }
 function EmptyState({ text }: {
     text: string;
 }) {
-    return (<div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/70 p-4 text-center text-[10px] text-gray-400">
+    return (<div className="rounded-lg border border-dashed border-[#E3D6B8] bg-[#F6EEDB]/70 p-4 text-center text-[12px] text-[#7A6A50]">
       {L(text)}
     </div>);
 }
@@ -1620,34 +1620,34 @@ export default function AtsCvMaker() {
             value,
         });
     };
-    const renderStepNavigation = () => (<div className="space-y-3 rounded-xl border border-[#E2E8F0]/80 bg-[#F8FAFC]/40 p-3.5">
+    const renderStepNavigation = () => (<div className="space-y-3 rounded-xl border border-[#E3D6B8]/80 bg-[#F6EEDB]/40 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-bold text-[#0F172A]">
+          <div className="text-[13px] font-bold text-[#3B2F1E]">
             {L(steps[currentStep - 1].label)}
           </div>
 
-          <div className="text-[9px] text-gray-500">
+          <div className="text-[11px] text-[#5A4A32]">
             {L(steps[currentStep - 1].meta)}
           </div>
         </div>
 
-        <div className="rounded-md bg-[#F8FAFC] px-2 py-1 text-right">
-          <div className="text-[10px] font-extrabold text-[#2563EB]">
+        <div className="rounded-md bg-[#F6EEDB] px-2 py-1 text-right">
+          <div className="text-[12px] font-extrabold text-[#DC2626]">
             {currentStep}<AtsCvText>{"/8\n          "}</AtsCvText></div>
 
-          <div className="text-[8px] text-gray-400"><AtsCvText>{"steps \u00B7 "}</AtsCvText>{completionPercent}<AtsCvText>{"%\n          "}</AtsCvText></div>
+          <div className="text-[10px] text-[#7A6A50]"><AtsCvText>{"steps \u00B7 "}</AtsCvText>{completionPercent}<AtsCvText>{"%\n          "}</AtsCvText></div>
         </div>
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-[#E2E8F0]">
-        <div className="h-full rounded-full bg-[#2563EB] transition-all duration-300" style={{
+      <div className="h-1.5 overflow-hidden rounded-full bg-[#F3E9D2]">
+        <div className="h-full rounded-full bg-[#D42020] transition-all duration-300" style={{
             width: `${completionPercent}%`,
         }}/>
       </div>
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={handlePrevStep} disabled={currentStep === 1} className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-[#0F172A] disabled:opacity-30" aria-label={L("Previous step")}>
+        <button type="button" onClick={handlePrevStep} disabled={currentStep === 1} className="rounded-md p-1 text-[#7A6A50] hover:bg-[#FBF6E8] hover:text-[#3B2F1E] disabled:opacity-30" aria-label={L("Previous step")}>
           <ChevronLeft size={13}/>
         </button>
 
@@ -1655,49 +1655,49 @@ export default function AtsCvMaker() {
           {steps.map((step) => {
             const isLocked = step.id > 2 && Boolean(personalStepError);
             return (<button type="button" key={step.id} onClick={() => goToStep(step.id)} className={`group flex min-w-[42px] flex-col items-center gap-1 ${isLocked ? "cursor-not-allowed opacity-50" : ""}`} aria-current={step.id === currentStep ? "step" : undefined} aria-disabled={isLocked} title={isLocked && personalStepError ? L(personalStepError) : undefined}>
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold transition ${step.id === currentStep
-                    ? "bg-[#2563EB] text-white shadow-sm"
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold transition ${step.id === currentStep
+                    ? "bg-[#D42020] text-white shadow-sm"
                     : step.id < currentStep
                         ? "bg-emerald-50 text-emerald-600"
-                        : "bg-white text-gray-400 ring-1 ring-gray-100 group-hover:bg-gray-50"}`}>
+                        : "bg-[#FBF6E8] text-[#7A6A50] ring-1 ring-[#E3D6B8] group-hover:bg-[#EFE3C8]"}`}>
                   {step.id < currentStep ? <Check size={10}/> : step.id}
                 </span>
 
-                <span className={`text-[7px] font-semibold ${step.id === currentStep ? "text-[#2563EB]" : "text-gray-400"}`}>
+                <span className={`text-[9px] font-semibold ${step.id === currentStep ? "text-[#DC2626]" : "text-[#7A6A50]"}`}>
                   {L(step.label)}
                 </span>
               </button>);
         })}
         </div>
 
-        <button type="button" onClick={handleNextStep} disabled={currentStep === steps.length} className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-[#0F172A] disabled:opacity-30" aria-label={L("Next step")}>
+        <button type="button" onClick={handleNextStep} disabled={currentStep === steps.length} className="rounded-md p-1 text-[#7A6A50] hover:bg-[#FBF6E8] hover:text-[#3B2F1E] disabled:opacity-30" aria-label={L("Next step")}>
           <ChevronRight size={13}/>
         </button>
       </div>
 
-      <div className="text-center text-[8px] text-gray-400"><AtsCvText>{"Required fields:"}</AtsCvText>{<AtsCvText>{" "}</AtsCvText>}
+      <div className="text-center text-[10px] text-[#7A6A50]"><AtsCvText>{"Required fields:"}</AtsCvText>{<AtsCvText>{" "}</AtsCvText>}
         <span className={requiredCount === 2
             ? "font-bold text-emerald-600"
-            : "font-bold text-[#2563EB]"}>
+            : "font-bold text-[#DC2626]"}>
           {requiredCount}<AtsCvText>{"/2\n        "}</AtsCvText></span>
       </div>
     </div>);
     const renderImportStep = () => (<SectionCard title={L("0. Import from PDF")} description="Upload an existing text-based CV PDF to pre-fill common fields directly in your browser.">
-      <button type="button" onClick={() => importInputRef.current?.click()} disabled={isImporting} className="group flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-6 text-center transition hover:border-indigo-400 hover:bg-indigo-50 disabled:cursor-wait disabled:opacity-70">
-        <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition group-hover:scale-105">
+      <button type="button" onClick={() => importInputRef.current?.click()} disabled={isImporting} className="group flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#FBB6B6] bg-[#FEE9E9]/30 p-6 text-center transition hover:border-[#DC2626] hover:bg-[#FEE9E9] disabled:cursor-wait disabled:opacity-70">
+        <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FEE9E9] text-[#DC2626] transition group-hover:scale-105">
           {isImporting ? (<RotateCw size={18} className="animate-spin"/>) : (<Upload size={18}/>)}
         </span>
 
-        <span className="text-[11px] font-bold text-indigo-700">
+        <span className="text-[13px] font-bold text-[#DC2626]">
           {isImporting ? <AtsCvText>{"Reading PDF…"}</AtsCvText> : <AtsCvText>{"Upload an existing CV PDF"}</AtsCvText>}
         </span>
 
-        <span className="mt-1 max-w-xs text-[9px] leading-relaxed text-gray-400"><AtsCvText>{"Up to 8 MB. Text-based PDFs can be parsed in the browser; scanned\n          image-only PDFs may require manual entry.\n        "}</AtsCvText></span>
+        <span className="mt-1 max-w-xs text-[11px] leading-relaxed text-[#7A6A50]"><AtsCvText>{"Up to 8 MB. Text-based PDFs can be parsed in the browser; scanned\n          image-only PDFs may require manual entry.\n        "}</AtsCvText></span>
       </button>
 
       <input ref={importInputRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => void handleImportPdf(event.target.files?.[0])}/>
 
-      {cvData.importedFileName ? (<div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-[9px] text-emerald-700">
+      {cvData.importedFileName ? (<div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
           <span className="truncate pr-3"><AtsCvText>{"Imported: "}</AtsCvText>{cvData.importedFileName}
           </span>
           <CheckCircle2 size={13}/>
@@ -1708,16 +1708,16 @@ export default function AtsCvMaker() {
             ? "Enter a valid email address."
             : "";
         return (<SectionCard title={L("1. Personal information")} description="These details appear at the top of your CV and are synced with the preview instantly.">
-        <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/40 p-3">
+        <div className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/40 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-[#0F172A]"><AtsCvText>{"Photo (optional)\n            "}</AtsCvText></span>
+            <span className="text-[12px] font-bold text-[#3B2F1E]"><AtsCvText>{"Photo (optional)\n            "}</AtsCvText></span>
 
-            <span className="text-[9px] text-gray-400"><AtsCvText>{"Recommended: square image\n            "}</AtsCvText></span>
+            <span className="text-[11px] text-[#7A6A50]"><AtsCvText>{"Recommended: square image\n            "}</AtsCvText></span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
-              {cvData.personal.photo ? (<img src={cvData.personal.photo} alt={L("Uploaded profile")} className="h-full w-full object-cover"/>) : (<div className="flex h-full w-full items-center justify-center text-gray-300">
+            <div className="h-14 w-14 overflow-hidden rounded-lg border border-[#E3D6B8] bg-[#FBF6E8]">
+              {cvData.personal.photo ? (<img src={cvData.personal.photo} alt={L("Uploaded profile")} className="h-full w-full object-cover"/>) : (<div className="flex h-full w-full items-center justify-center text-[#7A6A50]">
                   <UserRound size={20}/>
                 </div>)}
             </div>
@@ -1731,21 +1731,21 @@ export default function AtsCvMaker() {
               {cvData.personal.photo ? (<SecondaryButton onClick={() => updatePersonal("photo", "")}>
                   <Trash2 size={11}/><AtsCvText>{"Remove photo\n                "}</AtsCvText></SecondaryButton>) : null}
 
-              {cvData.personal.photo ? (<button type="button" onClick={() => updatePersonal("designPhoto", !cvData.personal.designPhoto)} className={`rounded-lg border px-2.5 py-2 text-[9px] font-bold transition ${cvData.personal.designPhoto
-                    ? "border-[#2563EB] bg-[#F8FAFC] text-[#2563EB]"
-                    : "border-gray-200 bg-white text-gray-500"}`}>
+              {cvData.personal.photo ? (<button type="button" onClick={() => updatePersonal("designPhoto", !cvData.personal.designPhoto)} className={`rounded-lg border px-2.5 py-2 text-[11px] font-bold transition ${cvData.personal.designPhoto
+                    ? "border-[#DC2626] bg-[#F6EEDB] text-[#DC2626]"
+                    : "border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32]"}`}>
                   {cvData.personal.designPhoto
                 ? <AtsCvText>{"Photo design on"}</AtsCvText> : <AtsCvText>{"Design photo"}</AtsCvText>}
                 </button>) : null}
             </div>
           </div>
 
-          {cvData.personal.photo && cvData.personal.designPhoto ? (<div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] text-gray-500">
+          {cvData.personal.photo && cvData.personal.designPhoto ? (<div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[#5A4A32]">
               <span className="font-semibold"><AtsCvText>{"Shape"}</AtsCvText></span>
 
               {(["square", "rounded", "circle"] as PhotoShape[]).map((shape) => (<button type="button" key={shape} onClick={() => updatePersonal("photoShape", shape)} className={`rounded-md px-2 py-1 ${cvData.personal.photoShape === shape
-                        ? "bg-[#2563EB] text-white"
-                        : "bg-white ring-1 ring-gray-200 hover:bg-gray-50"}`}>
+                        ? "bg-[#D42020] text-white"
+                        : "bg-[#FBF6E8] ring-1 ring-[#E3D6B8] hover:bg-[#EFE3C8]"}`}>
                     {L(shape)}
                   </button>))}
             </div>) : null}
@@ -1786,7 +1786,7 @@ export default function AtsCvMaker() {
     </SectionCard>);
     const renderExperienceStep = () => (<SectionCard title={L("3. Work experience")} description="Add roles in reverse chronological order. Use measurable responsibilities and achievements where possible." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_EXPERIENCE",
-            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
+            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F6EEDB] px-2.5 py-1.5 text-[11px] font-bold text-[#DC2626] hover:bg-[#F3E9D2]">
           <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.experienceTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
@@ -1797,15 +1797,15 @@ export default function AtsCvMaker() {
       {cvData.experiences.length === 0 ? (<EmptyState text="No experience added yet. Add your first role below."/>) : null}
 
       <div className="space-y-3">
-        {cvData.experiences.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
+        {cvData.experiences.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Experience "}</AtsCvText>{index + 1}
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#5A4A32]"><AtsCvText>{"Experience "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_EXPERIENCE",
                 id: item.id,
-            })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
+            })} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626] hover:text-[#B91C1C]">
                 <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
@@ -1845,13 +1845,13 @@ export default function AtsCvMaker() {
                 value,
             })}/>
 
-              <label className="flex items-center gap-2 self-end rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-semibold text-gray-600">
+              <label className="flex items-center gap-2 self-end rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2 text-[12px] font-semibold text-[#5A4A32]">
                 <input type="checkbox" checked={item.currentlyEmployed} onChange={(event) => dispatch({
                 type: "UPDATE_EXPERIENCE",
                 id: item.id,
                 field: "currentlyEmployed",
                 value: event.target.checked,
-            })} className="h-3.5 w-3.5 accent-[#2563EB]"/><AtsCvText>{"Currently employed\n              "}</AtsCvText></label>
+            })} className="h-3.5 w-3.5 accent-[#DC2626]"/><AtsCvText>{"Currently employed\n              "}</AtsCvText></label>
 
               <div className="sm:col-span-2">
                 <TextAreaField label="Responsibilities & achievements" value={item.description} rows={5} placeholder={"Led a team of 6…\nImproved campaign performance by 40%…"} onChange={(value) => dispatch({
@@ -1872,7 +1872,7 @@ export default function AtsCvMaker() {
     </SectionCard>);
     const renderEducationStep = () => (<SectionCard title={L("4. Education")} description="Add degrees, certificates, training, or other academic credentials." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_EDUCATION",
-            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
+            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F6EEDB] px-2.5 py-1.5 text-[11px] font-bold text-[#DC2626] hover:bg-[#F3E9D2]">
           <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.educationTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
@@ -1883,15 +1883,15 @@ export default function AtsCvMaker() {
       {cvData.education.length === 0 ? (<EmptyState text="No education added yet. Add your first qualification below."/>) : null}
 
       <div className="space-y-3">
-        {cvData.education.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
+        {cvData.education.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Education "}</AtsCvText>{index + 1}
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#5A4A32]"><AtsCvText>{"Education "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_EDUCATION",
                 id: item.id,
-            })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
+            })} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626] hover:text-[#B91C1C]">
                 <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
@@ -1950,7 +1950,7 @@ export default function AtsCvMaker() {
     </SectionCard>);
     const renderProjectsStep = () => (<SectionCard title={L("5. Projects")} description="Showcase relevant portfolio projects, freelance work, case studies, or coursework." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_PROJECT",
-            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
+            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F6EEDB] px-2.5 py-1.5 text-[11px] font-bold text-[#DC2626] hover:bg-[#F3E9D2]">
           <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       <Field label="Section title on CV" value={cvData.projectTitle} onChange={(value) => dispatch({
             type: "SET_SECTION_TITLE",
@@ -1961,15 +1961,15 @@ export default function AtsCvMaker() {
       {cvData.projects.length === 0 ? (<EmptyState text="No projects added yet. This section is optional."/>) : null}
 
       <div className="space-y-3">
-        {cvData.projects.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
+        {cvData.projects.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Project "}</AtsCvText>{index + 1}
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#5A4A32]"><AtsCvText>{"Project "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_PROJECT",
                 id: item.id,
-            })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
+            })} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626] hover:text-[#B91C1C]">
                 <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
@@ -2040,7 +2040,7 @@ export default function AtsCvMaker() {
             <button type="button" onClick={() => dispatch({
                 type: "REMOVE_SKILL",
                 id: skill.id,
-            })} className="mb-0.5 rounded-lg border border-gray-200 bg-white p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-500" aria-label={L(`Remove skill ${index + 1}`)}>
+            })} className="mb-0.5 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] p-2 text-[#7A6A50] hover:bg-[#FEE9E9] hover:text-[#DC2626]" aria-label={L(`Remove skill ${index + 1}`)}>
               <Trash2 size={12}/>
             </button>
           </div>))}
@@ -2048,7 +2048,7 @@ export default function AtsCvMaker() {
 
       <button type="button" onClick={() => dispatch({
             type: "ADD_SKILL",
-        })} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/50 px-3 py-2 text-[10px] font-bold text-[#2563EB] hover:bg-[#F8FAFC]">
+        })} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/50 px-3 py-2 text-[12px] font-bold text-[#DC2626] hover:bg-[#F6EEDB]">
         <Plus size={12}/><AtsCvText>{"Add skill\n      "}</AtsCvText></button>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -2085,20 +2085,20 @@ export default function AtsCvMaker() {
     </SectionCard>);
     const renderCustomStep = () => (<SectionCard title={L("7. Custom sections (optional)")} description="Add extra sections such as awards, volunteer work, publications, interests, or leadership. Empty sections will not appear on the CV." action={<button type="button" onClick={() => dispatch({
                 type: "ADD_CUSTOM",
-            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]">
+            })} className="inline-flex items-center gap-1 rounded-lg bg-[#F6EEDB] px-2.5 py-1.5 text-[11px] font-bold text-[#DC2626] hover:bg-[#F3E9D2]">
           <Plus size={11}/><AtsCvText>{"Add\n        "}</AtsCvText></button>}>
       {cvData.customSections.length === 0 ? (<EmptyState text="No extra sections yet. Add one only when you need it."/>) : null}
 
       <div className="space-y-3">
-        {cvData.customSections.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC]/30 p-3">
+        {cvData.customSections.map((item, index) => (<div key={item.id} className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]/30 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wide text-gray-500"><AtsCvText>{"Custom section "}</AtsCvText>{index + 1}
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#5A4A32]"><AtsCvText>{"Custom section "}</AtsCvText>{index + 1}
               </span>
 
               <button type="button" onClick={() => dispatch({
                 type: "REMOVE_CUSTOM",
                 id: item.id,
-            })} className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-500 hover:text-rose-600">
+            })} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626] hover:text-[#B91C1C]">
                 <Trash2 size={11}/><AtsCvText>{"Remove\n              "}</AtsCvText></button>
             </div>
 
@@ -2147,41 +2147,41 @@ export default function AtsCvMaker() {
                 return null;
         }
     };
-    return (<div className="ats-cv-maker w-full space-y-6 pb-16 font-sans text-[#0F172A]">
+    return (<div className="ats-cv-maker w-full space-y-6 pb-16 font-sans text-[#3B2F1E]">
       <div className="flex flex-col gap-4 print:hidden md:flex-row md:items-center md:justify-between">
         <div>
-          <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500">
-            <Link href="/" className="transition hover:text-[#0F172A]">
+          <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-[12px] text-[#5A4A32]">
+            <Link href="/" className="transition hover:text-[#3B2F1E]">
               <FileText size={12} className="inline"/>
             </Link>
 
             <span><AtsCvText>{"/"}</AtsCvText></span>
 
-            <Link href="/sohoj-tools" className="transition hover:text-[#0F172A]"><AtsCvText>{"Sohoz Tools\n            "}</AtsCvText></Link>
+            <Link href="/sohoj-tools" className="transition hover:text-[#3B2F1E]"><AtsCvText>{"Sohoz Tools\n            "}</AtsCvText></Link>
 
             <span><AtsCvText>{"/"}</AtsCvText></span>
             <span><AtsCvText>{"Educational Tools"}</AtsCvText></span>
             <span><AtsCvText>{"/"}</AtsCvText></span>
 
-            <span className="font-semibold text-[#0F172A]"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></span>
+            <span className="font-semibold text-[#3B2F1E]"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></span>
           </nav>
 
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FEE9E9] text-[#DC2626]">
               <FileText size={18}/>
             </div>
 
-            <h1 className="text-xl font-extrabold tracking-tight text-[#0F172A] md:text-2xl"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#3B2F1E] md:text-3xl"><AtsCvText>{"ATS Friendly CV Maker\n            "}</AtsCvText></h1>
 
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700"><AtsCvText>{"Free\n            "}</AtsCvText></span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700"><AtsCvText>{"Free\n            "}</AtsCvText></span>
           </div>
 
-          <p className="mt-1 text-[10px] font-medium text-gray-500"><AtsCvText>{"Build an ATS-friendly CV \u2014 live preview and high-quality A4\n            print/PDF flow.\n          "}</AtsCvText></p>
+          <p className="mt-1 text-[12px] font-medium text-[#5A4A32]"><AtsCvText>{"Build an ATS-friendly CV \u2014 live preview and high-quality A4\n            print/PDF flow.\n          "}</AtsCvText></p>
         </div>
 
         <div className="flex items-center gap-2">
           <IconButton label="Favorite" onClick={() => setFavorite((value) => !value)} active={favorite}>
-            <Star size={15} className={favorite ? "fill-orange-400 text-[#2563EB]" : ""}/>
+            <Star size={15} className={favorite ? "fill-[#DC2626] text-[#DC2626]" : ""}/>
           </IconButton>
 
           <IconButton label="Share" onClick={() => void handleShare()}>
@@ -2190,11 +2190,11 @@ export default function AtsCvMaker() {
         </div>
       </div>
 
-      {notice ? (<div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-semibold print:hidden ${notice.type === "success"
+      {notice ? (<div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-semibold print:hidden ${notice.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : notice.type === "error"
                     ? "border-rose-200 bg-rose-50 text-rose-700"
-                    : "border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB]"}`} role="status">
+                    : "border-[#E3D6B8] bg-[#F6EEDB] text-[#DC2626]"}`} role="status">
           {notice.type === "success" ? (<CheckCircle2 size={14}/>) : notice.type === "error" ? (<CircleHelp size={14}/>) : null}
 
           <span>{L(notice.text)}</span>
@@ -2206,23 +2206,23 @@ export default function AtsCvMaker() {
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <aside className="space-y-4 print:hidden lg:col-span-5">
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-[#E3D6B8]/80 bg-[#FBF6E8] p-5 shadow-sm">
             <div className="space-y-4">
               <div>
-                <h2 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Settings"}</AtsCvText></h2>
+                <h2 className="text-sm font-bold text-[#3B2F1E]"><AtsCvText>{"Settings"}</AtsCvText></h2>
 
-                <p className="mt-0.5 text-[10px] leading-relaxed text-gray-500"><AtsCvText>{"Fill in your CV step by step. The preview updates as you type.\n                "}</AtsCvText></p>
+                <p className="mt-0.5 text-[12px] leading-relaxed text-[#5A4A32]"><AtsCvText>{"Fill in your CV step by step. The preview updates as you type.\n                "}</AtsCvText></p>
               </div>
 
-              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]/20 p-3.5">
+              <div className="rounded-xl border border-[#E3D6B8] bg-[#F6EEDB]/20 p-3.5">
                 <button type="button" onClick={() => setIsTemplateOpen((open) => !open)} className="flex w-full items-center justify-between text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-[#0F172A]"><AtsCvText>{"Template\n                    "}</AtsCvText></span>
+                    <span className="text-[13px] font-bold text-[#3B2F1E]"><AtsCvText>{"Template\n                    "}</AtsCvText></span>
 
-                    <span className="text-[9px] font-medium text-[#2563EB]"><AtsCvText>{"More designs coming soon\n                    "}</AtsCvText></span>
+                    <span className="text-[11px] font-medium text-[#DC2626]"><AtsCvText>{"More designs coming soon\n                    "}</AtsCvText></span>
                   </div>
 
-                  <ChevronDown size={14} className={`text-gray-400 transition ${isTemplateOpen ? "rotate-180" : ""}`}/>
+                  <ChevronDown size={14} className={`text-[#7A6A50] transition ${isTemplateOpen ? "rotate-180" : ""}`}/>
                 </button>
 
                 {isTemplateOpen ? (<div className="mt-3 grid grid-cols-2 gap-2.5">
@@ -2232,10 +2232,10 @@ export default function AtsCvMaker() {
                         type: "SET_TEMPLATE",
                         template: template.id,
                     })} className={`relative rounded-xl border p-2.5 text-left transition-all ${selected
-                        ? "border-[#2563EB] bg-white shadow-sm ring-1 ring-orange-300"
-                        : "border-gray-200 bg-white hover:border-gray-300"}`}>
+                        ? "border-[#DC2626] bg-[#FBF6E8] shadow-sm ring-1 ring-[#DC2626]/40"
+                        : "border-[#E3D6B8] bg-[#FBF6E8] hover:border-[#D8C9A6]"}`}>
                           <div className={`mb-2 h-12 rounded-lg p-1.5 ${template.preview === "amber"
-                        ? "bg-[#E2E8F0]"
+                        ? "bg-[#F3E9D2]"
                         : template.preview === "teal"
                             ? "bg-teal-100"
                             : template.preview === "green"
@@ -2246,17 +2246,17 @@ export default function AtsCvMaker() {
                         backgroundColor: template.accent,
                     }}/>
 
-                              <div className="mt-1 h-1 w-full rounded bg-gray-100"/>
-                              <div className="mt-1 h-1 w-4/5 rounded bg-gray-100"/>
+                              <div className="mt-1 h-1 w-full rounded bg-[#F3E9D2]"/>
+                              <div className="mt-1 h-1 w-4/5 rounded bg-[#F3E9D2]"/>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-[#0F172A]">
+                            <span className="text-[12px] font-bold text-[#3B2F1E]">
                               {L(template.label)}
                             </span>
 
-                            {selected ? (<CheckCircle2 size={14} className="fill-orange-500 text-[#2563EB]"/>) : null}
+                            {selected ? (<CheckCircle2 size={14} className="fill-[#DC2626] text-[#DC2626]"/>) : null}
                           </div>
                         </button>);
             })}
@@ -2283,23 +2283,23 @@ export default function AtsCvMaker() {
         </aside>
 
         <section ref={previewPanelRef} className="min-w-0 lg:sticky lg:top-4 lg:col-span-7" aria-label={L("CV preview panel")}>
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 print:hidden">
+          <div className="rounded-2xl border border-[#E3D6B8]/80 bg-[#FBF6E8] p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-[#E3D6B8] pb-3 print:hidden">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Preview"}</AtsCvText></h2>
+                  <h2 className="text-sm font-bold text-[#3B2F1E]"><AtsCvText>{"Preview"}</AtsCvText></h2>
 
-                  <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                  <span className="flex items-center gap-1 text-[11px] text-[#7A6A50]">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>{<AtsCvText>{" "}</AtsCvText>}<AtsCvText>{"Live preview\n                  "}</AtsCvText></span>
                 </div>
 
-                <div className="mt-1 flex items-center gap-1.5 text-[8px] text-gray-400">
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#7A6A50]">
                   <span>
                     {L(templates.find((item) => item.id === cvData.selectedTemplate)?.label ?? "Classic ATS")}{<AtsCvText>{" "}</AtsCvText>}<AtsCvText>{"\u00B7 A4\n                  "}</AtsCvText></span>
 
                   <span className={`rounded-full px-1.5 py-0.5 font-semibold ${formReady
             ? "bg-emerald-50 text-emerald-600"
-            : "bg-gray-100 text-gray-400"}`}>
+            : "bg-[#F3E9D2] text-[#7A6A50]"}`}>
                     {formReady ? <AtsCvText>{"Ready"}</AtsCvText> : <AtsCvText>{"Draft"}</AtsCvText>}
                   </span>
                 </div>
@@ -2313,7 +2313,7 @@ export default function AtsCvMaker() {
                   <Minus size={12}/>
                 </IconButton>
 
-                <button type="button" onClick={resetPreviewZoom} title={L("Reset to fit the panel width")} className="h-8 min-w-12 rounded-lg border border-gray-200 bg-white px-2 text-[9px] font-bold text-gray-500 hover:bg-gray-50">
+                <button type="button" onClick={resetPreviewZoom} title={L("Reset to fit the panel width")} className="h-8 min-w-12 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 text-[11px] font-bold text-[#5A4A32] hover:bg-[#EFE3C8]">
                   {previewZoom}<AtsCvText>{"%\n                "}</AtsCvText></button>
 
                 <IconButton label="Zoom in" onClick={() => {
@@ -2323,11 +2323,11 @@ export default function AtsCvMaker() {
                   <Plus size={12}/>
                 </IconButton>
 
-                <button type="button" onClick={handleViewPreview} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-2 text-[9px] font-bold text-[#2563EB] hover:bg-[#E2E8F0]"><AtsCvText>{"Preview\n                "}</AtsCvText></button>
+                <button type="button" onClick={handleViewPreview} className="rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-2.5 py-2 text-[11px] font-bold text-[#DC2626] hover:bg-[#F3E9D2]"><AtsCvText>{"Preview\n                "}</AtsCvText></button>
               </div>
             </div>
 
-            <div ref={previewStageRef} className="preview-stage mt-4 overflow-auto rounded-xl border border-gray-200/60 bg-[#38372f] p-3 sm:p-6" aria-label={L("Scrollable A4 CV preview")}>
+            <div ref={previewStageRef} className="preview-stage mt-4 overflow-auto rounded-xl border border-[#E3D6B8]/60 bg-[#38372f] p-3 sm:p-6" aria-label={L("Scrollable A4 CV preview")}>
               <div className="flex min-w-full justify-center py-1">
                 <div id="cv-print-root" className="cv-print-root origin-top transition-transform duration-200" style={{
             width: "210mm",
@@ -2343,10 +2343,10 @@ export default function AtsCvMaker() {
         </section>
       </div>
 
-      <div className="sticky bottom-3 z-30 rounded-2xl border border-gray-200/80 bg-white/95 px-4 py-3 shadow-lg backdrop-blur print:hidden">
+      <div className="sticky bottom-3 z-30 rounded-2xl border border-[#E3D6B8]/80 bg-[#FBF6E8]/95 px-4 py-3 shadow-lg backdrop-blur print:hidden">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 text-[9px] font-medium text-gray-500">
-            <span className={`h-1.5 w-1.5 rounded-full ${formReady ? "bg-emerald-500" : "bg-[#2563EB]"}`}/>
+          <div className="flex items-center gap-2 text-[11px] font-medium text-[#5A4A32]">
+            <span className={`h-1.5 w-1.5 rounded-full ${formReady ? "bg-emerald-500" : "bg-[#D42020]"}`}/>
 
             <span>
               {formReady
@@ -2370,24 +2370,24 @@ export default function AtsCvMaker() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-[10px] font-medium text-emerald-800 shadow-sm print:hidden">
+      <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-[12px] font-medium text-emerald-800 shadow-sm print:hidden">
         <ShieldCheck size={17} className="shrink-0 text-emerald-600"/>
 
         <span><AtsCvText>{"Your CV and images are processed in your browser. This component does\n          not upload your CV data to a server.\n        "}</AtsCvText></span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm print:hidden">
-        <button type="button" onClick={() => setIsHowToUseOpen((open) => !open)} className="flex w-full items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/60">
+      <div className="overflow-hidden rounded-2xl border border-[#E3D6B8]/80 bg-[#FBF6E8] shadow-sm print:hidden">
+        <button type="button" onClick={() => setIsHowToUseOpen((open) => !open)} className="flex w-full items-center justify-between px-5 py-3.5 text-left hover:bg-[#EFE3C8]/60">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#2563EB]"><AtsCvText>{"?"}</AtsCvText></span>
+            <span className="font-bold text-[#DC2626]"><AtsCvText>{"?"}</AtsCvText></span>
 
-            <span className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"How to use"}</AtsCvText></span>
+            <span className="text-sm font-bold text-[#3B2F1E]"><AtsCvText>{"How to use"}</AtsCvText></span>
           </div>
 
-          <ChevronDown size={15} className={`text-gray-400 transition ${isHowToUseOpen ? "rotate-180" : ""}`}/>
+          <ChevronDown size={15} className={`text-[#7A6A50] transition ${isHowToUseOpen ? "rotate-180" : ""}`}/>
         </button>
 
-        {isHowToUseOpen ? (<div className="space-y-2 border-t border-gray-100 px-5 pb-4 pt-3 text-[10px] leading-relaxed text-gray-600">
+        {isHowToUseOpen ? (<div className="space-y-2 border-t border-[#E3D6B8] px-5 pb-4 pt-3 text-[12px] leading-relaxed text-[#5A4A32]">
             <p><AtsCvText>{"1. Choose a template from the top section."}</AtsCvText></p>
 
             <p><AtsCvText>{"2. Import an existing PDF or fill each step manually."}</AtsCvText></p>
@@ -2399,24 +2399,76 @@ export default function AtsCvMaker() {
       </div>
 
       <div className="space-y-3 print:hidden">
-        <h3 className="text-xs font-bold text-[#0F172A]"><AtsCvText>{"Tools in the same category\n        "}</AtsCvText></h3>
+        <h3 className="text-sm font-bold text-[#3B2F1E]"><AtsCvText>{"Tools in the same category\n        "}</AtsCvText></h3>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Link href="/sohoj-tools" className="group flex items-start gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:border-teal-300">
+          <Link href="/sohoj-tools" className="group flex items-start gap-3 rounded-2xl border border-[#E3D6B8]/80 bg-[#FBF6E8] p-4 shadow-sm transition hover:border-[#DC2626]/50">
             <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <LayoutTemplate size={19}/>
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold text-[#0F172A] transition group-hover:text-teal-600"><AtsCvText>{"All Sohoz Tools\n              "}</AtsCvText></h4>
+              <h4 className="text-[12px] font-bold text-[#3B2F1E] transition group-hover:text-[#DC2626]"><AtsCvText>{"All Sohoz Tools\n              "}</AtsCvText></h4>
 
-              <p className="mt-0.5 line-clamp-2 text-[9px] text-gray-400"><AtsCvText>{"Explore the complete collection of browser-based tools in one\n                place.\n              "}</AtsCvText></p>
+              <p className="mt-0.5 line-clamp-2 text-[11px] text-[#7A6A50]"><AtsCvText>{"Explore the complete collection of browser-based tools in one\n                place.\n              "}</AtsCvText></p>
             </div>
           </Link>
         </div>
       </div>
 
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .ats-cv-maker {
+          position: relative;
+          isolation: isolate;
+          min-height: 100vh;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          --ats-bg: #F2E8D2;
+          --ats-paper: #ffffff;
+        }
+
+        .ats-cv-maker::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
+        .ats-cv-maker,
+        .ats-cv-maker :not(.font-mono):not(svg):not(svg *) {
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        .ats-cv-maker :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select) {
+          color: #3B2F1E;
+          border-color: #E3D6B8;
+          background-color: #FBF6E8;
+          font-size: 15px;
+          font-family: inherit;
+          transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+        }
+
+        .ats-cv-maker :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select):focus-visible {
+          border-color: #DC2626;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+        }
+
+        .ats-cv-maker button {
+          transition-duration: 180ms;
+        }
+
+        .ats-cv-maker button:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+
         /* Pointer cursor on every clickable element of this tool */
         :where(.ats-cv-maker) a[href],
         :where(.ats-cv-maker) button:not(:disabled):not([aria-disabled="true"]),
@@ -2438,11 +2490,6 @@ export default function AtsCvMaker() {
           cursor: not-allowed;
         }
 
-        .ats-cv-maker {
-          --ats-bg: #f8fafc;
-          --ats-paper: #ffffff;
-        }
-
         .ats-cv-maker .cv-print-root {
           box-sizing: border-box;
         }
@@ -2454,7 +2501,8 @@ export default function AtsCvMaker() {
           min-height: 297mm;
           background: var(--ats-paper);
           color: #1d1d1b;
-          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+          font-family: Arial, Helvetica, sans-serif;
+          box-shadow: 0 10px 26px -8px rgba(59, 47, 30, 0.20);
           font-size: 9.6pt;
           line-height: 1.4;
           overflow: visible;

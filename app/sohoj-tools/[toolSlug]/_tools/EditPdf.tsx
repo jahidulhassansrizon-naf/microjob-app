@@ -624,10 +624,12 @@ export default function EditPdf() {
             await loadPdfIntoEditor(selectedFile);
         }
     };
-    return (<div className="w-full space-y-5 text-[#0F172A] font-sans">
+    return (<div className="relative w-full">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]" />
+      <div className="sohoj-edit-pdf page-font relative w-full space-y-5 text-[#3B2F1E]">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
+      <div className="flex items-center gap-2 text-sm text-[#7A6A50]">
+        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
 
           <span><EditPdfText>{"Back to Tools"}</EditPdfText></span>
@@ -639,33 +641,33 @@ export default function EditPdf() {
 
         <span><EditPdfText>{"/"}</EditPdfText></span>
 
-        <span className="font-semibold text-[#0F172A]"><EditPdfText>{"Edit PDF"}</EditPdfText></span>
+        <span className="font-semibold text-[#3B2F1E]"><EditPdfText>{"Edit PDF"}</EditPdfText></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
+          <div className="w-12 h-12 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#E3D6B8]">
             <Pencil size={24}/>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><EditPdfText>{"Edit PDF"}</EditPdfText></h1>
+              <h1 className="text-xl font-bold text-[#3B2F1E]"><EditPdfText>{"Edit PDF"}</EditPdfText></h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><EditPdfText>{"Free\n              "}</EditPdfText></span>
+              <span className="bg-[#F6EEDB] text-[#5A4A32] text-[12px] font-bold px-2 py-0.5 rounded-full border border-[#E3D6B8]"><EditPdfText>{"Free\n              "}</EditPdfText></span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><EditPdfText>{"Open any PDF in a full-screen editor \u2014 add or edit text, draw,\n              highlight, sign, stamp, insert images and rearrange pages.\n            "}</EditPdfText></p>
+            <p className="text-sm text-[#7A6A50] font-medium mt-0.5"><EditPdfText>{"Open any PDF in a full-screen editor \u2014 add or edit text, draw,\n              highlight, sign, stamp, insert images and rearrange pages.\n            "}</EditPdfText></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button aria-label={EL("Add to favorites")} title={EL("Add to favorites")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={EL("Add to favorites")} title={EL("Add to favorites")} className="p-2 text-[#7A6A50] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Star size={16}/>
           </button>
 
-          <button aria-label={EL("Share this tool")} title={EL("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+          <button aria-label={EL("Share this tool")} title={EL("Share this tool")} className="p-2 text-[#7A6A50] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Share2 size={16}/>
           </button>
         </div>
@@ -674,12 +676,12 @@ export default function EditPdf() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Side: Upload Box */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Files ("}</EditPdfText>{selectedFile ? 1 : 0}<EditPdfText>{")\n              "}</EditPdfText></h2>
+              <h2 className="text-sm font-bold text-[#3B2F1E]"><EditPdfText>{"Files ("}</EditPdfText>{selectedFile ? 1 : 0}<EditPdfText>{")\n              "}</EditPdfText></h2>
 
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-[#E2E8F0]">
+              <label className="inline-flex items-center gap-1 text-[13px] font-bold text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] px-2 py-0.5 rounded-md cursor-pointer transition-colors border border-[#E3D6B8]">
                 <Plus size={12}/>
 
                 <span><EditPdfText>{"Add"}</EditPdfText></span>
@@ -688,33 +690,33 @@ export default function EditPdf() {
               </label>
             </div>
 
-            {!selectedFile ? (<label className="border border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
-                <div className="w-10 h-10 bg-[#E2E8F0]/80 text-[#2563EB] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            {!selectedFile ? (<label className="border border-dashed border-[#DC2626] bg-[#F6EEDB]/20 hover:bg-[#EFE3C8]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group min-h-[220px]">
+                <div className="w-10 h-10 bg-[#F3E9D2]/80 text-[#DC2626] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Drop a PDF here or click to upload\n                "}</EditPdfText></span>
+                <span className="text-sm font-bold text-[#3B2F1E]"><EditPdfText>{"Drop a PDF here or click to upload\n                "}</EditPdfText></span>
 
-                <span className="text-[10px] text-gray-400 font-medium mt-1"><EditPdfText>{"1 PDF file, max 300 MB\n                "}</EditPdfText></span>
+                <span className="text-[12px] text-[#7A6A50] font-medium mt-1"><EditPdfText>{"1 PDF file, max 300 MB\n                "}</EditPdfText></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
-              </label>) : (<div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+              </label>) : (<div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#F3E9D2] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16}/>
                   </div>
 
                   <div className="truncate">
-                    <p className="text-xs font-bold text-[#0F172A] truncate">
+                    <p className="text-sm font-bold text-[#3B2F1E] truncate">
                       {selectedFile.name}
                     </p>
 
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[12px] text-[#7A6A50]">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)}<EditPdfText>{"MB\n                    "}</EditPdfText></p>
                   </div>
                 </div>
 
-                <button onClick={handleReset} aria-label={EL("Remove PDF")} title={EL("Remove PDF")} className="p-1 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                <button onClick={handleReset} aria-label={EL("Remove PDF")} title={EL("Remove PDF")} className="p-1 text-[#7A6A50] hover:text-[#B91C1C] rounded-lg transition-colors">
                   <X size={16}/>
                 </button>
               </div>)}
@@ -722,27 +724,27 @@ export default function EditPdf() {
         </div>
 
         {/* Right Side: Preview Box */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[380px]">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col justify-between min-h-[380px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Preview"}</EditPdfText></h2>
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><EditPdfText>{"Preview"}</EditPdfText></h2>
 
-            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+            <span className="bg-[#F3E9D2] text-[#7A6A50] text-[12px] font-bold px-2.5 py-0.5 rounded-full">
               {selectedFile ? <EditPdfText>{"Ready"}</EditPdfText> : <EditPdfText>{"Empty"}</EditPdfText>}
             </span>
           </div>
 
           {/* Empty Preview Placeholder */}
-          <div className="bg-gray-50/60 rounded-2xl border border-dashed border-gray-200 p-8 flex flex-col items-center justify-center my-auto text-center py-20">
-            <div className="w-10 h-10 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
+          <div className="bg-[#F6EEDB]/60 rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-20">
+            <div className="w-10 h-10 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#E3D6B8]">
               <FileText size={20}/>
             </div>
 
-            <p className="text-xs font-bold text-[#0F172A]">
+            <p className="text-sm font-bold text-[#3B2F1E]">
               {selectedFile
         ? <EditPdfText>{"Ready to open in the editor"}</EditPdfText> : <EditPdfText>{"Add files to get started"}</EditPdfText>}
             </p>
 
-            <p className="text-[11px] text-gray-400 mt-1">
+            <p className="text-[13px] text-[#7A6A50] mt-1">
               {selectedFile
         ? <EditPdfText>{'Click "Open editor" below to add text, drawings and highlights.'}</EditPdfText> : <EditPdfText>{"Your result will appear here after you run the tool."}</EditPdfText>}
             </p>
@@ -753,16 +755,16 @@ export default function EditPdf() {
       </div>
 
       {/* Error banner */}
-      {error && (<div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-red-700 font-medium">
+      {error && (<div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex items-center gap-2 text-sm text-red-700 font-medium">
           <AlertCircle size={15} className="text-red-500 shrink-0"/>
 
           <span>{EL(error)}</span>
         </div>)}
 
       {/* Bottom Action Controls Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-          <span className="w-2 h-2 rounded-full bg-gray-400 shrink-0"/>
+      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#7A6A50]">
+          <span className="w-2 h-2 rounded-full bg-[#B0A080] shrink-0"/>
 
           <span>
             {selectedFile
@@ -771,11 +773,11 @@ export default function EditPdf() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all"><EditPdfText>{"Reset\n          "}</EditPdfText></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#EFE3C8] transition-all"><EditPdfText>{"Reset\n          "}</EditPdfText></button>
 
-          <button onClick={handleOpenEditor} disabled={!selectedFile} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${selectedFile
-            ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+          <button onClick={handleOpenEditor} disabled={!selectedFile} className={`px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all ${selectedFile
+            ? "bg-[#D42020] text-white shadow-xs hover:bg-[#AE1717]"
+            : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"}`}>
             <Pencil size={14}/>
 
             <span><EditPdfText>{"Open editor"}</EditPdfText></span>
@@ -784,17 +786,17 @@ export default function EditPdf() {
       </div>
 
       {/* Security Banner */}
-      <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-xs text-emerald-800 font-medium">
+      <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-2xl flex items-center gap-2 text-sm text-emerald-800 font-medium">
         <Lock size={15} className="text-emerald-600 shrink-0"/>
 
         <span><EditPdfText>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</EditPdfText></span>
       </div>
 
       {/* How to use Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
-        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-gray-50/50 transition-colors">
+      <div className="bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-xs overflow-hidden">
+        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-sm font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB] font-bold"><EditPdfText>{"?"}</EditPdfText></span>
+            <span className="text-[#DC2626] font-bold"><EditPdfText>{"?"}</EditPdfText></span>
 
             <span><EditPdfText>{"How to use"}</EditPdfText></span>
           </div>
@@ -802,35 +804,35 @@ export default function EditPdf() {
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-gray-500 leading-relaxed border-t border-gray-50 pt-3"><EditPdfText>{"Upload your PDF, click \"Open editor\" to open the interactive editor,\n            add text, shapes, or signatures, and save your edited document.\n          "}</EditPdfText></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-sm text-[#7A6A50] leading-relaxed border-t border-[#E3D6B8]/70 pt-3"><EditPdfText>{"Upload your PDF, click \"Open editor\" to open the interactive editor,\n            add text, shapes, or signatures, and save your edited document.\n          "}</EditPdfText></div>)}
       </div>
 
       {/* Same Category Tools */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><EditPdfText>{"Tools in the same category\n        "}</EditPdfText></h3>
+        <h3 className="text-sm font-bold text-[#3B2F1E]"><EditPdfText>{"Tools in the same category\n        "}</EditPdfText></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/sohoj-tools/compress-pdf" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/compress-pdf" className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs hover:border-[#E3D6B8] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><EditPdfText>{"Compress PDF\n              "}</EditPdfText></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors"><EditPdfText>{"Compress PDF\n              "}</EditPdfText></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><EditPdfText>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</EditPdfText></p>
+              <p className="text-[12px] text-[#7A6A50] mt-0.5 line-clamp-1"><EditPdfText>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</EditPdfText></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/merge-pdfs" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/merge-pdfs" className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs hover:border-[#E3D6B8] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><EditPdfText>{"Merge PDFs\n              "}</EditPdfText></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors"><EditPdfText>{"Merge PDFs\n              "}</EditPdfText></h4>
 
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1"><EditPdfText>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</EditPdfText></p>
+              <p className="text-[12px] text-[#7A6A50] mt-0.5 line-clamp-1"><EditPdfText>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</EditPdfText></p>
             </div>
           </Link>
         </div>
@@ -838,65 +840,65 @@ export default function EditPdf() {
 
       {/* Full-screen Editor */}
       {isEditorOpen && (<div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white w-full h-full max-w-6xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-[#F2E8D2] w-full h-full max-w-6xl max-h-[92vh] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-[#E3D6B8]">
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-gray-100 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-[#E3D6B8] shrink-0">
               <div className="flex items-center gap-2 mr-2">
-                <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center">
                   <Pencil size={16}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[160px]">
+                <span className="text-sm font-bold text-[#3B2F1E] truncate max-w-[160px]">
                   {selectedFile?.name}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-xl p-1">
+              <div className="flex items-center gap-1 bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-1">
                 <button onClick={() => setTool("select")} title={EL("Select / pan")} className={`p-2 rounded-lg transition-all ${tool === "select"
-                ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
-                : "text-gray-400 hover:text-[#0F172A]"}`}>
+                ? "bg-[#FBF6E8] shadow-xs text-[#DC2626] border border-[#E3D6B8]"
+                : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                   <MousePointer2 size={16}/>
                 </button>
 
                 <button onClick={() => setTool("text")} title={EL("Add text")} className={`p-2 rounded-lg transition-all ${tool === "text"
-                ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
-                : "text-gray-400 hover:text-[#0F172A]"}`}>
+                ? "bg-[#FBF6E8] shadow-xs text-[#DC2626] border border-[#E3D6B8]"
+                : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                   <Type size={16}/>
                 </button>
 
                 <button onClick={() => setTool("draw")} title={EL("Draw / sign")} className={`p-2 rounded-lg transition-all ${tool === "draw"
-                ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
-                : "text-gray-400 hover:text-[#0F172A]"}`}>
+                ? "bg-[#FBF6E8] shadow-xs text-[#DC2626] border border-[#E3D6B8]"
+                : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                   <PenTool size={16}/>
                 </button>
 
                 <button onClick={() => setTool("highlight")} title={EL("Highlight")} className={`p-2 rounded-lg transition-all ${tool === "highlight"
-                ? "bg-white shadow-xs text-[#2563EB] border border-[#E2E8F0]"
-                : "text-gray-400 hover:text-[#0F172A]"}`}>
+                ? "bg-[#FBF6E8] shadow-xs text-[#DC2626] border border-[#E3D6B8]"
+                : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                   <Highlighter size={16}/>
                 </button>
               </div>
 
               <div className="flex items-center gap-1">
                 {PEN_COLORS.map((c) => (<button key={c} onClick={() => setPenColor(c)} title={c} className={`w-5 h-5 rounded-full border-2 transition-all ${penColor === c
-                    ? "border-gray-700 scale-110"
+                    ? "border-[#5A4A32] scale-110"
                     : "border-white"}`} style={{
                     backgroundColor: c,
                 }}/>))}
               </div>
 
               <button onClick={handleUndo} disabled={annotations.length === 0} title={EL("Undo last action")} className={`p-2 rounded-lg transition-all ${annotations.length === 0
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-gray-500 hover:bg-gray-50"}`}>
+                ? "text-[#B0A080] cursor-not-allowed"
+                : "text-[#7A6A50] hover:bg-[#EFE3C8]"}`}>
                 <Undo2 size={16}/>
               </button>
 
               <div className="flex-1"/>
 
-              {numPages > 0 && (<div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+              {numPages > 0 && (<div className="flex items-center gap-2 text-sm font-bold text-[#5A4A32]">
                   <button onClick={() => goToPage(-1)} disabled={currentPage <= 1} className={`p-1.5 rounded-lg ${currentPage <= 1
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-gray-50"}`}>
+                    ? "text-[#B0A080] cursor-not-allowed"
+                    : "text-[#7A6A50] hover:bg-[#EFE3C8]"}`}>
                     <ChevronLeft size={16}/>
                   </button>
 
@@ -904,37 +906,37 @@ export default function EditPdf() {
                   </span>
 
                   <button onClick={() => goToPage(1)} disabled={currentPage >= numPages} className={`p-1.5 rounded-lg ${currentPage >= numPages
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-gray-50"}`}>
+                    ? "text-[#B0A080] cursor-not-allowed"
+                    : "text-[#7A6A50] hover:bg-[#EFE3C8]"}`}>
                     <ChevronRight size={16}/>
                   </button>
                 </div>)}
 
-              <button onClick={handleExport} disabled={!pdfDoc || isExporting} className={`ml-2 px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${!pdfDoc || isExporting
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"}`}>
+              <button onClick={handleExport} disabled={!pdfDoc || isExporting} className={`ml-2 px-4 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all ${!pdfDoc || isExporting
+                ? "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"
+                : "bg-[#D42020] text-white shadow-xs hover:bg-[#AE1717]"}`}>
                 {isExporting ? (<Loader2 size={14} className="animate-spin"/>) : (<Download size={14}/>)}
 
                 <span>{isExporting ? <EditPdfText>{"Saving..."}</EditPdfText> : <EditPdfText>{"Save & Download"}</EditPdfText>}</span>
               </button>
 
-              <button onClick={() => setIsEditorOpen(false)} aria-label={EL("Close editor")} title={EL("Close editor")} className="p-2 text-gray-400 hover:text-[#0F172A] rounded-lg transition-colors">
+              <button onClick={() => setIsEditorOpen(false)} aria-label={EL("Close editor")} title={EL("Close editor")} className="p-2 text-[#7A6A50] hover:text-[#3B2F1E] rounded-lg transition-colors">
                 <X size={18}/>
               </button>
             </div>
 
-            {error && (<div className="mx-4 mt-3 bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium shrink-0">
+            {error && (<div className="mx-4 mt-3 bg-red-50 border border-red-100 p-2.5 rounded-xl flex items-center gap-2 text-sm text-red-700 font-medium shrink-0">
                 <AlertCircle size={14} className="text-red-500 shrink-0"/>
 
                 <span>{EL(error)}</span>
               </div>)}
 
             {/* Canvas area */}
-            <div className="flex-1 overflow-auto bg-gray-100 flex items-start justify-center p-6">
-              {isLoadingPdf ? (<div className="flex flex-col items-center justify-center gap-2 text-gray-400 mt-20">
+            <div className="scroll flex-1 overflow-auto bg-[#F3E9D2] flex items-start justify-center p-6">
+              {isLoadingPdf ? (<div className="flex flex-col items-center justify-center gap-2 text-[#7A6A50] mt-20">
                   <Loader2 size={28} className="animate-spin"/>
 
-                  <span className="text-xs font-bold"><EditPdfText>{"Loading PDF\u2026"}</EditPdfText></span>
+                  <span className="text-sm font-bold"><EditPdfText>{"Loading PDF\u2026"}</EditPdfText></span>
                 </div>) : (<div className="relative shadow-lg bg-white" style={{
                     lineHeight: 0,
                 }}>
@@ -959,7 +961,7 @@ export default function EditPdf() {
                             setTextInputPos(null);
                             setTextInputValue("");
                         }
-                    }} className="absolute px-1 text-[18px] leading-none bg-white/90 border border-[#2563EB] rounded outline-none" style={{
+                    }} className="absolute px-1 text-[18px] leading-none bg-[#FBF6E8]/90 border border-[#DC2626] rounded outline-none pdf-annotation-input" style={{
                         left: textInputPos.x,
                         top: textInputPos.y - 18,
                         color: penColor,
@@ -968,5 +970,93 @@ export default function EditPdf() {
             </div>
           </div>
         </div>)}
+      </div>
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .sohoj-edit-pdf.page-font,
+        .sohoj-edit-pdf.page-font *:not(.font-mono):not(svg):not(svg *):not(.pdf-annotation-input) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        .sohoj-edit-pdf h1,
+        .sohoj-edit-pdf h2,
+        .sohoj-edit-pdf h3,
+        .sohoj-edit-pdf h4 {
+          letter-spacing: -0.01em;
+        }
+
+        .sohoj-edit-pdf button,
+        .sohoj-edit-pdf a,
+        .sohoj-edit-pdf label {
+          transition-property: color, background-color, border-color, box-shadow, transform;
+          transition-duration: 180ms;
+        }
+
+        .sohoj-edit-pdf button:focus-visible,
+        .sohoj-edit-pdf a:focus-visible,
+        .sohoj-edit-pdf label:focus-within {
+          outline: 2px solid #DC2626;
+          outline-offset: 2px;
+        }
+
+        .sohoj-edit-pdf button:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+
+        .sohoj-edit-pdf button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .sohoj-edit-pdf input:not([type="file"]):not(.pdf-annotation-input) {
+          min-height: 42px;
+          background-color: #FBF6E8;
+          border-color: #E3D6B8;
+          color: #3B2F1E;
+          font-size: 15px;
+        }
+
+        .sohoj-edit-pdf input:not(.pdf-annotation-input)::placeholder {
+          color: #B0A080;
+        }
+
+        .sohoj-edit-pdf .pdf-annotation-input {
+          font-family: sans-serif;
+          font-size: 18px;
+          line-height: 1;
+          min-height: 0;
+        }
+
+        .sohoj-edit-pdf .scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+
+        .sohoj-edit-pdf .scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+
+        .sohoj-edit-pdf .scroll::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12);
+          border-radius: 999px;
+          margin: 10px 0;
+        }
+
+        .sohoj-edit-pdf .scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px;
+          border: 3px solid #F2E8D2;
+          min-height: 48px;
+        }
+
+        .sohoj-edit-pdf .scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
+      `}</style>
     </div>);
 }

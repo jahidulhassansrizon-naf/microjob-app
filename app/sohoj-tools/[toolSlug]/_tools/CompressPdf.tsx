@@ -474,9 +474,58 @@ export default function CompressPdf() {
     const reductionPercent = result
         ? Math.max(0, Math.round((1 - result.compressedSize / result.originalSize) * 100))
         : 0;
-    return (<div id="compress-pdf-tool" className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
+    return (<div id="compress-pdf-tool" className="page-font relative isolate min-h-screen w-full min-w-0 max-w-full space-y-5 bg-transparent text-[#3B2F1E] font-sans">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #compress-pdf-tool {
+          position: relative;
+          isolation: isolate;
+          min-height: 100vh;
+          min-width: 0;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          line-height: 1.45;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        /* A viewport-sized background, independent of the parent content width. */
+        #compress-pdf-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
+        #compress-pdf-tool.page-font.page-font,
+        #compress-pdf-tool.page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        #compress-pdf-tool h1,
+        #compress-pdf-tool h2,
+        #compress-pdf-tool h3,
+        #compress-pdf-tool h4 {
+          letter-spacing: -0.01em;
+        }
+        #compress-pdf-tool.page-font h1 { font-size: 24px; }
+        #compress-pdf-tool.page-font h2,
+        #compress-pdf-tool.page-font h3 { font-size: 18px; }
+        #compress-pdf-tool.page-font h4 { font-size: 17px; }
+
+        #compress-pdf-tool .text-sm { font-size: 15px; }
+        #compress-pdf-tool [class~="text-[12px]"] { font-size: 13px; }
+
         #compress-pdf-tool a[href],
         #compress-pdf-tool button:not(:disabled),
         #compress-pdf-tool label:has(input[type="file"]),
@@ -491,14 +540,79 @@ export default function CompressPdf() {
           cursor: pointer;
         }
 
-        #compress-pdf-tool button:disabled {
-          cursor: not-allowed;
+        #compress-pdf-tool button,
+        #compress-pdf-tool a[href],
+        #compress-pdf-tool input,
+        #compress-pdf-tool select,
+        #compress-pdf-tool label:has(input[type="file"]) {
+          transition-property: color, background-color, border-color, box-shadow, transform;
+          transition-duration: 180ms;
+          transition-timing-function: ease;
+        }
+
+        #compress-pdf-tool button:not(:disabled):active { transform: scale(0.98); }
+        #compress-pdf-tool button:disabled { cursor: not-allowed; opacity: 0.7; }
+        #compress-pdf-tool :is(button, a[href], input, select, label[for]):focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        }
+
+        #compress-pdf-tool input[type="number"],
+        #compress-pdf-tool select {
+          background-color: #FBF6E8;
+          color: #3B2F1E;
+          border-color: #E3D6B8;
+          font-size: 16px;
+        }
+        #compress-pdf-tool input::placeholder { color: #B0A080; opacity: 1; }
+        #compress-pdf-tool input[type="number"]:focus,
+        #compress-pdf-tool select:focus {
+          border-color: #DC2626;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+          outline: none;
+        }
+        #compress-pdf-tool label:has(input[type="file"]) { border-color: #B0A080; }
+        #compress-pdf-tool label:has(input[type="file"]):hover,
+        #compress-pdf-tool label:has(input[type="file"]):focus-within {
+          border-color: rgba(220, 38, 38, 0.5);
+        }
+        #compress-pdf-tool label:has(input[type="file"]):focus-within {
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        #compress-pdf-tool .scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+        #compress-pdf-tool .scroll::-webkit-scrollbar { width: 12px; }
+        #compress-pdf-tool .scroll::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12);
+          border-radius: 999px;
+          margin: 10px 0;
+        }
+        #compress-pdf-tool .scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px;
+          border: 3px solid #F2E8D2;
+          min-height: 48px;
+        }
+        #compress-pdf-tool .scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
+
+        @media (max-width: 640px) {
+          #compress-pdf-tool { overflow-wrap: anywhere; }
+          #compress-pdf-tool > .flex.items-center.justify-between {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+          }
         }
       `}</style>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-[#0F172A]">
-        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
+      <div className="flex items-center gap-2 text-sm text-[#3B2F1E]">
+        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
           <span><CompressT>{"Back to Tools"}</CompressT></span>
         </Link>
@@ -509,33 +623,33 @@ export default function CompressPdf() {
 
         <span><CompressT>{"/"}</CompressT></span>
 
-        <span className="font-semibold text-[#0F172A]"><CompressT>{"Compress PDF"}</CompressT></span>
+        <span className="font-semibold text-[#3B2F1E]"><CompressT>{"Compress PDF"}</CompressT></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#4F46E5]/20">
+          <div className="w-12 h-12 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#DC2626]/20">
             <Minimize2 size={24}/>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><CompressT>{"Compress PDF"}</CompressT></h1>
+              <h1 className="text-xl font-bold text-[#3B2F1E]"><CompressT>{"Compress PDF"}</CompressT></h1>
 
-              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full"><CompressT>{"Free\n              "}</CompressT></span>
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[12px] font-bold px-2 py-0.5 rounded-full"><CompressT>{"Free\n              "}</CompressT></span>
             </div>
 
-            <p className="text-xs text-[#0F172A] font-medium mt-0.5"><CompressT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays sharp.\n            "}</CompressT></p>
+            <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><CompressT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays sharp.\n            "}</CompressT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#3B2F1E] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Star size={16}/>
           </button>
 
-          <button aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#3B2F1E] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Share2 size={16}/>
           </button>
         </div>
@@ -546,109 +660,112 @@ export default function CompressPdf() {
         {/* Left Side: Upload & Options */}
         <div className="lg:col-span-4 space-y-4">
           {/* Upload Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]">{tx(`Files (${selectedFile ? 1 : 0})`)}</h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
+            <h2 className="text-sm font-bold text-[#3B2F1E]">{tx(`Files (${selectedFile ? 1 : 0})`)}</h2>
 
-            {!selectedFile ? (<label className="border-2 border-dashed border-[#2563EB]/30 bg-[#2563EB]/5 hover:bg-[#2563EB]/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
-                <div className="w-10 h-10 bg-[#2563EB]/10 text-[#2563EB] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            {!selectedFile ? (<label className="border-2 border-dashed border-[#DC2626]/30 bg-[#F6EEDB] hover:bg-[#FEE9E9] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A]"><CompressT>{"Drop PDF files here or click to upload\n                "}</CompressT></span>
+                <span className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Drop PDF files here or click to upload\n                "}</CompressT></span>
 
-                <span className="text-[10px] text-[#0F172A] font-medium mt-1"><CompressT>{"PDF files, max 500 MB each\n                "}</CompressT></span>
+                <span className="text-[12px] text-[#3B2F1E] font-medium mt-1"><CompressT>{"PDF files, max 500 MB each\n                "}</CompressT></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
-              </label>) : (<div className="bg-[#F8FAFC] border border-[#0F172A]/10 rounded-xl p-3 flex items-center justify-between">
+              </label>) : (<div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-[#2563EB]/10 text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16}/>
                   </div>
 
                   <div className="truncate">
-                    <p className="text-xs font-bold text-[#0F172A] truncate">
+                    <p className="text-sm font-bold text-[#3B2F1E] truncate">
                       {selectedFile.name}
                     </p>
 
-                    <p className="text-[10px] text-[#0F172A]">
+                    <p className="text-[12px] text-[#3B2F1E]">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)}<CompressT>{"MB\n                    "}</CompressT></p>
                   </div>
                 </div>
 
-                <button onClick={handleReset} className="p-1 text-[#0F172A] hover:text-[#2563EB] rounded-lg transition-colors">
+                <button onClick={handleReset} className="p-1 text-[#3B2F1E] hover:text-[#DC2626] rounded-lg transition-colors">
                   <X size={16}/>
                 </button>
               </div>)}
           </div>
 
           {/* Compression Settings Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-4">
-            <h2 className="text-xs font-bold text-[#0F172A]"><CompressT>{"Compression settings\n            "}</CompressT></h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4">
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Compression settings\n            "}</CompressT></h2>
 
             {/* Toggle Tabs */}
-            <div className="bg-[#F8FAFC] p-1 rounded-xl flex items-center gap-1">
-              <button onClick={() => setTabMode("preset")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${tabMode === "preset"
-            ? "bg-white text-[#0F172A] shadow-xs"
-            : "text-[#0F172A] hover:text-[#2563EB]"}`}><CompressT>{"Quality preset\n              "}</CompressT></button>
+            <div className="bg-[#F6EEDB] p-1 rounded-xl flex items-center gap-1">
+              <button onClick={() => setTabMode("preset")} className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${tabMode === "preset"
+            ? "bg-[#F6D9A8] text-[#3B2F1E] border border-[#DC2626] shadow-sm"
+            : "text-[#3B2F1E] hover:text-[#DC2626]"}`}><CompressT>{"Quality preset\n              "}</CompressT></button>
 
-              <button onClick={() => setTabMode("target")} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${tabMode === "target"
-            ? "bg-white text-[#0F172A] shadow-xs"
-            : "text-[#0F172A] hover:text-[#2563EB]"}`}><CompressT>{"Target file size\n              "}</CompressT></button>
+              <button onClick={() => setTabMode("target")} className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition-all ${tabMode === "target"
+            ? "bg-[#F6D9A8] text-[#3B2F1E] border border-[#DC2626] shadow-sm"
+            : "text-[#3B2F1E] hover:text-[#DC2626]"}`}><CompressT>{"Target file size\n              "}</CompressT></button>
             </div>
 
             {tabMode === "preset" ? (<div className="space-y-2">
-                <span className="text-[11px] font-bold text-[#0F172A] block"><CompressT>{"Compression level\n                "}</CompressT></span>
+                <span className="text-[13px] font-bold text-[#3B2F1E] block"><CompressT>{"Compression level\n                "}</CompressT></span>
 
                 {/* Level 1: Balanced */}
-                <button onClick={() => setCompressionLevel("balanced")} className={`w-full text-left p-3 rounded-xl border transition-all ${compressionLevel === "balanced"
-                ? "border-[#2563EB] bg-[#2563EB]/5"
-                : "border-[#0F172A]/10 bg-[#F8FAFC] hover:bg-white"}`}>
-                  <div className="text-xs font-bold text-[#0F172A]"><CompressT>{"Balanced\n                  "}</CompressT></div>
+                <button onClick={() => setCompressionLevel("balanced")} className={`relative w-full text-left p-3 pr-10 rounded-xl border transition-all ${compressionLevel === "balanced"
+                ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40"
+                : "border-[#E3D6B8] bg-[#F6EEDB] hover:bg-[#EFE3C8]"}`}>
+                  {compressionLevel === "balanced" && <span aria-hidden="true" className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#DC2626] text-white"><CheckCircle2 size={12}/></span>}
+                  <div className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Balanced\n                  "}</CompressT></div>
 
-                  <div className="text-[10px] text-[#0F172A] mt-0.5"><CompressT>{"Good balance for mixed text and images\n                  "}</CompressT></div>
+                  <div className="text-[12px] text-[#3B2F1E] mt-0.5"><CompressT>{"Good balance for mixed text and images\n                  "}</CompressT></div>
                 </button>
 
                 {/* Level 2: Light */}
-                <button onClick={() => setCompressionLevel("light")} className={`w-full text-left p-3 rounded-xl border transition-all ${compressionLevel === "light"
-                ? "border-[#2563EB] bg-[#2563EB]/5"
-                : "border-[#0F172A]/10 bg-[#F8FAFC] hover:bg-white"}`}>
-                  <div className="text-xs font-bold text-[#0F172A]"><CompressT>{"Light compression\n                  "}</CompressT></div>
+                <button onClick={() => setCompressionLevel("light")} className={`relative w-full text-left p-3 pr-10 rounded-xl border transition-all ${compressionLevel === "light"
+                ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40"
+                : "border-[#E3D6B8] bg-[#F6EEDB] hover:bg-[#EFE3C8]"}`}>
+                  {compressionLevel === "light" && <span aria-hidden="true" className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#DC2626] text-white"><CheckCircle2 size={12}/></span>}
+                  <div className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Light compression\n                  "}</CompressT></div>
 
-                  <div className="text-[10px] text-[#0F172A] mt-0.5"><CompressT>{"Gentle image reduction, best for text-heavy PDFs\n                  "}</CompressT></div>
+                  <div className="text-[12px] text-[#3B2F1E] mt-0.5"><CompressT>{"Gentle image reduction, best for text-heavy PDFs\n                  "}</CompressT></div>
                 </button>
 
                 {/* Level 3: Strong */}
-                <button onClick={() => setCompressionLevel("strong")} className={`w-full text-left p-3 rounded-xl border transition-all ${compressionLevel === "strong"
-                ? "border-[#2563EB] bg-[#2563EB]/5"
-                : "border-[#0F172A]/10 bg-[#F8FAFC] hover:bg-white"}`}>
-                  <div className="text-xs font-bold text-[#0F172A]"><CompressT>{"Strong compression\n                  "}</CompressT></div>
+                <button onClick={() => setCompressionLevel("strong")} className={`relative w-full text-left p-3 pr-10 rounded-xl border transition-all ${compressionLevel === "strong"
+                ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40"
+                : "border-[#E3D6B8] bg-[#F6EEDB] hover:bg-[#EFE3C8]"}`}>
+                  {compressionLevel === "strong" && <span aria-hidden="true" className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#DC2626] text-white"><CheckCircle2 size={12}/></span>}
+                  <div className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Strong compression\n                  "}</CompressT></div>
 
-                  <div className="text-[10px] text-[#0F172A] mt-0.5"><CompressT>{"Smaller images, ideal for scans and photos\n                  "}</CompressT></div>
+                  <div className="text-[12px] text-[#3B2F1E] mt-0.5"><CompressT>{"Smaller images, ideal for scans and photos\n                  "}</CompressT></div>
                 </button>
               </div>) : (<div className="pt-2 space-y-2">
-                <label className="text-[11px] font-bold text-[#0F172A] block"><CompressT>{"Target size (MB)\n                "}</CompressT></label>
+                <label className="text-[13px] font-bold text-[#3B2F1E] block"><CompressT>{"Target size (MB)\n                "}</CompressT></label>
 
-                <input type="number" min="0.1" step="0.1" value={targetSizeMB} onChange={(e) => setTargetSizeMB(e.target.value)} placeholder={tx("e.g. 2")} className="w-full bg-[#F8FAFC] border border-[#0F172A]/10 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"/>
+                <input type="number" min="0.1" step="0.1" value={targetSizeMB} onChange={(e) => setTargetSizeMB(e.target.value)} placeholder={tx("e.g. 2")} className="w-full bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20"/>
 
-                <p className="text-[10px] text-[#0F172A]"><CompressT>{"We'll try a few quality levels and use the closest match at or\n                  under your target.\n                "}</CompressT></p>
+                <p className="text-[12px] text-[#3B2F1E]"><CompressT>{"We'll try a few quality levels and use the closest match at or\n                  under your target.\n                "}</CompressT></p>
               </div>)}
           </div>
         </div>
 
         {/* Right Side: Compression Preview */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[480px]">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><CompressT>{"Compression preview\n            "}</CompressT></h2>
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Compression preview\n            "}</CompressT></h2>
 
-            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
-            ? "bg-[#0F172A]/5 text-[#0F172A]"
+            <span className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
+            ? "bg-[#FEE9E9] text-[#3B2F1E]"
             : result
                 ? "bg-[#10B981]/10 text-[#10B981]"
                 : isProcessing
-                    ? "bg-[#E2E8F0] text-[#2563EB]"
+                    ? "bg-[#F3E9D2] text-[#DC2626]"
                     : selectedFile
-                        ? "bg-[#2563EB]/10 text-[#2563EB]"
-                        : "bg-[#F8FAFC] text-[#0F172A]"}`}>
+                        ? "bg-[#DC2626]/10 text-[#DC2626]"
+                        : "bg-[#F6EEDB] text-[#3B2F1E]"}`}>
               {errorMessage
         ? <CompressT>{"Error"}</CompressT> : result
         ? tx("Done")
@@ -660,20 +777,20 @@ export default function CompressPdf() {
             </span>
           </div>
 
-          {isProcessing ? (<div className="bg-[#F8FAFC] rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3"/>
+          {isProcessing ? (<div className="bg-[#F6EEDB] rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <Loader2 size={28} className="text-[#DC2626] animate-spin mb-3"/>
 
-              <p className="text-xs font-bold text-[#0F172A]"><CompressT>{"Compressing your PDF\u2026\n              "}</CompressT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Compressing your PDF\u2026\n              "}</CompressT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><CompressT>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</CompressT></p>
-            </div>) : errorMessage ? (<div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#0F172A]/15 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
+              <p className="text-[13px] text-[#3B2F1E] mt-1"><CompressT>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</CompressT></p>
+            </div>) : errorMessage ? (<div className="bg-[#FEE9E9] rounded-2xl border border-dashed border-[#FBB6B6] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#DC2626]/20">
                 <AlertCircle size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><CompressT>{"Compression failed\n              "}</CompressT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Compression failed\n              "}</CompressT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1 max-w-xs">
+              <p className="text-[13px] text-[#3B2F1E] mt-1 max-w-xs">
                 {errorMessage}
               </p>
             </div>) : result ? (<div className="my-auto py-10 flex flex-col items-center gap-5">
@@ -683,39 +800,39 @@ export default function CompressPdf() {
 
               <div className="flex items-center gap-4 sm:gap-8">
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide"><CompressT>{"Original\n                  "}</CompressT></p>
+                  <p className="text-[12px] font-bold text-[#3B2F1E] uppercase tracking-wide"><CompressT>{"Original\n                  "}</CompressT></p>
 
-                  <p className="text-sm font-bold text-[#0F172A]">
+                  <p className="text-base font-bold text-[#3B2F1E]">
                     {formatBytes(result.originalSize)}
                   </p>
                 </div>
 
-                <span className="text-[#0F172A]/40 text-lg"><CompressT>{"\u2192"}</CompressT></span>
+                <span className="text-[#3B2F1E]/40 text-xl"><CompressT>{"\u2192"}</CompressT></span>
 
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide"><CompressT>{"Compressed\n                  "}</CompressT></p>
+                  <p className="text-[12px] font-bold text-[#3B2F1E] uppercase tracking-wide"><CompressT>{"Compressed\n                  "}</CompressT></p>
 
-                  <p className="text-sm font-bold text-[#10B981]">
+                  <p className="text-base font-bold text-[#10B981]">
                     {formatBytes(result.compressedSize)}
                   </p>
                 </div>
               </div>
 
-              <span className="bg-[#10B981]/10 text-[#10B981] text-xs font-bold px-3 py-1 rounded-full">
+              <span className="bg-[#10B981]/10 text-[#10B981] text-sm font-bold px-3 py-1 rounded-full">
                 {reductionPercent > 0
             ? <CompressT>{`${reductionPercent}% smaller`}</CompressT> : <CompressT>{"Already well optimized"}</CompressT>}
               </span>
 
-              <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#2563EB]/90 transition-all">
+              <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2.5 bg-[#D42020] text-white text-sm font-bold rounded-xl shadow-sm hover:bg-[#AE1717] active:bg-[#991B1B] transition-all">
                 <Download size={14}/><CompressT>{"Download compressed PDF\n              "}</CompressT></button>
-            </div>) : (<div className="bg-[#F8FAFC] rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
+            </div>) : (<div className="bg-[#F6EEDB] rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#DC2626]/20">
                 <FileText size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><CompressT>{"Add a PDF to get started\n              "}</CompressT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Add a PDF to get started\n              "}</CompressT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><CompressT>{"The compressed file will appear here after processing.\n              "}</CompressT></p>
+              <p className="text-[13px] text-[#3B2F1E] mt-1"><CompressT>{"The compressed file will appear here after processing.\n              "}</CompressT></p>
             </div>)}
 
           <div />
@@ -723,15 +840,15 @@ export default function CompressPdf() {
       </div>
 
       {/* Bottom Status & Actions */}
-      <div className="bg-white p-3.5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-[#0F172A]">
+      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#3B2F1E]">
           <span className={`w-2 h-2 rounded-full shrink-0 ${errorMessage
-            ? "bg-[#2563EB]"
+            ? "bg-[#DC2626]"
             : result
                 ? "bg-[#10B981]"
                 : isProcessing
-                    ? "bg-[#2563EB] animate-pulse"
-                    : "bg-[#0F172A]/40"}`}/>
+                    ? "bg-[#DC2626] animate-pulse"
+                    : "bg-[#3B2F1E]/40"}`}/>
 
           <span>
             {errorMessage
@@ -746,11 +863,11 @@ export default function CompressPdf() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-[#0F172A]/15 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-[#F8FAFC] transition-all"><CompressT>{"Reset\n          "}</CompressT></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-[#D8C9A6] text-[#B91C1C] text-sm font-bold rounded-xl bg-[#FBF6E8] hover:bg-[#FEE9E9] transition-all"><CompressT>{"Reset\n          "}</CompressT></button>
 
-          <button onClick={handleCompress} disabled={!selectedFile || isProcessing} className={`px-5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${selectedFile && !isProcessing
-            ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
-            : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"}`}>
+          <button onClick={handleCompress} disabled={!selectedFile || isProcessing} className={`px-5 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${selectedFile && !isProcessing
+            ? "bg-[#D42020] text-white shadow-sm hover:bg-[#AE1717] active:bg-[#991B1B]"
+            : "bg-[#F3E9D2] text-[#3B2F1E]/45 cursor-not-allowed"}`}>
             {isProcessing && <Loader2 size={14} className="animate-spin"/>}
 
             {isProcessing ? <CompressT>{"Compressing…"}</CompressT> : <CompressT>{"Compress PDF"}</CompressT>}
@@ -759,17 +876,17 @@ export default function CompressPdf() {
       </div>
 
       {/* Security Info Banner */}
-      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
+      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-sm text-[#3B2F1E] font-medium">
         <Lock size={15} className="text-[#10B981] shrink-0"/>
 
         <span><CompressT>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</CompressT></span>
       </div>
 
       {/* How to use Accordion */}
-      <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
-        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-white/60 transition-colors">
+      <div className="bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-sm overflow-hidden">
+        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-sm font-bold text-[#3B2F1E] hover:bg-[#FEE9E9]/60 transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB]"><CompressT>{"?"}</CompressT></span>
+            <span className="text-[#DC2626]"><CompressT>{"?"}</CompressT></span>
 
             <span><CompressT>{"How to use"}</CompressT></span>
           </div>
@@ -777,35 +894,35 @@ export default function CompressPdf() {
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3"><CompressT>{"Drag and drop your PDF file into the upload box or click to select a\n            file. Choose your preferred compression quality or target file size,\n            then click \"Compress PDF\" to start shrinking your document.\n          "}</CompressT></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-sm text-[#3B2F1E] leading-relaxed border-t border-[#E3D6B8] pt-3"><CompressT>{"Drag and drop your PDF file into the upload box or click to select a\n            file. Choose your preferred compression quality or target file size,\n            then click \"Compress PDF\" to start shrinking your document.\n          "}</CompressT></div>)}
       </div>
 
       {/* Related Tools Section */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><CompressT>{"Tools in the same category\n        "}</CompressT></h3>
+        <h3 className="text-sm font-bold text-[#3B2F1E]"><CompressT>{"Tools in the same category\n        "}</CompressT></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/sohoj-tools/merge-pdfs" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/merge-pdfs" className="bg-[#F3E9D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#DC2626]/40 transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><CompressT>{"Merge PDFs\n              "}</CompressT></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><CompressT>{"Merge PDFs\n              "}</CompressT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><CompressT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</CompressT></p>
+              <p className="text-[12px] text-[#3B2F1E] mt-0.5 line-clamp-1"><CompressT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</CompressT></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/split-pdf" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/split-pdf" className="bg-[#F3E9D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#DC2626]/40 transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <FileCode size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><CompressT>{"Split PDF\n              "}</CompressT></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><CompressT>{"Split PDF\n              "}</CompressT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><CompressT>{"Extract specific pages or split every page into separate files.\n              "}</CompressT></p>
+              <p className="text-[12px] text-[#3B2F1E] mt-0.5 line-clamp-1"><CompressT>{"Extract specific pages or split every page into separate files.\n              "}</CompressT></p>
             </div>
           </Link>
         </div>

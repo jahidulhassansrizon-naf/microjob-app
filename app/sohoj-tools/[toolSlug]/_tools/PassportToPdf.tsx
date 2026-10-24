@@ -1440,17 +1440,17 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
     y: point.y * dispSize.height,
   }));
   const modal = (
-    <div className="fixed inset-0 z-[9998] w-screen h-[100dvh] min-h-[100svh] bg-[#F8FAFC] flex flex-col font-sans select-none overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
+    <div className="passport-pdf-modal-font fixed inset-0 z-[9998] w-screen h-[100dvh] min-h-[100svh] bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col font-sans select-none overflow-hidden">
+      <div className="bg-[#FBF6E8] border-b border-[#E3D6B8] px-4 sm:px-6 py-3 flex items-center justify-between shadow-xs shrink-0">
         <div className="min-w-0 pr-3">
           <div className="flex items-center gap-2">
-            <Crop size={16} className="text-[#2563EB] shrink-0" />
-            <h2 className="text-sm font-bold text-gray-950 truncate">
+            <Crop size={16} className="text-[#DC2626] shrink-0" />
+            <h2 className="text-base font-bold text-[#3B2F1E] truncate">
               <NidT>{"Crop \u2014 "}</NidT>
               {sideTitle}
             </h2>
           </div>
-          <p className="text-[11px] text-gray-400 font-medium ml-6 truncate">
+          <p className="text-[13px] text-[#7A6A50] font-medium ml-6 truncate">
             {file.name}
           </p>
         </div>
@@ -1459,14 +1459,14 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="p-1.5 text-gray-400 hover:text-[#0F172A] bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          className="p-1.5 text-[#7A6A50] hover:text-[#3B2F1E] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-lg border border-[#E3D6B8] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           aria-label={t("Close manual crop")}
         >
           <X size={16} />
         </button>
       </div>
 
-      <div className="px-4 sm:px-6 py-2 bg-gray-50/50 text-[11px] text-gray-500 font-medium border-b border-gray-100 shrink-0">
+      <div className="px-4 sm:px-6 py-2 bg-[#F6EEDB] text-[13px] text-[#6B5A40] font-medium border-b border-[#E3D6B8] shrink-0">
         <NidT>
           {
             "Drag all four orange corner handles onto the card edges. The selected\n        area will be straightened to a CR80-sized rectangle.\n      "
@@ -1543,20 +1543,20 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
           )}
 
           {isImageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white text-[11px] font-semibold text-gray-500 min-w-[280px] min-h-[180px]">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#FBF6E8] text-[13px] font-semibold text-[#6B5A40] min-w-[280px] min-h-[180px]">
               <NidT>{"Loading image\u2026\n            "}</NidT>
             </div>
           )}
 
           {imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white p-6 text-center text-[11px] font-semibold text-red-600 min-w-[280px] min-h-[180px]">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#FBF6E8] p-6 text-center text-[13px] font-semibold text-red-600 min-w-[280px] min-h-[180px]">
               <NidT>{imageError}</NidT>
             </div>
           )}
 
           {isProcessing && !imageError && (
-            <div className="absolute inset-0 bg-white/45 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
-              <div className="rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+            <div className="absolute inset-0 bg-[#FBF6E8]/45 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+              <div className="rounded-full bg-slate-900 text-white px-3 py-1.5 text-[12px] font-bold shadow-lg">
                 <NidT>{"Cropping\u2026\n              "}</NidT>
               </div>
             </div>
@@ -1564,9 +1564,9 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
         </div>
       </div>
 
-      <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-3 shrink-0">
+      <div className="bg-[#FBF6E8] border-t border-[#E3D6B8] px-4 sm:px-6 py-3 shrink-0">
         {cropError && (
-          <div className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700">
+          <div className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-semibold text-red-700">
             <NidT>{cropError}</NidT>
           </div>
         )}
@@ -1576,7 +1576,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
             type="button"
             onClick={handleResetPoints}
             disabled={isProcessing || isImageLoading || !!imageError}
-            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#F6EEDB] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <NidT>{"Reset corners\n          "}</NidT>
           </button>
@@ -1586,7 +1586,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
               type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="px-5 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-5 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#F6EEDB] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <NidT>{"Cancel\n            "}</NidT>
             </button>
@@ -1599,7 +1599,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
                 !!imageError ||
                 dispSize.width === 0
               }
-              className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-5 py-2 bg-[#D42020] hover:bg-[#AE1717] text-white text-sm font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isProcessing ? (
                 <NidT>{"Cropping…"}</NidT>
@@ -1663,26 +1663,26 @@ function CropReviewModal({
   };
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] w-screen h-[100dvh] min-h-[100svh] bg-slate-950/95 backdrop-blur-md flex flex-col font-sans overflow-hidden"
+      className="passport-pdf-modal-font fixed inset-0 z-[9999] w-screen h-[100dvh] min-h-[100svh] bg-slate-950/95 backdrop-blur-md flex flex-col font-sans overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby="nid-crop-review-title"
     >
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg shrink-0">
+      <div className="bg-[#FBF6E8] border-b border-[#E3D6B8] px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg shrink-0">
         <div className="min-w-0 pr-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center shrink-0">
               <Eye size={16} />
             </div>
             <div className="min-w-0">
               <h2
                 id="nid-crop-review-title"
-                className="text-sm sm:text-base font-extrabold text-gray-950 truncate"
+                className="text-base sm:text-lg font-extrabold text-[#3B2F1E] truncate"
               >
                 <NidT>{"Crop Preview \u2014 "}</NidT>
                 {sideTitle}
               </h2>
-              <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium truncate mt-0.5">
+              <p className="text-[12px] sm:text-[13px] text-[#7A6A50] font-medium truncate mt-0.5">
                 <NidT>
                   {
                     "This is the exact cropped image that will be used in your PDF.\n              "
@@ -1696,7 +1696,7 @@ function CropReviewModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-2 text-gray-400 hover:text-[#0F172A] bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors cursor-pointer shrink-0"
+          className="p-2 text-[#7A6A50] hover:text-[#3B2F1E] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-xl border border-[#E3D6B8] transition-colors cursor-pointer shrink-0"
           aria-label={t("Close crop preview")}
         >
           <X size={17} />
@@ -1705,8 +1705,8 @@ function CropReviewModal({
 
       <div className="flex-1 min-h-0 overflow-auto px-4 py-5 sm:px-6 sm:py-7">
         <div className="w-full min-h-full flex flex-col items-center justify-center">
-          <div className="w-full max-w-7xl rounded-3xl border border-white/15 bg-white/10 p-2 sm:p-4 shadow-2xl">
-            <div className="w-full rounded-2xl bg-[#f3f4f6] border border-white/20 flex items-center justify-center overflow-hidden relative [background-image:radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]">
+          <div className="w-full max-w-7xl rounded-3xl border border-white/15 bg-[#FBF6E8]/10 p-2 sm:p-4 shadow-2xl">
+            <div className="w-full rounded-2xl bg-[#F3E9D2] border border-white/20 flex items-center justify-center overflow-hidden relative [background-image:radial-gradient(#B0A080_1px,transparent_1px)] [background-size:16px_16px]">
               <div
                 className="relative w-[min(96vw,1240px)] max-h-[74vh] aspect-[856/540] rounded-xl bg-white overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.28)]"
                 style={{
@@ -1725,8 +1725,8 @@ function CropReviewModal({
                 )}
 
                 {imageLoading && !imageError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/90">
-                    <div className="rounded-full bg-slate-900/90 text-white px-4 py-2 text-[11px] font-bold shadow-xl">
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#FBF6E8]/90">
+                    <div className="rounded-full bg-slate-900/90 text-white px-4 py-2 text-[13px] font-bold shadow-xl">
                       <NidT>
                         {"Loading final crop\u2026\n                    "}
                       </NidT>
@@ -1735,7 +1735,7 @@ function CropReviewModal({
                 )}
 
                 {imageError && (
-                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-xs sm:text-sm font-semibold text-red-600 bg-white">
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm sm:text-base font-semibold text-red-600 bg-[#FBF6E8]">
                     <NidT>{imageError}</NidT>
                   </div>
                 )}
@@ -1743,7 +1743,7 @@ function CropReviewModal({
             </div>
           </div>
 
-          <div className="w-full max-w-7xl mt-4 rounded-2xl border border-white/10 bg-white/95 shadow-xl px-4 py-3.5 sm:px-5 sm:py-4 shrink-0">
+          <div className="w-full max-w-7xl mt-4 rounded-2xl border border-white/10 bg-[#FBF6E8]/95 shadow-xl px-4 py-3.5 sm:px-5 sm:py-4 shrink-0">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -1751,11 +1751,11 @@ function CropReviewModal({
                     size={16}
                     className="text-emerald-600 shrink-0"
                   />
-                  <p className="text-xs sm:text-sm font-extrabold text-[#0F172A]">
+                  <p className="text-sm sm:text-base font-extrabold text-[#3B2F1E]">
                     <NidT>{"Review the final crop\n                  "}</NidT>
                   </p>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mt-1.5 leading-relaxed">
+                <p className="text-[12px] sm:text-[13px] text-[#6B5A40] font-medium mt-1.5 leading-relaxed">
                   <NidT>
                     {
                       "Check that the full passport page is visible, all four corners are\n                  included, and no important text or edge is cut off.\n                "
@@ -1763,7 +1763,7 @@ function CropReviewModal({
                   </NidT>
                 </p>
                 {dimensions.width > 0 && dimensions.height > 0 && (
-                  <p className="text-[10px] text-gray-400 font-semibold mt-1">
+                  <p className="text-[12px] text-[#7A6A50] font-semibold mt-1">
                     <NidT>{"Output size: "}</NidT>
                     {dimensions.width}
                     <NidT>{"\u00D7 "}</NidT>
@@ -1778,19 +1778,19 @@ function CropReviewModal({
                   type="button"
                   onClick={onManualCrop}
                   disabled={imageLoading || !!imageError}
-                  className="group rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-left hover:bg-[#E2E8F0] hover:border-[#2563EB] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group rounded-2xl border border-[#E3D6B8] bg-[#F6EEDB] px-4 py-3 text-left hover:bg-[#F3E9D2] hover:border-[#DC2626] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-white text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0 shadow-xs">
+                    <span className="w-8 h-8 rounded-xl bg-[#FBF6E8] text-[#DC2626] border border-[#E3D6B8] flex items-center justify-center shrink-0 shadow-xs">
                       <Crop size={15} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[11px] font-extrabold text-[#0F172A]">
+                      <span className="block text-[13px] font-extrabold text-[#3B2F1E]">
                         <NidT>
                           {"Not correct? Crop manually\n                      "}
                         </NidT>
                       </span>
-                      <span className="block text-[9px] font-semibold text-[#2563EB]/80 mt-0.5">
+                      <span className="block text-[11px] font-semibold text-[#DC2626]/80 mt-0.5">
                         <NidT>
                           {
                             "Adjust all 4 card corners yourself\n                      "
@@ -1805,21 +1805,21 @@ function CropReviewModal({
                   type="button"
                   onClick={onClose}
                   disabled={imageLoading || !!imageError}
-                  className="group rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-left transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group rounded-2xl bg-[#D42020] hover:bg-[#AE1717] px-4 py-3 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-white/15 text-white border border-white/20 flex items-center justify-center shrink-0">
+                    <span className="w-8 h-8 rounded-xl bg-[#FBF6E8]/15 text-white border border-white/20 flex items-center justify-center shrink-0">
                       <CheckCircle2 size={15} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[11px] font-extrabold text-white">
+                      <span className="block text-[13px] font-extrabold text-white">
                         <NidT>
                           {
                             "Looks correct \u2014 use this crop\n                      "
                           }
                         </NidT>
                       </span>
-                      <span className="block text-[9px] font-semibold text-emerald-50/90 mt-0.5">
+                      <span className="block text-[11px] font-semibold text-emerald-50/90 mt-0.5">
                         <NidT>
                           {
                             "Keep this image and continue to PDF\n                      "
@@ -2309,7 +2309,29 @@ export default function PassportToPdf() {
     }
   };
   return (
-    <div className="w-full space-y-5 text-[#0F172A] font-sans">
+    <div className="passport-pdf-page page-font relative isolate min-h-screen w-full space-y-5 text-[#3B2F1E] font-sans">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .passport-pdf-page { position: relative; isolation: isolate; min-height: 100vh; color: #3B2F1E; }
+        .passport-pdf-page::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%); }
+        .passport-pdf-page, .passport-pdf-page *:not(.font-mono):not(svg):not(svg *), .passport-pdf-modal-font, .passport-pdf-modal-font *:not(.font-mono):not(svg):not(svg *) { font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-optical-sizing: auto; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+        .passport-pdf-page h1, .passport-pdf-page h2, .passport-pdf-page h3, .passport-pdf-page h4, .passport-pdf-modal-font h1, .passport-pdf-modal-font h2, .passport-pdf-modal-font h3, .passport-pdf-modal-font h4 { letter-spacing: -0.01em; }
+        .passport-pdf-page input:not([type=file]):not([type=color]):not([type=range]), .passport-pdf-page select, .passport-pdf-page textarea, .passport-pdf-modal-font input:not([type=file]):not([type=color]):not([type=range]), .passport-pdf-modal-font select, .passport-pdf-modal-font textarea { font-size: max(15px, 1em); color: #3B2F1E; }
+        .passport-pdf-page :is(input, select, textarea):focus-visible, .passport-pdf-modal-font :is(input, select, textarea):focus-visible { outline: 2px solid rgba(220,38,38,.22); outline-offset: 1px; border-color: #DC2626; }
+        .passport-pdf-page button:not(:disabled), .passport-pdf-modal-font button:not(:disabled) { transition-property: color, background-color, border-color, box-shadow, transform; transition-duration: 180ms; }
+        .passport-pdf-page button:not(:disabled):active, .passport-pdf-modal-font button:not(:disabled):active { transform: scale(.98); }
+        .passport-pdf-page button:disabled, .passport-pdf-modal-font button:disabled { cursor: not-allowed; opacity: .7; }
+        .passport-pdf-page .scroll, .passport-pdf-modal-font .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+        .passport-pdf-page .scroll::-webkit-scrollbar, .passport-pdf-modal-font .scroll::-webkit-scrollbar { width: 12px; }
+        .passport-pdf-page .scroll::-webkit-scrollbar-track, .passport-pdf-modal-font .scroll::-webkit-scrollbar-track { background: rgba(148,113,67,.12); border-radius: 999px; margin: 10px 0; }
+        .passport-pdf-page .scroll::-webkit-scrollbar-thumb, .passport-pdf-modal-font .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        .passport-pdf-page .scroll::-webkit-scrollbar-thumb:hover, .passport-pdf-modal-font .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+        .passport-pdf-page [class~="bg-blue-600"], .passport-pdf-page [class~="bg-blue-700"], .passport-pdf-page [class~="bg-indigo-600"], .passport-pdf-page [class~="bg-indigo-700"], .passport-pdf-page [class~="bg-sky-600"], .passport-pdf-page [class~="bg-sky-700"], .passport-pdf-page [class~="bg-violet-600"], .passport-pdf-page [class~="bg-violet-700"] { background-color: #D42020 !important; color: #FFFFFF !important; border-color: #DC2626 !important; }
+        .passport-pdf-page [class*="hover:bg-blue-"]:hover, .passport-pdf-page [class*="hover:bg-indigo-"]:hover, .passport-pdf-page [class*="hover:bg-sky-"]:hover, .passport-pdf-page [class*="hover:bg-violet-"]:hover { background-color: #B91C1C !important; color: #FFFFFF !important; }
+        .passport-pdf-page [class~="bg-blue-50"], .passport-pdf-page [class~="bg-indigo-50"], .passport-pdf-page [class~="bg-sky-50"], .passport-pdf-page [class~="bg-violet-50"] { background-color: #FEE9E9 !important; }
+        .passport-pdf-page [class*="text-blue-"], .passport-pdf-page [class*="text-indigo-"], .passport-pdf-page [class*="text-sky-"], .passport-pdf-page [class*="text-violet-"] { color: #DC2626 !important; }
+        .passport-pdf-page [class*="border-blue-"], .passport-pdf-page [class*="border-indigo-"], .passport-pdf-page [class*="border-sky-"], .passport-pdf-page [class*="border-violet-"] { border-color: #DC2626 !important; }
+      `}</style>
       {croppingSide === "front" && frontImage && (
         <CropModal
           file={frontCropSource ?? frontImage}
@@ -2383,23 +2405,23 @@ export default function PassportToPdf() {
           }}
         >
           <div
-            className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden"
+            className="w-full max-w-md bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-2xl overflow-hidden"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+            <div className="px-5 py-4 border-b border-[#E3D6B8] flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#FEE9E9] text-[#DC2626] border border-[#FBB6B6] flex items-center justify-center shrink-0">
                     <Crop size={16} />
                   </div>
                   <div>
                     <h2
                       id="nid-auto-crop-choice-title"
-                      className="text-sm font-extrabold text-[#0F172A]"
+                      className="text-base font-extrabold text-[#3B2F1E]"
                     >
                       <NidT>{"Choose Auto Crop\n                    "}</NidT>
                     </h2>
-                    <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                    <p className="text-[13px] text-[#7A6A50] font-medium mt-0.5">
                       <NidT>
                         {
                           "You uploaded both sides. Which image should be\n                      auto-cropped?\n                    "
@@ -2417,7 +2439,7 @@ export default function PassportToPdf() {
                   setAutoCrop(false);
                   cancelAutoCropProcessing();
                 }}
-                className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-400 hover:text-[#0F172A] hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg bg-[#F6EEDB] border border-[#E3D6B8] text-[#7A6A50] hover:text-[#3B2F1E] hover:bg-[#F3E9D2] transition-colors cursor-pointer shrink-0"
                 aria-label={t("Close auto crop selection")}
               >
                 <X size={15} />
@@ -2429,65 +2451,65 @@ export default function PassportToPdf() {
                 type="button"
                 onClick={() => handleAutoCropChoice("front")}
                 disabled={processingSide !== null || !frontImage}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#2563EB] hover:bg-[#F8FAFC]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] hover:border-[#DC2626] hover:bg-[#F6EEDB] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-[#0F172A] text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-[#F3E9D2] flex items-center justify-center text-[#3B2F1E] text-sm font-extrabold">
                     <NidT>{"F\n                  "}</NidT>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#0F172A]">
+                    <p className="text-sm font-bold text-[#3B2F1E]">
                       <NidT>{"Front only\n                    "}</NidT>
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[12px] text-[#7A6A50] mt-0.5">
                       <NidT>
                         {"Auto-crop only the front side.\n                    "}
                       </NidT>
                     </p>
                   </div>
                 </div>
-                <ChevronRight size={15} className="text-gray-400" />
+                <ChevronRight size={15} className="text-[#7A6A50]" />
               </button>
 
               <button
                 type="button"
                 onClick={() => handleAutoCropChoice("back")}
                 disabled={processingSide !== null || !backImage}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-gray-200 bg-white hover:border-[#2563EB] hover:bg-[#F8FAFC]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] hover:border-[#DC2626] hover:bg-[#F6EEDB] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-[#0F172A] text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-[#F3E9D2] flex items-center justify-center text-[#3B2F1E] text-sm font-extrabold">
                     <NidT>{"B\n                  "}</NidT>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#0F172A]">
+                    <p className="text-sm font-bold text-[#3B2F1E]">
                       <NidT>{"Back only\n                    "}</NidT>
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[12px] text-[#7A6A50] mt-0.5">
                       <NidT>
                         {"Auto-crop only the back side.\n                    "}
                       </NidT>
                     </p>
                   </div>
                 </div>
-                <ChevronRight size={15} className="text-gray-400" />
+                <ChevronRight size={15} className="text-[#7A6A50]" />
               </button>
 
               <button
                 type="button"
                 onClick={() => handleAutoCropChoice("both")}
                 disabled={processingSide !== null}
-                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]/60 hover:bg-[#E2E8F0]/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] hover:bg-[#F3E9D2]/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center text-xs font-extrabold">
+                  <div className="w-10 h-10 rounded-xl bg-[#F3E9D2] text-[#DC2626] flex items-center justify-center text-sm font-extrabold">
                     <NidT>{"FB\n                  "}</NidT>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#0F172A]">
+                    <p className="text-sm font-bold text-[#3B2F1E]">
                       <NidT>{"Both sides\n                    "}</NidT>
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[12px] text-[#7A6A50] mt-0.5">
                       <NidT>
                         {
                           "Auto-crop front and back sequentially.\n                    "
@@ -2496,7 +2518,7 @@ export default function PassportToPdf() {
                     </p>
                   </div>
                 </div>
-                <ChevronRight size={15} className="text-[#2563EB]" />
+                <ChevronRight size={15} className="text-[#DC2626]" />
               </button>
 
               <button
@@ -2506,7 +2528,7 @@ export default function PassportToPdf() {
                   setAutoCrop(false);
                   cancelAutoCropProcessing();
                 }}
-                className="w-full py-2.5 mt-1 rounded-xl border border-gray-200 bg-gray-50 text-[#0F172A] hover:bg-gray-100 text-xs font-bold transition-colors cursor-pointer"
+                className="w-full py-2.5 mt-1 rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] text-[#3B2F1E] hover:bg-[#F3E9D2] text-sm font-bold transition-colors cursor-pointer"
               >
                 <NidT>{"Cancel\n              "}</NidT>
               </button>
@@ -2515,10 +2537,10 @@ export default function PassportToPdf() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-[#6B5A40]">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
+          className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>
@@ -2534,26 +2556,26 @@ export default function PassportToPdf() {
         <span>
           <NidT>{"/"}</NidT>
         </span>
-        <span className="font-semibold text-[#0F172A]">
+        <span className="font-semibold text-[#3B2F1E]">
           <NidT>{"Passport Joiner"}</NidT>
         </span>
       </div>
 
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+          <div className="w-12 h-12 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#FBB6B6]">
             <CreditCard size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]">
+              <h1 className="text-xl font-bold text-[#3B2F1E]">
                 <NidT>{"Passport Joiner"}</NidT>
               </h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-100 text-emerald-700 text-[12px] font-bold px-2 py-0.5 rounded-full">
                 <NidT>{"Free\n              "}</NidT>
               </span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-sm text-[#6B5A40] font-medium mt-0.5">
               <NidT>
                 {
                   "Turn passport front and back page photos into a clean A4 PDF \u2014\n              ICAO 88\u00D7125 mm layout, all in your browser.\n            "
@@ -2564,10 +2586,10 @@ export default function PassportToPdf() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button className="p-2 text-[#7A6A50] hover:text-[#5A4A32] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-xl transition-all border border-[#E3D6B8] cursor-pointer">
             <Star size={16} />
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button className="p-2 text-[#7A6A50] hover:text-[#5A4A32] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-xl transition-all border border-[#E3D6B8] cursor-pointer">
             <Share2 size={16} />
           </button>
         </div>
@@ -2612,13 +2634,13 @@ export default function PassportToPdf() {
           handlePrint={handlePrint}
         />
 
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#E3D6B8] pb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-bold text-[#0F172A]">
+              <h2 className="text-sm font-bold text-[#3B2F1E]">
                 <NidT>{"Live preview"}</NidT>
               </h2>
-              <span className="text-[10px] text-gray-400 font-medium">
+              <span className="text-[12px] text-[#7A6A50] font-medium">
                 <NidT>{"A4 \u2014 210 \u00D7 297 mm\n                "}</NidT>
                 {sheetLayout.pages.length > 1 ? (
                   <NidT>{` · ${sheetLayout.pages.length} pages`}</NidT>
@@ -2628,35 +2650,35 @@ export default function PassportToPdf() {
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-gray-500 font-bold">
+            <div className="flex items-center gap-3 text-sm text-[#6B5A40] font-bold">
               <span>
                 {zoom}
                 <NidT>{"%"}</NidT>
               </span>
               <button
                 onClick={() => setZoom((prev) => Math.min(prev + 10, 150))}
-                className="hover:text-[#0F172A] p-1 cursor-pointer"
+                className="hover:text-[#3B2F1E] p-1 cursor-pointer"
                 title={t("Zoom In")}
               >
                 <ZoomIn size={14} />
               </button>
               <button
                 onClick={handleGlobalRotate}
-                className="hover:text-[#0F172A] p-1 cursor-pointer"
+                className="hover:text-[#3B2F1E] p-1 cursor-pointer"
                 title={t("Rotate Canvas")}
               >
                 <RefreshCw size={13} />
               </button>
               <button
                 onClick={() => setZoom((prev) => Math.max(prev - 10, 50))}
-                className="hover:text-[#0F172A] p-1 cursor-pointer"
+                className="hover:text-[#3B2F1E] p-1 cursor-pointer"
                 title={t("Zoom Out")}
               >
                 <ZoomOut size={14} />
               </button>
               <button
                 onClick={() => setZoom(100)}
-                className="hover:text-[#0F172A] p-1 cursor-pointer"
+                className="hover:text-[#3B2F1E] p-1 cursor-pointer"
                 title={t("Reset Zoom")}
               >
                 <Maximize2 size={14} />
@@ -2667,7 +2689,7 @@ export default function PassportToPdf() {
           {(processingSide || processingError) && (
             <div className="mt-3 space-y-2">
               {processingSide && (
-                <div className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[11px] font-semibold text-[#2563EB]">
+                <div className="flex items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2 text-[13px] font-semibold text-[#DC2626]">
                   <RefreshCw size={13} className="animate-spin shrink-0" />
                   <span>
                     <NidT>{"Auto cropping"}</NidT>
@@ -2688,7 +2710,7 @@ export default function PassportToPdf() {
               {processingError && !processingSide && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700"
+                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-semibold text-red-700"
                 >
                   <NidT>{processingError}</NidT>
                 </div>
@@ -2696,10 +2718,10 @@ export default function PassportToPdf() {
             </div>
           )}
 
-          <div className="relative bg-[#f3f4f6] border border-gray-200/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-[620px] overflow-auto [background-image:radial-gradient(#94a3b8_1.2px,transparent_1.2px)] [background-size:16px_16px]">
+          <div className="relative bg-[#F3E9D2] border border-[#E3D6B8]/80 rounded-2xl p-8 my-4 flex-1 flex justify-center items-start min-h-[620px] overflow-auto [background-image:radial-gradient(#B0A080_1.2px,transparent_1.2px)] [background-size:16px_16px]">
             <div
               id="printable-sheet"
-              className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-gray-200/60 transition-all duration-300 flex flex-col items-center shrink-0"
+              className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-[#E3D6B8]/60 transition-all duration-300 flex flex-col items-center shrink-0"
               style={{
                 width: sheetPx.width,
                 minHeight: sheetPx.height,
@@ -2731,7 +2753,7 @@ export default function PassportToPdf() {
                           <>
                             <button
                               onClick={handleSwap}
-                              className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+                              className="w-6 h-6 rounded-full bg-[#D42020] hover:bg-[#B91C1C] text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
                               title={t("Swap Front and Back")}
                             >
                               <ArrowLeftRight size={12} />
@@ -2740,7 +2762,7 @@ export default function PassportToPdf() {
                               onClick={() =>
                                 setCopies((c) => Math.min(c + 1, 4))
                               }
-                              className="w-6 h-6 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+                              className="w-6 h-6 rounded-full bg-[#D42020] hover:bg-[#AE1717] text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
                               title={t("Add Copy")}
                             >
                               <Copy size={12} />
@@ -2750,7 +2772,7 @@ export default function PassportToPdf() {
 
                         <button
                           onClick={handleGlobalRotate}
-                          className="w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+                          className="w-6 h-6 rounded-full bg-[#D42020] hover:bg-[#DC2626] text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
                           title={t("Rotate All 90°")}
                         >
                           <RotateCw size={12} />
@@ -2776,7 +2798,7 @@ export default function PassportToPdf() {
                       >
                         {frontImageUrl ? (
                           <div
-                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200 ${
+                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-[#E3D6B8] ${
                               frontCropReviewReady && processingSide !== "front"
                                 ? "cursor-zoom-in hover:ring-2 hover:ring-emerald-400/70"
                                 : ""
@@ -2808,8 +2830,8 @@ export default function PassportToPdf() {
                             }}
                           >
                             {(processingSide === "front" || processingBoth) && (
-                              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
-                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+                              <div className="absolute inset-0 z-20 bg-[#FBF6E8]/70 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[12px] font-bold shadow-lg">
                                   <RefreshCw
                                     size={12}
                                     className="animate-spin"
@@ -2825,7 +2847,7 @@ export default function PassportToPdf() {
 
                             {frontCropReviewReady &&
                               processingSide !== "front" && (
-                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden flex items-center gap-1">
+                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[11px] font-bold shadow-md print:hidden flex items-center gap-1">
                                   <Eye size={10} />
                                   {frontAutoCropped ? (
                                     <NidT>
@@ -2857,7 +2879,7 @@ export default function PassportToPdf() {
                             >
                               <button
                                 onClick={() => setCroppingSide("front")}
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Crop")}
                               >
                                 <Crop size={13} />
@@ -2865,7 +2887,7 @@ export default function PassportToPdf() {
                               <label
                                 htmlFor="front-change-input"
                                 onClick={(event) => event.stopPropagation()}
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Change Image")}
                               >
                                 <Upload size={13} />
@@ -2874,7 +2896,7 @@ export default function PassportToPdf() {
                                 onClick={() =>
                                   setFrontRotation((prev) => (prev + 90) % 360)
                                 }
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Rotate 90°")}
                               >
                                 <RotateCw size={13} />
@@ -2905,25 +2927,25 @@ export default function PassportToPdf() {
                             />
                           </div>
                         ) : (
-                          <label className="border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
-                            <div className="w-8 h-8 bg-[#E2E8F0]/80 text-[#2563EB] rounded-full flex items-center justify-center mb-2">
+                          <label className="border-2 border-dashed border-[#DC2626] bg-[#F6EEDB]/60 hover:bg-[#F6EEDB] rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-[#F3E9D2] text-[#DC2626] rounded-full flex items-center justify-center mb-2">
                               <Upload size={16} />
                             </div>
-                            <span className="text-xs font-bold text-[#0F172A]">
+                            <span className="text-sm font-bold text-[#3B2F1E]">
                               <NidT>
                                 {
                                   "Front passport page\n                            "
                                 }
                               </NidT>
                             </span>
-                            <span className="text-[10px] text-gray-400 mt-0.5">
+                            <span className="text-[12px] text-[#7A6A50] mt-0.5">
                               <NidT>
                                 {
                                   "Upload front side photo\n                            "
                                 }
                               </NidT>
                             </span>
-                            <span className="bg-[#E2E8F0]/60 text-[#2563EB] font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                            <span className="bg-[#F6EEDB] text-[#DC2626] font-semibold text-[11px] px-2 py-0.5 rounded-full mt-2">
                               <NidT>
                                 {
                                   "JPG \u00B7 PNG \u00B7 HEIC\n                            "
@@ -2959,7 +2981,7 @@ export default function PassportToPdf() {
                       >
                         {backImageUrl ? (
                           <div
-                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-gray-200 ${
+                            className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-[#E3D6B8] ${
                               backCropReviewReady && processingSide !== "back"
                                 ? "cursor-zoom-in hover:ring-2 hover:ring-emerald-400/70"
                                 : ""
@@ -2991,8 +3013,8 @@ export default function PassportToPdf() {
                             }}
                           >
                             {(processingSide === "back" || processingBoth) && (
-                              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
-                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[10px] font-bold shadow-lg">
+                              <div className="absolute inset-0 z-20 bg-[#FBF6E8]/70 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1.5 text-[12px] font-bold shadow-lg">
                                   <RefreshCw
                                     size={12}
                                     className="animate-spin"
@@ -3008,7 +3030,7 @@ export default function PassportToPdf() {
 
                             {backCropReviewReady &&
                               processingSide !== "back" && (
-                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[9px] font-bold shadow-md print:hidden flex items-center gap-1">
+                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[11px] font-bold shadow-md print:hidden flex items-center gap-1">
                                   <Eye size={10} />
                                   {backAutoCropped ? (
                                     <NidT>
@@ -3040,7 +3062,7 @@ export default function PassportToPdf() {
                             >
                               <button
                                 onClick={() => setCroppingSide("back")}
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Crop")}
                               >
                                 <Crop size={13} />
@@ -3048,7 +3070,7 @@ export default function PassportToPdf() {
                               <label
                                 htmlFor="back-change-input"
                                 onClick={(event) => event.stopPropagation()}
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Change Image")}
                               >
                                 <Upload size={13} />
@@ -3057,7 +3079,7 @@ export default function PassportToPdf() {
                                 onClick={() =>
                                   setBackRotation((prev) => (prev + 90) % 360)
                                 }
-                                className="p-1 hover:text-[#2563EB] transition-colors cursor-pointer"
+                                className="p-1 hover:text-[#DC2626] transition-colors cursor-pointer"
                                 title={t("Rotate 90°")}
                               >
                                 <RotateCw size={13} />
@@ -3088,25 +3110,25 @@ export default function PassportToPdf() {
                             />
                           </div>
                         ) : (
-                          <label className="border-2 border-dashed border-[#2563EB] bg-[#F8FAFC]/20 hover:bg-[#F8FAFC]/50 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
-                            <div className="w-8 h-8 bg-[#E2E8F0]/80 text-[#2563EB] rounded-full flex items-center justify-center mb-2">
+                          <label className="border-2 border-dashed border-[#DC2626] bg-[#F6EEDB]/60 hover:bg-[#F6EEDB] rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer w-full h-full transition-all">
+                            <div className="w-8 h-8 bg-[#F3E9D2] text-[#DC2626] rounded-full flex items-center justify-center mb-2">
                               <Upload size={16} />
                             </div>
-                            <span className="text-xs font-bold text-[#0F172A]">
+                            <span className="text-sm font-bold text-[#3B2F1E]">
                               <NidT>
                                 {
                                   "Back passport page\n                            "
                                 }
                               </NidT>
                             </span>
-                            <span className="text-[10px] text-gray-400 mt-0.5">
+                            <span className="text-[12px] text-[#7A6A50] mt-0.5">
                               <NidT>
                                 {
                                   "Upload back side photo\n                            "
                                 }
                               </NidT>
                             </span>
-                            <span className="bg-[#E2E8F0]/60 text-[#2563EB] font-semibold text-[9px] px-2 py-0.5 rounded-full mt-2">
+                            <span className="bg-[#F6EEDB] text-[#DC2626] font-semibold text-[11px] px-2 py-0.5 rounded-full mt-2">
                               <NidT>
                                 {
                                   "JPG \u00B7 PNG \u00B7 HEIC\n                            "
@@ -3131,10 +3153,10 @@ export default function PassportToPdf() {
         </div>
       </div>
 
-      <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
+      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#5A4A32]">
           <span
-            className={`w-2 h-2 rounded-full shrink-0 ${frontImage && backImage ? "bg-[#2563EB]" : "bg-red-500"}`}
+            className={`w-2 h-2 rounded-full shrink-0 ${frontImage && backImage ? "bg-[#D42020]" : "bg-red-500"}`}
           />
           <span>
             {frontImage && backImage ? (
@@ -3148,7 +3170,7 @@ export default function PassportToPdf() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
+            className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#F6EEDB] transition-all cursor-pointer"
           >
             <NidT>{"Reset\n          "}</NidT>
           </button>
@@ -3160,10 +3182,10 @@ export default function PassportToPdf() {
               isGeneratingPdf ||
               processingSide !== null
             }
-            className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${
+            className={`px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all ${
               frontImage || backImage
-                ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB] cursor-pointer"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-[#D42020] text-white shadow-xs hover:bg-[#AE1717] cursor-pointer"
+                : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"
             } ${isGeneratingPdf ? "opacity-75 !cursor-wait" : ""}`}
           >
             {isGeneratingPdf ? (
@@ -3183,23 +3205,23 @@ export default function PassportToPdf() {
       </div>
 
       <div className="pt-3 space-y-3">
-        <h3 className="text-xs font-bold text-[#0F172A]">
+        <h3 className="text-sm font-bold text-[#3B2F1E]">
           <NidT>{"Tools in the same category\n        "}</NidT>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs hover:border-[#E3D6B8] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform">
               <Minimize2 size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
                 <NidT>{"Image Size Reducer\n              "}</NidT>
               </h4>
-              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              <p className="text-[13px] text-[#6B5A40] mt-1 leading-relaxed">
                 <NidT>
                   {
                     "Shrink JPG, PNG, and WebP photos in your browser.\n              "
@@ -3211,14 +3233,14 @@ export default function PassportToPdf() {
 
           <Link
             href="/sohoj-tools/remove-background"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs hover:border-[#E3D6B8] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform"></div>
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform"></div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
                 <NidT>{"Remove Background\n              "}</NidT>
               </h4>
-              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              <p className="text-[13px] text-[#6B5A40] mt-1 leading-relaxed">
                 <NidT>
                   {
                     "Erase portrait, product, or logo backgrounds easily.\n              "
@@ -3230,16 +3252,16 @@ export default function PassportToPdf() {
 
           <Link
             href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex flex-col gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs hover:border-[#E3D6B8] transition-all flex flex-col gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center border border-[#E2E8F0] group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center border border-[#E3D6B8] group-hover:scale-105 transition-transform">
               <FileText size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors">
                 <NidT>{"NID Joiner\n              "}</NidT>
               </h4>
-              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              <p className="text-[13px] text-[#6B5A40] mt-1 leading-relaxed">
                 <NidT>
                   {
                     "Turn NID card front and back photos into a clean A4 PDF.\n              "

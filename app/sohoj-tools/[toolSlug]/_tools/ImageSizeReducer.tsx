@@ -958,7 +958,89 @@ export default function ImageSizeReducer() {
             showNotification("The tool link could not be shared.", "error");
         }
     }, [showNotification, IL]);
-    return (<div className="w-full space-y-5 text-[#0F172A] font-sans pb-24 relative">
+    return (<div id="image-size-reducer-tool" className="w-full space-y-5 text-[#3B2F1E] font-sans pb-32 sm:pb-24 relative isolate">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #image-size-reducer-tool {
+          isolation: isolate;
+          color: #3B2F1E;
+        }
+        #image-size-reducer-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+        #image-size-reducer-tool,
+        #image-size-reducer-tool *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #image-size-reducer-tool h1,
+        #image-size-reducer-tool h2,
+        #image-size-reducer-tool h3,
+        #image-size-reducer-tool h4 {
+          letter-spacing: -0.01em;
+        }
+        #image-size-reducer-tool h1 { font-size: 24px; line-height: 1.3; }
+        #image-size-reducer-tool h2 { font-size: 18px; line-height: 1.4; }
+        #image-size-reducer-tool h3 { font-size: 17px; line-height: 1.4; }
+        #image-size-reducer-tool h4 { font-size: 16px; line-height: 1.4; }
+        #image-size-reducer-tool button:not(:disabled) { font-size: max(15px, 1em); }
+        #image-size-reducer-tool label { font-size: max(15px, 1em); }
+        #image-size-reducer-tool p { font-size: max(13px, 0.92em); line-height: 1.55; }
+        #image-size-reducer-tool .font-mono,
+        #image-size-reducer-tool .font-mono * {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+          font-size: max(14px, 1em);
+        }
+        #image-size-reducer-tool a[href],
+        #image-size-reducer-tool button:not(:disabled),
+        #image-size-reducer-tool label:has(input[type="file"]),
+        #image-size-reducer-tool [role="button"],
+        #image-size-reducer-tool select,
+        #image-size-reducer-tool input[type="color"],
+        #image-size-reducer-tool input[type="range"],
+        #image-size-reducer-tool input[type="checkbox"],
+        #image-size-reducer-tool input[type="radio"],
+        #image-size-reducer-tool input[type="file"] {
+          cursor: pointer;
+        }
+        #image-size-reducer-tool button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        #image-size-reducer-tool input[type="range"] { accent-color: #DC2626; }
+        #image-size-reducer-tool button:not(:disabled),
+        #image-size-reducer-tool a[href] {
+          transition-duration: 180ms;
+        }
+        #image-size-reducer-tool button:not(:disabled):active,
+        #image-size-reducer-tool a[href]:active {
+          transform: scale(0.98);
+        }
+        #image-size-reducer-tool button:focus-visible,
+        #image-size-reducer-tool a[href]:focus-visible,
+        #image-size-reducer-tool [role="button"]:focus-visible {
+          outline: 2px solid rgba(220, 38, 38, 0.45);
+          outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #image-size-reducer-tool *,
+          #image-size-reducer-tool *::before,
+          #image-size-reducer-tool *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        }
+      `}</style>
       {/* Toast Notification */}
       {showToast && (<div className={`fixed top-5 right-5 max-w-sm px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 z-[70] animate-in fade-in slide-in-from-top-2 ${toastType === "success"
                 ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
@@ -968,15 +1050,15 @@ export default function ImageSizeReducer() {
           </div>
 
           <div className="min-w-0">
-            <p className="text-xs font-bold">
+            <p className="text-sm font-bold">
               {toastType === "success" ? <ImageSizeT>{"Success"}</ImageSizeT> : <ImageSizeT>{"Unable to complete"}</ImageSizeT>}
             </p>
-            <p className={`text-[11px] font-medium break-words ${toastType === "success" ? "text-emerald-600" : "text-red-600"}`}>
+            <p className={`text-[13px] font-medium break-words ${toastType === "success" ? "text-emerald-600" : "text-red-600"}`}>
               <ImageSizeT>{toastMessage}</ImageSizeT>
             </p>
           </div>
 
-          <button onClick={() => setShowToast(false)} className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0" aria-label={IL("Close notification")}>
+          <button onClick={() => setShowToast(false)} className="ml-2 text-[#7A6A50] hover:text-[#5A4A32] cursor-pointer shrink-0" aria-label={IL("Close notification")}>
             <X size={14}/>
           </button>
         </div>)}
@@ -985,37 +1067,37 @@ export default function ImageSizeReducer() {
       <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden"/>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <Link className="flex items-center gap-1 hover:text-[#0F172A] transition-colors cursor-pointer" href="/sohoj-tools">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#7A6A50]">
+        <Link className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors cursor-pointer" href="/sohoj-tools">
           <ArrowLeft size={14}/>
           <span><ImageSizeT>{"Back to Tools"}</ImageSizeT></span>
         </Link>
         <span><ImageSizeT>{"/"}</ImageSizeT></span>
         <span><ImageSizeT>{"Image Tools"}</ImageSizeT></span>
         <span><ImageSizeT>{"/"}</ImageSizeT></span>
-        <span className="font-semibold text-[#0F172A]"><ImageSizeT>{"Image Size Reducer"}</ImageSizeT></span>
+        <span className="font-semibold text-[#3B2F1E]"><ImageSizeT>{"Image Size Reducer"}</ImageSizeT></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
+          <div className="w-12 h-12 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#E3D6B8]">
             <ImageIcon size={24}/>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><ImageSizeT>{"Image Size Reducer\n              "}</ImageSizeT></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><ImageSizeT>{"Free\n              "}</ImageSizeT></span>
+              <h1 className="text-2xl font-bold text-[#3B2F1E] min-w-0"><ImageSizeT>{"Image Size Reducer\n              "}</ImageSizeT></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[12px] font-bold px-2 py-0.5 rounded-full"><ImageSizeT>{"Free\n              "}</ImageSizeT></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><ImageSizeT>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n              sharp.\n            "}</ImageSizeT></p>
+            <p className="text-sm text-[#7A6A50] font-medium mt-0.5"><ImageSizeT>{"Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n              sharp.\n            "}</ImageSizeT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button className="p-2 text-[#7A6A50] hover:text-[#5A4A32] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-xl transition-all border border-[#E3D6B8] cursor-pointer">
             <Star size={16}/>
           </button>
-          <button onClick={handleShare} title={IL("Share this tool")} aria-label={IL("Share this tool")} className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100 cursor-pointer">
+          <button onClick={handleShare} title={IL("Share this tool")} aria-label={IL("Share this tool")} className="p-2 text-[#7A6A50] hover:text-[#5A4A32] bg-[#F6EEDB] hover:bg-[#F3E9D2] rounded-xl transition-all border border-[#E3D6B8] cursor-pointer">
             <Share2 size={16}/>
           </button>
         </div>
@@ -1026,77 +1108,77 @@ export default function ImageSizeReducer() {
         {/* Left Side: Controls Box */}
         <div className="lg:col-span-4 space-y-4">
           {/* Quality Slider */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Quality"}</ImageSizeT></label>
-              <span className="text-xs font-bold text-[#0F172A]">
+              <label className="text-sm font-bold text-[#3B2F1E]"><ImageSizeT>{"Quality"}</ImageSizeT></label>
+              <span className="text-sm font-bold text-[#3B2F1E]">
                 {quality}<ImageSizeT>{"%\n              "}</ImageSizeT></span>
             </div>
             <input type="range" min="1" max="100" value={quality} onChange={(e) => {
             setQuality(Number(e.target.value));
             setIsCompressed(false);
-        }} className="w-full accent-[#2563EB] bg-gray-200 rounded-lg h-2 cursor-pointer"/>
-            <p className="text-[10px] text-gray-400 font-medium">
+        }} className="w-full accent-[#DC2626] bg-[#E3D6B8] rounded-lg h-2 cursor-pointer"/>
+            <p className="text-[12px] text-[#7A6A50] font-medium">
               {outputFormat === "PNG"
         ? <ImageSizeT>{"PNG is lossless; quality has little effect on size."}</ImageSizeT> : <ImageSizeT>{"Lower quality = smaller file size"}</ImageSizeT>}
             </p>
           </div>
 
           {/* Max Dimension Dropdown */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2 relative" ref={dropdownRef}>
-            <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Max dimension\n            "}</ImageSizeT></label>
-            <div onClick={() => setIsDimensionOpen(!isDimensionOpen)} className="w-full flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-[#0F172A] cursor-pointer hover:border-[#2563EB] transition-all shadow-xs">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs space-y-2 relative" ref={dropdownRef}>
+            <label className="text-sm font-bold text-[#3B2F1E] block"><ImageSizeT>{"Max dimension\n            "}</ImageSizeT></label>
+            <div onClick={() => setIsDimensionOpen(!isDimensionOpen)} className="w-full flex items-center justify-between p-2.5 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl text-sm font-medium text-[#3B2F1E] cursor-pointer hover:border-[#DC2626] transition-all shadow-xs">
               <span><ImageSizeT>{maxDimension}</ImageSizeT></span>
-              <ChevronDown size={16} className={`text-gray-400 transition-transform ${isDimensionOpen ? "rotate-180" : ""}`}/>
+              <ChevronDown size={16} className={`text-[#7A6A50] transition-transform ${isDimensionOpen ? "rotate-180" : ""}`}/>
             </div>
 
-            {isDimensionOpen && (<div className="absolute left-4 right-4 top-20 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden py-1">
+            {isDimensionOpen && (<div className="absolute left-4 right-4 top-20 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl shadow-lg z-20 overflow-hidden py-1">
                 {dimensionOptions.map((opt) => (<div key={opt} onClick={() => {
                     setMaxDimension(opt);
                     setIsDimensionOpen(false);
                     setIsCompressed(false);
-                }} className={`px-3 py-2 text-xs font-medium cursor-pointer transition-colors ${maxDimension === opt
-                    ? "bg-[#F8FAFC] text-[#2563EB] font-bold"
-                    : "text-[#0F172A] hover:bg-gray-50"}`}>
+                }} className={`px-3 py-2 text-sm font-medium cursor-pointer transition-colors ${maxDimension === opt
+                    ? "bg-[#F6EEDB] text-[#DC2626] font-bold"
+                    : "text-[#3B2F1E] hover:bg-[#F6EEDB]"}`}>
                     <ImageSizeT>{opt}</ImageSizeT>
                   </div>))}
               </div>)}
 
-            <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Images larger than this will be resized\n            "}</ImageSizeT></p>
+            <p className="text-[12px] text-[#7A6A50] font-medium"><ImageSizeT>{"Images larger than this will be resized\n            "}</ImageSizeT></p>
           </div>
 
           {/* Preserve EXIF */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Preserve EXIF\n              "}</ImageSizeT></label>
-              <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Keep camera & location data\n              "}</ImageSizeT></p>
+              <label className="text-sm font-bold text-[#3B2F1E] block"><ImageSizeT>{"Preserve EXIF\n              "}</ImageSizeT></label>
+              <p className="text-[12px] text-[#7A6A50] font-medium"><ImageSizeT>{"Keep camera & location data\n              "}</ImageSizeT></p>
             </div>
             <button onClick={() => {
             setPreserveExif(!preserveExif);
             setIsCompressed(false);
-        }} className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${preserveExif ? "bg-[#2563EB]" : "bg-gray-200"}`}>
-              <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${preserveExif ? "translate-x-5" : "translate-x-0"}`}/>
+        }} className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${preserveExif ? "bg-[#DC2626]" : "bg-[#E3D6B8]"}`}>
+              <div className={`bg-[#FBF6E8] w-4 h-4 rounded-full shadow-md transform transition-transform ${preserveExif ? "translate-x-5" : "translate-x-0"}`}/>
             </button>
           </div>
 
           {/* Keep original name */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Keep original name\n              "}</ImageSizeT></label>
-              <p className="text-[10px] text-gray-400 font-medium"><ImageSizeT>{"Don't add the \"-compressed\" suffix\n              "}</ImageSizeT></p>
+              <label className="text-sm font-bold text-[#3B2F1E] block"><ImageSizeT>{"Keep original name\n              "}</ImageSizeT></label>
+              <p className="text-[12px] text-[#7A6A50] font-medium"><ImageSizeT>{"Don't add the \"-compressed\" suffix\n              "}</ImageSizeT></p>
             </div>
             <button onClick={() => {
             setKeepOriginalName(!keepOriginalName);
             setIsCompressed(false);
-        }} className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${keepOriginalName ? "bg-[#2563EB]" : "bg-gray-200"}`}>
-              <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${keepOriginalName ? "translate-x-5" : "translate-x-0"}`}/>
+        }} className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${keepOriginalName ? "bg-[#DC2626]" : "bg-[#E3D6B8]"}`}>
+              <div className={`bg-[#FBF6E8] w-4 h-4 rounded-full shadow-md transform transition-transform ${keepOriginalName ? "translate-x-5" : "translate-x-0"}`}/>
             </button>
           </div>
 
           {/* Output Format */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-2">
-            <label className="text-xs font-bold text-[#0F172A] block"><ImageSizeT>{"Output format\n            "}</ImageSizeT></label>
-            <div className="grid grid-cols-5 gap-1.5 bg-gray-50/80 p-1 rounded-xl border border-gray-100">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-xs space-y-2">
+            <label className="text-sm font-bold text-[#3B2F1E] block"><ImageSizeT>{"Output format\n            "}</ImageSizeT></label>
+            <div className="grid grid-cols-5 gap-1.5 bg-[#F6EEDB]/80 p-1 rounded-xl border border-[#E3D6B8]">
               {[
             { name: "Original", icon: Crop },
             { name: "JPG", icon: FileText },
@@ -1108,9 +1190,9 @@ export default function ImageSizeReducer() {
             return (<button key={item.name} onClick={() => {
                     setOutputFormat(item.name);
                     setIsCompressed(false);
-                }} className={`py-2 px-1 rounded-lg text-[10px] font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${outputFormat === item.name
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"}`}>
+                }} className={`py-2 px-1 rounded-lg text-[12px] font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${outputFormat === item.name
+                    ? "bg-[#FBF6E8] text-[#DC2626] shadow-xs border border-[#E3D6B8]"
+                    : "text-[#7A6A50] hover:text-[#3B2F1E]"}`}>
                     <IconComponent size={14}/>
                     <span>{<ImageSizeT>{item.name}</ImageSizeT>}</span>
                   </button>);
@@ -1120,14 +1202,14 @@ export default function ImageSizeReducer() {
         </div>
 
         {/* Right Side: Compression Preview Box */}
-        <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[460px] transition-colors ${isDragging ? "bg-[#F8FAFC]/30 border-[#2563EB]" : ""}`}>
+        <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col justify-between min-h-[460px] transition-colors ${isDragging ? "bg-[#FEE9E9]/35 border-[#DC2626]" : ""}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Compression preview\n            "}</ImageSizeT></h2>
-            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isCompressed
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><ImageSizeT>{"Compression preview\n            "}</ImageSizeT></h2>
+            <span className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${isCompressed
             ? "bg-emerald-100 text-emerald-700"
             : selectedFiles.length > 0
-                ? "bg-[#E2E8F0] text-[#2563EB]"
-                : "bg-gray-100 text-gray-500"}`}>
+                ? "bg-[#E3D6B8] text-[#DC2626]"
+                : "bg-[#F3E9D2] text-[#7A6A50]"}`}>
               {isCompressed
         ? <ImageSizeT>{"Done"}</ImageSizeT> : selectedFiles.length > 0
         ? <ImageSizeT>{`${selectedFiles.length} file(s) added`}</ImageSizeT>
@@ -1136,13 +1218,13 @@ export default function ImageSizeReducer() {
           </div>
 
           {previews.length === 0 ? (<div onClick={() => fileInputRef.current?.click()} className={`rounded-2xl border border-dashed p-8 flex flex-col items-center justify-center my-auto text-center py-24 cursor-pointer transition-all ${isDragging
-                ? "border-[#2563EB] bg-[#F8FAFC]/40"
-                : "border-gray-200 bg-gray-50/60 hover:border-[#2563EB] hover:bg-[#F8FAFC]/20"}`}>
-              <div className="w-10 h-10 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
+                ? "border-[#DC2626] bg-[#FEE9E9]/40"
+                : "border-[#E3D6B8] bg-[#F6EEDB]/60 hover:border-[#DC2626] hover:bg-[#FEE9E9]/20"}`}>
+              <div className="w-10 h-10 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#E3D6B8]">
                 <Upload size={20}/>
               </div>
-              <p className="text-xs font-bold text-[#0F172A]"><ImageSizeT>{"Add an image to get started\n              "}</ImageSizeT></p>
-              <p className="text-[11px] text-gray-400 mt-1"><ImageSizeT>{"Before and after previews will appear here after processing.\n              "}</ImageSizeT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><ImageSizeT>{"Add an image to get started\n              "}</ImageSizeT></p>
+              <p className="text-[13px] text-[#7A6A50] mt-1"><ImageSizeT>{"Before and after previews will appear here after processing.\n              "}</ImageSizeT></p>
             </div>) : (<div className="flex flex-wrap gap-4 items-start justify-start overflow-y-auto max-h-[420px] p-1">
               {previews.map((src, index) => {
                 const file = selectedFiles[index];
@@ -1154,17 +1236,17 @@ export default function ImageSizeReducer() {
                             setZoomLevel(100);
                             setActiveCompareIndex(index);
                         }
-                    }} className={`w-44 bg-white rounded-2xl border overflow-hidden shadow-xs relative group flex flex-col transition-all ${isCompressed && compRes
+                    }} className={`w-44 bg-[#FBF6E8] rounded-2xl border overflow-hidden shadow-xs relative group flex flex-col transition-all ${isCompressed && compRes
                         ? "border-emerald-300 cursor-pointer hover:shadow-md"
-                        : "border-gray-200 cursor-default"}`}>
-                    <div className="relative w-full h-40 bg-gray-100 overflow-hidden">
+                        : "border-[#E3D6B8] cursor-default"}`}>
+                    <div className="relative w-full h-40 bg-[#F3E9D2] overflow-hidden">
                       <img src={displaySrc} alt={file?.name || "preview"} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"/>
 
                       {isCompressed && compRes && (<>
-                          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs"><ImageSizeT>{"-"}</ImageSizeT>{compRes.reductionPercentage}<ImageSizeT>{"%\n                          "}</ImageSizeT></span>
+                          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[12px] font-bold px-2 py-0.5 rounded-md shadow-xs"><ImageSizeT>{"-"}</ImageSizeT>{compRes.reductionPercentage}<ImageSizeT>{"%\n                          "}</ImageSizeT></span>
 
                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                            <span className="bg-black/75 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-xs"><ImageSizeT>{"Click to compare\n                            "}</ImageSizeT></span>
+                            <span className="bg-black/75 text-white text-[12px] font-bold px-2 py-1 rounded-md backdrop-blur-xs"><ImageSizeT>{"Click to compare\n                            "}</ImageSizeT></span>
                           </div>
                         </>)}
 
@@ -1173,13 +1255,13 @@ export default function ImageSizeReducer() {
                       </button>
                     </div>
 
-                    <div className="p-3 bg-white flex flex-col justify-center">
-                      <p className="text-xs font-bold text-[#0F172A] truncate" title={isCompressed && compRes ? compRes.name : file?.name}>
+                    <div className="p-3 bg-[#FBF6E8] flex flex-col justify-center">
+                      <p className="text-sm font-bold text-[#3B2F1E] truncate" title={isCompressed && compRes ? compRes.name : file?.name}>
                         {isCompressed && compRes ? compRes.name : file?.name}
                       </p>
 
                       <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                        {isCompressed && compRes ? (<div className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                        {isCompressed && compRes ? (<div className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md text-[12px] font-bold">
                             <span>
                               {formatFileSize(compRes.compressedSize)}
                             </span>
@@ -1187,7 +1269,7 @@ export default function ImageSizeReducer() {
                             <span>
                               {compRes.width}<ImageSizeT>{"x"}</ImageSizeT>{compRes.height}
                             </span>
-                          </div>) : (<span className="text-[10px] text-gray-400 font-medium">
+                          </div>) : (<span className="text-[12px] text-[#7A6A50] font-medium">
                             {file ? formatFileSize(file.size) : <ImageSizeT>{"0 B"}</ImageSizeT>}
                           </span>)}
                       </div>
@@ -1195,9 +1277,9 @@ export default function ImageSizeReducer() {
                   </div>);
             })}
 
-              <div onClick={() => fileInputRef.current?.click()} className="w-44 h-52 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#2563EB] bg-gray-50/40 hover:bg-[#F8FAFC]/20 flex flex-col items-center justify-center text-gray-400 hover:text-[#2563EB] cursor-pointer transition-all shrink-0">
-                <Plus className="text-gray-400" size={22}/>
-                <span className="text-xs font-semibold text-gray-500 mt-2"><ImageSizeT>{"Add more images\n                "}</ImageSizeT></span>
+              <div onClick={() => fileInputRef.current?.click()} className="w-44 h-52 rounded-2xl border-2 border-dashed border-[#E3D6B8] hover:border-[#DC2626] bg-[#FEE9E9]/40 hover:bg-[#FEE9E9]/20 flex flex-col items-center justify-center text-[#7A6A50] hover:text-[#DC2626] cursor-pointer transition-all shrink-0">
+                <Plus className="text-[#7A6A50]" size={22}/>
+                <span className="text-sm font-semibold text-[#7A6A50] mt-2"><ImageSizeT>{"Add more images\n                "}</ImageSizeT></span>
               </div>
             </div>)}
 
@@ -1207,7 +1289,7 @@ export default function ImageSizeReducer() {
 
       {/* Related tools: clear titles and descriptions help users understand each tool */}
       <div className="space-y-3 pt-4">
-        <h3 className="text-sm font-bold text-[#0F172A]"><ImageSizeT>{"Tools in the same category"}</ImageSizeT></h3>
+        <h3 className="text-base font-bold text-[#3B2F1E]"><ImageSizeT>{"Tools in the same category"}</ImageSizeT></h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {[
             {
@@ -1234,16 +1316,16 @@ export default function ImageSizeReducer() {
               <Link
                 key={tool.name}
                 href={tool.href}
-                className="group flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-xs transition-all hover:border-[#CBD5E1] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
+                className="group flex items-start gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-xs transition-all hover:border-[#D8C9A6] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#2563EB] transition-colors group-hover:bg-blue-50">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] text-[#DC2626] transition-colors group-hover:bg-[#FEE9E9]">
                   <Icon size={20} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-[#2563EB]">
+                  <h4 className="text-sm font-bold text-[#3B2F1E] transition-colors group-hover:text-[#DC2626]">
                     <ImageSizeT>{tool.name}</ImageSizeT>
                   </h4>
-                  <p className="mt-1 line-clamp-3 text-[11px] leading-relaxed text-gray-500">
+                  <p className="mt-1 line-clamp-3 text-[13px] leading-relaxed text-[#7A6A50]">
                     <ImageSizeT>{tool.description}</ImageSizeT>
                   </p>
                 </div>
@@ -1254,15 +1336,15 @@ export default function ImageSizeReducer() {
       </div>
 
       {/* Bottom Sticky Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-100 p-3 px-6 flex items-center justify-between z-30 shadow-lg">
-        <div className="flex items-center gap-2 text-xs text-gray-500 min-w-0">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#FBF6E8]/95 backdrop-blur-md border-t border-[#E3D6B8] p-3 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-30 shadow-lg">
+        <div className="flex items-center gap-2 text-sm text-[#7A6A50] min-w-0">
           <span className={`w-2 h-2 rounded-full shrink-0 ${isCompressing
-            ? "bg-[#2563EB] animate-pulse"
+            ? "bg-[#DC2626] animate-pulse"
             : isCompressed
                 ? "bg-emerald-500"
                 : selectedFiles.length > 0
-                    ? "bg-[#2563EB]"
-                    : "bg-gray-300"}`}></span>
+                    ? "bg-[#DC2626]"
+                    : "bg-[#D8C9A6]"}`}></span>
 
           <span className="truncate">
             {isCompressing
@@ -1273,21 +1355,21 @@ export default function ImageSizeReducer() {
             : <ImageSizeT>{"Add an input to get started"}</ImageSizeT>}
           </span>
 
-          {isCompressing && (<span className="hidden sm:block w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
-              <span className="block h-full bg-[#2563EB] transition-all duration-200" style={{ width: `${compressionProgress}%` }}/>
+          {isCompressing && (<span className="hidden sm:block w-24 h-1.5 bg-[#E3D6B8] rounded-full overflow-hidden shrink-0">
+              <span className="block h-full bg-[#DC2626] transition-all duration-200" style={{ width: `${compressionProgress}%` }}/>
             </span>)}
         </div>
 
-        <div className="flex items-center gap-3">
-          <button onClick={handleReset} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"><ImageSizeT>{"Reset\n          "}</ImageSizeT></button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button onClick={handleReset} className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#F6EEDB] transition-all cursor-pointer"><ImageSizeT>{"Reset\n          "}</ImageSizeT></button>
 
           {isCompressed ? (<>
-              <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1.5">
+              <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#F6EEDB] transition-all cursor-pointer flex items-center gap-1.5">
                 <RefreshCw size={14}/>
                 <span><ImageSizeT>{"Compress more images"}</ImageSizeT></span>
               </button>
 
-              <button disabled={isZipping} onClick={handleDownloadAll} className="px-5 py-2 text-xs font-bold bg-[#2563EB] text-white rounded-xl hover:bg-[#2563EB] transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50">
+              <button disabled={isZipping} onClick={handleDownloadAll} className="px-5 py-2 text-sm font-bold bg-[#DC2626] text-white rounded-xl hover:bg-[#B91C1C] transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50">
                 {isZipping ? (<Loader2 className="animate-spin" size={14}/>) : compressedResults.length > 1 ? (<Archive size={14}/>) : (<Download size={14}/>)}
                 <span>
                   {isZipping
@@ -1296,9 +1378,9 @@ export default function ImageSizeReducer() {
             : <ImageSizeT>{"Download"}</ImageSizeT>}
                 </span>
               </button>
-            </>) : (<button disabled={selectedFiles.length === 0 || isCompressing} onClick={handleCompress} className={`px-5 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${selectedFiles.length > 0 && !isCompressing
-                ? "bg-[#2563EB] text-white hover:bg-[#2563EB] cursor-pointer shadow-md"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+            </>) : (<button disabled={selectedFiles.length === 0 || isCompressing} onClick={handleCompress} className={`px-5 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${selectedFiles.length > 0 && !isCompressing
+                ? "bg-[#DC2626] text-white hover:bg-[#B91C1C] cursor-pointer shadow-md"
+                : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"}`}>
               {isCompressing && <Loader2 className="animate-spin" size={14}/>}
               <span>
                 {isCompressing ? <ImageSizeT>{"Compressing..."}</ImageSizeT> : <ImageSizeT>{"Compress images"}</ImageSizeT>}
@@ -1316,7 +1398,7 @@ export default function ImageSizeReducer() {
             }}>
             {/* Top Close Button Bar */}
             <div className="p-4 flex justify-between items-center z-20">
-              <div className="text-white text-xs font-bold bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+              <div className="text-white text-sm font-bold bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
                 {selectedFiles[activeCompareIndex]?.name}
               </div>
               <button onClick={closeCompareModal} className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg cursor-pointer">
@@ -1328,7 +1410,7 @@ export default function ImageSizeReducer() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-1 px-4 overflow-hidden relative">
               {/* Left Column: Before */}
               <div className="relative flex flex-col items-center justify-center border-r border-white/10 overflow-hidden bg-black/40 rounded-l-2xl">
-                <span className="absolute top-4 left-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10"><ImageSizeT>{"Before\n                "}</ImageSizeT></span>
+                <span className="absolute top-4 left-4 bg-black/60 text-white text-sm font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md z-10"><ImageSizeT>{"Before\n                "}</ImageSizeT></span>
 
                 <div className="w-full h-full flex items-center justify-center p-6 overflow-auto" style={{
                 transform: `scale(${zoomLevel / 100})`,
@@ -1338,13 +1420,13 @@ export default function ImageSizeReducer() {
                 </div>
 
                 {/* Zoom Controls */}
-                <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs z-10">
-                  <button onClick={() => setZoomLevel((z) => Math.max(50, z - 25))} className="hover:text-[#2563EB] transition-colors cursor-pointer">
+                <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-3 px-3 py-1.5 rounded-xl text-sm z-10">
+                  <button onClick={() => setZoomLevel((z) => Math.max(50, z - 25))} className="hover:text-[#DC2626] transition-colors cursor-pointer">
                     <ZoomOut size={14}/>
                   </button>
-                  <span className="font-mono text-[11px] font-bold">
+                  <span className="font-mono text-[13px] font-bold">
                     {zoomLevel}<ImageSizeT>{"%\n                  "}</ImageSizeT></span>
-                  <button onClick={() => setZoomLevel((z) => Math.min(200, z + 25))} className="hover:text-[#2563EB] transition-colors cursor-pointer">
+                  <button onClick={() => setZoomLevel((z) => Math.min(200, z + 25))} className="hover:text-[#DC2626] transition-colors cursor-pointer">
                     <ZoomIn size={14}/>
                   </button>
                 </div>
@@ -1355,25 +1437,25 @@ export default function ImageSizeReducer() {
                 {/* Controls Bar on top right pane */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
                   <div className="flex items-center gap-2">
-                    <button onClick={closeCompareModal} className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-indigo-400/30 cursor-pointer">
+                    <button onClick={closeCompareModal} className="bg-[#DC2626]/90 hover:bg-[#B91C1C] text-white text-sm font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-[#DC2626]/30 cursor-pointer">
                       <LogOut size={12}/>
                       <span><ImageSizeT>{"Exit"}</ImageSizeT></span>
                     </button>
 
-                    {compressedResults[activeCompareIndex] && (<button onClick={() => handleDownloadSingle(compressedResults[activeCompareIndex])} className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-emerald-400/30 cursor-pointer">
+                    {compressedResults[activeCompareIndex] && (<button onClick={() => handleDownloadSingle(compressedResults[activeCompareIndex])} className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-sm font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border border-emerald-400/30 cursor-pointer">
                         <Download size={12}/>
                         <span><ImageSizeT>{"Download"}</ImageSizeT></span>
                       </button>)}
 
-                    <button onClick={() => setIsEditing(!isEditing)} className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${isEditing
-                ? "bg-[#2563EB] hover:bg-[#2563EB] text-white border-[#2563EB]"
+                    <button onClick={() => setIsEditing(!isEditing)} className={`text-sm font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md transition-all border cursor-pointer ${isEditing
+                ? "bg-[#DC2626] hover:bg-[#B91C1C] text-white border-[#DC2626]"
                 : "bg-white/10 hover:bg-white/20 text-white border-white/20"}`}>
                       <Pencil size={12}/>
                       <span><ImageSizeT>{"Edit"}</ImageSizeT></span>
                     </button>
                   </div>
 
-                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md"><ImageSizeT>{"After\n                  "}</ImageSizeT></span>
+                  <span className="bg-black/60 text-white text-sm font-bold px-3 py-1 rounded-md border border-white/20 backdrop-blur-md"><ImageSizeT>{"After\n                  "}</ImageSizeT></span>
                 </div>
 
                 <div className="w-full h-full flex items-center justify-center p-6 overflow-auto" style={{
@@ -1386,11 +1468,11 @@ export default function ImageSizeReducer() {
                 </div>
 
                 {/* EDITING SIDEBAR */}
-                {isEditing && (<div className="absolute top-0 right-0 h-full w-64 bg-white shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
+                {isEditing && (<div className="absolute top-0 right-0 h-full w-64 bg-[#FBF6E8] shadow-2xl z-20 flex flex-col animate-in slide-in-from-right-8 duration-300">
                     <div className="p-6 flex flex-col mt-14 overflow-y-auto flex-1">
                       <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider"><ImageSizeT>{"Image Editing\n                        "}</ImageSizeT></h3>
-                        <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors cursor-pointer">
+                        <h3 className="text-base font-bold text-[#3B2F1E] uppercase tracking-wider"><ImageSizeT>{"Image Editing\n                        "}</ImageSizeT></h3>
+                        <button onClick={() => setIsEditing(false)} className="text-[#7A6A50] hover:text-[#5A4A32] p-1 rounded-md transition-colors cursor-pointer">
                           <X size={16}/>
                         </button>
                       </div>
@@ -1398,42 +1480,42 @@ export default function ImageSizeReducer() {
                       <div className="space-y-6 flex-1">
                         {/* Brightness */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
+                          <div className="flex justify-between items-center text-[12px] font-bold text-[#3B2F1E] uppercase">
                             <span><ImageSizeT>{"Brightness"}</ImageSizeT></span>
                             <span>{editSettings.brightness}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.brightness} onChange={(e) => setEditSettings({
                     ...editSettings,
                     brightness: Number(e.target.value),
-                })} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"/>
+                })} className="w-full h-1.5 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"/>
                         </div>
 
                         {/* Contrast */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
+                          <div className="flex justify-between items-center text-[12px] font-bold text-[#3B2F1E] uppercase">
                             <span><ImageSizeT>{"Contrast"}</ImageSizeT></span>
                             <span>{editSettings.contrast}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.contrast} onChange={(e) => setEditSettings({
                     ...editSettings,
                     contrast: Number(e.target.value),
-                })} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"/>
+                })} className="w-full h-1.5 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"/>
                         </div>
 
                         {/* Saturation */}
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-[#0F172A] uppercase">
+                          <div className="flex justify-between items-center text-[12px] font-bold text-[#3B2F1E] uppercase">
                             <span><ImageSizeT>{"Saturation"}</ImageSizeT></span>
                             <span>{editSettings.saturation}<ImageSizeT>{"%"}</ImageSizeT></span>
                           </div>
                           <input type="range" min="0" max="200" value={editSettings.saturation} onChange={(e) => setEditSettings({
                     ...editSettings,
                     saturation: Number(e.target.value),
-                })} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"/>
+                })} className="w-full h-1.5 bg-[#E3D6B8] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"/>
                         </div>
                       </div>
 
-                      <button onClick={handleApplyEditing} disabled={isApplyingEdit} className="mt-6 w-full py-2.5 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                      <button onClick={handleApplyEditing} disabled={isApplyingEdit} className="mt-6 w-full py-2.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                         {isApplyingEdit && (<Loader2 className="animate-spin" size={14}/>)}
                         <span>
                           {isApplyingEdit ? <ImageSizeT>{"Saving..."}</ImageSizeT> : <ImageSizeT>{"Save & Apply Edits"}</ImageSizeT>}

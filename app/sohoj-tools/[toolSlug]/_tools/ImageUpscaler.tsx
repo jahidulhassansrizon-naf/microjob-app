@@ -948,11 +948,44 @@ export default function ImageUpscaler() {
                     label: "Ready",
                     className: "bg-emerald-50 text-emerald-600 font-semibold",
                 }
-                : { label: "Empty", className: "bg-gray-100 text-gray-400" };
+                : { label: "Empty", className: "bg-[#F3E9D2] text-[#7A6A50]" };
     /* ---------------------------------- Render -------------------------------- */
-    return (<div id="image-upscaler-tool" className="w-full space-y-5 text-[#0F172A] font-sans">
+    return (<div id="image-upscaler-tool" className="relative isolate w-full space-y-5 text-[#3B2F1E] font-sans">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #image-upscaler-tool {
+          isolation: isolate;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          color: #3B2F1E;
+        }
+
+        #image-upscaler-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
+        #image-upscaler-tool,
+        #image-upscaler-tool *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        #image-upscaler-tool h1,
+        #image-upscaler-tool h2,
+        #image-upscaler-tool h3,
+        #image-upscaler-tool h4 {
+          letter-spacing: -0.01em;
+        }
+
         #image-upscaler-tool a[href],
         #image-upscaler-tool button:not(:disabled),
         #image-upscaler-tool label:has(input[type="file"]),
@@ -969,43 +1002,63 @@ export default function ImageUpscaler() {
 
         #image-upscaler-tool button:disabled {
           cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        #image-upscaler-tool button:not(:disabled) {
+          transition-duration: 180ms;
+        }
+
+        #image-upscaler-tool button:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+
+        #image-upscaler-tool input[type="range"] {
+          accent-color: #DC2626;
+        }
+
+        #image-upscaler-tool a:focus-visible,
+        #image-upscaler-tool button:focus-visible,
+        #image-upscaler-tool [role="button"]:focus-visible {
+          outline: 2px solid rgba(220, 38, 38, 0.45);
+          outline-offset: 2px;
         }
       `}</style>
 
       <input ref={fileInputRef} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" onChange={handleFileChange}/>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#0F172A] transition-colors">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#7A6A50]">
+        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
           <span><UpscalerText>{"Sohoj Tools"}</UpscalerText></span>
         </Link>
         <span><UpscalerText>{"/"}</UpscalerText></span>
         <span><UpscalerText>{"Image Tools"}</UpscalerText></span>
         <span><UpscalerText>{"/"}</UpscalerText></span>
-        <span className="font-semibold text-[#0F172A]"><UpscalerText>{"Image Upscaler"}</UpscalerText></span>
+        <span className="font-semibold text-[#3B2F1E]"><UpscalerText>{"Image Upscaler"}</UpscalerText></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between gap-4">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]">
+          <div className="w-12 h-12 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#E3D6B8]">
             <Sparkles size={24}/>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-[#0F172A]"><UpscalerText>{"Image Upscaler\n              "}</UpscalerText></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><UpscalerText>{"Free\n              "}</UpscalerText></span>
+              <h1 className="text-xl font-bold text-[#3B2F1E]"><UpscalerText>{"Image Upscaler\n              "}</UpscalerText></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[12px] font-bold px-2 py-0.5 rounded-full"><UpscalerText>{"Free\n              "}</UpscalerText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5"><UpscalerText>{"Enlarge images up to 4x while keeping your workflow simple and\n              clean.\n            "}</UpscalerText></p>
+            <p className="text-sm text-[#7A6A50] font-medium mt-0.5"><UpscalerText>{"Enlarge images up to 4x while keeping your workflow simple and\n              clean.\n            "}</UpscalerText></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100" aria-label={UL("Add to favorites")}>
+          <button type="button" className="p-2 text-[#7A6A50] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]" aria-label={UL("Add to favorites")}>
             <Star size={16}/>
           </button>
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100" aria-label={UL("Share tool")}>
+          <button type="button" className="p-2 text-[#7A6A50] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]" aria-label={UL("Share tool")}>
             <Share2 size={16}/>
           </button>
         </div>
@@ -1016,60 +1069,62 @@ export default function ImageUpscaler() {
         {/* Left Controls */}
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-5 self-start">
           {/* Scale Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xs font-bold text-[#0F172A]"><UpscalerText>{"Upscale by"}</UpscalerText></h2>
-              <span className="text-[10px] font-medium text-gray-400"><UpscalerText>{"Choose output size\n              "}</UpscalerText></span>
+              <h2 className="text-sm font-bold text-[#3B2F1E]"><UpscalerText>{"Upscale by"}</UpscalerText></h2>
+              <span className="text-[12px] font-medium text-[#7A6A50]"><UpscalerText>{"Choose output size\n              "}</UpscalerText></span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {(["2x", "4x"] as ScaleOption[]).map((option) => (<button key={option} type="button" disabled={isProcessing} onClick={() => setScale(option)} className={`py-3 rounded-xl border text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed ${scale === option
-                ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] shadow-2xs"
-                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
+              {(["2x", "4x"] as ScaleOption[]).map((option) => (<button key={option} type="button" disabled={isProcessing} onClick={() => setScale(option)} className={`relative py-3 rounded-xl border text-[13px] font-bold transition-all flex flex-col items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed ${scale === option
+                ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40 shadow-sm"
+                : "border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:border-[#D8C9A6]"}`}>
                   <div className="w-6 h-6 rounded-lg border border-current/30 flex items-center justify-center">
                     <Zap size={13}/>
                   </div>
                   <span>{option}</span>
+                  {scale === option && (<span aria-hidden="true" className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#DC2626] text-white flex items-center justify-center shadow-sm"><CheckCircle2 size={11}/></span>)}
                 </button>))}
             </div>
 
-            {outputDims && (<p className={`text-[10px] leading-relaxed ${exceedsLimit ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+            {outputDims && (<p className={`text-[12px] leading-relaxed ${exceedsLimit ? "text-red-600 font-semibold" : "text-[#7A6A50]"}`}>
                 {exceedsLimit
             ? <UpscalerText>{`${outputDims.width} × ${outputDims.height} px is over the 4096 × 4096 px browser limit. Choose 2x or use a smaller image.`}</UpscalerText> : <UpscalerText>{`Output size: ${outputDims.width} × ${outputDims.height} px`}</UpscalerText>}
               </p>)}
           </div>
 
           {/* Output Format Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><UpscalerText>{"Output format"}</UpscalerText></h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><UpscalerText>{"Output format"}</UpscalerText></h2>
             <div className="grid grid-cols-4 gap-2">
-              {(["Original", "PNG", "JPG", "WebP"] as OutputFormat[]).map((format) => (<button key={format} type="button" onClick={() => setOutputFormat(format)} className={`py-2.5 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${outputFormat === format
-                ? "border-[#2563EB] bg-[#F8FAFC]/40 text-[#2563EB] font-bold shadow-2xs"
-                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
-                    <span className="text-[10px] font-bold leading-tight">
+              {(["Original", "PNG", "JPG", "WebP"] as OutputFormat[]).map((format) => (<button key={format} type="button" onClick={() => setOutputFormat(format)} className={`relative py-2.5 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${outputFormat === format
+                ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] font-bold ring-2 ring-[#DC2626]/40 shadow-sm"
+                : "border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:border-[#D8C9A6]"}`}>
+                    <span className="text-[12px] font-bold leading-tight">
                       {format === "Original" ? <UpscalerText>{format}</UpscalerText> : format}
                     </span>
+                    {outputFormat === format && (<span aria-hidden="true" className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#DC2626] text-white flex items-center justify-center shadow-sm"><CheckCircle2 size={9}/></span>)}
                   </button>))}
             </div>
-            {selectedFile && outputFormat === "Original" && (<p className="text-[10px] text-gray-400 leading-relaxed"><UpscalerText>{"Original will download as "}</UpscalerText>{exportTarget.label}<UpscalerText>{".\n              "}</UpscalerText></p>)}
-            {result?.hasAlpha && exportTarget.mime === TARGET_JPG.mime && (<p className="text-[10px] text-amber-600 leading-relaxed"><UpscalerText>{"JPG doesn&apos;t support transparency. Transparent areas will\n                turn white. Choose PNG or WebP to keep them.\n              "}</UpscalerText></p>)}
+            {selectedFile && outputFormat === "Original" && (<p className="text-[12px] text-[#7A6A50] leading-relaxed"><UpscalerText>{"Original will download as "}</UpscalerText>{exportTarget.label}<UpscalerText>{".\n              "}</UpscalerText></p>)}
+            {result?.hasAlpha && exportTarget.mime === TARGET_JPG.mime && (<p className="text-[12px] text-amber-600 leading-relaxed"><UpscalerText>{"JPG doesn&apos;t support transparency. Transparent areas will\n                turn white. Choose PNG or WebP to keep them.\n              "}</UpscalerText></p>)}
           </div>
 
           {/* Quick Info Card */}
-          <div className="bg-[#F8FAFC] p-4 rounded-2xl border border-gray-100 space-y-2.5">
+          <div className="bg-[#F6EEDB] p-4 rounded-2xl border border-[#E3D6B8] space-y-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-white border border-gray-100 text-[#2563EB] flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-[#FBF6E8] border border-[#E3D6B8] text-[#DC2626] flex items-center justify-center shrink-0">
                 <CheckCircle2 size={15}/>
               </div>
-              <p className="text-[10px] font-bold text-[#0F172A]"><UpscalerText>{"Private &amp; on-device\n              "}</UpscalerText></p>
+              <p className="text-[12px] font-bold text-[#3B2F1E]"><UpscalerText>{"Private &amp; on-device\n              "}</UpscalerText></p>
             </div>
-            <p className="text-[10px] leading-relaxed text-gray-500"><UpscalerText>{"Your image is processed in your browser and is never uploaded. The\n              AI model downloads once on first use and is cached after that. It\n              also removes noise and JPEG blockiness, so larger images take more\n              time.\n            "}</UpscalerText></p>
+            <p className="text-[12px] leading-relaxed text-[#7A6A50]"><UpscalerText>{"Your image is processed in your browser and is never uploaded. The\n              AI model downloads once on first use and is cached after that. It\n              also removes noise and JPEG blockiness, so larger images take more\n              time.\n            "}</UpscalerText></p>
           </div>
 
           {/* Error Banner */}
           {error && (<div role="alert" className="bg-red-50 border border-red-100 text-red-700 rounded-xl px-3.5 py-3 flex items-start gap-2.5">
               <AlertTriangle size={15} className="shrink-0 mt-0.5"/>
-              <p className="text-[10px] leading-relaxed font-medium flex-1">
+              <p className="text-[12px] leading-relaxed font-medium flex-1">
                 {translateUpscalerText(error, locale, baseL)}
               </p>
               <button type="button" onClick={() => setError("")} className="shrink-0 text-red-400 hover:text-red-600 transition-colors" aria-label={UL("Dismiss error")}>
@@ -1079,11 +1134,11 @@ export default function ImageUpscaler() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-1">
-            <button type="button" onClick={handleReset} className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
+            <button type="button" onClick={handleReset} className="px-4 py-2.5 border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8] text-sm font-bold rounded-xl transition-all flex items-center gap-1.5">
               <RotateCcw size={13}/><UpscalerText>{"Reset\n            "}</UpscalerText></button>
-            <button type="button" disabled={!canUpscale} onClick={() => void handleUpscale()} className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${canUpscale
-            ? "bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-xs cursor-pointer"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+            <button type="button" disabled={!canUpscale} onClick={() => void handleUpscale()} className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${canUpscale
+            ? "bg-[#D42020] hover:bg-[#AE1717] text-white shadow-sm cursor-pointer"
+            : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"}`}>
               {isProcessing ? (<>
                   <Loader2 size={14} className="animate-spin"/><UpscalerText>{"Upscaling\u2026"}</UpscalerText>{<UpscalerText>{" "}</UpscalerText>}
                   {progress > 0 ? <UpscalerText>{`${progress}%`}</UpscalerText> : <UpscalerText>{""}</UpscalerText>}
@@ -1094,9 +1149,9 @@ export default function ImageUpscaler() {
             </button>
           </div>
 
-          <button type="button" disabled={!canDownload} onClick={() => void handleDownload()} className={`w-full py-2.5 border text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${canDownload
-            ? "border-[#2563EB] bg-white text-[#2563EB] hover:bg-blue-50/50 cursor-pointer"
-            : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"}`}>
+          <button type="button" disabled={!canDownload} onClick={() => void handleDownload()} className={`w-full py-2.5 border text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${canDownload
+            ? "border-[#DC2626] bg-[#FBF6E8] text-[#DC2626] hover:bg-[#FEE9E9]/50 cursor-pointer"
+            : "border-[#E3D6B8] text-[#7A6A50] bg-[#F6EEDB] cursor-not-allowed"}`}>
             {isDownloading ? (<>
                 <Loader2 size={14} className="animate-spin"/><UpscalerText>{"Preparing\n                download\u2026\n              "}</UpscalerText></>) : (<>
                 <Download size={14}/>{<UpscalerText>{" "}</UpscalerText>}
@@ -1107,17 +1162,17 @@ export default function ImageUpscaler() {
 
         {/* Right Preview */}
         <div className="lg:col-span-8">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-h-[520px] flex flex-col">
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4 min-h-[520px] flex flex-col">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xs font-bold text-[#0F172A]"><UpscalerText>{"Image preview\n                "}</UpscalerText></h2>
-                <p className="text-[10px] text-gray-400 mt-0.5"><UpscalerText>{"Compare the source and enlarged result here.\n                "}</UpscalerText></p>
+                <h2 className="text-sm font-bold text-[#3B2F1E]"><UpscalerText>{"Image preview\n                "}</UpscalerText></h2>
+                <p className="text-[12px] text-[#7A6A50] mt-0.5"><UpscalerText>{"Compare the source and enlarged result here.\n                "}</UpscalerText></p>
               </div>
 
               <div className="flex items-center gap-2">
-                {selectedFile && (<button type="button" disabled={isProcessing} onClick={() => fileInputRef.current?.click()} className="text-[10px] bg-[#F8FAFC] text-[#2563EB] hover:bg-blue-50 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all border border-gray-100 disabled:opacity-60 disabled:cursor-not-allowed">
+                {selectedFile && (<button type="button" disabled={isProcessing} onClick={() => fileInputRef.current?.click()} className="text-[12px] bg-[#F6EEDB] text-[#DC2626] hover:bg-[#FEE9E9] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all border border-[#E3D6B8] disabled:opacity-60 disabled:cursor-not-allowed">
                     <Upload size={12}/><UpscalerText>{"Change Image\n                  "}</UpscalerText></button>)}
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusPill.className}`}>
+                <span className={`text-[12px] px-2 py-0.5 rounded-full font-medium ${statusPill.className}`}>
                   {translateUpscalerText(statusPill.label, locale, baseL)}
                 </span>
               </div>
@@ -1128,98 +1183,98 @@ export default function ImageUpscaler() {
                     e.preventDefault();
                     fileInputRef.current?.click();
                 }
-            }} className={`bg-[#F8FAFC] border border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center flex-1 min-h-[430px] cursor-pointer transition-all ${isDragging
-                ? "border-[#2563EB] bg-blue-50/60 scale-[0.99]"
-                : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/20"}`}>
-                <div className="w-16 h-16 bg-white text-[#2563EB] rounded-2xl flex items-center justify-center mb-4 border border-gray-100 shadow-xs">
+            }} className={`bg-[#F6EEDB] border border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center flex-1 min-h-[430px] cursor-pointer transition-all ${isDragging
+                ? "border-[#DC2626] bg-[#FEE9E9]/60 scale-[0.99]"
+                : "border-[#E3D6B8] hover:border-[#DC2626] hover:bg-[#FEE9E9]/20"}`}>
+                <div className="w-16 h-16 bg-[#FBF6E8] text-[#DC2626] rounded-2xl flex items-center justify-center mb-4 border border-[#E3D6B8] shadow-sm">
                   <ImageIcon size={30}/>
                 </div>
-                <span className="text-sm font-bold text-[#0F172A] block"><UpscalerText>{"Click or drag an image here\n                "}</UpscalerText></span>
-                <span className="text-[10px] text-gray-400 mt-1.5 max-w-sm leading-relaxed"><UpscalerText>{"Upload a JPG, PNG, or WebP image up to"}</UpscalerText>{<UpscalerText>{" "}</UpscalerText>}
+                <span className="text-base font-bold text-[#3B2F1E] block"><UpscalerText>{"Click or drag an image here\n                "}</UpscalerText></span>
+                <span className="text-[12px] text-[#7A6A50] mt-1.5 max-w-sm leading-relaxed"><UpscalerText>{"Upload a JPG, PNG, or WebP image up to"}</UpscalerText>{<UpscalerText>{" "}</UpscalerText>}
                   {formatFileSize(MAX_FILE_SIZE)}<UpscalerText>{"and enlarge it 2x or 4x right\n                  in your browser.\n                "}</UpscalerText></span>
                 <button type="button" onClick={(e) => {
                 e.stopPropagation();
                 fileInputRef.current?.click();
-            }} className="mt-4 px-4 py-2 bg-white border border-gray-200 text-[#2563EB] hover:border-blue-200 hover:bg-blue-50/40 text-[10px] font-bold rounded-xl transition-all flex items-center gap-1.5">
+            }} className="mt-4 px-4 py-2 bg-[#FBF6E8] border border-[#E3D6B8] text-[#DC2626] hover:border-[#DC2626]/50 hover:bg-[#FEE9E9]/40 text-[12px] font-bold rounded-xl transition-all flex items-center gap-1.5">
                   <Upload size={13}/><UpscalerText>{"Choose image\n                "}</UpscalerText></button>
-                <span className="text-[10px] text-gray-400 mt-4 font-medium"><UpscalerText>{"Or press Ctrl+V to paste a copied image\n                "}</UpscalerText></span>
+                <span className="text-[12px] text-[#7A6A50] mt-4 font-medium"><UpscalerText>{"Or press Ctrl+V to paste a copied image\n                "}</UpscalerText></span>
               </div>) : (<div className="flex-1 min-h-[430px] flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                   {/* Before */}
-                  <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-3 flex flex-col min-h-[280px]">
+                  <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-3 flex flex-col min-h-[280px]">
                     <div className="flex items-center justify-between gap-2 mb-3 px-1">
-                      <span className="text-[10px] font-bold text-[#0F172A]"><UpscalerText>{"Before\n                      "}</UpscalerText></span>
-                      <span className="text-[9px] font-medium text-gray-400 px-2 py-0.5 rounded-full bg-white border border-gray-100">
+                      <span className="text-[12px] font-bold text-[#3B2F1E]"><UpscalerText>{"Before\n                      "}</UpscalerText></span>
+                      <span className="text-[11px] font-medium text-[#7A6A50] px-2 py-0.5 rounded-full bg-[#FBF6E8] border border-[#E3D6B8]">
                         {sourceDims
             ? <UpscalerText>{`${sourceDims.width} × ${sourceDims.height} px`}</UpscalerText> : <UpscalerText>{"Original"}</UpscalerText>}
                       </span>
                     </div>
-                    <div className="flex-1 bg-white border border-gray-100 rounded-xl p-2 flex items-center justify-center overflow-hidden">
+                    <div className="flex-1 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl p-2 flex items-center justify-center overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={previewUrl} alt={UL("Selected image preview")} className="max-h-[320px] max-w-full w-auto object-contain rounded-lg"/>
                     </div>
                   </div>
 
                   {/* After */}
-                  <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-3 flex flex-col min-h-[280px]">
+                  <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-3 flex flex-col min-h-[280px]">
                     <div className="flex items-center justify-between gap-2 mb-3 px-1">
-                      <span className="text-[10px] font-bold text-[#0F172A]"><UpscalerText>{"After\n                      "}</UpscalerText></span>
-                      <span className="text-[9px] font-bold text-[#2563EB] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100">
+                      <span className="text-[12px] font-bold text-[#3B2F1E]"><UpscalerText>{"After\n                      "}</UpscalerText></span>
+                      <span className="text-[11px] font-bold text-[#DC2626] px-2 py-0.5 rounded-full bg-[#FEE9E9] border border-[#FBB6B6]">
                         {result
             ? <UpscalerText>{`${result.width} × ${result.height} px`}</UpscalerText> : <UpscalerText>{`${scale} Preview`}</UpscalerText>}
                       </span>
                     </div>
 
-                    <div className="flex-1 bg-white border border-gray-100 rounded-xl flex flex-col items-center justify-center px-3 py-2 text-center overflow-hidden">
+                    <div className="flex-1 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl flex flex-col items-center justify-center px-3 py-2 text-center overflow-hidden">
                       {isProcessing ? (<div className="w-full max-w-[240px] flex flex-col items-center" aria-live="polite">
-                          <Loader2 size={28} className="animate-spin text-[#2563EB] mb-3"/>
-                          <p className="text-xs font-bold text-[#0F172A]">
+                          <Loader2 size={28} className="animate-spin text-[#DC2626] mb-3"/>
+                          <p className="text-sm font-bold text-[#3B2F1E]">
                             {translateUpscalerText(statusText || "Working…", locale, baseL)}
                           </p>
-                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-3" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-                            <div className="h-full bg-[#2563EB] rounded-full transition-all duration-300" style={{ width: `${Math.max(progress, 3)}%` }}/>
+                          <div className="w-full h-1.5 bg-[#F3E9D2] rounded-full overflow-hidden mt-3" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+                            <div className="h-full bg-[#D42020] rounded-full transition-all duration-300" style={{ width: `${Math.max(progress, 3)}%` }}/>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                          <p className="text-[12px] text-[#7A6A50] mt-2 font-medium">
                             {progress > 0 ? <UpscalerText>{`${progress}%`}</UpscalerText> : <UpscalerText>{"Starting…"}</UpscalerText>}
                           </p>
-                          <button type="button" onClick={handleCancel} className="mt-3 px-3 py-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 text-[10px] font-bold rounded-lg transition-all flex items-center gap-1">
+                          <button type="button" onClick={handleCancel} className="mt-3 px-3 py-1.5 border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8] text-[12px] font-bold rounded-lg transition-all flex items-center gap-1">
                             <X size={12}/><UpscalerText>{"Cancel\n                          "}</UpscalerText></button>
                         </div>) : result ? (<div className="w-full flex flex-col items-center gap-2">
                           <a href={result.url} target="_blank" rel="noreferrer" title={UL("Open full size in a new tab")} className="block max-w-full">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={result.url} alt={`Upscaled ${result.scale} result`} className="max-h-[300px] max-w-full w-auto object-contain rounded-lg"/>
                           </a>
-                          <p className="text-[9px] text-gray-400 font-medium">
+                          <p className="text-[11px] text-[#7A6A50] font-medium">
                             {result.scale}<UpscalerText>{"\u00B7 done in"}</UpscalerText>{<UpscalerText>{" "}</UpscalerText>}
                             {formatDuration(result.durationMs)}<UpscalerText>{"\u00B7 click to open\n                            full size\n                          "}</UpscalerText></p>
                         </div>) : (<div className="flex flex-col items-center px-3">
-                          <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] text-[#2563EB] flex items-center justify-center mb-3 border border-gray-100">
+                          <div className="w-12 h-12 rounded-xl bg-[#F6EEDB] text-[#DC2626] flex items-center justify-center mb-3 border border-[#E3D6B8]">
                             <Sparkles size={22}/>
                           </div>
-                          <p className="text-xs font-bold text-[#0F172A]"><UpscalerText>{"Your "}</UpscalerText>{scale}<UpscalerText>{"result will appear here\n                          "}</UpscalerText></p>
-                          <p className="text-[10px] text-gray-400 mt-1 max-w-[220px] leading-relaxed"><UpscalerText>{"Press &quot;Upscale image&quot; to enlarge it, then\n                            download it as "}</UpscalerText>{exportTarget.label}<UpscalerText>{".\n                          "}</UpscalerText></p>
+                          <p className="text-sm font-bold text-[#3B2F1E]"><UpscalerText>{"Your "}</UpscalerText>{scale}<UpscalerText>{"result will appear here\n                          "}</UpscalerText></p>
+                          <p className="text-[12px] text-[#7A6A50] mt-1 max-w-[220px] leading-relaxed"><UpscalerText>{"Press &quot;Upscale image&quot; to enlarge it, then\n                            download it as "}</UpscalerText>{exportTarget.label}<UpscalerText>{".\n                          "}</UpscalerText></p>
                         </div>)}
                     </div>
 
-                    {scaleChangedSinceResult && !isProcessing && (<p className="text-[9px] text-amber-600 font-medium mt-2 px-1"><UpscalerText>{"This result is "}</UpscalerText>{result?.scale}<UpscalerText>{". Press &quot;Upscale\n                        again&quot; to create a "}</UpscalerText>{scale}<UpscalerText>{"version.\n                      "}</UpscalerText></p>)}
+                    {scaleChangedSinceResult && !isProcessing && (<p className="text-[11px] text-amber-600 font-medium mt-2 px-1"><UpscalerText>{"This result is "}</UpscalerText>{result?.scale}<UpscalerText>{". Press &quot;Upscale\n                        again&quot; to create a "}</UpscalerText>{scale}<UpscalerText>{"version.\n                      "}</UpscalerText></p>)}
                   </div>
                 </div>
 
                 {/* Selected file details */}
-                <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-[#0F172A] truncate">
+                    <p className="text-[12px] font-bold text-[#3B2F1E] truncate">
                       {selectedFile.name}
                     </p>
-                    <p className="text-[9px] text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-[#7A6A50] mt-0.5">
                       {formatFileSize(selectedFile.size)}<UpscalerText>{"\u00B7"}</UpscalerText>{<UpscalerText>{" "}</UpscalerText>}
                       {selectedFile.type || "Image"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg"><UpscalerText>{"Scale: "}</UpscalerText>{scale}
+                    <span className="text-[11px] font-semibold text-[#7A6A50] bg-[#F6EEDB] border border-[#E3D6B8] px-2 py-1 rounded-lg"><UpscalerText>{"Scale: "}</UpscalerText>{scale}
                     </span>
-                    <span className="text-[9px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg"><UpscalerText>{"Format: "}</UpscalerText>{outputFormat}
+                    <span className="text-[11px] font-semibold text-[#7A6A50] bg-[#F6EEDB] border border-[#E3D6B8] px-2 py-1 rounded-lg"><UpscalerText>{"Format: "}</UpscalerText>{outputFormat}
                     </span>
                   </div>
                 </div>
@@ -1230,35 +1285,35 @@ export default function ImageUpscaler() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><UpscalerText>{"Tools in the same category\n        "}</UpscalerText></h3>
+        <h3 className="text-sm font-bold text-[#3B2F1E]"><UpscalerText>{"Tools in the same category\n        "}</UpscalerText></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/sohoj-tools/image-size-reducer" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/image-size-reducer" className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#E3D6B8] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><UpscalerText>{"Image Size Reducer\n              "}</UpscalerText></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><UpscalerText>{"Shrink JPG, PNG, and WebP photos in your browser while keeping\n                the result clear.\n              "}</UpscalerText></p>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><UpscalerText>{"Image Size Reducer\n              "}</UpscalerText></h4>
+              <p className="text-[12px] text-[#7A6A50] mt-0.5 line-clamp-2"><UpscalerText>{"Shrink JPG, PNG, and WebP photos in your browser while keeping\n                the result clear.\n              "}</UpscalerText></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/image-convert" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/image-convert" className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#E3D6B8] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><UpscalerText>{"Image Convert\n              "}</UpscalerText></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><UpscalerText>{"Convert images between popular formats with a simple browser\n                workflow.\n              "}</UpscalerText></p>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><UpscalerText>{"Image Convert\n              "}</UpscalerText></h4>
+              <p className="text-[12px] text-[#7A6A50] mt-0.5 line-clamp-2"><UpscalerText>{"Convert images between popular formats with a simple browser\n                workflow.\n              "}</UpscalerText></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/crop-image" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/crop-image" className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#E3D6B8] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16}/>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors"><UpscalerText>{"Crop Image\n              "}</UpscalerText></h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2"><UpscalerText>{"Crop images to a custom area or a fixed aspect ratio directly in\n                the browser.\n              "}</UpscalerText></p>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><UpscalerText>{"Crop Image\n              "}</UpscalerText></h4>
+              <p className="text-[12px] text-[#7A6A50] mt-0.5 line-clamp-2"><UpscalerText>{"Crop images to a custom area or a fixed aspect ratio directly in\n                the browser.\n              "}</UpscalerText></p>
             </div>
           </Link>
         </div>

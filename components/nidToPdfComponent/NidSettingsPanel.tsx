@@ -168,14 +168,14 @@ export default function NidSettingsPanel({
 }: NidSettingsPanelProps) {
   const { t } = useNidSettingsText();
   return (
-    <div className="lg:col-span-4 bg-[#F2E8D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4 text-[#3B2F1E]">
-      <h2 className="text-[17px] font-semibold text-[#3B2F1E] border-b border-[#E3D6B8] pb-2">
+    <div className="nid-settings-panel lg:col-span-4 bg-[#F2E8D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4 text-[#3B2F1E]">
+      <h2 className="nid-settings-heading text-[17px] font-semibold text-[#3B2F1E] border-b border-[#E3D6B8] pb-2">
         <NidSettingsT>{"Settings\r\n      "}</NidSettingsT>
       </h2>
 
       {/* Auto crop Toggle */}
       <div
-        className={`rounded-xl border p-2.5 transition-all duration-200 ${
+        className={`nid-settings-auto-crop rounded-xl border p-2.5 transition-all duration-200 ${
           autoCrop
             ? "bg-[#DC2626]/10 border-[#DC2626]/30"
             : "bg-[#F6EEDB] border-[#E3D6B8]"
@@ -273,7 +273,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Page settings */}
-      <div className="space-y-1.5">
+      <div className="nid-settings-page space-y-1.5">
         <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Page settings"}</NidSettingsT>
@@ -317,7 +317,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Layout */}
-      <div className="space-y-1.5">
+      <div className="nid-settings-layout space-y-1.5">
         <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Layout"}</NidSettingsT>
@@ -362,7 +362,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Rotate */}
-      <div className="space-y-1.5">
+      <div className="nid-settings-rotate space-y-1.5">
         <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
           <span>
             <NidSettingsT>{"Rotate"}</NidSettingsT>
@@ -394,7 +394,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Position on page */}
-      <div className="space-y-1.5">
+      <div className="nid-settings-position space-y-1.5">
         <span className="text-[13px] font-bold text-[#5A4A32] block">
           <NidSettingsT>{"Position on page\r\n        "}</NidSettingsT>
         </span>
@@ -416,7 +416,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Copies */}
-      <div className="space-y-1.5">
+      <div className="nid-settings-copies space-y-1.5">
         <span className="text-[13px] font-bold text-[#5A4A32] block">
           <NidSettingsT>{"Copies\r\n        "}</NidSettingsT>
         </span>
@@ -438,7 +438,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Rounded corners */}
-      <div className="flex items-center justify-between pt-1">
+      <div className="nid-settings-rounded flex items-center justify-between pt-1">
         <div>
           <span className="text-[15px] font-bold text-[#3B2F1E] block">
             <NidSettingsT>
@@ -459,7 +459,7 @@ export default function NidSettingsPanel({
       </div>
 
       {/* Cleanup style Controls */}
-      <div className="space-y-4 border-t border-[#E3D6B8] pt-3">
+      <div className="nid-settings-cleanup space-y-4 border-t border-[#E3D6B8] pt-3">
         <div className="flex justify-between items-center">
           <span className="text-[15px] font-bold text-[#3B2F1E]">
             <NidSettingsT>{"Cleanup style\r\n          "}</NidSettingsT>
@@ -479,7 +479,7 @@ export default function NidSettingsPanel({
         </div>
 
         {/* Preset Grid */}
-        <div className="bg-[#F3E9D2] p-2 rounded-2xl grid grid-cols-2 gap-2">
+        <div className="nid-settings-presets bg-[#F3E9D2] p-2 rounded-2xl grid grid-cols-2 gap-2">
           {[
             { id: "plain", label: "Plain clean", icon: Wand2 },
             { id: "color", label: "Colour clean", icon: Sparkles },
@@ -542,11 +542,11 @@ export default function NidSettingsPanel({
         </div>
 
         {/* Fine tuning */}
-        <div className="space-y-3 pt-1 border-t border-[#E3D6B8]">
+        <div className="nid-settings-fine-tuning space-y-3 pt-1 border-t border-[#E3D6B8]">
           <span className="text-[15px] font-bold text-[#3B2F1E] block">
             <NidSettingsT>{"Fine tuning\r\n          "}</NidSettingsT>
           </span>
-          <div className="space-y-3">
+          <div className="nid-settings-range-grid space-y-3">
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-[13px] font-bold text-[#5A4A32]">
                 <span>
@@ -628,7 +628,7 @@ export default function NidSettingsPanel({
         {/* Print Button (main call-to-action) */}
         <button
           onClick={handlePrint}
-          className="w-full py-2.5 bg-[#D42020] hover:bg-[#AE1717] text-white text-[15px] font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
+          className="nid-settings-print w-full py-2.5 bg-[#D42020] hover:bg-[#AE1717] text-white text-[15px] font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
         >
           <Printer size={16} />
           <span>

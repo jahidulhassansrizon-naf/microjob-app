@@ -207,9 +207,48 @@ export default function ChangeSpeed() {
             setNotice("Copy the page link from your browser to share this tool.");
         }
     };
-    return (<div id="change-speed-tool" className="min-h-[calc(100vh-64px)] w-full bg-white text-[#1F2937] font-sans">
+    return (<div id="change-speed-tool" className="relative isolate min-h-[calc(100vh-64px)] w-full bg-transparent text-[#3B2F1E] font-sans page-font">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #change-speed-tool {
+          position: relative;
+          isolation: isolate;
+          background: transparent !important;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        #change-speed-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+        #change-speed-tool,
+        #change-speed-tool *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #change-speed-tool h1, #change-speed-tool h2, #change-speed-tool h3, #change-speed-tool h4 {
+          letter-spacing: -0.01em;
+        }
+        #change-speed-tool :focus-visible {
+          outline: 2px solid #DC2626;
+          outline-offset: 2px;
+        }
+        #change-speed-tool button:not(:disabled) {
+          transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+        }
+        #change-speed-tool button:not(:disabled):active { transform: scale(0.98); }
+        #change-speed-tool button:disabled { cursor: not-allowed; opacity: 0.7; }
+        #change-speed-tool a[href] { transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease; }
+
         :where(#change-speed-tool) a[href],
         :where(#change-speed-tool) button:not(:disabled),
         :where(#change-speed-tool) label:has(input[type="file"]),
@@ -229,39 +268,39 @@ export default function ChangeSpeed() {
       `}</style>
 
       <main className="mx-auto w-full max-w-[1320px] px-4 py-3.5 sm:px-6 lg:px-0 lg:py-4">
-        <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
-          <Link href="/sohoj-tools" aria-label={L("Sohoj Tools home")} title={L("Sohoj Tools home")} className="inline-flex items-center gap-1 hover:text-[#111827] transition-colors">
+        <div className="flex items-center gap-2 text-[13px] text-[#5A4A32]">
+          <Link href="/sohoj-tools" aria-label={L("Sohoj Tools home")} title={L("Sohoj Tools home")} className="inline-flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
             <Home size={13}/>
           </Link>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>
-          <Link href="/sohoj-tools" className="hover:text-[#111827] transition-colors"><ChangeSpeedText locale={locale}>{"Sohoj Tools\n          "}</ChangeSpeedText></Link>
+          <Link href="/sohoj-tools" className="hover:text-[#3B2F1E] transition-colors"><ChangeSpeedText locale={locale}>{"Sohoj Tools\n          "}</ChangeSpeedText></Link>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>
           <span><ChangeSpeedText locale={locale}>{"Video Tools"}</ChangeSpeedText></span>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>
-          <span className="font-semibold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Change Speed"}</ChangeSpeedText></span>
+          <span className="font-semibold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Change Speed"}</ChangeSpeedText></span>
         </div>
 
         <section className="mt-4 flex items-start justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#9945F5] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] text-[#DC2626] shadow-[0_1px_2px_rgba(59,47,30,0.08)]">
               <FileVideo size={20}/>
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#111827]"><ChangeSpeedText locale={locale}>{"Change Speed\n                "}</ChangeSpeedText></h1>
-                <span className="rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#15803D]"><ChangeSpeedText locale={locale}>{"Free\n                "}</ChangeSpeedText></span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9CA3AF]">
+                <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Change Speed\n                "}</ChangeSpeedText></h1>
+                <span className="rounded-full bg-[#F6EEDB] px-2.5 py-1 text-[13px] font-bold text-[#5A4A32]"><ChangeSpeedText locale={locale}>{"Free\n                "}</ChangeSpeedText></span>
+                <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[#7A6A50]">
                   <Check size={12}/><ChangeSpeedText locale={locale}>{"Used 0 times\n                "}</ChangeSpeedText></span>
               </div>
-              <p className="mt-0.5 text-sm font-medium text-[#6B7280]"><ChangeSpeedText locale={locale}>{"Speed up or slow down a video in your browser \u2014 presets from\n                0.5x to 2x or a custom value.\n              "}</ChangeSpeedText></p>
+              <p className="mt-0.5 text-base font-medium text-[#5A4A32]"><ChangeSpeedText locale={locale}>{"Speed up or slow down a video in your browser \u2014 presets from\n                0.5x to 2x or a custom value.\n              "}</ChangeSpeedText></p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setNotice("Added to favorites.")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#6B7280] hover:text-[#9945F5] transition-all" aria-label={L("Favorite")}>
+            <button type="button" onClick={() => setNotice("Added to favorites.")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:text-[#DC2626] transition-all" aria-label={L("Favorite")}>
               <Star size={17}/>
             </button>
-            <button type="button" onClick={share} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#6B7280] hover:text-[#9945F5] transition-all" aria-label={L("Share")}>
+            <button type="button" onClick={share} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:text-[#DC2626] transition-all" aria-label={L("Share")}>
               <Share2 size={17}/>
             </button>
           </div>
@@ -269,132 +308,132 @@ export default function ChangeSpeed() {
 
         <section className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
           <aside className="space-y-4">
-            <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
-              <div className="text-[13px] font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Files ("}</ChangeSpeedText>{file ? 1 : 0}<ChangeSpeedText locale={locale}>{")\n              "}</ChangeSpeedText></div>
+            <div className="rounded-[22px] border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-[0_8px_22px_rgba(59,47,30,0.08)]">
+              <div className="text-[15px] font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Files ("}</ChangeSpeedText>{file ? 1 : 0}<ChangeSpeedText locale={locale}>{")\n              "}</ChangeSpeedText></div>
               <button type="button" disabled={isBusy} onClick={openPicker} onDragEnter={(event) => {
             event.preventDefault();
             setIsDragging(true);
         }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`mt-3 flex min-h-[170px] w-full flex-col items-center justify-center rounded-2xl border border-dashed px-5 text-center transition-all ${isDragging
-            ? "border-[#9945F5] bg-[#FAF5FF]"
-            : "border-[#D8B4FE] bg-white hover:bg-[#FAF5FF]"}`}>
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FAF5FF] text-[#9945F5] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+            ? "border-[#DC2626] bg-[#FEE9E9]"
+            : "border-[#DC2626] bg-[#FBF6E8] hover:bg-[#FEE9E9]"}`}>
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FEE9E9] text-[#DC2626] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                   <Upload size={19}/>
                 </span>
-                <span className="mt-3 text-sm font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Drop a video here or click to upload\n                "}</ChangeSpeedText></span>
-                <span className="mt-1.5 text-[11px] font-medium text-[#9CA3AF]"><ChangeSpeedText locale={locale}>{"One video file (MP4, MOV, WebM, MKV, AVI), max"}</ChangeSpeedText>{<ChangeSpeedText locale={locale}>{" "}</ChangeSpeedText>}
+                <span className="mt-3 text-base font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Drop a video here or click to upload\n                "}</ChangeSpeedText></span>
+                <span className="mt-1.5 text-[13px] font-medium text-[#7A6A50]"><ChangeSpeedText locale={locale}>{"One video file (MP4, MOV, WebM, MKV, AVI), max"}</ChangeSpeedText>{<ChangeSpeedText locale={locale}>{" "}</ChangeSpeedText>}
                   {formatSize(MAX_FILE_SIZE)}
                 </span>
-                <span className="mt-1 text-[11px] font-medium text-[#9CA3AF]"><ChangeSpeedText locale={locale}>{"Or press Ctrl+V to paste a copied video\n                "}</ChangeSpeedText></span>
+                <span className="mt-1 text-[13px] font-medium text-[#7A6A50]"><ChangeSpeedText locale={locale}>{"Or press Ctrl+V to paste a copied video\n                "}</ChangeSpeedText></span>
               </button>
               <input ref={inputRef} onChange={handleInput} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden"/>
 
-              {file && (<div className="mt-3 flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F5F3FF] text-[#9945F5]">
+              {file && (<div className="mt-3 flex items-center gap-3 rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F6EEDB] text-[#DC2626]">
                     <FileVideo size={16}/>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-bold text-[#374151]">
+                    <div className="truncate text-sm font-bold text-[#5A4A32]">
                       {file.name}
                     </div>
-                    <div className="mt-0.5 text-[10px] font-medium text-[#9CA3AF]">
+                    <div className="mt-0.5 text-[12px] font-medium text-[#7A6A50]">
                       {formatSize(file.size)}
                     </div>
                   </div>
-                  <button type="button" onClick={handleReset} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]" aria-label={L("Remove video")}>
+                  <button type="button" onClick={handleReset} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5A4A32] hover:bg-[#F6EEDB] hover:text-[#3B2F1E]" aria-label={L("Remove video")}>
                     <X size={16}/>
                   </button>
                 </div>)}
             </div>
 
-            {hasFile && (<div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
-                <div className="text-[13px] font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Playback speed\n                "}</ChangeSpeedText></div>
-                <div className="mt-2 text-[11px] font-medium text-[#9CA3AF]"><ChangeSpeedText locale={locale}>{"Speed presets\n                "}</ChangeSpeedText></div>
+            {hasFile && (<div className="rounded-[22px] border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-[0_8px_22px_rgba(59,47,30,0.08)]">
+                <div className="text-[15px] font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Playback speed\n                "}</ChangeSpeedText></div>
+                <div className="mt-2 text-[13px] font-medium text-[#7A6A50]"><ChangeSpeedText locale={locale}>{"Speed presets\n                "}</ChangeSpeedText></div>
 
-                <div className="mt-2 grid grid-cols-6 gap-1.5 rounded-xl bg-[#F9FAFB] p-2.5">
+                <div className="mt-2 grid grid-cols-6 gap-1.5 rounded-xl bg-[#F6EEDB] p-2.5">
                   {SPEED_PRESETS.map((preset) => {
                 const active = !customEnabled && Math.abs(speed - preset) < 0.001;
                 return (<button type="button" key={preset} disabled={isBusy} onClick={() => {
                         applySpeed(preset);
                         setCustomEnabled(false);
-                    }} className={`flex flex-col items-center rounded-lg px-1 py-2 transition-all ${active ? "bg-white shadow-sm" : "hover:bg-white/70"}`}>
-                        <Clock3 size={17} className={active ? "text-[#7D5C99]" : "text-[#4B5563]"}/>
-                        <span className={`mt-1 text-[10px] font-bold ${active ? "text-[#6B3E9C]" : "text-[#4B5563]"}`}>
+                    }} className={`flex flex-col items-center rounded-lg px-1 py-2 transition-all ${active ? "border border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40 text-[#DC2626] shadow-sm" : "hover:bg-[#EFE3C8]"}`}>
+                        <Clock3 size={17} className={active ? "text-[#DC2626]" : "text-[#5A4A32]"}/>
+                        <span className={`mt-1 text-[12px] font-bold ${active ? "text-[#DC2626]" : "text-[#5A4A32]"}`}>
                           {preset}<ChangeSpeedText locale={locale}>{"x\n                        "}</ChangeSpeedText></span>
                       </button>);
             })}
                 </div>
 
                 <div className="mt-4 flex items-center justify-between gap-3">
-                  <span className="text-[13px] font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Custom speed\n                  "}</ChangeSpeedText></span>
-                  <button type="button" onClick={() => setCustomEnabled((current) => !current)} className={`rounded-lg border px-3 py-1 text-[11px] font-bold transition-all ${customEnabled ? "border-[#9945F5] bg-[#FAF5FF] text-[#8B3DE0]" : "border-[#D1D5DB] bg-white text-[#6B7280]"}`}><ChangeSpeedText locale={locale}>{"Custom "}</ChangeSpeedText>{customEnabled ? <ChangeSpeedText locale={locale}>{"on"}</ChangeSpeedText> : <ChangeSpeedText locale={locale}>{"off"}</ChangeSpeedText>}
+                  <span className="text-[15px] font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Custom speed\n                  "}</ChangeSpeedText></span>
+                  <button type="button" onClick={() => setCustomEnabled((current) => !current)} className={`rounded-lg border px-3 py-1 text-[13px] font-bold transition-all ${customEnabled ? "border-[#DC2626] bg-[#FEE9E9] text-[#B91C1C]" : "border-[#D8C9A6] bg-[#FBF6E8] text-[#5A4A32]"}`}><ChangeSpeedText locale={locale}>{"Custom "}</ChangeSpeedText>{customEnabled ? <ChangeSpeedText locale={locale}>{"on"}</ChangeSpeedText> : <ChangeSpeedText locale={locale}>{"off"}</ChangeSpeedText>}
                   </button>
                 </div>
 
-                <div className="mt-2 rounded-xl border border-[#E5E7EB] bg-white p-2">
+                <div className="mt-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-2">
                   <input aria-label={L("Custom playback speed")} type="number" inputMode="decimal" min={MIN_SPEED} max={MAX_SPEED} step={0.05} disabled={!customEnabled || isBusy} value={speedDraft} onChange={handleSpeedInput} onBlur={commitSpeedDraft} onKeyDown={(event) => {
                 if (event.key === "Enter")
                     commitSpeedDraft();
-            }} className="w-full bg-transparent px-1 py-1 text-sm font-bold text-[#111827] outline-none disabled:opacity-50"/>
+            }} className="w-full bg-transparent px-1 py-1 text-base font-bold text-[#3B2F1E] outline-none disabled:opacity-50"/>
                 </div>
-                <div className="mt-2 text-[10px] font-medium leading-relaxed text-[#9CA3AF]"><ChangeSpeedText locale={locale}>{"1x is normal. Below 1x is slower; above 1x is faster. Range:\n                  0.25x\u20134x.\n                "}</ChangeSpeedText></div>
+                <div className="mt-2 text-[12px] font-medium leading-relaxed text-[#7A6A50]"><ChangeSpeedText locale={locale}>{"1x is normal. Below 1x is slower; above 1x is faster. Range:\n                  0.25x\u20134x.\n                "}</ChangeSpeedText></div>
               </div>)}
           </aside>
 
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)] lg:min-h-[660px]">
+          <section className="rounded-[22px] border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-[0_8px_22px_rgba(59,47,30,0.08)] lg:min-h-[660px]">
             <div className="flex items-center justify-between">
-              <div className="text-[13px] font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Video preview\n              "}</ChangeSpeedText></div>
-              <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${previewUrl ? "bg-[#FFF7ED] text-[#EA580C]" : "bg-[#F3F4F6] text-[#9CA3AF]"}`}>
+              <div className="text-[15px] font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Video preview\n              "}</ChangeSpeedText></div>
+              <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${previewUrl ? "bg-[#FEE9E9] text-[#DC2626]" : "bg-[#F3E9D2] text-[#7A6A50]"}`}>
                 {previewUrl ? <ChangeSpeedText locale={locale}>{"Preview"}</ChangeSpeedText> : <ChangeSpeedText locale={locale}>{"Empty"}</ChangeSpeedText>}
               </span>
             </div>
 
-            <div className="mt-3 flex min-h-[625px] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white p-3">
+            <div className="mt-3 flex min-h-[625px] items-center justify-center rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3">
               {previewUrl ? (<div className="flex h-full w-full items-center justify-center rounded-xl bg-black">
                   <video src={previewUrl} controls playsInline className="max-h-[590px] w-full rounded-xl bg-black object-contain"/>
                 </div>) : (<div className="max-w-[330px] text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FAF5FF] text-[#9945F5]">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FEE9E9] text-[#DC2626]">
                     <Play size={22}/>
                   </div>
-                  <h2 className="mt-4 text-base font-bold text-[#1F2937]"><ChangeSpeedText locale={locale}>{"Add a video to get started\n                  "}</ChangeSpeedText></h2>
-                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-[#9CA3AF]"><ChangeSpeedText locale={locale}>{"Choose a preset or custom speed, then apply the change.\n                  "}</ChangeSpeedText></p>
+                  <h2 className="mt-4 text-lg font-bold text-[#3B2F1E]"><ChangeSpeedText locale={locale}>{"Add a video to get started\n                  "}</ChangeSpeedText></h2>
+                  <p className="mt-1.5 text-sm font-medium leading-relaxed text-[#7A6A50]"><ChangeSpeedText locale={locale}>{"Choose a preset or custom speed, then apply the change.\n                  "}</ChangeSpeedText></p>
                 </div>)}
             </div>
 
             {file && (<div className="mt-3 flex items-center justify-between gap-4 px-1">
-                <div className="min-w-0 truncate text-[11px] font-medium text-[#4B5563]">
+                <div className="min-w-0 truncate text-[13px] font-medium text-[#5A4A32]">
                   {result ? <ChangeSpeedText locale={locale}>{"Changed speed result"}</ChangeSpeedText> : file.name}
                 </div>
-                <div className="shrink-0 text-[11px] font-semibold text-[#9CA3AF]">
+                <div className="shrink-0 text-[13px] font-semibold text-[#7A6A50]">
                   {result ? result.speed : speed}<ChangeSpeedText locale={locale}>{"x\n                "}</ChangeSpeedText></div>
               </div>)}
 
-            <div className="mt-3 text-center text-[11px] font-medium text-[#9CA3AF]">
+            <div className="mt-3 text-center text-[13px] font-medium text-[#7A6A50]">
               {result
         ? <ChangeSpeedText locale={locale}>{"Preview the processed result above, then download it."}</ChangeSpeedText> : <ChangeSpeedText locale={locale}>{"Press Change speed below."}</ChangeSpeedText>}
             </div>
           </section>
         </section>
 
-        <section className="mt-5 flex flex-col gap-3 rounded-[18px] border border-[#E5E7EB] bg-white p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-[#4B5563]">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${status === "error" ? "bg-[#E34A24]" : isBusy ? "bg-[#F59E0B]" : status === "done" ? "bg-[#26A35A]" : "bg-[#9CA3AF]"}`}/>
+        <section className="mt-5 flex flex-col gap-3 rounded-[18px] border border-[#E3D6B8] bg-[#FBF6E8] p-3.5 shadow-[0_8px_22px_rgba(59,47,30,0.08)] sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-[#5A4A32]">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${status === "error" ? "bg-[#E34A24]" : isBusy ? "bg-[#DC2626]" : status === "done" ? "bg-[#26A35A]" : "bg-[#7A6A50]"}`}/>
             <span className="truncate" role="status" aria-live="polite">
               {statusText ||
             (hasFile ? "Ready to process" : "Add an input to get started")}
             </span>
-            {status === "processing" && (<span className="shrink-0 text-[#9CA3AF]">{progress}<ChangeSpeedText locale={locale}>{"%"}</ChangeSpeedText></span>)}
+            {status === "processing" && (<span className="shrink-0 text-[#7A6A50]">{progress}<ChangeSpeedText locale={locale}>{"%"}</ChangeSpeedText></span>)}
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            {result && (<a href={result.url} download={`change-speed-${result.speed}x.mp4`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-xs font-bold text-[#374151] hover:bg-[#F9FAFB] transition-all">
+            {result && (<a href={result.url} download={`change-speed-${result.speed}x.mp4`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-2.5 text-sm font-bold text-[#5A4A32] hover:bg-[#F6EEDB] transition-all">
                 <Download size={13}/><ChangeSpeedText locale={locale}>{"Download\n              "}</ChangeSpeedText></a>)}
-            {isBusy && (<button type="button" onClick={cancel} className="inline-flex items-center gap-1.5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-2.5 text-xs font-bold text-[#DC2626] hover:bg-white transition-all">
+            {isBusy && (<button type="button" onClick={cancel} className="inline-flex items-center gap-1.5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-2.5 text-sm font-bold text-[#DC2626] hover:bg-[#FBF6E8] transition-all">
                 <X size={13}/><ChangeSpeedText locale={locale}>{"Cancel\n              "}</ChangeSpeedText></button>)}
-            <button type="button" onClick={handleReset} className="rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] px-4 py-2.5 text-xs font-bold text-[#4B5563] hover:bg-white transition-all">
+            <button type="button" onClick={handleReset} className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-2.5 text-sm font-bold text-[#5A4A32] hover:bg-[#FBF6E8] transition-all">
               <span className="inline-flex items-center gap-1.5">
                 <RotateCcw size={13}/><ChangeSpeedText locale={locale}>{"Reset\n              "}</ChangeSpeedText></span>
             </button>
-            <button type="button" onClick={() => void process(speed)} disabled={!hasFile || isBusy} className="inline-flex min-w-[160px] items-center justify-center gap-1.5 rounded-xl bg-[#FF860B] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#EA7600] disabled:cursor-not-allowed disabled:opacity-45">
+            <button type="button" onClick={() => void process(speed)} disabled={!hasFile || isBusy} className="inline-flex min-w-[160px] items-center justify-center gap-1.5 rounded-xl bg-[#D42020] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#AE1717] disabled:cursor-not-allowed disabled:opacity-45">
               {isBusy ? (<Sparkles size={13} className="animate-pulse"/>) : (<Zap size={13}/>)}
               {isBusy
         ? status === "loading"

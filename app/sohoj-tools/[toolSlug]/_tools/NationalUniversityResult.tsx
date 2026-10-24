@@ -555,15 +555,82 @@ export default function AddWatermarkTool() {
     const dotColor = phase === "error"
         ? "bg-rose-500"
         : isBusy
-            ? "bg-[#2563EB]"
+            ? "bg-[#D42020]"
             : "bg-[#10B981]";
     const previewingResult = showResult && Boolean(outputUrl);
     /* -------------------------------------------------------------------------- */
     /*                                   Render                                   */
     /* -------------------------------------------------------------------------- */
-    return (<div id="add-watermark-tool" className="min-h-[calc(100vh-74px)] w-full bg-[#F8FAFC] px-4 py-6 text-[#0F172A] md:px-8 md:py-8">
+    return (<div id="add-watermark-tool" className="isolate relative min-h-screen w-full bg-transparent px-4 py-6 text-[#3B2F1E] md:px-8 md:py-8">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #add-watermark-tool {
+          isolation: isolate;
+          position: relative;
+          min-height: 100vh;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #add-watermark-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+        #add-watermark-tool, #add-watermark-tool *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+        }
+        #add-watermark-tool h1, #add-watermark-tool h2, #add-watermark-tool h3, #add-watermark-tool h4 {
+          letter-spacing: -0.01em;
+        }
+        #add-watermark-tool button {
+          transition-duration: 180ms;
+        }
+        #add-watermark-tool button:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+        #add-watermark-tool :focus-visible {
+          outline: 2px solid #DC2626;
+          outline-offset: 2px;
+        }
+        #add-watermark-tool input:not([type="range"]):not([type="file"]),
+        #add-watermark-tool textarea,
+        #add-watermark-tool select {
+          color: #3B2F1E;
+        }
+        #add-watermark-tool input::placeholder,
+        #add-watermark-tool textarea::placeholder {
+          color: #B0A080;
+          opacity: 1;
+        }
+        #add-watermark-tool .warm-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+        #add-watermark-tool .warm-scroll::-webkit-scrollbar { width: 12px; }
+        #add-watermark-tool .warm-scroll::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12);
+          border-radius: 999px;
+          margin: 10px 0;
+        }
+        #add-watermark-tool .warm-scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px;
+          border: 3px solid #F2E8D2;
+          min-height: 48px;
+        }
+        #add-watermark-tool .warm-scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
+
         :where(#add-watermark-tool) a[href],
         :where(#add-watermark-tool) button:not(:disabled),
         :where(#add-watermark-tool) label:has(input[type="file"]),
@@ -586,46 +653,46 @@ export default function AddWatermarkTool() {
         {/* Header */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-medium text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-[#7A6A50]">
               <span>{L("Sohoz Tools")}</span>
               <span>{L("/")}</span>
               <span>{L("Video Tools")}</span>
               <span>{L("/")}</span>
-              <span className="font-semibold text-[#0F172A]">{L("Add Watermark")}</span>
+              <span className="font-semibold text-[#3B2F1E]">{L("Add Watermark")}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C7D2FE] bg-[#EEF2FF] text-[#4F46E5]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#FBB6B6] bg-[#F6D9A8] text-[#DC2626]">
                 <ImageIcon size={20}/>
               </div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-[#0F172A] md:text-[30px]">{L("Add Watermark")}</h1>
-              <span className="rounded-full bg-[#D1FAE5] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#047857]">{L("Free")}</span>
+              <h1 className="text-3xl font-extrabold tracking-tight text-[#3B2F1E] md:text-[30px]">{L("Add Watermark")}</h1>
+              <span className="rounded-full bg-[#D1FAE5] px-2.5 py-1 text-[12px] font-extrabold uppercase tracking-wide text-[#047857]">{L("Free")}</span>
             </div>
 
-            <p className="mt-1 max-w-2xl text-xs font-medium leading-relaxed text-slate-500 md:text-sm">{L("Add a text or logo watermark to your video — set position and opacity, then export as MP4. Everything runs in your browser; your video is never uploaded.")}</p>
+            <p className="mt-1 max-w-2xl text-sm font-medium leading-relaxed text-[#6B5A40] md:text-base">{L("Add a text or logo watermark to your video — set position and opacity, then export as MP4. Everything runs in your browser; your video is never uploaded.")}</p>
           </div>
         </header>
 
         <section className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* ------------------------------ Sidebar ------------------------------ */}
-          <aside className={`space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] md:p-5 ${isBusy ? "pointer-events-none opacity-70" : ""}`} aria-busy={isBusy}>
+          <aside className={`space-y-4 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-[0_8px_28px_rgba(59,47,30,0.08)] md:p-5 ${isBusy ? "pointer-events-none opacity-70" : ""}`} aria-busy={isBusy}>
             {/* Video file */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]">{L("Files")}</h2>
-                {videoFile && (<span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#10B981]">
+                <h2 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#3B2F1E]">{L("Files")}</h2>
+                {videoFile && (<span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#10B981]">
                     <Check size={12}/>{L("ready")}</span>)}
               </div>
 
-              {videoFile ? (<div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EEF2FF] text-[#4F46E5]">
+              {videoFile ? (<div className="flex items-center gap-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#F6D9A8] text-[#DC2626]">
                     <FileVideo size={18}/>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold text-[#0F172A]">
+                    <p className="truncate text-sm font-bold text-[#3B2F1E]">
                       {videoFile.name}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-slate-400">
+                    <p className="mt-0.5 text-[12px] text-[#7A6A50]">
                       {formatFileSize(videoFile.size)}
                     </p>
                   </div>
@@ -635,20 +702,20 @@ export default function AddWatermarkTool() {
                 invalidateOutput();
                 setPhase("idle");
                 setStatus("Video removed");
-            }} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-[#0F172A]" aria-label={L("Remove video")}>
+            }} className="rounded-lg p-1.5 text-[#7A6A50] transition hover:bg-[#EFE3C8] hover:text-[#3B2F1E]" aria-label={L("Remove video")}>
                     <X size={15}/>
                   </button>
                 </div>) : (<label onDragOver={(e) => {
                 e.preventDefault();
                 setDraggingVideo(true);
             }} onDragLeave={() => setDraggingVideo(false)} onDrop={onDropVideo} className={`group flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition ${draggingVideo
-                ? "border-[#818CF8] bg-[#EEF2FF]/60"
-                : "border-slate-300 bg-white hover:border-[#818CF8] hover:bg-[#EEF2FF]/40"}`}>
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-[#E0E7FF] group-hover:text-[#4F46E5]">
+                ? "border-[#DC2626] bg-[#F6D9A8]"
+                : "border-[#D8C9A6] bg-[#FBF6E8] hover:border-[#DC2626] hover:bg-[#EFE3C8]"}`}>
+                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-[#F3E9D2] text-[#6B5A40] transition group-hover:bg-[#F6D9A8] group-hover:text-[#DC2626]">
                     <Upload size={16}/>
                   </div>
-                  <p className="text-xs font-bold text-[#0F172A]">{L("Drop your video here")}</p>
-                  <p className="mt-1 text-[10px] text-slate-400">{L("or click to browse an MP4 / WebM")}</p>
+                  <p className="text-sm font-bold text-[#3B2F1E]">{L("Drop your video here")}</p>
+                  <p className="mt-1 text-[12px] text-[#7A6A50]">{L("or click to browse an MP4 / WebM")}</p>
                   <input type="file" accept="video/*" className="hidden" onChange={(e) => {
                 handleVideoSelect(e.target.files?.[0]);
                 e.target.value = "";
@@ -657,121 +724,121 @@ export default function AddWatermarkTool() {
             </div>
 
             {/* Watermark type */}
-            <div className="border-t border-slate-200 pt-4">
-              <h2 className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]">{L("Watermark type")}</h2>
+            <div className="border-t border-[#E3D6B8] pt-4">
+              <h2 className="mb-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#3B2F1E]">{L("Watermark type")}</h2>
 
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F3E9D2] p-1">
                 {(["text", "image"] as const).map((type) => (<button key={type} type="button" onClick={() => {
                 setWatermarkType(type);
                 invalidateOutput();
-            }} aria-pressed={watermarkType === type} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-extrabold transition ${watermarkType === type
-                ? "bg-white text-[#0F172A] shadow-sm"
-                : "text-slate-500 hover:text-[#0F172A]"}`}>
+            }} aria-pressed={watermarkType === type} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-extrabold transition ${watermarkType === type
+                ? "bg-[#FBF6E8] text-[#3B2F1E] shadow-sm"
+                : "text-[#6B5A40] hover:text-[#3B2F1E]"}`}>
                     {type === "text" ? (<Type size={14}/>) : (<ImageIcon size={14}/>)}
                     {type === "text" ? L("Text") : L("Image")}
                   </button>))}
               </div>
 
-              {watermarkType === "image" ? (watermarkImage ? (<div className="mt-3 flex items-center gap-3 rounded-xl border border-[#C7D2FE] bg-[#EEF2FF]/60 p-3">
-                    <div className="h-11 w-11 overflow-hidden rounded-lg bg-white ring-1 ring-[#C7D2FE]">
+              {watermarkType === "image" ? (watermarkImage ? (<div className="mt-3 flex items-center gap-3 rounded-xl border border-[#FBB6B6] bg-[#F6D9A8] p-3">
+                    <div className="h-11 w-11 overflow-hidden rounded-lg bg-[#FBF6E8] ring-1 ring-[#DC2626]/40">
                       {watermarkThumbUrl && (<img src={watermarkThumbUrl} alt={L("Watermark preview")} className="h-full w-full object-contain"/>)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-[#0F172A]">
+                      <p className="truncate text-sm font-bold text-[#3B2F1E]">
                         {watermarkImage.name}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-400">{L("PNG, JPG or WebP · ")}{formatFileSize(watermarkImage.size)}
+                      <p className="mt-0.5 text-[12px] text-[#7A6A50]">{L("PNG, JPG or WebP · ")}{formatFileSize(watermarkImage.size)}
                       </p>
                     </div>
                     <button type="button" onClick={() => {
                 setWatermarkImage(null);
                 invalidateOutput();
-            }} className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-[#0F172A]" aria-label={L("Remove watermark image")}>
+            }} className="rounded-lg p-1.5 text-[#7A6A50] hover:bg-[#FBF6E8] hover:text-[#3B2F1E]" aria-label={L("Remove watermark image")}>
                       <X size={15}/>
                     </button>
                   </div>) : (<label onDragOver={(e) => {
                 e.preventDefault();
                 setDraggingImage(true);
             }} onDragLeave={() => setDraggingImage(false)} onDrop={onDropImage} className={`mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-3 py-3.5 transition ${draggingImage
-                ? "border-[#818CF8] bg-[#EEF2FF]/60"
-                : "border-slate-300 bg-white hover:border-[#818CF8] hover:bg-[#EEF2FF]/40"}`}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EEF2FF] text-[#4F46E5]">
+                ? "border-[#DC2626] bg-[#F6D9A8]"
+                : "border-[#D8C9A6] bg-[#FBF6E8] hover:border-[#DC2626] hover:bg-[#EFE3C8]"}`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F6D9A8] text-[#DC2626]">
                       <ImageIcon size={16}/>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-[#0F172A]">{L("Upload watermark image")}</p>
-                      <p className="mt-0.5 text-[10px] text-slate-400">{L("PNG, JPG or WebP · max 5 MB")}</p>
+                      <p className="text-sm font-bold text-[#3B2F1E]">{L("Upload watermark image")}</p>
+                      <p className="mt-0.5 text-[12px] text-[#7A6A50]">{L("PNG, JPG or WebP · max 5 MB")}</p>
                     </div>
-                    <Upload size={15} className="text-slate-400"/>
+                    <Upload size={15} className="text-[#7A6A50]"/>
                     <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => {
                 handleWatermarkImageSelect(e.target.files?.[0]);
                 e.target.value = "";
             }}/>
                   </label>)) : (<div className="mt-3 space-y-2">
-                  <label htmlFor="watermark-text" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{L("Watermark text")}</label>
-                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-within:border-[#818CF8]">
+                  <label htmlFor="watermark-text" className="text-[12px] font-bold uppercase tracking-wider text-[#6B5A40]">{L("Watermark text")}</label>
+                  <div className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 focus-within:border-[#DC2626]">
                     <input id="watermark-text" value={text} maxLength={60} onChange={(e) => {
                 setText(e.target.value);
                 invalidateOutput();
-            }} className="w-full bg-transparent text-xs font-bold text-[#0F172A] outline-none placeholder:text-slate-400" placeholder={L("Type your watermark")}/>
+            }} className="w-full bg-transparent text-sm font-bold text-[#3B2F1E] outline-none placeholder:text-[#7A6A50]" placeholder={L("Type your watermark")}/>
                   </div>
                 </div>)}
             </div>
 
             {/* Size */}
-            <div className="border-t border-slate-200 pt-4">
+            <div className="border-t border-[#E3D6B8] pt-4">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]">{L("Size")}</h2>
-                <span className="text-[11px] font-bold text-[#4F46E5]">
+                <h2 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#3B2F1E]">{L("Size")}</h2>
+                <span className="text-[13px] font-bold text-[#DC2626]">
                   {locale === "bn" ? `ভিডিওর প্রস্থের ${size}%` : `${size}% of video width`}</span>
               </div>
               <input type="range" min={8} max={45} value={size} aria-label={L("Watermark size")} onChange={(e) => {
             setSize(Number(e.target.value));
             invalidateOutput();
-        }} className="h-1.5 w-full cursor-pointer accent-[#6366F1]"/>
-              <div className="mt-1 flex justify-between text-[9px] font-semibold text-slate-400">
+        }} className="h-1.5 w-full cursor-pointer accent-[#DC2626]"/>
+              <div className="mt-1 flex justify-between text-[12px] font-semibold text-[#7A6A50]">
                 <span>{L("Small")}</span>
                 <span>{L("Large")}</span>
               </div>
             </div>
 
             {/* Position */}
-            <div className="border-t border-slate-200 pt-4">
+            <div className="border-t border-[#E3D6B8] pt-4">
               <div className="mb-2 flex items-center gap-2">
-                <SlidersHorizontal size={13} className="text-slate-500"/>
-                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]">{L("Position")}</h2>
+                <SlidersHorizontal size={13} className="text-[#6B5A40]"/>
+                <h2 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#3B2F1E]">{L("Position")}</h2>
               </div>
 
-              <div role="radiogroup" aria-label={L("Watermark position")} className="grid grid-cols-5 gap-1 rounded-xl bg-[#E2E8F0] p-1">
+              <div role="radiogroup" aria-label={L("Watermark position")} className="grid grid-cols-5 gap-1 rounded-xl bg-[#F3E9D2] p-1">
                 {POSITION_GRID_ORDER.map((item) => {
             const active = position === item;
             return (<button key={item} type="button" role="radio" aria-checked={active} title={positionLabel(item)} aria-label={positionLabel(item)} onClick={() => {
                     setPosition(item);
                     invalidateOutput();
                 }} className={`flex h-11 items-center justify-center rounded-lg transition ${active
-                    ? "bg-white text-[#4F46E5] shadow-sm"
-                    : "text-slate-500 hover:bg-white/60 hover:text-[#0F172A]"}`}>
+                    ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm"
+                    : "text-[#6B5A40] hover:bg-white/60 hover:text-[#3B2F1E]"}`}>
                       <PositionIcon position={item}/>
                     </button>);
         })}
               </div>
-              <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">
+              <p className="mt-2 text-center text-[12px] font-semibold text-[#7A6A50]">
                 {positionLabel(position)}
               </p>
             </div>
 
             {/* Opacity */}
-            <div className="border-t border-slate-200 pt-4">
+            <div className="border-t border-[#E3D6B8] pt-4">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0F172A]">{L("Opacity")}</h2>
-                <span className="text-[11px] font-bold text-[#4F46E5]">
+                <h2 className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-[#3B2F1E]">{L("Opacity")}</h2>
+                <span className="text-[13px] font-bold text-[#DC2626]">
                   {opacity}{"%"}</span>
               </div>
               <input type="range" min={10} max={100} value={opacity} aria-label={L("Watermark opacity")} onChange={(e) => {
             setOpacity(Number(e.target.value));
             invalidateOutput();
-        }} className="h-1.5 w-full cursor-pointer accent-[#6366F1]"/>
-              <div className="mt-1 flex justify-between text-[9px] font-semibold text-slate-400">
+        }} className="h-1.5 w-full cursor-pointer accent-[#DC2626]"/>
+              <div className="mt-1 flex justify-between text-[12px] font-semibold text-[#7A6A50]">
                 <span>{L("Transparent")}</span>
                 <span>{L("Solid")}</span>
               </div>
@@ -779,20 +846,20 @@ export default function AddWatermarkTool() {
           </aside>
 
           {/* ------------------------------ Preview ------------------------------ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] md:p-5">
+          <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-[0_8px_28px_rgba(59,47,30,0.08)] md:p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-xs font-extrabold text-[#0F172A]">
+              <h2 className="text-sm font-extrabold text-[#3B2F1E]">
                 {previewingResult ? L("Watermarked video") : L("Video preview")}
               </h2>
 
-              {outputUrl ? (<div className="inline-flex rounded-full bg-slate-100 p-0.5 text-[10px] font-bold">
+              {outputUrl ? (<div className="inline-flex rounded-full bg-[#F3E9D2] p-0.5 text-[12px] font-bold">
                   <button type="button" onClick={() => setShowResult(false)} className={`rounded-full px-2.5 py-1 transition ${!previewingResult
-                ? "bg-white text-[#4F46E5] shadow-sm"
-                : "text-slate-500"}`}>{L("Live preview")}</button>
+                ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm"
+                : "text-[#6B5A40]"}`}>{L("Live preview")}</button>
                   <button type="button" onClick={() => setShowResult(true)} className={`rounded-full px-2.5 py-1 transition ${previewingResult
-                ? "bg-white text-[#4F46E5] shadow-sm"
-                : "text-slate-500"}`}>{L("Exported")}</button>
-                </div>) : (<span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-[10px] font-bold text-[#4F46E5]">{L("Preview")}</span>)}
+                ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm"
+                : "text-[#6B5A40]"}`}>{L("Exported")}</button>
+                </div>) : (<span className="rounded-full bg-[#F6D9A8] px-2.5 py-1 text-[12px] font-bold text-[#DC2626]">{L("Preview")}</span>)}
             </div>
 
             <div className="relative overflow-hidden rounded-xl bg-[#11151b] p-2 shadow-inner">
@@ -813,8 +880,8 @@ export default function AddWatermarkTool() {
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 backdrop-blur">
                           <Play size={24} fill="currentColor"/>
                         </div>
-                        <p className="mt-4 text-sm font-extrabold text-white">{L("Your video preview will appear here")}</p>
-                        <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-slate-400">{L("Upload a video from the left panel to preview the watermark position, size and opacity.")}</p>
+                        <p className="mt-4 text-base font-extrabold text-white">{L("Your video preview will appear here")}</p>
+                        <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-[#7A6A50]">{L("Upload a video from the left panel to preview the watermark position, size and opacity.")}</p>
                       </div>)}
 
                     {/* Live watermark overlay, clipped to the real video frame */}
@@ -833,25 +900,25 @@ export default function AddWatermarkTool() {
 
                     {/* Processing overlay */}
                     {isBusy && (<div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/75 px-6 text-center backdrop-blur-sm">
-                        <Loader2 size={28} className="animate-spin text-[#A5B4FC]"/>
-                        <p className="text-sm font-extrabold text-white">
+                        <Loader2 size={28} className="animate-spin text-[#F87171]"/>
+                        <p className="text-base font-extrabold text-white">
                           {phase === "loading-engine"
                 ? L("Loading video engine…") : (locale === "bn" ? `ভিডিও প্রস্তুত হচ্ছে… ${progress}%` : `Rendering… ${progress}%`)}
                         </p>
                         <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === "processing" ? progress : undefined}>
-                          <div className={`h-full rounded-full bg-[#818CF8] transition-[width] duration-300 ${phase === "loading-engine"
+                          <div className={`h-full rounded-full bg-[#DC2626] transition-[width] duration-300 ${phase === "loading-engine"
                     ? "w-1/3 animate-pulse"
                     : ""}`} style={phase === "processing"
                     ? { width: `${progress}%` }
                     : undefined}/>
                         </div>
-                        <button type="button" onClick={cancelProcessing} className="pointer-events-auto mt-1 rounded-lg border border-white/20 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-white/10">{L("Cancel")}</button>
+                        <button type="button" onClick={cancelProcessing} className="pointer-events-auto mt-1 rounded-lg border border-white/20 px-3 py-1.5 text-[13px] font-bold text-white transition hover:bg-white/10">{L("Cancel")}</button>
                       </div>)}
                   </>)}
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
+            <div className="mt-3 flex items-center justify-between text-[12px] text-[#7A6A50]">
               <span className="truncate pr-3">
                 {videoFile?.name ?? "manualEdit.mp4"}
               </span>
@@ -864,30 +931,30 @@ export default function AddWatermarkTool() {
         </section>
 
         {/* ------------------------------ Action bar ------------------------------ */}
-        <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between md:px-5">
+        <section className="flex flex-col gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-4 shadow-[0_8px_28px_rgba(59,47,30,0.08)] sm:flex-row sm:items-center sm:justify-between md:px-5">
           <div className="min-w-0 flex-1" role="status" aria-live="polite">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#6B5A40]">
               {phase === "error" ? (<AlertCircle size={14} className="shrink-0 text-rose-500"/>) : (<span className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`}/>)}
               <span className={`truncate ${phase === "error" ? "text-rose-600" : ""}`}>
                 {localizeStatus(status, locale, t)}
               </span>
-              {phase === "processing" && (<span className="shrink-0 font-bold text-[#4F46E5]">
+              {phase === "processing" && (<span className="shrink-0 font-bold text-[#DC2626]">
                   {progress}{"%"}</span>)}
             </div>
 
-            {(phase === "processing" || phase === "loading-engine") && (<div className="mt-2 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-slate-200">
-                <div className={`h-full rounded-full bg-[#6366F1] transition-[width] duration-300 ${phase === "loading-engine" ? "w-1/3 animate-pulse" : ""}`} style={phase === "processing"
+            {(phase === "processing" || phase === "loading-engine") && (<div className="mt-2 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-[#F3E9D2]">
+                <div className={`h-full rounded-full bg-[#DC2626] transition-[width] duration-300 ${phase === "loading-engine" ? "w-1/3 animate-pulse" : ""}`} style={phase === "processing"
                 ? { width: `${progress}%` }
                 : undefined}/>
               </div>)}
           </div>
 
           <div className="flex w-full gap-2 sm:w-auto">
-            <button type="button" onClick={reset} disabled={isBusy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-extrabold text-[#0F172A] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none">
+            <button type="button" onClick={reset} disabled={isBusy} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-2.5 text-sm font-extrabold text-[#3B2F1E] transition hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none">
               <RotateCcw size={14}/>{L("Reset")}</button>
 
-            {phase === "done" && outputUrl ? (<button type="button" onClick={downloadOutput} className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-700 sm:flex-none">
-                <Download size={14}/>{L("Download MP4")}</button>) : (<button type="button" onClick={addWatermark} disabled={isBusy || !videoFile || !watermarkBlob} className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none">
+            {phase === "done" && outputUrl ? (<button type="button" onClick={downloadOutput} className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-[#D42020] px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#B91C1C] sm:flex-none">
+                <Download size={14}/>{L("Download MP4")}</button>) : (<button type="button" onClick={addWatermark} disabled={isBusy || !videoFile || !watermarkBlob} className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-[#D42020] px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none">
                 {isBusy ? (<Loader2 size={14} className="animate-spin"/>) : (<ImageIcon size={14}/>)}
                 {isBusy ? L("Processing…") : L("Add watermark")}
               </button>)}

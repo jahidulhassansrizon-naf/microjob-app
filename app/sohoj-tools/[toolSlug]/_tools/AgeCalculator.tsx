@@ -265,7 +265,7 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
         for (let y = yearFrom; y >= yearTo; y--)
             years.push(y);
     }
-    const selectClass = "w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#2563EB] cursor-pointer";
+    const selectClass = "w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[#3B2F1E] focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 cursor-pointer";
     return (<div className="grid grid-cols-3 gap-2">
       <div>
         <label htmlFor={`${idPrefix}-day`} className="sr-only"><AgeText>{"Day\n        "}</AgeText></label>
@@ -444,37 +444,65 @@ export default function AgeCalculator() {
             // Clipboard may be unavailable — fail silently, nothing else to do here.
         }
     };
-    return (<div className="w-full text-[#0F172A] font-sans pb-16 print:pb-0">
-      <div className="w-full space-y-6">
+    return (<div className="age-calculator-page relative isolate w-full min-h-screen text-[#3B2F1E] font-sans pb-16 print:pb-0">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+.age-calculator-page,
+.age-calculator-page *:not(.font-mono):not(svg):not(svg *) {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.age-calculator-page h1,
+.age-calculator-page h2,
+.age-calculator-page h3,
+.age-calculator-page h4 { letter-spacing: -0.01em; }
+.age-calculator-page button:not(:disabled) {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 180ms;
+}
+.age-calculator-page button:active:not(:disabled) { transform: scale(0.98); }
+.age-calculator-page button:focus-visible,
+.age-calculator-page a:focus-visible,
+.age-calculator-page select:focus-visible,
+.age-calculator-page input[type="checkbox"]:focus-visible + div {
+  outline: 2px solid rgba(220, 38, 38, 0.4);
+  outline-offset: 2px;
+}
+.age-calculator-page button:disabled { opacity: 0.7; cursor: not-allowed; }
+`}</style>
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] print:hidden" />
+      <div className="relative z-10 w-full space-y-6">
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
           <div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1 cursor-pointer" title={L("Go back")}>
+            <div className="flex items-center gap-2 text-sm text-[#5A4A32] font-medium mb-2">
+              <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8]/60 rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1 cursor-pointer" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><AgeText>{"Sohoj Tools\n              "}</AgeText></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><AgeText>{"Sohoj Tools\n              "}</AgeText></Link>
               <span><AgeText>{"/"}</AgeText></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><AgeText>{"General Tools\n              "}</AgeText></span>
+              <span className="hover:text-[#3B2F1E] cursor-pointer"><AgeText>{"General Tools\n              "}</AgeText></span>
               <span><AgeText>{"/"}</AgeText></span>
-              <span className="text-[#0F172A] font-semibold"><AgeText>{"Age Calculator\n              "}</AgeText></span>
+              <span className="text-[#3B2F1E] font-semibold"><AgeText>{"Age Calculator\n              "}</AgeText></span>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center font-bold shadow-sm">
                 <Calculator size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><AgeText>{"Age Calculator\n              "}</AgeText></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><AgeText>{"Free\n              "}</AgeText></span>
+              <h1 className="text-2xl font-bold text-[#3B2F1E] tracking-tight"><AgeText>{"Age Calculator\n              "}</AgeText></h1>
+              <span className="bg-[#F6EEDB] text-[#5A4A32] text-[15px] font-bold px-2.5 py-1 rounded-full"><AgeText>{"Free\n              "}</AgeText></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><AgeText>{"Pick your date of birth from the dropdowns \u2014 your exact age\n              appears instantly, no typing needed.\n            "}</AgeText></p>
+            <p className="text-sm text-[#5A4A32] font-medium mt-1"><AgeText>{"Pick your date of birth from the dropdowns \u2014 your exact age\n              appears instantly, no typing needed.\n            "}</AgeText></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} aria-pressed={isFavorite} aria-label={L("Save to favourites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#2563EB] hover:border-[#93C5FD] transition-all shadow-2xs cursor-pointer">
-              <Star size={16} className={isFavorite ? "fill-[#2563EB] text-[#2563EB]" : ""}/>
+            <button onClick={() => setIsFavorite(!isFavorite)} aria-pressed={isFavorite} aria-label={L("Save to favourites")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#DC2626] hover:border-[#DC2626] transition-all shadow-sm cursor-pointer">
+              <Star size={16} className={isFavorite ? "fill-[#DC2626] text-[#DC2626]" : ""}/>
             </button>
-            <button aria-label={L("Share this tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs cursor-pointer">
+            <button aria-label={L("Share this tool")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#3B2F1E] transition-all shadow-sm cursor-pointer">
               <Share size={16}/>
             </button>
           </div>
@@ -484,35 +512,35 @@ export default function AgeCalculator() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: ENTER DATES FORM */}
           <div className="lg:col-span-5 space-y-4 print:hidden">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs space-y-5">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><AgeText>{"Enter dates\n                "}</AgeText></span>
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-sm space-y-5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E3D6B8]">
+                <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider"><AgeText>{"Enter dates\n                "}</AgeText></span>
               </div>
 
               {/* Date of Birth */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
-                  <Cake size={13} className="text-[#4F46E5]"/><AgeText>{"Date of birth "}</AgeText><span className="text-red-500"><AgeText>{"*"}</AgeText></span>
+                <label className="text-sm font-bold text-[#3B2F1E] flex items-center gap-1.5">
+                  <Cake size={13} className="text-[#DC2626]"/><AgeText>{"Date of birth "}</AgeText><span className="text-red-500"><AgeText>{"*"}</AgeText></span>
                 </label>
-                <p className="text-[11px] text-gray-400 font-medium"><AgeText>{"Choose the day, month and year \u2014 cannot be a future date\n                "}</AgeText></p>
+                <p className="text-[13px] text-[#7A6A50] font-medium"><AgeText>{"Choose the day, month and year \u2014 cannot be a future date\n                "}</AgeText></p>
                 <DatePicker idPrefix="dob" day={dobDay} month={dobMonth} year={dobYear} onDay={setDobDay} onMonth={setDobMonth} onYear={setDobYear} yearFrom={currentYear - 120} yearTo={currentYear}/>
               </div>
 
               {/* Age at date toggle */}
-              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-[#F8FAFC]">
+              <div className="border border-[#E3D6B8] rounded-xl p-3.5 space-y-3 bg-[#F6EEDB]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-[#EFF6FF] text-[#2563EB] rounded-lg flex items-center justify-center font-bold">
+                    <div className="w-7 h-7 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center font-bold">
                       <Clock3 size={14}/>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Calculate age on a different date\n                      "}</AgeText></h4>
-                      <p className="text-[10px] text-gray-500 font-medium"><AgeText>{"Off = calculate as of today\n                      "}</AgeText></p>
+                      <h4 className="text-sm font-bold text-[#3B2F1E]"><AgeText>{"Calculate age on a different date\n                      "}</AgeText></h4>
+                      <p className="text-[12px] text-[#5A4A32] font-medium"><AgeText>{"Off = calculate as of today\n                      "}</AgeText></p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={useCustomTargetDate} onChange={() => setUseCustomTargetDate((v) => !v)} aria-label={L("Calculate age on a different date")} className="sr-only peer"/>
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2563EB]"/>
+                    <div className="w-9 h-5 bg-[#D8C9A6] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#FBF6E8] after:border-[#D8C9A6] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"/>
                   </label>
                 </div>
                 {useCustomTargetDate && (<div className="pt-1">
@@ -521,27 +549,27 @@ export default function AgeCalculator() {
               </div>
 
               {/* Compare Age Toggle Box */}
-              <div className="border border-gray-200 rounded-xl p-3.5 space-y-3 bg-[#F8FAFC]">
+              <div className="border border-[#E3D6B8] rounded-xl p-3.5 space-y-3 bg-[#F6EEDB]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center font-bold">
+                    <div className="w-7 h-7 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center font-bold">
                       <Users size={14}/>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Compare with another person\n                      "}</AgeText></h4>
-                      <p className="text-[10px] text-gray-500 font-medium"><AgeText>{"Enter their birth date to see who is older\n                      "}</AgeText></p>
+                      <h4 className="text-sm font-bold text-[#3B2F1E]"><AgeText>{"Compare with another person\n                      "}</AgeText></h4>
+                      <p className="text-[12px] text-[#5A4A32] font-medium"><AgeText>{"Enter their birth date to see who is older\n                      "}</AgeText></p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={compareOn} onChange={() => setCompareOn((v) => !v)} aria-label={L("Compare with another person")} className="sr-only peer"/>
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F46E5]"/>
+                    <div className="w-9 h-5 bg-[#D8C9A6] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#FBF6E8] after:border-[#D8C9A6] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"/>
                   </label>
                 </div>
                 {compareOn && (<div className="pt-1 space-y-2">
                     <DatePicker idPrefix="cmp" day={cmpDay} month={cmpMonth} year={cmpYear} onDay={setCmpDay} onMonth={setCmpMonth} onYear={setCmpYear} yearFrom={currentYear - 120} yearTo={currentYear}/>
-                    {cmpComplete && !cmpValid && (<p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
+                    {cmpComplete && !cmpValid && (<p className="text-[13px] text-red-500 font-semibold flex items-center gap-1">
                         <AlertCircle size={12}/><AgeText>{"That date doesn't exist.\n                      "}</AgeText></p>)}
-                    {cmpFuture && (<p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
+                    {cmpFuture && (<p className="text-[13px] text-red-500 font-semibold flex items-center gap-1">
                         <AlertCircle size={12}/><AgeText>{"That date can't be in the\n                        future.\n                      "}</AgeText></p>)}
                   </div>)}
               </div>
@@ -549,7 +577,7 @@ export default function AgeCalculator() {
               {/* Inline error */}
               {errorMessage && (<div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-3.5 py-2.5">
                   <AlertCircle size={15} className="mt-0.5 shrink-0"/>
-                  <p className="text-xs font-semibold leading-relaxed">
+                  <p className="text-sm font-semibold leading-relaxed">
                     <AgeText>{errorMessage}</AgeText>
                   </p>
                 </div>)}
@@ -558,64 +586,64 @@ export default function AgeCalculator() {
 
           {/* RIGHT COLUMN: RESULTS */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between min-h-[480px]">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[480px]">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
-                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4F46E5]"/>
+                <div className="flex items-center justify-between pb-3 border-b border-[#E3D6B8] print:hidden">
+                  <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#DC2626]"/>
                     <span><AgeText>{"Your age"}</AgeText></span>
                   </span>
-                  <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                  <span className="text-[13px] font-semibold text-[#7A6A50] bg-[#F3E9D2] px-2.5 py-0.5 rounded-md">
                     {age ? <AgeText>{"Calculated"}</AgeText> : <AgeText>{"Empty"}</AgeText>}
                   </span>
                 </div>
 
                 {age && birthDate && targetDate ? (<div className="mt-6 space-y-6">
                     {/* Headline result */}
-                    <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-2xl p-6 text-center space-y-2">
-                      <p className="text-xs font-bold text-[#4338CA] uppercase tracking-widest">
+                    <div className="bg-[#FEE9E9] border border-[#FBB6B6] rounded-2xl p-6 text-center space-y-2">
+                      <p className="text-sm font-bold text-[#B91C1C] uppercase tracking-widest">
                         {useCustomTargetDate
             ? <AgeText>{`Age on ${formatDate(targetDate, locale)}`}</AgeText> : <AgeText>{"Exact age today"}</AgeText>}
                       </p>
-                      <h2 className="text-3xl font-extrabold text-[#312E81]">
+                      <h2 className="text-3xl font-extrabold text-[#3B2F1E]">
                         {formatAgeNumber(age.years, locale)}{<AgeText>{" "}</AgeText>}
-                        <span className="text-base font-normal"><AgeText>{"Years"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
+                        <span className="text-lg font-normal"><AgeText>{"Years"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
                         {formatAgeNumber(age.months, locale)}{<AgeText>{" "}</AgeText>}
-                        <span className="text-base font-normal"><AgeText>{"Months"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
+                        <span className="text-lg font-normal"><AgeText>{"Months"}</AgeText></span><AgeText>{","}</AgeText>{<AgeText>{" "}</AgeText>}
                         {formatAgeNumber(age.days, locale)}{<AgeText>{" "}</AgeText>}
-                        <span className="text-base font-normal"><AgeText>{"Days"}</AgeText></span>
+                        <span className="text-lg font-normal"><AgeText>{"Days"}</AgeText></span>
                       </h2>
-                      <span className="inline-block bg-white text-[#4338CA] border border-[#C7D2FE] text-[11px] font-bold px-3 py-1 rounded-full">
+                      <span className="inline-block bg-[#FBF6E8] text-[#B91C1C] border border-[#FBB6B6] text-[13px] font-bold px-3 py-1 rounded-full">
                         <AgeText>{lifeStage(age.years)}</AgeText>
                       </span>
                     </div>
 
                     {/* Quick stats */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Months\n                        "}</AgeText></p>
-                        <p className="text-base font-bold text-[#0F172A]">
+                      <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-4 text-center space-y-1">
+                        <p className="text-[13px] text-[#5A4A32] font-medium"><AgeText>{"Total Months\n                        "}</AgeText></p>
+                        <p className="text-lg font-bold text-[#3B2F1E]">
                           {formatAgeNumber(age.totalMonths, locale)}
                         </p>
                       </div>
-                      <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Weeks\n                        "}</AgeText></p>
-                        <p className="text-base font-bold text-[#0F172A]">
+                      <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-4 text-center space-y-1">
+                        <p className="text-[13px] text-[#5A4A32] font-medium"><AgeText>{"Total Weeks\n                        "}</AgeText></p>
+                        <p className="text-lg font-bold text-[#3B2F1E]">
                           {formatAgeNumber(age.totalWeeks, locale)}
                         </p>
                       </div>
-                      <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-4 text-center space-y-1 col-span-2 sm:col-span-1">
-                        <p className="text-[11px] text-gray-500 font-medium"><AgeText>{"Total Days\n                        "}</AgeText></p>
-                        <p className="text-base font-bold text-[#0F172A]">
+                      <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-4 text-center space-y-1 col-span-2 sm:col-span-1">
+                        <p className="text-[13px] text-[#5A4A32] font-medium"><AgeText>{"Total Days\n                        "}</AgeText></p>
+                        <p className="text-lg font-bold text-[#3B2F1E]">
                           {formatAgeNumber(age.totalDays, locale)}
                         </p>
                       </div>
                     </div>
 
                     {/* Next birthday */}
-                    {nextBirthday && (<div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 bg-[#E2E8F0] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0"></div>
-                        <p className="text-xs font-semibold text-[#0F172A] leading-relaxed">
+                    {nextBirthday && (<div className="bg-[#F6EEDB] border border-[#F3E9D2] rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 bg-[#F3E9D2] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0"></div>
+                        <p className="text-sm font-semibold text-[#3B2F1E] leading-relaxed">
                           {nextBirthday.isToday ? (locale === "bn" ? <>
                               🎉 আজ জন্মদিন—আপনার বয়স এখন <b>{formatAgeNumber(nextBirthday.turningAge, locale)} বছর</b>!
                             </> : <>
@@ -630,16 +658,16 @@ export default function AgeCalculator() {
 
                     {/* Milestones relevant to daily life / paperwork in BD */}
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-[#0F172A]"><AgeText>{"Milestones\n                      "}</AgeText></p>
+                      <p className="text-sm font-bold text-[#3B2F1E]"><AgeText>{"Milestones\n                      "}</AgeText></p>
                       <div className="space-y-1.5">
-                        {milestones.map((m) => (<div key={m.label} className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200/80 rounded-lg px-3 py-2">
+                        {milestones.map((m) => (<div key={m.label} className="flex items-center justify-between gap-3 bg-[#F6EEDB] border border-[#E3D6B8] rounded-lg px-3 py-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              {m.reached ? (<CheckCircle2 size={15} className="text-emerald-500 shrink-0"/>) : (<AlertCircle size={15} className="text-gray-300 shrink-0"/>)}
-                              <span className="text-[11px] font-semibold text-[#0F172A] truncate">
+                              {m.reached ? (<CheckCircle2 size={15} className="text-emerald-500 shrink-0"/>) : (<AlertCircle size={15} className="text-[#B0A080] shrink-0"/>)}
+                              <span className="text-[13px] font-semibold text-[#3B2F1E] truncate">
                                 <AgeText>{m.label}</AgeText>
                               </span>
                             </div>
-                            <span className={`text-[11px] font-bold whitespace-nowrap ${m.reached ? "text-emerald-600" : "text-gray-400"}`}>
+                            <span className={`text-[13px] font-bold whitespace-nowrap ${m.reached ? "text-emerald-600" : "text-[#7A6A50]"}`}>
                               {m.reached
                 ? <AgeText>{`Since ${formatDate(m.date, locale)}`}</AgeText> : <AgeText>{`In ${shortDuration(m.remaining as YMD, locale)}`}</AgeText>}
                             </span>
@@ -648,11 +676,11 @@ export default function AgeCalculator() {
                     </div>
 
                     {/* Comparison result */}
-                    {compareOn && comparison && (<div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 bg-[#DBEAFE] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+                    {compareOn && comparison && (<div className="bg-[#FEE9E9] border border-[#FBB6B6] rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
                           <Users size={17}/>
                         </div>
-                        <p className="text-xs font-semibold text-[#1E40AF] leading-relaxed">
+                        <p className="text-sm font-semibold text-[#3B2F1E] leading-relaxed">
                           {comparison.isSame ? <AgeText>{"Both people are exactly the same age."}</AgeText> : (locale === "bn" ? <>
                               প্রথম ব্যক্তি দ্বিতীয় ব্যক্তির চেয়ে <b>{shortDuration(comparison.diff, locale)}</b> বয়সে {comparison.personOneOlder ? "বড়" : "ছোট"}।
                             </> : <>
@@ -663,17 +691,17 @@ export default function AgeCalculator() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 print:hidden">
-                      <button onClick={handleCopy} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer">
+                      <button onClick={handleCopy} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors cursor-pointer">
                         {copied ? (<Check size={14} className="text-emerald-600"/>) : (<Copy size={14}/>)}
                         {copied ? <AgeText>{"Copied"}</AgeText> : <AgeText>{"Copy result"}</AgeText>}
                       </button>
                     </div>
                   </div>) : (<div className="mt-16 flex flex-col items-center justify-center text-center p-8 space-y-3">
-                    <div className="w-12 h-12 bg-[#EEF2FF] text-[#4F46E5] rounded-2xl flex items-center justify-center shadow-2xs">
+                    <div className="w-12 h-12 bg-[#FEE9E9] text-[#DC2626] rounded-2xl flex items-center justify-center shadow-sm">
                       <Calculator size={22}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A]"><AgeText>{"Choose a date of birth on the left to see the age\n                      instantly.\n                    "}</AgeText></h3>
-                    <p className="text-[11px] text-gray-400 font-medium max-w-xs leading-relaxed"><AgeText>{"No typing required \u2014 just pick the day, month and year\n                      from the dropdown lists.\n                    "}</AgeText></p>
+                    <h3 className="text-sm font-bold text-[#3B2F1E]"><AgeText>{"Choose a date of birth on the left to see the age\n                      instantly.\n                    "}</AgeText></h3>
+                    <p className="text-[13px] text-[#7A6A50] font-medium max-w-xs leading-relaxed"><AgeText>{"No typing required \u2014 just pick the day, month and year\n                      from the dropdown lists.\n                    "}</AgeText></p>
                   </div>)}
               </div>
             </div>
@@ -681,15 +709,15 @@ export default function AgeCalculator() {
         </div>
 
         {/* BOTTOM ACTION BAR */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs print:hidden">
-          <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#4F46E5]"/>
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm print:hidden">
+          <div className="text-sm font-medium text-[#5A4A32] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#DC2626]"/>
             <span><AgeText>{"Everything is calculated in your browser \u2014 nothing is uploaded to\n              any server.\n            "}</AgeText></span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button onClick={handleReset} className="px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#0F172A] text-xs font-bold rounded-xl transition-colors cursor-pointer"><AgeText>{"Reset\n            "}</AgeText></button>
-            <button onClick={() => window.print()} disabled={!age} className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-2 cursor-pointer">
+            <button onClick={handleReset} className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors cursor-pointer"><AgeText>{"Reset\n            "}</AgeText></button>
+            <button onClick={() => window.print()} disabled={!age} className="px-5 py-2 bg-[#D42020] hover:bg-[#AE1717] active:bg-[#991B1B] disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer">
               <Calculator size={14}/>
               <span><AgeText>{"Print / Save"}</AgeText></span>
             </button>
@@ -697,16 +725,16 @@ export default function AgeCalculator() {
         </div>
 
         {/* HOW TO USE */}
-        <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs print:hidden">
-          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl overflow-hidden shadow-sm print:hidden">
+          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-sm text-[#3B2F1E] hover:bg-[#EFE3C8] transition-colors cursor-pointer">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5]"/>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]"/>
               <span><AgeText>{"How to use"}</AgeText></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
-          {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
+          {showHowToUse && (<div className="p-4 pt-0 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8] font-medium leading-relaxed">
               <p><AgeText>{"1. Pick the day, month and year of birth from the three dropdown\n                lists \u2014 no typing needed.\n              "}</AgeText></p>
               <p><AgeText>{"2. Your exact age, next birthday and total days lived appear\n                immediately on the right.\n              "}</AgeText></p>
               <p><AgeText>{"3. Turn on \"Calculate age on a different date\" to see the age as\n                of a past or future date.\n              "}</AgeText></p>
@@ -716,19 +744,19 @@ export default function AgeCalculator() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3 print:hidden">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><AgeText>{"Tools in the same category\n          "}</AgeText></h2>
+          <h2 className="text-base font-bold text-[#3B2F1E] tracking-tight"><AgeText>{"Tools in the same category\n          "}</AgeText></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
             const ToolIcon = tool.icon;
-            return (<Link key={idx} href={tool.href} className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#93C5FD] transition-all flex flex-col justify-between group">
+            return (<Link key={idx} href={tool.href} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#DC2626] transition-all flex flex-col justify-between group">
                   <div>
-                    <div className="w-9 h-9 bg-[#EEF2FF] text-[#4F46E5] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#E0E7FF] transition-colors">
+                    <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#FEE9E9] transition-colors">
                       <ToolIcon size={18}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-[#4F46E5] transition-colors">
+                    <h3 className="text-sm font-bold text-[#3B2F1E] mb-1 group-hover:text-[#DC2626] transition-colors">
                       {<AgeText>{tool.title}</AgeText>}
                     </h3>
-                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                    <p className="text-[13px] text-[#5A4A32] font-medium leading-relaxed">
                       {<AgeText>{tool.description}</AgeText>}
                     </p>
                   </div>

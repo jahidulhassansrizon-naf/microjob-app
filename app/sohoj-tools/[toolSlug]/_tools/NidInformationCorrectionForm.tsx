@@ -619,7 +619,39 @@ const INSTRUCTIONS: Instruction[] = [
 /* Styles (preview page + print rules)                                        */
 /* -------------------------------------------------------------------------- */
 const PAGE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+.page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+  font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+/* Preserve the formal Bengali typeface and white paper of the actual Form-2 document. */
+.page-font.page-font .nid-page, .page-font.page-font .nid-page * {
+  font-family: 'Noto Serif Bengali', 'Siyam Rupali', 'Kalpurush', 'Nirmala UI', 'Noto Sans Bengali', serif !important;
+}
+.page-font button { transition-duration: 150ms; }
+.page-font input, .page-font textarea, .page-font select {
+  background-color: #FBF6E8;
+  border-color: #E3D6B8;
+  color: #3B2F1E;
+  font-size: 15px !important;
+}
+.page-font input::placeholder, .page-font textarea::placeholder { color: #B0A080; opacity: 1; }
+.page-font input:focus, .page-font textarea:focus, .page-font select:focus {
+  border-color: #DC2626;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(220,38,38,0.2);
+}
+.page-font button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(220,38,38,0.35); }
+.page-font .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+.page-font .scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+.page-font .scroll::-webkit-scrollbar-track { background: rgba(216,201,166,0.35); border-radius: 999px; margin: 10px 0; }
+.page-font .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+.page-font .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+
 
 .nid-page{width:${PAGE_W}px;box-sizing:border-box;background:#fff;color:#0F172A;
   font-family:'Noto Serif Bengali','Siyam Rupali','Kalpurush','Nirmala UI','Noto Sans Bengali',serif;font-size:12px;line-height:1.5}
@@ -1065,7 +1097,7 @@ function ReceiptLine({ label }: { label: string }) {
 /* Left-column UI pieces                                                      */
 /* -------------------------------------------------------------------------- */
 const INPUT_CLS =
-  "w-full rounded-[11px] border border-[#E2E8F0] bg-white px-3 text-[13px] font-medium text-[#0F172A] outline-none transition placeholder:text-slate-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20";
+  "w-full rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 text-[15px] font-medium text-[#3B2F1E] outline-none transition placeholder:text-[#B0A080] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20";
 function InputField({
   label,
   placeholder,
@@ -1087,7 +1119,7 @@ function InputField({
     <div className="min-w-0">
       <label
         htmlFor={id}
-        className="mb-2 block text-[12px] font-semibold leading-none text-[#0F172A]"
+        className="mb-2 block text-[15px] font-semibold leading-[1.45] text-[#3B2F1E]"
       >
         <NidT>{label}</NidT>
       </label>
@@ -1099,7 +1131,7 @@ function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={nidTranslateText(placeholder, locale)}
-        className={`${INPUT_CLS} h-[39px]`}
+        className={`${INPUT_CLS} h-[44px]`}
       />
     </div>
   );
@@ -1114,8 +1146,8 @@ function SectionCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-[16px] border border-[#E2E8F0] bg-white px-4 py-[17px] shadow-sm">
-      <h2 className="text-[14px] font-extrabold leading-tight text-[#2563EB]">
+    <section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-[17px] shadow-sm">
+      <h2 className="text-[16px] font-extrabold leading-tight text-[#DC2626]">
         {number}
         <NidT>{". "}</NidT>
         <NidT>{title}</NidT>
@@ -1126,7 +1158,7 @@ function SectionCard({
 }
 function Hint({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-[15px] text-[11px] font-medium leading-[1.5] text-slate-500">
+    <p className="mb-[15px] text-[13px] font-medium leading-[1.5] text-[#6B5A40]">
       {children}
     </p>
   );
@@ -1194,7 +1226,7 @@ function SubjectField({
     <div>
       <label
         htmlFor={id}
-        className="mb-2 block text-[11px] font-semibold text-[#0F172A]"
+        className="mb-2 block text-[15px] font-semibold text-[#3B2F1E]"
       >
         <NidT>{label}</NidT>
       </label>
@@ -1205,7 +1237,7 @@ function SubjectField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={nidTranslateText(placeholder, locale)}
-          className={`${INPUT_CLS} resize-y py-2 text-[12px]`}
+          className={`${INPUT_CLS} resize-y py-2 text-[15px]`}
         />
       ) : (
         <input
@@ -1214,7 +1246,7 @@ function SubjectField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={nidTranslateText(placeholder, locale)}
           autoComplete="off"
-          className={`${INPUT_CLS} h-[39px] text-[12px]`}
+          className={`${INPUT_CLS} h-[44px] text-[15px]`}
         />
       )}
     </div>
@@ -1239,10 +1271,10 @@ function SubjectEditor({
   const panelId = useId();
   return (
     <div
-      className={`rounded-[12px] border transition-colors ${
+      className={`rounded-xl border transition-colors duration-150 ${
         isOpen
-          ? "border-[#2563EB]/40 bg-[#EFF6FF]"
-          : "border-[#E2E8F0] bg-white"
+          ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40"
+          : "border-[#E3D6B8] bg-[#FBF6E8]"
       }`}
     >
       <button
@@ -1250,9 +1282,9 @@ function SubjectEditor({
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex min-h-[46px] w-full items-center justify-between gap-3 rounded-[12px] px-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30"
+        className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl px-3 text-left transition duration-150 hover:bg-[#EFE3C8] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
       >
-        <span className="text-[12px] font-bold text-[#0F172A]">
+        <span className="text-[15px] font-bold text-[#3B2F1E]">
           <NidT>{"("}</NidT>
           <NidT>{subject.letter}</NidT>
           <NidT>{") "}</NidT>
@@ -1260,11 +1292,11 @@ function SubjectEditor({
         </span>
         <span className="flex shrink-0 items-center gap-2">
           {filled ? (
-            <span className="rounded-full bg-[#10B981]/15 px-2 py-[2px] text-[10px] font-extrabold text-[#10B981]">
+            <span className="rounded-full bg-[#10B981]/15 px-2 py-[2px] text-[12px] font-extrabold text-[#10B981]">
               <NidT>{"Filled\n            "}</NidT>
             </span>
           ) : null}
-          <span className="text-[11px] font-extrabold text-[#2563EB]">
+          <span className="text-[15px] font-extrabold text-[#DC2626]">
             {isOpen ? <NidT>{"Close"}</NidT> : <NidT>{"Fill in"}</NidT>}
           </span>
         </span>
@@ -1273,7 +1305,7 @@ function SubjectEditor({
       {isOpen ? (
         <div
           id={panelId}
-          className="space-y-3 border-t border-[#E2E8F0] px-3 pb-3 pt-3"
+          className="space-y-3 border-t border-[#E3D6B8] px-3 pb-3 pt-3"
         >
           <SubjectField
             label="What the NID says now"
@@ -1298,7 +1330,7 @@ function SubjectEditor({
           />
           {filled ? (
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-semibold text-[#10B981]">
+              <p className="text-[15px] font-semibold text-[#10B981]">
                 <NidT>
                   {
                     "This subject appears in the correction table.\n              "
@@ -1308,7 +1340,7 @@ function SubjectEditor({
               <button
                 type="button"
                 onClick={onClear}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-rose-600 hover:bg-rose-50"
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[15px] font-bold text-[#B91C1C] transition duration-150 hover:bg-[#FEE9E9] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
               >
                 <Trash2 size={11} />
                 <NidT>{"Clear this subject\n              "}</NidT>
@@ -1324,9 +1356,9 @@ function SubjectEditor({
 /* Main component                                                             */
 /* -------------------------------------------------------------------------- */
 const ACTION_BTN =
-  "inline-flex items-center justify-center gap-1.5 rounded-[11px] border border-[#E2E8F0] bg-white px-3 py-[11px] text-[11px] font-extrabold text-[#0F172A] shadow-sm transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50 sm:px-4";
+  "inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-[11px] text-[15px] font-extrabold text-[#3B2F1E] shadow-sm transition duration-150 hover:bg-[#FEE9E9] hover:text-[#B91C1C] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 disabled:cursor-not-allowed disabled:opacity-70 sm:px-4";
 const ICON_BTN =
-  "flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#E2E8F0] bg-white text-[#0F172A] shadow-sm transition hover:bg-[#F8FAFC]";
+  "flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] shadow-sm transition duration-150 hover:bg-[#FEE9E9] hover:text-[#B91C1C] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
 export default function NidInformationCorrectionForm() {
   const { locale } = useSohozI18n();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -1487,7 +1519,7 @@ export default function NidInformationCorrectionForm() {
   } = empty
     ? {
         text: nidTranslateText("Add an input to get started", locale),
-        dot: "bg-slate-400",
+        dot: "bg-[#B0A080]",
       }
     : missing.length > 0
       ? {
@@ -1572,7 +1604,7 @@ export default function NidInformationCorrectionForm() {
       for (const target of targets) {
         const canvas = await html2canvas(target, {
           scale: 3,
-          backgroundColor: "#ffffff",
+          backgroundColor: "#FBF6E8",
           useCORS: true,
           logging: false,
           scrollX: 0,
@@ -1597,7 +1629,7 @@ export default function NidInformationCorrectionForm() {
           slice.height = pagePx;
           const ctx = slice.getContext("2d");
           if (!ctx) throw new Error("Canvas 2D context unavailable");
-          ctx.fillStyle = "#ffffff";
+          ctx.fillStyle = "#FBF6E8";
           ctx.fillRect(0, 0, slice.width, slice.height);
           ctx.drawImage(
             canvas,
@@ -1661,14 +1693,14 @@ export default function NidInformationCorrectionForm() {
   };
   /* ---- render ------------------------------------------------------------ */
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] pb-[104px] font-sans text-[#0F172A]">
+    <div className="page-font min-h-screen w-full bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] pb-[104px] font-sans text-[#3B2F1E]">
       <style>{PAGE_CSS}</style>
 
       <div className="mx-auto w-full max-w-[1320px] px-4 pb-10 pt-5 sm:px-5 xl:px-0">
         {/* Breadcrumb */}
         <nav
           aria-label={nidTranslateText("Breadcrumb", locale)}
-          className="mb-4 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-500"
+          className="mb-4 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold text-[#6B5A40]"
         >
           <Home size={12} />
           <span>
@@ -1686,7 +1718,7 @@ export default function NidInformationCorrectionForm() {
           <span>
             <NidT>{"/"}</NidT>
           </span>
-          <span className="font-extrabold text-[#0F172A]">
+          <span className="font-extrabold text-[#3B2F1E]">
             <NidT>{TITLE}</NidT>
           </span>
         </nav>
@@ -1694,18 +1726,18 @@ export default function NidInformationCorrectionForm() {
         {/* Header */}
         <header className="mb-[18px] flex items-start justify-between gap-5">
           <div className="flex items-start gap-3.5">
-            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-[#2563EB]/20 bg-[#EFF6FF] text-[#2563EB] shadow-sm">
+            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-[#DC2626]/20 bg-[#F6D9A8] text-[#DC2626] shadow-sm">
               <FileText size={21} />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[24px] font-extrabold tracking-[-0.02em] text-[#0F172A] sm:text-[26px]">
+                <h1 className="text-[24px] font-extrabold tracking-[-0.02em] text-[#3B2F1E] sm:text-[26px]">
                   <NidT>{TITLE}</NidT>
                 </h1>
-                <span className="rounded-full bg-[#10B981]/15 px-2.5 py-[5px] text-[10px] font-extrabold text-[#10B981]">
+                <span className="rounded-full bg-[#10B981]/15 px-2.5 py-[5px] text-[12px] font-extrabold text-[#10B981]">
                   <NidT>{"Free\n                "}</NidT>
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#6B5A40]">
                   <Check size={11} />
                   <NidT>{"Used "}</NidT>
                   {uses}
@@ -1713,7 +1745,7 @@ export default function NidInformationCorrectionForm() {
                   {uses === 1 ? <NidT>{"time"}</NidT> : <NidT>{"times"}</NidT>}
                 </span>
               </div>
-              <p className="mt-1 text-[13px] font-medium text-slate-500">
+              <p className="mt-1 text-[15px] font-medium text-[#6B5A40]">
                 <NidT>
                   {
                     "Fill in your details on the left \u2014 see a live Form-2 on the\n                right and download it as PDF.\n              "
@@ -1728,7 +1760,7 @@ export default function NidInformationCorrectionForm() {
               type="button"
               onClick={toggleFav}
               aria-pressed={fav}
-              className={`${ICON_BTN} ${fav ? "text-amber-500" : ""}`}
+              className={`${ICON_BTN} ${fav ? "text-[#DC2626]" : ""}`}
               aria-label={
                 fav
                   ? nidTranslateText("Remove from favorites", locale)
@@ -1749,7 +1781,7 @@ export default function NidInformationCorrectionForm() {
         </header>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[390px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[410px_minmax(0,1fr)]">
           {/* ------------------------------ Left: form ------------------------------ */}
           <div className="space-y-[12px]">
             <SectionCard number="1" title="National ID card holder">
@@ -1827,7 +1859,7 @@ export default function NidInformationCorrectionForm() {
                 ))}
               </div>
               <p
-                className={`mt-[13px] text-[11px] font-semibold ${filledSubjectCount > 0 ? "text-[#10B981]" : "text-slate-400"}`}
+                className={`mt-[13px] text-[13px] font-semibold ${filledSubjectCount > 0 ? "text-[#10B981]" : "text-[#6B5A40]"}`}
               >
                 {filledSubjectCount > 0 ? (
                   String(locale ?? "")
@@ -1900,11 +1932,11 @@ export default function NidInformationCorrectionForm() {
           {/* ----------------------------- Right: preview ---------------------------- */}
           <section
             aria-label={nidTranslateText("Live preview", locale)}
-            className="flex flex-col rounded-[18px] border border-[#E2E8F0] bg-white p-4 shadow-sm lg:sticky lg:top-4"
+            className="flex flex-col rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-4 shadow-sm lg:sticky lg:top-4"
             style={{ height: "clamp(560px, calc(100vh - 140px), 900px)" }}
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[12px] font-extrabold text-[#0F172A]">
+              <div className="flex items-center gap-2 text-[14px] font-extrabold text-[#3B2F1E]">
                 <Eye size={14} />
                 <span>
                   <NidT>{"Live preview"}</NidT>
@@ -1912,23 +1944,23 @@ export default function NidInformationCorrectionForm() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center overflow-hidden rounded-[11px] border border-[#E2E8F0] bg-[#F8FAFC]">
+                <div className="flex items-center overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#F6EEDB]">
                   <button
                     type="button"
                     onClick={() => setZoom((z) => clamp(z - 10, 40, 250))}
-                    className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-white"
+                    className="flex h-8 w-8 items-center justify-center text-[#5A4A32] transition duration-150 hover:bg-[#EFE3C8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                     aria-label={nidTranslateText("Zoom out", locale)}
                   >
                     <Minus size={14} />
                   </button>
-                  <span className="min-w-[46px] text-center text-[10px] font-extrabold tabular-nums text-[#0F172A]">
+                  <span className="min-w-[46px] text-center text-[14px] font-extrabold tabular-nums text-[#3B2F1E]">
                     {zoom}
                     <NidT>{"%\n                  "}</NidT>
                   </span>
                   <button
                     type="button"
                     onClick={() => setZoom((z) => clamp(z + 10, 40, 250))}
-                    className="flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-white"
+                    className="flex h-8 w-8 items-center justify-center text-[#5A4A32] transition duration-150 hover:bg-[#EFE3C8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                     aria-label={nidTranslateText("Zoom in", locale)}
                   >
                     <Plus size={14} />
@@ -1936,7 +1968,7 @@ export default function NidInformationCorrectionForm() {
                   <button
                     type="button"
                     onClick={() => setZoom(computeFit())}
-                    className="flex h-8 w-9 items-center justify-center border-l border-[#E2E8F0] text-slate-600 hover:bg-white"
+                    className="flex h-8 w-9 items-center justify-center border-l border-[#E3D6B8] text-[#5A4A32] transition duration-150 hover:bg-[#EFE3C8] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
                     aria-label={nidTranslateText("Fit to width", locale)}
                     title={nidTranslateText("Fit to width", locale)}
                   >
@@ -1944,9 +1976,9 @@ export default function NidInformationCorrectionForm() {
                   </button>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-1.5 text-[10px] font-bold ${
+                  className={`rounded-full px-2.5 py-1.5 text-[12px] font-bold ${
                     empty
-                      ? "bg-[#E2E8F0] text-slate-500"
+                      ? "bg-[#E3D6B8] text-[#6B5A40]"
                       : "bg-[#10B981]/15 text-[#10B981]"
                   }`}
                 >
@@ -1955,7 +1987,7 @@ export default function NidInformationCorrectionForm() {
               </div>
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[12px] bg-slate-900">
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[12px] bg-[#3B2F1E]">
               <div
                 ref={scrollerRef}
                 onScroll={onPreviewScroll}
@@ -1963,9 +1995,9 @@ export default function NidInformationCorrectionForm() {
                 onPointerMove={onPanMove}
                 onPointerUp={onPanEnd}
                 onPointerCancel={onPanEnd}
-                className={`h-full select-none overflow-auto p-4 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+                className={`scroll h-full select-none overflow-auto p-4 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
                 style={{
-                  scrollbarColor: "#475569 transparent",
+                  scrollbarColor: "#6B5A40 transparent",
                   touchAction: "auto",
                 }}
               >
@@ -1987,7 +2019,7 @@ export default function NidInformationCorrectionForm() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute right-6 top-3 inline-flex items-center gap-1 rounded-full bg-[#0F172A]/90 px-4 py-[7px] text-[11px] font-bold text-white shadow-lg backdrop-blur-sm">
+              <div className="pointer-events-none absolute right-6 top-3 inline-flex items-center gap-1 rounded-full bg-[#3B2F1E]/90 px-4 py-[7px] text-[13px] font-bold text-white shadow-lg backdrop-blur-sm">
                 <NidT>{"Page "}</NidT>
                 {currentPage}
                 <NidT>{"of "}</NidT>
@@ -2004,9 +2036,9 @@ export default function NidInformationCorrectionForm() {
             "Important information and instructions",
             locale,
           )}
-          className="mt-6 rounded-[16px] border border-[#E2E8F0] bg-white px-6 py-5 shadow-sm text-[12px] leading-[1.7] text-[#0F172A]"
+          className="mt-6 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-6 py-5 shadow-sm text-[15px] leading-[1.7] text-[#3B2F1E]"
         >
-          <h2 className="border-b border-[#E2E8F0] pb-5 text-[14px] font-extrabold text-[#2563EB]">
+          <h2 className="border-b border-[#E3D6B8] pb-5 text-[16px] font-extrabold text-[#DC2626]">
             <NidT>{"Important information and instructions:\n          "}</NidT>
           </h2>
           <p className="mt-5">
@@ -2016,7 +2048,7 @@ export default function NidInformationCorrectionForm() {
               }
             </NidT>
           </p>
-          <ul className="mt-3 list-disc space-y-2.5 pl-6 marker:text-[#2563EB]">
+          <ul className="mt-3 list-disc space-y-2.5 pl-6 marker:text-[#DC2626]">
             <li>
               <NidT>
                 {
@@ -2067,7 +2099,7 @@ export default function NidInformationCorrectionForm() {
               </NidT>
             </li>
           </ul>
-          <p className="mt-5 rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#4F46E5]">
+          <p className="mt-5 rounded-[10px] border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-3 font-semibold text-[#B91C1C]">
             <NidT>
               {
                 "Fill in every field accurately. An incomplete or incorrect\n            application is treated as cancelled.\n          "
@@ -2085,10 +2117,10 @@ export default function NidInformationCorrectionForm() {
       </div>
 
       {/* Fixed action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E2E8F0] bg-white/95 backdrop-blur-xl">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E3D6B8] bg-[#FBF6E8]/95 backdrop-blur-xl">
         <div className="mx-auto flex min-h-[68px] max-w-[1320px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 sm:px-5 xl:px-0">
           <div
-            className="hidden items-center gap-2 text-[11px] font-semibold text-slate-500 md:flex"
+            className="hidden items-center gap-2 text-[13px] font-semibold text-[#6B5A40] md:flex"
             role="status"
           >
             <span className={`h-[7px] w-[7px] rounded-full ${status.dot}`} />
@@ -2139,7 +2171,7 @@ export default function NidInformationCorrectionForm() {
               type="button"
               onClick={handleDownload}
               disabled={busy}
-              className="inline-flex items-center justify-center gap-1.5 rounded-[11px] bg-[#10B981] px-4 py-[11px] text-[11px] font-extrabold text-white shadow-md transition hover:bg-[#059669] disabled:cursor-wait disabled:opacity-70 sm:px-5"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D42020] px-4 py-[12px] text-[15px] font-extrabold text-white shadow-sm transition duration-150 hover:bg-[#AE1717] active:bg-[#991B1B] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 disabled:cursor-not-allowed disabled:opacity-70 sm:px-5"
             >
               {busy ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -2160,7 +2192,7 @@ export default function NidInformationCorrectionForm() {
       {toast ? (
         <div
           role="status"
-          className="fixed bottom-[84px] left-1/2 z-[60] max-w-[92vw] -translate-x-1/2 rounded-full bg-[#0F172A] px-4 py-2 text-[12px] font-semibold text-white shadow-xl"
+          className="fixed bottom-[84px] left-1/2 z-[60] max-w-[92vw] -translate-x-1/2 rounded-full bg-[#3B2F1E] px-4 py-2 text-[14px] font-semibold text-white shadow-xl"
         >
           {toast}
         </div>

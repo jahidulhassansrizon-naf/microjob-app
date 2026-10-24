@@ -468,9 +468,37 @@ export default function PdfToImage() {
         }), `${baseName}-images.zip`);
     };
     const canConvert = !!selectedFile && !isProcessing;
-    return (<div id="pdf-to-image-tool" className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
+    return (<div id="pdf-to-image-tool" className="page-font w-full space-y-5 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
+        #pdf-to-image-tool {
+          line-height: 1.45;
+          position: relative;
+          isolation: isolate;
+        }
+
+        /* Extend this tool's warm-sand backdrop across the viewport without
+           widening the content column or introducing horizontal scrolling. */
+        #pdf-to-image-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(to bottom, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
         #pdf-to-image-tool a[href],
         #pdf-to-image-tool button:not(:disabled),
         #pdf-to-image-tool label,
@@ -481,18 +509,60 @@ export default function PdfToImage() {
         #pdf-to-image-tool input[type="range"],
         #pdf-to-image-tool input[type="checkbox"],
         #pdf-to-image-tool input[type="radio"],
-        #pdf-to-image-tool input[type="file"] {
-          cursor: pointer;
-        }
+        #pdf-to-image-tool input[type="file"] { cursor: pointer; }
 
-        #pdf-to-image-tool button:disabled {
-          cursor: not-allowed;
+        #pdf-to-image-tool button {
+          font-size: 16px;
+          line-height: 1.45;
+          transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
         }
+        #pdf-to-image-tool button:not(:disabled):active,
+        #pdf-to-image-tool a[href]:active,
+        #pdf-to-image-tool [role="button"]:active { transform: scale(0.98); }
+        #pdf-to-image-tool button:disabled { cursor: not-allowed; opacity: 0.7; }
+        #pdf-to-image-tool button:focus-visible,
+        #pdf-to-image-tool a[href]:focus-visible,
+        #pdf-to-image-tool label:focus-within,
+        #pdf-to-image-tool [role="button"]:focus-visible {
+          outline: 2px solid #DC2626;
+          outline-offset: 2px;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+        }
+        #pdf-to-image-tool .grid-cols-4 button { font-size: 15px; }
+        #pdf-to-image-tool button.selected-tile { position: relative; }
+        #pdf-to-image-tool button.selected-tile::after {
+          content: "✓"; position: absolute; top: 3px; right: 3px;
+          width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+          border-radius: 999px; background: #DC2626; color: #FFFFFF;
+          font-size: 11px; font-weight: 700; line-height: 1;
+        }
+        #pdf-to-image-tool label span { font-size: 16px; line-height: 1.45; }
+        #pdf-to-image-tool p { font-size: 14px; line-height: 1.45; }
+        #pdf-to-image-tool h1 { font-size: 24px; line-height: 1.35; }
+        #pdf-to-image-tool h2, #pdf-to-image-tool h3, #pdf-to-image-tool h4 { font-size: 18px; line-height: 1.4; }
+        #pdf-to-image-tool input:not([type="file"]), #pdf-to-image-tool select, #pdf-to-image-tool textarea {
+          background: #FBF6E8;
+          border-color: #E3D6B8;
+          color: #3B2F1E;
+          font-size: 16px;
+        }
+        #pdf-to-image-tool input:focus, #pdf-to-image-tool select:focus, #pdf-to-image-tool textarea:focus {
+          border-color: #DC2626;
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+        }
+        #pdf-to-image-tool .scroll { scrollbar-width: thin; scrollbar-color: #F87171 transparent; }
+        #pdf-to-image-tool .scroll::-webkit-scrollbar { width: 12px; }
+        #pdf-to-image-tool .scroll::-webkit-scrollbar-track { background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0; }
+        #pdf-to-image-tool .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #F87171, #DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        #pdf-to-image-tool .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #EF4444, #B91C1C); }
+        #pdf-to-image-tool label.border-dashed { border-color: #B0A080; }
+        #pdf-to-image-tool label.border-dashed:hover, #pdf-to-image-tool label.border-dashed:focus-within { border-color: rgba(220, 38, 38, 0.5); }
       `}</style>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-[#0F172A]">
-        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#2563EB] transition-colors">
+      <div className="flex items-center gap-2 text-sm text-[#3B2F1E]">
+        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#DC2626] transition-colors">
           <ArrowLeft size={14}/>
 
           <span><PdfT>{"Back to Tools"}</PdfT></span>
@@ -504,33 +574,33 @@ export default function PdfToImage() {
 
         <span><PdfT>{"/"}</PdfT></span>
 
-        <span className="font-semibold text-[#0F172A]"><PdfT>{"PDF to Image"}</PdfT></span>
+        <span className="font-semibold text-[#3B2F1E]"><PdfT>{"PDF to Image"}</PdfT></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#4F46E5]/20">
+          <div className="w-12 h-12 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#FBB6B6]">
             <FileImage size={24}/>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><PdfT>{"PDF to Image"}</PdfT></h1>
+              <h1 className="text-[24px] font-bold text-[#3B2F1E]"><PdfT>{"PDF to Image"}</PdfT></h1>
 
-              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full"><PdfT>{"Free\n              "}</PdfT></span>
+              <span className="bg-[#F3E9D2] text-[#5A4A32] text-[12px] font-bold px-2 py-0.5 rounded-full"><PdfT>{"Free\n              "}</PdfT></span>
             </div>
 
-            <p className="text-xs text-[#0F172A] font-medium mt-0.5"><PdfT>{"Convert each PDF page to PNG, JPG, WebP, or AVIF.\n            "}</PdfT></p>
+            <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><PdfT>{"Convert each PDF page to PNG, JPG, WebP, or AVIF.\n            "}</PdfT></p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#3B2F1E] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Star size={16}/>
           </button>
 
-          <button aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#3B2F1E] hover:text-[#DC2626] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Share2 size={16}/>
           </button>
         </div>
@@ -541,11 +611,11 @@ export default function PdfToImage() {
         {/* Left Side: Controls & Upload */}
         <div className="lg:col-span-4 space-y-4">
           {/* Upload Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Files ("}</PdfT>{String(selectedFile ? 1 : 0).replace(/[0-9]/g, (digit) => String(locale ?? "").toLowerCase().startsWith("bn") ? "০১২৩৪৫৬৭৮৯"[Number(digit)] : digit)}<PdfT>{")\n              "}</PdfT></h2>
+              <h2 className="text-[18px] font-bold text-[#3B2F1E]"><PdfT>{"Files ("}</PdfT>{String(selectedFile ? 1 : 0).replace(/[0-9]/g, (digit) => String(locale ?? "").toLowerCase().startsWith("bn") ? "০১২৩৪৫৬৭৮৯"[Number(digit)] : digit)}<PdfT>{")\n              "}</PdfT></h2>
 
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#4F46E5] bg-[#4F46E5]/10 hover:bg-[#2563EB]/10 px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#4F46E5]/20">
+              <label className="inline-flex items-center gap-1 text-[13px] font-bold text-[#DC2626] bg-[#FEE9E9] hover:bg-[#FEE9E9] px-2.5 py-1 rounded-lg cursor-pointer transition-colors border border-[#FBB6B6]">
                 <Plus size={12}/>
 
                 <span><PdfT>{"Add"}</PdfT></span>
@@ -554,100 +624,100 @@ export default function PdfToImage() {
               </label>
             </div>
 
-            {!selectedFile ? (<label className="border-2 border-dashed border-[#2563EB]/30 bg-[#2563EB]/5 hover:bg-[#2563EB]/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
-                <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            {!selectedFile ? (<label className="border-2 border-dashed border-[#B0A080] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                <div className="w-10 h-10 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                   <Upload size={20}/>
                 </div>
 
-                <span className="text-xs font-bold text-[#0F172A]"><PdfT>{"Drop PDF files here or click to upload\n                "}</PdfT></span>
+                <span className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Drop PDF files here or click to upload\n                "}</PdfT></span>
 
-                <span className="text-[10px] text-[#0F172A] font-medium mt-1"><PdfT>{"PDF files, max 500 MB each\n                "}</PdfT></span>
+                <span className="text-[12px] text-[#3B2F1E] font-medium mt-1"><PdfT>{"PDF files, max 500 MB each\n                "}</PdfT></span>
 
                 <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden"/>
-              </label>) : (<div className="bg-[#F8FAFC] border border-[#0F172A]/10 rounded-xl p-3 flex items-center justify-between">
+              </label>) : (<div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 bg-[#2563EB]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
                     <FileText size={16}/>
                   </div>
 
                   <div className="truncate">
-                    <p className="text-xs font-bold text-[#0F172A] truncate">
+                    <p className="text-sm font-bold text-[#3B2F1E] truncate">
                       {selectedFile.name}
                     </p>
 
-                    <p className="text-[10px] text-[#0F172A]">
+                    <p className="text-sm text-[#3B2F1E]">
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)}<PdfT>{"MB\n                    "}</PdfT></p>
                   </div>
                 </div>
 
-                <button onClick={handleReset} className="p-1 text-[#0F172A] hover:text-[#4F46E5] rounded-lg transition-colors">
+                <button onClick={handleReset} className="p-1 text-[#3B2F1E] hover:text-[#DC2626] rounded-lg transition-colors">
                   <X size={16}/>
                 </button>
               </div>)}
           </div>
 
           {/* Image Format Selector Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Image format"}</PdfT></h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
+            <h2 className="text-[18px] font-bold text-[#3B2F1E]"><PdfT>{"Image format"}</PdfT></h2>
 
             <div className="grid grid-cols-4 gap-2">
-              {(["JPG", "PNG", "WebP", "AVIF"] as const).map((fmt) => (<button key={fmt} onClick={() => handleFormatChange(fmt)} className={`py-2 text-xs font-bold rounded-xl border transition-all ${imageFormat === fmt
-                ? "border-[#2563EB] bg-[#2563EB]/5 text-[#2563EB] shadow-2xs"
-                : "border-[#0F172A]/10 bg-white text-[#0F172A] hover:bg-white"}`}>
+              {(["JPG", "PNG", "WebP", "AVIF"] as const).map((fmt) => (<button key={fmt} onClick={() => handleFormatChange(fmt)} className={`py-2 text-sm font-bold rounded-xl border transition-all ${imageFormat === fmt
+                ? "selected-tile border-[#DC2626] bg-[#F6D9A8] text-[#DC2626] ring-2 ring-[#DC2626]/40 shadow-sm"
+                : "border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}>
                   {fmt}
                 </button>))}
             </div>
           </div>
 
           {/* Resolution Selector Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Resolution"}</PdfT></h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
+            <h2 className="text-[18px] font-bold text-[#3B2F1E]"><PdfT>{"Resolution"}</PdfT></h2>
 
             <div className="space-y-2">
               {/* Standard */}
               <button onClick={() => handleResolutionChange("standard")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "standard"
-            ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
-            : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Standard"}</PdfT></p>
+            ? "selected-tile border-[#DC2626] bg-[#F6D9A8] text-[#3B2F1E] ring-2 ring-[#DC2626]/40 shadow-sm"
+            : "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#EFE3C8]"}`}>
+                <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Standard"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"96 DPI \u2014 good for screen and sharing\n                "}</PdfT></p>
+                <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><PdfT>{"96 DPI \u2014 good for screen and sharing\n                "}</PdfT></p>
               </button>
 
               {/* High */}
               <button onClick={() => handleResolutionChange("high")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "high"
-            ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
-            : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"High"}</PdfT></p>
+            ? "selected-tile border-[#DC2626] bg-[#F6D9A8] text-[#3B2F1E] ring-2 ring-[#DC2626]/40 shadow-sm"
+            : "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#EFE3C8]"}`}>
+                <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"High"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"144 DPI \u2014 sharper text and details\n                "}</PdfT></p>
+                <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><PdfT>{"144 DPI \u2014 sharper text and details\n                "}</PdfT></p>
               </button>
 
               {/* Ultra high */}
               <button onClick={() => handleResolutionChange("ultra")} className={`w-full p-3 text-left rounded-xl border transition-all ${resolution === "ultra"
-            ? "border-[#2563EB] bg-[#2563EB]/5 text-[#0F172A] shadow-2xs"
-            : "border-[#0F172A]/10 bg-white hover:bg-white"}`}>
-                <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Ultra high"}</PdfT></p>
+            ? "selected-tile border-[#DC2626] bg-[#F6D9A8] text-[#3B2F1E] ring-2 ring-[#DC2626]/40 shadow-sm"
+            : "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#EFE3C8]"}`}>
+                <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Ultra high"}</PdfT></p>
 
-                <p className="text-[10px] text-[#0F172A] font-medium mt-0.5"><PdfT>{"216 DPI \u2014 best for print\n                "}</PdfT></p>
+                <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><PdfT>{"216 DPI \u2014 best for print\n                "}</PdfT></p>
               </button>
             </div>
           </div>
         </div>
 
         {/* Right Side: Preview */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[520px]">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between min-h-[520px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Preview"}</PdfT></h2>
+            <h2 className="text-[18px] font-bold text-[#3B2F1E]"><PdfT>{"Preview"}</PdfT></h2>
 
-            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
-            ? "bg-[#2563EB]/10 text-[#0F172A]"
+            <span className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
+            ? "bg-[#FEE9E9] text-[#DC2626]"
             : pages
                 ? "bg-[#10B981]/10 text-[#10B981]"
                 : isProcessing
-                    ? "bg-[#E2E8F0] text-[#2563EB]"
+                    ? "bg-[#F3E9D2] text-[#DC2626]"
                     : selectedFile
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-[#F8FAFC] text-[#0F172A]"}`}>
+                        ? "bg-[#FEE9E9] text-[#DC2626]"
+                        : "bg-[#F6EEDB] text-[#3B2F1E]"}`}>
               <PdfT>{errorMessage ? "Error" : pages
                 ? `${pages.length} page${pages.length === 1 ? "" : "s"}`
                 : isProcessing
@@ -658,23 +728,23 @@ export default function PdfToImage() {
             </span>
           </div>
 
-          {isProcessing ? (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3"/>
+          {isProcessing ? (<div className="bg-[#F6EEDB]/60 rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <Loader2 size={28} className="text-[#DC2626] animate-spin mb-3"/>
 
-              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Rendering your PDF\u2026\n              "}</PdfT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Rendering your PDF\u2026\n              "}</PdfT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1">
+              <p className="text-sm text-[#3B2F1E] mt-1">
                 {progress && progress.total > 0
             ? <PdfT>{`Page ${progress.done} of ${progress.total}`}</PdfT> : <PdfT>{"Getting started…"}</PdfT>}
               </p>
-            </div>) : errorMessage ? (<div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#2563EB]/30 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#2563EB]/30">
+            </div>) : errorMessage ? (<div className="bg-[#FEE9E9] rounded-2xl border border-dashed border-[#DC2626]/50 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <div className="w-10 h-10 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#DC2626]/50">
                 <AlertCircle size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Conversion failed\n              "}</PdfT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Conversion failed\n              "}</PdfT></p>
 
-              <p className="text-[11px] text-[#4F46E5] mt-1 max-w-xs">
+              <p className="text-sm text-[#DC2626] mt-1 max-w-xs">
                 <PdfT>{errorMessage ?? ""}</PdfT>
               </p>
             </div>) : pages ? (<div className="my-auto py-4 space-y-4">
@@ -684,39 +754,39 @@ export default function PdfToImage() {
                     <CheckCircle2 size={16}/>
                   </div>
 
-                  <p className="text-xs font-bold text-[#0F172A]">
+                  <p className="text-sm font-bold text-[#3B2F1E]">
                     <PdfT>{`${pages.length} page${pages.length === 1 ? "" : "s"} converted`}</PdfT>
                   </p>
                 </div>
 
-                {pages.length > 1 && (<button onClick={downloadAllAsZip} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-[11px] font-bold rounded-lg shadow-xs hover:bg-[#2563EB]/90 transition-all">
+                {pages.length > 1 && (<button onClick={downloadAllAsZip} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#DC2626] text-white text-[15px] font-bold rounded-lg shadow-sm hover:bg-[#B91C1C] transition-all">
                     <Download size={12}/><PdfT>{"Download all (.zip)\n                  "}</PdfT></button>)}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                {pages.map((page) => (<div key={page.pageNumber} className="bg-[#F8FAFC] border border-[#0F172A]/10 p-2.5 rounded-xl flex flex-col items-center text-center gap-1.5">
-                    <div className="w-full aspect-[3/4] bg-white border border-[#0F172A]/10 rounded-md overflow-hidden flex items-center justify-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[440px] overflow-y-auto scroll pr-1">
+                {pages.map((page) => (<div key={page.pageNumber} className="bg-[#F6EEDB] border border-[#E3D6B8] p-2.5 rounded-xl flex flex-col items-center text-center gap-1.5">
+                    <div className="w-full aspect-[3/4] bg-white border border-[#E3D6B8] rounded-md overflow-hidden flex items-center justify-center">
                       <img src={page.thumbnailUrl} alt={tx(`Page ${page.pageNumber}`)} className="max-w-full max-h-full object-contain"/>
                     </div>
 
-                    <p className="text-[11px] font-bold text-[#0F172A] truncate w-full"><PdfT>{`Page ${page.pageNumber}`}</PdfT></p>
+                    <p className="text-sm font-bold text-[#3B2F1E] truncate w-full"><PdfT>{`Page ${page.pageNumber}`}</PdfT></p>
 
-                    <p className="text-[10px] text-[#0F172A]">
+                    <p className="text-sm text-[#3B2F1E]">
                       {formatBytes(page.blob.size)}<PdfT>{"\u00B7 "}</PdfT>{page.format}
                     </p>
 
-                    <button onClick={() => downloadPage(page)} className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-[#0F172A]/10 text-[#0F172A] text-[10px] font-bold rounded-lg hover:bg-[#E2E8F0] transition-all">
+                    <button onClick={() => downloadPage(page)} className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 border border-[#E3D6B8] text-[#3B2F1E] text-[15px] font-bold rounded-lg hover:bg-[#EFE3C8] transition-all">
                       <Download size={11}/><PdfT>{"Download\n                    "}</PdfT></button>
                   </div>))}
               </div>
-            </div>) : (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-28">
-              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
+            </div>) : (<div className="bg-[#F6EEDB]/60 rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-28">
+              <div className="w-10 h-10 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#FBB6B6]">
                 <FileText size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><PdfT>{"Add files to get started\n              "}</PdfT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><PdfT>{"Add files to get started\n              "}</PdfT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><PdfT>{"Your result will appear here after you run the tool.\n              "}</PdfT></p>
+              <p className="text-sm text-[#3B2F1E] mt-1"><PdfT>{"Your result will appear here after you run the tool.\n              "}</PdfT></p>
             </div>)}
 
           <div />
@@ -724,15 +794,15 @@ export default function PdfToImage() {
       </div>
 
       {/* Bottom Status & Action Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-[#0F172A]">
+      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#3B2F1E]">
           <span className={`w-2 h-2 rounded-full shrink-0 ${errorMessage
-            ? "bg-[#2563EB]"
+            ? "bg-[#DC2626]"
             : pages
                 ? "bg-[#10B981]"
                 : isProcessing
-                    ? "bg-[#2563EB] animate-pulse"
-                    : "bg-[#0F172A]/40"}`}/>
+                    ? "bg-[#DC2626] animate-pulse"
+                    : "bg-[#B0A080]"}`}/>
 
           <span>
             <PdfT>{errorMessage
@@ -750,11 +820,11 @@ export default function PdfToImage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-white transition-all"><PdfT>{"Reset\n          "}</PdfT></button>
+          <button onClick={handleReset} className="px-4 py-2 border border-[#FBB6B6] text-[#B91C1C] text-sm font-bold rounded-xl hover:bg-[#FEE9E9] transition-all"><PdfT>{"Reset\n          "}</PdfT></button>
 
-          <button onClick={handleConvert} disabled={!canConvert} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${canConvert
-            ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
-            : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"}`}>
+          <button onClick={handleConvert} disabled={!canConvert} className={`px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all ${canConvert
+            ? "bg-[#D42020] text-white shadow-sm hover:bg-[#AE1717] active:scale-[0.98]"
+            : "bg-[#D42020] text-white cursor-not-allowed"}`}>
             {isProcessing ? (<Loader2 size={14} className="animate-spin"/>) : (<FileImage size={14}/>)}
 
             <span>{isProcessing ? <PdfT>{"Converting…"}</PdfT> : <PdfT>{"Convert to images"}</PdfT>}</span>
@@ -763,17 +833,17 @@ export default function PdfToImage() {
       </div>
 
       {/* Security Banner */}
-      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
+      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-sm text-[#3B2F1E] font-medium">
         <Lock size={15} className="text-[#10B981] shrink-0"/>
 
         <span><PdfT>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</PdfT></span>
       </div>
 
       {/* How to use Accordion */}
-      <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
-        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors">
+      <div className="bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-sm overflow-hidden">
+        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-sm font-bold text-[#3B2F1E] hover:bg-[#F6EEDB] transition-colors">
           <div className="flex items-center gap-2">
-            <span className="text-[#2563EB]"><PdfT>{"?"}</PdfT></span>
+            <span className="text-[#DC2626]"><PdfT>{"?"}</PdfT></span>
 
             <span><PdfT>{"How to use"}</PdfT></span>
           </div>
@@ -781,35 +851,35 @@ export default function PdfToImage() {
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3"><PdfT>{"Upload your PDF, choose your preferred image format (JPG, PNG, WebP,\n            or AVIF) and resolution quality, then click \"Convert to images\" to\n            extract pages as image files.\n          "}</PdfT></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-sm text-[#3B2F1E] leading-relaxed border-t border-[#E3D6B8] pt-3"><PdfT>{"Upload your PDF, choose your preferred image format (JPG, PNG, WebP,\n            or AVIF) and resolution quality, then click \"Convert to images\" to\n            extract pages as image files.\n          "}</PdfT></div>)}
       </div>
 
       {/* Tools in Same Category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><PdfT>{"Tools in the same category\n        "}</PdfT></h3>
+        <h3 className="text-[18px] font-bold text-[#3B2F1E]"><PdfT>{"Tools in the same category\n        "}</PdfT></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/sohoj-tools/compress-pdf" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/compress-pdf" className="bg-[#F3E9D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#DC2626]/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#EFE3C8] flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><PdfT>{"Compress PDF\n              "}</PdfT></h4>
+              <h4 className="text-[18px] font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><PdfT>{"Compress PDF\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><PdfT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</PdfT></p>
+              <p className="text-sm text-[#3B2F1E] mt-1 leading-snug"><PdfT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</PdfT></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/merge-pdfs" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/merge-pdfs" className="bg-[#F3E9D2] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#DC2626]/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#EFE3C8] flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Combine size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><PdfT>{"Merge PDFs\n              "}</PdfT></h4>
+              <h4 className="text-[18px] font-bold text-[#3B2F1E] group-hover:text-[#DC2626] transition-colors"><PdfT>{"Merge PDFs\n              "}</PdfT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><PdfT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</PdfT></p>
+              <p className="text-sm text-[#3B2F1E] mt-1 leading-snug"><PdfT>{"Combine multiple PDF files into one document in your chosen\n                order.\n              "}</PdfT></p>
             </div>
           </Link>
         </div>

@@ -259,10 +259,46 @@ export default function RemoveBackground() {
   return (
     <div
       id="remove-bg-tool"
-      className="w-full space-y-5 text-[#0F172A] font-sans"
+      className="relative isolate z-0 w-full space-y-5 text-[#3B2F1E] page-font"
     >
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        html:has(#remove-bg-tool),
+        body:has(#remove-bg-tool),
+        main:has(#remove-bg-tool) {
+          background: linear-gradient(to bottom, #E9DDC3, #EFE5CE) !important;
+        }
+        body:has(#remove-bg-tool) {
+          background-attachment: fixed !important;
+        }
+        #remove-bg-tool {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #remove-bg-tool, #remove-bg-tool *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #remove-bg-tool h1, #remove-bg-tool h2, #remove-bg-tool h3, #remove-bg-tool h4 {
+          letter-spacing: -0.01em;
+        }
+        /* Extend the warm page canvas to both sides even inside a centred layout. */
+        #remove-bg-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(to bottom, #E9DDC3, #EFE5CE);
+        }
         #remove-bg-tool a[href],
         #remove-bg-tool button:not(:disabled),
         #remove-bg-tool label,
@@ -279,14 +315,34 @@ export default function RemoveBackground() {
 
         #remove-bg-tool button:disabled {
           cursor: not-allowed;
+          opacity: 0.7;
+        }
+        #remove-bg-tool button:not(:disabled),
+        #remove-bg-tool a[href],
+        #remove-bg-tool input,
+        #remove-bg-tool select {
+          transition-duration: 150ms;
+        }
+        #remove-bg-tool input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+        #remove-bg-tool select {
+          background-color: #FBF6E8;
+          border-color: #E3D6B8;
+          color: #3B2F1E;
+        }
+        #remove-bg-tool button:focus-visible,
+        #remove-bg-tool a:focus-visible,
+        #remove-bg-tool input:focus-visible,
+        #remove-bg-tool select:focus-visible {
+          outline: 2px solid rgba(220, 38, 38, 0.4);
+          outline-offset: 2px;
         }
       `}</style>
 
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-[#6B5A40]">
         <Link
           href="/sohoj-tools"
-          className="flex items-center gap-1 hover:text-[#0F172A] transition-colors"
+          className="flex items-center gap-1 hover:text-[#B91C1C] transition-colors"
         >
           <ArrowLeft size={14} />
           <span>
@@ -302,25 +358,25 @@ export default function RemoveBackground() {
         <span>
           <T>{"/"}</T>
         </span>
-        <span className="font-semibold text-[#0F172A]">
+        <span className="font-semibold text-[#3B2F1E]">
           <T>{"Remove Background"}</T>
         </span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0]"></div>
+          <div className="w-12 h-12 bg-[#F6EEDB] text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#E3D6B8]"></div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]">
+              <h1 className="text-xl font-bold text-[#3B2F1E]">
                 <T>{"Remove Background\n              "}</T>
               </h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-100 text-emerald-700 text-[12px] font-bold px-2 py-0.5 rounded-full">
                 <T>{"Free\n              "}</T>
               </span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
+            <p className="text-sm text-[#6B5A40] font-medium mt-0.5">
               <span>
                 {removeBgText(
                   locale,
@@ -339,14 +395,14 @@ export default function RemoveBackground() {
             title={
               locale === "bn" ? "পছন্দের তালিকায় যোগ করুন" : "Add to favorites"
             }
-            className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
+            className="p-2 text-[#6B5A40] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]"
           >
             <Star size={16} />
           </button>
           <button
             aria-label={locale === "bn" ? "শেয়ার করুন" : "Share"}
             title={locale === "bn" ? "শেয়ার করুন" : "Share"}
-            className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
+            className="p-2 text-[#6B5A40] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]"
           >
             <Share2 size={16} />
           </button>
@@ -357,19 +413,19 @@ export default function RemoveBackground() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Side: Controls Panel */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-4">
-            <h2 className="text-xs font-bold text-[#0F172A] border-b border-gray-100 pb-2">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-4">
+            <h2 className="text-sm font-bold text-[#3B2F1E] border-b border-[#E3D6B8] pb-2">
               <T>{"New background\n            "}</T>
             </h2>
 
             {/* Background Selector Tabs */}
-            <div className="grid grid-cols-3 gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100">
+            <div className="grid grid-cols-3 gap-1.5 bg-[#F6EEDB] p-1 rounded-xl border border-[#E3D6B8]">
               <button
                 onClick={() => setBgType("transparent")}
-                className={`py-2 text-[11px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
+                className={`py-2 text-[13px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
                   bgType === "transparent"
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"
+                    ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm border border-[#E3D6B8]"
+                    : "text-[#6B5A40] hover:text-[#B91C1C]"
                 }`}
               >
                 <Layers size={14} />
@@ -380,10 +436,10 @@ export default function RemoveBackground() {
 
               <button
                 onClick={() => setBgType("solid")}
-                className={`py-2 text-[11px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
+                className={`py-2 text-[13px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
                   bgType === "solid"
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"
+                    ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm border border-[#E3D6B8]"
+                    : "text-[#6B5A40] hover:text-[#B91C1C]"
                 }`}
               >
                 <Palette size={14} />
@@ -394,10 +450,10 @@ export default function RemoveBackground() {
 
               <button
                 onClick={() => setBgType("photo")}
-                className={`py-2 text-[11px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
+                className={`py-2 text-[13px] font-bold rounded-lg transition-all flex flex-col items-center gap-1 ${
                   bgType === "photo"
-                    ? "bg-white text-[#2563EB] shadow-xs border border-gray-100"
-                    : "text-gray-500 hover:text-[#0F172A]"
+                    ? "bg-[#FBF6E8] text-[#DC2626] shadow-sm border border-[#E3D6B8]"
+                    : "text-[#6B5A40] hover:text-[#B91C1C]"
                 }`}
               >
                 <ImageIcon size={14} />
@@ -409,8 +465,8 @@ export default function RemoveBackground() {
 
             {/* Solid Color Options */}
             {bgType === "solid" && (
-              <div className="space-y-2 pt-1 border-t border-gray-100">
-                <span className="text-[11px] font-bold text-gray-600 block">
+              <div className="space-y-2 pt-1 border-t border-[#E3D6B8]">
+                <span className="text-[13px] font-bold text-[#5A4A32] block">
                   <T>{"Select Color\n                "}</T>
                 </span>
                 <div className="flex items-center gap-2">
@@ -426,9 +482,9 @@ export default function RemoveBackground() {
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
-                      className={`w-6 h-6 rounded-full border border-gray-200 transition-transform ${
+                      className={`w-6 h-6 rounded-full border border-[#E3D6B8] transition-transform ${
                         selectedColor === color
-                          ? "scale-110 ring-2 ring-[#2563EB]"
+                          ? "scale-110 ring-2 ring-[#DC2626]"
                           : ""
                       }`}
                       style={{ backgroundColor: color }}
@@ -451,9 +507,9 @@ export default function RemoveBackground() {
           </div>
 
           {/* Action Buttons Box */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col gap-2">
+          <div className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col gap-2">
             {errorMessage && (
-              <p className="text-[11px] text-red-500 font-medium">
+              <p className="text-[13px] text-red-500 font-medium">
                 {removeBgErrorText(locale, errorMessage)}
               </p>
             )}
@@ -461,7 +517,7 @@ export default function RemoveBackground() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleReset}
-                className="w-1/3 py-2.5 border border-gray-200 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-1"
+                className="w-1/3 py-2.5 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#EFE3C8] transition-all flex items-center justify-center gap-1"
               >
                 <RefreshCw size={12} />
                 <span>
@@ -472,10 +528,10 @@ export default function RemoveBackground() {
               <button
                 onClick={handleRemoveBg}
                 disabled={!imageFile || isProcessing}
-                className={`w-2/3 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                className={`w-2/3 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                   imageFile && !isProcessing
-                    ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    ? "bg-[#D42020] text-white shadow-sm hover:bg-[#AE1717]"
+                    : "bg-[#F3E9D2] text-[#6B5A40] cursor-not-allowed"
                 }`}
               >
                 {isProcessing ? (
@@ -504,7 +560,7 @@ export default function RemoveBackground() {
             {processedUrl && (
               <button
                 onClick={handleDownload}
-                className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                className="w-full mt-1 py-2.5 bg-[#D42020] hover:bg-[#AE1717] text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Download size={14} />
                 <span>
@@ -516,12 +572,12 @@ export default function RemoveBackground() {
         </div>
 
         {/* Right Side: Canvas / Preview Area */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between min-h-[480px]">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h2 className="text-xs font-bold text-[#0F172A]">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between min-h-[480px]">
+          <div className="flex items-center justify-between border-b border-[#E3D6B8] pb-3">
+            <h2 className="text-sm font-bold text-[#3B2F1E]">
               <T>{"Preview"}</T>
             </h2>
-            <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-2.5 py-1 rounded-full">
+            <span className="text-[12px] bg-[#F3E9D2] text-[#6B5A40] font-bold px-2.5 py-1 rounded-full">
               {processedUrl ? (
                 <T>{"Processed"}</T>
               ) : imageFile ? (
@@ -533,7 +589,7 @@ export default function RemoveBackground() {
           </div>
 
           {/* Preview Container */}
-          <div className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-6 my-4 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
+          <div className="bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-6 my-4 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
             {processedUrl || previewUrl ? (
               <div
                 className="relative max-w-full max-h-[380px] flex items-center justify-center rounded-lg overflow-hidden p-2"
@@ -575,34 +631,34 @@ export default function RemoveBackground() {
                         animation: rb-scan 1.6s ease-in-out infinite alternate;
                         background: linear-gradient(
                           to bottom,
-                          rgba(37, 99, 235, 0),
-                          rgba(37, 99, 235, 0.35)
+                          rgba(220, 38, 38, 0),
+                          rgba(220, 38, 38, 0.28)
                         );
-                        border-bottom: 2px solid #2563eb;
-                        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+                        border-bottom: 2px solid #DC2626;
+                        box-shadow: 0 4px 16px rgba(220, 38, 38, 0.32);
                       }
                     `}</style>
-                    <div className="absolute inset-0 bg-[#2563EB]/10" />
+                    <div className="absolute inset-0 bg-[#DC2626]/10" />
                     <div className="rb-scan-line absolute left-0 right-0" />
                   </div>
                 )}
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center text-center cursor-pointer p-8 w-full h-full">
-                <div className="w-12 h-12 bg-[#F8FAFC] text-[#2563EB] rounded-2xl flex items-center justify-center mb-3 border border-[#E2E8F0]">
+                <div className="w-12 h-12 bg-[#F6EEDB] text-[#DC2626] rounded-2xl flex items-center justify-center mb-3 border border-[#E3D6B8]">
                   <ImageIcon size={22} />
                 </div>
-                <h3 className="text-xs font-bold text-[#0F172A] mb-1">
+                <h3 className="text-sm font-bold text-[#3B2F1E] mb-1">
                   <T>{"Add an image to get started\n                "}</T>
                 </h3>
-                <p className="text-[11px] text-gray-400 max-w-xs">
+                <p className="text-[13px] text-[#6B5A40] max-w-xs">
                   <T>
                     {
                       "The cut-out preview will appear here after processing.\n                "
                     }
                   </T>
                 </p>
-                <span className="text-[10px] text-gray-400 mt-4 block">
+                <span className="text-[12px] text-[#6B5A40] mt-4 block">
                   <T>
                     {
                       "Or press Ctrl+V to paste a copied image\n                "
@@ -624,22 +680,22 @@ export default function RemoveBackground() {
 
       {/* Tools in the same category */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]">
+        <h3 className="text-sm font-bold text-[#3B2F1E]">
           <T>{"Tools in the same category\n        "}</T>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/sohoj-tools/image-size-reducer"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#D8C9A6] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <ImageIcon size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors">
                 <T>{"Image Size Reducer\n              "}</T>
               </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
+              <p className="text-[12px] text-[#6B5A40] mt-0.5 line-clamp-2">
                 <T>
                   {
                     "Shrink JPG, PNG, and WebP photos in your browser \u2014 quality stays\n                sharp.\n              "
@@ -651,16 +707,16 @@ export default function RemoveBackground() {
 
           <Link
             href="/sohoj-tools/nid-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#D8C9A6] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors">
                 <T>{"NID Joiner\n              "}</T>
               </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
+              <p className="text-[12px] text-[#6B5A40] mt-0.5 line-clamp-2">
                 <T>
                   {
                     "Turn NID card front and back photos into a clean A4 PDF \u2014 all in\n                your browser.\n              "
@@ -672,16 +728,16 @@ export default function RemoveBackground() {
 
           <Link
             href="/sohoj-tools/passport-joiner"
-            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs hover:border-[#E2E8F0] transition-all flex items-start gap-3 group"
+            className="bg-[#FBF6E8] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:border-[#D8C9A6] transition-all flex items-start gap-3 group"
           >
-            <div className="w-8 h-8 bg-[#F8FAFC] text-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-[#F6EEDB] text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <BookOpen size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors">
                 <T>{"Passport Joiner\n              "}</T>
               </h4>
-              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-2">
+              <p className="text-[12px] text-[#6B5A40] mt-0.5 line-clamp-2">
                 <T>
                   {
                     "Turn passport front and back page photos into a clean A4 PDF \u2014\n                ICAO 88\u00D7125 mm layout, all in your browser.\n              "

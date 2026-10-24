@@ -475,10 +475,10 @@ export default function ReduceVideoFileSize() {
     const gotLarger = !!result && savedBytes <= 0;
     const canCompress = !!file && engineState === "ready" && !isCompressing;
     let statusText = "Add a video to get started";
-    let statusDot = "bg-[#2563EB]";
+    let statusDot = "bg-[#D42020]";
     if (engineState === "loading") {
         statusText = "Loading video engine…";
-        statusDot = "bg-[#2563EB]";
+        statusDot = "bg-[#D42020]";
     }
     else if (engineState === "error") {
         statusText = "Video engine failed to load";
@@ -486,7 +486,7 @@ export default function ReduceVideoFileSize() {
     }
     else if (isCompressing) {
         statusText = `Compressing… ${progress}%`;
-        statusDot = "bg-[#2563EB]";
+        statusDot = "bg-[#D42020]";
     }
     else if (result) {
         statusText = "Done. Your compressed video is ready";
@@ -497,9 +497,63 @@ export default function ReduceVideoFileSize() {
         statusDot = "bg-[#10B981]";
     }
     /* --------------------------------- Render --------------------------------- */
-    return (<div id="reduce-video-tool" className="w-full bg-[#F8FAFC] min-h-screen text-[#0F172A] font-sans pb-16">
+    return (<div id="reduce-video-tool" className="page-font relative isolate w-full min-h-screen text-[#3B2F1E] font-sans pb-16">
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #reduce-video-tool {
+          position: relative;
+          isolation: isolate;
+          background: transparent !important;
+          color: #3B2F1E;
+        }
+        #reduce-video-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(to bottom, #E9DDC3, #EFE5CE);
+        }
+        #reduce-video-tool.page-font,
+        #reduce-video-tool.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #reduce-video-tool h1,
+        #reduce-video-tool h2,
+        #reduce-video-tool h3,
+        #reduce-video-tool h4 { letter-spacing: -0.01em; }
+        #reduce-video-tool :where(input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+          color: #3B2F1E;
+          background-color: #FBF6E8;
+          border-color: #E3D6B8;
+          font-size: max(15px, 1em);
+          transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+        }
+        #reduce-video-tool :where(input, select, textarea):focus-visible {
+          outline: none;
+          border-color: #DC2626;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+        }
+        #reduce-video-tool :where(button, a) {
+          transition-duration: 180ms;
+        }
+        #reduce-video-tool button:active:not(:disabled) { transform: scale(0.98); }
+        #reduce-video-tool button:disabled { opacity: 0.7; cursor: not-allowed; }
+        #reduce-video-tool .scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+        #reduce-video-tool .scroll::-webkit-scrollbar { width: 12px; }
+        #reduce-video-tool .scroll::-webkit-scrollbar-track { background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0; }
+        #reduce-video-tool .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #F87171, #DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
+        #reduce-video-tool .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #EF4444, #B91C1C); }
+
         :where(#reduce-video-tool) a[href],
         :where(#reduce-video-tool) button:not(:disabled),
         :where(#reduce-video-tool) label:has(input[type="file"]:not(:disabled)),
@@ -522,32 +576,32 @@ export default function ReduceVideoFileSize() {
         {/* Top Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-[#E2E8F0] rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={L("Go back")}>
+            <div className="flex items-center gap-2 text-sm text-[#5A4A32] font-medium mb-2">
+              <button onClick={() => router.back()} className="p-1 hover:bg-[#F3E9D2] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Sohoj Tools\n              "}</T></Link>
               <span><T>{"/"}</T></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"Video Tools\n              "}</T></span>
+              <span className="hover:text-[#3B2F1E] cursor-pointer"><T>{"Video Tools\n              "}</T></span>
               <span><T>{"/"}</T></span>
-              <span className="text-[#0F172A] font-semibold"><T>{"Reduce Video File Size\n              "}</T></span>
+              <span className="text-[#3B2F1E] font-semibold"><T>{"Reduce Video File Size\n              "}</T></span>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-blue-50 text-[#2563EB] rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <Video size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Reduce Video File Size\n              "}</T></h1>
-              <span className="bg-[#10B981]/10 text-[#10B981] text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <h1 className="text-2xl font-bold text-[#3B2F1E] tracking-tight"><T>{"Reduce Video File Size\n              "}</T></h1>
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[13px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-1"><T>{"Shrink video files in your browser \u2014 adjust quality and resolution\n              before sharing or uploading. Your video never leaves your device.\n            "}</T></p>
+            <p className="text-sm text-[#5A4A32] font-medium mt-1"><T>{"Shrink video files in your browser \u2014 adjust quality and resolution\n              before sharing or uploading. Your video never leaves your device.\n            "}</T></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Toggle favorite")} className="p-2 bg-white rounded-lg border border-[#E2E8F0] text-slate-500 hover:text-[#2563EB] hover:border-[#2563EB]/40 transition-all shadow-2xs">
-              <Star size={16} className={isFavorite ? "fill-[#2563EB] text-[#2563EB]" : ""}/>
+            <button onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Toggle favorite")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#DC2626] hover:border-[#DC2626]/50 transition-all shadow-2xs">
+              <Star size={16} className={isFavorite ? "fill-[#DC2626] text-[#DC2626]" : ""}/>
             </button>
-            <button aria-label={L("Share")} className="p-2 bg-white rounded-lg border border-[#E2E8F0] text-slate-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button aria-label={L("Share")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#3B2F1E] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -556,7 +610,7 @@ export default function ReduceVideoFileSize() {
         {/* Error banner */}
         {error && (<div role="alert" className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4">
             <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
-            <p className="text-xs font-medium leading-relaxed flex-1">
+            <p className="text-sm font-medium leading-relaxed flex-1">
               <T>{error}</T>
             </p>
             <button onClick={() => setError(null)} aria-label={L("Dismiss error")} className="p-0.5 hover:bg-red-100 rounded-md transition-colors">
@@ -565,50 +619,50 @@ export default function ReduceVideoFileSize() {
           </div>)}
 
         {/* Engine status */}
-        {engineState === "loading" && (<div className="flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#2563EB] rounded-2xl px-4 py-3 text-xs font-medium">
+        {engineState === "loading" && (<div className="flex items-center gap-2 bg-[#FEE9E9] border border-[#FBB6B6] text-[#DC2626] rounded-2xl px-4 py-3 text-sm font-medium">
             <Loader2 size={14} className="animate-spin"/><T>{"Loading the video engine (about 30 MB, only downloaded once)\u2026\n          "}</T></div>)}
-        {engineState === "error" && (<div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl px-4 py-3 text-xs font-medium">
+        {engineState === "error" && (<div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl px-4 py-3 text-sm font-medium">
             <span><T>{"Couldn&apos;t download the video engine. Check your connection and\n              try again.\n            "}</T></span>
-            <button onClick={() => void loadEngine()} className="px-3 py-1.5 bg-white border border-red-200 hover:bg-red-100 rounded-lg font-bold transition-colors"><T>{"Retry\n            "}</T></button>
+            <button onClick={() => void loadEngine()} className="px-3 py-1.5 bg-[#FBF6E8] border border-red-200 hover:bg-red-100 rounded-lg font-bold transition-colors"><T>{"Retry\n            "}</T></button>
           </div>)}
 
         {/* Main Workspace Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: UPLOAD + SETTINGS */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs space-y-4">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-bold text-[#0F172A]"><T>{"Files ("}</T>{file ? 1 : 0}<T>{")\n                "}</T></span>
+                <span className="text-sm font-bold text-[#3B2F1E]"><T>{"Files ("}</T>{file ? 1 : 0}<T>{")\n                "}</T></span>
               </div>
 
               {/* Upload Dropzone */}
               <label onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`border-2 border-dashed transition-all rounded-2xl p-6 flex flex-col items-center justify-center text-center group ${file ? "min-h-[120px]" : "min-h-[220px]"} ${isCompressing
-            ? "opacity-50 cursor-not-allowed border-[#E2E8F0]"
+            ? "opacity-50 cursor-not-allowed border-[#E3D6B8]"
             : "cursor-pointer"} ${isDragging
-            ? "border-[#2563EB] bg-blue-50/50"
-            : "border-[#2563EB]/30 bg-blue-50/20 hover:bg-blue-50/40 hover:border-[#2563EB]/50"}`}>
+            ? "border-[#DC2626] bg-[#FEE9E9]"
+            : "border-[#DC2626]/50 bg-[#FEE9E9] hover:bg-[#FEE9E9] hover:border-[#DC2626]/50"}`}>
                 <input ref={fileInputRef} type="file" accept="video/*,.mkv" onChange={handleFileChange} disabled={isCompressing} className="hidden"/>
-                <div className="w-10 h-10 bg-blue-100 text-[#2563EB] rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                   <Upload size={20}/>
                 </div>
-                <h3 className="text-xs font-bold text-[#0F172A] mb-1">
+                <h3 className="text-sm font-bold text-[#3B2F1E] mb-1">
                   {file
         ? <T>{"Drop another video or click to replace"}</T> : <T>{"Drop a video here or click to upload"}</T>}
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium"><T>{"One video file, max 500 MB\n                "}</T></p>
-                {!file && (<p className="text-[10px] text-slate-400 font-medium mt-3"><T>{"Or press Ctrl+V to paste a copied video\n                  "}</T></p>)}
+                <p className="text-[13px] text-[#7A6A50] font-medium"><T>{"One video file, max 500 MB\n                "}</T></p>
+                {!file && (<p className="text-[12px] text-[#7A6A50] font-medium mt-3"><T>{"Or press Ctrl+V to paste a copied video\n                  "}</T></p>)}
               </label>
 
               {/* Selected file card */}
-              {file && (<div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center gap-3">
-                  <div className="w-9 h-9 shrink-0 bg-blue-100 text-[#2563EB] rounded-lg flex items-center justify-center">
+              {file && (<div className="p-3 bg-[#F6EEDB] border border-[#E3D6B8] rounded-xl flex items-center gap-3">
+                  <div className="w-9 h-9 shrink-0 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center">
                     <FileVideo size={18}/>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#0F172A] truncate" title={file.name}>
+                    <p className="text-sm font-bold text-[#3B2F1E] truncate" title={file.name}>
                       {file.name}
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[13px] text-[#7A6A50]">
                       {formatBytes(file.size, locale)}
                     </p>
                   </div>
@@ -616,17 +670,17 @@ export default function ReduceVideoFileSize() {
             </div>
 
             {/* Settings */}
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-5">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs space-y-5">
               <fieldset disabled={isCompressing} className="space-y-2">
-                <legend className="text-xs font-bold text-[#0F172A] mb-2"><T>{"Quality\n                "}</T></legend>
+                <legend className="text-sm font-bold text-[#3B2F1E] mb-2"><T>{"Quality\n                "}</T></legend>
                 {(Object.keys(QUALITY_PRESETS) as QualityKey[]).map((key) => {
             const preset = QUALITY_PRESETS[key];
             const active = quality === key;
             return (<button key={key} type="button" onClick={() => setQuality(key)} aria-pressed={active} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-colors disabled:opacity-50 ${active
-                    ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
-                    : "border-[#E2E8F0] hover:border-[#2563EB]/30 hover:bg-[#F8FAFC]"}`}>
-                      <span className="text-xs font-bold"><T>{preset.label}</T></span>
-                      <span className="text-[11px] text-slate-500 font-medium">
+                    ? "border-[#DC2626] bg-[#FEE9E9] text-[#DC2626]"
+                    : "border-[#E3D6B8] hover:border-[#DC2626]/50 hover:bg-[#F6EEDB]"}`}>
+                      <span className="text-sm font-bold"><T>{preset.label}</T></span>
+                      <span className="text-[13px] text-[#5A4A32] font-medium">
                         <T>{preset.hint}</T>
                       </span>
                     </button>);
@@ -634,28 +688,28 @@ export default function ReduceVideoFileSize() {
               </fieldset>
 
               <fieldset disabled={isCompressing}>
-                <legend className="text-xs font-bold text-[#0F172A] mb-2"><T>{"Resolution\n                "}</T></legend>
+                <legend className="text-sm font-bold text-[#3B2F1E] mb-2"><T>{"Resolution\n                "}</T></legend>
                 <div className="grid grid-cols-4 gap-2">
                   {RESOLUTION_OPTIONS.map((opt) => {
             const active = resolution === opt.key;
-            return (<button key={opt.key} type="button" onClick={() => setResolution(opt.key)} aria-pressed={active} className={`px-2 py-2 rounded-xl border text-[11px] font-bold transition-colors disabled:opacity-50 ${active
-                    ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
-                    : "border-[#E2E8F0] hover:border-[#2563EB]/30 hover:bg-[#F8FAFC]"}`}>
+            return (<button key={opt.key} type="button" onClick={() => setResolution(opt.key)} aria-pressed={active} className={`px-2 py-2 rounded-xl border text-[13px] font-bold transition-colors disabled:opacity-50 ${active
+                    ? "border-[#DC2626] bg-[#FEE9E9] text-[#DC2626]"
+                    : "border-[#E3D6B8] hover:border-[#DC2626]/50 hover:bg-[#F6EEDB]"}`}>
                         <T>{opt.label}</T>
                       </button>);
         })}
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium mt-2"><T>{"Videos are only scaled down, never enlarged.\n                "}</T></p>
+                <p className="text-[13px] text-[#7A6A50] font-medium mt-2"><T>{"Videos are only scaled down, never enlarged.\n                "}</T></p>
               </fieldset>
             </div>
           </div>
 
           {/* RIGHT COLUMN: PREVIEW / RESULT */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs flex flex-col min-h-[480px]">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
-                <span className="text-xs font-bold text-[#0F172A]"><T>{"Video preview\n                "}</T></span>
-                <span className="text-[11px] font-semibold text-slate-500 bg-[#E2E8F0]/50 px-2.5 py-0.5 rounded-md">
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs flex flex-col min-h-[480px]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E3D6B8]">
+                <span className="text-sm font-bold text-[#3B2F1E]"><T>{"Video preview\n                "}</T></span>
+                <span className="text-[13px] font-semibold text-[#5A4A32] bg-[#F3E9D2]/70 px-2.5 py-0.5 rounded-md">
                   {isCompressing
         ? <T>{"Compressing"}</T> : result
         ? <T>{"Compressed"}</T>
@@ -666,11 +720,11 @@ export default function ReduceVideoFileSize() {
               </div>
 
               {!file && (<div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-2">
-                  <div className="w-10 h-10 bg-blue-50 text-[#2563EB] rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-[#FEE9E9] text-[#DC2626] rounded-xl flex items-center justify-center">
                     <Video size={20}/>
                   </div>
-                  <h3 className="text-xs font-bold text-[#0F172A]"><T>{"Add a video to get started\n                  "}</T></h3>
-                  <p className="text-[11px] text-slate-400 font-medium max-w-xs leading-relaxed"><T>{"Your original and compressed preview will appear here.\n                  "}</T></p>
+                  <h3 className="text-sm font-bold text-[#3B2F1E]"><T>{"Add a video to get started\n                  "}</T></h3>
+                  <p className="text-[13px] text-[#7A6A50] font-medium max-w-xs leading-relaxed"><T>{"Your original and compressed preview will appear here.\n                  "}</T></p>
                 </div>)}
 
               {file && inputUrl && (<div className="mt-4 space-y-5">
@@ -678,8 +732,8 @@ export default function ReduceVideoFileSize() {
                     {/* Original */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-500"><T>{"Original\n                        "}</T></span>
-                        <span className="text-[11px] font-semibold text-slate-500">
+                        <span className="text-[13px] font-bold text-[#5A4A32]"><T>{"Original\n                        "}</T></span>
+                        <span className="text-[13px] font-semibold text-[#5A4A32]">
                           {formatBytes(file.size, locale)}
                         </span>
                       </div>
@@ -689,8 +743,8 @@ export default function ReduceVideoFileSize() {
                     {/* Compressed */}
                     {result && (<div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#10B981]"><T>{"Compressed\n                          "}</T></span>
-                          <span className="text-[11px] font-semibold text-[#10B981]">
+                          <span className="text-[13px] font-bold text-[#10B981]"><T>{"Compressed\n                          "}</T></span>
+                          <span className="text-[13px] font-semibold text-[#10B981]">
                             {formatBytes(result.size, locale)}
                           </span>
                         </div>
@@ -699,16 +753,16 @@ export default function ReduceVideoFileSize() {
                   </div>
 
                   {/* Progress */}
-                  {isCompressing && (<div className="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-2">
-                      <div className="flex items-center justify-between text-xs font-bold text-[#0F172A]">
-                        <span className="flex items-center gap-2 text-[#2563EB]">
+                  {isCompressing && (<div className="p-4 bg-[#FEE9E9] border border-[#FBB6B6] rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between text-sm font-bold text-[#3B2F1E]">
+                        <span className="flex items-center gap-2 text-[#DC2626]">
                           <Loader2 size={14} className="animate-spin"/><T>{"Compressing your video\u2026\n                        "}</T></span>
-                        <span className="text-[#2563EB]">{(progress).toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"%"}</T></span>
+                        <span className="text-[#DC2626]">{(progress).toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"%"}</T></span>
                       </div>
-                      <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 w-full bg-[#E2E8F0] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#2563EB] rounded-full transition-[width] duration-300" style={{ width: `${Math.max(progress, 2)}%` }}/>
+                      <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 w-full bg-[#F3E9D2] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#D42020] rounded-full transition-[width] duration-300" style={{ width: `${Math.max(progress, 2)}%` }}/>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium"><T>{"This runs on your device, so large files can take a few\n                        minutes. Keep this tab open.\n                      "}</T></p>
+                      <p className="text-[13px] text-[#5A4A32] font-medium"><T>{"This runs on your device, so large files can take a few\n                        minutes. Keep this tab open.\n                      "}</T></p>
                     </div>)}
 
                   {/* Result summary */}
@@ -717,8 +771,8 @@ export default function ReduceVideoFileSize() {
                     : "bg-emerald-50/60 border-[#10B981]/30"}`}>
                       <div className="flex items-start gap-2">
                         {gotLarger ? (<AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0"/>) : (<CheckCircle2 size={16} className="text-[#10B981] mt-0.5 shrink-0"/>)}
-                        <div className="text-xs font-medium leading-relaxed">
-                          {gotLarger ? (<p className="text-amber-900"><T>{"This video was already well compressed, so the\n                              result isn&apos;t smaller. Try &quot;Smallest\n                              file&quot; or a lower resolution.\n                            "}</T></p>) : (<p className="text-[#0F172A]">
+                        <div className="text-sm font-medium leading-relaxed">
+                          {gotLarger ? (<p className="text-amber-900"><T>{"This video was already well compressed, so the\n                              result isn&apos;t smaller. Try &quot;Smallest\n                              file&quot; or a lower resolution.\n                            "}</T></p>) : (<p className="text-[#3B2F1E]">
                               <span className="font-bold text-[#10B981]">
                                 {savedPercent.toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"% smaller.\n                              "}</T></span>{<T>{" "}</T>}
                               {formatBytes(file.size, locale)}<T>{"\u2192"}</T>{<T>{" "}</T>}
@@ -727,7 +781,7 @@ export default function ReduceVideoFileSize() {
                         </div>
                       </div>
 
-                      <a href={result.url} download={result.fileName} className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-xs font-bold rounded-xl transition-colors shadow-2xs">
+                      <a href={result.url} download={result.fileName} className="inline-flex items-center gap-2 px-4 py-2 bg-[#D42020] hover:bg-[#AE1717] text-white text-sm font-bold rounded-xl transition-colors shadow-2xs">
                         <Download size={14}/><T>{"Download video\n                      "}</T></a>
                     </div>)}
                 </div>)}
@@ -736,19 +790,19 @@ export default function ReduceVideoFileSize() {
         </div>
 
         {/* BOTTOM ACTION BAR */}
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
-          <div className="text-xs font-medium text-slate-500 flex items-center gap-2" aria-live="polite">
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+          <div className="text-sm font-medium text-[#5A4A32] flex items-center gap-2" aria-live="polite">
             <span className={`w-2 h-2 rounded-full ${statusDot}`}></span>
             <span><T>{statusText}</T></span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button onClick={handleReset} className="px-4 py-2 bg-[#E2E8F0] hover:bg-[#E2E8F0]/80 text-[#0F172A] text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1.5">
+            <button onClick={handleReset} className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors inline-flex items-center gap-1.5">
               <RotateCcw size={13}/><T>{"Reset\n            "}</T></button>
 
-            {isCompressing ? (<button onClick={handleCancel} className="px-5 py-2 text-xs font-bold rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors"><T>{"Cancel\n              "}</T></button>) : (<button onClick={handleCompress} disabled={!canCompress} className={`px-5 py-2 text-xs font-bold rounded-xl transition-all shadow-2xs inline-flex items-center gap-2 ${canCompress
-                ? "bg-[#2563EB] hover:bg-[#1d4ed8] text-white cursor-pointer"
-                : "bg-[#E2E8F0] text-slate-400 cursor-not-allowed"}`}>
+            {isCompressing ? (<button onClick={handleCancel} className="px-5 py-2 text-sm font-bold rounded-xl bg-[#FBF6E8] border border-red-200 text-red-600 hover:bg-red-50 transition-colors"><T>{"Cancel\n              "}</T></button>) : (<button onClick={handleCompress} disabled={!canCompress} className={`px-5 py-2 text-sm font-bold rounded-xl transition-all shadow-2xs inline-flex items-center gap-2 ${canCompress
+                ? "bg-[#D42020] hover:bg-[#AE1717] text-white cursor-pointer"
+                : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"}`}>
                 {engineState === "loading" && (<Loader2 size={13} className="animate-spin"/>)}
                 {result ? <T>{"Compress again"}</T> : <T>{"Compress video"}</T>}
               </button>)}
@@ -756,16 +810,16 @@ export default function ReduceVideoFileSize() {
         </div>
 
         {/* HOW TO USE DROPDOWN */}
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-2xs">
-          <button onClick={() => setShowHowToUse(!showHowToUse)} aria-expanded={showHowToUse} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-[#F8FAFC] transition-colors">
+        <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl overflow-hidden shadow-2xs">
+          <button onClick={() => setShowHowToUse(!showHowToUse)} aria-expanded={showHowToUse} className="w-full p-4 text-left flex items-center justify-between font-bold text-sm text-[#3B2F1E] hover:bg-[#F6EEDB] transition-colors">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D42020]"></span>
               <span><T>{"How to use"}</T></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
-          {showHowToUse && (<div className="p-4 pt-4 text-xs text-slate-600 space-y-2 border-t border-[#E2E8F0] font-medium leading-relaxed">
+          {showHowToUse && (<div className="p-4 pt-4 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8] font-medium leading-relaxed">
               <p><T>{"1. Upload or drag and drop your video file into the input box on\n                the left.\n              "}</T></p>
               <p><T>{"2. Preview the original file details and select your target\n                quality and resolution.\n              "}</T></p>
               <p><T>{"3. Click &quot;Compress video&quot; to process, then download\n                your reduced file.\n              "}</T></p>
@@ -774,19 +828,19 @@ export default function ReduceVideoFileSize() {
 
         {/* TOOLS IN THE SAME CATEGORY */}
         <div className="pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-base font-bold text-[#3B2F1E] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool) => {
             const ToolIcon = tool.icon;
-            return (<Link key={tool.href} href={tool.href} className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#2563EB]/40 transition-all flex flex-col justify-between group">
+            return (<Link key={tool.href} href={tool.href} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#DC2626]/50 transition-all flex flex-col justify-between group">
                   <div>
-                    <div className="w-9 h-9 bg-blue-50 text-[#2563EB] rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors">
+                    <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#FEE9E9] transition-colors">
                       <ToolIcon size={18}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-[#2563EB] transition-colors">
+                    <h3 className="text-sm font-bold text-[#3B2F1E] mb-1 group-hover:text-[#DC2626] transition-colors">
                       {<T>{tool.title}</T>}
                     </h3>
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    <p className="text-[13px] text-[#5A4A32] font-medium leading-relaxed">
                       {<T>{tool.description}</T>}
                     </p>
                   </div>

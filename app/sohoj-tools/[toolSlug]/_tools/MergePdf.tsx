@@ -287,10 +287,136 @@ export default function MergePdf() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-    return (<div className="w-full space-y-5 bg-[#F8FAFC] text-[#0F172A] font-sans">
+    return (<div id="merge-pdf-tool" className="page-font relative isolate min-h-screen w-full min-w-0 max-w-full space-y-5 bg-transparent text-[#3B2F1E] font-sans">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #merge-pdf-tool {
+          position: relative;
+          isolation: isolate;
+          min-height: 100vh;
+          min-width: 0;
+          max-width: 100%;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          line-height: 1.45;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        /* Fill the viewport behind the tool without widening the page or blocking pointer events. */
+        #merge-pdf-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
+        #merge-pdf-tool.page-font.page-font,
+        #merge-pdf-tool.page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        #merge-pdf-tool h1,
+        #merge-pdf-tool h2,
+        #merge-pdf-tool h3,
+        #merge-pdf-tool h4 { letter-spacing: -0.01em; }
+        #merge-pdf-tool.page-font h1 { font-size: 24px; }
+        #merge-pdf-tool.page-font h2,
+        #merge-pdf-tool.page-font h3 { font-size: 18px; }
+        #merge-pdf-tool.page-font h4 { font-size: 17px; }
+
+        #merge-pdf-tool .text-sm { font-size: 15px; }
+        #merge-pdf-tool [class~="text-[12px]"] { font-size: 13px; }
+        #merge-pdf-tool [class~="text-[13px]"] { font-size: 14px; }
+        #merge-pdf-tool [class~="text-[14px]"] { font-size: 15px; }
+
+        #merge-pdf-tool a[href],
+        #merge-pdf-tool button:not(:disabled),
+        #merge-pdf-tool label:has(input[type="file"]),
+        #merge-pdf-tool summary,
+        #merge-pdf-tool [role="button"],
+        #merge-pdf-tool select,
+        #merge-pdf-tool input[type="color"],
+        #merge-pdf-tool input[type="range"],
+        #merge-pdf-tool input[type="checkbox"],
+        #merge-pdf-tool input[type="radio"],
+        #merge-pdf-tool input[type="file"] { cursor: pointer; }
+
+        #merge-pdf-tool button,
+        #merge-pdf-tool a[href],
+        #merge-pdf-tool input,
+        #merge-pdf-tool select,
+        #merge-pdf-tool label:has(input[type="file"]) {
+          transition-property: color, background-color, border-color, box-shadow, transform;
+          transition-duration: 180ms;
+          transition-timing-function: ease;
+        }
+
+        #merge-pdf-tool button:not(:disabled):active { transform: scale(0.98); }
+        #merge-pdf-tool button:disabled { cursor: not-allowed; opacity: 0.7; }
+        #merge-pdf-tool :is(button, a[href], input, select, label[for]):focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        }
+
+        #merge-pdf-tool input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+        #merge-pdf-tool select {
+          background-color: #FBF6E8;
+          color: #3B2F1E;
+          border-color: #E3D6B8;
+          font-size: 16px;
+        }
+        #merge-pdf-tool input::placeholder { color: #B0A080; opacity: 1; }
+        #merge-pdf-tool label:has(input[type="file"]) { border-color: #B0A080; }
+        #merge-pdf-tool label:has(input[type="file"]):hover,
+        #merge-pdf-tool label:has(input[type="file"]):focus-within {
+          border-color: rgba(220, 38, 38, 0.5);
+        }
+        #merge-pdf-tool label:has(input[type="file"]):focus-within {
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        #merge-pdf-tool .scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+        #merge-pdf-tool .scroll::-webkit-scrollbar { width: 12px; }
+        #merge-pdf-tool .scroll::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12);
+          border-radius: 999px;
+          margin: 10px 0;
+        }
+        #merge-pdf-tool .scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px;
+          border: 3px solid #F2E8D2;
+          min-height: 48px;
+        }
+        #merge-pdf-tool .scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
+
+        @media (max-width: 640px) {
+          #merge-pdf-tool { overflow-wrap: anywhere; }
+          #merge-pdf-tool > .flex.items-center.justify-between {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+          }
+        }
+      `}</style>
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-[#0F172A]">
-        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#2563EB] transition-colors">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#3B2F1E]">
+        <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#B91C1C] transition-colors">
           <ArrowLeft size={14}/>
 
           <span><MergeT>{"Back to Tools"}</MergeT></span>
@@ -302,33 +428,33 @@ export default function MergePdf() {
 
         <span><MergeT>{"/"}</MergeT></span>
 
-        <span className="font-semibold text-[#0F172A]"><MergeT>{"Merge PDFs"}</MergeT></span>
+        <span className="font-semibold text-[#3B2F1E]"><MergeT>{"Merge PDFs"}</MergeT></span>
       </div>
 
       {/* Header Card */}
-      <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex items-center justify-between">
+      <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center shrink-0 border border-[#4F46E5]/20">
+          <div className="w-12 h-12 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center shrink-0 border border-[#E3D6B8]">
             <Combine size={24}/>
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#0F172A]"><MergeT>{"Merge PDFs"}</MergeT></h1>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-xl font-bold text-[#3B2F1E]"><MergeT>{"Merge PDFs"}</MergeT></h1>
 
-              <span className="bg-[#10B981]/10 text-[#10B981] text-[10px] font-bold px-2 py-0.5 rounded-full"><MergeT>{"Free\n              "}</MergeT></span>
+              <span className="bg-[#10B981]/10 text-[#10B981] text-[12px] font-bold px-2 py-0.5 rounded-full"><MergeT>{"Free\n              "}</MergeT></span>
             </div>
 
-            <p className="text-xs text-[#0F172A] font-medium mt-0.5"><MergeT>{"Combine multiple PDF files into one document in your chosen order.\n            "}</MergeT></p>
+            <p className="text-sm text-[#3B2F1E] font-medium mt-0.5"><MergeT>{"Combine multiple PDF files into one document in your chosen order.\n            "}</MergeT></p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button type="button" aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+        <div className="flex items-center gap-2 min-w-0">
+          <button type="button" aria-label={tx("Add to favorites")} title={tx("Add to favorites")} className="p-2 text-[#3B2F1E] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Star size={16}/>
           </button>
 
-          <button type="button" aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#0F172A] hover:text-[#2563EB] bg-[#F8FAFC] hover:bg-[#E2E8F0] rounded-xl transition-all border border-[#0F172A]/10">
+          <button type="button" aria-label={tx("Share this tool")} title={tx("Share this tool")} className="p-2 text-[#3B2F1E] hover:text-[#B91C1C] bg-[#F6EEDB] hover:bg-[#EFE3C8] rounded-xl transition-all border border-[#E3D6B8]">
             <Share2 size={16}/>
           </button>
         </div>
@@ -338,46 +464,46 @@ export default function MergePdf() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Side: Upload Zone */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs space-y-3">
-            <h2 className="text-xs font-bold text-[#0F172A]">{tx(`Files (${selectedFiles.length})`)}</h2>
+          <div className="bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm space-y-3">
+            <h2 className="text-sm font-bold text-[#3B2F1E]">{tx(`Files (${selectedFiles.length})`)}</h2>
 
             <label onDrop={handleDropOnZone} onDragOver={handleDragOverZone} onDragLeave={handleDragLeaveZone} className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${isDraggingOverZone
-            ? "border-[#2563EB] bg-[#2563EB]/10"
-            : "border-[#2563EB]/30 bg-[#2563EB]/5 hover:bg-[#2563EB]/10"}`}>
-              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            ? "border-[#DC2626] bg-[#FEE9E9] ring-2 ring-[#DC2626]/20"
+            : "border-[#B0A080] bg-[#F6EEDB] hover:bg-[#EFE3C8]"}`}>
+              <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
                 <Upload size={20}/>
               </div>
 
-              <span className="text-xs font-bold text-[#0F172A]"><MergeT>{"Drop PDF files here or click to upload\n              "}</MergeT></span>
+              <span className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Drop PDF files here or click to upload\n              "}</MergeT></span>
 
-              <span className="text-[10px] text-[#0F172A] font-medium mt-1"><MergeT>{"PDF files, max 500 MB each (at least 2)\n              "}</MergeT></span>
+              <span className="text-[12px] text-[#3B2F1E] font-medium mt-1"><MergeT>{"PDF files, max 500 MB each (at least 2)\n              "}</MergeT></span>
 
               <input type="file" multiple accept="application/pdf" onChange={handleFileChange} className="hidden"/>
             </label>
 
             {/* List of uploaded files */}
-            {selectedFiles.length > 0 && (<div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-1">
-                {selectedFiles.map((file, idx) => (<div key={`${file.name}-${file.lastModified}-${idx}`} draggable onDragStart={() => handleItemDragStart(idx)} onDragOver={(e) => handleItemDragOver(e, idx)} onDrop={() => handleItemDrop(idx)} onDragEnd={handleItemDragEnd} className={`bg-[#F8FAFC] border rounded-xl p-2.5 flex items-center justify-between group transition-all ${dragOverIndex === idx && dragIndex !== idx
-                    ? "border-[#2563EB] bg-[#2563EB]/5"
-                    : "border-[#0F172A]/10"} ${dragIndex === idx ? "opacity-50" : "opacity-100"}`}>
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <GripVertical size={14} className="text-[#0F172A] cursor-grab"/>
+            {selectedFiles.length > 0 && (<div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-1 scroll">
+                {selectedFiles.map((file, idx) => (<div key={`${file.name}-${file.lastModified}-${idx}`} draggable onDragStart={() => handleItemDragStart(idx)} onDragOver={(e) => handleItemDragOver(e, idx)} onDrop={() => handleItemDrop(idx)} onDragEnd={handleItemDragEnd} className={`bg-[#F6EEDB] border rounded-xl p-2.5 flex items-center justify-between group transition-all ${dragOverIndex === idx && dragIndex !== idx
+                    ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/20"
+                    : "border-[#E3D6B8]"} ${dragIndex === idx ? "opacity-50" : "opacity-100"}`}>
+                    <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                      <GripVertical size={14} className="text-[#3B2F1E] cursor-grab"/>
 
-                      <div className="w-7 h-7 bg-[#2563EB]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
                         <FileText size={14}/>
                       </div>
 
                       <div className="truncate">
-                        <p className="text-xs font-bold text-[#0F172A] truncate">
+                        <p className="text-sm font-bold text-[#3B2F1E] truncate">
                           {file.name}
                         </p>
 
-                        <p className="text-[10px] text-[#0F172A]">
+                        <p className="text-[12px] text-[#3B2F1E]">
                           {(file.size / (1024 * 1024)).toFixed(2)}<MergeT>{"MB\n                        "}</MergeT></p>
                       </div>
                     </div>
 
-                    <button type="button" aria-label={tx(`Remove ${file.name}`)} title={tx(`Remove ${file.name}`)} onClick={() => handleRemoveFile(idx)} className="p-1 text-[#0F172A] hover:text-[#4F46E5] rounded-lg transition-colors">
+                    <button type="button" aria-label={tx(`Remove ${file.name}`)} title={tx(`Remove ${file.name}`)} onClick={() => handleRemoveFile(idx)} className="p-1 text-[#3B2F1E] hover:text-[#B91C1C] rounded-lg transition-colors">
                       <X size={14}/>
                     </button>
                   </div>))}
@@ -386,36 +512,36 @@ export default function MergePdf() {
         </div>
 
         {/* Right Side: Merge Preview */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col justify-between min-h-[480px]">
+        <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col justify-between min-h-[480px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#0F172A]"><MergeT>{"Merge preview"}</MergeT></h2>
+            <h2 className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Merge preview"}</MergeT></h2>
 
-            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
-            ? "bg-[#2563EB]/10 text-[#0F172A]"
+            <span className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${errorMessage
+            ? "bg-[#FEE9E9] text-[#B91C1C]"
             : result
                 ? "bg-[#10B981]/10 text-[#10B981]"
                 : isProcessing
-                    ? "bg-[#E2E8F0] text-[#2563EB]"
-                    : "bg-[#F8FAFC] text-[#0F172A]"}`}>
+                    ? "bg-[#F6EEDB] text-[#DC2626]"
+                    : "bg-[#F6EEDB] text-[#3B2F1E]"}`}>
               {tx(errorMessage ? "Error" : result ? "Done" : isProcessing ? "Merging" : selectedFiles.length < 2 ? "Empty" : `${selectedFiles.length} files`)}
             </span>
           </div>
 
           {/* Empty / Preview / Processing / Result state */}
-          {isProcessing ? (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <Loader2 size={28} className="text-[#4F46E5] animate-spin mb-3"/>
+          {isProcessing ? (<div className="bg-[#F6EEDB]/60 rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <Loader2 size={28} className="text-[#DC2626] animate-spin mb-3"/>
 
-              <p className="text-xs font-bold text-[#0F172A]"><MergeT>{"Merging your PDFs\u2026\n              "}</MergeT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Merging your PDFs\u2026\n              "}</MergeT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><MergeT>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</MergeT></p>
-            </div>) : errorMessage ? (<div className="bg-[#0F172A]/5 rounded-2xl border border-dashed border-[#2563EB]/30 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-[#2563EB]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#2563EB]/30">
+              <p className="text-[13px] text-[#3B2F1E] mt-1"><MergeT>{"Everything runs in your browser \u2014 larger files take a little\n                longer.\n              "}</MergeT></p>
+            </div>) : errorMessage ? (<div className="bg-[#F3E9D2] rounded-2xl border border-dashed border-[#B0A080] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#B0A080]">
                 <AlertCircle size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><MergeT>{"Merge failed"}</MergeT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Merge failed"}</MergeT></p>
 
-              <p className="text-[11px] text-[#4F46E5] mt-1 max-w-xs">
+              <p className="text-[13px] text-[#DC2626] mt-1 max-w-xs">
                 {getMergePdfErrorMessage(errorMessage, locale)}
               </p>
             </div>) : result ? (<div className="my-auto py-10 flex flex-col items-center gap-5">
@@ -425,51 +551,51 @@ export default function MergePdf() {
 
               <div className="flex items-center gap-4 sm:gap-8">
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide"><MergeT>{"Files merged\n                  "}</MergeT></p>
+                  <p className="text-[12px] font-bold text-[#3B2F1E] uppercase tracking-wide"><MergeT>{"Files merged\n                  "}</MergeT></p>
 
-                  <p className="text-sm font-bold text-[#0F172A]">
+                  <p className="text-base font-bold text-[#3B2F1E]">
                     {result.fileCount}
                   </p>
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide"><MergeT>{"Total pages\n                  "}</MergeT></p>
+                  <p className="text-[12px] font-bold text-[#3B2F1E] uppercase tracking-wide"><MergeT>{"Total pages\n                  "}</MergeT></p>
 
-                  <p className="text-sm font-bold text-[#0F172A]">
+                  <p className="text-base font-bold text-[#3B2F1E]">
                     {result.pageCount}
                   </p>
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wide"><MergeT>{"File size\n                  "}</MergeT></p>
+                  <p className="text-[12px] font-bold text-[#3B2F1E] uppercase tracking-wide"><MergeT>{"File size\n                  "}</MergeT></p>
 
-                  <p className="text-sm font-bold text-[#10B981]">
+                  <p className="text-base font-bold text-[#10B981]">
                     {formatBytes(result.size)}
                   </p>
                 </div>
               </div>
 
-              <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#2563EB]/90 transition-all">
+              <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2.5 bg-[#D42020] text-white text-sm font-bold rounded-xl shadow-sm hover:bg-[#B91C1C] transition-all">
                 <Download size={14}/><MergeT>{"Download merged PDF\n              "}</MergeT></button>
-            </div>) : selectedFiles.length < 2 ? (<div className="bg-[#F8FAFC]/60 rounded-2xl border border-dashed border-[#0F172A]/10 p-8 flex flex-col items-center justify-center my-auto text-center py-24">
-              <div className="w-10 h-10 bg-[#4F46E5]/10 text-[#4F46E5] rounded-xl flex items-center justify-center mb-3 border border-[#4F46E5]/20">
+            </div>) : selectedFiles.length < 2 ? (<div className="bg-[#F6EEDB]/60 rounded-2xl border border-dashed border-[#E3D6B8] p-8 flex flex-col items-center justify-center my-auto text-center py-24">
+              <div className="w-10 h-10 bg-[#DC2626]/10 text-[#DC2626] rounded-xl flex items-center justify-center mb-3 border border-[#E3D6B8]">
                 <FileText size={20}/>
               </div>
 
-              <p className="text-xs font-bold text-[#0F172A]"><MergeT>{"Add at least two PDFs\n              "}</MergeT></p>
+              <p className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Add at least two PDFs\n              "}</MergeT></p>
 
-              <p className="text-[11px] text-[#0F172A] mt-1"><MergeT>{"Arrange them in order, then merge into one file.\n              "}</MergeT></p>
+              <p className="text-[13px] text-[#3B2F1E] mt-1"><MergeT>{"Arrange them in order, then merge into one file.\n              "}</MergeT></p>
             </div>) : (<div className="my-auto py-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {selectedFiles.map((file, index) => (<div key={`${file.name}-${index}`} className="bg-[#F8FAFC] border border-[#0F172A]/10 p-3 rounded-xl flex flex-col items-center text-center relative group">
-                  <span className="absolute top-2 left-2 bg-[#2563EB] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              {selectedFiles.map((file, index) => (<div key={`${file.name}-${index}`} className="bg-[#F6EEDB] border border-[#E3D6B8] p-3 rounded-xl flex flex-col items-center text-center relative group">
+                  <span className="absolute top-2 left-2 bg-[#D42020] text-white text-[11px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                     {index + 1}
                   </span>
 
-                  <div className="w-12 h-16 bg-white border border-[#0F172A]/10 rounded-md shadow-2xs flex items-center justify-center my-2 text-[#4F46E5]">
+                  <div className="w-12 h-16 bg-white border border-[#E3D6B8] rounded-md shadow-sm flex items-center justify-center my-2 text-[#DC2626]">
                     <FileText size={20}/>
                   </div>
 
-                  <p className="text-[11px] font-bold text-[#0F172A] truncate w-full">
+                  <p className="text-[13px] font-bold text-[#3B2F1E] truncate w-full">
                     {file.name}
                   </p>
                 </div>))}
@@ -480,15 +606,15 @@ export default function MergePdf() {
       </div>
 
       {/* Bottom Status & Actions */}
-      <div className="bg-white p-3.5 rounded-2xl border border-[#0F172A]/10 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-[#0F172A]">
+      <div className="bg-[#FBF6E8] p-3.5 rounded-2xl border border-[#E3D6B8] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#3B2F1E]">
           <span className={`w-2 h-2 rounded-full shrink-0 ${errorMessage
-            ? "bg-[#2563EB]"
+            ? "bg-[#DC2626]"
             : result
                 ? "bg-[#10B981]"
                 : isProcessing
-                    ? "bg-[#2563EB] animate-pulse"
-                    : "bg-[#0F172A]/40"}`}/>
+                    ? "bg-[#DC2626] animate-pulse"
+                    : "bg-[#D8C9A6]"}`}/>
 
           <span>
             {tx(errorMessage
@@ -503,12 +629,12 @@ export default function MergePdf() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="px-4 py-2 border border-[#0F172A]/10 text-[#0F172A] text-xs font-bold rounded-xl hover:bg-[#F8FAFC] transition-all"><MergeT>{"Reset\n          "}</MergeT></button>
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={handleReset} className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-sm font-bold rounded-xl hover:bg-[#EFE3C8] transition-all"><MergeT>{"Reset\n          "}</MergeT></button>
 
-          <button onClick={handleMerge} disabled={selectedFiles.length < 2 || isProcessing} className={`px-5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${selectedFiles.length >= 2 && !isProcessing
-            ? "bg-[#2563EB] text-white shadow-xs hover:bg-[#2563EB]/90"
-            : "bg-[#E2E8F0] text-[#0F172A]/45 cursor-not-allowed"}`}>
+          <button onClick={handleMerge} disabled={selectedFiles.length < 2 || isProcessing} className={`px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all ${selectedFiles.length >= 2 && !isProcessing
+            ? "bg-[#D42020] text-white shadow-sm hover:bg-[#B91C1C]"
+            : "bg-[#F3E9D2] text-[#7A6A50] cursor-not-allowed"}`}>
             {isProcessing ? (<Loader2 size={14} className="animate-spin"/>) : (<Combine size={14}/>)}
 
             <span>{isProcessing ? <MergeT>{"Merging…"}</MergeT> : <MergeT>{"Merge PDFs"}</MergeT>}</span>
@@ -517,17 +643,17 @@ export default function MergePdf() {
       </div>
 
       {/* Security Info Banner */}
-      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-xs text-[#0F172A] font-medium">
+      <div className="bg-[#10B981]/5 border border-[#10B981]/20 p-3 rounded-2xl flex items-center gap-2 text-sm text-[#3B2F1E] font-medium">
         <Lock size={15} className="text-[#10B981] shrink-0"/>
 
         <span><MergeT>{"Your files are processed in the browser \u2014 they are not uploaded to any\n          server.\n        "}</MergeT></span>
       </div>
 
       {/* How to use Accordion */}
-      <div className="bg-white rounded-2xl border border-[#0F172A]/10 shadow-xs overflow-hidden">
-        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors">
-          <div className="flex items-center gap-2">
-            <span className="text-[#2563EB]"><MergeT>{"?"}</MergeT></span>
+      <div className="bg-[#FBF6E8] rounded-2xl border border-[#E3D6B8] shadow-sm overflow-hidden">
+        <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full px-5 py-3.5 flex items-center justify-between text-sm font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition-colors">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[#DC2626]"><MergeT>{"?"}</MergeT></span>
 
             <span><MergeT>{"How to use"}</MergeT></span>
           </div>
@@ -535,35 +661,35 @@ export default function MergePdf() {
           {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </button>
 
-        {showHowToUse && (<div className="px-5 pb-4 text-xs text-[#0F172A] leading-relaxed border-t border-[#0F172A]/10 pt-3"><MergeT>{"Drag and drop multiple PDF files into the upload box. Reorder them\n            as needed, then click \"Merge PDFs\" to combine all pages into a\n            single document.\n          "}</MergeT></div>)}
+        {showHowToUse && (<div className="px-5 pb-4 text-sm text-[#3B2F1E] leading-relaxed border-t border-[#E3D6B8] pt-3"><MergeT>{"Drag and drop multiple PDF files into the upload box. Reorder them\n            as needed, then click \"Merge PDFs\" to combine all pages into a\n            single document.\n          "}</MergeT></div>)}
       </div>
 
       {/* Related Tools Section */}
       <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-bold text-[#0F172A]"><MergeT>{"Tools in the same category\n        "}</MergeT></h3>
+        <h3 className="text-sm font-bold text-[#3B2F1E]"><MergeT>{"Tools in the same category\n        "}</MergeT></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/sohoj-tools/compress-pdf" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/compress-pdf" className="bg-[#F6EEDB] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:bg-[#EFE3C8] hover:border-[#DC2626] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <Minimize2 size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><MergeT>{"Compress PDF\n              "}</MergeT></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors"><MergeT>{"Compress PDF\n              "}</MergeT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><MergeT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</MergeT></p>
+              <p className="text-[12px] text-[#3B2F1E] mt-0.5 line-clamp-1"><MergeT>{"Shrink embedded photos and scans inside a PDF \u2014 text stays\n                sharp.\n              "}</MergeT></p>
             </div>
           </Link>
 
-          <Link href="/sohoj-tools/split-pdf" className="bg-[#E2E8F0] p-4 rounded-2xl border border-[#0F172A]/10 shadow-xs hover:border-[#2563EB]/40 transition-all flex items-start gap-3 group">
-            <div className="w-8 h-8 bg-[#4F46E5]/10 text-[#4F46E5] rounded-lg flex items-center justify-center shrink-0">
+          <Link href="/sohoj-tools/split-pdf" className="bg-[#F6EEDB] p-4 rounded-2xl border border-[#E3D6B8] shadow-sm hover:bg-[#EFE3C8] hover:border-[#DC2626] transition-all flex items-start gap-3 group">
+            <div className="w-8 h-8 bg-[#DC2626]/10 text-[#DC2626] rounded-lg flex items-center justify-center shrink-0">
               <FileCode size={16}/>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold text-[#0F172A] group-hover:text-[#4F46E5] transition-colors"><MergeT>{"Split PDF\n              "}</MergeT></h4>
+              <h4 className="text-sm font-bold text-[#3B2F1E] group-hover:text-[#B91C1C] transition-colors"><MergeT>{"Split PDF\n              "}</MergeT></h4>
 
-              <p className="text-[10px] text-[#0F172A] mt-0.5 line-clamp-1"><MergeT>{"Extract specific pages or split every page into separate files.\n              "}</MergeT></p>
+              <p className="text-[12px] text-[#3B2F1E] mt-0.5 line-clamp-1"><MergeT>{"Extract specific pages or split every page into separate files.\n              "}</MergeT></p>
             </div>
           </Link>
         </div>

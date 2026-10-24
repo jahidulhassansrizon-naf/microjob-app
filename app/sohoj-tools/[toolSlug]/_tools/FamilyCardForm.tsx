@@ -380,14 +380,14 @@ function GeoCombobox({
           setOpen(true);
           requestAnimationFrame(() => inputRef.current?.focus());
         }}
-        className={`w-full bg-white border rounded-lg px-2.5 py-1.5 min-h-[34px] text-xs flex items-center gap-1.5 transition-colors ${
+        className={`w-full bg-[#FBF6E8] border rounded-lg px-2.5 py-1.5 min-h-[34px] text-sm flex items-center gap-1.5 transition-colors ${
           disabled
-            ? "border-[#EEE7D4] bg-gray-50 cursor-not-allowed"
-            : "border-gray-200 cursor-text focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
+            ? "border-[#EEE7D4] bg-[#F6EEDB] cursor-not-allowed"
+            : "border-[#E3D6B8] cursor-text focus-within:border-[#DC2626] focus-within:ring-2 focus-within:ring-[#DC2626]/20"
         }`}
       >
         {selected ? (
-          <span className="inline-flex items-center gap-1 bg-[#E8EEFF] text-[#3C5FCA] rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
+          <span className="inline-flex items-center gap-1 bg-[#F6D9A8] text-[#B91C1C] ring-1 ring-[#DC2626]/20 rounded-lg pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
             <span className="truncate">{selected.bn}</span>
 
             {!disabled && (
@@ -398,7 +398,7 @@ function GeoCombobox({
                   onChange("");
                   setQuery("");
                 }}
-                className="text-[#6C83D4] hover:text-[#3C5FCA] shrink-0"
+                className="text-[#B91C1C] hover:text-[#DC2626] shrink-0"
                 aria-label={`${geoL("Clear")} ${placeholder}`}
               >
                 <X size={11} />
@@ -424,19 +424,19 @@ function GeoCombobox({
             }
           }}
           placeholder={selected ? "" : placeholder}
-          className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#42382C] placeholder:text-[#9A907F] disabled:cursor-not-allowed"
+          className="flex-1 min-w-[2rem] outline-none bg-transparent text-sm text-[#3B2F1E] placeholder:text-[#B0A080] disabled:cursor-not-allowed"
         />
 
         <ChevronDown
           size={13}
-          className={`text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-[#7A6A50] shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </div>
 
       {open && !disabled && (
-        <div className="absolute z-30 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+        <div className="absolute z-30 mt-1 w-full max-h-56 overflow-y-auto bg-[#F0DDB5] border-2 border-[#DC2626] rounded-xl shadow-xl p-2 fc-geo-popup">
           {filtered.length === 0 ? (
-            <p className="text-[11px] text-gray-400 px-2 py-2 text-center">
+            <p className="text-[13px] text-[#7A6A50] px-2 py-2 text-center">
               <FamilyT>{"No results found\n            "}</FamilyT>
             </p>
           ) : (
@@ -456,10 +456,10 @@ function GeoCombobox({
                     setOpen(false);
                     setQuery("");
                   }}
-                  className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-[#F0F3FF] transition-colors truncate ${
+                  className={`text-left text-sm px-2 py-1.5 rounded-md hover:bg-[#EFE3C8] transition-colors truncate ${
                     option.id === value
-                      ? "bg-[#E8EEFF] text-[#3C5FCA] font-semibold"
-                      : "text-[#42382C]"
+                      ? "bg-[#F6D9A8] text-[#B91C1C] font-semibold ring-1 ring-[#DC2626]/20"
+                      : "text-[#3B2F1E]"
                   }`}
                 >
                   {option.bn}
@@ -486,11 +486,11 @@ function Field({
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
         {no ? (
-          <span className="inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded bg-[#E8EEFF] px-1 text-[10px] font-bold text-[#3C5FCA]">
+          <span className="inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded bg-[#F6D9A8] px-1 text-[12px] font-bold text-[#DC2626]">
             {no}
           </span>
         ) : null}
-        <label className="text-[11px] font-semibold text-[#665D4F]">
+        <label className="text-[13px] font-semibold text-[#5A4A32]">
           <FamilyT>{label}</FamilyT>
         </label>
       </div>
@@ -500,7 +500,7 @@ function Field({
   );
 }
 const INPUT_CLASS =
-  "w-full bg-white border rounded-lg px-2.5 py-1.5 min-h-[34px] text-xs text-[#42382C] placeholder:text-[#9A907F] focus:outline-none focus:border-[#3C5FCA] focus:ring-2 focus:ring-[#E8EEFF]";
+  "w-full bg-[#FBF6E8] border rounded-lg px-2.5 py-1.5 min-h-[34px] text-sm text-[#3B2F1E] placeholder:text-[#B0A080] focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#F6D9A8]";
 function TextInput({
   value,
   onChange,
@@ -532,13 +532,13 @@ function TextInput({
         onBlur={() => setTouched(true)}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={`${INPUT_CLASS} ${showError ? "border-red-300 focus:border-red-500" : "border-gray-200"}`}
+        className={`${INPUT_CLASS} ${showError ? "border-red-300 focus:border-red-500" : "border-[#E3D6B8]"}`}
       />
 
       {showError ? (
         <p
           role="alert"
-          className="text-[10px] text-red-600 font-semibold leading-snug"
+          className="text-[12px] text-red-600 font-semibold leading-snug"
         >
           <FamilyT>{message}</FamilyT>
         </p>
@@ -558,17 +558,17 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-3.5 border border-[#E8D9A8] rounded-xl p-3.5 bg-white">
+    <div className="space-y-3.5 border border-[#E8D9A8] rounded-xl p-3.5 bg-[#FBF6E8]">
       <div className="flex items-center gap-2.5 pb-2.5 border-b border-[#F1E7C8]">
-        <span className="w-6 h-6 shrink-0 rounded-md bg-[#3C5FCA] text-white text-[11px] font-bold flex items-center justify-center">
+        <span className="w-6 h-6 shrink-0 rounded-md bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
           {no}
         </span>
 
         <div className="min-w-0">
-          <h3 className="text-xs font-bold text-[#42382C] leading-tight">
+          <h3 className="text-sm font-bold text-[#3B2F1E] leading-tight">
             {title}
           </h3>
-          <p className="text-[10px] text-[#786D5B] leading-tight">
+          <p className="text-[12px] text-[#7A6A50] leading-tight">
             <FamilyT>{subtitle}</FamilyT>
           </p>
         </div>
@@ -877,6 +877,89 @@ const FAMILY_CARD_PRINT_CSS = `
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
+  }
+`;
+
+const FAMILY_CARD_THEME_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  .family-card-root {
+    position: relative;
+    isolation: isolate;
+    min-height: 100vh;
+  }
+
+  .family-card-root::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+  }
+
+  .family-card-screen {
+    position: relative;
+    z-index: 0;
+    color: #3B2F1E;
+    font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.45;
+  }
+
+  .family-card-screen h1,
+  .family-card-screen h2,
+  .family-card-screen h3,
+  .family-card-screen h4 {
+    letter-spacing: -0.01em;
+  }
+
+  .family-card-root .fc-preview-scroll,
+  .family-card-root .family-card-screen [class*="overflow-y-auto"] {
+    scrollbar-width: thin;
+    scrollbar-color: #F87171 transparent;
+  }
+
+  .family-card-root .fc-preview-scroll::-webkit-scrollbar,
+  .family-card-root .family-card-screen [class*="overflow-y-auto"]::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .family-card-root .fc-preview-scroll::-webkit-scrollbar-track,
+  .family-card-root .family-card-screen [class*="overflow-y-auto"]::-webkit-scrollbar-track {
+    background: rgba(148, 113, 67, 0.12);
+    border-radius: 999px;
+    margin: 10px 0;
+  }
+
+  .family-card-root .fc-preview-scroll::-webkit-scrollbar-thumb,
+  .family-card-root .family-card-screen [class*="overflow-y-auto"]::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #F87171, #DC2626);
+    border-radius: 999px;
+    border: 3px solid #F2E8D2;
+    min-height: 48px;
+  }
+
+  .family-card-root .fc-preview-scroll::-webkit-scrollbar-thumb:hover,
+  .family-card-root .family-card-screen [class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #EF4444, #B91C1C);
+  }
+
+  .family-card-root button:not(:disabled),
+  .family-card-root a[href],
+  .family-card-root select,
+  .family-card-root [role="button"] {
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: 180ms;
+    transition-timing-function: ease;
+  }
+
+  .family-card-root button:not(:disabled):active {
+    transform: scale(0.98);
   }
 `;
 /** Shrinks the font slightly for long values so text never gets cut. */
@@ -1511,11 +1594,12 @@ export default function FamilyCardForm() {
     setFrozen(value ? null : form);
   };
   return (
-    <div className="family-card-root w-full text-[#0F172A] font-sans pb-28">
+    <div className="family-card-root w-full min-h-screen text-[#3B2F1E] font-sans pb-32">
       <style>{FAMILY_CARD_PRINT_CSS}</style>
+      <style>{FAMILY_CARD_THEME_CSS}</style>
 
       {toast ? (
-        <div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+        <div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-[#3B2F1E] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400" />
 
           {toast}
@@ -1525,17 +1609,17 @@ export default function FamilyCardForm() {
       <div className="family-card-screen w-full space-y-6">
         <div className="print-hide flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
+            <div className="flex items-center gap-2 text-sm text-[#5A4A32] font-medium mb-2">
               <button
                 onClick={() => router.back()}
-                className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1"
+                className="p-1 hover:bg-[#EFE3C8] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1"
                 title={familyL("Go back")}
                 type="button"
               >
                 <ArrowLeft size={16} />
               </button>
 
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]">
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]">
                 <FamilyT>{"Sohoj Tools\n              "}</FamilyT>
               </Link>
 
@@ -1551,33 +1635,33 @@ export default function FamilyCardForm() {
                 <FamilyT>{"/"}</FamilyT>
               </span>
 
-              <span className="text-[#0F172A] font-semibold">
+              <span className="text-[#3B2F1E] font-semibold">
                 <FamilyT>{"Family Card Form\n              "}</FamilyT>
               </span>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <CreditCard size={18} />
               </div>
 
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
+              <h1 className="text-2xl font-bold text-[#3B2F1E] tracking-tight">
                 <FamilyT>{"Family Card Form\n              "}</FamilyT>
               </h1>
 
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-100 text-emerald-700 text-[13px] font-bold px-2 py-0.5 rounded-full">
                 <FamilyT>{"Free\n              "}</FamilyT>
               </span>
 
-              <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                <CheckCircle2 size={12} className="text-gray-300" />
+              <span className="flex items-center gap-1 text-[13px] text-[#7A6A50] font-semibold">
+                <CheckCircle2 size={12} className="text-[#D8C9A6]" />
                 <FamilyT>{"Used "}</FamilyT>
                 {usageCount}
                 <FamilyT>{"times\n              "}</FamilyT>
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 font-medium mt-1">
+            <p className="text-sm text-[#5A4A32] font-medium mt-1">
               <FamilyT>
                 {
                   "Fill in your details on the left \u2014 see a live application letter\n              on the right and download as PDF.\n            "
@@ -1589,20 +1673,20 @@ export default function FamilyCardForm() {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setIsFavorite((favorite) => !favorite)}
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-blue-500 hover:border-blue-300 transition-all shadow-2xs"
+              className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#DC2626] hover:border-[#DC2626] transition-all shadow-2xs"
               type="button"
               aria-label={familyL("Favorite")}
               aria-pressed={isFavorite}
             >
               <Star
                 size={16}
-                className={isFavorite ? "fill-blue-400 text-blue-400" : ""}
+                className={isFavorite ? "fill-[#DC2626] text-[#DC2626]" : ""}
               />
             </button>
 
             <button
               onClick={handleShare}
-              className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs"
+              className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#3B2F1E] transition-all shadow-2xs"
               type="button"
               aria-label={familyL("Share")}
             >
@@ -1614,14 +1698,14 @@ export default function FamilyCardForm() {
         <div className="print-hide grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ───────────── Left: settings ───────────── */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white border border-[#E8D9A8] rounded-2xl p-4 shadow-2xs space-y-5">
+            <div className="bg-[#FBF6E8] border border-[#E8D9A8] rounded-2xl p-4 shadow-2xs space-y-5">
               <div className="space-y-2 pb-3 border-b border-[#F1E7C8]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#42382C] uppercase tracking-wider">
+                  <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
                     <FamilyT>{"Settings\n                  "}</FamilyT>
                   </span>
 
-                  <span className="text-[11px] text-gray-400 font-medium">
+                  <span className="text-[13px] text-[#7A6A50] font-medium">
                     <FamilyT>
                       {"Preview updates as you type.\n                  "}
                     </FamilyT>
@@ -1631,14 +1715,14 @@ export default function FamilyCardForm() {
                 <div className="flex items-center gap-2.5">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F1E7C8]">
                     <div
-                      className="h-full rounded-full bg-[#3C5FCA] transition-all"
+                      className="h-full rounded-full bg-[#DC2626] transition-all"
                       style={{
                         width: `${(filledCount / PROGRESS_KEYS.length) * 100}%`,
                       }}
                     />
                   </div>
 
-                  <span className="text-[10px] font-semibold text-[#786D5B] tabular-nums">
+                  <span className="text-[12px] font-semibold text-[#7A6A50] tabular-nums">
                     {filledCount}
                     <FamilyT>{"/ "}</FamilyT>
                     {PROGRESS_KEYS.length}
@@ -1659,7 +1743,7 @@ export default function FamilyCardForm() {
                         onChange={(event) =>
                           setField("recipient", event.target.value)
                         }
-                        className={`${INPUT_CLASS} appearance-none pr-8 cursor-pointer border-gray-200`}
+                        className={`${INPUT_CLASS} appearance-none pr-8 cursor-pointer border-[#E3D6B8]`}
                       >
                         {RECIPIENT_OPTIONS.map((option) => (
                           <option key={option} value={option}>
@@ -1670,7 +1754,7 @@ export default function FamilyCardForm() {
 
                       <ChevronDown
                         size={13}
-                        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7A6A50]"
                       />
                     </div>
                   </Field>
@@ -1836,7 +1920,7 @@ export default function FamilyCardForm() {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={handleClear}
-                  className="w-full py-2 bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5"
+                  className="w-full py-2 bg-[#FBF6E8] hover:bg-[#F6EEDB] text-[#DC2626] border border-[#FBB6B6] text-sm font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5"
                   type="button"
                 >
                   <RotateCcw size={14} />
@@ -1849,7 +1933,7 @@ export default function FamilyCardForm() {
                 <button
                   onClick={handlePrint}
                   disabled={isProcessing !== null}
-                  className="w-full py-2 bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  className="w-full py-2 bg-[#FBF6E8] hover:bg-[#F6EEDB] text-[#DC2626] border border-[#FBB6B6] text-sm font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-60"
                   type="button"
                 >
                   {isProcessing === "print" ? (
@@ -1872,10 +1956,10 @@ export default function FamilyCardForm() {
 
           {/* ───────────── Right: live preview ───────────── */}
           <div className="lg:col-span-7 lg:sticky lg:top-3">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-2xs">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E3D6B8]">
+                <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#FEE9E9]0" />
 
                   <span>
                     <FamilyT>{"Preview"}</FamilyT>
@@ -1883,19 +1967,19 @@ export default function FamilyCardForm() {
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1 py-0.5 border border-gray-200">
+                  <div className="flex items-center gap-1 bg-[#F6EEDB] rounded-lg px-1 py-0.5 border border-[#E3D6B8]">
                     <button
                       onClick={() =>
                         setZoom((currentZoom) => Math.max(60, currentZoom - 10))
                       }
-                      className="p-1 hover:bg-white rounded-md text-gray-500"
+                      className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#5A4A32]"
                       type="button"
                       aria-label={familyL("Zoom out")}
                     >
                       <Minus size={12} />
                     </button>
 
-                    <span className="text-[11px] font-bold text-gray-600 w-9 text-center">
+                    <span className="text-[13px] font-bold text-[#5A4A32] w-9 text-center">
                       {zoom}
                       <FamilyT>{"%\n                    "}</FamilyT>
                     </span>
@@ -1906,7 +1990,7 @@ export default function FamilyCardForm() {
                           Math.min(200, currentZoom + 10),
                         )
                       }
-                      className="p-1 hover:bg-white rounded-md text-gray-500"
+                      className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#5A4A32]"
                       type="button"
                       aria-label={familyL("Zoom in")}
                     >
@@ -1915,7 +1999,7 @@ export default function FamilyCardForm() {
 
                     <button
                       onClick={resetPreview}
-                      className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-[#0F172A]"
+                      className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#7A6A50] hover:text-[#3B2F1E]"
                       type="button"
                       aria-label={familyL("Fit page")}
                       title={familyL("Fit page")}
@@ -1925,10 +2009,10 @@ export default function FamilyCardForm() {
                   </div>
 
                   <span
-                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${
+                    className={`text-[13px] font-semibold px-2.5 py-0.5 rounded-md ${
                       anyFieldFilled
-                        ? "text-[#2563EB] bg-[#F8FAFC]"
-                        : "text-gray-400 bg-gray-100"
+                        ? "text-[#DC2626] bg-[#FBF6E8]"
+                        : "text-[#7A6A50] bg-[#F3E9D2]"
                     }`}
                   >
                     {anyFieldFilled ? (
@@ -1940,13 +2024,13 @@ export default function FamilyCardForm() {
                 </div>
               </div>
 
-              <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-gray-500">
+              <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[#5A4A32]">
                 <label className="flex cursor-pointer items-center gap-1.5">
                   <input
                     type="checkbox"
                     checked={live}
                     onChange={(event) => onLiveChange(event.target.checked)}
-                    className="accent-blue-600"
+                    className="accent-[#DC2626]"
                   />
 
                   <span>
@@ -1958,7 +2042,7 @@ export default function FamilyCardForm() {
                   <button
                     type="button"
                     onClick={() => setFrozen(form)}
-                    className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100"
+                    className="rounded-md border border-[#FBB6B6] bg-[#FEE9E9] px-2 py-0.5 text-[12px] font-semibold text-[#DC2626] hover:bg-[#FEE9E9]"
                   >
                     <FamilyT>{"Update preview\n                  "}</FamilyT>
                   </button>
@@ -1969,7 +2053,7 @@ export default function FamilyCardForm() {
                     type="checkbox"
                     checked={bnDigits}
                     onChange={(event) => setBnDigits(event.target.checked)}
-                    className="accent-blue-600"
+                    className="accent-[#DC2626]"
                   />
 
                   <span>
@@ -1980,7 +2064,7 @@ export default function FamilyCardForm() {
                 </label>
 
                 {isZoomedBeyondFit ? (
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-[12px] text-[#7A6A50]">
                     <FamilyT>
                       {"\u2022 Drag to move\n                  "}
                     </FamilyT>
@@ -2000,7 +2084,7 @@ export default function FamilyCardForm() {
                     ? familyL("Zoomed form preview. Drag to move the page.")
                     : familyL("Form preview")
                 }
-                className={`bg-[#3d3934] rounded-xl overflow-auto h-[min(80vh,860px)] min-h-[520px] p-4 sm:p-5 flex items-start select-none ${
+                className={`bg-[#4A3B26] rounded-xl overflow-auto h-[min(80vh,860px)] fc-preview-scroll min-h-[520px] p-4 sm:p-5 flex items-start select-none ${
                   isZoomedBeyondFit
                     ? isPanning
                       ? "cursor-grabbing"
@@ -2037,7 +2121,7 @@ export default function FamilyCardForm() {
                 </div>
               </div>
 
-              <p className="mt-2 text-[10px] text-gray-400">
+              <p className="mt-2 text-[12px] text-[#7A6A50]">
                 <FamilyT>
                   {
                     "A4 \u00B7 210 \u00D7 297 mm \u2014 print and PDF use this exact layout.\n              "
@@ -2048,20 +2132,20 @@ export default function FamilyCardForm() {
           </div>
         </div>
 
-        <div className="print-hide bg-sky-50/40 border border-sky-200/80 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+        <div className="print-hide bg-[#F2E8D2] border border-[#E3D6B8] rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wide">
             <FamilyT>
               {"Important Information and Instructions:\n          "}
             </FamilyT>
           </h3>
 
-          <p className="text-xs text-[#0F172A] font-medium">
+          <p className="text-sm text-[#3B2F1E] font-medium">
             <FamilyT>
               {"The following documents must be attached:\n          "}
             </FamilyT>
           </p>
 
-          <ul className="list-disc list-inside text-xs text-gray-600 space-y-1.5 font-medium">
+          <ul className="list-disc list-inside text-sm text-[#5A4A32] space-y-1.5 font-medium">
             <li>
               <FamilyT>
                 {
@@ -2091,7 +2175,7 @@ export default function FamilyCardForm() {
             </li>
           </ul>
 
-          <p className="text-[11px] font-bold text-red-600 pt-1">
+          <p className="text-[13px] font-bold text-red-600 pt-1">
             <FamilyT>
               {
                 "Fill in all information correctly and accurately. The application\n            may be cancelled for incorrect information.\n          "
@@ -2099,7 +2183,7 @@ export default function FamilyCardForm() {
             </FamilyT>
           </p>
 
-          <p className="text-[11px] font-medium text-gray-600">
+          <p className="text-[13px] font-medium text-[#5A4A32]">
             <FamilyT>
               {
                 "Submit this form to a respectable person in your area \u2014 Member,\n            Chairman, Councillor or Mayor. There is no online system to apply\n            for a Family Card.\n          "
@@ -2107,7 +2191,7 @@ export default function FamilyCardForm() {
             </FamilyT>
           </p>
 
-          <p className="text-[11px] font-medium text-gray-600">
+          <p className="text-[13px] font-medium text-[#5A4A32]">
             <FamilyT>
               {
                 "You do not need to pay anyone or use a broker to get this government\n            benefit \u2014 the Family Card is distributed free of charge by the\n            government.\n          "
@@ -2116,8 +2200,8 @@ export default function FamilyCardForm() {
           </p>
         </div>
 
-        <div className="print-hide bg-blue-50/60 border border-blue-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-blue-900 font-medium">
-          <ShieldCheck size={16} className="text-blue-600 shrink-0" />
+        <div className="print-hide bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-3.5 flex items-center gap-2.5 text-sm text-[#3B2F1E] font-medium">
+          <ShieldCheck size={16} className="text-[#DC2626] shrink-0" />
 
           <span>
             <FamilyT>
@@ -2128,14 +2212,14 @@ export default function FamilyCardForm() {
           </span>
         </div>
 
-        <div className="print-hide bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="print-hide bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl overflow-hidden shadow-2xs">
           <button
             onClick={() => setShowHowToUse((open) => !open)}
-            className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors"
+            className="w-full p-4 text-left flex items-center justify-between font-bold text-sm text-[#3B2F1E] hover:bg-[#EFE3C8] transition-colors"
             type="button"
           >
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FEE9E9]0" />
 
               <span>
                 <FamilyT>{"How to use"}</FamilyT>
@@ -2146,7 +2230,7 @@ export default function FamilyCardForm() {
           </button>
 
           {showHowToUse ? (
-            <div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
+            <div className="p-4 pt-0 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8] font-medium leading-relaxed">
               <p>
                 <FamilyT>
                   {
@@ -2173,7 +2257,7 @@ export default function FamilyCardForm() {
         </div>
 
         <div className="print-hide pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
+          <h2 className="text-base font-bold text-[#3B2F1E] tracking-tight">
             <FamilyT>{"Tools in the same category\n          "}</FamilyT>
           </h2>
 
@@ -2184,18 +2268,18 @@ export default function FamilyCardForm() {
                 <Link
                   key={tool.href}
                   href={tool.href}
-                  className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between group"
+                  className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#DC2626] transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors">
+                    <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#FEE9E9] transition-colors">
                       <ToolIcon size={18} />
                     </div>
 
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-sm font-bold text-[#3B2F1E] mb-1 group-hover:text-[#DC2626] transition-colors">
                       {<FamilyT>{tool.title}</FamilyT>}
                     </h3>
 
-                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                    <p className="text-[13px] text-[#5A4A32] font-medium leading-relaxed">
                       {<FamilyT>{tool.description}</FamilyT>}
                     </p>
                   </div>
@@ -2206,8 +2290,8 @@ export default function FamilyCardForm() {
         </div>
 
         <div className="print-hide fixed bottom-0 left-0 right-0 z-40 px-3 sm:px-4 pb-3 pointer-events-none">
-          <div className="w-full pointer-events-auto bg-[#F8FAFC]/95 backdrop-blur-md border border-gray-200/80 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_-8px_28px_rgba(30,30,30,.12)]">
-            <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
+          <div className="w-full pointer-events-auto bg-[#FBF6E8]/95 backdrop-blur-md border border-[#E3D6B8] rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_-8px_28px_rgba(59,47,30,0.12)]">
+            <div className="text-sm font-medium text-[#5A4A32] flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
 
               <span>
@@ -2222,7 +2306,7 @@ export default function FamilyCardForm() {
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
               <button
                 onClick={handleClear}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors"
+                className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors"
                 type="button"
               >
                 <FamilyT>{"Clear all\n              "}</FamilyT>
@@ -2230,7 +2314,7 @@ export default function FamilyCardForm() {
 
               <button
                 onClick={handleRestoreLastApplication}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors flex items-center gap-1.5"
                 type="button"
               >
                 <RefreshCw size={13} />
@@ -2243,7 +2327,7 @@ export default function FamilyCardForm() {
               <button
                 onClick={handlePrint}
                 disabled={isProcessing !== null}
-                className="px-5 py-2 bg-white hover:bg-gray-50 text-[#0F172A] border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+                className="px-5 py-2 bg-[#FBF6E8] hover:bg-[#F6EEDB] text-[#3B2F1E] border border-[#E3D6B8] text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
                 type="button"
               >
                 {isProcessing === "print" ? (
@@ -2264,7 +2348,7 @@ export default function FamilyCardForm() {
               <button
                 onClick={handleDownloadPdf}
                 disabled={isProcessing !== null}
-                className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
+                className="px-5 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60"
                 type="button"
               >
                 {isProcessing === "download" ? (

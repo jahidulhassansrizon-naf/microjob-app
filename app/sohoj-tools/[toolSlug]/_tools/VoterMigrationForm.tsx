@@ -458,37 +458,37 @@ function GeoCombobox({ value, onChange, options, placeholder, disabled, }: {
                 return;
             setOpen(true);
             requestAnimationFrame(() => inputRef.current?.focus());
-        }} className={`w-full bg-white border rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 transition-colors ${disabled
-            ? "border-gray-100 bg-gray-50 cursor-not-allowed"
-            : "border-gray-200 cursor-text focus-within:border-indigo-500"}`}>
-        {selected ? (<span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
+        }} className={`w-full bg-[#FBF6E8] border rounded-lg px-2.5 py-1 text-sm flex items-center gap-1.5 transition-colors ${disabled
+            ? "border-[#E3D6B8]/70 bg-[#F6EEDB] cursor-not-allowed"
+            : "border-[#E3D6B8] cursor-text focus-within:border-[#DC2626]"}`}>
+        {selected ? (<span className="inline-flex items-center gap-1 bg-[#FEE9E9] text-[#B91C1C] rounded-md pl-1.5 pr-1 py-0.5 font-semibold max-w-full">
             <span className="truncate">{selected.bn}</span>
             {!disabled && (<button type="button" onClick={(e) => {
                     e.stopPropagation();
                     onChange("");
                     setQuery("");
-                }} className="text-indigo-400 hover:text-indigo-700 shrink-0">
+                }} className="text-[#B91C1C] hover:text-[#991B1B] shrink-0">
                 <X size={11}/>
               </button>)}
           </span>) : null}
         <input ref={inputRef} type="text" disabled={disabled} value={query} onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
-        }} onFocus={() => !disabled && setOpen(true)} placeholder={selected ? "" : placeholder} className="flex-1 min-w-[2rem] outline-none bg-transparent text-xs text-[#0F172A] placeholder:text-gray-400 disabled:cursor-not-allowed"/>
-        <ChevronDown size={13} className={`text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}/>
+        }} onFocus={() => !disabled && setOpen(true)} placeholder={selected ? "" : placeholder} className="flex-1 min-w-[2rem] outline-none bg-transparent text-sm text-[#3B2F1E] placeholder:text-[#B0A080] disabled:cursor-not-allowed"/>
+        <ChevronDown size={13} className={`text-[#7A6A50] shrink-0 transition-transform ${open ? "rotate-180" : ""}`}/>
       </div>
 
-      {open && !disabled && (<div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-          {filtered.length === 0 ? (<p className="text-[11px] text-gray-400 px-2 py-2 text-center"><T>{"No results found\n            "}</T></p>) : (<div className={filtered.length > 12
+      {open && !disabled && (<div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg shadow-lg p-2">
+          {filtered.length === 0 ? (<p className="text-[13px] text-[#7A6A50] px-2 py-2 text-center"><T>{"No results found\n            "}</T></p>) : (<div className={filtered.length > 12
                     ? "grid grid-cols-2 gap-x-2"
                     : "flex flex-col"}>
               {filtered.map((o) => (<button key={o.id} type="button" onClick={() => {
                         onChange(o.id);
                         setOpen(false);
                         setQuery("");
-                    }} className={`text-left text-xs px-2 py-1.5 rounded-md hover:bg-indigo-50 transition-colors truncate ${o.id === value
-                        ? "bg-indigo-50 text-indigo-700 font-semibold"
-                        : "text-[#0F172A]"}`}>
+                    }} className={`text-left text-sm px-2 py-1.5 rounded-md hover:bg-[#FEE9E9] transition-colors truncate ${o.id === value
+                        ? "bg-[#FEE9E9] text-[#B91C1C] font-semibold"
+                        : "text-[#3B2F1E]"}`}>
                   {o.bn}
                 </button>))}
             </div>)}
@@ -519,8 +519,8 @@ function Section({ title, children, }: {
     title: string;
     children: React.ReactNode;
 }) {
-    return (<div className="space-y-2 border border-indigo-200/80 rounded-xl p-3 bg-indigo-50/20">
-      <h3 className="text-[11.5px] font-bold text-indigo-900"><T>{title}</T></h3>
+    return (<div className="space-y-2 border border-[#E3D6B8] rounded-xl p-3 bg-[#F6EEDB]">
+      <h3 className="text-[13.5px] font-bold text-[#B91C1C]"><T>{title}</T></h3>
       {children}
     </div>);
 }
@@ -532,15 +532,15 @@ function Field({ label, children, hint, counter, }: {
 }) {
     return (<div className="space-y-0.5 min-w-0">
       <div className="flex items-end justify-between gap-2">
-        <label className="text-[11px] font-semibold text-gray-600 leading-tight">
+        <label className="text-[13px] font-semibold text-[#5A4A32] leading-tight">
           <T>{label}</T>
         </label>
-        {counter && (<span className="text-[10px] font-medium text-gray-400 shrink-0">
+        {counter && (<span className="text-[12px] font-medium text-[#7A6A50] shrink-0">
             {counter}
           </span>)}
       </div>
       {children}
-      {hint && <p className="text-[10px] text-red-500 font-medium"><T>{hint}</T></p>}
+      {hint && <p className="text-[12px] text-red-500 font-medium"><T>{hint}</T></p>}
     </div>);
 }
 function TextInput({ value, onChange, placeholder, inputMode, maxLength, }: {
@@ -550,7 +550,7 @@ function TextInput({ value, onChange, placeholder, inputMode, maxLength, }: {
     inputMode?: "text" | "numeric" | "tel";
     maxLength?: number;
 }) {
-    return (<input type="text" inputMode={inputMode} maxLength={maxLength} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#0F172A] focus:outline-none focus:border-indigo-500"/>);
+    return (<input type="text" inputMode={inputMode} maxLength={maxLength} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg px-2.5 py-1 text-sm text-[#3B2F1E] focus:outline-none focus:border-[#DC2626]"/>);
 }
 // 4 separate boxes for the postal code (digits only, auto-advance, paste-able).
 function PostCodeBoxes({ value, onChange, }: {
@@ -600,7 +600,7 @@ function PostCodeBoxes({ value, onChange, }: {
                     return;
                 onChange(pasted);
                 focusBox(pasted.length);
-            }} className="w-8 h-8 text-center text-xs font-bold text-[#0F172A] bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500"/>))}
+            }} className="w-8 h-8 text-center text-sm font-bold text-[#3B2F1E] bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg focus:outline-none focus:border-[#DC2626]"/>))}
     </div>);
 }
 // ---- Form-13 paper primitives (plain CSS classes from PAPER_CSS) ----------
@@ -655,41 +655,41 @@ function DobPicker({ value, onPick, placeholder, }: {
     const currentYear = new Date().getFullYear();
     const yearOptions = useMemo(() => Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i), [currentYear]);
     return (<div ref={rootRef} className="relative">
-      <div onClick={() => setOpen((o) => !o)} className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500">
-        <CalendarIcon size={13} className="text-gray-400 shrink-0"/>
-        {value ? (<span className="flex-1 text-[#0F172A] font-semibold">
+      <div onClick={() => setOpen((o) => !o)} className="w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg px-2.5 py-1 text-sm flex items-center gap-1.5 cursor-pointer focus-within:border-[#DC2626]">
+        <CalendarIcon size={13} className="text-[#7A6A50] shrink-0"/>
+        {value ? (<span className="flex-1 text-[#3B2F1E] font-semibold">
             {isBangla ? formatDateBn(value) : formatDateEn(value)}
-          </span>) : (<span className="flex-1 text-gray-400">{placeholder}</span>)}
+          </span>) : (<span className="flex-1 text-[#7A6A50]">{placeholder}</span>)}
         {value && (<button type="button" onClick={(e) => {
                 e.stopPropagation();
                 onPick(null);
-            }} className="text-gray-400 hover:text-gray-600 shrink-0">
+            }} className="text-[#7A6A50] hover:text-[#3B2F1E] shrink-0">
             <X size={12}/>
           </button>)}
       </div>
 
-      {open && (<div className="absolute z-20 mt-1 right-0 w-64 bg-white border border-gray-200 rounded-xl shadow-lg p-3">
+      {open && (<div className="absolute z-20 mt-1 right-0 w-64 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl shadow-lg p-3">
           <div className="flex items-center justify-between mb-2">
-            <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+            <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#7A6A50]">
               <ChevronLeft size={14}/>
             </button>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-[#0F172A]">
+              <span className="text-sm font-bold text-[#3B2F1E]">
                 {isBangla ? BN_MONTHS[month] : EN_MONTHS[month]}
               </span>
-              <select value={year} onChange={(e) => setViewDate(new Date(Number(e.target.value), month, 1))} className="text-[11px] font-bold text-[#0F172A] border border-gray-200 rounded px-1 py-0.5 outline-none">
+              <select value={year} onChange={(e) => setViewDate(new Date(Number(e.target.value), month, 1))} className="text-[13px] font-bold text-[#3B2F1E] border border-[#E3D6B8] rounded px-1 py-0.5 outline-none">
                 {yearOptions.map((y) => (<option key={y} value={y}>
                     {isBangla ? toBn(y) : y}
                   </option>))}
               </select>
             </div>
-            <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+            <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#7A6A50]">
               <ChevronRight size={14}/>
             </button>
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {(isBangla ? ["র", "সো", "ম", "বু", "বৃ", "শু", "শ"] : ["S", "M", "T", "W", "T", "F", "S"]).map((d, i) => (<span key={i} className="text-[10px] text-center font-semibold text-gray-400">
+            {(isBangla ? ["র", "সো", "ম", "বু", "বৃ", "শু", "শ"] : ["S", "M", "T", "W", "T", "F", "S"]).map((d, i) => (<span key={i} className="text-[12px] text-center font-semibold text-[#7A6A50]">
                 {d}
               </span>))}
           </div>
@@ -703,11 +703,11 @@ function DobPicker({ value, onPick, placeholder, }: {
                 return (<button key={day} type="button" disabled={isFuture} onClick={() => {
                         onPick(thisDate);
                         setOpen(false);
-                    }} className={`text-[11px] rounded-md py-1 transition-colors ${selected
-                        ? "bg-indigo-600 text-white font-bold"
+                    }} className={`text-[13px] rounded-md py-1 transition-colors ${selected
+                        ? "bg-[#DC2626] text-white font-bold"
                         : isFuture
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-[#0F172A] hover:bg-indigo-50"}`}>
+                            ? "text-[#B0A080] cursor-not-allowed"
+                            : "text-[#3B2F1E] hover:bg-[#FEE9E9]"}`}>
                   {isBangla ? toBn(day) : day}
                 </button>);
             })}
@@ -741,18 +741,18 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
     }, []);
     const display = month !== null && year !== null ? `${isBangla ? BN_MONTHS[month] : EN_MONTHS[month]}, ${isBangla ? toBn(year) : year}` : "";
     return (<div ref={rootRef} className="relative">
-      <div onClick={() => setOpen((o) => !o)} className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs flex items-center gap-1.5 cursor-pointer focus-within:border-indigo-500">
-        <CalendarIcon size={13} className="text-gray-400 shrink-0"/>
-        {display ? (<span className="flex-1 text-[#0F172A] font-semibold">{display}</span>) : (<span className="flex-1 text-gray-400">{placeholder}</span>)}
+      <div onClick={() => setOpen((o) => !o)} className="w-full bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg px-2.5 py-1 text-sm flex items-center gap-1.5 cursor-pointer focus-within:border-[#DC2626]">
+        <CalendarIcon size={13} className="text-[#7A6A50] shrink-0"/>
+        {display ? (<span className="flex-1 text-[#3B2F1E] font-semibold">{display}</span>) : (<span className="flex-1 text-[#7A6A50]">{placeholder}</span>)}
       </div>
 
-      {open && (<div className="absolute z-20 mt-1 right-0 w-60 bg-white border border-gray-200 rounded-xl shadow-lg p-3">
+      {open && (<div className="absolute z-20 mt-1 right-0 w-60 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl shadow-lg p-3">
           <div className="flex items-center justify-between mb-2">
-            <button type="button" onClick={() => setViewYear((y) => y - 1)} className="p-1 hover:bg-gray-100 rounded-md text-gray-500">
+            <button type="button" onClick={() => setViewYear((y) => y - 1)} className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#7A6A50]">
               <ChevronLeft size={14}/>
             </button>
-            <span className="text-xs font-bold text-[#0F172A]">{isBangla ? toBn(viewYear) : viewYear}</span>
-            <button type="button" onClick={() => setViewYear((y) => y + 1)} disabled={viewYear >= new Date().getFullYear()} className="p-1 hover:bg-gray-100 rounded-md text-gray-500 disabled:opacity-30">
+            <span className="text-sm font-bold text-[#3B2F1E]">{isBangla ? toBn(viewYear) : viewYear}</span>
+            <button type="button" onClick={() => setViewYear((y) => y + 1)} disabled={viewYear >= new Date().getFullYear()} className="p-1 hover:bg-[#EFE3C8] rounded-md text-[#7A6A50] disabled:opacity-30">
               <ChevronRight size={14}/>
             </button>
           </div>
@@ -764,11 +764,11 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
                 return (<button key={m} type="button" disabled={disabled} onClick={() => {
                         onPick(i, viewYear);
                         setOpen(false);
-                    }} className={`text-[10.5px] rounded-md py-1.5 px-1 transition-colors ${selected
-                        ? "bg-indigo-600 text-white font-bold"
+                    }} className={`text-[12.5px] rounded-md py-1.5 px-1 transition-colors ${selected
+                        ? "bg-[#DC2626] text-white font-bold"
                         : disabled
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-[#0F172A] hover:bg-indigo-50"}`}>
+                            ? "text-[#B0A080] cursor-not-allowed"
+                            : "text-[#3B2F1E] hover:bg-[#FEE9E9]"}`}>
                   {m}
                 </button>);
             })}
@@ -785,23 +785,23 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
     const { locale } = useSohozI18n();
     const isBangla = String(locale).toLowerCase().startsWith("bn");
     return (<div className="print-hide fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl relative">
-        <button onClick={onFixDate} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+      <div className="bg-[#FBF6E8] rounded-2xl max-w-sm w-full p-6 shadow-xl relative">
+        <button onClick={onFixDate} className="absolute top-3 right-3 text-[#7A6A50] hover:text-[#3B2F1E]">
           <X size={16}/>
         </button>
-        <div className="w-11 h-11 mx-auto rounded-full bg-[#E2E8F0] text-[#2563EB] flex items-center justify-center mb-3">
+        <div className="w-11 h-11 mx-auto rounded-full bg-[#FBB6B6] text-[#DC2626] flex items-center justify-center mb-3">
           <AlertTriangle size={20}/>
         </div>
-        <h3 className="text-sm font-bold text-[#0F172A] text-center"><T>{"Age "}</T>{age}<T>{"\u2014 not yet 18\n        "}</T></h3>
-        <p className="text-xs text-gray-500 text-center mt-1"><T>{"The electoral roll requires an age of at least 18.\n        "}</T></p>
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 mt-4 text-left text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
+        <h3 className="text-base font-bold text-[#3B2F1E] text-center"><T>{"Age "}</T>{age}<T>{"\u2014 not yet 18\n        "}</T></h3>
+        <p className="text-sm text-[#7A6A50] text-center mt-1"><T>{"The electoral roll requires an age of at least 18.\n        "}</T></p>
+        <div className="bg-[#F6EEDB] border border-[#FBB6B6] rounded-xl p-3 mt-4 text-left text-[13px] text-[#5A4A32] space-y-1.5 leading-relaxed">
           <p><T>{"\u2022 But under 18 the name is not added to the voter list \u2014 the office\n            may return this form.\n          "}</T></p>
-          <p className="text-[#2563EB] font-bold"><T>{"\u2022 Turns 18 on: "}</T>{isBangla ? formatDateBn(turns18On) : formatDateEn(turns18On)}
+          <p className="text-[#DC2626] font-bold"><T>{"\u2022 Turns 18 on: "}</T>{isBangla ? formatDateBn(turns18On) : formatDateEn(turns18On)}
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4">
-          <button onClick={onFixDate} className="flex-1 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 rounded-xl border border-gray-200 transition-colors"><T>{"Fix the date\n          "}</T></button>
-          <button onClick={onContinue} className="flex-1 py-2 text-xs font-bold text-white bg-[#2563EB] hover:bg-[#2563EB] rounded-xl transition-colors"><T>{"Continue anyway\n          "}</T></button>
+          <button onClick={onFixDate} className="flex-1 py-2 text-sm font-bold text-[#5A4A32] hover:bg-[#EFE3C8] rounded-xl border border-[#E3D6B8] transition-colors"><T>{"Fix the date\n          "}</T></button>
+          <button onClick={onContinue} className="flex-1 py-2 text-sm font-bold text-white bg-[#DC2626] hover:bg-[#B91C1C] rounded-xl transition-colors"><T>{"Continue anyway\n          "}</T></button>
         </div>
       </div>
     </div>);
@@ -1262,15 +1262,111 @@ export default function VoterMigrationForm() {
     const postalHint = newPostalCode && newPostalCode.length !== 4
         ? "Post code must be 4 digits"
         : undefined;
-    return (<div className="voter-migration-root w-full text-[#0F172A] font-sans pb-16">
+    return (<div className="voter-migration-root page-font relative isolate min-h-screen w-full text-[#3B2F1E] font-sans pb-16">
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
         ${PAPER_CSS}
+
+        .voter-migration-root.page-font {
+          position: relative;
+          isolation: isolate;
+          min-height: 100vh;
+          color: #3B2F1E;
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+
+        .voter-migration-root.page-font::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+
+        .voter-migration-root h1,
+        .voter-migration-root h2,
+        .voter-migration-root h3,
+        .voter-migration-root h4 { letter-spacing: -0.01em; }
+
+        .voter-migration-root button,
+        .voter-migration-root a,
+        .voter-migration-root input,
+        .voter-migration-root select,
+        .voter-migration-root textarea { transition-duration: 180ms; }
+
+        .voter-migration-root button:active:not(:disabled),
+        .voter-migration-root a:active { transform: scale(0.98); }
+
+        .voter-migration-root button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .voter-migration-root button:focus-visible,
+        .voter-migration-root a:focus-visible,
+        .voter-migration-root input:focus-visible,
+        .voter-migration-root select:focus-visible,
+        .voter-migration-root textarea:focus-visible {
+          outline: 2px solid rgba(220, 38, 38, 0.45);
+          outline-offset: 2px;
+        }
+
+        .voter-migration-root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+        .voter-migration-root select,
+        .voter-migration-root textarea {
+          background-color: #FBF6E8;
+          border-color: #E3D6B8;
+          color: #3B2F1E;
+        }
+
+        .voter-migration-root input:focus,
+        .voter-migration-root select:focus,
+        .voter-migration-root textarea:focus {
+          border-color: #DC2626;
+          box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.16);
+          outline: none;
+        }
+
+        .voter-migration-root button[class~="bg-[#FBF6E8]"] {
+          color: #B91C1C;
+          border-color: #FBB6B6;
+        }
+
+        .voter-migration-root button[class~="bg-[#DC2626]"]:hover { background-color: #B91C1C; }
+
+        .voter-migration-root .print-preview-scroll,
+        .voter-migration-root .print-preview-shell {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+
+        .voter-migration-root .print-preview-scroll::-webkit-scrollbar,
+        .voter-migration-root .print-preview-shell::-webkit-scrollbar { width: 12px; }
+
+        .voter-migration-root .print-preview-scroll::-webkit-scrollbar-track,
+        .voter-migration-root .print-preview-shell::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0;
+        }
+
+        .voter-migration-root .print-preview-scroll::-webkit-scrollbar-thumb,
+        .voter-migration-root .print-preview-shell::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px;
+        }
+
+        .voter-migration-root .print-preview-scroll::-webkit-scrollbar-thumb:hover,
+        .voter-migration-root .print-preview-shell::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
 
         .f13-sheet {
           width: 210mm;
           background: #ffffff;
-          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18),
-            0 8px 24px rgba(15, 23, 42, 0.08);
+          box-shadow: 0 1px 3px rgba(59, 47, 30, 0.12),
+            0 8px 24px rgba(59, 47, 30, 0.08);
         }
 
         /* Fallback only: used if the isolated print frame can't be created. */
@@ -1286,6 +1382,7 @@ export default function VoterMigrationForm() {
           }
 
           .print-hide { display: none !important; }
+          .voter-migration-root::before { display: none !important; }
 
           .voter-migration-root,
           .print-workspace,
@@ -1339,7 +1436,7 @@ export default function VoterMigrationForm() {
                 setPendingDob(null);
             }}/>)}
 
-      {toast && (<div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+      {toast && (<div className="print-hide fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#3B2F1E] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
           <CheckCircle2 size={14} className="text-emerald-400"/>
           <T>{toast}</T>
         </div>)}
@@ -1347,34 +1444,34 @@ export default function VoterMigrationForm() {
       <div className="w-full space-y-6">
         <div className="print-hide flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2">
-              <button onClick={() => router.back()} className="p-1 hover:bg-gray-200/60 rounded-md transition-colors text-[#0F172A] flex items-center justify-center -ml-1" title={L("Go back")}>
+            <div className="flex items-center gap-2 text-sm text-[#7A6A50] font-medium mb-2">
+              <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8]/60 rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#0F172A]"><T>{"Sohoj Tools\n              "}</T></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Sohoj Tools\n              "}</T></Link>
               <span><T>{"/"}</T></span>
-              <span className="hover:text-[#0F172A] cursor-pointer"><T>{"General Tools\n              "}</T></span>
+              <span className="hover:text-[#3B2F1E] cursor-pointer"><T>{"General Tools\n              "}</T></span>
               <span><T>{"/"}</T></span>
-              <span className="text-[#0F172A] font-semibold"><T>{"Voter Migration Form\n              "}</T></span>
+              <span className="text-[#3B2F1E] font-semibold"><T>{"Voter Migration Form\n              "}</T></span>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center font-bold shadow-2xs">
+              <div className="w-8 h-8 bg-[#FEE9E9] text-[#B91C1C] rounded-lg flex items-center justify-center font-bold shadow-2xs">
                 <FileText size={18}/>
               </div>
-              <h1 className="text-xl font-bold text-[#0F172A] tracking-tight"><T>{"Voter Migration Form\n              "}</T></h1>
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
-              <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                <CheckCircle2 size={12} className="text-gray-300"/><T>{"Used "}</T>{(String(locale).toLowerCase().startsWith("bn") ? toBn(usageCount) : usageCount)}<T>{"times\n              "}</T></span>
+              <h1 className="text-2xl font-bold text-[#3B2F1E] tracking-tight"><T>{"Voter Migration Form\n              "}</T></h1>
+              <span className="bg-emerald-100 text-emerald-700 text-[13px] font-bold px-2 py-0.5 rounded-full"><T>{"Free\n              "}</T></span>
+              <span className="flex items-center gap-1 text-[13px] text-[#7A6A50] font-semibold">
+                <CheckCircle2 size={12} className="text-[#B0A080]"/><T>{"Used "}</T>{(String(locale).toLowerCase().startsWith("bn") ? toBn(usageCount) : usageCount)}<T>{"times\n              "}</T></span>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-1"><T>{"Fill in your details on the left \u2014 see a live Form-13 on the right\n              and download it as PDF.\n            "}</T></p>
+            <p className="text-sm text-[#7A6A50] font-medium mt-1"><T>{"Fill in your details on the left \u2014 see a live Form-13 on the right\n              and download it as PDF.\n            "}</T></p>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button type="button" onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Add to favorites")} title={L("Add to favorites")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-indigo-500 hover:border-indigo-300 transition-all shadow-2xs">
-              <Star size={16} className={isFavorite ? "fill-indigo-400 text-indigo-400" : ""}/>
+            <button type="button" onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Add to favorites")} title={L("Add to favorites")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#7A6A50] hover:text-[#B91C1C] hover:border-[#DC2626] transition-all shadow-2xs">
+              <Star size={16} className={isFavorite ? "fill-[#DC2626] text-[#B91C1C]" : ""}/>
             </button>
-            <button type="button" aria-label={L("Share tool")} title={L("Share tool")} className="p-2 bg-white rounded-lg border border-gray-200 text-gray-500 hover:text-[#0F172A] transition-all shadow-2xs">
+            <button type="button" aria-label={L("Share tool")} title={L("Share tool")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#7A6A50] hover:text-[#3B2F1E] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -1382,10 +1479,10 @@ export default function VoterMigrationForm() {
 
         <div className="print-workspace grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="print-hide lg:col-span-5 space-y-4">
-            <div className="bg-white border border-gray-200/80 rounded-2xl p-3 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider"><T>{"Settings\n                "}</T></span>
-                <span className="text-[11px] text-gray-400 font-medium"><T>{"Preview updates as you type.\n                "}</T></span>
+            <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-3 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E3D6B8]/70">
+                <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider"><T>{"Settings\n                "}</T></span>
+                <span className="text-[13px] text-[#7A6A50] font-medium"><T>{"Preview updates as you type.\n                "}</T></span>
               </div>
 
               <Section title={L("1. Recipient (election office)")}>
@@ -1529,13 +1626,13 @@ export default function VoterMigrationForm() {
               </Section>
 
               <div className="grid grid-cols-2 gap-2 pt-1">
-                <button onClick={handlePrint} disabled={isProcessing !== null} className="w-full py-2 bg-white hover:bg-gray-50 text-indigo-600 border border-indigo-200 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-60">
+                <button onClick={handlePrint} disabled={isProcessing !== null} className="w-full py-2 bg-[#FBF6E8] hover:bg-[#EFE3C8] text-[#DC2626] border border-[#FBB6B6] text-sm font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-60">
                   {isProcessing === "print" ? (<Loader2 size={14} className="animate-spin"/>) : (<Printer size={14}/>)}
                   <span>
                     {isProcessing === "print" ? <T>{"Processing..."}</T> : <T>{"Print"}</T>}
                   </span>
                 </button>
-                <button onClick={handleClear} className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5">
+                <button onClick={handleClear} className="w-full py-2 bg-[#FEE9E9] hover:bg-[#FEE9E9] text-red-600 border border-[#FBB6B6] text-sm font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5">
                   <RotateCcw size={14}/>
                   <span><T>{"Clear all"}</T></span>
                 </button>
@@ -1544,38 +1641,38 @@ export default function VoterMigrationForm() {
           </div>
 
           <div className="print-preview-column lg:col-span-7 lg:sticky lg:top-4 space-y-4">
-            <div className="print-preview-shell bg-white border border-gray-200/80 rounded-2xl p-3 shadow-2xs">
-              <div className="print-hide flex items-center justify-between pb-3 border-b border-gray-100">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+            <div className="print-preview-shell bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-3 shadow-2xs">
+              <div className="print-hide flex items-center justify-between pb-3 border-b border-[#E3D6B8]/70">
+                <span className="text-sm font-bold text-[#3B2F1E] uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#DC2626]"></span>
                   <span><T>{"Live preview"}</T></span>
                 </span>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-1 py-0.5">
-                    <button onClick={() => setZoom((z) => Math.max(60, z - 10))} className="p-1 hover:bg-white rounded-md text-gray-500" aria-label={L("Zoom out")}>
+                  <div className="flex items-center gap-1 bg-[#F3E9D2] rounded-lg px-1 py-0.5">
+                    <button onClick={() => setZoom((z) => Math.max(60, z - 10))} className="p-1 hover:bg-[#FBF6E8] rounded-md text-[#7A6A50]" aria-label={L("Zoom out")}>
                       <Minus size={12}/>
                     </button>
-                    <span className="text-[11px] font-bold text-gray-600 w-9 text-center">
+                    <span className="text-[13px] font-bold text-[#5A4A32] w-9 text-center">
                       {zoom}<T>{"%\n                    "}</T></span>
-                    <button onClick={() => setZoom((z) => Math.min(150, z + 10))} className="p-1 hover:bg-white rounded-md text-gray-500" aria-label={L("Zoom in")}>
+                    <button onClick={() => setZoom((z) => Math.min(150, z + 10))} className="p-1 hover:bg-[#FBF6E8] rounded-md text-[#7A6A50]" aria-label={L("Zoom in")}>
                       <Plus size={12}/>
                     </button>
                   </div>
                   <div className="relative">
-                    <button onClick={() => setPageMenuOpen((o) => !o)} className="text-[11px] font-semibold text-white bg-gray-900 px-2.5 py-1 rounded-md flex items-center gap-1"><T>{"Page "}</T>{String(locale).toLowerCase().startsWith("bn") ? toBn(activePage) : activePage}<T>{"of 2\n                      "}</T><ChevronDown size={11}/>
+                    <button onClick={() => setPageMenuOpen((o) => !o)} className="text-[13px] font-semibold text-white bg-[#3B2F1E] px-2.5 py-1 rounded-md flex items-center gap-1"><T>{"Page "}</T>{String(locale).toLowerCase().startsWith("bn") ? toBn(activePage) : activePage}<T>{"of 2\n                      "}</T><ChevronDown size={11}/>
                     </button>
-                    {pageMenuOpen && (<div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
-                        <button onClick={() => scrollToPage(1)} className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"><T>{"Page 1\n                        "}</T></button>
-                        <button onClick={() => scrollToPage(2)} className="w-full text-left px-3 py-1.5 text-[11px] text-[#0F172A] hover:bg-gray-50"><T>{"Page 2\n                        "}</T></button>
+                    {pageMenuOpen && (<div className="absolute right-0 mt-1 w-28 bg-[#FBF6E8] border border-[#E3D6B8] rounded-lg shadow-lg py-1 z-10">
+                        <button onClick={() => scrollToPage(1)} className="w-full text-left px-3 py-1.5 text-[13px] text-[#3B2F1E] hover:bg-[#EFE3C8]"><T>{"Page 1\n                        "}</T></button>
+                        <button onClick={() => scrollToPage(2)} className="w-full text-left px-3 py-1.5 text-[13px] text-[#3B2F1E] hover:bg-[#EFE3C8]"><T>{"Page 2\n                        "}</T></button>
                       </div>)}
                   </div>
-                  <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                  <span className="text-[13px] font-semibold text-[#7A6A50] bg-[#F3E9D2] px-2.5 py-0.5 rounded-md">
                     {anyFieldFilled ? <T>{"Preview"}</T> : <T>{"Empty"}</T>}
                   </span>
                 </div>
               </div>
 
-              <div ref={previewScrollRef} className={`print-preview-scroll mt-3 max-h-[85vh] overflow-auto rounded-lg bg-gray-100/70 p-2 select-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={handlePreviewPointerDown} onPointerMove={handlePreviewPointerMove} onPointerUp={stopPreviewPan} onPointerCancel={stopPreviewPan} style={{ touchAction: "none" }}>
+              <div ref={previewScrollRef} className={`print-preview-scroll mt-3 max-h-[85vh] overflow-auto rounded-lg bg-[#F3E9D2]/70 p-2 select-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={handlePreviewPointerDown} onPointerMove={handlePreviewPointerMove} onPointerUp={stopPreviewPan} onPointerCancel={stopPreviewPan} style={{ touchAction: "none" }}>
                 <div className="print-scale-wrap" style={{
             width: PAGE_W_PX * previewScale,
             height: (PAGE_H_PX * 2 + PAGE_GAP_PX) * previewScale,
@@ -1764,13 +1861,13 @@ export default function VoterMigrationForm() {
           </div>
         </div>
 
-        <div className="print-hide bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
-          <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
+        <div className="print-hide bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+          <div className="text-sm font-medium text-[#7A6A50] flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${isComplete
             ? "bg-emerald-500"
             : anyFieldFilled
-                ? "bg-[#2563EB]"
-                : "bg-indigo-500"}`}></span>
+                ? "bg-[#DC2626]"
+                : "bg-[#DC2626]"}`}></span>
             <span>
               {isComplete
         ? <T>{"Form complete — download or print your application."}</T> : anyFieldFilled
@@ -1780,18 +1877,18 @@ export default function VoterMigrationForm() {
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
-            <button onClick={handleClear} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors"><T>{"Clear all\n            "}</T></button>
-            <button onClick={handleRestoreLastApplication} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#0F172A] text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5">
+            <button onClick={handleClear} className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors"><T>{"Clear all\n            "}</T></button>
+            <button onClick={handleRestoreLastApplication} className="px-4 py-2 bg-[#F3E9D2] hover:bg-[#EFE3C8] text-[#3B2F1E] text-sm font-bold rounded-xl transition-colors flex items-center gap-1.5">
               <RefreshCw size={13}/>
               <span><T>{"Restore last application"}</T></span>
             </button>
-            <button onClick={handlePrint} disabled={isProcessing !== null} className="px-5 py-2 bg-white hover:bg-gray-50 text-[#0F172A] border border-gray-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60">
+            <button onClick={handlePrint} disabled={isProcessing !== null} className="px-5 py-2 bg-[#FBF6E8] hover:bg-[#EFE3C8] text-[#3B2F1E] border border-[#E3D6B8] text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60">
               {isProcessing === "print" ? (<Loader2 size={14} className="animate-spin"/>) : (<Printer size={14}/>)}
               <span>
                 {isProcessing === "print" ? <T>{"Processing..."}</T> : <T>{"Print"}</T>}
               </span>
             </button>
-            <button onClick={handleDownloadPdf} disabled={isProcessing !== null} className="px-5 py-2 bg-[#2563EB] hover:bg-[#2563EB] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60">
+            <button onClick={handleDownloadPdf} disabled={isProcessing !== null} className="px-5 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-60">
               {isProcessing === "download" ? (<Loader2 size={14} className="animate-spin"/>) : (<Download size={14}/>)}
               <span>
                 {isProcessing === "download" ? <T>{"Processing..."}</T> : <T>{"Download PDF"}</T>}
@@ -1800,35 +1897,35 @@ export default function VoterMigrationForm() {
           </div>
         </div>
 
-        <div className="print-hide bg-sky-50/40 border border-sky-200/80 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-bold text-sky-900 uppercase tracking-wide"><T>{"Important Information and Instructions:\n          "}</T></h3>
-          <p className="text-xs text-[#0F172A] font-medium"><T>{"Attach the following documents with the application:\n          "}</T></p>
-          <ul className="list-disc list-inside text-xs text-gray-600 space-y-1.5 font-medium">
+        <div className="print-hide bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-[#5A4A32] uppercase tracking-wide"><T>{"Important Information and Instructions:\n          "}</T></h3>
+          <p className="text-sm text-[#3B2F1E] font-medium"><T>{"Attach the following documents with the application:\n          "}</T></p>
+          <ul className="list-disc list-inside text-sm text-[#5A4A32] space-y-1.5 font-medium">
             <li><T>{"A photocopy of the National ID (NID) must be attached."}</T></li>
             <li><T>{"A certificate from a first-class officer / mayor / councillor /\n              union chairman proving you live at the new address.\n            "}</T></li>
             <li><T>{"A copy of a utility bill (if available)."}</T></li>
             <li><T>{"House rent receipt / chowkidari tax receipt / municipal tax\n              receipt or other proof.\n            "}</T></li>
           </ul>
-          <p className="text-[11px] font-bold text-red-600 pt-1"><T>{"Fill in every field accurately. Wrong information can get the\n            application rejected.\n          "}</T></p>
-          <p className="text-[11px] font-medium text-gray-600"><T>{"Print the completed Form-13, sign it, and submit it to your upazila\n            / thana election office.\n          "}</T></p>
-          <p className="text-[11px] font-medium text-gray-600"><T>{"You do not need a broker or any payment to migrate your vote \u2014 this\n            service is free of charge.\n          "}</T></p>
+          <p className="text-[13px] font-bold text-red-600 pt-1"><T>{"Fill in every field accurately. Wrong information can get the\n            application rejected.\n          "}</T></p>
+          <p className="text-[13px] font-medium text-[#5A4A32]"><T>{"Print the completed Form-13, sign it, and submit it to your upazila\n            / thana election office.\n          "}</T></p>
+          <p className="text-[13px] font-medium text-[#5A4A32]"><T>{"You do not need a broker or any payment to migrate your vote \u2014 this\n            service is free of charge.\n          "}</T></p>
         </div>
 
-        <div className="print-hide bg-indigo-50/60 border border-indigo-200/60 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-indigo-900 font-medium">
-          <ShieldCheck size={16} className="text-indigo-600 shrink-0"/>
+        <div className="print-hide bg-[#F6EEDB] border border-[#E3D6B8] rounded-2xl p-3.5 flex items-center gap-2.5 text-sm text-[#B91C1C] font-medium">
+          <ShieldCheck size={16} className="text-[#DC2626] shrink-0"/>
           <span><T>{"Your files are processed in the browser \u2014 they are not uploaded to\n            any server.\n          "}</T></span>
         </div>
 
-        <div className="print-hide bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-2xs">
-          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-xs text-[#0F172A] hover:bg-gray-50/50 transition-colors">
+        <div className="print-hide bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl overflow-hidden shadow-2xs">
+          <button onClick={() => setShowHowToUse(!showHowToUse)} className="w-full p-4 text-left flex items-center justify-between font-bold text-sm text-[#3B2F1E] hover:bg-[#EFE3C8]/50 transition-colors">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
               <span><T>{"How to use"}</T></span>
             </div>
             {showHowToUse ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
 
-          {showHowToUse && (<div className="p-4 pt-0 text-xs text-gray-600 space-y-2 border-t border-gray-100 font-medium leading-relaxed">
+          {showHowToUse && (<div className="p-4 pt-0 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8]/70 font-medium leading-relaxed">
               <p><T>{"1. Fill in your personal details, election office name, current\n                and new address on the left panel.\n              "}</T></p>
               <p><T>{"2. Watch the official Form-13 update live on the right panel.\n              "}</T></p>
               <p><T>{"3. Print or download the 2-page form as a PDF to submit."}</T></p>
@@ -1836,19 +1933,19 @@ export default function VoterMigrationForm() {
         </div>
 
         <div className="print-hide pt-4 space-y-3">
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
+          <h2 className="text-base font-bold text-[#3B2F1E] tracking-tight"><T>{"Tools in the same category\n          "}</T></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedTools.map((tool, idx) => {
             const ToolIcon = tool.icon;
-            return (<Link key={idx} href={tool.href} className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between group">
+            return (<Link key={idx} href={tool.href} className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-[#DC2626] transition-all flex flex-col justify-between group">
                   <div>
-                    <div className="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3 group-hover:bg-indigo-100 transition-colors">
+                    <div className="w-9 h-9 bg-[#FEE9E9] text-[#DC2626] rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#FEE9E9] transition-colors">
                       <ToolIcon size={18}/>
                     </div>
-                    <h3 className="text-xs font-bold text-[#0F172A] mb-1 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-sm font-bold text-[#3B2F1E] mb-1 group-hover:text-[#DC2626] transition-colors">
                       {<T>{tool.title}</T>}
                     </h3>
-                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                    <p className="text-[13px] text-[#7A6A50] font-medium leading-relaxed">
                       {<T>{tool.description}</T>}
                     </p>
                   </div>

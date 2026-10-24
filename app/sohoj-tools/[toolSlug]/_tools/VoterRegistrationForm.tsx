@@ -739,23 +739,23 @@ function FieldLabel({
   hint?: string;
 }) {
   return (
-    <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] font-semibold text-[#4B5563]">
+    <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px] font-semibold text-[#5A4A32]">
       <span>{children}</span>
       {hint ? (
-        <span className="font-normal text-[10px] text-[#9CA3AF]">{hint}</span>
+        <span className="font-normal text-[12px] text-[#7A6A50]">{hint}</span>
       ) : null}
     </div>
   );
 }
 const INPUT_CLASS =
-  "h-9 w-full rounded-md border bg-white/60 px-3 text-[11px] text-[#111827] outline-none transition placeholder:text-[#B4B0A5] focus:bg-white focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50";
-const INPUT_OK = "border-[#EEE5CC] focus:border-[#2563EB] focus:ring-[#BFDBFE]";
+  "h-9 w-full rounded-md border bg-[#FBF6E8]/80 px-3 text-[13px] text-[#3B2F1E] outline-none transition placeholder:text-[#B0A080] focus:bg-[#FBF6E8] focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50";
+const INPUT_OK = "border-[#E3D6B8] focus:border-[#DC2626] focus:ring-[#DC2626]/20";
 const INPUT_BAD =
-  "border-[#E3A0A6] focus:border-[#D46A75] focus:ring-[#F2C4C8]";
+  "border-[#E3A0A6] focus:border-[#DC2626] focus:ring-[#F2C4C8]";
 function FieldError({ message }: { message: string }) {
   const vt = useVoterText();
   return (
-    <p role="alert" className="mt-1 text-[9.5px] leading-3 text-[#B4232F]">
+    <p role="alert" className="mt-1 text-[12px] leading-3 text-[#B4232F]">
       {vt(message)}
     </p>
   );
@@ -850,7 +850,7 @@ function DateField({
           type="button"
           onClick={openPicker}
           aria-label={vt("Open calendar")}
-          className="absolute left-2 top-2 z-10 text-[#B8B1A4] hover:text-[#2563EB]"
+          className="absolute left-2 top-2 z-10 text-[#7A6A50] hover:text-[#DC2626]"
         >
           <CalendarDays className="h-4 w-4" />
         </button>
@@ -903,10 +903,10 @@ function ChoicePill({
       onClick={onClick}
       aria-pressed={active}
       className={cx(
-        "rounded-md border px-3 py-2 text-[10px] font-medium transition",
+        "rounded-md border px-3 py-2 text-[12px] font-medium transition",
         active
-          ? "border-[#2563EB] bg-[#DBEAFE] text-[#1D4ED8]"
-          : "border-[#EEE5CC] bg-white/60 text-[#555048] hover:border-[#D7CBD1] hover:bg-white",
+          ? "border-[#DC2626] bg-[#F6D9A8] text-[#B91C1C]"
+          : "border-[#E3D6B8] bg-[#FBF6E8]/80 text-[#5A4A32] hover:border-[#D8C9A6] hover:bg-[#EFE3C8]",
       )}
     >
       {children}
@@ -928,15 +928,15 @@ function CheckBox({
       role="checkbox"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 text-left text-[10px] text-[#555048]"
+      className="flex items-center gap-2 text-left text-[12px] text-[#5A4A32]"
     >
       <span
         className={cx(
-          "flex h-4 w-4 shrink-0 items-center justify-center rounded border bg-white transition",
-          checked ? "border-[#2563EB] bg-[#DBEAFE]" : "border-[#DCCFB0]",
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border bg-[#FBF6E8] transition",
+          checked ? "border-[#DC2626] bg-[#F6D9A8]" : "border-[#DCCFB0]",
         )}
       >
-        {checked ? <Check className="h-3 w-3 text-[#2563EB]" /> : null}
+        {checked ? <Check className="h-3 w-3 text-[#DC2626]" /> : null}
       </span>
       {label}
     </button>
@@ -954,15 +954,15 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[#EFE3C5] bg-white p-3.5 shadow-[0_3px_12px_rgba(119,93,41,0.05)]">
+    <section className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3.5 shadow-[0_3px_12px_rgba(119,93,41,0.05)]">
       <div className="mb-3">
-        <h2 className="text-[12px] font-bold text-[#2563EB]">
+        <h2 className="text-[14px] font-bold text-[#DC2626]">
           {number}
           <T>{". "}</T>
           {title}
         </h2>
         {description ? (
-          <p className="mt-1 text-[9.5px] leading-4 text-[#7C756A]">
+          <p className="mt-1 text-[12px] leading-4 text-[#7A6A50]">
             {description}
           </p>
         ) : null}
@@ -2521,24 +2521,24 @@ function PreviewFrame({
     setPage(target);
   };
   return (
-    <div className="rounded-xl border border-[#EFE3C5] bg-white p-3 shadow-[0_5px_20px_rgba(119,93,41,0.08)]">
+    <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3 shadow-[0_5px_20px_rgba(119,93,41,0.08)]">
       <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-[12px] font-semibold text-[#4B5563]">
+        <span className="text-[14px] font-semibold text-[#5A4A32]">
           <VT>{"Preview\n        "}</VT>
         </span>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#EAE1C9] bg-white/70">
+          <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#E3D6B8] bg-[#FBF6E8]/85">
             <button
               type="button"
               title={vt("Zoom out")}
               aria-label={vt("Zoom out")}
               disabled={zoom <= ZOOM_MIN}
               onClick={() => nudgeZoom(-ZOOM_STEP)}
-              className="h-full px-2 text-[#857F74] hover:bg-[#FAF6E9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <span className="min-w-11 text-center text-[10px] font-semibold text-[#696359]">
+            <span className="min-w-11 text-center text-[12px] font-semibold text-[#5A4A32]">
               {zoom}
               <VT>{"%\n            "}</VT>
             </span>
@@ -2548,7 +2548,7 @@ function PreviewFrame({
               aria-label={vt("Zoom in")}
               disabled={zoom >= ZOOM_MAX}
               onClick={() => nudgeZoom(ZOOM_STEP)}
-              className="h-full px-2 text-[#857F74] hover:bg-[#FAF6E9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -2558,16 +2558,16 @@ function PreviewFrame({
               aria-label={vt("Reset zoom to 100%")}
               disabled={zoom === 100}
               onClick={() => setZoom(100)}
-              className="h-full border-l border-[#EAE1C9] px-2 text-[#857F74] hover:bg-[#FAF6E9] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-full border-l border-[#E3D6B8] px-2 text-[#7A6A50] hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Search className="h-3.5 w-3.5" />
             </button>
           </div>
           <span
             className={cx(
-              "rounded-md px-2.5 py-1.5 text-[9px] font-semibold",
+              "rounded-md px-2.5 py-1.5 text-[12px] font-semibold",
               hasData
-                ? "bg-[#FBE4E4] text-[#C23A4D]"
+                ? "bg-[#FEE9E9] text-[#B91C1C]"
                 : "bg-[#F6E7B4] text-[#796838]",
             )}
           >
@@ -2576,8 +2576,8 @@ function PreviewFrame({
         </div>
       </div>
 
-      <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] text-[#6D675D]">
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-[#D8D2C2] bg-white">
+      <div className="mb-2 flex items-center gap-1.5 px-1 text-[12px] text-[#5A4A32]">
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-[#D8C9A6] bg-[#FBF6E8]">
           <Check className="h-2.5 w-2.5 text-[#7E786E]" />
         </span>
         <VT>{"Live preview\n      "}</VT>
@@ -2589,7 +2589,7 @@ function PreviewFrame({
             type="button"
             onClick={() => jumpToPage(page === 1 ? 2 : 1)}
             title={page === 1 ? vt("Go to page 2") : vt("Go to page 1")}
-            className="flex items-center gap-1 rounded-full bg-[#37332D] px-2.5 py-1.5 text-[9px] font-semibold text-white shadow-lg"
+            className="flex items-center gap-1 rounded-full bg-[#37332D] px-2.5 py-1.5 text-[12px] font-semibold text-white shadow-lg"
           >
             <VT>{"Page "}</VT>
             {page}
@@ -3130,11 +3130,67 @@ export default function VoterRegistrationForm() {
   return (
     <div
       id="voter-registration-tool"
-      className="relative -mx-4 -mt-6 min-h-[calc(100vh-72px)] bg-[#F8FAFC] px-4 pb-28 pt-5 text-[#0F172A] shadow-[0_0_0_100vmax_#F8FAFC] [clip-path:inset(0_-100vmax)] print:bg-white print:shadow-none"
+      className="relative isolate page-font -mx-4 -mt-6 min-h-[calc(100vh-72px)] px-4 pb-28 pt-5 text-[#3B2F1E] print:bg-white print:shadow-none"
     >
       <style>{PRINT_CSS}</style>
       {/* Pointer cursor on every clickable element of this tool */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        #voter-registration-tool::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, #E9DDC3 0%, #EFE5CE 100%);
+        }
+        #voter-registration-tool.page-font,
+        #voter-registration-tool.page-font *:not(.font-mono):not(svg):not(svg *):not([data-voter-paper]):not([data-voter-paper] *):not([data-form-page]):not([data-form-page] *) {
+          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-optical-sizing: auto;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        #voter-registration-tool h1,
+        #voter-registration-tool h2,
+        #voter-registration-tool h3,
+        #voter-registration-tool h4 { letter-spacing: -0.01em; }
+        #voter-registration-tool :where(input, select, textarea, button) { transition-duration: 180ms; }
+        #voter-registration-tool :where(input, select, textarea):focus-visible,
+        #voter-registration-tool button:focus-visible,
+        #voter-registration-tool a:focus-visible {
+          outline: 2px solid #DC2626;
+          outline-offset: 2px;
+        }
+        #voter-registration-tool .scroll,
+        #voter-registration-tool [class*="overflow-auto"],
+        #voter-registration-tool [class*="overflow-y-auto"] {
+          scrollbar-width: thin;
+          scrollbar-color: #F87171 transparent;
+        }
+        #voter-registration-tool .scroll::-webkit-scrollbar,
+        #voter-registration-tool [class*="overflow-auto"]::-webkit-scrollbar,
+        #voter-registration-tool [class*="overflow-y-auto"]::-webkit-scrollbar { width: 12px; height: 12px; }
+        #voter-registration-tool .scroll::-webkit-scrollbar-track,
+        #voter-registration-tool [class*="overflow-auto"]::-webkit-scrollbar-track,
+        #voter-registration-tool [class*="overflow-y-auto"]::-webkit-scrollbar-track {
+          background: rgba(148, 113, 67, 0.12); border-radius: 999px; margin: 10px 0;
+        }
+        #voter-registration-tool .scroll::-webkit-scrollbar-thumb,
+        #voter-registration-tool [class*="overflow-auto"]::-webkit-scrollbar-thumb,
+        #voter-registration-tool [class*="overflow-y-auto"]::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #F87171, #DC2626);
+          border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px;
+        }
+        #voter-registration-tool .scroll::-webkit-scrollbar-thumb:hover,
+        #voter-registration-tool [class*="overflow-auto"]::-webkit-scrollbar-thumb:hover,
+        #voter-registration-tool [class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #EF4444, #B91C1C);
+        }
+        @media print { #voter-registration-tool::before { display: none !important; } }
+
         :where(#voter-registration-tool) a[href],
         :where(#voter-registration-tool) button:not(:disabled),
         :where(#voter-registration-tool) summary,
@@ -3159,7 +3215,7 @@ export default function VoterRegistrationForm() {
       </datalist>
 
       <div className="mx-auto max-w-[1180px]">
-        <div className="mb-2 flex items-center gap-2 px-1 text-[9px] text-[#9A9284]">
+        <div className="mb-2 flex items-center gap-2 px-1 text-[12px] text-[#7A6A50]">
           <span>
             <VT>{"\u2302"}</VT>
           </span>
@@ -3178,7 +3234,7 @@ export default function VoterRegistrationForm() {
           <span>
             <VT>{"/"}</VT>
           </span>
-          <span className="font-semibold text-[#71695E]">
+          <span className="font-semibold text-[#5A4A32]">
             <VT>{"Voter Registration Form\n          "}</VT>
           </span>
         </div>
@@ -3186,22 +3242,22 @@ export default function VoterRegistrationForm() {
         <div className="mb-4 flex items-start justify-between gap-4 px-1">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#DBEAFE] text-[#2563EB]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#F6D9A8] text-[#DC2626]">
                 <FileText className="h-4 w-4" />
               </span>
-              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#111827]">
+              <h1 className="text-[23px] font-bold tracking-[-0.02em] text-[#3B2F1E]">
                 <VT>{"Voter Registration Form\n              "}</VT>
               </h1>
-              <span className="rounded-full bg-[#DDF2D4] px-2 py-1 text-[9px] font-bold text-[#4B8C44]">
+              <span className="rounded-full bg-[#DDF2D4] px-2 py-1 text-[12px] font-bold text-[#4B8C44]">
                 <VT>{"Free\n              "}</VT>
               </span>
-              <span className="text-[9px] text-[#A59D90]">
+              <span className="text-[12px] text-[#7A6A50]">
                 <VT>{"\u2713 Used "}</VT>
                 {usedCount}{" "}
                 {usedCount === 1 ? <VT>{"time"}</VT> : <VT>{"times"}</VT>}
               </span>
             </div>
-            <p className="mt-1 pl-10 text-[10px] text-[#71695E]">
+            <p className="mt-1 pl-10 text-[12px] text-[#5A4A32]">
               <VT>
                 {
                   "Fill in your details on the left \u2014 see the live Form-2 on the\n              right and download it as PDF.\n            "
@@ -3218,10 +3274,10 @@ export default function VoterRegistrationForm() {
               aria-pressed={favorite}
               onClick={toggleFavorite}
               className={cx(
-                "flex h-9 w-9 items-center justify-center rounded-lg border bg-white/60 transition",
+                "flex h-9 w-9 items-center justify-center rounded-lg border bg-[#FBF6E8]/80 transition",
                 favorite
                   ? "border-[#E6C37F] text-[#C58C2C]"
-                  : "border-[#EEE3C5] text-[#A49B8B] hover:bg-white",
+                  : "border-[#E3D6B8] text-[#7A6A50] hover:bg-[#EFE3C8]",
               )}
             >
               <Star className={cx("h-4 w-4", favorite && "fill-current")} />
@@ -3231,7 +3287,7 @@ export default function VoterRegistrationForm() {
               title={vt("Share")}
               aria-label={vt("Share")}
               onClick={share}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EEE3C5] bg-white/60 text-[#A49B8B] transition hover:bg-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E3D6B8] bg-[#FBF6E8]/80 text-[#7A6A50] transition hover:bg-[#EFE3C8]"
             >
               <Share2 className="h-4 w-4" />
             </button>
@@ -3774,13 +3830,13 @@ export default function VoterRegistrationForm() {
         </div>
 
         <section className="mt-4 rounded-xl border border-[#BFE3CF] bg-[#F6FFF3]/80 p-4">
-          <h2 className="border-b border-[#CDE9D8] pb-2 text-[11px] font-bold text-[#2F6B5E]">
+          <h2 className="border-b border-[#CDE9D8] pb-2 text-[13px] font-bold text-[#2F6B5E]">
             <VT>{"Important notes:\n          "}</VT>
           </h2>
-          <p className="mt-3 text-[10px] text-[#4B5563]">
+          <p className="mt-3 text-[12px] text-[#5A4A32]">
             <VT>{"Bring the following with the form:\n          "}</VT>
           </p>
-          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[10px] text-[#374151]">
+          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[12px] text-[#5A4A32]">
             <li>
               <VT>{"A photocopy of the birth registration certificate."}</VT>
             </li>
@@ -3798,14 +3854,14 @@ export default function VoterRegistrationForm() {
               </VT>
             </li>
           </ul>
-          <p className="mt-3 text-[10px] text-[#B4232F]">
+          <p className="mt-3 text-[12px] text-[#B4232F]">
             <VT>
               {
                 "Fill everything in accurately \u2014 wrong information can get the\n            application rejected.\n          "
               }
             </VT>
           </p>
-          <p className="mt-3 text-[10px] text-[#B7791F]">
+          <p className="mt-3 text-[12px] text-[#B7791F]">
             <VT>
               {
                 "Print the filled form and attend the registration centre for your\n            photo, fingerprints and signature. Keep the registration slip and\n            the receipt.\n          "
@@ -3815,13 +3871,13 @@ export default function VoterRegistrationForm() {
         </section>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-[#E2E8F0] bg-[#F8FAFC]/95 shadow-[0_-6px_24px_rgba(15,23,42,0.08)] backdrop-blur print:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-[#F3E9D2] bg-[#F2E8D2]/95 shadow-[0_-6px_24px_rgba(59,47,30,0.12)] backdrop-blur print:hidden">
         <div className="pointer-events-auto mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-[9px] font-medium text-[#0F172A]">
+          <div className="flex items-center gap-2 text-[12px] font-medium text-[#3B2F1E]">
             <span
               className={cx(
                 "h-2 w-2 rounded-full",
-                hasData ? "bg-[#10B981]" : "bg-[#94A3B8]",
+                hasData ? "bg-[#10B981]" : "bg-[#7A6A50]",
               )}
             />
             {hasData ? (
@@ -3835,7 +3891,7 @@ export default function VoterRegistrationForm() {
               type="button"
               disabled={!hasData}
               onClick={clearAll}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[12px] font-semibold text-[#3B2F1E] hover:bg-[#F3E9D2] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             >
               <X className="h-3.5 w-3.5" />
               <VT>{"Clear all\n            "}</VT>
@@ -3843,7 +3899,7 @@ export default function VoterRegistrationForm() {
             <button
               type="button"
               onClick={restoreLast}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#E2E8F0] px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#CBD5E1]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D8C9A6] bg-[#F3E9D2] px-3 text-[12px] font-semibold text-[#3B2F1E] hover:bg-[#D8C9A6]"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <VT>{"Restore last form\n            "}</VT>
@@ -3852,7 +3908,7 @@ export default function VoterRegistrationForm() {
               type="button"
               disabled={pdfBusy}
               onClick={print}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#E2E8F0] px-3 text-[10px] font-semibold text-[#0F172A] hover:bg-[#CBD5E1] disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D8C9A6] bg-[#F3E9D2] px-3 text-[12px] font-semibold text-[#3B2F1E] hover:bg-[#D8C9A6] disabled:cursor-wait disabled:opacity-60"
             >
               <Printer className="h-3.5 w-3.5" />
               <VT>{"Print\n            "}</VT>
@@ -3861,7 +3917,7 @@ export default function VoterRegistrationForm() {
               type="button"
               disabled={pdfBusy}
               onClick={downloadPdf}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2563EB] px-3.5 text-[10px] font-bold text-white shadow-sm hover:bg-[#1D4ED8] disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#DC2626] px-3.5 text-[12px] font-bold text-white shadow-sm hover:bg-[#B91C1C] disabled:cursor-wait disabled:opacity-70"
             >
               <FileDown className="h-3.5 w-3.5" />
               {pdfBusy ? <VT>{"Processing..."}</VT> : <VT>{"Download PDF"}</VT>}
@@ -3881,7 +3937,7 @@ export default function VoterRegistrationForm() {
             className={cx(
               "pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-lg",
               toast.kind === "success" && "border-[#BFE3CF] bg-[#F1FBF4]",
-              toast.kind === "info" && "border-[#EADFC4] bg-[#FFFBEF]",
+              toast.kind === "info" && "border-[#EADFC4] bg-[#FBF6E8]",
               toast.kind === "error" && "border-[#EBB4B9] bg-[#FFF3F3]",
             )}
           >
@@ -3891,17 +3947,17 @@ export default function VoterRegistrationForm() {
             <div className="min-w-0 flex-1">
               <p
                 className={cx(
-                  "text-[10px] font-bold",
+                  "text-[12px] font-bold",
                   toast.kind === "success"
                     ? "text-[#2F7A4B]"
                     : toast.kind === "error"
                       ? "text-[#B4232F]"
-                      : "text-[#4B5563]",
+                      : "text-[#5A4A32]",
                 )}
               >
                 {vt(toast.title)}
               </p>
-              <p className="mt-0.5 text-[9.5px] leading-4 text-[#5F5A50]">
+              <p className="mt-0.5 text-[12px] leading-4 text-[#5A4A32]">
                 {vt(toast.message)}
               </p>
             </div>
@@ -3909,7 +3965,7 @@ export default function VoterRegistrationForm() {
               type="button"
               aria-label={vt("Dismiss")}
               onClick={() => dismissToast(toast.id)}
-              className="text-[#9A9284] hover:text-[#4B5563]"
+              className="text-[#7A6A50] hover:text-[#5A4A32]"
             >
               <X className="h-3 w-3" />
             </button>
