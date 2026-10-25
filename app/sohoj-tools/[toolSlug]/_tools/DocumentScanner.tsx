@@ -46,7 +46,7 @@ import {
   type EnhanceProgress,
 } from "./realEsrganEngine";
 import { cleanDocumentCanvas, isCleanAbort } from "./documentClean";
-import { colorDocumentCanvas, isColorAbort } from "./colorDocument";
+import { isColorAbort } from "./colorDocument";
 import { detectDocumentCornersCv } from "./documentCorners";
 declare global {
   interface Window {
@@ -108,7 +108,7 @@ type Effects = {
   clean: boolean;
   enhance: number;
 };
-type DocToolKind = "invert";
+type DocToolKind = "invert" | "straighten";
 type StepKind =
   | EffectKey
   | "autoCrop"
@@ -136,6 +136,7 @@ const STEP_LABELS: Record<StepKind, string> = {
   manualCrop: "Manual crop",
   erase: "Eraser / Pen",
   invert: "Invert colors",
+  straighten: "Straighten page",
 };
 const NO_EFFECTS: Effects = { color: false, clean: false, enhance: 0 };
 // Every effect (Color Document, Magic Clean, Document Clean) and both crops run
@@ -583,7 +584,8 @@ const removeStampInRegion = (
     }
   } else {
     // Cleaned page: wipe the places where the coloured original has a stamp.
-    const R = 2;
+    // Recolouring writing needs a wider reach than wiping a stamp does.
+    const R = mode === "recolor" ? 4 : 2;
     const sMap = new Float32Array(pw * ph);
     const cMap = new Float32Array(pw * ph);
     const ex0 = Math.max(0, ax0 - R);
@@ -602,7 +604,9 @@ const removeStampInRegion = (
         sMap[y * pw + x] = stampSmooth(lo, hi, c);
       }
     }
-    if (mode === "recolor") {
+    // With a chosen colour every bit of ink in the marked area gets it, so the
+    // colour of the original does not need to be searched for.
+    if (mode === "recolor" && !tintRgb) {
       // A faded stamp has only a little colour. Look at how coloured the
       // strongest pixels of the marked area are and set the limit from that.
       const vals: number[] = [];
@@ -615,7 +619,7 @@ const removeStampInRegion = (
       vals.sort((u, v) => u - v);
       const top = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.98))];
       if (top < 0.02) return; // the original has no colour here at all
-      const thr = Math.max(0.02, Math.min(hi, top * 0.5));
+      const thr = Math.max(0.02, Math.min(hi, top * 0.4));
       for (let y = ey0; y < ey1; y++) {
         for (let x = ex0; x < ex1; x++) {
           sMap[y * pw + x] = stampSmooth(thr * 0.4, thr, cMap[y * pw + x]);
@@ -642,10 +646,12 @@ const removeStampInRegion = (
           }
         }
       }
-      if (cnt >= 5) {
-        ar /= cnt;
-        ag /= cnt;
-        ab /= cnt;
+      if (cnt >= 5 || tintRgb) {
+        if (cnt > 0) {
+          ar /= cnt;
+          ag /= cnt;
+          ab /= cnt;
+        }
         if (tintRgb) {
           ar = tintRgb[0];
           ag = tintRgb[1];
@@ -654,13 +660,20 @@ const removeStampInRegion = (
         for (let y = ay0; y < ay0 + h; y++) {
           for (let x = ax0; x < ax0 + w; x++) {
             const k = (y * pw + x) * 4;
-            const m = (mask[k + 3] / 255) * grown[y * pw + x];
+            // Chosen colour: the whole marked area counts. Original colour:
+            // only the places where the original really has colour.
+            const m = (mask[k + 3] / 255) * (tintRgb ? 1 : grown[y * pw + x]);
             if (m < 0.02 || data[k + 3] < 10) continue;
             paperT(x, y, tp);
             const lum = 0.299 * data[k] + 0.587 * data[k + 1] + 0.114 * data[k + 2];
             const plum = 0.299 * tp[0] + 0.587 * tp[1] + 0.114 * tp[2];
-            // The darker the cleaned pixel, the more stamp ink it gets.
-            const dk = Math.min(1, Math.max(0, 1 - lum / plum) * 1.8);
+            // The darker the cleaned pixel, the more ink it gets. For a chosen
+            // colour even the soft edge of a thin stroke is filled completely,
+            // while the white paper between the letters stays untouched.
+            const dark = Math.max(0, 1 - lum / plum);
+            const dk = tintRgb
+              ? stampSmooth(0.03, 0.4, dark)
+              : Math.min(1, dark * 1.8);
             let ir = ar;
             let ig = ag;
             let ib = ab;
@@ -821,7 +834,28 @@ type BorderStyleKey =
   | "scallop"
   | "chain"
   | "corners"
-  | "squares";
+  | "squares"
+  | "certBand"
+  | "checkerBand"
+  | "greekKey"
+  | "railroad"
+  | "beads"
+  | "diamonds"
+  | "stars"
+  | "triangles"
+  | "notched"
+  | "ticket"
+  | "dashedDouble"
+  | "dotLine"
+  | "diagonal"
+  | "arches"
+  | "waveDouble"
+  | "circleCorners"
+  | "doubleRounded"
+  | "thinThick"
+  | "thickThinThick"
+  | "cornerDiamonds"
+  | "crosses";
 const BORDER_STYLES: { key: BorderStyleKey; label: string }[] = [
   { key: "single", label: "Line" },
   { key: "thick", label: "Thick" },
@@ -838,6 +872,27 @@ const BORDER_STYLES: { key: BorderStyleKey; label: string }[] = [
   { key: "chain", label: "Chain" },
   { key: "corners", label: "Corners" },
   { key: "squares", label: "Squares" },
+  { key: "certBand", label: "Certificate" },
+  { key: "checkerBand", label: "Checker band" },
+  { key: "greekKey", label: "Greek key" },
+  { key: "railroad", label: "Railroad" },
+  { key: "beads", label: "Beads" },
+  { key: "diamonds", label: "Diamonds" },
+  { key: "stars", label: "Stars" },
+  { key: "triangles", label: "Sawtooth" },
+  { key: "notched", label: "Cut corners" },
+  { key: "ticket", label: "Ticket" },
+  { key: "dashedDouble", label: "Solid + dashed" },
+  { key: "dotLine", label: "Line + dots" },
+  { key: "diagonal", label: "Diagonal band" },
+  { key: "arches", label: "Arches" },
+  { key: "waveDouble", label: "Wave band" },
+  { key: "circleCorners", label: "Round knobs" },
+  { key: "doubleRounded", label: "Double rounded" },
+  { key: "thinThick", label: "Thin + thick" },
+  { key: "thickThinThick", label: "Thick-thin-thick" },
+  { key: "cornerDiamonds", label: "Corner diamonds" },
+  { key: "crosses", label: "Crosses" },
 ];
 // Draws one border inside the box (x0,y0)-(x1,y1). `t` = base line thickness
 // in pixels. The border never goes outside the box.
@@ -902,6 +957,105 @@ const drawBorderPx = (
   };
   const tooSmall = rw < t * 12 || rh < t * 12;
   if (tooSmall && style !== "thick") style = "single";
+
+  // ---- helpers for the extra border designs ----
+  type BSide = { x: number; y: number; ux: number; uy: number; len: number };
+  // Put one item at even steps along every side. `m` = distance of the item
+  // line from the outer edge, `ref` is used to count the items per side.
+  const along = (
+    m: number,
+    spacing: number,
+    ref: number,
+    cb: (px: number, py: number, sd: BSide, i: number) => void,
+  ) => {
+    const refSides = sides(ref);
+    sides(m).forEach((sd, si) => {
+      const k = Math.max(1, Math.round(refSides[si].len / spacing));
+      for (let i = 0; i < k; i++) {
+        const s0 = (sd.len * i) / k;
+        cb(sd.x + sd.ux * s0, sd.y + sd.uy * s0, sd, i);
+      }
+    });
+  };
+  const line2 = (ax: number, ay: number, bx: number, by: number, lw: number) => {
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+  };
+  const diamond = (px: number, py: number, r: number) => {
+    ctx.beginPath();
+    ctx.moveTo(px, py - r);
+    ctx.lineTo(px + r, py);
+    ctx.lineTo(px, py + r);
+    ctx.lineTo(px - r, py);
+    ctx.closePath();
+    ctx.fill();
+  };
+  const star5 = (px: number, py: number, R: number) => {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const ang = -Math.PI / 2 + (i * Math.PI) / 5;
+      const rr = i % 2 ? R * 0.45 : R;
+      const qx = px + Math.cos(ang) * rr;
+      const qy = py + Math.sin(ang) * rr;
+      if (i === 0) ctx.moveTo(qx, qy);
+      else ctx.lineTo(qx, qy);
+    }
+    ctx.closePath();
+    ctx.fill();
+  };
+  // Rectangle with the four corners cut off.
+  const cham = (inset: number, lw: number, cut: number) => {
+    const a = x0 + inset + lw / 2;
+    const b = y0 + inset + lw / 2;
+    const c = x1 - inset - lw / 2;
+    const d = y1 - inset - lw / 2;
+    const k = Math.min(cut, (c - a) / 2, (d - b) / 2);
+    if (c - a < 1 || d - b < 1) return;
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(a + k, b);
+    ctx.lineTo(c - k, b);
+    ctx.lineTo(c, b + k);
+    ctx.lineTo(c, d - k);
+    ctx.lineTo(c - k, d);
+    ctx.lineTo(a + k, d);
+    ctx.lineTo(a, d - k);
+    ctx.lineTo(a, b + k);
+    ctx.closePath();
+    ctx.stroke();
+  };
+  // Rectangle with the four corners bitten out by quarter circles.
+  const ticketBox = (inset: number, lw: number, R0: number) => {
+    const a = x0 + inset + lw / 2;
+    const b = y0 + inset + lw / 2;
+    const c = x1 - inset - lw / 2;
+    const d = y1 - inset - lw / 2;
+    const R = Math.min(R0, (c - a) / 2, (d - b) / 2);
+    if (c - a < 1 || d - b < 1) return;
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(a + R, b);
+    ctx.lineTo(c - R, b);
+    ctx.arc(c, b, R, Math.PI, Math.PI / 2, true);
+    ctx.lineTo(c, d - R);
+    ctx.arc(c, d, R, (3 * Math.PI) / 2, Math.PI, true);
+    ctx.lineTo(a + R, d);
+    ctx.arc(a, d, R, 0, -Math.PI / 2, true);
+    ctx.lineTo(a, b + R);
+    ctx.arc(a, b, R, Math.PI / 2, 0, true);
+    ctx.closePath();
+    ctx.stroke();
+  };
+  const WIDE_STYLES: BorderStyleKey[] = [
+    "certBand", "checkerBand", "greekKey", "railroad", "beads", "diamonds",
+    "stars", "triangles", "diagonal", "arches", "waveDouble", "crosses",
+    "cornerDiamonds", "circleCorners", "thickThinThick", "dotLine",
+    "dashedDouble",
+  ];
+  if (WIDE_STYLES.includes(style) && Math.min(rw, rh) < t * 22) style = "double";
 
   switch (style) {
     case "thick":
@@ -1057,6 +1211,283 @@ const drawBorderPx = (
       ctx.fillRect(x1 - q, y0, q, q);
       ctx.fillRect(x0, y1 - q, q, q);
       ctx.fillRect(x1 - q, y1 - q, q, q);
+      break;
+    }
+
+    case "certBand": {
+      const lw = t * 1.7;
+      const q = t * 1.4;
+      const gap = t * 0.5;
+      box(0, lw);
+      const m = lw + gap + q / 2;
+      along(m, q * 2, m, (px, py) => ctx.fillRect(px - q / 2, py - q / 2, q, q));
+      box(lw + gap * 2 + q, t * 0.6);
+      break;
+    }
+    case "checkerBand": {
+      const q = t * 1.1;
+      const lw = t * 0.8;
+      box(0, lw);
+      const base = lw + t * 0.4;
+      for (let r = 0; r < 2; r++) {
+        const m = base + q / 2 + r * q;
+        along(m, q, base + q / 2, (px, py, _sd, i) => {
+          if ((i + r) % 2 === 0) ctx.fillRect(px - q / 2, py - q / 2, q, q);
+        });
+      }
+      box(base + 2 * q + t * 0.4, lw);
+      break;
+    }
+    case "greekKey": {
+      const lw = t * 0.8;
+      const u = t * 0.75;
+      box(0, lw);
+      const top = lw + t * 0.5;
+      ctx.lineWidth = t * 0.55;
+      for (const sd of sides(top)) {
+        ctx.save();
+        ctx.translate(sd.x, sd.y);
+        ctx.rotate(Math.atan2(sd.uy, sd.ux));
+        const k = Math.max(1, Math.round(sd.len / (4 * u)));
+        for (let i = 0; i < k; i++) {
+          const x = (sd.len * i) / k;
+          ctx.beginPath();
+          ctx.moveTo(x, 3 * u);
+          ctx.lineTo(x, 0);
+          ctx.lineTo(x + 3 * u, 0);
+          ctx.lineTo(x + 3 * u, 2 * u);
+          ctx.lineTo(x + u, 2 * u);
+          ctx.lineTo(x + u, u);
+          ctx.lineTo(x + 2 * u, u);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      box(top + 3 * u + t * 0.5, lw);
+      break;
+    }
+    case "railroad": {
+      const lw = t * 0.8;
+      const gap = t * 2.2;
+      box(0, lw);
+      box(lw + gap, lw);
+      const m = lw + gap / 2;
+      along(m, t * 2.2, m, (px, py, sd) => {
+        const nx = -sd.uy;
+        const ny = sd.ux;
+        line2(px - (nx * gap) / 2, py - (ny * gap) / 2, px + (nx * gap) / 2, py + (ny * gap) / 2, t * 0.6);
+      });
+      break;
+    }
+    case "beads": {
+      const lw = t * 0.7;
+      const r = t * 1.1;
+      const gap = t * 0.4;
+      box(0, lw);
+      const m = lw + gap + r;
+      along(m, r * 2.5, m, (px, py) => {
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      box(lw + gap * 2 + 2 * r, lw);
+      break;
+    }
+    case "diamonds":
+    case "stars": {
+      const lw = t * 0.7;
+      const d = t * 1.3;
+      box(0, lw);
+      const m = lw + t * 0.4 + d;
+      along(m, d * 2.6, m, (px, py) => {
+        if (style === "stars") star5(px, py, d * 1.1);
+        else diamond(px, py, d);
+      });
+      box(lw + t * 0.8 + 2 * d, lw);
+      break;
+    }
+    case "triangles": {
+      const lw = t * 0.8;
+      const h = t * 2;
+      const wd = t * 2.4;
+      box(0, lw);
+      const m = lw + h / 2;
+      along(m, wd * 1.05, m, (px, py, sd) => {
+        const nx = -sd.uy;
+        const ny = sd.ux;
+        const bx = px - (nx * h) / 2;
+        const by = py - (ny * h) / 2;
+        ctx.beginPath();
+        ctx.moveTo(bx - (sd.ux * wd) / 2, by - (sd.uy * wd) / 2);
+        ctx.lineTo(bx + (sd.ux * wd) / 2, by + (sd.uy * wd) / 2);
+        ctx.lineTo(px + (nx * h) / 2, py + (ny * h) / 2);
+        ctx.closePath();
+        ctx.fill();
+      });
+      box(lw + h + t * 0.4, t * 0.5);
+      break;
+    }
+    case "notched":
+      ctx.lineJoin = "miter";
+      cham(0, t * 0.85, t * 4.5);
+      cham(t * 2.7, t * 0.85, t * 2.4);
+      break;
+    case "ticket":
+      ticketBox(0, t * 0.9, Math.max(t * 4, Math.min(rw, rh) * 0.08));
+      break;
+    case "dashedDouble": {
+      const lw = t * 0.9;
+      box(0, lw);
+      const lw2 = t * 0.7;
+      ctx.lineWidth = lw2;
+      for (const sd of sides(lw + t * 1.6 + lw2 / 2)) {
+        const k = Math.max(1, Math.round(sd.len / (t * 5)));
+        const f = sd.len / (k * t * 5);
+        ctx.setLineDash([t * 3 * f, t * 2 * f]);
+        ctx.lineDashOffset = (t * 3 * f) / 2;
+        ctx.beginPath();
+        ctx.moveTo(sd.x, sd.y);
+        ctx.lineTo(sd.x + sd.ux * sd.len, sd.y + sd.uy * sd.len);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      break;
+    }
+    case "dotLine": {
+      const lw = t * 0.9;
+      const r = t * 0.55;
+      box(0, lw);
+      const m = lw + t * 0.9 + r;
+      along(m, t * 2.4, m, (px, py) => {
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      break;
+    }
+    case "diagonal": {
+      const lw = t * 0.7;
+      const w = t * 2.6;
+      box(0, lw);
+      const m = lw + t * 0.4 + w / 2;
+      along(m, t * 1.8, m, (px, py, sd) => {
+        const nx = -sd.uy;
+        const ny = sd.ux;
+        line2(
+          px - (nx * w) / 2 - (sd.ux * w) / 2,
+          py - (ny * w) / 2 - (sd.uy * w) / 2,
+          px + (nx * w) / 2 + (sd.ux * w) / 2,
+          py + (ny * w) / 2 + (sd.uy * w) / 2,
+          t * 0.55,
+        );
+      });
+      box(lw + t * 0.8 + w, lw);
+      break;
+    }
+    case "arches": {
+      const lw = t * 0.8;
+      box(0, lw);
+      ctx.lineWidth = t * 0.7;
+      ctx.lineCap = "round";
+      const R0 = t * 1.7;
+      for (const sd of sides(lw)) {
+        const k = Math.max(1, Math.round(sd.len / (R0 * 2)));
+        const wd = sd.len / k;
+        const R = wd / 2;
+        const a0 = Math.atan2(-sd.uy, -sd.ux);
+        for (let i = 0; i < k; i++) {
+          const s0 = wd * (i + 0.5);
+          ctx.beginPath();
+          ctx.arc(sd.x + sd.ux * s0, sd.y + sd.uy * s0, R, a0, a0 - Math.PI, true);
+          ctx.stroke();
+        }
+      }
+      break;
+    }
+    case "waveDouble": {
+      const lw = t * 0.7;
+      const gap = t * 3.4;
+      box(0, lw);
+      box(lw + gap, lw);
+      const amp = t * 0.8;
+      ctx.lineWidth = t * 0.5;
+      ctx.lineJoin = "round";
+      for (const sd of sides(lw + gap / 2)) {
+        const k = Math.max(1, Math.round(sd.len / (t * 5)));
+        const steps = Math.max(8, Math.ceil(sd.len / 2));
+        const nx = sd.uy;
+        const ny = -sd.ux;
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const s0 = (sd.len * i) / steps;
+          const off = amp * Math.sin((2 * Math.PI * k * i) / steps);
+          const px = sd.x + sd.ux * s0 + nx * off;
+          const py = sd.y + sd.uy * s0 + ny * off;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      break;
+    }
+    case "circleCorners": {
+      box(0, t * 0.8);
+      box(t * 1.9, t * 0.5);
+      const r = t * 1.7;
+      const o = t * 1.9;
+      for (const [cx, cy] of [
+        [x0 + o, y0 + o],
+        [x1 - o, y0 + o],
+        [x1 - o, y1 - o],
+        [x0 + o, y1 - o],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+    case "doubleRounded": {
+      ctx.lineJoin = "round";
+      const rr = Math.max(t * 3.5, Math.min(rw, rh) * 0.1);
+      box(0, t * 0.85, rr);
+      box(t * 2.6, t * 0.85, Math.max(t, rr - t * 2.6));
+      break;
+    }
+    case "thinThick":
+      box(0, t * 0.6);
+      box(t * 2.2, t * 2);
+      break;
+    case "thickThinThick":
+      box(0, t * 1.6);
+      box(t * 2.4, t * 0.5);
+      box(t * 3.6, t * 1.6);
+      break;
+    case "cornerDiamonds": {
+      box(0, t * 1.5);
+      box(t * 2.8, t * 0.6);
+      const o = t * 3;
+      for (const [cx, cy] of [
+        [x0 + o, y0 + o],
+        [x1 - o, y0 + o],
+        [x1 - o, y1 - o],
+        [x0 + o, y1 - o],
+      ]) {
+        diamond(cx, cy, t * 2.3);
+      }
+      break;
+    }
+    case "crosses": {
+      const lw = t * 0.7;
+      const arm = t * 0.9;
+      box(0, lw);
+      const m = lw + t * 0.5 + arm;
+      ctx.lineWidth = t * 0.5;
+      along(m, t * 3.2, m, (px, py) => {
+        line2(px - arm, py, px + arm, py, t * 0.5);
+        line2(px, py - arm, px, py + arm, t * 0.5);
+      });
+      box(lw + t * 1 + 2 * arm + t * 0.4, lw);
       break;
     }
     case "single":
@@ -1715,12 +2146,238 @@ const drawEraseArea = (
 // Brings back dots (".........") or an underline that Document Clean / the
 // eraser removed. The person drags from where it should start to where it
 // should end; a nearly straight drag snaps perfectly horizontal / vertical.
-const snapLineEnd = (a: Point, b: Point, w: number, h: number): Point => {
-  const dx = Math.abs((b.x - a.x) * w);
-  const dy = Math.abs((b.y - a.y) * h);
-  if (dx > 1 && dy / dx < 0.06) return { x: b.x, y: a.y };
-  if (dy > 1 && dx / dy < 0.06) return { x: a.x, y: b.y };
-  return b;
+// Estimates how much the page text lines are tilted (degrees, + = clockwise).
+// Projection-profile method: the angle where dark pixels line up in the
+// fewest, sharpest rows is the text direction. Cropped pages give ~0.
+// A drag that is within LINE_AXIS_TOL_DEG of horizontal / vertical becomes a
+// straight line. If `src` (the page on screen) is given, the line also
+// follows the tilt of the text around it, so on a slightly tilted scan the
+// line runs parallel to the page's own lines (not just to the screen).
+const LINE_AXIS_TOL_DEG = 8;
+const snapLineEnd = (
+  a: Point,
+  b: Point,
+  w: number,
+  h: number,
+  src?: HTMLCanvasElement | null,
+): Point => {
+  const dx = (b.x - a.x) * w;
+  const dy = (b.y - a.y) * h;
+  if (Math.hypot(dx, dy) < 1) return b;
+  const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+  let base: number | null = null;
+  for (const t of [0, 90, 180, -90, -180]) {
+    if (Math.abs(ang - t) <= LINE_AXIS_TOL_DEG) {
+      base = t;
+      break;
+    }
+  }
+  if (base === null) return b;
+  let t = base;
+  if (src) {
+    try {
+      const local = estimateLocalAngleDeg(src, a, b, base);
+      if (local !== null) t = local;
+    } catch {
+      /* keep the plain axis */
+    }
+  }
+  const r = (t * Math.PI) / 180;
+  const ux = Math.cos(r);
+  const uy = Math.sin(r);
+  const proj = dx * ux + dy * uy; // keep the length the person dragged
+  return {
+    x: Math.min(1, Math.max(0, a.x + (proj * ux) / w)),
+    y: Math.min(1, Math.max(0, a.y + (proj * uy) / h)),
+  };
+};
+const estimateSkewDeg = (src: HTMLCanvasElement): number => {
+  const k = Math.min(1, 1400 / Math.max(src.width, src.height));
+  const w = Math.max(32, Math.round(src.width * k));
+  const h = Math.max(32, Math.round(src.height * k));
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  if (!cx) return 0;
+  cx.drawImage(src, 0, 0, w, h);
+  const d = cx.getImageData(0, 0, w, h).data;
+  const lum = new Float32Array(w * h);
+  let mean = 0;
+  for (let i = 0; i < w * h; i++) {
+    lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    mean += lum[i];
+  }
+  mean /= w * h;
+  const thr = mean * 0.78;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const stride = Math.max(1, Math.floor((w * h) / 250000));
+  for (let i = 0; i < w * h; i += stride) {
+    if (lum[i] < thr) {
+      xs.push(i % w);
+      ys.push(Math.floor(i / w));
+    }
+  }
+  if (xs.length < 300) return 0;
+  const bins = new Float64Array(w + h + 4);
+  const score = (deg: number) => {
+    const a = (deg * Math.PI) / 180;
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    bins.fill(0);
+    for (let i = 0; i < xs.length; i++) {
+      const p = Math.round(ys[i] * c - xs[i] * s) + w;
+      bins[p]++;
+    }
+    let sc = 0;
+    for (let i = 0; i < bins.length; i++) sc += bins[i] * bins[i];
+    return sc;
+  };
+  let best = 0;
+  let bestSc = -1;
+  for (let deg = -12; deg <= 12; deg += 0.25) {
+    const sc = score(deg);
+    if (sc > bestSc) {
+      bestSc = sc;
+      best = deg;
+    }
+  }
+  const mid = best;
+  for (let deg = mid - 0.3; deg <= mid + 0.3; deg += 0.02) {
+    const sc = score(deg);
+    if (sc > bestSc) {
+      bestSc = sc;
+      best = deg;
+    }
+  }
+  // Even a small tilt (a few tenths of a degree) is visible on a long line.
+  return Math.abs(best) < 0.08 ? 0 : best;
+};
+// Direction of the text right around a dragged line. Looks only at a strip
+// along the line, searching a few degrees either side of `baseDeg`
+// (0 = horizontal, 90 = vertical). Returns null when the strip has no clear
+// lines to follow, so the caller can fall back to the plain axis.
+const LOCAL_SEARCH_DEG = 6;
+const estimateLocalAngleDeg = (
+  src: HTMLCanvasElement,
+  a: Point,
+  b: Point,
+  baseDeg: number,
+): number | null => {
+  const W = src.width;
+  const H = src.height;
+  const ax = a.x * W;
+  const ay = a.y * H;
+  const bx = b.x * W;
+  const by = b.y * H;
+  const pad = Math.min(160, Math.max(30, H * 0.04));
+  const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - pad));
+  const y0 = Math.max(0, Math.floor(Math.min(ay, by) - pad));
+  const x1 = Math.min(W, Math.ceil(Math.max(ax, bx) + pad));
+  const y1 = Math.min(H, Math.ceil(Math.max(ay, by) + pad));
+  const sw = x1 - x0;
+  const sh = y1 - y0;
+  if (sw < 8 || sh < 8) return null;
+  const k = Math.min(1, 900 / Math.max(sw, sh));
+  const w = Math.max(8, Math.round(sw * k));
+  const h = Math.max(8, Math.round(sh * k));
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  if (!cx) return null;
+  cx.drawImage(src, x0, y0, sw, sh, 0, 0, w, h);
+  const d = cx.getImageData(0, 0, w, h).data;
+  const lum = new Float32Array(w * h);
+  let mean = 0;
+  for (let i = 0; i < w * h; i++) {
+    lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    mean += lum[i];
+  }
+  mean /= w * h;
+  const thr = mean * 0.78;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let i = 0; i < w * h; i++) {
+    if (lum[i] < thr) {
+      xs.push(i % w);
+      ys.push(Math.floor(i / w));
+    }
+  }
+  if (xs.length < 80) return null;
+  const off = w + h;
+  const bins = new Float64Array(off * 2 + 4);
+  const score = (deg: number) => {
+    const r = (deg * Math.PI) / 180;
+    const c = Math.cos(r);
+    const s = Math.sin(r);
+    bins.fill(0);
+    for (let i = 0; i < xs.length; i++) {
+      bins[Math.round(ys[i] * c - xs[i] * s) + off]++;
+    }
+    let sc = 0;
+    for (let i = 0; i < bins.length; i++) sc += bins[i] * bins[i];
+    return sc;
+  };
+  let best = baseDeg;
+  let bestSc = -1;
+  let total = 0;
+  let n = 0;
+  for (
+    let deg = baseDeg - LOCAL_SEARCH_DEG;
+    deg <= baseDeg + LOCAL_SEARCH_DEG + 1e-6;
+    deg += 0.25
+  ) {
+    const sc = score(deg);
+    total += sc;
+    n++;
+    if (sc > bestSc) {
+      bestSc = sc;
+      best = deg;
+    }
+  }
+  // No sharper than the average angle = no lines to follow.
+  if (bestSc / (total / n) < 1.05) return null;
+  const mid = best;
+  for (let deg = mid - 0.3; deg <= mid + 0.3; deg += 0.05) {
+    const sc = score(deg);
+    if (sc > bestSc) {
+      bestSc = sc;
+      best = deg;
+    }
+  }
+  return best;
+};
+// Turns the page by `deg` degrees (+ = clockwise). The canvas grows so no
+// corner of the page is cut off; the new corners get the paper colour.
+const rotateCanvasByDeg = (
+  src: HTMLCanvasElement,
+  deg: number,
+): HTMLCanvasElement => {
+  const a = (deg * Math.PI) / 180;
+  const ca = Math.abs(Math.cos(a));
+  const sa = Math.abs(Math.sin(a));
+  const out = makeCanvas(
+    src.width * ca + src.height * sa,
+    src.width * sa + src.height * ca,
+  );
+  const ctx = out.getContext("2d", { willReadFrequently: true });
+  const sctx = src.getContext("2d", { willReadFrequently: true });
+  if (!ctx || !sctx) return src;
+  ctx.fillStyle = samplePaperColor(
+    sctx,
+    src.width / 2,
+    src.height / 2,
+    Math.min(src.width, src.height) / 2,
+  );
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.translate(out.width / 2, out.height / 2);
+  ctx.rotate(a);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return out;
 };
 const drawLineMark = (
   ctx: CanvasRenderingContext2D,
@@ -2557,8 +3214,8 @@ const DOCUMENT_EXACT: Record<string, string> = {
   "remove stamp": "সিল / স্ট্যাম্প সরান",
   "circle (drag out)": "গোল (টেনে বড় করুন)",
   "stamp removal strength": "সিল মোছার শক্তি",
-  "restore stamp color": "সিলের রঙ ফিরিয়ে আনুন",
-  "stamp colour detection": "সিলের রঙ ধরার শক্তি",
+  "restore color": "রঙ ফিরিয়ে আনুন",
+  "colour restore strength": "রঙ ফিরিয়ে আনার শক্তি",
   "press at one edge of the stamp and drag to the opposite edge — the circle is drawn between the two points. let go and the stamp gets its colour back inside it.":
     "সিলের এক কিনারায় চেপে ধরে উল্টো কিনারা পর্যন্ত টানুন — দুই পয়েন্টের মাঝে বৃত্ত তৈরি হবে। ছেড়ে দিলে বৃত্তের ভেতরের সিলের রঙ ফিরে আসবে।",
   "drag a box over the stamp — it gets its colour back as soon as you let go.":
@@ -2676,6 +3333,27 @@ const DOCUMENT_EXACT: Record<string, string> = {
   chain: "চেইন",
   corners: "কোণা",
   squares: "চৌকো কোণা",
+  "certificate": "সার্টিফিকেট",
+  "checker band": "চেকার ব্যান্ড",
+  "greek key": "গ্রিক কী",
+  "railroad": "রেলপথ",
+  "beads": "পুঁতির মালা",
+  "diamonds": "হীরা",
+  "stars": "তারা",
+  "sawtooth": "করাত দাঁত",
+  "cut corners": "কাটা কোণা",
+  "ticket": "টিকিট কোণা",
+  "solid + dashed": "লাইন + ড্যাশ",
+  "line + dots": "লাইন + ডট",
+  "diagonal band": "তির্যক ব্যান্ড",
+  "arches": "খিলান",
+  "wave band": "ঢেউ ব্যান্ড",
+  "round knobs": "গোল নব কোণা",
+  "double rounded": "ডবল গোল কোণা",
+  "thin + thick": "চিকন + মোটা",
+  "thick-thin-thick": "মোটা-চিকন-মোটা",
+  "corner diamonds": "কোণায় হীরা",
+  "crosses": "ক্রস",
   handwriting: "হাতের লেখা",
   "write text": "লেখা বসান",
   "handwriting style": "হাতের লেখার স্টাইল",
@@ -2781,6 +3459,8 @@ const DOCUMENT_EXACT: Record<string, string> = {
 };
 
 const DOCUMENT_EXTRA: Record<string, string> = {
+  "straighten page": "পেজ সোজা করুন",
+  "the page already looks straight.": "পেজ আগে থেকেই সোজা আছে।",
   "noto sans": "নোটো সান্স",
   "noto sans bold": "নোটো সান্স মোটা",
   anek: "অনেক",
@@ -2961,6 +3641,7 @@ const translateDocumentText = (
       "Manual crop": "ম্যানুয়াল ক্রপ",
       "Eraser / Pen": "ইরেজার / কলম",
       "Invert colors": "রঙ উল্টান",
+      "Straighten page": "পেজ সোজা করুন",
     };
     return `পূর্বাবস্থায় ফিরুন: ${labels[label] ?? fallback(label)}`;
   }
@@ -3152,7 +3833,10 @@ export default function DocumentScanner() {
   }, [pageScale]);
   useEffect(() => {
     const DESIGN_W = 1760;
-    const DESIGN_H = 960;
+    // Tallest content (right tools column incl. stacked page-margin card)
+    // needs ~1160px at scale 1, so the design height must be at least that;
+    // otherwise at 100% browser zoom the sidebar overflows and needs scrolling.
+    const DESIGN_H = 1160;
     const calc = () => {
       const fit = window.matchMedia(
         "(min-width: 1280px) and (min-height: 720px)",
@@ -3194,6 +3878,12 @@ export default function DocumentScanner() {
   const [cropReady, setCropReady] = useState<boolean>(false);
   // Eraser tool state.
   const [isErasing, setIsErasing] = useState<boolean>(false);
+  // "Color Document": after Document Clean has run, open the Restore color tool.
+  const [pendingRecolor, setPendingRecolor] = useState<boolean>(false);
+  // The cleanBaseSrc the on-screen preview (processedImageSrc) was built from.
+  // The preview is made a moment AFTER cleanBaseSrc changes, so the tool must
+  // wait until this matches, or it would open on the old picture.
+  const [processedBaseKey, setProcessedBaseKey] = useState<string>("");
   const [eraserSize, setEraserSize] = useState<number>(30);
   const [eraseStrokeCount, setEraseStrokeCount] = useState<number>(0);
   const [eraserCursor, setEraserCursor] = useState<{
@@ -3829,6 +4519,9 @@ export default function DocumentScanner() {
   );
   useEffect(() => {
     if (!isManualCropping || !selectedImageSrc) return;
+    // Don't re-warp / re-encode the image on every pixel of a drag (that was
+    // the lag); the preview updates once the corner is released.
+    if (draggingCorner !== null) return;
     let active = true;
     const currentProcessingId = ++processingIdRef.current;
     const sourceSrc = manualCropSourceSrc || selectedImageSrc;
@@ -3902,6 +4595,7 @@ export default function DocumentScanner() {
     isManualCropping,
     cropReady,
     debouncedCorners,
+    draggingCorner,
     selectedImageSrc,
     manualCropSourceSrc,
     manualCropOriginalSrc,
@@ -3977,6 +4671,7 @@ export default function DocumentScanner() {
         ctx.putImageData(imageData, 0, 0);
       }
       setProcessedImageSrc(canvas.toDataURL("image/png", 1));
+      setProcessedBaseKey(cleanBaseSrc);
     } catch (error) {
       console.error("Local image processing failed:", error);
     }
@@ -3995,49 +4690,81 @@ export default function DocumentScanner() {
   useEffect(() => {
     void applyAdjustments();
   }, [applyAdjustments]);
-  const handleMouseDown = (index: number) => setDraggingCorner(index);
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (draggingCorner === null || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(
-      0,
-      Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
-    );
-    const y = Math.max(
-      0,
-      Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
-    );
-    setCorners((prev) => {
-      const updated = [...prev];
-      updated[draggingCorner] = { x, y };
-      return updated;
-    });
-    setCropReady(true);
-    setHasUnsavedChanges(true);
+  // Corner dragging uses pointer capture: once a corner is grabbed it keeps
+  // following the pointer everywhere (even outside the preview box or over
+  // other elements), so it never "sticks" or drops mid-drag. The heavy crop
+  // preview is only recomputed after the corner is released.
+  const cornerMoveRafRef = useRef<number | null>(null);
+  const cornerPendingRef = useRef<{ x: number; y: number } | null>(null);
+  const handleCornerPointerDown = (
+    index: number,
+    e: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* pointer capture not supported – dragging still works on the handle */
+    }
+    setDraggingCorner(index);
   };
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (draggingCorner === null || !containerRef.current || !e.touches[0])
-      return;
+  const handleCornerPointerMove = (
+    index: number,
+    e: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    if (draggingCorner !== index || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = Math.max(
-      0,
-      Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100),
-    );
-    const y = Math.max(
-      0,
-      Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100),
-    );
-    setCorners((prev) => {
-      const updated = [...prev];
-      updated[draggingCorner] = { x, y };
-      return updated;
+    if (!rect.width || !rect.height) return;
+    cornerPendingRef.current = {
+      x: Math.max(
+        0,
+        Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
+      ),
+      y: Math.max(
+        0,
+        Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
+      ),
+    };
+    if (cornerMoveRafRef.current !== null) return;
+    cornerMoveRafRef.current = requestAnimationFrame(() => {
+      cornerMoveRafRef.current = null;
+      const point = cornerPendingRef.current;
+      if (!point) return;
+      setCorners((prev) => {
+        const updated = [...prev];
+        updated[index] = point;
+        return updated;
+      });
+      setCropReady(true);
+      setHasUnsavedChanges(true);
     });
-    setCropReady(true);
-    setHasUnsavedChanges(true);
   };
-  const handlePointerRelease = () => {
-    if (draggingCorner !== null) setDraggingCorner(null);
+  const handleCornerPointerUp = (
+    index: number,
+    e: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    if (draggingCorner !== index) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
+    // Flush the last position so the corner lands exactly where it was dropped.
+    const point = cornerPendingRef.current;
+    if (cornerMoveRafRef.current !== null) {
+      cancelAnimationFrame(cornerMoveRafRef.current);
+      cornerMoveRafRef.current = null;
+    }
+    if (point) {
+      setCorners((prev) => {
+        const updated = [...prev];
+        updated[index] = point;
+        return updated;
+      });
+    }
+    cornerPendingRef.current = null;
+    setDraggingCorner(null);
   };
   const handleRotate = () => {
     if (
@@ -4902,8 +5629,10 @@ export default function DocumentScanner() {
         if (isStale()) return;
         stageSrc = cleaned.toDataURL("image/png");
       } else {
-        // Color Document: client-side shadow removal + colour boost.
-        const colored = await colorDocumentCanvas(input, {
+        // Color Document: its own, separate clean of the page (same cleaning
+        // as Document Clean). Afterwards the Restore color tool opens so the
+        // person can colour the parts they want on the cleaned page.
+        const colored = await cleanDocumentCanvas(input, {
           signal: controller.signal,
         });
         if (isStale()) return;
@@ -5693,7 +6422,9 @@ export default function DocumentScanner() {
         display: processedImageSrc || baseSrc,
       };
       eraseBaseCanvasRef.current = baseCanvas;
-      eraseEffectedRef.current = effects.clean;
+      // Page already cleaned (by either button): stamp tools must look at the
+      // coloured original to find the stamp.
+      eraseEffectedRef.current = effects.clean || effects.color;
       try {
         const colorImg = await loadImage(originalSrc);
         const cc = document.createElement("canvas");
@@ -5932,7 +6663,7 @@ export default function DocumentScanner() {
       const st = lineStartRef.current;
       const cv = eraseCanvasRef.current;
       if (st && cv) {
-        const end = snapLineEnd(st, { x: pos.x, y: pos.y }, cv.width, cv.height);
+        const end = snapLineEnd(st, { x: pos.x, y: pos.y }, cv.width, cv.height, cv);
         setLineDraft({ x0: st.x, y0: st.y, x1: end.x, y1: end.y });
       }
       return;
@@ -6093,7 +6824,7 @@ export default function DocumentScanner() {
       }
       setLineDraft(null);
       if (pos && cv) {
-        const end = snapLineEnd(lineStart, { x: pos.x, y: pos.y }, cv.width, cv.height);
+        const end = snapLineEnd(lineStart, { x: pos.x, y: pos.y }, cv.width, cv.height, cv);
         const lenPx = Math.hypot(
           (end.x - lineStart.x) * cv.width,
           (end.y - lineStart.y) * cv.height,
@@ -6353,7 +7084,26 @@ export default function DocumentScanner() {
         bakeOriginal = true;
       }
       if (currentProcessingId !== processingIdRef.current) return;
-      const result = kind === "invert" ? invertCanvas(baseCanvas) : baseCanvas;
+      let result = baseCanvas;
+      if (kind === "invert") {
+        result = invertCanvas(baseCanvas);
+      } else if (kind === "straighten") {
+        // Find how much the text lines are tilted and turn the page back by
+        // that much. The effect-free "Normal" twin is turned the same way so
+        // the compare / hold views stay aligned.
+        const skew = estimateSkewDeg(baseCanvas);
+        if (skew === 0) {
+          setErrorMessage("The page already looks straight.");
+          return;
+        }
+        result = rotateCanvasByDeg(baseCanvas, -skew);
+        const originalImg = await loadImage(originalSrc);
+        originalSrc = rotateCanvasByDeg(
+          createRotatedCanvas(originalImg, 0),
+          -skew,
+        ).toDataURL("image/png");
+        bakeOriginal = true;
+      }
       const baseSrc = result.toDataURL("image/png");
       if (currentProcessingId !== processingIdRef.current) return;
       pushHistory(kind);
@@ -6374,6 +7124,84 @@ export default function DocumentScanner() {
         setActiveStage(null);
       }
     }
+  };
+  // ---- Color Document = Document Clean + Restore color --------------------------
+  // 1) the page is cleaned (same as the Document Clean button), then
+  // 2) the Restore color tool opens, so the person can choose which parts of
+  //    the document get their colour back (paint by hand / box / circle).
+  // The tool is opened from an effect, after the cleaned page is in state, so it
+  // starts from the cleaned page and not from a stale copy.
+  useEffect(() => {
+    if (!pendingRecolor || isProcessing) return;
+    // The clean did not work out: give up quietly (the error is shown).
+    if (!effects.color) {
+      setPendingRecolor(false);
+      return;
+    }
+    // The cleaned picture is not on screen yet: wait for the next render.
+    if (processedBaseKey !== cleanBaseSrc) return;
+    setPendingRecolor(false);
+    if (!isErasing) void handleToggleEraser("recolor");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    pendingRecolor,
+    isProcessing,
+    effects.clean,
+    processedBaseKey,
+    cleanBaseSrc,
+    isErasing,
+    effects.color,
+  ]);
+  const handleColorDocument = () => {
+    if (!canChangeImage()) return;
+    setPendingRecolor(true);
+    if (!effects.color) void applyEffectStep("color");
+  };
+  const renderColorDocumentRow = () => {
+    const active = effects.color;
+    const busy =
+      isProcessing ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping ||
+      isErasing;
+    const canRemove = findEffectUndoIndex("color") >= 0;
+    return (
+      <div className="flex items-stretch gap-2">
+        <button
+          type="button"
+          onClick={handleColorDocument}
+          disabled={busy}
+          aria-pressed={active}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Check size={14} /> : <Palette size={14} />}
+          {DL("Color Document")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => (active ? handleUndoEffect("color") : handleColorDocument())}
+          disabled={busy || (active && !canRemove)}
+          title={
+            active
+              ? canRemove
+                ? DL("Remove Color Document")
+                : DL(
+                    "This cannot be removed separately after cropping or erasing — press Undo.",
+                  )
+              : DL("Add Color Document")
+          }
+          aria-label={
+            active ? DL("Remove Color Document") : DL("Add Color Document")
+          }
+          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Minus size={14} /> : <Plus size={14} />}
+        </button>
+      </div>
+    );
   };
   const renderEffectRow = (
     key: "color" | "clean",
@@ -6527,6 +7355,7 @@ export default function DocumentScanner() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {docTool("invert", <Contrast size={14} />)}
+          {docTool("straighten", <RotateCw size={14} />)}
         </div>
 
         <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
@@ -6538,7 +7367,7 @@ export default function DocumentScanner() {
           {markupBtn("highlight", "Highlighter", <Highlighter size={14} />)}
           {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />)}
           {markupBtn("stamp", "Remove stamp", <Wand2 size={14} />, "col-span-2")}
-          {markupBtn("recolor", "Restore stamp color", <Palette size={14} />, "col-span-2")}
+          {markupBtn("recolor", "Restore color", <Palette size={14} />, "col-span-2")}
           {markupBtn("seal", "Add seal", <Stamp size={14} />, "col-span-2")}
         </div>
 
@@ -7304,7 +8133,7 @@ export default function DocumentScanner() {
               <div className="flex justify-between font-semibold text-[#5A4A32] mb-1 text-sm">
                 <span>
                   {brushTool === "recolor"
-                    ? DL("Stamp colour detection")
+                    ? DL("Colour restore strength")
                     : DL("Stamp removal strength")}
                 </span>
                 <span>{stampStrength}</span>
@@ -8366,11 +9195,6 @@ export default function DocumentScanner() {
                 ) : (
                   <div
                     ref={containerRef}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handlePointerRelease}
-                    onMouseLeave={handlePointerRelease}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handlePointerRelease}
                     style={{
                       transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
                       transition: isPanning ? "none" : "transform 0.1s ease",
@@ -8676,24 +9500,20 @@ export default function DocumentScanner() {
                         {corners.map((corner, index) => (
                           <div
                             key={index}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleMouseDown(index);
-                            }}
-                            onTouchStart={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDraggingCorner(index);
-                            }}
+                            onPointerDown={(e) => handleCornerPointerDown(index, e)}
+                            onPointerMove={(e) => handleCornerPointerMove(index, e)}
+                            onPointerUp={(e) => handleCornerPointerUp(index, e)}
+                            onPointerCancel={(e) => handleCornerPointerUp(index, e)}
                             style={{
                               left: `${corner.x}%`,
                               top: `${corner.y}%`,
                               touchAction: "none",
                             }}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-[#DC2626] hover:bg-[#B91C1C] border-2 border-[#FBF6E8] rounded-full absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing shadow-lg flex items-center justify-center z-30"
+                            className="group w-11 h-11 absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing flex items-center justify-center z-30 select-none"
                           >
-                            <span className="w-2 h-2 bg-[#FBF6E8] rounded-full" />
+                            <span className="w-7 h-7 sm:w-6 sm:h-6 bg-[#DC2626] group-hover:bg-[#B91C1C] border-2 border-[#FBF6E8] rounded-full shadow-lg flex items-center justify-center pointer-events-none">
+                              <span className="w-2 h-2 bg-[#FBF6E8] rounded-full" />
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -8849,11 +9669,7 @@ export default function DocumentScanner() {
                     <DocumentText>{"Enhance Document\n              "}</DocumentText>
                   </div>
 
-                  {renderEffectRow(
-                    "color",
-                    "Color Document",
-                    <Palette size={14} />,
-                  )}
+                  {renderColorDocumentRow()}
                   {renderMagicCleanRow()}
                   {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
                   <button
