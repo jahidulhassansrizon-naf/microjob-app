@@ -56,6 +56,10 @@ export interface GenerationSettingsProps {
   setLeftClothing?: (clothing: number) => void;
   rightClothing?: number;
   setRightClothing?: (clothing: number) => void;
+  leftClothingColor?: string;
+  setLeftClothingColor?: (color: string) => void;
+  rightClothingColor?: string;
+  setRightClothingColor?: (color: string) => void;
   colorPickerRef?: React.RefObject<HTMLDivElement | null>;
   visaPopupRef?: React.RefObject<HTMLDivElement | null>;
   onGenerate?: () => void;
@@ -445,6 +449,10 @@ export default function GenerationSettings({
   setLeftClothing = () => {},
   rightClothing = 0,
   setRightClothing = () => {},
+  leftClothingColor = "#EF4444",
+  setLeftClothingColor,
+  rightClothingColor = "#EF4444",
+  setRightClothingColor,
   colorPickerRef,
   visaPopupRef,
   onGenerate = () => {},
@@ -498,11 +506,37 @@ export default function GenerationSettings({
   const customInstructionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editingGuideSearchRef = useRef<HTMLInputElement>(null);
   const clothingColorPopupRef = useRef<HTMLDivElement>(null);
-  const currentColor = setSelectedClothingColor
-    ? selectedClothingColor
-    : internalClothingColor;
+  // Dual mode: the colour popup edits the person whose clothing tile was clicked.
+  const [dualColorTarget, setDualColorTarget] = useState<"left" | "right">("left");
+  const [internalLeftColor, setInternalLeftColor] = useState("#EF4444");
+  const [internalRightColor, setInternalRightColor] = useState("#EF4444");
+  const dualLeftColor = setLeftClothingColor ? leftClothingColor : internalLeftColor;
+  const dualRightColor = setRightClothingColor ? rightClothingColor : internalRightColor;
+  const currentColor = isDualMode
+    ? dualColorTarget === "left"
+      ? dualLeftColor
+      : dualRightColor
+    : setSelectedClothingColor
+      ? selectedClothingColor
+      : internalClothingColor;
+  const activeClothingIndex = isDualMode
+    ? dualColorTarget === "left"
+      ? leftClothing
+      : rightClothing
+    : selectedClothing;
   const handleColorChange = (hex: string) => {
     const normalized = hex.toUpperCase();
+    if (isDualMode) {
+      if (dualColorTarget === "left") {
+        if (setLeftClothingColor) setLeftClothingColor(normalized);
+        else setInternalLeftColor(normalized);
+      } else if (setRightClothingColor) {
+        setRightClothingColor(normalized);
+      } else {
+        setInternalRightColor(normalized);
+      }
+      return;
+    }
     if (setSelectedClothingColor) {
       setSelectedClothingColor(normalized);
     } else {
@@ -572,8 +606,20 @@ export default function GenerationSettings({
   useEffect(() => {
     onEditingGuidesChange?.(activeGuides);
   }, [activeGuides, onEditingGuidesChange]);
-  const handleClothingClick = (idx: number, tile?: HTMLElement | null) => {
-    setSelectedClothing(idx);
+  const handleClothingClick = (
+    idx: number,
+    tile?: HTMLElement | null,
+    side?: "left" | "right",
+  ) => {
+    if (side === "left") {
+      setDualColorTarget("left");
+      setLeftClothing(idx);
+    } else if (side === "right") {
+      setDualColorTarget("right");
+      setRightClothing(idx);
+    } else {
+      setSelectedClothing(idx);
+    }
     const cont = clothingColorPopupRef.current?.getBoundingClientRect();
     popupScrollTopRef.current =
       (tile?.closest("[data-scroller]") as HTMLElement | null)?.scrollTop ?? 0;
@@ -1065,11 +1111,28 @@ export default function GenerationSettings({
                   </p>
 
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLeftClothing(-1);
+                        setShowClothingColorPicker(false);
+                      }}
+                      className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 ${
+                        leftClothing === -1
+                          ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                          : "border-[#E3D6B8]"
+                      }`}
+                      aria-label={t("No clothing")}
+                    >
+                      <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
+                      <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
+                    </button>
+
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`left-${idx}`}
                         type="button"
-                        onClick={() => setLeftClothing(idx)}
+                        onClick={(e) => handleClothingClick(idx, e.currentTarget, "left")}
                         className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 overflow-hidden ${
                           leftClothing === idx
                             ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
@@ -1078,7 +1141,8 @@ export default function GenerationSettings({
                       >
                         <span className="block w-full aspect-square"><RawSvgClothingPreview
                           index={idx}
-                          selected={false}
+                          selected={leftClothing === idx}
+                          color={leftClothing === idx ? dualLeftColor : undefined}
                           alt={t(`${name} left person`)}
                         /></span>
 
@@ -1098,11 +1162,28 @@ export default function GenerationSettings({
                   </p>
 
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRightClothing(-1);
+                        setShowClothingColorPicker(false);
+                      }}
+                      className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 ${
+                        rightClothing === -1
+                          ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
+                          : "border-[#E3D6B8]"
+                      }`}
+                      aria-label={t("No clothing")}
+                    >
+                      <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
+                      <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
+                    </button>
+
                     {CLOTHING_NAMES.map((name, idx) => (
                       <button
                         key={`right-${idx}`}
                         type="button"
-                        onClick={() => setRightClothing(idx)}
+                        onClick={(e) => handleClothingClick(idx, e.currentTarget, "right")}
                         className={`w-full rounded-xl border flex flex-col items-center justify-start gap-1 relative bg-[#FBF6E8] cursor-pointer transition-all hover:bg-[#EFE3C8] hover:shadow-sm hover:-translate-y-0.5 px-1 pt-1.5 pb-1 overflow-hidden ${
                           rightClothing === idx
                             ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]"
@@ -1111,7 +1192,8 @@ export default function GenerationSettings({
                       >
                         <span className="block w-full aspect-square"><RawSvgClothingPreview
                           index={idx}
-                          selected={false}
+                          selected={rightClothing === idx}
+                          color={rightClothing === idx ? dualRightColor : undefined}
                           alt={t(`${name} right person`)}
                         /></span>
 
@@ -1128,7 +1210,7 @@ export default function GenerationSettings({
             )}
           </div>
 
-          {showClothingColorPicker && selectedClothing >= 0 && (
+          {showClothingColorPicker && activeClothingIndex >= 0 && (
             <div
               ref={clothingPopupRef}
               data-no-drag
@@ -1150,7 +1232,7 @@ export default function GenerationSettings({
               />
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm font-semibold text-[#3B2F1E]">
-                  <AiT>{CLOTHING_NAMES[selectedClothing] || "Clothing"}</AiT>
+                  <AiT>{CLOTHING_NAMES[activeClothingIndex] || "Clothing"}</AiT>
                   <AiT>
                     {"\u2014 Pick a\n                  Color\n                "}
                   </AiT>

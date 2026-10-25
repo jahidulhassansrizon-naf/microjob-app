@@ -87,10 +87,10 @@ export default function RecentGenerations({
         <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1">
           {isLoading ? (Array.from({ length: 5 }).map((_, index) => (<div key={index} className="h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 animate-pulse rounded-xl border border-[#E3D6B8] bg-[#E3D6B8]"/>))) : generations.length === 0 ? (<div className="flex min-h-[150px] w-full items-center justify-center xl:min-h-[clamp(72px,10.5vh,112px)]">
               <p className="text-sm italic text-[#3B2F1E]/60"><AiT>{"No recent generations yet. Click \u201CGenerate Photo\u201D to add images\r\n                here.\r\n              "}</AiT></p>
-            </div>) : (generations.map((item, index) => (<button type="button" key={item.id ?? index} onClick={() => onImageClick(item)} className="group relative flex h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#F2E8D2] text-left transition hover:border-[#DC2626] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#DC2626]" style={item.bgColor === "transparent"
+            </div>) : (generations.map((item, index) => (<button type="button" key={item.id ?? index} onClick={() => onImageClick(item)} className={`group relative flex h-36 ${item.side === "dual" ? "w-56 xl:w-[calc(clamp(72px,10.5vh,112px)*1.56)]" : "w-28 xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)]"} xl:h-[clamp(72px,10.5vh,112px)] shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#F2E8D2] text-left transition hover:border-[#DC2626] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#DC2626]`} style={item.bgColor === "transparent"
                 ? TRANSPARENT_THUMBNAIL_STYLE
                 : undefined}>
-                <img src={item.url} alt={t("Generated photo")} loading="lazy" className="h-full w-full object-cover"/>
+                <img src={item.url} alt={t("Generated photo")} loading="lazy" className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`}/>
                 <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100"><AiT>{"View\r\n                "}</AiT></span>
                 {showMeta && (<span className="absolute inset-x-0 bottom-0 bg-black/65 px-1.5 py-1 text-[11px] leading-tight text-white">
                     <AiT>{item.size || "Photo"}</AiT>{<AiT>{" "}</AiT>}
@@ -117,10 +117,10 @@ export default function RecentGenerations({
               {generations.map((item, index) => (<button type="button" key={item.id ?? index} onClick={() => {
                     onImageClick(item);
                     setShowAll(false);
-                }} className="group relative aspect-[4/5] overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#F2E8D2] cursor-pointer hover:border-[#DC2626] transition" style={item.bgColor === "transparent"
+                }} className={`group relative ${item.side === "dual" ? "col-span-2 aspect-[90/55]" : "aspect-[4/5]"} overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#F2E8D2] cursor-pointer hover:border-[#DC2626] transition`} style={item.bgColor === "transparent"
                     ? TRANSPARENT_THUMBNAIL_STYLE
                     : undefined}>
-                  <img src={item.url} alt={t("Generated photo")} loading="lazy" className="h-full w-full object-cover"/>
+                  <img src={item.url} alt={t("Generated photo")} loading="lazy" className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`}/>
                   <span className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-left text-[11px] text-white opacity-0 transition group-hover:opacity-100">
                     <AiT>{item.size || "Photo"}</AiT>
                   </span>

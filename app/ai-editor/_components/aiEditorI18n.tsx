@@ -41,6 +41,8 @@ const AI_EDITOR_BN: Record<string, string> = {
   "CLOTHING STYLE": "পোশাকের ধরন",
   "No clothing": "কোনো পোশাক নয়",
   "Left Person": "বাম পাশের ব্যক্তি",
+  "Dual Photo": "ডুয়াল ছবি",
+  "Edit photos again": "ছবি আবার এডিট করুন",
   "Right Person": "ডান পাশের ব্যক্তি",
   "— Pick a Color": "— একটি রং বেছে নিন",
   Clothing: "পোশাক",

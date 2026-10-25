@@ -320,6 +320,31 @@ function parseTemplateUpload(req, res, next) {
   });
 }
 
+// Dual mode (AI Editor): two separate photos in one request.
+//   image  = left person
+//   image2 = right person
+function parseDualUpload(req, res, next) {
+  upload.fields([
+    {
+      name: "image",
+      maxCount: 1,
+    },
+    {
+      name: "image2",
+      maxCount: 1,
+    },
+  ])(req, res, (error) => {
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    next();
+  });
+}
+
 // Optional protection: if ASK_KEY is set in Render's Environment,
 // every protected request must send the same value in the
 // "x-api-key" header. If ASK_KEY is not set, the route is open.
@@ -1087,6 +1112,106 @@ app.post(
       });
     } catch (error) {
       console.error("template-edit error:", error);
+
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      if (tempDir) {
+        await fs
+          .rm(tempDir, {
+            recursive: true,
+            force: true,
+          })
+          .catch(() => {});
+      }
+    }
+  },
+);
+
+// --------------------------------------------------
+// NEW AI Editor DUAL endpoint (two photos -> ONE group photo)
+// Existing endpoints above are untouched. This reuses the generic
+// two-image Gemini uploader (generateTemplateWithGemini), which just
+// attaches the two files in order and sends the prompt.
+// --------------------------------------------------
+
+app.post(
+  "/edit-image-dual",
+  requireApiKey,
+  parseDualUpload,
+  async (req, res) => {
+    const prompt =
+      typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: "No editing prompt was provided.",
+      });
+    }
+
+    const files = req.files || {};
+    const leftFile = Array.isArray(files.image) ? files.image[0] : null;
+    const rightFile = Array.isArray(files.image2) ? files.image2[0] : null;
+
+    if (!leftFile || !leftFile.buffer || !leftFile.buffer.length) {
+      return res.status(400).json({
+        success: false,
+        error: "No left person photo was provided.",
+      });
+    }
+
+    if (!rightFile || !rightFile.buffer || !rightFile.buffer.length) {
+      return res.status(400).json({
+        success: false,
+        error: "No right person photo was provided.",
+      });
+    }
+
+    if (
+      !String(leftFile.mimetype || "").toLowerCase().startsWith("image/") ||
+      !String(rightFile.mimetype || "").toLowerCase().startsWith("image/")
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Uploaded dual photo is not an image.",
+      });
+    }
+
+    let tempDir = null;
+
+    try {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-dual-edit-"));
+
+      // File names keep the upload order: person 1 first, person 2 second.
+      const leftPath = path.join(
+        tempDir,
+        `person-1-left${getExtension(leftFile.mimetype)}`,
+      );
+      const rightPath = path.join(
+        tempDir,
+        `person-2-right${getExtension(rightFile.mimetype)}`,
+      );
+
+      await fs.writeFile(leftPath, leftFile.buffer);
+      await fs.writeFile(rightPath, rightFile.buffer);
+
+      const result = await generateTemplateWithGemini(
+        leftPath,
+        rightPath,
+        prompt,
+        tempDir,
+      );
+
+      return res.json({
+        success: true,
+        provider: "gemini-playwright-dual",
+        image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
+      });
+    } catch (error) {
+      console.error("edit-image-dual error:", error);
 
       return res.status(500).json({
         success: false,

@@ -29,6 +29,9 @@ interface PhotoPreviewAreaProps {
     setOriginalImageForDual: React.Dispatch<React.SetStateAction<string | null>>;
     isDualPreviewActive: boolean;
     setIsDualPreviewActive: React.Dispatch<React.SetStateAction<boolean>>;
+    /** Dual mode: the single combined image (left person | right person). */
+    dualResultImage?: string | null;
+    setDualResultImage?: React.Dispatch<React.SetStateAction<string | null>>;
 }
 const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)",
@@ -63,6 +66,20 @@ const GATE_STYLES = `
   30%  { transform: perspective(900px) translateY(3%) scale(0.84) rotateX(12deg) rotateZ(-1.5deg); filter: brightness(0.82) blur(0); }
   70%  { transform: perspective(900px) translateY(8%) scale(0.36) rotateX(30deg) rotateZ(4deg); filter: brightness(0.35) blur(0.5px); }
   100% { transform: perspective(900px) translateY(10%) scale(0.07) rotateX(42deg) rotateZ(7deg); filter: brightness(0.04) blur(1.5px); }
+}
+@keyframes pp-gate-fall-dl {
+  0%   { transform: perspective(900px) translateX(0) translateY(0) scale(1) rotateX(0deg) rotateZ(0deg); filter: brightness(1) blur(0); }
+  26%  { transform: perspective(900px) translateX(50%) translateY(0) scale(0.9) rotateX(4deg) rotateZ(0deg); filter: brightness(0.92) blur(0); }
+  50%  { transform: perspective(900px) translateX(50%) translateY(3%) scale(0.74) rotateX(14deg) rotateZ(-1.5deg); filter: brightness(0.75) blur(0); }
+  78%  { transform: perspective(900px) translateX(50%) translateY(8%) scale(0.3) rotateX(30deg) rotateZ(-4deg); filter: brightness(0.3) blur(0.5px); }
+  100% { transform: perspective(900px) translateX(50%) translateY(10%) scale(0.07) rotateX(42deg) rotateZ(-7deg); filter: brightness(0.04) blur(1.5px); }
+}
+@keyframes pp-gate-fall-dr {
+  0%   { transform: perspective(900px) translateX(0) translateY(0) scale(1) rotateX(0deg) rotateZ(0deg); filter: brightness(1) blur(0); }
+  26%  { transform: perspective(900px) translateX(-50%) translateY(0) scale(0.9) rotateX(4deg) rotateZ(0deg); filter: brightness(0.92) blur(0); }
+  50%  { transform: perspective(900px) translateX(-50%) translateY(3%) scale(0.74) rotateX(14deg) rotateZ(1.5deg); filter: brightness(0.75) blur(0); }
+  78%  { transform: perspective(900px) translateX(-50%) translateY(8%) scale(0.3) rotateX(30deg) rotateZ(4deg); filter: brightness(0.3) blur(0.5px); }
+  100% { transform: perspective(900px) translateX(-50%) translateY(10%) scale(0.07) rotateX(42deg) rotateZ(7deg); filter: brightness(0.04) blur(1.5px); }
 }
 @keyframes pp-gate-rise {
   0%   { transform: perspective(900px) translateY(10%) scale(0.07) rotateX(42deg) rotateZ(-5deg); filter: brightness(0.04) blur(1.5px); }
@@ -138,10 +155,12 @@ function useGateSequence(active: boolean): GatePhase {
     useEffect(() => clearTimers, []);
     return phase;
 }
-function GateOverlay({ active, image, background }: {
+function GateOverlay({ active, image, background, splitImages = null }: {
     active: boolean;
     image: string | null;
     background: string;
+    /** Dual mode: both photos fall into the ONE gate together (left photo + right photo). */
+    splitImages?: [string | null, string | null] | null;
 }) {
     const { t } = useAiEditorText();
     const phase = useGateSequence(active);
@@ -168,6 +187,7 @@ function GateOverlay({ active, image, background }: {
     }, [phase]);
     if (phase === "idle")
         return null;
+    const dualFall = phase === "opening" && !!splitImages && !!(splitImages[0] || splitImages[1]);
     const cloneSrc = phase === "opening" ? frozenImage.current : phase === "revealing" ? image : null;
     const doorTransform = (side: "l" | "r") => phase === "opening" ? `translateX(${side === "l" ? "-90%" : "90%"})` : "translateX(0)";
     const doorAnimation = (side: "l" | "r") => phase === "closing"
@@ -253,7 +273,17 @@ function GateOverlay({ active, image, background }: {
       </div>
 
       {/* Photo falling into the shaft / rising out of it */}
-      {cloneSrc && (<div className="absolute inset-0" style={{
+      {dualFall && splitImages && (<>
+          {[0, 1].map((index) => (<div key={index} className={`absolute inset-y-0 w-1/2 ${index === 0 ? "left-0" : "right-0"}`} style={{
+                    ...getBackgroundStyle(background),
+                    transformOrigin: "50% 55%",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+                    animation: `pp-gate-fall-d${index === 0 ? "l" : "r"} 1250ms cubic-bezier(0.55, 0.05, 0.85, 0.45) 200ms both`,
+                }}>
+              {splitImages[index] && (<img src={splitImages[index] as string} alt="" className="h-full w-full object-contain"/>)}
+            </div>))}
+        </>)}
+      {cloneSrc && !dualFall && (<div className="absolute inset-0" style={{
                 ...getBackgroundStyle(background),
                 transformOrigin: "50% 55%",
                 boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
@@ -493,7 +523,7 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
     </div>);
 }
 export default function PhotoPreviewArea({
-    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive,
+    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage,
 }: PhotoPreviewAreaProps) {
     const { t } = useAiEditorText();
     const handleRemoveSingle = () => {
@@ -546,6 +576,37 @@ export default function PhotoPreviewArea({
 
           {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#E3D6B8]/60 px-4 py-2 text-sm font-medium text-[#3B2F1E] shadow-sm transition hover:bg-[#E3D6B8]">
               <ImageIcon size={14} className="text-[#DC2626]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
+        </div>) : (dualResultImage || isGenerating) ? (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
+          <span className="shrink-0 text-center text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Dual Photo\n          "}</AiT></span>
+
+          {/* ONE wide frame and ONE gate: both photos fall in together, one group photo comes out. */}
+          <FitFrame info={{ text: "90×55 mm", style: { width: "540px", height: "330px" } }} imageSrc={dualResultImage || leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
+            <div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
+              {dualResultImage ? (<img src={dualResultImage} alt="Dual photo" className="h-full w-full object-contain"/>) : (<div className="flex h-full w-full">
+                  <div className="h-full w-1/2" style={getBackgroundStyle(currentBgColorValue)}>
+                    {leftImage && (<img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>)}
+                  </div>
+                  <div className="h-full w-1/2" style={getBackgroundStyle(currentBgColorValue)}>
+                    {rightImage && (<img src={rightImage} alt="Right person" className="h-full w-full object-contain"/>)}
+                  </div>
+                </div>)}
+            </div>
+
+            <GateOverlay active={isGenerating} image={dualResultImage} background={currentBgColorValue} splitImages={dualResultImage ? null : [leftImage, rightImage]}/>
+          </FitFrame>
+
+          {!isGenerating && (<div className="flex shrink-0 items-center gap-3">
+            <button type="button" onClick={() => setDualResultImage?.(null)} className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#E3D6B8] px-3.5 py-1.5 text-sm font-medium text-[#3B2F1E] transition hover:bg-[#E3D6B8]/80">
+              <RefreshCw size={14}/><AiT>{"Edit photos again\n            "}</AiT></button>
+
+            <button type="button" onClick={() => {
+                setDualResultImage?.(null);
+                setLeftImage(null);
+                setRightImage(null);
+                exitDualMode();
+            }} className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100">
+              <RefreshCw size={14}/><AiT>{"Exit dual mode\n            "}</AiT></button>
+          </div>)}
         </div>) : (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">

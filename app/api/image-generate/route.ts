@@ -92,8 +92,10 @@ async function assertOwnedImageUrl(imageUrl: string, userId: string) {
 async function getSourceImage(
   formData: FormData,
   userId: string,
+  fileKey = "image",
+  urlKey = "imageUrl",
 ): Promise<{ blob: Blob; filename: string }> {
-  const uploadedImage = formData.get("image");
+  const uploadedImage = formData.get(fileKey);
 
   if (
     uploadedImage &&
@@ -113,7 +115,7 @@ async function getSourceImage(
     return { blob: file, filename: file.name || "source.jpg" };
   }
 
-  const imageUrlValue = formData.get("imageUrl");
+  const imageUrlValue = formData.get(urlKey);
   const imageUrl =
     typeof imageUrlValue === "string" ? imageUrlValue.trim() : "";
 
@@ -172,6 +174,7 @@ async function callRenderService(
   blob: Blob,
   filename: string,
   prompt: string,
+  secondImage?: { blob: Blob; filename: string } | null,
 ): Promise<string> {
   if (!RENDER_URL) {
     throw new Error("GEMINI_RENDER_URL is not set on the website server.");
@@ -179,6 +182,10 @@ async function callRenderService(
 
   const body = new FormData();
   body.append("image", blob, filename);
+  if (secondImage) {
+    // Dual mode: second person's photo.
+    body.append("image2", secondImage.blob, secondImage.filename);
+  }
   body.append("prompt", prompt);
 
   const headers: Record<string, string> = {};
@@ -187,7 +194,9 @@ async function callRenderService(
     headers["x-api-key"] = RENDER_KEY;
   }
 
-  const response = await fetch(`${RENDER_URL}/edit-image`, {
+  const endpoint = secondImage ? "/edit-image-dual" : "/edit-image";
+
+  const response = await fetch(`${RENDER_URL}${endpoint}`, {
     method: "POST",
     headers,
     body,
@@ -305,9 +314,20 @@ export async function POST(req: Request) {
 
     const source = await getSourceImage(formData, userId);
 
+    // Dual mode only: a second photo (image2 / imageUrl2) is sent alongside the first.
+    const hasSecondImage = formData.has("image2") || formData.has("imageUrl2");
+    const secondSource = hasSecondImage
+      ? await getSourceImage(formData, userId, "image2", "imageUrl2")
+      : null;
+
     // Let each authenticated request reach the render service immediately.
     // Concurrency is handled by isolated browser contexts in that service.
-    const image = await callRenderService(source.blob, source.filename, prompt);
+    const image = await callRenderService(
+      source.blob,
+      source.filename,
+      prompt,
+      secondSource,
+    );
 
     return NextResponse.json({
       success: true,

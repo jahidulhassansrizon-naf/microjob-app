@@ -29,6 +29,8 @@ export default function PhotoEditorPage() {
     const [selectedClothing, setSelectedClothing] = useState(-1);
     const [leftClothing, setLeftClothing] = useState(2);
     const [rightClothing, setRightClothing] = useState(2);
+    const [leftClothingColor, setLeftClothingColor] = useState("#EF4444");
+    const [rightClothingColor, setRightClothingColor] = useState("#EF4444");
     const [selectedClothingColor, setSelectedClothingColor] = useState("#EF4444");
     const [editingGuides, setEditingGuides] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,6 +45,8 @@ export default function PhotoEditorPage() {
     const [originalLeftImage, setOriginalLeftImage] = useState<string | null>(null);
     const [originalRightImage, setOriginalRightImage] = useState<string | null>(null);
     const [isDualPreviewActive, setIsDualPreviewActive] = useState(false);
+    // Dual mode: the single combined (left + right side by side) generated image.
+    const [dualResultImage, setDualResultImage] = useState<string | null>(null);
     const [recentList, setRecentList] = useState<any[]>([]);
     const [previewModalImage, setPreviewModalImage] = useState<any>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -236,7 +240,7 @@ export default function PhotoEditorPage() {
             dpi: EXPORT_DPI,
         };
     };
-    const normalizeImageToExactPhysicalSize = async (imageSrc: string, sizeLabel: string, transparentBackground = false): Promise<{
+    const normalizeImageToExactPhysicalSize = async (imageSrc: string, sizeLabel: string, transparentBackground = false, dualGroupPhoto = false): Promise<{
         dataUrl: string;
         widthPx: number;
         heightPx: number;
@@ -277,7 +281,48 @@ export default function PhotoEditorPage() {
             context.fillStyle = getSelectedBgColorValue();
             context.fillRect(0, 0, target.widthPx, target.heightPx);
         }
-        context.drawImage(image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+        if (dualGroupPhoto) {
+            // Dual group photo: the AI image must fill the whole frame, so there is never
+            // a white strip. Close ratios are cover-cropped (a little from the sides or
+            // from the bottom, keeping headroom). Very different ratios are fitted whole,
+            // and the empty area takes the backdrop colour sampled from the image corner.
+            const targetRatio = target.widthPx / target.heightPx;
+            const sourceRatio = sourceWidth / sourceHeight;
+            if (Math.abs(sourceRatio / targetRatio - 1) <= 0.15) {
+                const coverScale = Math.max(target.widthPx / sourceWidth, target.heightPx / sourceHeight);
+                const cropW = target.widthPx / coverScale;
+                const cropH = target.heightPx / coverScale;
+                const sx = (sourceWidth - cropW) / 2;
+                const sy = (sourceHeight - cropH) * 0.25;
+                context.drawImage(image, sx, sy, cropW, cropH, 0, 0, target.widthPx, target.heightPx);
+            }
+            else {
+                if (!transparentBackground) {
+                    try {
+                        const probe = document.createElement("canvas");
+                        probe.width = 1;
+                        probe.height = 1;
+                        const probeContext = probe.getContext("2d");
+                        if (probeContext) {
+                            probeContext.drawImage(image, 0, 0, Math.min(12, sourceWidth), Math.min(12, sourceHeight), 0, 0, 1, 1);
+                            const [r, g, b] = probeContext.getImageData(0, 0, 1, 1).data;
+                            context.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                            context.fillRect(0, 0, target.widthPx, target.heightPx);
+                        }
+                    }
+                    catch {
+                        // Keep the selected background colour if the pixel cannot be read.
+                    }
+                }
+                const fitScale = Math.min(target.widthPx / sourceWidth, target.heightPx / sourceHeight);
+                const fitW = Math.max(1, Math.round(sourceWidth * fitScale));
+                const fitH = Math.max(1, Math.round(sourceHeight * fitScale));
+                context.drawImage(image, 0, 0, sourceWidth, sourceHeight, Math.round((target.widthPx - fitW) / 2), Math.round((target.heightPx - fitH) / 2), fitW, fitH);
+            }
+        }
+        else {
+            context.drawImage(image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+        }
         // Keep only the serialized image data; release the large canvas bitmap now.
         const dataUrl = transparentBackground
             ? canvas.toDataURL("image/png")
@@ -611,6 +656,7 @@ export default function PhotoEditorPage() {
                 }
             }
             setIsDualPreviewActive(false);
+            setDualResultImage(null);
             if (activeTarget === "left") {
                 setLeftImage(finalImageUrl);
                 setOriginalLeftImage(finalImageUrl);
@@ -662,6 +708,8 @@ export default function PhotoEditorPage() {
         setOriginalRightImage(null);
         setActiveTarget(null);
         setIsDualPreviewActive(false);
+        setDualResultImage(null);
+        setRegeneratingId(null);
     };
     const handleSizeClick = (sizeId: string) => {
         if (sizeId === "Visa") {
@@ -695,7 +743,30 @@ export default function PhotoEditorPage() {
     const handleClothingSelectionChange = (clothing: number) => {
         setSelectedClothing(clothing);
     };
-    const handleRegenerateFromModal = (imageItem: any) => {
+    const handleRegenerateFromModal = async (imageItem: any) => {
+        if (imageItem?.side === "dual") {
+            // A combined dual photo: split the saved real photo back into left/right.
+            try {
+                const { left, right } = await splitDualImage(imageItem.originalUrl || imageItem.url);
+                setIsDualMode(true);
+                setSelectedSize("Dual");
+                setShowVisaPopup(false);
+                setShowColorPicker(false);
+                setLeftImage(left);
+                setRightImage(right);
+                setOriginalLeftImage(left);
+                setOriginalRightImage(right);
+                setDualResultImage(null);
+                setIsDualPreviewActive(false);
+                setRegeneratingId(imageItem.id);
+                setPreviewModalImage(null);
+            }
+            catch (error) {
+                console.error("Dual regenerate error:", error);
+                setErrorMessage("Could not open this dual photo for regeneration.");
+            }
+            return;
+        }
         const realPhoto = imageItem.originalUrl || imageItem.url;
         setOriginalImageForDual(realPhoto);
         setOriginalLeftImage(null);
@@ -800,7 +871,76 @@ export default function PhotoEditorPage() {
         }
         return typeof payload.sizeType === "string" ? payload.sizeType.trim() : selectedSize;
     };
+    // Dual mode: ONE request with TWO attached photos (image = left person, image2 = right person).
+    // The AI must return ONE studio group portrait of both people in the same frame.
+    const buildDualPrompt = (payload: Record<string, unknown>) => {
+        const transparentBackground = payload.transparentBackground === true;
+        const keepOriginalBackground = payload.keepOriginalBackground === true && !transparentBackground;
+        const bgColor = typeof payload.bgColor === "string" ? payload.bgColor.toUpperCase() : "#FFFFFF";
+        const bgColorName = BACKGROUND_COLOR_NAMES[bgColor] || `the exact solid color represented by ${bgColor}`;
+        const rawGuides = Array.isArray(payload.editingGuides)
+            ? payload.editingGuides.filter((item): item is string => typeof item === "string")
+            : [];
+        const backgroundRef = transparentBackground
+            ? "the fully removed (transparent) background"
+            : keepOriginalBackground
+                ? "one plain, clean, uniform white or very light neutral studio background"
+                : `a solid ${bgColorName} background (${bgColor})`;
+        const plan = planEditingGuides(rawGuides, { backgroundRef, side: "" });
+        const describeClothing = (value: unknown, colorValue: unknown) => {
+            const index = typeof value === "number" ? value : -1;
+            if (index < 0 || !CLOTHING_NAMES[index]) {
+                return "keep their original clothing exactly as it appears in their own photo (same garment, same color, same neckline); only straighten it naturally for the upright pose";
+            }
+            const clothingPrompt = CLOTHING_STYLES[index]?.prompt || `a ${CLOTHING_NAMES[index].toLowerCase()}`;
+            const colorHex = typeof colorValue === "string" ? colorValue.toUpperCase() : "";
+            const colorName = CLOTHING_COLOR_NAMES[colorHex] || (colorHex ? `the exact color ${colorHex}` : "a natural color");
+            return `replace ONLY their visible clothing with ${clothingPrompt}, in ${colorName}, neatly ironed, symmetrical, properly fitted to the body and shoulders, with a realistic collar and neckline`;
+        };
+        const backgroundRule = transparentBackground
+            ? "BACKGROUND: remove the entire background cleanly from both people with no halos, gray outlines, or leftover fragments. Both people are isolated on one shared transparent canvas."
+            : keepOriginalBackground
+                ? "BACKGROUND: ONE single seamless plain studio backdrop behind BOTH people, pure white or a very light neutral shade, perfectly uniform from edge to edge. It must NOT be two different backdrops, must NOT show a seam or dividing line in the middle, and must contain no scenery, gradient, pattern, object, or shadow."
+                : `BACKGROUND: ONE single seamless solid ${bgColorName} backdrop behind BOTH people, exact color ${bgColor}, perfectly uniform from edge to edge. It must NOT be two different backdrops, must NOT show a seam or dividing line in the middle, and must contain no scenery, gradient, vignette, pattern, object, or shadow.`;
+        const rules = [
+            "You are a professional passport and ID photographer working in a studio with a DSLR camera. Produce ONE perfect studio group portrait of two people from the two attached photos.",
+            "INPUTS: The FIRST attached photo shows Person A, who must appear on the LEFT side of the final image. The SECOND attached photo shows Person B, who must appear on the RIGHT side. Each attached photo contains exactly one person. Use each person's own photo as the one and only reference for that person's face.",
+            "OUTPUT: Return exactly ONE image. It is a single photograph of both people sitting side by side in the same frame, as if one camera took one shot of them posing together. It is NOT a collage, NOT a split screen, NOT two separate photos placed next to each other, and has no divider, gap, border, frame, or line between them. Never return the attached photos unchanged.",
+            "CANVAS: landscape, aspect ratio exactly 90:55 (about 1.64 : 1). The backdrop must fill the ENTIRE canvas edge to edge. No white, black, or colored bars, margins, strips, or letterboxing at the top, bottom, or sides.",
+            "IDENTITY LOCK (highest priority, above every other instruction): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyebrows, eyes and eye shape, nose, lips, teeth, ears, skin tone and skin texture, moles, scars, marks, facial hair, hairline and hairstyle, and apparent age. Do NOT beautify, slim, smooth, whiten, enlarge, sharpen, age, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and an identical face, choose the identical face. Both faces must be clearly recognizable as the people in their own photos.",
+            "POSE AND CAMERA: classic passport-studio pose for BOTH people. Sitting upright with straight backs, shoulders square to the camera and level, necks long and relaxed, heads perfectly straight with no tilt, turn, or lean, chin level, eyes open and looking directly into the lens, natural neutral expression with the mouth closed (a very slight natural smile at most). If a person's original photo is tilted, turned, or leaning, re-pose only the head and body to face the camera straight while keeping the face identical. The camera is at eye level, shot with a long portrait lens (about 85mm equivalent), no wide-angle distortion.",
+            "FRAMING: Person A is centered in the left half and Person B is centered in the right half, sitting close together so their shoulders almost touch (a very slight overlap of shoulders is fine) with no faces overlapping or hidden. Both people are at exactly the same scale, with their eyes on the same horizontal line and the tops of their heads at the same height, with a small even headroom above. Show each person from the top of the head down to the upper chest. Both are fully inside the frame with nothing cut off.",
+            backgroundRule,
+            "LIGHTING: soft, even, frontal studio lighting on both faces, identical color temperature and exposure for both people, no harsh shadows on faces, no shadow cast on the backdrop, no color cast. Natural skin tones, sharp focus, realistic DSLR photo quality.",
+            `CLOTHING: Person A (left): ${describeClothing(payload.leftClothing, payload.leftClothingColor)}. Person B (right): ${describeClothing(payload.rightClothing, payload.rightClothingColor)}.`,
+            "STRICTLY FORBIDDEN: extra people, text, letters, logos, watermarks, frames, borders, dividing lines, props, jewelry or accessories that are not in the original photos, changed hair or hijab/head covering, changed face, changed skin tone, cartoon or painted or AI-art look, and any stylization.",
+            "BEFORE ANSWERING, silently verify: (1) exactly one image with both people in the same frame; (2) Person A is left and Person B is right; (3) both faces are identical to their own photos; (4) both sit upright facing the camera at the same size and height; (5) one uniform backdrop fills the whole canvas with no strip or seam; (6) clothing matches the instructions. Fix anything that fails before you answer.",
+        ];
+        const sections = [rules.join("\n\n")];
+        if (plan.edits.length > 0) {
+            sections.push([
+                plan.edits.length > 1
+                    ? "Additional requested edits, apply them to both people together as one coordinated edit, in the order listed, without ever changing anyone's face or identity:"
+                    : "Additional requested edit, apply it to both people without ever changing anyone's face or identity:",
+                ...plan.edits.map((edit, index) => `${index + 1}. ${edit}`),
+            ].join("\n"));
+        }
+        if (plan.constraints.length > 0) {
+            sections.push([
+                "Also follow these preservation rules:",
+                ...plan.constraints.map((rule) => `- ${rule}`),
+            ].join("\n"));
+        }
+        if (plan.customInstruction) {
+            sections.push(`Custom instruction from the user (apply it together with the rules above; never change anyone's face or identity): ${plan.customInstruction}`);
+        }
+        sections.push("The application handles the exact pixel dimensions after generation, so do not add any text or size labels.");
+        return sections.join("\n\n");
+    };
     const buildAiEditingPrompt = (payload: Record<string, unknown>) => {
+        if (payload.dualMode === true) {
+            return buildDualPrompt(payload);
+        }
         const sizeType = resolvePayloadSizeType(payload);
         const hasSelectedPhotoSize = Boolean(sizeType);
         const transparentBackground = payload.transparentBackground === true;
@@ -901,6 +1041,76 @@ export default function PhotoEditorPage() {
         }
         return sections.join("\n\n");
     };
+    const loadImageForCanvas = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.decoding = "async";
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Could not load image for the dual photo."));
+        img.src = src;
+    });
+    // Joins the left and right person into ONE image (left person | right person).
+    const composeDualImage = async (leftSrc: string, rightSrc: string, transparentBackground: boolean, fillColor?: string) => {
+        const single = getExactExportDimensions("45×55 mm");
+        const [leftImg, rightImg] = await Promise.all([
+            loadImageForCanvas(leftSrc),
+            loadImageForCanvas(rightSrc),
+        ]);
+        const canvas = document.createElement("canvas");
+        canvas.width = single.widthPx * 2;
+        canvas.height = single.heightPx;
+        const context = canvas.getContext("2d");
+        if (!context) {
+            throw new Error("Could not create the dual photo canvas.");
+        }
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
+        if (!transparentBackground) {
+            const selectedBgValue = getSelectedBgColorValue();
+            context.fillStyle = fillColor || (selectedBgValue === "transparent" ? "#FFFFFF" : selectedBgValue);
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        // Each half is exactly one 45x55 mm photo; fit (never crop) inside its half.
+        const drawHalf = (img: HTMLImageElement, offsetX: number) => {
+            const sw = img.naturalWidth || img.width;
+            const sh = img.naturalHeight || img.height;
+            const scale = Math.min(single.widthPx / sw, single.heightPx / sh);
+            const dw = Math.max(1, Math.round(sw * scale));
+            const dh = Math.max(1, Math.round(sh * scale));
+            context.drawImage(img, 0, 0, sw, sh, offsetX + Math.round((single.widthPx - dw) / 2), single.heightPx - dh, dw, dh);
+        };
+        drawHalf(leftImg, 0);
+        drawHalf(rightImg, single.widthPx);
+        const dataUrl = transparentBackground
+            ? canvas.toDataURL("image/png")
+            : canvas.toDataURL("image/jpeg", 0.95);
+        const result = { dataUrl, widthPx: canvas.width, heightPx: canvas.height, dpi: single.dpi };
+        canvas.width = 0;
+        canvas.height = 0;
+        return result;
+    };
+    // Splits a saved combined dual image back into its left and right halves.
+    const splitDualImage = async (src: string) => {
+        const img = await loadImageForCanvas(src);
+        const sw = img.naturalWidth || img.width;
+        const sh = img.naturalHeight || img.height;
+        const half = Math.floor(sw / 2);
+        const cut = (sx: number, sWidth: number) => {
+            const canvas = document.createElement("canvas");
+            canvas.width = sWidth;
+            canvas.height = sh;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+                throw new Error("Could not split the dual photo.");
+            }
+            ctx.drawImage(img, sx, 0, sWidth, sh, 0, 0, sWidth, sh);
+            const out = canvas.toDataURL("image/png");
+            canvas.width = 0;
+            canvas.height = 0;
+            return out;
+        };
+        return { left: cut(0, half), right: cut(half, sw - half) };
+    };
     const callGenerateApi = async (payload: Record<string, unknown>) => {
         let image = typeof payload.image === "string" ? payload.image.trim() : "";
         if (!image) {
@@ -925,6 +1135,17 @@ export default function PhotoEditorPage() {
                 const sourceFile = await dataUrlToFile(image, `sohozkaj-ai-source-${Date.now()}.jpg`);
                 formData.append("image", sourceFile);
             }
+            // Dual mode only: the second person's photo travels in the same request.
+            const secondImage = typeof payload.image2 === "string" ? payload.image2.trim() : "";
+            if (secondImage) {
+                if (/^https?:\/\//i.test(secondImage)) {
+                    formData.append("imageUrl2", secondImage);
+                }
+                else {
+                    const secondFile = await dataUrlToFile(secondImage, `sohozkaj-ai-source2-${Date.now()}.jpg`);
+                    formData.append("image2", secondFile);
+                }
+            }
             formData.append("prompt", prompt);
 
             const response = await fetch("/api/image-generate", {
@@ -948,7 +1169,11 @@ export default function PhotoEditorPage() {
             if (sizeType) {
                 const currentSize = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
                 const transparentBackground = payload.transparentBackground === true;
-                normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground);
+                normalized = await normalizeImageToExactPhysicalSize(result.image, currentSize, transparentBackground, payload.dualMode === true);
+                if (payload.skipUpload === true) {
+                    // Dual mode composes both people into one image first, then uploads once.
+                    return normalized.dataUrl;
+                }
                 cloudUrl = await uploadToCloudinary(normalized.dataUrl);
             } else {
                 // No photo preset selected: keep the generated image's natural pixel size.
@@ -971,6 +1196,8 @@ export default function PhotoEditorPage() {
             // FormData may hold a File backed by the temporary source image.
             formData.delete("image");
             formData.delete("imageUrl");
+            formData.delete("image2");
+            formData.delete("imageUrl2");
             formData.delete("prompt");
             if (result && typeof result.image === "string") {
                 result.image = "";
@@ -1020,71 +1247,89 @@ export default function PhotoEditorPage() {
             if (isDualMode) {
                 const leftSource = originalLeftImage || leftImage!;
                 const rightSource = originalRightImage || rightImage!;
-                const [leftGenerated, rightGenerated] = await Promise.all([
-                    callGenerateApi({
-                        ...basePayload,
-                        image: leftSource,
-                        side: "left",
-                        clothing: leftClothing,
-                    }),
-                    callGenerateApi({
-                        ...basePayload,
-                        image: rightSource,
-                        side: "right",
-                        clothing: rightClothing,
-                    }),
-                ]);
-                setLeftImage(leftGenerated);
-                setRightImage(rightGenerated);
-                setOriginalImageForDual(originalLeftImage || leftImage);
-                const dualExport = exactExport ?? getExactExportDimensions("45×55 mm");
-                const docs = [
-                    {
-                        url: leftGenerated,
-                        originalUrl: leftImage,
-                        size: currentSizeLabel,
-                        sizeType: selectedSize,
-                        widthPx: dualExport.widthPx,
-                        heightPx: dualExport.heightPx,
-                        dpi: dualExport.dpi,
-                        bgColor: currentBgHex,
-                        clothingStyle: `Style ${leftClothing}`,
-                        clothingColor: selectedClothingColor,
-                        editingGuides,
-                        side: "left",
-                        source: "ai-editor",
-                    },
-                    {
-                        url: rightGenerated,
-                        originalUrl: rightImage,
-                        size: currentSizeLabel,
-                        sizeType: selectedSize,
-                        widthPx: dualExport.widthPx,
-                        heightPx: dualExport.heightPx,
-                        dpi: dualExport.dpi,
-                        bgColor: currentBgHex,
-                        clothingStyle: `Style ${rightClothing}`,
-                        clothingColor: selectedClothingColor,
-                        editingGuides,
-                        side: "right",
-                        source: "ai-editor",
-                    },
-                ];
-                const response = await fetch("/api/ai-generations", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...getAuthHeaders(),
-                    },
-                    credentials: "include",
-                    body: JSON.stringify(docs),
+                const dualExport = getExactExportDimensions("90×55 mm");
+                // Both photos go to the AI as two separate images in ONE request
+                // (image = left person, image2 = right person). The AI returns ONE
+                // group photo with both people in the same frame.
+                // A side-by-side copy of the real photos is only kept for Regenerate.
+                const reference = await composeDualImage(leftSource, rightSource, false, "#FFFFFF");
+                const combinedUrl = await callGenerateApi({
+                    ...basePayload,
+                    image: leftSource,
+                    image2: rightSource,
+                    dualMode: true,
+                    size: "90×55 mm",
+                    leftClothing,
+                    rightClothing,
+                    leftClothingColor,
+                    rightClothingColor,
+                    widthPx: dualExport.widthPx,
+                    heightPx: dualExport.heightPx,
                 });
-                const result = await response.json().catch(() => null);
-                if (!response.ok || !result?.success) {
-                    throw new Error(result?.error || "Failed to save generated photos.");
+                // Keep the combined "real photo" too, so Regenerate can restore both people.
+                let combinedOriginal: string = reference.dataUrl;
+                try {
+                    combinedOriginal = (await uploadToCloudinary(reference.dataUrl)) || reference.dataUrl;
                 }
-                const createdItems = Array.isArray(result.data) ? result.data : [];
-                setRecentList((prev) => [...createdItems, ...prev]);
+                catch (originalError) {
+                    console.error("Could not save the combined original photo:", originalError);
+                }
+                setDualResultImage(combinedUrl);
+                setOriginalImageForDual(originalLeftImage || leftImage);
+                const dualDocData = {
+                    url: combinedUrl,
+                    originalUrl: combinedOriginal,
+                    size: "90×55 mm",
+                    sizeType: selectedSize,
+                    widthPx: dualExport.widthPx,
+                    heightPx: dualExport.heightPx,
+                    dpi: dualExport.dpi,
+                    bgColor: currentBgHex,
+                    clothingStyle: `Left Style ${leftClothing} / Right Style ${rightClothing}`,
+                    clothingColor: selectedClothingColor,
+                    editingGuides,
+                    side: "dual",
+                    source: "ai-editor",
+                };
+                if (regeneratingId) {
+                    const response = await fetch(`/api/ai-generations?id=${encodeURIComponent(regeneratingId)}`, {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...getAuthHeaders(),
+                        },
+                        credentials: "include",
+                        body: JSON.stringify(dualDocData),
+                    });
+                    const result = await response.json().catch(() => null);
+                    if (!response.ok || !result?.success) {
+                        throw new Error(result?.error || "Failed to update the generated photo.");
+                    }
+                    const updatedItem = result.data || {
+                        id: regeneratingId,
+                        ...dualDocData,
+                    };
+                    setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
+                }
+                else {
+                    const response = await fetch("/api/ai-generations", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...getAuthHeaders(),
+                        },
+                        credentials: "include",
+                        body: JSON.stringify(dualDocData),
+                    });
+                    const result = await response.json().catch(() => null);
+                    if (!response.ok || !result?.success) {
+                        throw new Error(result?.error || "Failed to save generated photo.");
+                    }
+                    const createdItem = Array.isArray(result.data) ? result.data[0] : result.data;
+                    if (createdItem) {
+                        setRecentList((prev) => [createdItem, ...prev]);
+                    }
+                }
                 generationSucceeded = true;
                 return;
             }
@@ -1235,6 +1480,8 @@ export default function PhotoEditorPage() {
         setSelectedClothingColor("#EF4444");
         setLeftClothing(2);
         setRightClothing(2);
+        setLeftClothingColor("#EF4444");
+        setRightClothingColor("#EF4444");
         setEditingGuides([]);
         setLeftImage(null);
         setRightImage(null);
@@ -1242,6 +1489,7 @@ export default function PhotoEditorPage() {
         setOriginalLeftImage(null);
         setOriginalRightImage(null);
         setIsDualPreviewActive(false);
+        setDualResultImage(null);
         setShowVisaPopup(false);
         setShowColorPicker(false);
         setIsDualMode(false);
@@ -1381,11 +1629,11 @@ export default function PhotoEditorPage() {
       <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
         <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive}/>
+            <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
           </div>
 
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
