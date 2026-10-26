@@ -168,7 +168,7 @@ export default function ManualPaymentPage() {
             <div className="flex items-start gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#DC2626] text-white shadow-sm"><CreditCard size={22} /></span>
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-[#DC2626]">SOHOJ HUB CHECKOUT</p>
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-[#DC2626]">STUDIO SEBA CHECKOUT</p>
                 <h1 className="mt-1 text-3xl font-black tracking-tight text-[#3B2F1E] sm:text-3xl">পেমেন্ট সম্পন্ন করুন</h1>
                 <p className="mt-1.5 text-base leading-6 text-[#5A4A32] sm:text-lg">সঠিক নম্বরে টাকা পাঠিয়ে Transaction ID জমা দিন। অ্যাডমিন যাচাই করে অনুমোদন দিলেই সাবস্ক্রিপশন চালু হবে।</p>
               </div>

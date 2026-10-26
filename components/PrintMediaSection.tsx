@@ -92,7 +92,7 @@ export default function PrintMediaSection() {
           </div>
 
           <h2 className="text-4xl font-bold leading-[1.15] tracking-tight text-slate-900 md:text-5xl">
-            <T>{"Sohoj Hub-Professional "}</T>
+            <T>{"Studio Seba-Professional "}</T>
             <br />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
               <T>{"Print Media"}</T>
@@ -174,7 +174,7 @@ export default function PrintMediaSection() {
           </div>
 
           <h2 className="relative mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight md:text-5xl">
-            <T>{"Start Today with Sohoj Hub - Completely Free\r\n          "}</T>
+            <T>{"Start Today with Studio Seba - Completely Free\r\n          "}</T>
           </h2>
 
           <p className="relative mb-8 max-w-xl text-sm font-medium text-slate-300 md:text-base">

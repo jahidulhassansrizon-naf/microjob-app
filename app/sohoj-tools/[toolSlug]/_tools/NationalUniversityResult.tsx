@@ -173,7 +173,7 @@ function PositionIcon({ position }: {
 /*                                 Component                                  */
 /* -------------------------------------------------------------------------- */
 const PAGE_BN: Record<string, string> = {
-    "Sohoz Tools": "সহজ টুলস",
+    "Studio Seba": "স্টুডিও সেবা",
     "Video Tools": "ভিডিও টুলস",
     "Add Watermark": "ওয়াটারমার্ক যোগ করুন",
     "Free": "বিনামূল্যে",
@@ -261,7 +261,7 @@ export default function AddWatermarkTool() {
     const [watermarkType, setWatermarkType] = useState<WatermarkType>("image");
     const [watermarkImage, setWatermarkImage] = useState<File | null>(null);
     const [textBlob, setTextBlob] = useState<Blob | null>(null);
-    const [text, setText] = useState("SohojKaj");
+    const [text, setText] = useState("Studio Seba");
     const [size, setSize] = useState(20);
     const [opacity, setOpacity] = useState(60);
     const [position, setPosition] = useState<Position>("bottom-right");
@@ -392,7 +392,7 @@ export default function AddWatermarkTool() {
         setOutputBlob(null);
         setShowResult(false);
         setVideoMeta(DEFAULT_META);
-        setText("SohojKaj");
+        setText("Studio Seba");
         setSize(20);
         setOpacity(60);
         setPosition("bottom-right");
@@ -654,7 +654,7 @@ export default function AddWatermarkTool() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-[#7A6A50]">
-              <span>{L("Sohoz Tools")}</span>
+              <span>{L("Studio Seba")}</span>
               <span>{L("/")}</span>
               <span>{L("Video Tools")}</span>
               <span>{L("/")}</span>

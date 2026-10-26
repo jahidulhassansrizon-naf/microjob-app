@@ -354,7 +354,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
             SK
           </div>
           <div className="hidden leading-none sm:block">
-            <div className="text-[14px] font-black tracking-tight">Sohoj Hub</div>
+            <div className="text-[14px] font-black tracking-tight">Studio Seba</div>
             <div className="mt-[3px] text-[7px] uppercase tracking-[0.16em] text-slate-500">
               www.sohozkaj.com
             </div>

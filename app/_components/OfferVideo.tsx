@@ -42,7 +42,7 @@ export default function OfferVideo({
         playsInline
         autoPlay={autoPlay}
         preload={autoPlay ? "auto" : "metadata"}
-        aria-label="Sohoj Hub subscription offer video"
+        aria-label="Studio Seba subscription offer video"
       >
         Your browser does not support HTML video.
       </video>

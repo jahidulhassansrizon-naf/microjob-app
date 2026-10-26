@@ -311,15 +311,15 @@ export default function RegisterPage() {
 
         <section className="mx-auto my-auto w-full max-w-xl py-8">
           <div className="mb-6 flex flex-col items-center text-center">
-            <Link href="/" className="group mb-3 inline-flex items-center gap-3" aria-label="Sohoj Hub home">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-base font-black text-white shadow-lg shadow-indigo-500/20 transition group-hover:scale-105">SH</span>
+            <Link href="/" className="group mb-3 inline-flex items-center gap-3" aria-label="Studio Seba home">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-base font-black text-white shadow-lg shadow-indigo-500/20 transition group-hover:scale-105">SS</span>
               <span className="text-left">
-                <span className="block text-2xl font-black tracking-tight text-slate-900">Sohoj <span className="text-indigo-600">Hub</span></span>
-                <span className="mt-0.5 block text-[9px] font-bold tracking-[0.22em] text-slate-400">SOHOJHUB.COM</span>
+                <span className="block text-2xl font-black tracking-tight text-slate-900">Studio <span className="text-indigo-600">Seba</span></span>
+                <span className="mt-0.5 block text-[9px] font-bold tracking-[0.22em] text-slate-400">STUDIO SEBA</span>
               </span>
             </Link>
             <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{tx("Create your account", "আপনার অ্যাকাউন্ট তৈরি করুন")}</h2>
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{tx("Join Sohoj Hub to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে সহজ হাবে যোগ দিন।")}</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{tx("Join Studio Seba to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে স্টুডিও সেবায় যোগ দিন।")}</p>
           </div>
 
           <div className="relative rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
@@ -443,9 +443,9 @@ export default function RegisterPage() {
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
             <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
             <div className="mb-5 flex justify-center">
-              <Link href="/" aria-label="Sohoj Hub home" className="inline-flex items-center gap-2.5 rounded-2xl px-3 py-2 transition hover:bg-slate-50">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20">SH</span>
-                <span className="text-left"><span className="block text-lg font-black tracking-tight text-slate-900">Sohoj <span className="text-indigo-600">Hub</span></span><span className="mt-0.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400">SOHOJHUB.COM</span></span>
+              <Link href="/" aria-label="Studio Seba home" className="inline-flex items-center gap-2.5 rounded-2xl px-3 py-2 transition hover:bg-slate-50">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20">SS</span>
+                <span className="text-left"><span className="block text-lg font-black tracking-tight text-slate-900">Studio <span className="text-indigo-600">Seba</span></span><span className="mt-0.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400">STUDIO SEBA</span></span>
               </Link>
             </div>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-violet-100 text-indigo-600 ring-1 ring-indigo-100"><ShieldCheck size={25} /></div>

@@ -20,7 +20,7 @@ export default function ContactMap() {
             <T>{"A home workspace,"}</T><br /><span className="text-[#4359DC]"><T>{"built for a bigger idea."}</T></span>
           </h2>
           <p className="mt-5 max-w-[560px] text-[15px] leading-7 text-[#555D70] sm:text-[16px]">
-            <T>{"Sohoj Hub is an independently built digital platform, currently developed and managed from a home workspace in Tongi, Bangladesh. There is no separate walk-in office, so please get in touch before planning a visit."}</T>
+            <T>{"Studio Seba is an independently built digital platform, currently developed and managed from a home workspace in Tongi, Bangladesh. There is no separate walk-in office, so please get in touch before planning a visit."}</T>
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a href={MAP_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#3F60DD] to-[#7215D5] px-5 py-3 text-[13px] font-bold text-white shadow-md transition hover:brightness-105">

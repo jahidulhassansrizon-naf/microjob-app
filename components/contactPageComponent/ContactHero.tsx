@@ -75,7 +75,7 @@ export default function ContactHero() {
             <T>{"about your project."}</T>
           </h1>
           <p className="mx-auto mt-5 max-w-[710px] text-[16px] leading-7 text-[#555D70] sm:text-[17px]">
-            <T>{"Sohoj Hub is independently built and operated from a home workspace in Tongi, Bangladesh. Send a message about support, feedback, or collaboration, and I'll reply as soon as I can."}</T>
+            <T>{"Studio Seba is independently built and operated from a home workspace in Tongi, Bangladesh. Send a message about support, feedback, or collaboration, and I'll reply as soon as I can."}</T>
           </p>
         </motion.div>
 

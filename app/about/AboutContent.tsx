@@ -24,10 +24,10 @@ const copy = {
     titleA: "Built independently.",
     titleB: "Growing with every step.",
     intro:
-      "I’m an independent full-stack developer building Sohoj Hub hands-on. Over the last two months, I’ve been turning an idea into a working platform for everyday digital tasks—and improving it one feature at a time.",
+      "I’m an independent full-stack developer building Studio Seba hands-on. Over the last two months, I’ve been turning an idea into a working platform for everyday digital tasks—and improving it one feature at a time.",
     introNote:
       "This is a living project, built piece by piece, with plenty of room to improve and grow.",
-    aboutLabel: "THE PERSON BEHIND SOHOJ HUB",
+    aboutLabel: "THE PERSON BEHIND STUDIO SEBA",
     aboutTitle: "One developer, from idea to implementation",
     aboutBody:
       "I plan, design, code, connect the front end with the back end, and keep testing the experience myself. The goal is simple: make useful digital work feel more straightforward and accessible in one place.",
@@ -40,7 +40,7 @@ const copy = {
     journeyEyebrow: "THE JOURNEY SO FAR",
     journeyTitle: "A small start, built with intention",
     journeyIntro:
-      "Sohoj Hub is still growing. Here’s the journey in three honest chapters—not a story about a big team or years of company history.",
+      "Studio Seba is still growing. Here’s the journey in three honest chapters—not a story about a big team or years of company history.",
     step1Title: "The idea",
     step1Body:
       "Create a practical home for everyday digital tasks, so people can get useful work done without jumping between too many disconnected tools.",
@@ -62,7 +62,7 @@ const copy = {
     value3Body:
       "Be open about what’s ready, what’s still in progress, and where collaboration can help.",
     openLabel: "OPEN INVITATION",
-    openTitle: "Sohoj Hub is a solo build today. The next chapter can be shared.",
+    openTitle: "Studio Seba is a solo build today. The next chapter can be shared.",
     openBody:
       "If you’re a developer, designer, creator, marketer, or simply someone with ideas and energy to contribute, I’d love to talk. You can help improve the platform, bring new skills to the project, or discuss a possible long-term collaboration or business partnership. We can talk openly about the role and terms before making any commitment.",
     primaryCta: "Let’s talk about collaborating",
@@ -74,10 +74,10 @@ const copy = {
     titleA: "নিজের হাতে তৈরি।",
     titleB: "প্রতিটি ধাপে এগিয়ে চলা।",
     intro:
-      "আমি একজন স্বতন্ত্র ফুল-স্ট্যাক ডেভেলপার; নিজের হাতে সহজ হাব তৈরি করছি। গত দুই মাস ধরে একটি ধারণাকে দৈনন্দিন ডিজিটাল কাজের ব্যবহারযোগ্য প্ল্যাটফর্মে রূপ দিচ্ছি এবং ধাপে ধাপে নতুন ফিচার যোগ করে উন্নত করছি।",
+      "আমি একজন স্বতন্ত্র ফুল-স্ট্যাক ডেভেলপার; নিজের হাতে স্টুডিও সেবা তৈরি করছি। গত দুই মাস ধরে একটি ধারণাকে দৈনন্দিন ডিজিটাল কাজের ব্যবহারযোগ্য প্ল্যাটফর্মে রূপ দিচ্ছি এবং ধাপে ধাপে নতুন ফিচার যোগ করে উন্নত করছি।",
     introNote:
       "এটি ধাপে ধাপে গড়ে ওঠা একটি চলমান প্রকল্প—উন্নতি ও বড় হয়ে ওঠার অনেক সুযোগ রয়েছে।",
-    aboutLabel: "সহজ হাবের পেছনের মানুষটি",
+    aboutLabel: "স্টুডিও সেবার পেছনের মানুষটি",
     aboutTitle: "একজন ডেভেলপার—ধারণা থেকে বাস্তবায়ন",
     aboutBody:
       "আমি নিজেই পরিকল্পনা করি, ডিজাইন করি, কোড লিখি, ফ্রন্টএন্ড ও ব্যাকএন্ড যুক্ত করি এবং ব্যবহার করার অভিজ্ঞতা পরীক্ষা করি। লক্ষ্যটি সহজ: দরকারি ডিজিটাল কাজগুলোকে এক জায়গায় আরও সহজ ও সবার নাগালে নিয়ে আসা।",
@@ -90,7 +90,7 @@ const copy = {
     journeyEyebrow: "এ পর্যন্ত যাত্রা",
     journeyTitle: "ছোট শুরু, উদ্দেশ্য স্পষ্ট",
     journeyIntro:
-      "সহজ হাব এখনো গড়ে উঠছে। এখানে তিনটি বাস্তব ধাপে যাত্রাটা তুলে ধরা হলো—এটি কোনো বড় দলের বা বহু বছরের প্রতিষ্ঠানের সাজানো গল্প নয়।",
+      "স্টুডিও সেবা এখনো গড়ে উঠছে। এখানে তিনটি বাস্তব ধাপে যাত্রাটা তুলে ধরা হলো—এটি কোনো বড় দলের বা বহু বছরের প্রতিষ্ঠানের সাজানো গল্প নয়।",
     step1Title: "ভাবনার শুরু",
     step1Body:
       "দৈনন্দিন ডিজিটাল কাজের জন্য একটি ব্যবহারিক জায়গা তৈরি করা, যাতে মানুষ অনেকগুলো বিচ্ছিন্ন টুলের মধ্যে ঘুরে না বেড়িয়ে প্রয়োজনীয় কাজ করতে পারেন।",
@@ -112,7 +112,7 @@ const copy = {
     value3Body:
       "কোনটি প্রস্তুত, কোনটি এখনো তৈরি হচ্ছে এবং কোথায় সহযোগিতা কাজে লাগবে—তা পরিষ্কার রাখা।",
     openLabel: "সবার জন্য আমন্ত্রণ",
-    openTitle: "আজ সহজ হাব একার হাতে তৈরি হচ্ছে। আগামী পথটা একসঙ্গে এগিয়ে নেওয়া যায়।",
+    openTitle: "আজ স্টুডিও সেবা একার হাতে তৈরি হচ্ছে। আগামী পথটা একসঙ্গে এগিয়ে নেওয়া যায়।",
     openBody:
       "আপনি ডেভেলপার, ডিজাইনার, কনটেন্ট নির্মাতা, মার্কেটার—অথবা নতুন ভাবনা ও কাজের আগ্রহ নিয়ে যুক্ত হতে চান, তাহলে কথা বলতে চাই। আপনি প্ল্যাটফর্ম উন্নত করতে, নিজের দক্ষতা দিয়ে প্রকল্পে অবদান রাখতে, কিংবা দীর্ঘমেয়াদি সহযোগিতা বা ব্যবসায়িক অংশীদারত্বের সম্ভাবনা নিয়ে আলোচনা করতে পারেন। কোনো সিদ্ধান্তের আগে কাজের ধরন ও শর্ত খোলাখুলিভাবে আলোচনা করে নেওয়া হবে।",
     primaryCta: "সহযোগিতা নিয়ে কথা বলুন",

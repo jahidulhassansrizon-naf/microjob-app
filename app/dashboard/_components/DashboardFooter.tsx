@@ -6,9 +6,9 @@ export default function DashboardFooter() {
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#7A6A50] font-medium">
         {/* Left: Logo, Copyright & Version */}
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-gradient-to-br from-[#EF4444] to-[#B91C1C] rounded-md flex items-center justify-center text-[12px] font-black text-white shrink-0 shadow-2xs">SH</div>
+          <div className="w-5 h-5 bg-gradient-to-br from-[#EF4444] to-[#B91C1C] rounded-md flex items-center justify-center text-[12px] font-black text-white shrink-0 shadow-2xs">SS</div>
           <span><DT>{"\u00A9 2026"}</DT>{<DT>{" "}</DT>}
-            <strong className="text-[#DC2626] font-bold">Sohoj Hub</strong><DT>{". All\r\n            rights reserved.\r\n          "}</DT></span>
+            <strong className="text-[#DC2626] font-bold">Studio Seba</strong><DT>{". All\r\n            rights reserved.\r\n          "}</DT></span>
           <span className="text-[#B0A080]"><DT>{"\u00B7"}</DT></span>
           <span className="text-[#7A6A50]"><DT>{"v1.8.3"}</DT></span>
         </div>

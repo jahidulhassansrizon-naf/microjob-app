@@ -57,7 +57,7 @@ const serviceItems = [
   },
 ];
 
-// Sohoj Hub Tools mega menu
+// Studio Seba Tools mega menu
 const sohojHubToolsCategories = [
   {
     title: "PDF Tools",
@@ -161,7 +161,7 @@ const importantLinksItems = [
   },
   {
     title: "Contest",
-    subtitle: "Use Sohoj Hub & win prizes!",
+    subtitle: "Use Studio Seba & win prizes!",
     isNew: true,
     isFeatured: true,
   },
@@ -380,17 +380,17 @@ export default function Navbar() {
               whileTap={{ scale: 0.95 }}
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-[13px] font-black tracking-tight text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/20"
             >
-              SH
+              SS
             </motion.div>
             <div className="leading-none">
               <h2 className="text-[19px] font-extrabold tracking-tight text-slate-900">
-                Sohoj{" "}
+                Studio{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                  Hub
+                  Seba
                 </span>
               </h2>
               <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                sohojhub.vercel.app
+                STUDIO SEBA
               </p>
             </div>
           </Link>
@@ -445,7 +445,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Sohoj Hub Tools Mega Menu (positioned against the header, not the trigger) */}
+            {/* Studio Seba Tools Mega Menu (positioned against the header, not the trigger) */}
             <div
               className="flex h-full items-center"
               onMouseEnter={() => setIsToolsOpen(true)}
@@ -714,12 +714,12 @@ export default function Navbar() {
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-xs font-black text-white shadow-md shadow-indigo-500/30">
-                    SH
+                    SS
                   </div>
                   <span className="text-base font-extrabold tracking-tight text-slate-900">
-                    Sohoj{" "}
+                    Studio{" "}
                     <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                      Hub
+                      Seba
                     </span>
                   </span>
                 </div>

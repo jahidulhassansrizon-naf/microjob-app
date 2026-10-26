@@ -27,7 +27,7 @@ export default function AiEditorSection() {
     },
     {
       title: "Share, print, download with ease",
-      desc: "On Sohoj Hub, instantly download, share, or email your photos without any hassle.",
+      desc: "On Studio Seba, instantly download, share, or email your photos without any hassle.",
       icon: <Share2 size={22} />,
       chip: "bg-emerald-50 text-emerald-600 ring-emerald-100",
     },
@@ -174,7 +174,7 @@ export default function AiEditorSection() {
                   <Sparkles size={24} />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold tracking-tight text-slate-900 sm:mb-3 sm:text-2xl">
-                  <T>{"Sohoj Hub's Smart AI Editor.\r\n                "}</T>
+                  <T>{"Studio Seba's Smart AI Editor.\r\n                "}</T>
                 </h3>
                 <p className="max-w-lg text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
                   <T>
@@ -210,7 +210,7 @@ export default function AiEditorSection() {
                 <p className="max-w-lg text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
                   <T>
                     {
-                      "On Sohoj Hub, easily edit your photos with blue, black, or\r\n                  gray suits, navy blazers, white shirts, polo shirts, as well\r\n                  as casual and traditional outfits.\r\n                "
+                      "On Studio Seba, easily edit your photos with blue, black, or\r\n                  gray suits, navy blazers, white shirts, polo shirts, as well\r\n                  as casual and traditional outfits.\r\n                "
                     }
                   </T>
                 </p>

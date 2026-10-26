@@ -107,7 +107,7 @@ export default function DocumentSection() {
           </div>
 
           <h2 className="text-4xl font-bold leading-[1.15] tracking-tight text-slate-900 md:text-5xl">
-            <T>{"In Sohoj Hub contracts & documents"}</T>
+            <T>{"In Studio Seba contracts & documents"}</T>
             {<T>{" "}</T>}
             <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">

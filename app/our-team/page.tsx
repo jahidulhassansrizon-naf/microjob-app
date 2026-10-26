@@ -41,7 +41,7 @@ const opportunities: Opportunity[] = [
   {
     title: "Marketing & Community",
     description:
-      "Help more people discover Sohoj Hub, listen to feedback, and grow a useful community.",
+      "Help more people discover Studio Seba, listen to feedback, and grow a useful community.",
     type: "Growth",
   },
   {
@@ -111,10 +111,10 @@ export default function OurTeamPage() {
           </div>
 
           <section className="team-intro">
-            <div className="eyebrow"><SparkIcon /><T>Building Sohoj Hub together</T></div>
+            <div className="eyebrow"><SparkIcon /><T>Building Studio Seba together</T></div>
             <h1><T>One founder. A growing vision.</T></h1>
             <p className="intro-copy">
-              <T>Sohoj Hub is being built step by step, with a clear goal: make useful digital work simpler and more accessible.</T>
+              <T>Studio Seba is being built step by step, with a clear goal: make useful digital work simpler and more accessible.</T>
             </p>
           </section>
 
@@ -124,13 +124,13 @@ export default function OurTeamPage() {
                 <img
                   className="founder-photo"
                   src={FOUNDER_IMAGE_URL}
-                  alt="Sohoj Hub founder"
+                  alt="Studio Seba founder"
                   loading="eager"
                   referrerPolicy="no-referrer"
                   onError={() => setPhotoFailed(true)}
                 />
               ) : (
-                <div className="founder-photo-fallback" aria-label="Sohoj Hub founder">SH</div>
+                <div className="founder-photo-fallback" aria-label="Studio Seba founder">SS</div>
               )}
               <span className="founder-online-dot" aria-hidden="true" />
             </div>
@@ -139,7 +139,7 @@ export default function OurTeamPage() {
             <h2 id="founder-heading"><T>Founder & Website Administrator</T></h2>
             <p className="founder-subtitle"><T>Solo Full-Stack Developer</T></p>
             <p className="founder-bio">
-              <T>I started building Sohoj Hub independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.</T>
+              <T>I started building Studio Seba independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.</T>
             </p>
             <div className="founder-tags">
               <span><T>Built independently</T></span>
@@ -154,7 +154,7 @@ export default function OurTeamPage() {
           <section className="opportunities-section" aria-labelledby="opportunities-heading">
             <div className="section-heading">
               <div className="eyebrow"><SparkIcon /><T>Open collaboration opportunities</T></div>
-              <h2 id="opportunities-heading"><T>Help shape what Sohoj Hub becomes.</T></h2>
+              <h2 id="opportunities-heading"><T>Help shape what Studio Seba becomes.</T></h2>
               <p>
                 <T>I’m currently building the platform on my own. If you have skills, ideas, or energy to help it grow, there may be a place for you here.</T>
               </p>

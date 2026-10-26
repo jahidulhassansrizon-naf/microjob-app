@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       : `user-${userAuth!.userId}-${sessionId.slice(0, 16)}`;
     const token = new AccessToken(liveKitApiKey, liveKitApiSecret, {
       identity,
-      name: isAdmin ? "Sohoj Hub Admin Viewer" : "Sohoj Hub User Screen",
+      name: isAdmin ? "Studio Seba Admin Viewer" : "Studio Seba User Screen",
       ttl: "5m",
     });
 

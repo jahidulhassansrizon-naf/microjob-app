@@ -11,8 +11,8 @@ export default function FaqSection() {
   const faqs = [
       {
           id: "01",
-          question: "What is Sohoj Hub and how does it work?",
-          answer: "Sohoj Hub is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
+          question: "What is Studio Seba and how does it work?",
+          answer: "Studio Seba is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
       },
       {
           id: "02",
@@ -36,8 +36,8 @@ export default function FaqSection() {
       },
       {
           id: "06",
-          question: "Can Sohoj Hub be used on mobile?",
-          answer: "Yes, Sohoj Hub is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
+          question: "Can Studio Seba be used on mobile?",
+          answer: "Yes, Studio Seba is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
       },
       {
           id: "07",
@@ -66,7 +66,7 @@ export default function FaqSection() {
       },
       {
           id: "12",
-          question: "Do I need to create an account to use Sohoj Hub?",
+          question: "Do I need to create an account to use Studio Seba?",
           answer: "You can browse templates freely, but an account is required to save and download your generated documents.",
       },
       {
@@ -110,7 +110,7 @@ export default function FaqSection() {
           </h2>
 
           <p className="text-base leading-relaxed text-slate-600">
-            <T>{"Some common questions about Sohoj Hub.\r\n          "}</T>
+            <T>{"Some common questions about Studio Seba.\r\n          "}</T>
           </p>
         </motion.div>
 

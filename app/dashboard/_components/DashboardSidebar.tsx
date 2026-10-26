@@ -214,10 +214,10 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#E3D6B8] px-4">
           <Link href="/dashboard" onClick={onClose} translate="no" className="flex cursor-pointer items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DC2626] text-[15px] font-bold tracking-tight text-white">
-              SK
+              SS
             </span>
             <span className="text-[19px] font-bold tracking-tight text-[#3B2F1E]">
-              Sohoj<span className="text-[#DC2626]"> Hub</span>
+              Studio<span className="text-[#DC2626]"> Seba</span>
             </span>
           </Link>
           <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-[#7A6A50] transition-colors hover:bg-[#EFE3C8] hover:text-[#5A4A32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">

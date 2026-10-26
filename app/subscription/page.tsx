@@ -272,7 +272,7 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#B91C1C]">
-              Sohoj Hub · Payment guide
+              Studio Seba · Payment guide
             </p>
             <h2 className="mt-1.5 text-2xl font-black tracking-tight text-[#3B2F1E] sm:text-3xl">
               পেমেন্ট করবেন যেভাবে

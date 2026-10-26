@@ -51,7 +51,7 @@ export default function Hero() {
       </div>
 
       {/* ================= HERO: VIDEO LEFT, CONTENT RIGHT ================= */}
-      <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-6 md:px-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 xl:gap-16">
+      <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 items-center gap-8 px-4 sm:px-6 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 xl:gap-14">
         {/* The video src uses "#t=0.1" so browsers (incl. iOS Safari) show a first frame as the thumbnail. */}
         {/* The video is first in the DOM so it appears above the copy on mobile. */}
         <motion.div
@@ -70,7 +70,7 @@ export default function Hero() {
               <video
                 ref={videoRef}
                 src={`${VIDEO_SRC}#t=0.1`}
-                aria-label={t("Sohoj Hub - Your Creative Toolbox")}
+                aria-label={t("Studio Seba - Your Creative Toolbox")}
                 playsInline
                 loop={false}
                 controls={!showOverlay}
@@ -121,18 +121,20 @@ export default function Hero() {
           initial={{ opacity: 0, x: 18 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-          className="order-2 flex min-w-0 flex-col items-center text-center lg:items-start lg:text-left"
+          className="order-2 flex min-w-0 flex-col items-center text-center [container-type:inline-size] lg:items-start lg:text-left"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/80 px-4 py-1.5 text-xs font-semibold text-blue-700 shadow-sm sm:text-[13px]">
             <Zap size={14} className="fill-blue-600 text-blue-600" />
             <T>{"Trusted by 35,000+ users"}</T>
           </div>
 
-          <h1 className="mt-5 max-w-2xl text-balance text-4xl font-bold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl lg:mt-6 lg:text-[54px] xl:text-[60px]">
-            <span>
+          {/* Two fixed lines: the headline never splits in the middle of the gradient phrase.
+              On desktop the font scales with the column width (cqw) so line 1 always fits. */}
+          <h1 className="mt-5 w-full text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:mt-6 lg:[font-size:clamp(36px,8.4cqw,60px)]">
+            <span className="block text-balance">
               <T>{"Everyday digital work,"}</T>
-            </span>{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            </span>
+            <span className="block w-fit max-lg:mx-auto bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text pb-1 text-transparent">
               <T>{"done in seconds"}</T>
             </span>
           </h1>

@@ -514,13 +514,6 @@ const QuestionPaperIcon = dual(QuestionPaperColor, QuestionPaperMono);
 const PrintMediaIcon = dual(PrintMediaColor, PrintMediaMono);
 const AllToolsIcon = dual(AllToolsColor, AllToolsMono);
 
-/* More - three dots */
-const MoreIcon: NavIcon = ({ size = 22, className }) => (
-  <svg {...GLYPH} width={size} height={size} className={className}>
-    <path d="M6 12h.01M12 12h.01M18 12h.01" strokeWidth={3} />
-  </svg>
-);
-
 const aiTemplateItems = [
   "Motivational",
   "Creative Shots",
@@ -629,13 +622,12 @@ const NAV_ITEMS: NavConfig[] = [
   {
     id: "sohoj-tools",
     href: "/sohoj-tools",
-    label: "All Tools",
+    label: "Seba Tools",
     icon: AllToolsIcon,
     tone: "orange",
     match: "/sohoj-tools",
   },
 ];
-const NAV_GAP = 2;
 const NAV_SIDE_GAP = 12;
 const NAV_EDGE_PAD = 6;
 // জুম-আউট / বড় স্ক্রিনে ন্যাভবার ঠিক একই দেখানোর জন্য (scaleWithZoom চালু থাকলে)
@@ -848,109 +840,6 @@ function NavDropdown({
     </div>
   );
 }
-function MoreMenu({
-  items,
-  open,
-  setOpen,
-  active,
-  isActive,
-}: {
-  items: NavConfig[];
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  active: boolean;
-  isActive: (prefix: string) => boolean;
-}) {
-  const router = useRouter();
-  return (
-    <div
-      className="relative flex h-full shrink-0 items-center"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button
-        type="button"
-        aria-haspopup="true"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className={`${itemBase} cursor-pointer ${active || open ? itemActive : itemIdle}`}
-      >
-        <IconTile icon={MoreIcon} tone="slate" />
-        <span>
-          <DT>{"More"}</DT>
-        </span>
-
-        <ChevronDown
-          size={13}
-          className={`nav-chev -ml-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#DC2626]" : "text-[#7A6A50]"}`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-[100] w-64 max-w-[calc(100vw-1.5rem)] rounded-xl border-2 border-[#DC2626] bg-[#F0DDB5] p-1.5 text-[15px] font-medium shadow-xl animate-in fade-in duration-150">
-          <span aria-hidden="true" className="pointer-events-none absolute -top-[7px] right-6 h-3 w-3 rotate-45 border-l-2 border-t-2 border-[#DC2626] bg-[#F0DDB5]" />
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              prefetch
-              onMouseEnter={() => {
-                router.prefetch(item.href);
-                if (item.href === "/my-files") prefetchMyFilesData();
-              }}
-              onFocus={() => {
-                router.prefetch(item.href);
-                if (item.href === "/my-files") prefetchMyFilesData();
-              }}
-              onTouchStart={() => {
-                if (item.href === "/my-files") prefetchMyFilesData(true);
-              }}
-              onMouseDown={() => {
-                if (item.href === "/my-files") prefetchMyFilesData(true);
-              }}
-              onClick={() => {
-                if (item.href === "/my-files") prefetchMyFilesData(true);
-              }}
-              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
-                isActive(item.match)
-                  ? "bg-[#F6D9A8] text-[#B91C1C]"
-                  : "text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"
-              }`}
-            >
-              <IconTile icon={item.icon} tone={item.tone} />
-
-              <span className="flex-1">{<DT>{item.label}</DT>}</span>
-
-              {item.proBadge && <ProBadge />}
-
-              {item.upcoming && (
-                <span className="rounded border-2 border-red-600 bg-[#FBF6E8] px-1.5 text-[12px] font-black uppercase leading-[14px] tracking-wider text-red-600">
-                  <DT>{"Coming Soon"}</DT>
-                </span>
-              )}
-
-              {item.tag && (
-                <span
-                  className={`rounded px-1.5 text-[12px] font-semibold leading-[15px] ${item.tag.className}`}
-                >
-                  {item.tag.text}
-                </span>
-              )}
-
-              {item.accessTag && (
-                <span
-                  className={`rounded px-1.5 text-[11px] font-semibold uppercase leading-[14px] ${item.accessTag.className}`}
-                >
-                  <DT>{item.accessTag.text}</DT>
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 /* ------------------------------------------------------------------ */
 /* Navbar                                                             */
 /* ------------------------------------------------------------------ */
@@ -1038,16 +927,15 @@ export default function DashboardNavbar({
     : [];
   /* Nav dropdown states */
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [moreOpen, setMoreOpen] = useState<boolean>(false);
   /* Responsive nav */
   const headerRef = useRef<HTMLElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
-  const ghostRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [navScale, setNavScale] = useState<number>(1);
   const [navWidth, setNavWidth] = useState<number>(0);
   const [navAligned, setNavAligned] = useState<boolean>(false);
-  const [visibleCount, setVisibleCount] = useState<number>(NAV_ITEMS.length);
   const [navReady, setNavReady] = useState<boolean>(false);
   // once React renders the nav from its own state, the cached CSS-variable layout can go
   useEffect(() => {
@@ -1151,8 +1039,8 @@ export default function DashboardNavbar({
     const left = leftRef.current;
     const right = rightRef.current;
     const nav = navRef.current;
-    const ghost = ghostRef.current;
-    if (!header || !left || !right || !nav || !ghost) {
+    const inner = innerRef.current;
+    if (!header || !left || !right || !nav || !inner) {
       return;
     }
     let observer: ResizeObserver | undefined;
@@ -1180,10 +1068,8 @@ export default function DashboardNavbar({
         (parseFloat(tcs.paddingRight) || 0)
       );
     };
-    // FIX: the visible items are chosen from measured text widths. Measuring before the web
-    // font is loaded and again after it loaded made items hop into/out of the "More" menu
-    // while the nav was already visible. Only reveal the nav once fonts are settled (with a
-    // short safety timeout so it never stays hidden).
+    // Only reveal the nav once fonts are settled (with a short safety timeout so it never
+    // stays hidden). All nav items are always shown - there is no "More" menu.
     let fontsSettled = !document.fonts || document.fonts.status === "loaded";
     const measure = () => {
       if (getComputedStyle(nav).display === "none") {
@@ -1208,32 +1094,21 @@ export default function DashboardNavbar({
         : symmetricW;
       setNavAligned(aligned);
       setNavWidth(Math.max(navW, 0));
+      // All items must always be visible: if their natural width is larger than the space
+      // available, the whole row is scaled down just enough to fit.
       const available = navW - 4;
-      if (available <= 0) return;
-      const widths = (Array.from(ghost.children) as HTMLElement[]).map(
-        (el) => el.offsetWidth,
-      );
-      const moreW = widths[widths.length - 1];
-      const itemWidths = widths.slice(0, NAV_ITEMS.length);
-      const total = itemWidths.reduce((sum, w) => sum + w + NAV_GAP, 0);
-      let count = NAV_ITEMS.length;
-      if (total > available) {
-        let used = moreW + NAV_GAP;
-        count = 0;
-        for (const w of itemWidths) {
-          if (used + w + NAV_GAP > available) {
-            break;
-          }
-          used += w + NAV_GAP;
-          count += 1;
-        }
+      if (available > 0) {
+        const kids = Array.from(inner.children) as HTMLElement[];
+        const natural =
+          kids.reduce((sum, el) => sum + el.offsetWidth, 0) +
+          2 * Math.max(kids.length - 1, 0);
+        setNavScale(natural > available ? Math.max(available / natural, 0.1) : 1);
       }
-      setVisibleCount(count);
       if (fontsSettled) {
         setNavReady(true);
         // remember the settled layout so the next reload can paint it immediately
         saveNavLayout(pathnameRef.current, {
-          vc: count,
+          vc: NAV_ITEMS.length,
           w: Math.max(navW, 0),
           al: aligned,
         });
@@ -1244,7 +1119,7 @@ export default function DashboardNavbar({
     observer.observe(header);
     observer.observe(left);
     observer.observe(right);
-    observer.observe(ghost);
+    Array.from(inner.children).forEach((child) => observer?.observe(child));
     document.fonts?.ready.then(() => {
       fontsSettled = true;
       measure();
@@ -1301,7 +1176,6 @@ export default function DashboardNavbar({
         setIsSearchOpen(false);
         setDropdownOpen(false);
         setOpenMenu(null);
-        setMoreOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -1347,7 +1221,6 @@ export default function DashboardNavbar({
   };
   const isActive = (prefix: string) =>
     pathname === prefix || !!pathname?.startsWith(`${prefix}/`);
-  const hiddenItems = NAV_ITEMS.slice(visibleCount);
   const menuSetter = (id: string) => (v: boolean) =>
     setOpenMenu((cur) => (v ? id : cur === id ? null : cur));
   const iconButton =
@@ -1376,14 +1249,14 @@ export default function DashboardNavbar({
           >
             <Link href="/" className="flex min-w-0 shrink items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#EF4444] to-[#B91C1C] text-[16px] font-bold tracking-tight text-white ring-1 ring-[#F87171]/60 shadow-[0_6px_14px_-6px_rgba(220,38,38,0.6)]">
-                SH
+                SS
               </div>
 
               <div className="flex min-w-0 flex-col leading-none">
                 <span className="truncate text-[19px] font-bold tracking-tight text-[#3B2F1E] sm:text-[21px]">
-                  <DT>{"Sohoj"}</DT>
+                  <DT>{"Studio"}</DT>
                   <span className="text-[#DC2626]">
-                    <DT>{" Hub"}</DT>
+                    <DT>{" Seba"}</DT>
                   </span>
                 </span>
               </div>
@@ -1412,86 +1285,38 @@ export default function DashboardNavbar({
               left: navReady
                 ? `calc(50% - ${navWidth / 2}px)`
                 : "calc(50% - var(--nav-w, 0px) / 2)",
-              justifyContent: navReady
-                ? navAligned
-                  ? "space-between"
-                  : "center"
-                : "var(--nav-j, center)",
+              justifyContent: "center",
             }}
-            className={`absolute top-0 hidden h-full items-center gap-0.5 text-[15px] font-medium lg:flex 2xl:text-[15.5px] 2xl:font-semibold ${navReady ? "opacity-100 transition-opacity duration-150" : "opacity-0 [html[data-nav-pre]_&]:opacity-100"}`}
+            className={`absolute top-0 hidden h-full items-center gap-0.5 text-[15px] font-medium lg:flex 2xl:text-[15.5px] 2xl:font-semibold ${navReady ? "opacity-100 transition-opacity duration-150" : "opacity-0"}`}
           >
-            {/* Hidden measuring copy */}
+            {/* Every item is always shown - there is no "More" menu. If space is short the
+                whole row is scaled down to fit. */}
             <div
-              aria-hidden="true"
-              className="pointer-events-none invisible absolute inset-x-0 top-0 h-0 overflow-hidden"
+              ref={innerRef}
+              className="flex h-full min-w-full items-center gap-0.5"
+              style={{
+                justifyContent: navAligned ? "space-between" : "center",
+                transform: navScale < 1 ? `scale(${navScale})` : undefined,
+                transformOrigin: "center center",
+              }}
             >
-              <div ref={ghostRef} className="flex w-max items-center gap-0.5">
-                {NAV_ITEMS.map((item) => (
-                  <div key={item.id} className="flex shrink-0 items-center">
-                    <div className={itemBase}>
-                      <NavLabel item={item} />
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex shrink-0 items-center">
-                  <div className={itemBase}>
-                    <IconTile icon={MoreIcon} tone="slate" />
-
-                    <span>
-                      <DT>{"More"}</DT>
-                    </span>
-
-                    <ChevronDown size={13} className="-ml-0.5" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Every item is always rendered; the ones that don't fit are display:none. Before the
-                first settled measurement the choice comes from the cached --ni-N variables. */}
-            {NAV_ITEMS.map((item, index) => (
-              <div
-                key={item.id}
-                className="contents"
-                style={{
-                  display: navReady
-                    ? index < visibleCount
-                      ? "contents"
-                      : "none"
-                    : `var(--ni-${index}, contents)`,
-                }}
-              >
-                {item.menu ? (
+              {NAV_ITEMS.map((item) =>
+                item.menu ? (
                   <NavDropdown
+                    key={item.id}
                     item={item}
                     open={openMenu === item.id}
                     setOpen={menuSetter(item.id)}
                     active={isActive(item.match)}
                   />
                 ) : (
-                  <NavItem item={item} active={isActive(item.match)} />
-                )}
-              </div>
-            ))}
-
-            <div
-              className="contents"
-              style={{
-                display: navReady
-                  ? hiddenItems.length > 0
-                    ? "contents"
-                    : "none"
-                  : "var(--nav-more, none)",
-              }}
-            >
-              <MoreMenu
-                items={hiddenItems}
-                open={moreOpen}
-                setOpen={setMoreOpen}
-                active={hiddenItems.some((item) => isActive(item.match))}
-                isActive={isActive}
-              />
+                  <NavItem
+                    key={item.id}
+                    item={item}
+                    active={isActive(item.match)}
+                  />
+                ),
+              )}
             </div>
           </nav>
 

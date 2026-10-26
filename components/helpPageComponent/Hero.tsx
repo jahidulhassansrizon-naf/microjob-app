@@ -10,7 +10,7 @@ type Tutorial = {
 const tutorials: Tutorial[] = [
     {
         id: 1,
-        title: "Sohoj Hub photo editing tutorial",
+        title: "Studio Seba photo editing tutorial",
         description: "Learn how to edit photos, remove backgrounds, resize images, and complete essential design work quickly.",
     },
     {
@@ -162,11 +162,11 @@ export default function Hero() {
           <span className="rounded-full border border-[#2563EB]/20 bg-white px-[14px] py-[6px] text-[11px] font-semibold text-[#2563EB] shadow-sm"><T>{"Our specialty\r\n          "}</T></span>
 
           <h1 className="mt-[28px] font-extrabold leading-none tracking-[-0.045em] text-[#0F172A]">
-            <span className="text-[50px] text-[#2563EB] sm:text-[52px]"><T>{"Sohoj Hub\r\n            "}</T></span>
+            <span className="text-[50px] text-[#2563EB] sm:text-[52px]"><T>{"Studio Seba\r\n            "}</T></span>
             <span className="text-[50px] sm:text-[52px]"><T>{"Introduction"}</T></span>
           </h1>
 
-          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#334155]"><T>{"Watch the video tutorials below to learn how to use Sohoj Hub.\r\n          "}</T></p>
+          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#334155]"><T>{"Watch the video tutorials below to learn how to use Studio Seba.\r\n          "}</T></p>
         </div>
       </section>
 
@@ -177,7 +177,7 @@ export default function Hero() {
           <div>
             <div className="mb-[10px] text-[11px] font-medium text-[#64748B]"><T>{"Video 1\r\n            "}</T></div>
 
-            <h2 className="text-[16px] font-bold leading-6 text-[#0F172A]"><T>{"Sohoj Hub introduction\r\n            "}</T></h2>
+            <h2 className="text-[16px] font-bold leading-6 text-[#0F172A]"><T>{"Studio Seba introduction\r\n            "}</T></h2>
 
             <p className="mt-[4px] text-[11px] leading-5 text-[#334155]"><T>{"Use various digital tools to help computer operators complete\r\n              their daily tasks of images, documents, applications, and other\r\n              necessary tasks easily and quickly.\r\n            "}</T></p>
 
@@ -196,7 +196,7 @@ export default function Hero() {
             <h2 className="text-[15px] font-bold text-[#0F172A]"><T>{"Contact"}</T></h2>
 
             <div className="mt-[10px] rounded-[7px] border border-[#E2E8F0] bg-[#EFF6FF]/60 px-[16px] py-[14px]">
-              <p className="text-[10px] leading-5 text-[#475569]"><T>{"Contact us for any Sohoj Hub support or information.\r\n              "}</T></p>
+              <p className="text-[10px] leading-5 text-[#475569]"><T>{"Contact us for any Studio Seba support or information.\r\n              "}</T></p>
 
               <div className="mt-[9px] flex flex-wrap items-center gap-x-[24px] gap-y-[7px] text-[10px] font-medium text-[#64748B] italic">
                 <div className="inline-flex items-center gap-[6px] not-italic">
