@@ -104,7 +104,7 @@ export async function GET(request: Request) {
       {
         success: true,
         user: { fullName: user.fullName || "", phoneNumber: user.phoneNumber || "" },
-        plan: { id: planId, name: plan.name, days: plan.days, price: plan.price },
+        plan: { id: planId, name: plan.name, duration: plan.duration, months: plan.months, days: plan.days, price: plan.price },
         paymentNumbers: WALLET_NUMBERS,
         pending: pending ? {
           id: String(pending._id),

@@ -57,7 +57,9 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ success: true, message: "Payment rejected.", subscription: { id: String(rejected._id), paymentStatus: rejected.paymentStatus, accessStatus: rejected.accessStatus, reviewStatus: rejected.reviewStatus } });
     }
 
-    const plan = SUBSCRIPTION_PLAN_BY_ID[subscription.planId as keyof typeof SUBSCRIPTION_PLAN_BY_ID];
+    const currentPlan = SUBSCRIPTION_PLAN_BY_ID[subscription.planId as keyof typeof SUBSCRIPTION_PLAN_BY_ID];
+    // Allow an already-submitted legacy 3-month payment to be reviewed even though it is no longer sold.
+    const plan = currentPlan ?? (subscription.planId === "3-month" ? { name: "3 Months", days: 90 } : null);
     if (!plan || !Number.isFinite(plan.days) || plan.days <= 0) {
       return NextResponse.json({ success: false, message: "The subscription plan duration is not supported." }, { status: 409 });
     }
@@ -97,7 +99,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      message: "Payment approved. 30-day subscription access is active.",
+      message: `Payment approved. ${plan.name} subscription access is active.`,
       subscription: {
         id: String(approved._id),
         paymentStatus: approved.paymentStatus,

@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       const fullName = item.userId && typeof item.userId === "object" ? item.userId.fullName : "";
       const name = maskBuyerName(fullName);
       const months = Number(item.months || 0);
-      const fallbackPlan = months === 1 ? "1 Month plan" : months > 1 ? `${months} Months plan` : "Subscription plan";
+      const fallbackPlan = months === 12 ? "1 Year plan" : months === 6 ? "6 Months plan" : months === 3 ? "3 Months plan" : months === 1 ? "1 Month plan" : months > 1 ? `${months} Months plan` : "Subscription plan";
       return {
         id: String(item._id),
         name,

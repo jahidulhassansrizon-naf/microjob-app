@@ -39,8 +39,8 @@ export type VerifyActivationResult = {
   alreadyCompleted?: boolean;
 };
 
-// Keep legacy durations so checkouts started before the pricing change can still be verified.
-// New checkouts are restricted to the single 1-month plan in /api/checkout.
+// Keep durations for the three current plans and the legacy 3-month plan so older
+// checkouts that were already paid can still be verified after the catalogue changes.
 const DURATION_BY_PLAN_ID: Record<string, number> = {
   "1-month": 30,
   "3-month": 90,

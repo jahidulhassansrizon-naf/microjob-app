@@ -1,6 +1,7 @@
 /**
  * Single source of truth for subscription pricing.
- * Update this catalogue to change the displayed price and server-side checkout amount together.
+ * The visible plans here are used by the subscription UI, checkout, manual payments,
+ * and subscription approval so the displayed and stored amounts stay in sync.
  */
 export const SUBSCRIPTION_PLAN_BY_ID = {
   "1-month": {
@@ -9,10 +10,32 @@ export const SUBSCRIPTION_PLAN_BY_ID = {
     duration: "30 Days",
     months: 1,
     days: 30,
-    price: 100,
+    price: 99,
     regularPrice: 350,
-    note: "Full access to all paid tools for 30 days",
-    badge: "Limited-time launch offer",
+    note: "Full access to all paid tools for 1 month",
+    badge: "Monthly plan",
+  },
+  "6-month": {
+    id: "6-month",
+    name: "6 Months",
+    duration: "180 Days",
+    months: 6,
+    days: 180,
+    price: 499,
+    regularPrice: 2100,
+    note: "Full access to all paid tools for 6 months",
+    badge: "Most popular",
+  },
+  "1-year": {
+    id: "1-year",
+    name: "1 Year",
+    duration: "365 Days",
+    months: 12,
+    days: 365,
+    price: 899,
+    regularPrice: 4200,
+    note: "Full access to all paid tools for 1 year",
+    badge: "Best value",
   },
 } as const;
 

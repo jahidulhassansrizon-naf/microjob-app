@@ -69,6 +69,14 @@ type UserRow = {
     expiresAt?: string | null;
   };
 };
+function subscriptionDurationLabel(planId: string, months: number) {
+  if (planId === "1-year" || months === 12) return "1 year";
+  if (planId === "6-month" || months === 6) return "6 months";
+  if (planId === "1-month" || months === 1) return "1 month";
+  if (months > 0) return `${months} months`;
+  return "Duration unavailable";
+}
+
 type SubscriptionRow = {
   id: string;
   planId: string;
@@ -1152,7 +1160,7 @@ export default function AdminDashboardClient() {
                       {item.planName || item.planId}
                     </div>
                     <div className="mt-0.5 text-xs text-slate-500">
-                      {item.months} {item.months === 1 ? "month" : "months"}
+                      {subscriptionDurationLabel(item.planId, item.months)}
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-right">
@@ -1213,7 +1221,7 @@ export default function AdminDashboardClient() {
                     {money(item.amount)}
                   </div>
                   <div className="text-xs text-slate-500">
-                    {item.planName || item.planId} · {item.months} mo
+                    {item.planName || item.planId} · {subscriptionDurationLabel(item.planId, item.months)}
                   </div>
                 </div>
               </div>

@@ -37,10 +37,16 @@ const capitalize = (value: string) => value ? value.charAt(0).toUpperCase() + va
 
 const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "launch offer: get 30 days of access to all paid tools at a special price. pay once; renew only when you want.": "লঞ্চ অফারে বিশেষ কম দামে ৩০ দিনের জন্য সব পেইড টুল ব্যবহার করুন। একবার পেমেন্ট করুন; চাইলে পরের মাসে নিজে থেকে নবায়ন করুন।",
-  "full access to all paid tools for 30 days": "৩০ দিনের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "choose 1 month, 6 months, or 1 year of access to all paid tools. pay once; renew only when you want.": "সব পেইড টুলের জন্য ১ মাস, ৬ মাস অথবা ১ বছরের প্ল্যান বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
+  "full access to all paid tools for 1 month": "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 6 months": "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 1 year": "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "regular price": "নিয়মিত মূল্য",
-  "/ 30 days": "/ ৩০ দিন",
+  "monthly plan": "মাসিক প্ল্যান",
+  "most popular": "সবচেয়ে জনপ্রিয়",
+  "/ 1 month": "/ ১ মাস",
+  "/ 6 months": "/ ৬ মাস",
+  "/ 1 year": "/ ১ বছর",
   "ai editor, ai template, and bulk photo edit are included": "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
   "one-time payment": "একবারের পেমেন্ট",
   "no auto-renewal": "স্বয়ংক্রিয় নবায়ন নেই",
@@ -69,7 +75,7 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "this plan ended on": "এই প্ল্যানের মেয়াদ শেষ হয়েছে",
   ". choose a plan below to renew.": "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
   "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
-  ". you can renew for another month whenever you want.": " পর্যন্ত। চাইলে পরবর্তী মাসের জন্য আবার নবায়ন করতে পারবেন।",
+  ". you can choose any plan whenever you want.": " পর্যন্ত। চাইলে যেকোনো প্ল্যান নিয়ে আবার নবায়ন করতে পারবেন।",
   "amount paid": "পরিশোধিত অর্থ",
   started: "শুরুর তারিখ",
   ended: "মেয়াদ শেষ",
@@ -86,6 +92,9 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "for regular users": "নিয়মিত ব্যবহারকারীদের জন্য",
   "longer access, less hassle": "দীর্ঘমেয়াদি ব্যবহার, কম ঝামেলা",
   "full-year access": "পুরো এক বছরের সুবিধা",
+  "1 month plan": "১ মাসের প্যাকেজ",
+  "6 months plan": "৬ মাসের প্যাকেজ",
+  "1 year plan": "১ বছরের প্যাকেজ",
   "most chosen": "সবচেয়ে জনপ্রিয়",
   "best value": "সবচেয়ে সাশ্রয়ী",
   "billed monthly": "মাসিক বিল",
@@ -137,10 +146,11 @@ function translateSubscriptionText(
     return `${banglaDigits(match[1])} সাশ্রয় · ${banglaDigits(match[2])}% ছাড়`;
   }
 
-  match = /^unlock 30-day access for (৳[\d,]+)$/i.exec(key);
+  match = /^unlock (1 month|6 months|1 year) access for (৳[\d,]+)$/i.exec(key);
   if (match) {
-    const price = match[1].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
-    return `${price}-তে ৩০ দিনের অ্যাক্সেস নিন`;
+    const periods: Record<string, string> = { "1 month": "১ মাস", "6 months": "৬ মাস", "1 year": "১ বছর" };
+    const price = match[2].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    return `${periods[match[1].toLowerCase()]}-এর অ্যাক্সেস ${price}-তে নিন`;
   }
 
   match = /^(৳[\d,]+)\s*\/\s*month$/i.exec(key);
@@ -462,7 +472,7 @@ export default function PricingPage() {
                 <T>{"Choose your subscription plan"}</T>
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
-                <T>{"Launch offer: get 30 days of access to all paid tools at a special price. Pay once; renew only when you want."}</T>
+                <T>{"Choose 1 month, 6 months, or 1 year of access to all paid tools. Pay once; renew only when you want."}</T>
               </p>
             </div>
           </section>
@@ -534,7 +544,7 @@ export default function PricingPage() {
                             <>
                               <T>{"Your access is active until"}</T>{" "}
                               <strong className="font-bold text-red-800">{formatDate(currentSubscription.expiresAt)}</strong>
-                              <T>{". You can renew for another month whenever you want."}</T>
+                              <T>{". You can choose any plan whenever you want."}</T>
                             </>
                           )}
                         </p>
@@ -623,7 +633,7 @@ export default function PricingPage() {
                       </p>
                       <div className="mt-1 flex items-baseline gap-2 md:justify-end">
                         <span className="text-4xl font-black leading-none tracking-tight text-[#2563EB] sm:text-5xl">{formatPrice(plan.price)}</span>
-                        <span className="text-xs font-semibold text-slate-500"><T>{"/ 30 days"}</T></span>
+                        <span className="text-xs font-semibold text-slate-500"><T>{`/ ${plan.name}`}</T></span>
                       </div>
                       <span className="mt-3 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                         <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
@@ -650,7 +660,7 @@ export default function PricingPage() {
                   <p className="mt-0.5 text-2xl font-black text-[#0F172A]">{formatPrice(selected.price)}</p>
                 </div>
                 <button type="button" onClick={handleContinue} disabled={isProcessing} className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
-                  {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Unlock 30-day access for ${formatPrice(selected.price)}`}</T>}
+                  {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Unlock ${selected.name.toLowerCase()} access for ${formatPrice(selected.price)}`}</T>}
                 </button>
               </div>
             </div>

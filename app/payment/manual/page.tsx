@@ -8,7 +8,7 @@ import { WalletLogo } from "@/app/payment/manual/_components/WalletLogos";
 
 type WalletMethod = "Nagad" | "bKash";
 type PaymentInfo = {
-  plan: { id: string; name: string; days: number; price: number };
+  plan: { id: string; name: string; duration: string; months: number; days: number; price: number };
   paymentNumbers: Record<WalletMethod, string>;
   pending: null | {
     id: string;
@@ -185,6 +185,7 @@ export default function ManualPaymentPage() {
                     <div>
                       <p className="text-base font-extrabold text-[#DC2626]">নির্বাচিত প্ল্যান</p>
                       <p className="mt-0.5 text-xl font-black text-[#3B2F1E] sm:text-2xl">{info.plan.name} · {info.plan.days} দিন</p>
+                      <p className="mt-0.5 text-sm font-semibold text-[#6B5A40]">মেয়াদ: {info.plan.duration}</p>
                     </div>
                     <p className="text-3xl font-black tracking-tight text-[#DC2626]">{formatMoney(info.plan.price)}</p>
                   </div>

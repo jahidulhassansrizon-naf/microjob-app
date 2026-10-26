@@ -53,12 +53,17 @@ const capitalize = (value: string) =>
 
 const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "launch offer: get 30 days of access to all paid tools at a special price. pay once; renew only when you want.":
-    "লঞ্চ অফারে বিশেষ কম দামে ৩০ দিনের জন্য সব পেইড টুল ব্যবহার করুন। একবার পেমেন্ট করুন; চাইলে পরের মাসে নিজে থেকে নবায়ন করুন।",
-  "full access to all paid tools for 30 days":
-    "৩০ দিনের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "choose 1 month, 6 months, or 1 year of access to all paid tools. pay once; renew only when you want.":
+    "সব পেইড টুলের জন্য ১ মাস, ৬ মাস অথবা ১ বছরের প্ল্যান বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
+  "full access to all paid tools for 1 month": "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 6 months": "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 1 year": "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "regular price": "নিয়মিত মূল্য",
-  "/ 30 days": "/ ৩০ দিন",
+  "monthly plan": "মাসিক প্ল্যান",
+  "most popular": "সবচেয়ে জনপ্রিয়",
+  "/ 1 month": "/ ১ মাস",
+  "/ 6 months": "/ ৬ মাস",
+  "/ 1 year": "/ ১ বছর",
   "ai editor, ai template, and bulk photo edit are included":
     "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
   "one-time payment": "একবারের পেমেন্ট",
@@ -77,8 +82,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   ". choose a plan below to renew.":
     "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
   "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
-  ". you can renew for another month whenever you want.":
-    " পর্যন্ত। চাইলে পরবর্তী মাসের জন্য আবার নবায়ন করতে পারবেন।",
+  ". you can choose any plan whenever you want.":
+    " পর্যন্ত। চাইলে যেকোনো প্ল্যান নিয়ে আবার নবায়ন করতে পারবেন।",
   "amount paid": "পরিশোধিত অর্থ",
   started: "শুরুর তারিখ",
   ended: "মেয়াদ শেষ",
@@ -129,6 +134,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "minutes ago": "মিনিট আগে",
   "purchase notification": "ক্রয় নোটিফিকেশন",
   "1 month plan": "১ মাসের প্যাকেজ",
+  "6 months plan": "৬ মাসের প্যাকেজ",
+  "1 year plan": "১ বছরের প্যাকেজ",
 };
 
 function normalizeSubscriptionText(value: string): string {
@@ -167,13 +174,15 @@ function translateSubscriptionText(
     return `${banglaDigits(match[1])} সাশ্রয় · ${banglaDigits(match[2])}% ছাড়`;
   }
 
-  match = /^unlock 30-day access for (৳[\d,]+)$/i.exec(key);
+  match = /^unlock (1 month|6 months|1 year) access for (৳[\d,]+)$/i.exec(key);
   if (match) {
-    const price = match[1].replace(
-      /\d/g,
-      (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)],
-    );
-    return `${price}-তে ৩০ দিনের অ্যাক্সেস নিন`;
+    const periods: Record<string, string> = {
+      "1 month": "১ মাস",
+      "6 months": "৬ মাস",
+      "1 year": "১ বছর",
+    };
+    const price = match[2].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    return `${periods[match[1].toLowerCase()]}-এর অ্যাক্সেস ${price}-তে নিন`;
   }
 
   match = /^(৳[\d,]+)\s*\/\s*month$/i.exec(key);
@@ -555,7 +564,7 @@ function RecentSubscriptionActivity() {
                     {p.name}
                   </p>
                   <p className="text-sm text-[#6B5A40] sm:text-base">
-                    {t("1 Month plan")} · ৳১০০
+                    {t(`${plans[activeIndex % plans.length].name} plan`)} · {formatPrice(plans[activeIndex % plans.length].price)}
                   </p>
                 </div>
                 <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#B91C1C] sm:text-base">
@@ -603,7 +612,7 @@ function RecentSubscriptionActivity() {
                 {activePurchase.name}
               </p>
               <p className="mt-0.5 text-sm text-[#5A4A32]">
-                {t("1 Month plan")} · ৳১০০
+                {t(`${plans[activeIndex % plans.length].name} plan`)} · {formatPrice(plans[activeIndex % plans.length].price)}
               </p>
               <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#B91C1C] sm:text-base">
                 <Clock3 size={13} /> {timeLabel(activePurchase)}
@@ -854,7 +863,7 @@ export default function SubscriptionPage() {
                                 </strong>
                                 <T>
                                   {
-                                    ". You can renew for another month whenever you want."
+                                    ". You can choose any plan whenever you want."
                                   }
                                 </T>
                               </>
@@ -1009,7 +1018,7 @@ export default function SubscriptionPage() {
                 {isProcessing ? (
                   <T>{"Opening payment page..."}</T>
                 ) : (
-                  <T>{`Unlock 30-day access for ${formatPrice(selected.price)}`}</T>
+                  <T>{`Unlock ${selected.name.toLowerCase()} access for ${formatPrice(selected.price)}`}</T>
                 )}
               </button>
               {paymentError && (
@@ -1098,7 +1107,7 @@ export default function SubscriptionPage() {
                             {formatPrice(plan.price)}
                           </span>
                           <span className="text-sm font-semibold text-[#6B5A40]">
-                            <T>{"/ 30 days"}</T>
+                            <T>{`/ ${plan.name}`}</T>
                           </span>
                         </div>
                         <span className="mt-2 inline-flex rounded-lg bg-[#FEE9E9] px-2.5 py-1 text-[12px] font-extrabold text-[#B91C1C] ring-1 ring-inset ring-[#FBB6B6] sm:text-sm">
