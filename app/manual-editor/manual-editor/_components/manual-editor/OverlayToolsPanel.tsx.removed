@@ -1,0 +1,106 @@
+"use client";
+
+import { Circle, MousePointer2, Plus, RectangleHorizontal, Trash2, Type, Undo2 } from "lucide-react";
+import { useManualEditor } from "./EditorProvider";
+import type { PhotoOverlayType } from "./types";
+
+const ADD_TOOLS: Array<{ type: PhotoOverlayType; label: string; icon: typeof Type }> = [
+  { type: "text", label: "লেখা যোগ করুন", icon: Type },
+  { type: "rectangle", label: "বক্স", icon: RectangleHorizontal },
+  { type: "circle", label: "বৃত্ত", icon: Circle },
+  { type: "arrow", label: "তীর চিহ্ন", icon: MousePointer2 },
+];
+
+export default function OverlayToolsPanel() {
+  const {
+    activePhoto,
+    overlays,
+    selectedOverlayId,
+    addOverlay,
+    updateOverlay,
+    selectOverlay,
+    removeOverlay,
+    clearOverlays,
+  } = useManualEditor();
+
+  const selected = overlays.find((overlay) => overlay.id === selectedOverlayId) ?? null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <div className="h-3.5 w-1 rounded-full bg-[#DC2626]" />
+        <span className="text-sm font-extrabold uppercase tracking-wider text-[#3B2F1E]">TEXT &amp; SHAPES</span>
+      </div>
+
+      <p className="text-[11px] leading-5 text-[#6B5A40]">ছবির ওপর লেখা বা চিহ্ন যোগ করুন। ক্যানভাসে বস্তুটি ধরে টেনে সরাতে পারবেন; ডাউনলোডেও এগুলো যুক্ত থাকবে।</p>
+
+      <div className="grid grid-cols-2 gap-2">
+        {ADD_TOOLS.map(({ type, label, icon: Icon }) => (
+          <button key={type} type="button" disabled={!activePhoto} onClick={() => addOverlay(type)} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-2 text-[11px] font-extrabold text-[#3B2F1E] transition hover:border-[#DC2626] hover:bg-[#F6D9A8] disabled:cursor-not-allowed disabled:opacity-45">
+            <Icon size={15} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {!activePhoto && <p className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2 text-[11px] text-[#6B5A40]">প্রথমে একটি ছবি আপলোড করুন।</p>}
+
+      {overlays.length > 0 && (
+        <div className="rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-2">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-extrabold text-[#5A4A32]">যোগ করা অবজেক্ট ({overlays.length})</span>
+            <button type="button" onClick={clearOverlays} className="text-[10px] font-bold text-[#B91C1C] hover:underline">সব সরান</button>
+          </div>
+          <div className="flex max-h-28 flex-col gap-1 overflow-y-auto">
+            {overlays.map((overlay, index) => (
+              <button key={overlay.id} type="button" onClick={() => selectOverlay(overlay.id)} className={`flex items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-left text-[11px] font-bold ${selectedOverlayId === overlay.id ? "border-[#DC2626] bg-[#F6D9A8] text-[#B91C1C]" : "border-transparent text-[#5A4A32] hover:bg-[#F2E8D2]"}`}>
+                <span className="truncate">{overlay.type === "text" ? `লেখা: ${overlay.text || "খালি"}` : overlay.type === "rectangle" ? "বক্স" : overlay.type === "circle" ? "বৃত্ত" : "তীর চিহ্ন"} {index + 1}</span>
+                <span className="shrink-0 text-[9px] opacity-70">{selectedOverlayId === overlay.id ? "নির্বাচিত" : "এডিট"}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="space-y-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-3">
+          {selected.type === "text" && (
+            <div>
+              <label htmlFor="manual-overlay-text" className="mb-1 block text-[11px] font-bold text-[#5A4A32]">লেখা</label>
+              <input id="manual-overlay-text" value={selected.text} maxLength={160} onChange={(event) => updateOverlay(selected.id, { text: event.target.value })} placeholder="আপনার লেখা লিখুন" className="w-full rounded-lg border border-[#E3D6B8] bg-white px-2.5 py-2 text-xs text-[#3B2F1E] outline-none focus:border-[#DC2626]" />
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="manual-overlay-color" className="mb-1 flex items-center justify-between text-[11px] font-bold text-[#5A4A32]">রং <span className="font-mono text-[10px]">{selected.color}</span></label>
+            <input id="manual-overlay-color" type="color" value={selected.color} onChange={(event) => updateOverlay(selected.id, { color: event.target.value })} className="h-9 w-full cursor-pointer rounded-lg border border-[#E3D6B8] bg-white p-1" />
+          </div>
+
+          {selected.type === "text" ? (
+            <div>
+              <label htmlFor="manual-overlay-size" className="mb-1 flex items-center justify-between text-[11px] font-bold text-[#5A4A32]">লেখার সাইজ <span className="text-[#DC2626]">{selected.fontSize}</span></label>
+              <input id="manual-overlay-size" type="range" min={18} max={100} step={2} value={selected.fontSize} onChange={(event) => updateOverlay(selected.id, { fontSize: Number(event.target.value) })} className="w-full accent-[#DC2626]" />
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="manual-overlay-width" className="mb-1 flex items-center justify-between text-[11px] font-bold text-[#5A4A32]">সাইজ <span className="text-[#DC2626]">{selected.width}</span></label>
+              <input id="manual-overlay-width" type="range" min={60} max={760} step={10} value={selected.width} onChange={(event) => updateOverlay(selected.id, { width: Number(event.target.value), ...(selected.type === "circle" ? { height: Number(event.target.value) } : {}) })} className="w-full accent-[#DC2626]" />
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="manual-overlay-opacity" className="mb-1 flex items-center justify-between text-[11px] font-bold text-[#5A4A32]">স্বচ্ছতা <span className="text-[#DC2626]">{Math.round(selected.opacity * 100)}%</span></label>
+            <input id="manual-overlay-opacity" type="range" min={10} max={100} step={5} value={Math.round(selected.opacity * 100)} onChange={(event) => updateOverlay(selected.id, { opacity: Number(event.target.value) / 100 })} className="w-full accent-[#DC2626]" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => selectOverlay(null)} className="flex items-center justify-center gap-1 rounded-lg border border-[#E3D6B8] py-2 text-[11px] font-extrabold text-[#5A4A32]"><Undo2 size={13} /> নির্বাচন ছাড়ুন</button>
+            <button type="button" onClick={() => removeOverlay(selected.id)} className="flex items-center justify-center gap-1 rounded-lg border border-red-200 bg-red-50 py-2 text-[11px] font-extrabold text-red-700"><Trash2 size={13} /> মুছুন</button>
+          </div>
+          <p className="text-[10px] leading-4 text-[#6B5A40]">ক্যানভাসে এই অবজেক্টটি ধরে টেনে সরান। অবস্থানটি মূল ছবির সাইজ অনুযায়ী সংরক্ষণ হয়।</p>
+        </div>
+      )}
+
+      {overlays.length === 0 && <p className="text-[10px] leading-4 text-[#7A6A50]">এখনো কোনো লেখা বা শেপ যোগ করা হয়নি।</p>}
+    </section>
+  );
+}

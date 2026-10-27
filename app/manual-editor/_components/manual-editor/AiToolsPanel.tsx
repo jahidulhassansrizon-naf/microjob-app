@@ -1,12 +1,20 @@
 "use client";
+import { useState } from "react";
 import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
-import { Eraser, Eye, FileEdit, Grid, Loader2, Maximize2, Plus, Redo2, RefreshCcw, ScanLine, Sparkles, Undo2, UserCheck, } from "lucide-react";
+import { Droplets, Eraser, Eye, FileEdit, Grid, History, Loader2, Maximize2, Plus, Redo2, RefreshCcw, ScanLine, Sparkles, Sun, Undo2, UserCheck, Zap, } from "lucide-react";
 import type { ObjectTab } from "./types";
 import { useManualEditor } from "./EditorProvider";
 import { preloadFaceDetector, preloadUpscaler } from "./aiEnhancement";
+import type { PhotoAsset } from "./types";
+import CutoutEditorModal from "./CutoutEditorModal";
+import RetouchEditorModal from "./RetouchEditorModal";
+import PhotoEnhanceModal from "./PhotoEnhanceModal";
 export default function AiToolsPanel() {
     const { t } = useManualEditorText();
-    const { activeAiTool, showUnsupportedAiMessage, runUpscale, runFaceEnhance, aiProcessing, aiNotice, objectTab, setObjectTab, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, brushSize, setObjectBrightness, setObjectContrast, setObjectSaturation, setObjectHue, setShadowStrength, setBrushSize, objectPreview, setObjectPreview, objectBrushMode, setObjectBrushMode, objectMaskBusy, objectApplyBusy, undoObjectMask, redoObjectMask, resetObjectAdjust, cancelObjectAdjust, applyObjectAdjust, } = useManualEditor();
+    const { activeAiTool, showUnsupportedAiMessage, runUpscale, runFaceEnhance, aiProcessing, isRemovingBackground, aiNotice, activePhoto, setActiveAiTool, setAiNotice, objectTab, setObjectTab, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, brushSize, setObjectBrightness, setObjectContrast, setObjectSaturation, setObjectHue, setShadowStrength, setBrushSize, objectPreview, setObjectPreview, objectBrushMode, setObjectBrushMode, objectMaskBusy, objectApplyBusy, undoObjectMask, redoObjectMask, resetObjectAdjust, cancelObjectAdjust, applyObjectAdjust, } = useManualEditor();
+    const [cutoutSource, setCutoutSource] = useState<PhotoAsset | null>(null);
+    const [retouchSource, setRetouchSource] = useState<PhotoAsset | null>(null);
+    const [enhanceSource, setEnhanceSource] = useState<{ photo: PhotoAsset; tab: "auto" | "clean" | "relight" | "restore"; } | null>(null);
     return (<>
       <style>{`
         @keyframes manual-editor-button-scan {
@@ -87,12 +95,56 @@ export default function AiToolsPanel() {
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        <button type="button" onClick={() => showUnsupportedAiMessage("cutout")} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer ${activeAiTool === "cutout"
+        <button type="button" onClick={() => {
+            if (!activePhoto) {
+              setAiNotice("Upload a photo first.");
+              return;
+            }
+            setAiNotice("");
+            setActiveAiTool("cutout");
+            setCutoutSource(activePhoto);
+          }} disabled={Boolean(aiProcessing) || isRemovingBackground} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "cutout"
             ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
             : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
           <FileEdit className="h-5 w-5 text-[#7A6A50]"/>
           <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]"><T>{"Cutout Editor\n          "}</T></span>
         </button>
+        <button type="button" onClick={() => {
+            if (!activePhoto) {
+              setAiNotice("Upload a photo first.");
+              return;
+            }
+            setAiNotice("");
+            setActiveAiTool("retouch");
+            setRetouchSource(activePhoto);
+          }} disabled={Boolean(aiProcessing) || isRemovingBackground} title="Remove objects, heal spots, fix red-eye, smooth skin, blur or pixelate" className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "retouch"
+            ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
+            : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
+          <Eraser className="h-5 w-5 text-[#7A6A50]"/>
+          <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]">Retouch</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {([
+            { tab: "auto" as const, label: "Auto Enhance", hint: "One click: fixes exposure, colour cast, contrast, noise and softness", icon: <Zap className="h-5 w-5 text-[#7A6A50]"/> },
+            { tab: "clean" as const, label: "Denoise & Deblur", hint: "Reduce grain and recover mild softness", icon: <Droplets className="h-5 w-5 text-[#7A6A50]"/> },
+            { tab: "relight" as const, label: "Relight", hint: "Lift dark areas and faces, protect highlights", icon: <Sun className="h-5 w-5 text-[#7A6A50]"/> },
+            { tab: "restore" as const, label: "Old Photo", hint: "Repair dust, scratches and faded tones", icon: <History className="h-5 w-5 text-[#7A6A50]"/> },
+        ]).map((item) => (<button key={item.tab} type="button" onClick={() => {
+            if (!activePhoto) {
+              setAiNotice("Upload a photo first.");
+              return;
+            }
+            setAiNotice("");
+            setActiveAiTool("enhance");
+            setEnhanceSource({ photo: activePhoto, tab: item.tab });
+          }} disabled={Boolean(aiProcessing) || isRemovingBackground} title={item.hint} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "enhance" && enhanceSource?.tab === item.tab
+            ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
+            : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
+            {item.icon}
+            <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]">{item.label}</span>
+          </button>))}
       </div>
 
       {aiNotice && (<div className="rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-2 text-[11px] leading-5 text-[#B91C1C]">
@@ -200,5 +252,17 @@ export default function AiToolsPanel() {
           </div>
         </div>)}
     </section>
+    {cutoutSource && (<CutoutEditorModal sourcePhoto={cutoutSource} onClose={() => {
+        setCutoutSource(null);
+        setActiveAiTool(null);
+      }} />)}
+    {retouchSource && (<RetouchEditorModal sourcePhoto={retouchSource} onClose={() => {
+        setRetouchSource(null);
+        setActiveAiTool(null);
+      }} />)}
+    {enhanceSource && (<PhotoEnhanceModal sourcePhoto={enhanceSource.photo} initialTab={enhanceSource.tab} onClose={() => {
+        setEnhanceSource(null);
+        setActiveAiTool(null);
+      }} />)}
     </>);
 }

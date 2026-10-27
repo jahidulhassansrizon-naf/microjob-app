@@ -754,3 +754,50 @@ export function preloadFaceDetector() {
     // Best-effort warmup only.
   }
 }
+
+export type HeadBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  score: number;
+};
+
+/**
+ * Estimates head regions (in pixels of `source`) by reusing the existing
+ * person detector and the same head-ROI heuristic Face Enhance already uses.
+ *
+ * Accuracy note: this is NOT a landmark/face-mesh detector. The head box is
+ * derived from a detected person's bounding box, so it is a good starting
+ * point for auto-framing and fill-light, but the user must be able to adjust
+ * the result manually. Throws if another AI operation is running.
+ */
+export function detectHeadBoxes(source: CanvasSource): Promise<HeadBox[]> {
+  assertBrowser();
+
+  return exclusive(async (signal) => {
+    const { width, height } = sourceSize(source);
+    const small = drawToCanvas(source, FACE_DETECTION_SIDE);
+
+    try {
+      const blob = await canvasToBlob(small, "image/jpeg", 0.82);
+      const people = await detectFacesInWorker(blob, signal);
+      throwIfAborted(signal);
+
+      return people
+        .map((detection) => {
+          const roi = headRoi(
+            detection.box,
+            width / small.width,
+            height / small.height,
+            width,
+            height,
+          );
+          return { x: roi.x, y: roi.y, width: roi.w, height: roi.h, score: detection.score };
+        })
+        .filter((box) => box.width >= 8 && box.height >= 8);
+    } finally {
+      releaseCanvas(small);
+    }
+  });
+}

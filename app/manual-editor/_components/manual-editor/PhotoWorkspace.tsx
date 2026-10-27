@@ -181,7 +181,7 @@ function ScanProcessingOverlay({ mode, progress, style, onCancel, firstRunMessag
 }
 export default function PhotoWorkspace() {
     const { t } = useManualEditorText();
-    const { activePhoto, comparisonOriginalFile, dualPhotos, activeDualSlot, setActiveDualSlot, swapDualPhotos, openFilePicker, fileInputRef, handleFileInput, handleDrop, setIsDragging, uploadError, isDragging, activeBackground, backgroundRemoved, currentPreset, photoMode, zoom, setZoom, rotation, setRotation, flipX, setFlipX, removeActivePhoto, activeAiTool, aiProcessing, aiProgress, cancelAiProcessing, isRemovingBackground, aiNotice, objectMaskDataUrl, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, objectTab, brightness, contrast, saturation, } = useManualEditor();
+    const { activePhoto, comparisonOriginalFile, dualPhotos, activeDualSlot, setActiveDualSlot, swapDualPhotos, openFilePicker, fileInputRef, handleFileInput, handleDrop, setIsDragging, uploadError, isDragging, activeBackground, backgroundRemoved, currentPreset, photoMode, zoom, setZoom, rotation, setRotation, flipX, setFlipX, removeActivePhoto, activeAiTool, aiProcessing, aiProgress, cancelAiProcessing, isRemovingBackground, aiNotice, objectMaskDataUrl, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, objectTab, brightness, contrast, saturation, hue, sepia, grayscale, } = useManualEditor();
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const previewHostRef = useRef<HTMLDivElement | null>(null);
     const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null);
@@ -614,7 +614,7 @@ export default function PhotoWorkspace() {
                             : "transparent",
                     }}>
                           <img src={activePhoto!.url} alt={t("Edited photo")} className="absolute inset-0 block h-full w-full object-contain" style={{
-                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) hue-rotate(${hue}deg) sepia(${sepia}%) grayscale(${grayscale}%)`,
                     }} draggable={false}/>
                         </div>
 
@@ -627,11 +627,11 @@ export default function PhotoWorkspace() {
                         <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/70 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Edited\n                        "}</T></div>
                         <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/65 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Original\n                        "}</T></div>
                       </div>) : (<img src={activePhoto!.url} alt={t("Uploaded")} className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
-                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) hue-rotate(${hue}deg) sepia(${sepia}%) grayscale(${grayscale}%)`,
                     }}/>)}
 
                     {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (<canvas ref={previewCanvasRef} className="absolute inset-0 pointer-events-none" style={{
-                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%)`,
+                        filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) hue-rotate(${hue}deg) sepia(${sepia}%) grayscale(${grayscale}%)`,
                     }}/>)}
 
                     {scanMode && (<ScanProcessingOverlay mode={scanMode} progress={aiProgress} onCancel={scanMode === "background" ? undefined : cancelAiProcessing} firstRunMessage={isFirstBackgroundRun
@@ -643,6 +643,7 @@ export default function PhotoWorkspace() {
                   </div>
 
                   {!compareOpen && activeAiTool === "object" && objectMaskDataUrl && (<ObjectMaskCanvas />)}
+
 
                   {!aiProcessing && !compareOpen && (<button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={removeActivePhoto} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-[#3B2F1E]/60 hover:bg-[#3B2F1E]/80 text-white flex items-center justify-center z-40 transition" title={t("Remove photo")}>
                       <X size={14}/>

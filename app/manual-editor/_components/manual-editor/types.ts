@@ -1,6 +1,6 @@
 export type PhotoMode = "passport" | "dual" | "visa" | "rsizes" | "freesize";
 
-export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout";
+export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout" | "retouch" | "enhance";
 
 export type ObjectTab = "face" | "skin" | "hair" | "shadow";
 
@@ -35,3 +35,4 @@ export type EditorFilters = {
   saturation: number;
   sharp: number;
 };
+

@@ -33,6 +33,7 @@ import {
   upscaleImageWithEsrgan,
 } from "./aiEnhancement";
 import { renderObjectAdjust } from "./objectAdjust";
+import { applyCssFilterPixels, isNeutralCssFilter, supportsCanvasFilter } from "./photoTools";
 import {
   MIN_SELECTION_COVERAGE,
   clearSegmenterImageCache,
@@ -294,6 +295,10 @@ export type ManualEditorContextValue = {
 
   applyCroppedDataUrl: (dataUrl: string, fileName?: string) => Promise<string>;
 
+  applyCutoutFile: (file: File, originalFile?: File) => Promise<string>;
+
+  applyRetouchedFile: (file: File, originalFile?: File) => Promise<string>;
+
   cropAvailable: boolean;
 
   consumeCrop: () => void;
@@ -316,6 +321,18 @@ export type ManualEditorContextValue = {
 
   setSharp: (value: number) => void;
 
+  hue: number;
+
+  sepia: number;
+
+  grayscale: number;
+
+  setHue: (value: number) => void;
+
+  setSepia: (value: number) => void;
+
+  setGrayscale: (value: number) => void;
+
   zoom: number;
 
   rotation: number;
@@ -328,7 +345,7 @@ export type ManualEditorContextValue = {
 
   setFlipX: (value: boolean) => void;
 
-  downloadEdited: () => Promise<void>;
+  downloadEdited: (format?: "png" | "jpeg" | "webp", quality?: number) => Promise<void>;
 
   printEdited: () => Promise<void>;
 
@@ -541,6 +558,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   const [saturation, setSaturation] = useState(DEFAULT_FILTERS.saturation);
 
   const [sharp, setSharp] = useState(DEFAULT_FILTERS.sharp);
+  const [hue, setHue] = useState(0);
+  const [sepia, setSepia] = useState(0);
+  const [grayscale, setGrayscale] = useState(0);
 
   const [zoom, setZoom] = useState(100);
 
@@ -688,6 +708,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setSaturation(DEFAULT_FILTERS.saturation);
 
     setSharp(DEFAULT_FILTERS.sharp);
+    setHue(0);
+    setSepia(0);
+    setGrayscale(0);
 
     setZoom(100);
     setRotation(0);
@@ -891,6 +914,69 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       resetTransforms,
       resetObjectValues,
     ],
+  );
+
+  const applyCutoutFile = useCallback(
+    async (file: File, originalFile?: File) => {
+      const asset = await createPhotoAsset(file);
+      replaceActivePhoto(asset);
+
+      const compareFile = originalFile ?? file;
+      if (photoMode === "dual") {
+        setDualCompareOriginalFiles((current) => {
+          const next = [...current] as [File | null, File | null];
+          next[activeDualSlot] = compareFile;
+          return next;
+        });
+      } else {
+        setSingleCompareOriginalFile(compareFile);
+      }
+
+      // The applied PNG contains real alpha transparency. Keep that state so
+      // the renderer does not paint a solid background behind the cutout.
+      setBackgroundRemoved(true);
+      resetTransforms();
+      resetObjectValues();
+      setObjectMaskHistory([null]);
+      setObjectMaskHistoryIndex(0);
+      setCropAvailable(false);
+      setActiveAiTool(null);
+      setAiNotice("Cutout applied. Choose a background color or download the transparent PNG.");
+
+      return asset.url;
+    },
+    [activeDualSlot, createPhotoAsset, photoMode, replaceActivePhoto, resetTransforms, resetObjectValues],
+  );
+
+  /**
+   * Replace the active photo with a retouched version (Remove / Clone / Red-eye /
+   * Smooth / Blur / Pixelate). Unlike a cutout this keeps the current
+   * transparent-background state, crop transforms and background colour: the
+   * pixel dimensions are unchanged, so everything downstream (adjustments,
+   * export, print, save) keeps working on the new pixels.
+   */
+  const applyRetouchedFile = useCallback(
+    async (file: File, originalFile?: File) => {
+      const asset = await createPhotoAsset(file);
+      replaceActivePhoto(asset);
+
+      // Keep the first original so Before/After always compares with the upload.
+      if (originalFile) {
+        if (photoMode === "dual") {
+          setDualCompareOriginalFiles((current) => {
+            const next = [...current] as [File | null, File | null];
+            next[activeDualSlot] = next[activeDualSlot] ?? originalFile;
+            return next;
+          });
+        } else {
+          setSingleCompareOriginalFile((current) => current ?? originalFile);
+        }
+      }
+
+      setActiveAiTool(null);
+      return asset.url;
+    },
+    [activeDualSlot, createPhotoAsset, photoMode, replaceActivePhoto],
   );
 
   const handleFileInput = useCallback(
@@ -1473,6 +1559,8 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         transparent: "Transparent",
         upscale: "Upscale",
         cutout: "Cutout Editor",
+        retouch: "Retouch",
+        enhance: "Enhance & Restore",
       };
 
       setAiNotice(`${names[tool]} is not connected yet.`);
@@ -1697,8 +1785,11 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       `brightness(${100 + brightness}%)`,
       `contrast(${100 + contrast}%)`,
       `saturate(${100 + saturation}%)`,
+      `hue-rotate(${hue}deg)`,
+      `sepia(${sepia}%)`,
+      `grayscale(${grayscale}%)`,
     ].join(" ");
-  }, [brightness, contrast, saturation]);
+  }, [brightness, contrast, saturation, hue, sepia, grayscale]);
 
   const drawAsset = async (
     ctx: CanvasRenderingContext2D,
@@ -1709,9 +1800,35 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   ) => {
     const img = await loadImage(asset.url);
 
+    /*
+     * Safari (before 18) silently ignores CanvasRenderingContext2D.filter, which
+     * would export photos without brightness / contrast / hue / sepia / B&W.
+     * In that case bake the same filter chain into a temporary copy of the
+     * photo so the exported file matches the on-screen preview. Only the photo
+     * is filtered, never the background colour behind it.
+     */
+    const nativeFilter = supportsCanvasFilter(ctx);
+    const filterValues = { brightness, contrast, saturation, hue, sepia, grayscale };
+    let source: CanvasImageSource = img;
+    if (!nativeFilter && !isNeutralCssFilter(filterValues)) {
+      const temp = document.createElement("canvas");
+      temp.width = img.naturalWidth;
+      temp.height = img.naturalHeight;
+      const tempCtx = temp.getContext("2d", { willReadFrequently: true });
+      if (tempCtx) {
+        tempCtx.drawImage(img, 0, 0);
+        const pixels = tempCtx.getImageData(0, 0, temp.width, temp.height);
+        applyCssFilterPixels(pixels, filterValues);
+        tempCtx.putImageData(pixels, 0, 0);
+        source = temp;
+      }
+    }
+
     ctx.save();
 
-    ctx.filter = filterString;
+    if (nativeFilter) {
+      ctx.filter = filterString;
+    }
 
     ctx.translate(offsetX + targetW / 2, targetH / 2);
 
@@ -1742,7 +1859,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       Math.min(targetW / rotatedWidth, targetH / rotatedHeight) * (zoom / 100);
 
     ctx.drawImage(
-      img,
+      source,
       (-img.naturalWidth * scale) / 2,
       (-img.naturalHeight * scale) / 2,
       img.naturalWidth * scale,
@@ -1803,6 +1920,10 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
      */
     applyCanvasSharpness(ctx, sharp);
 
+    if (photoMode === "dual") {
+    } else {
+    }
+
     return canvas;
   }, [
     activePhoto,
@@ -1855,21 +1976,59 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     sharp,
   ]);
 
-  const downloadEdited = useCallback(async () => {
-    const canvas = await renderCurrentCanvas();
+  const downloadEdited = useCallback(async (
+    format: "png" | "jpeg" | "webp" = "png",
+    quality = 0.92,
+  ) => {
+    try {
+      const canvas = await renderCurrentCanvas();
 
-    if (!canvas || !activePhoto) {
-      return;
+      if (!canvas || !activePhoto) {
+        setSaveNotice("Upload a photo first.");
+        window.setTimeout(() => setSaveNotice(""), 2200);
+        return;
+      }
+
+      // JPEG cannot preserve transparency, so flatten transparent pixels over
+      // white rather than allowing browser-dependent black transparent areas.
+      if (format === "jpeg") {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.save();
+          ctx.globalCompositeOperation = "destination-over";
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+      }
+
+      const mime = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (value) => value ? resolve(value) : reject(new Error("The edited image could not be exported.")),
+          mime,
+          Math.max(0.4, Math.min(1, quality)),
+        );
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const extension = format === "jpeg" ? "jpg" : format;
+      link.download = fileName(activePhoto.file.name).replace(/\.png$/i, `.${extension}`);
+      link.href = url;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      const sizeLabel = blob.size >= 1024 * 1024
+        ? `${(blob.size / (1024 * 1024)).toFixed(2)} MB`
+        : `${Math.max(1, Math.round(blob.size / 1024))} KB`;
+      const transparencyNote = format === "png" && backgroundRemoved ? ", transparent" : format === "jpeg" ? ", flattened on white" : "";
+      setSaveNotice(`Downloaded ${extension.toUpperCase()} · ${canvas.width}×${canvas.height}px · ${sizeLabel}${transparencyNote}`);
+      window.setTimeout(() => setSaveNotice(""), 4500);
+    } catch (error) {
+      setSaveNotice(error instanceof Error ? error.message : "Could not export this image.");
+      window.setTimeout(() => setSaveNotice(""), 2600);
     }
-
-    const link = document.createElement("a");
-
-    link.download = fileName(activePhoto.file.name);
-
-    link.href = canvas.toDataURL("image/png");
-
-    link.click();
-  }, [activePhoto, renderCurrentCanvas]);
+  }, [activePhoto, backgroundRemoved, renderCurrentCanvas]);
 
   const closePrintStudio = useCallback(() => {
     setPrintStudioOpen(false);
@@ -2479,6 +2638,10 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
 
     applyCroppedDataUrl,
 
+    applyCutoutFile,
+
+    applyRetouchedFile,
+
     cropAvailable,
 
     consumeCrop,
@@ -2500,6 +2663,25 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
     setSaturation,
 
     setSharp,
+
+    hue,
+
+    sepia,
+
+    grayscale,
+
+    setHue,
+
+    setSepia,
+
+    setGrayscale,
+
+
+
+
+
+
+
 
     zoom,
 
