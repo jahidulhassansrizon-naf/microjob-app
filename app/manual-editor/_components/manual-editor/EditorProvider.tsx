@@ -30,6 +30,7 @@ import { canvasToBlob, fitSize, releaseCanvas } from "./canvasUtils";
 import {
   cancelCurrentAiOperation,
   enhanceFacesWithTransformers,
+  preloadUpscaler,
   upscaleImageWithEsrgan,
 } from "./aiEnhancement";
 import { renderObjectAdjust } from "./objectAdjust";
@@ -39,6 +40,7 @@ import {
   clearSegmenterImageCache,
   detectTargetMask,
   disposeSegmenter,
+  preloadBackgroundRemoval,
   preloadSegmenter,
   removeBackgroundFromImage,
 } from "./segmentation";
@@ -632,7 +634,25 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       void preloadSegmenter().catch(() => undefined);
     }, 250);
 
-    return () => window.clearTimeout(timer);
+    /*
+     * Background removal and Upscale are the two slow-start tools: they must
+     * download a model and start a runtime before the first pixel is touched.
+     * Do that quietly once a photo is on the canvas (staggered, so the page
+     * stays responsive) so the button click only pays for the real work.
+     */
+    const bgTimer = window.setTimeout(() => {
+      void preloadBackgroundRemoval();
+    }, 1200);
+
+    const upscaleTimer = window.setTimeout(() => {
+      preloadUpscaler();
+    }, 2400);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(bgTimer);
+      window.clearTimeout(upscaleTimer);
+    };
   }, [activePhoto?.url]);
 
   useEffect(() => {
@@ -1411,7 +1431,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
     try {
       const image = await loadImage(sourceUrl);
-      const blob = await upscaleImageWithEsrgan(image, setAiProgress);
+      const blob = await upscaleImageWithEsrgan(image, setAiProgress, {
+        onDevice: (device) => {
+          if (device === "wasm") {
+            setAiNotice(
+              "This browser has no GPU acceleration for AI, so upscaling runs on the CPU and takes longer. Use the latest Chrome or Edge for a much faster result.",
+            );
+          }
+        },
+      });
       image.src = "";
 
       const resultFile = new File(

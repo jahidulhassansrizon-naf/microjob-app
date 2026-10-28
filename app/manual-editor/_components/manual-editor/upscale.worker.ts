@@ -2,6 +2,8 @@
 
 "use strict";
 
+import { boxBlockFor, planarToRgbaBox, rgbaToPlanar } from "./upscaleMath";
+
 type OrtModule = typeof import("onnxruntime-web");
 type OrtSession = import("onnxruntime-web").InferenceSession;
 type InferenceDevice = "webgpu" | "wasm";
@@ -13,11 +15,27 @@ interface OrtBundle {
 
 type WorkerRequest =
   | { type: "warmup"; id: number }
-  | { type: "tile"; id: number; input: ArrayBuffer; width: number; height: number };
+  | {
+      type: "tile";
+      id: number;
+      /** RGBA bytes of the input tile (not float planes: 4x smaller to send). */
+      input: ArrayBuffer;
+      width: number;
+      height: number;
+      /** Wanted size multiplier of the returned tile (the model is x4). */
+      targetScale: number;
+    };
 
 type WorkerResponse =
-  | { type: "ready"; id: number }
-  | { type: "tile-result"; id: number; data: ArrayBuffer; width: number; height: number }
+  | { type: "ready"; id: number; device: InferenceDevice }
+  | {
+      type: "tile-result";
+      id: number;
+      /** Opaque RGBA bytes, already converted and averaged down to targetScale. */
+      data: ArrayBuffer;
+      width: number;
+      height: number;
+    }
   | { type: "error"; id: number; message: string };
 
 const MODEL_URL = "/models/realesr-general-x4v3.onnx";
@@ -153,52 +171,69 @@ async function runTile(
 
 const workerScope = self as unknown as DedicatedWorkerGlobalScope;
 
-workerScope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const message = event.data;
+/*
+ * The main thread keeps two tiles in flight so the model never waits for the
+ * UI thread. ORT sessions must not run concurrently, so every request is
+ * chained on this queue and processed strictly one after another.
+ */
+let workQueue: Promise<void> = Promise.resolve();
 
+function respond(response: WorkerResponse, transfer?: Transferable[]) {
+  workerScope.postMessage(response, transfer ?? []);
+}
+
+async function handle(message: WorkerRequest) {
   try {
     if (message.type === "warmup") {
       await getUpscaler();
-      const response: WorkerResponse = { type: "ready", id: message.id };
-      workerScope.postMessage(response);
+      respond({ type: "ready", id: message.id, device: device ?? "wasm" });
       return;
     }
 
-    const input = new Float32Array(message.input);
-    const result = await runTile(input, message.width, message.height);
-    // `TypedArray.buffer` is typed as ArrayBufferLike in newer TypeScript
-    // versions, while the worker response contract intentionally requires a
-    // concrete ArrayBuffer for transferable postMessage data. Create a compact
-    // ArrayBuffer copy so SharedArrayBuffer is never possible here.
-    const transferableBuffer = new ArrayBuffer(result.data.byteLength);
-    new Uint8Array(transferableBuffer).set(
-      new Uint8Array(
-        result.data.buffer,
-        result.data.byteOffset,
-        result.data.byteLength,
-      ),
+    const planar = rgbaToPlanar(
+      new Uint8ClampedArray(message.input),
+      message.width,
+      message.height,
     );
+    const result = await runTile(planar, message.width, message.height);
 
-    const response: WorkerResponse = {
-      type: "tile-result",
-      id: message.id,
-      data: transferableBuffer,
-      width: result.width,
-      height: result.height,
-    };
+    const block = boxBlockFor(
+      message.width,
+      result.width,
+      message.targetScale,
+    );
+    const small = planarToRgbaBox(result.data, result.width, result.height, block);
 
-    workerScope.postMessage(response, [transferableBuffer]);
+    // Compact ArrayBuffer copy so a SharedArrayBuffer is never possible here.
+    const buffer = new ArrayBuffer(small.rgba.byteLength);
+    new Uint8Array(buffer).set(small.rgba);
+
+    respond(
+      {
+        type: "tile-result",
+        id: message.id,
+        data: buffer,
+        width: small.width,
+        height: small.height,
+      },
+      [buffer],
+    );
   } catch (error) {
-    const response: WorkerResponse = {
+    respond({
       type: "error",
       id: message.id,
       message:
         error instanceof Error && error.message
           ? error.message
           : "Upscale worker failed.",
-    };
-    workerScope.postMessage(response);
+    });
   }
+}
+
+workerScope.onmessage = (event: MessageEvent<WorkerRequest>) => {
+  const message = event.data;
+
+  workQueue = workQueue.then(() => handle(message));
 };
 
 export {};

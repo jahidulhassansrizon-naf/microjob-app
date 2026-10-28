@@ -70,7 +70,7 @@ export default function Hero() {
               <video
                 ref={videoRef}
                 src={`${VIDEO_SRC}#t=0.1`}
-                aria-label={t("Studio Seba - Your Creative Toolbox")}
+                aria-label={t("Seba Lagbe - Your Creative Toolbox")}
                 playsInline
                 loop={false}
                 controls={!showOverlay}

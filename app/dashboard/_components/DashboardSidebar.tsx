@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { X, User as UserIcon, LayoutDashboard, FileText, Languages, Wallet, Settings, MessageCircle, PlayCircle, LogOut, Sparkles, PenLine, Images, LayoutTemplate, Printer, Wrench, Users, type LucideIcon, } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
+import BrandName from "@/app/_components/BrandName";
 interface UserData {
     fullName?: string;
     phoneNumber?: string;
@@ -103,7 +104,7 @@ const NAV_SECTIONS: NavSection[] = [
                 tone: "blue",
             },
             {
-                label: "SohozTools",
+                label: "Seba Lagbe Tools",
                 href: "/sohoj-tools",
                 icon: Wrench,
                 tone: "emerald",
@@ -214,11 +215,9 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#E3D6B8] px-4">
           <Link href="/dashboard" onClick={onClose} translate="no" className="flex cursor-pointer items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DC2626] text-[15px] font-bold tracking-tight text-white">
-              SS
+              SL
             </span>
-            <span className="text-[19px] font-bold tracking-tight text-[#3B2F1E]">
-              Studio<span className="text-[#DC2626]"> Seba</span>
-            </span>
+            <BrandName className="text-[19px] font-bold tracking-tight text-[#3B2F1E]" accentClassName="text-[#DC2626]" />
           </Link>
           <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-[#7A6A50] transition-colors hover:bg-[#EFE3C8] hover:text-[#5A4A32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
             <X size={18} strokeWidth={1.75}/>

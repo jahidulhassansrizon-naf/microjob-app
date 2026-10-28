@@ -95,8 +95,8 @@ const videoReviewsData = [
 const textReviews = [
   {
     quote:
-      "We use Studio Seba to create business cards, flyers and notices for our shop very quickly. We no longer depend on a designer — we finish the work ourselves in minutes.",
-    quoteBn: "আমরা আমাদের দোকানের বিজনেস কার্ড, ফ্লায়ার ও নোটিশ খুব দ্রুত তৈরি করতে Studio Seba ব্যবহার করি। এখন আর ডিজাইনারের ওপর নির্ভর করতে হয় না—কয়েক মিনিটেই নিজেরা কাজ শেষ করতে পারি।",
+      "We use Seba Lagbe to create business cards, flyers and notices for our shop very quickly. We no longer depend on a designer — we finish the work ourselves in minutes.",
+    quoteBn: "আমরা আমাদের দোকানের বিজনেস কার্ড, ফ্লায়ার ও নোটিশ খুব দ্রুত তৈরি করতে ‘সেবা লাগবে’ ব্যবহার করি। এখন আর ডিজাইনারের ওপর নির্ভর করতে হয় না—কয়েক মিনিটেই নিজেরা কাজ শেষ করতে পারি।",
     name: "Anom",
     nameBn: "অনম",
     shop: "Shop 129, Saptapadi Market, 7th Mor, Bogura",
@@ -113,8 +113,8 @@ const textReviews = [
   },
   {
     quote:
-      "As a computer shop we often handle NID, passport and visiting card jobs. Studio Seba tools make photo resizing and PDF creation fast.",
-    quoteBn: "কম্পিউটার দোকান হিসেবে আমরা প্রায়ই NID, পাসপোর্ট ও ভিজিটিং কার্ডের কাজ করি। Studio Seba-এর টুল দিয়ে ছবি রিসাইজ ও PDF তৈরি দ্রুত করা যায়।",
+      "As a computer shop we often handle NID, passport and visiting card jobs. Seba Lagbe tools make photo resizing and PDF creation fast.",
+    quoteBn: "কম্পিউটার দোকান হিসেবে আমরা প্রায়ই NID, পাসপোর্ট ও ভিজিটিং কার্ডের কাজ করি। ‘সেবা লাগবে’-এর টুল দিয়ে ছবি রিসাইজ ও PDF তৈরি দ্রুত করা যায়।",
     name: "Imtiaz Hossain",
     nameBn: "ইমতিয়াজ হোসেন",
     shop: "Tajma Computer & System, Saptapadi Market, 7th Mor, Bogura",
@@ -122,8 +122,8 @@ const textReviews = [
   },
   {
     quote:
-      "Studio Seba truly saves time for our shop. We edit templates and get print-ready files — customers stay happy too.",
-    quoteBn: "Studio Seba সত্যিই আমাদের দোকানের সময় বাঁচায়। আমরা টেমপ্লেট সম্পাদনা করে প্রিন্টের জন্য প্রস্তুত ফাইল তৈরি করি—গ্রাহকরাও খুশি থাকেন।",
+      "Seba Lagbe truly saves time for our shop. We edit templates and get print-ready files — customers stay happy too.",
+    quoteBn: "সেবা লাগবে সত্যিই আমাদের দোকানের সময় বাঁচায়। আমরা টেমপ্লেট সম্পাদনা করে প্রিন্টের জন্য প্রস্তুত ফাইল তৈরি করি—গ্রাহকরাও খুশি থাকেন।",
     name: "Moli Computer",
     nameBn: "মলি কম্পিউটার",
     shop: "Saptapadi Market, 2nd Floor, Satmatha, Bogura",
@@ -131,8 +131,8 @@ const textReviews = [
   },
   {
     quote:
-      "Our print shop gets many jobs daily. With ready-made designs on Studio Seba we just add details and deliver fast — revenue has grown too.",
-    quoteBn: "আমাদের প্রিন্টিং দোকানে প্রতিদিন অনেক কাজ আসে। Studio Seba-এর তৈরি ডিজাইনে শুধু তথ্য যোগ করেই দ্রুত কাজ ডেলিভারি দিতে পারি—আয়ও বেড়েছে।",
+      "Our print shop gets many jobs daily. With ready-made designs on Seba Lagbe we just add details and deliver fast — revenue has grown too.",
+    quoteBn: "আমাদের প্রিন্টিং দোকানে প্রতিদিন অনেক কাজ আসে। ‘সেবা লাগবে’-এর তৈরি ডিজাইনে শুধু তথ্য যোগ করেই দ্রুত কাজ ডেলিভারি দিতে পারি—আয়ও বেড়েছে।",
     name: "Rakibul Islam",
     nameBn: "রাকিবুল ইসলাম",
     shop: "Rakib Printing & Stationery, Thanchania, Bogura",
@@ -140,8 +140,8 @@ const textReviews = [
   },
   {
     quote:
-      "Studio Seba is very useful for family cards, fuel forms and government documents. Live preview helps reduce mistakes.",
-    quoteBn: "পারিবারিক কার্ড, ফুয়েল ফর্ম ও সরকারি নথির কাজে Studio Seba খুবই উপকারী। লাইভ প্রিভিউ ভুল কমাতে সাহায্য করে।",
+      "Seba Lagbe is very useful for family cards, fuel forms and government documents. Live preview helps reduce mistakes.",
+    quoteBn: "পারিবারিক কার্ড, ফুয়েল ফর্ম ও সরকারি নথির কাজে সেবা লাগবে খুবই উপকারী। লাইভ প্রিভিউ ভুল কমাতে সাহায্য করে।",
     name: "Salma Akter",
     nameBn: "সালমা আক্তার",
     shop: "Smart Digital Center, Sherpur Road, Bogura",
@@ -149,8 +149,8 @@ const textReviews = [
   },
   {
     quote:
-      "Studio Seba is excellent and perfect for beautiful photo work. I would give it a hundred out of a hundred.",
-    quoteBn: "সুন্দর ছবি সম্পাদনার জন্য Studio Seba চমৎকার ও দারুণ উপযোগী। আমি ১০০-এর মধ্যে ১০০ দেব।",
+      "Seba Lagbe is excellent and perfect for beautiful photo work. I would give it a hundred out of a hundred.",
+    quoteBn: "সুন্দর ছবি সম্পাদনার জন্য সেবা লাগবে চমৎকার ও দারুণ উপযোগী। আমি ১০০-এর মধ্যে ১০০ দেব।",
     name: "Masud Rana",
     nameBn: "মাসুদ রানা",
     shop: "Millat Plaza, near Judge Court, Bogura",
@@ -158,8 +158,8 @@ const textReviews = [
   },
   {
     quote:
-      "Using Studio Seba I do various photo editing, ID cards, banners and many other tasks — and I really like it. So I want to thank everyone at Studio Seba.",
-    quoteBn: "Studio Seba ব্যবহার করে আমি ছবি সম্পাদনা, আইডি কার্ড, ব্যানারসহ নানা কাজ করি—আমার সত্যিই ভালো লাগে। Studio Seba-এর সবাইকে ধন্যবাদ জানাই।",
+      "Using Seba Lagbe I do various photo editing, ID cards, banners and many other tasks — and I really like it. So I want to thank everyone at Seba Lagbe.",
+    quoteBn: "‘সেবা লাগবে’ ব্যবহার করে আমি ছবি সম্পাদনা, আইডি কার্ড, ব্যানারসহ নানা কাজ করি—আমার সত্যিই ভালো লাগে। ‘সেবা লাগবে’-এর সবাইকে ধন্যবাদ জানাই।",
     name: "Apel Mahamud",
     nameBn: "আপেল মাহমুদ",
     shop: "Saptapadi Market, 2nd Floor, Bogura",
@@ -167,8 +167,8 @@ const textReviews = [
   },
   {
     quote:
-      "I use Studio Seba tools, I do photo editing work here. The photo editing gets done very fast.",
-    quoteBn: "আমি Studio Seba-এর টুল ব্যবহার করে ছবি সম্পাদনার কাজ করি। এখানে ছবির সম্পাদনা খুব দ্রুত হয়ে যায়।",
+      "I use Seba Lagbe tools, I do photo editing work here. The photo editing gets done very fast.",
+    quoteBn: "আমি ‘সেবা লাগবে’-এর টুল ব্যবহার করে ছবি সম্পাদনার কাজ করি। এখানে ছবির সম্পাদনা খুব দ্রুত হয়ে যায়।",
     name: "Md Shakil Mia",
     nameBn: "মোঃ শাকিল মিয়া",
     shop: "Opposite the Police Super's Office, Bogura",
@@ -179,8 +179,8 @@ const textReviews = [
 const steps = [
   {
     icon: Wrench,
-    title: "Use Studio Seba",
-    titleBn: "Studio Seba ব্যবহার করুন",
+    title: "Use Seba Lagbe",
+    titleBn: "‘সেবা লাগবে’ ব্যবহার করুন",
     text: "Try documents, tools or print media yourself first.",
     textBn: "প্রথমে নিজে ডকুমেন্ট, টুল বা প্রিন্ট মিডিয়ার কাজ করে দেখুন।",
     tone: "bg-indigo-50 text-indigo-600 ring-indigo-100",
@@ -261,8 +261,8 @@ export default function ReviewsPage() {
   const formatNum = (value: number) =>
     value.toLocaleString(isBn ? "bn-BD" : "en-US");
   const whatsappMessage = isBn
-    ? "আসসালামু আলাইকুম, আমি Studio Seba সম্পর্কে আমার রিভিউ জমা দিতে চাই।"
-    : "Assalamu Alaikum, I want to submit a review about Studio Seba.";
+    ? "আসসালামু আলাইকুম, আমি ‘সেবা লাগবে’ সম্পর্কে আমার রিভিউ জমা দিতে চাই।"
+    : "Assalamu Alaikum, I want to submit a review about Seba Lagbe.";
   const whatsappHref = `https://api.whatsapp.com/send/?phone=8801783666743&text=${encodeURIComponent(whatsappMessage)}&type=phone_number&app_absent=0`;
 
   const [selectedVideo, setSelectedVideo] = useState<
@@ -295,8 +295,8 @@ export default function ReviewsPage() {
 
             <p className="mt-5 text-sm sm:text-base text-slate-600 max-w-xl font-medium leading-relaxed">
               {tx(
-                "Print shops, digital centers and shop owners across the country share their real experiences with Studio Seba.",
-                "দেশজুড়ে প্রিন্ট শপ, ডিজিটাল সেন্টার ও দোকানমালিকরা Studio Seba নিয়ে তাঁদের বাস্তব অভিজ্ঞতা শেয়ার করেন।",
+                "Print shops, digital centers and shop owners across the country share their real experiences with Seba Lagbe.",
+                "দেশজুড়ে প্রিন্ট শপ, ডিজিটাল সেন্টার ও দোকানমালিকরা ‘সেবা লাগবে’ নিয়ে তাঁদের বাস্তব অভিজ্ঞতা শেয়ার করেন।",
               )}
             </p>
           </div>
@@ -423,8 +423,8 @@ export default function ReviewsPage() {
                 </h3>
                 <p className="mt-4 text-sm sm:text-base text-indigo-100/90 font-medium leading-relaxed max-w-md">
                   {tx(
-                    "We are recording short videos with shop owners who use Studio Seba every day. They will be published here very soon.",
-                    "যেসব দোকানমালিক প্রতিদিন Studio Seba ব্যবহার করেন, তাঁদের সঙ্গে আমরা ছোট ভিডিও রেকর্ড করছি। খুব শিগগিরই সেগুলো এখানে প্রকাশ করা হবে।",
+                    "We are recording short videos with shop owners who use Seba Lagbe every day. They will be published here very soon.",
+                    "যেসব দোকানমালিক প্রতিদিন ‘সেবা লাগবে’ ব্যবহার করেন, তাঁদের সঙ্গে আমরা ছোট ভিডিও রেকর্ড করছি। খুব শিগগিরই সেগুলো এখানে প্রকাশ করা হবে।",
                   )}
                 </p>
 

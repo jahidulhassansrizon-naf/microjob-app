@@ -8,6 +8,12 @@ import {
   get2d,
   releaseCanvas,
 } from "./canvasUtils";
+import {
+  buildTileSpecs,
+  planUpscale,
+  tilePlacement,
+  type TileSpec,
+} from "./upscaleMath";
 
 type CanvasSource = HTMLImageElement | HTMLCanvasElement;
 type ProgressCallback = (progress: number) => void;
@@ -25,16 +31,22 @@ export type Detection = {
   box: Box;
 };
 
+/** Opaque RGBA tile, already converted and averaged down to the x2 result. */
 type TileResult = {
-  data: Float32Array;
+  data: Uint8ClampedArray;
   width: number;
   height: number;
 };
 
-const UPSCALE_MAX_INPUT_SIDE = 1600;
+export type UpscaleDevice = "webgpu" | "wasm";
+
+type UpscaleReply =
+  | { kind: "tile"; tile: TileResult }
+  | { kind: "ready"; device: UpscaleDevice };
+
+/** The editor keeps a x2 result (the model itself is x4). */
+const UPSCALE_FACTOR = 2;
 const WHOLE_IMAGE_MAX_SIDE = 256;
-const TILE_SIZE = 128;
-const TILE_OVERLAP = 20;
 const FACE_DETECTION_SIDE = 512;
 const FACE_MAX_WORKING_SIDE = 4096;
 
@@ -51,11 +63,15 @@ let faceWorkerPending: {
 
 let upscaleWorker: Worker | null = null;
 let upscaleWorkerRequestId = 0;
-let upscaleWorkerPending: {
-  id: number;
-  resolve: (result: TileResult) => void;
-  reject: (error: Error) => void;
-} | null = null;
+/* Several tiles can be in flight at once (see upscaleImageWithEsrgan). */
+const upscaleWorkerPending = new Map<
+  number,
+  {
+    resolve: (reply: UpscaleReply) => void;
+    reject: (error: Error) => void;
+  }
+>();
+let upscaleReady: Promise<UpscaleDevice> | null = null;
 
 function assertBrowser() {
   if (typeof window === "undefined" || typeof document === "undefined") {
@@ -104,14 +120,22 @@ function terminateFaceWorker() {
   }
 }
 
+function rejectAllUpscalePending(error: Error) {
+  const pending = [...upscaleWorkerPending.values()];
+
+  upscaleWorkerPending.clear();
+
+  for (const entry of pending) {
+    entry.reject(error);
+  }
+}
+
 function terminateUpscaleWorker() {
   upscaleWorker?.terminate();
   upscaleWorker = null;
+  upscaleReady = null;
 
-  if (upscaleWorkerPending) {
-    upscaleWorkerPending.reject(createCancelledError());
-    upscaleWorkerPending = null;
-  }
+  rejectAllUpscalePending(createCancelledError());
 }
 
 function getFaceWorker(): Worker {
@@ -215,16 +239,16 @@ function getUpscaleWorker(): Worker {
         data?: ArrayBuffer;
         width?: number;
         height?: number;
+        device?: UpscaleDevice;
         message?: string;
       }>,
     ) => {
       const message = event.data;
-      if (!upscaleWorkerPending || message.id !== upscaleWorkerPending.id) {
-        return;
-      }
+      const pending = upscaleWorkerPending.get(message.id);
 
-      const pending = upscaleWorkerPending;
-      upscaleWorkerPending = null;
+      if (!pending) return;
+
+      upscaleWorkerPending.delete(message.id);
 
       if (
         message.type === "tile-result" &&
@@ -233,22 +257,30 @@ function getUpscaleWorker(): Worker {
         message.height
       ) {
         pending.resolve({
-          data: new Float32Array(message.data),
-          width: message.width,
-          height: message.height,
+          kind: "tile",
+          tile: {
+            data: new Uint8ClampedArray(message.data),
+            width: message.width,
+            height: message.height,
+          },
         });
+      } else if (message.type === "ready") {
+        pending.resolve({ kind: "ready", device: message.device ?? "wasm" });
       } else if (message.type === "error") {
         pending.reject(
           new Error(message.message || "Upscale worker failed."),
         );
+      } else {
+        pending.reject(new Error("Upscale worker returned an invalid reply."));
       }
     };
 
     worker.onerror = (event) => {
-      const pending = upscaleWorkerPending;
-      upscaleWorkerPending = null;
       upscaleWorker = null;
-      pending?.reject(new Error(event.message || "Upscale worker failed."));
+      upscaleReady = null;
+      rejectAllUpscalePending(
+        new Error(event.message || "Upscale worker failed."),
+      );
     };
 
     upscaleWorker = worker;
@@ -257,8 +289,39 @@ function getUpscaleWorker(): Worker {
   return upscaleWorker;
 }
 
+/**
+ * Loads the model in the worker (once) and reports which device it runs on:
+ * "webgpu" = real GPU, "wasm" = CPU fallback (much slower).
+ */
+export function warmupUpscaler(): Promise<UpscaleDevice> {
+  if (!upscaleReady) {
+    const worker = getUpscaleWorker();
+    const id = ++upscaleWorkerRequestId;
+
+    const promise = new Promise<UpscaleDevice>((resolve, reject) => {
+      upscaleWorkerPending.set(id, {
+        resolve: (reply) =>
+          reply.kind === "ready"
+            ? resolve(reply.device)
+            : reject(new Error("Upscale worker returned an invalid reply.")),
+        reject,
+      });
+
+      worker.postMessage({ type: "warmup", id });
+    });
+
+    upscaleReady = promise;
+
+    promise.catch(() => {
+      if (upscaleReady === promise) upscaleReady = null;
+    });
+  }
+
+  return upscaleReady;
+}
+
 function runTileInWorker(
-  input: Float32Array,
+  rgba: ArrayBuffer,
   width: number,
   height: number,
   signal: AbortSignal,
@@ -269,40 +332,25 @@ function runTileInWorker(
   const id = ++upscaleWorkerRequestId;
 
   return new Promise((resolve, reject) => {
-    let settled = false;
+    upscaleWorkerPending.set(id, {
+      resolve: (reply) =>
+        reply.kind === "tile"
+          ? resolve(reply.tile)
+          : reject(new Error("Upscale worker returned an invalid reply.")),
+      reject,
+    });
 
-    const onAbort = () => {
-      if (upscaleWorkerPending?.id === id) {
-        upscaleWorkerPending = null;
-      }
-      terminateUpscaleWorker();
-      finish(() => reject(createCancelledError()));
-    };
-
-    const finish = (fn: () => void) => {
-      if (settled) return;
-      settled = true;
-      signal.removeEventListener("abort", onAbort);
-      fn();
-    };
-
-    upscaleWorkerPending = {
-      id,
-      resolve: (result) => finish(() => resolve(result)),
-      reject: (error) => finish(() => reject(error)),
-    };
-
-    signal.addEventListener("abort", onAbort, { once: true });
-
+    // Cancelling terminates the worker, which rejects every pending tile.
     worker.postMessage(
       {
         type: "tile",
         id,
-        input: input.buffer,
+        input: rgba,
         width,
         height,
+        targetScale: UPSCALE_FACTOR,
       },
-      [input.buffer],
+      [rgba],
     );
   });
 }
@@ -347,18 +395,28 @@ function drawToCanvas(source: CanvasSource, maxSide: number) {
 
 const nextTick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-const toByte = (value: number) => {
-  const rounded = Math.round(value * 255);
-  return rounded < 0 ? 0 : rounded > 255 ? 255 : rounded;
+export type UpscaleOptions = {
+  /** Called once the model is ready, before the first tile is processed. */
+  onDevice?: (device: UpscaleDevice) => void;
 };
 
 /**
  * 2x Super Resolution. Model inference lives in a dedicated worker so a
  * long ONNX/WebGPU/WASM inference cannot freeze the editor's main thread.
+ *
+ * Speed design (the work is dominated by input pixels x overlap waste):
+ *  - the input is capped per device (GPU 1280 px, CPU 640 px longest side);
+ *    a 2x result of that is already far above passport/print needs;
+ *  - larger tiles with a small overlap (waste 1.27x instead of 1.72x);
+ *  - the worker converts and 2x2-averages each tile, so only a small RGBA
+ *    tile is sent back, and the UI thread just copies it into place;
+ *  - two tiles are kept in flight: while the model works on tile N, the UI
+ *    thread already cuts tile N+1 and paints tile N-1.
  */
 export function upscaleImageWithEsrgan(
   source: CanvasSource,
   onProgress?: ProgressCallback,
+  options?: UpscaleOptions,
 ): Promise<Blob> {
   assertBrowser();
 
@@ -366,10 +424,26 @@ export function upscaleImageWithEsrgan(
     const report = throttleProgress(onProgress);
     report(0);
 
-    const input = drawToCanvas(source, UPSCALE_MAX_INPUT_SIDE);
+    const device = await warmupUpscaler();
+    throwIfAborted(signal);
+    options?.onDevice?.(device);
+
+    const plan = planUpscale(device);
+
+    // Upscale is for small photos. A photo above the cap would have to be
+    // shrunk first, which defeats the purpose (and costs minutes), so say so.
+    const original = sourceSize(source);
+
+    if (Math.max(original.width, original.height) > plan.maxInputSide) {
+      throw new Error(
+        `This photo is already large (${original.width} x ${original.height} px). Upscale is for small photos (up to ${plan.maxInputSide} px on the longest side on this device).`,
+      );
+    }
+
+    const input = drawToCanvas(source, plan.maxInputSide);
     const sourceWidth = input.width;
     const sourceHeight = input.height;
-    const factor = 2;
+    const factor = UPSCALE_FACTOR;
 
     const output = createCanvas(sourceWidth * factor, sourceHeight * factor);
     const outputCtx = get2d(output);
@@ -380,102 +454,125 @@ export function upscaleImageWithEsrgan(
 
     try {
       const whole = Math.max(sourceWidth, sourceHeight) <= WHOLE_IMAGE_MAX_SIDE;
-      const tileSize = whole ? Math.max(sourceWidth, sourceHeight) : TILE_SIZE;
-      const overlap = whole ? 0 : TILE_OVERLAP;
-      const cols = Math.ceil(sourceWidth / tileSize);
-      const rows = Math.ceil(sourceHeight / tileSize);
-      const totalTiles = cols * rows;
-      let completed = 0;
+      const tileSize = whole
+        ? Math.max(sourceWidth, sourceHeight)
+        : plan.tileSize;
+      const overlap = whole ? 0 : plan.overlap;
+      const specs: TileSpec[] = buildTileSpecs(
+        sourceWidth,
+        sourceHeight,
+        tileSize,
+        overlap,
+      );
 
-      for (let row = 0; row < rows; row += 1) {
-        for (let col = 0; col < cols; col += 1) {
-          throwIfAborted(signal);
+      const totalTiles = specs.length;
+      const jobs: Array<Promise<TileResult> | undefined> = [];
 
-          const x = col * tileSize;
-          const y = row * tileSize;
-          const coreWidth = Math.min(tileSize, sourceWidth - x);
-          const coreHeight = Math.min(tileSize, sourceHeight - y);
-          const sx0 = Math.max(0, x - overlap);
-          const sy0 = Math.max(0, y - overlap);
-          const sx1 = Math.min(sourceWidth, x + coreWidth + overlap);
-          const sy1 = Math.min(sourceHeight, y + coreHeight + overlap);
-          const tileWidth = sx1 - sx0;
-          const tileHeight = sy1 - sy0;
+      const launch = (index: number) => {
+        if (index >= totalTiles || jobs[index]) return;
 
-          tileIn.width = tileWidth;
-          tileIn.height = tileHeight;
-          tileInCtx.drawImage(
-            input,
-            sx0,
-            sy0,
-            tileWidth,
-            tileHeight,
-            0,
-            0,
-            tileWidth,
-            tileHeight,
-          );
+        const spec = specs[index];
 
-          const rgba = tileInCtx.getImageData(
-            0,
-            0,
-            tileWidth,
-            tileHeight,
-          ).data;
-          const plane = tileWidth * tileHeight;
-          const planar = new Float32Array(3 * plane);
+        tileIn.width = spec.tileWidth;
+        tileIn.height = spec.tileHeight;
+        tileInCtx.drawImage(
+          input,
+          spec.sx0,
+          spec.sy0,
+          spec.tileWidth,
+          spec.tileHeight,
+          0,
+          0,
+          spec.tileWidth,
+          spec.tileHeight,
+        );
 
-          for (let i = 0; i < plane; i += 1) {
-            const index = i * 4;
-            planar[i] = rgba[index] / 255;
-            planar[plane + i] = rgba[index + 1] / 255;
-            planar[2 * plane + i] = rgba[index + 2] / 255;
-          }
+        const rgba = tileInCtx.getImageData(
+          0,
+          0,
+          spec.tileWidth,
+          spec.tileHeight,
+        ).data;
 
-          const tile = await runTileInWorker(
-            planar,
-            tileWidth,
-            tileHeight,
-            signal,
-          );
-          throwIfAborted(signal);
+        const job = runTileInWorker(
+          rgba.buffer as ArrayBuffer,
+          spec.tileWidth,
+          spec.tileHeight,
+          signal,
+        );
 
-          const imageData = tileOutCtx.createImageData(
+        // A tile that is never awaited (cancel / earlier error) must not
+        // surface as an unhandled rejection.
+        job.catch(() => undefined);
+        jobs[index] = job;
+      };
+
+      launch(0);
+      launch(1);
+
+      for (let index = 0; index < totalTiles; index += 1) {
+        throwIfAborted(signal);
+
+        const spec = specs[index];
+        const tile = await jobs[index];
+
+        jobs[index] = undefined;
+        throwIfAborted(signal);
+
+        // Cut the tile after next while the model is busy with the next one.
+        launch(index + 2);
+
+        if (
+          tile &&
+          tile.width === spec.tileWidth * factor &&
+          tile.height === spec.tileHeight * factor
+        ) {
+          // Exact x2 tile: copy only the core region straight into place.
+          const imageData = new ImageData(
+            tile.data as Uint8ClampedArray<ArrayBuffer>,
             tile.width,
             tile.height,
           );
-          const pixels = imageData.data;
-          const outputPlane = tile.width * tile.height;
 
-          for (let i = 0; i < outputPlane; i += 1) {
-            const index = i * 4;
-            pixels[index] = toByte(tile.data[i]);
-            pixels[index + 1] = toByte(tile.data[outputPlane + i]);
-            pixels[index + 2] = toByte(tile.data[2 * outputPlane + i]);
-            pixels[index + 3] = 255;
-          }
+          const place = tilePlacement(spec, factor);
+
+          outputCtx.putImageData(
+            imageData,
+            place.dx,
+            place.dy,
+            place.dirtyX,
+            place.dirtyY,
+            place.dirtyWidth,
+            place.dirtyHeight,
+          );
+        } else if (tile) {
+          // Unexpected model scale: fall back to canvas resampling.
+          const imageData = new ImageData(
+            tile.data as Uint8ClampedArray<ArrayBuffer>,
+            tile.width,
+            tile.height,
+          );
 
           tileOut.width = tile.width;
           tileOut.height = tile.height;
           tileOutCtx.putImageData(imageData, 0, 0);
 
-          const scale = tile.width / tileWidth;
+          const scale = tile.width / spec.tileWidth;
+
           outputCtx.drawImage(
             tileOut,
-            (x - sx0) * scale,
-            (y - sy0) * scale,
-            coreWidth * scale,
-            coreHeight * scale,
-            x * factor,
-            y * factor,
-            coreWidth * factor,
-            coreHeight * factor,
+            (spec.x - spec.sx0) * scale,
+            (spec.y - spec.sy0) * scale,
+            spec.coreWidth * scale,
+            spec.coreHeight * scale,
+            spec.x * factor,
+            spec.y * factor,
+            spec.coreWidth * factor,
+            spec.coreHeight * factor,
           );
-
-          completed += 1;
-          report((completed / totalTiles) * 0.97);
-          await nextTick();
         }
+
+        report(((index + 1) / totalTiles) * 0.97);
       }
 
       const alpha = createCanvas(output.width, output.height);
@@ -735,9 +832,7 @@ export function preloadUpscaler() {
   if (typeof window === "undefined") return;
 
   try {
-    const worker = getUpscaleWorker();
-    const id = ++upscaleWorkerRequestId;
-    worker.postMessage({ type: "warmup", id });
+    void warmupUpscaler().catch(() => undefined);
   } catch {
     // Best-effort warmup only.
   }

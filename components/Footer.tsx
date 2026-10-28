@@ -60,11 +60,11 @@ export default function Footer() {
       href: "/login?redirect=/questions-create/create",
     },
     { title: "Job Circular", href: "/login?redirect=/jobs" },
-    { title: "Studio Seba Tools", href: "/login?redirect=/sohoj-tools" },
+    { title: "Seba Lagbe Tools", href: "/login?redirect=/sohoj-tools" },
   ];
 
   const pagesLinks: Array<{ title: string; href?: string; target?: string; comingSoon?: boolean }> = [
-    { title: "What is Studio Seba?", href: "/help" },
+    { title: "What is Seba Lagbe?", href: "/help" },
     { title: "About Us", href: "/about" },
     { title: "Our Team", href: "/our-team" },
     { title: "Contact", href: "/contact" },
@@ -123,17 +123,17 @@ export default function Footer() {
             {/* Logo */}
             <Link href="/" className="flex w-fit items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-[13px] font-black tracking-tight text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/20">
-                SS
+                SL
               </div>
               <div className="leading-none">
                 <span className="text-[19px] font-extrabold tracking-tight text-white">
-                  Studio{" "}
+                  Seba{" "}
                   <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-                    Seba
+                    Lagbe
                   </span>
                 </span>
                 <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <T>{"STUDIO SEBA\r\n                "}</T>
+                  <T>{"SEBA LAGBE\r\n                "}</T>
                 </span>
               </div>
             </Link>
@@ -141,7 +141,7 @@ export default function Footer() {
             <p className="max-w-sm text-sm leading-relaxed text-slate-400">
               <T>
                 {
-                  "Studio Seba Platform \u2014 document creation, design, print media, and AI\r\n              tools \u2014 all in one place.\r\n            "
+                  "Seba Lagbe Platform \u2014 document creation, design, print media, and AI\r\n              tools \u2014 all in one place.\r\n            "
                 }
               </T>
             </p>
@@ -271,7 +271,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Socials */}
         <div className="mb-8 flex flex-col items-center justify-between gap-4 border-t border-slate-800/80 pt-8 text-xs text-slate-500 sm:flex-row">
           <p>
-            <T>{"\u00A9 2026 Studio Seba. All rights reserved."}</T>
+            <T>{"\u00A9 2026 Seba Lagbe. All rights reserved."}</T>
           </p>
 
           <div className="flex items-center gap-3">

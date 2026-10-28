@@ -70,3 +70,35 @@ None. Uses `react` and `lucide-react` only.
 ## Still not implemented (and why)
 - AI Object Remover (true inpainting), AI Photo Colorizer: need a neural model; see the decision list in the chat summary. Nothing fake was added.
 - Background Blur, Smart Background Replace extras, Smart Compressor, AI Passport Fit, extra Develop sliders (Exposure/Temperature/Tint/Highlights/Shadows/Vibrance/Vignette), free crop / straighten / perspective, AI-tools category regrouping, Bangla strings for the new modal.
+
+---
+
+# Pass 4: Speed (Remove BG, Upscale, Object Adjust) + tool guide
+
+## Why it was slow (found by reading the code)
+- **Remove BG** gave the full-resolution photo to `@imgly/background-removal`. The model only ever sees 1024 px, but the library still decoded, resized, composited and PNG-encoded the whole photo. After Upscale or Object Adjust the photo is a 2000-3200 px PNG, so every Remove BG afterwards got slower. The model and runtime were also only loaded on the first click.
+- **Upscale** ran 128 px tiles with 20 px overlap (1.72x wasted work), one tile at a time, and every tile came back as a full x4 float image (~5 MB) that the UI thread converted and downscaled. Input could be up to 1600 px. A 1200x1600 photo meant 130 sequential model calls.
+- **Object Adjust** sent the full-resolution bitmap to the segmentation worker although the model works on 256 px.
+
+## What changed
+- `segmentation.ts` - `removeBackgroundFromImage`: model runs on a <= 1024 px copy; the returned cut-out is used as a soft alpha mask on the ORIGINAL pixels (output keeps the photo's resolution, cap 4096). Mask cached per file (Remove BG then Cutout Editor = one model run). GPU (WebGPU) device is requested when available, with automatic CPU retry. New `preloadBackgroundRemoval()`.
+- `EditorProvider.tsx` - once a photo is on the canvas the BG model (after 1.2 s) and the upscaler (after 2.4 s) are preloaded in the background. Hovering Remove BG / Transparent / Cutout Editor also preloads. A CPU-only browser gets a clear notice before Upscale starts.
+- `upscaleMath.ts` (new, pure, unit-tested) + `upscale.worker.ts` + `aiEnhancement.ts` - tile size 256/overlap 16 on GPU (192/12 on CPU); RGBA tiles in, already-averaged x2 RGBA tiles out (conversion and 2x2 averaging moved into the worker); two tiles in flight so the model never waits for the UI thread; tiles are copied straight into place with `putImageData` (no intermediate canvas); the per-tile `setTimeout` yield was removed.
+- **Behaviour change (on purpose):** Upscale now accepts photos up to 1280 px (GPU) / 640 px (CPU) on the longest side. A larger photo shows "This photo is already large..." instead of being shrunk and re-enlarged, which cost minutes and could not make it sharper. To change the limits edit `planUpscale()` in `upscaleMath.ts` (and the numbers in `toolGuide.ts`; a test checks they match).
+- `segmentation.ts` - Object Adjust segmentation input is shrunk to <= 1024 px before it is sent to the worker.
+- `toolGuide.ts` (new) + `AiToolsPanel.tsx` - every one of the 10 tools has a "what it does / use it when / good to know" text in English and Bangla: a hover/focus card under the buttons, a native tooltip, and a "How to use each tool" list. `manualEditorI18n.tsx` got the matching Bangla button labels and notices.
+- `BackgroundPanel.tsx` - Remove BG button preloads the model on hover/focus.
+- The duplicate nested folder `manual-editor/manual-editor/` (byte-identical copy) was left out of the ZIP.
+
+## Verification actually performed
+- `tests/upscaleMath.test.ts`: 25 checks pass in Node (pixel conversion, 2x2 averaging, tile geometry covers every pixel exactly once, a synthetic image rebuilt tile by tile equals the whole-image result, plan numbers match the on-screen guide, guide text complete in both languages). `tests/photoEnhance.test.ts` still 33/33.
+- Changed `aiEnhancement.ts`, `segmentation.ts`, `upscale.worker.ts`, `AiToolsPanel.tsx`, `BackgroundPanel.tsx` type-check under `tsc --strict` against typed stubs for `@imgly/background-removal`, `onnxruntime-web`, `@mediapipe/tasks-vision` and React. Every `.ts/.tsx` file parses. Full project type-check / `next build` could not be run (no `package.json`, `@/lib/*`, `fabric`, `node_modules` in the ZIP).
+- **NOT done:** no real-browser run, so no measured timings. The speed-up is from removing work (arithmetic above), not from a stopwatch.
+
+## Things to check in the real project
+- `@imgly/background-removal` must export `preload` (all 1.x versions do). `proxyToWorker`, `device`, `model` are passed through a loosely-typed object, so an older version simply ignores what it does not know.
+- Optional, bigger win for CPU-only browsers: serve the app with cross-origin isolation (COOP/COEP headers) so ONNX can use several threads. Not changed here because it can break third-party CDN assets.
+- Optional: self-host the imgly model files (`publicPath`) to avoid CDN latency on the first run.
+
+## New npm packages
+None.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 import Footer from "@/components/Footer";
 
 const FOUNDER_IMAGE_URL =
@@ -41,7 +41,7 @@ const opportunities: Opportunity[] = [
   {
     title: "Marketing & Community",
     description:
-      "Help more people discover Studio Seba, listen to feedback, and grow a useful community.",
+      "Help more people discover Seba Lagbe, listen to feedback, and grow a useful community.",
     type: "Growth",
   },
   {
@@ -98,6 +98,8 @@ function RoleIcon({ index }: { index: number }) {
 }
 
 export default function OurTeamPage() {
+  const { locale } = useI18n();
+  const isBn = locale === "bn";
   const [photoFailed, setPhotoFailed] = useState(false);
 
   return (
@@ -111,10 +113,10 @@ export default function OurTeamPage() {
           </div>
 
           <section className="team-intro">
-            <div className="eyebrow"><SparkIcon /><T>Building Studio Seba together</T></div>
+            <div className="eyebrow"><SparkIcon />{isBn ? "সেবা লাগবে গড়ে তুলি একসঙ্গে" : "Building Seba Lagbe together"}</div>
             <h1><T>One founder. A growing vision.</T></h1>
             <p className="intro-copy">
-              <T>Studio Seba is being built step by step, with a clear goal: make useful digital work simpler and more accessible.</T>
+              {isBn ? "সেবা লাগবে ধাপে ধাপে তৈরি হচ্ছে, একটি স্পষ্ট লক্ষ্য নিয়ে: দরকারি ডিজিটাল কাজকে আরও সহজ ও সবার নাগালে আনা।" : "Seba Lagbe is being built step by step, with a clear goal: make useful digital work simpler and more accessible."}
             </p>
           </section>
 
@@ -124,13 +126,13 @@ export default function OurTeamPage() {
                 <img
                   className="founder-photo"
                   src={FOUNDER_IMAGE_URL}
-                  alt="Studio Seba founder"
+                  alt={isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder"}
                   loading="eager"
                   referrerPolicy="no-referrer"
                   onError={() => setPhotoFailed(true)}
                 />
               ) : (
-                <div className="founder-photo-fallback" aria-label="Studio Seba founder">SS</div>
+                <div className="founder-photo-fallback" aria-label={isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder"}>SL</div>
               )}
               <span className="founder-online-dot" aria-hidden="true" />
             </div>
@@ -139,7 +141,7 @@ export default function OurTeamPage() {
             <h2 id="founder-heading"><T>Founder & Website Administrator</T></h2>
             <p className="founder-subtitle"><T>Solo Full-Stack Developer</T></p>
             <p className="founder-bio">
-              <T>I started building Studio Seba independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.</T>
+              {isBn ? "আমি প্রায় দুই মাস আগে নিজের উদ্যোগে সেবা লাগবে তৈরি করা শুরু করেছি। নিজেই হাতে-কলমে কাজ করছি, শিখছি এবং ব্যবহারিক পণ্য ও ভালো সহযোগিতায় আগ্রহী মানুষের সঙ্গে প্ল্যাটফর্মটিকে এগিয়ে নিতে চাই।" : "I started building Seba Lagbe independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork."}
             </p>
             <div className="founder-tags">
               <span><T>Built independently</T></span>
@@ -154,7 +156,7 @@ export default function OurTeamPage() {
           <section className="opportunities-section" aria-labelledby="opportunities-heading">
             <div className="section-heading">
               <div className="eyebrow"><SparkIcon /><T>Open collaboration opportunities</T></div>
-              <h2 id="opportunities-heading"><T>Help shape what Studio Seba becomes.</T></h2>
+              <h2 id="opportunities-heading">{isBn ? "সেবা লাগবে-এর ভবিষ্যৎ গড়তে সাহায্য করুন।" : "Help shape what Seba Lagbe becomes."}</h2>
               <p>
                 <T>I’m currently building the platform on my own. If you have skills, ideas, or energy to help it grow, there may be a place for you here.</T>
               </p>
@@ -168,7 +170,7 @@ export default function OurTeamPage() {
                     <span className="opportunity-type"><T>{opportunity.type}</T></span>
                   </div>
                   <h3><T>{opportunity.title}</T></h3>
-                  <p><T>{opportunity.description}</T></p>
+                  <p><T>{opportunity.description.replace(/সেবা লাগবে|Seba Lagbe/g, isBn ? "সেবা লাগবে" : "Seba Lagbe")}</T></p>
                   <a href="/contact" className="opportunity-link">
                     <T>Discuss this opportunity</T><ArrowIcon />
                   </a>

@@ -18,7 +18,7 @@ export default function RegisteredAddress() {
             <T>{"Home workspace"}</T> <span className="text-[#4359DC]"><T>{"& contact details"}</T></span>
           </h2>
           <p className="mx-auto mt-4 max-w-[690px] text-[15px] leading-7 text-[#555D70] sm:text-[16px]">
-            <T>{"Studio Seba is a solo developer-operated project. The platform is currently built and managed from a home workspace rather than a separate public office."}</T>
+            <T>{"Seba Lagbe is a solo developer-operated project. The platform is currently built and managed from a home workspace rather than a separate public office."}</T>
           </p>
         </motion.div>
 
@@ -39,7 +39,7 @@ export default function RegisteredAddress() {
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EDF0FF] text-[#4659DB]"><UserRound className="h-5 w-5" /></span>
               <div>
                 <h3 className="text-[16px] font-extrabold text-[#172033]"><T>{"Independently operated"}</T></h3>
-                <p className="mt-1 text-[13px] leading-6 text-[#646B7B]"><T>{"Studio Seba is currently developed and maintained by one full-stack developer."}</T></p>
+                <p className="mt-1 text-[13px] leading-6 text-[#646B7B]"><T>{"Seba Lagbe is currently developed and maintained by one full-stack developer."}</T></p>
               </div>
             </div>
             <a href={`tel:${PHONE}`} className="flex items-start gap-4 border-b border-[#E9E3D2] py-5 transition hover:opacity-80">

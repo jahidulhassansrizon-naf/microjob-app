@@ -1,6 +1,7 @@
 "use client";
 
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
+import BrandName from "@/app/_components/BrandName";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,8 @@ import {
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { locale } = useI18n();
+  const isBn = locale === "bn";
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -103,7 +106,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-white font-sans text-slate-900">
-      {/* Soft blue-violet atmosphere used across the Studio Seba website. */}
+      {/* Soft blue-violet atmosphere used across the সেবা লাগবে website. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-36 -top-36 h-[26rem] w-[26rem] rounded-full bg-blue-200/45 blur-3xl" />
         <div className="absolute -right-36 top-10 h-[30rem] w-[30rem] rounded-full bg-violet-200/50 blur-3xl" />
@@ -112,11 +115,11 @@ export default function ForgotPasswordPage() {
       </div>
 
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
-        <Link href="/" aria-label="Studio Seba home" className="group inline-flex min-w-0 items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">SS</span>
+        <Link href="/" aria-label={isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home"} className="group inline-flex min-w-0 items-center gap-2.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">SL</span>
           <span className="min-w-0 leading-none">
-            <span className="block text-lg font-black tracking-tight text-slate-900 sm:text-xl">Studio <span className="text-indigo-600">Seba</span></span>
-            <span className="mt-1.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400 sm:text-[9px]">STUDIO SEBA</span>
+            <BrandName className="block text-lg font-black tracking-tight text-slate-900 sm:text-xl" accentClassName="text-indigo-600" />
+            <span className="mt-1.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400 sm:text-[9px]">{isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}</span>
           </span>
         </Link>
         <Link href="/login" className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200/90 bg-white/80 px-3.5 py-2.5 text-xs font-bold text-slate-600 shadow-sm backdrop-blur transition hover:border-indigo-200 hover:text-indigo-600 sm:px-4">
@@ -206,7 +209,7 @@ export default function ForgotPasswordPage() {
             )}
           </div>
 
-          <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">© {new Date().getFullYear()} Studio Seba. <T>All rights reserved.</T></p>
+          <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">© {new Date().getFullYear()} <BrandName accentClassName="text-slate-400" />. <T>All rights reserved.</T></p>
         </section>
       </main>
     </div>

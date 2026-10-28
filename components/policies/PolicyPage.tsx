@@ -20,17 +20,17 @@ type PolicyContent = {
 
 const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
   terms: {
-    eyebrow: ["STUDIO SEBA · PLATFORM GUIDELINES", "স্টুডিও সেবা · প্ল্যাটফর্ম নির্দেশিকা"],
+    eyebrow: ["SEBA LAGBE · PLATFORM GUIDELINES", "“সেবা লাগবে” · প্ল্যাটফর্ম নির্দেশিকা"],
     title: ["Terms of Service", "ব্যবহারের শর্তাবলি"],
     intro: [
-      "These terms explain how you may use Studio Seba, an independently developed digital-work platform offering online tools and creative utilities. By accessing or using the platform, you agree to these terms. If you do not agree, please stop using the service.",
-      "এই শর্তাবলিতে স্টুডিও সেবা ব্যবহারের নিয়ম ব্যাখ্যা করা হয়েছে। স্টুডিও সেবা একটি স্বতন্ত্রভাবে তৈরি ডিজিটাল কাজের প্ল্যাটফর্ম, যেখানে অনলাইন টুল ও সৃজনশীল সুবিধা রয়েছে। প্ল্যাটফর্ম ব্যবহার করলে আপনি এই শর্তগুলোতে সম্মত হচ্ছেন। সম্মত না হলে সেবা ব্যবহার বন্ধ রাখুন।",
+      "These terms explain how you may use Seba Lagbe, an independently developed digital-work platform offering online tools and creative utilities. By accessing or using the platform, you agree to these terms. If you do not agree, please stop using the service.",
+      "এই শর্তাবলিতে “সেবা লাগবে” ব্যবহারের নিয়ম ব্যাখ্যা করা হয়েছে। “সেবা লাগবে” একটি স্বতন্ত্রভাবে তৈরি ডিজিটাল কাজের প্ল্যাটফর্ম, যেখানে অনলাইন টুল ও সৃজনশীল সুবিধা রয়েছে। প্ল্যাটফর্ম ব্যবহার করলে আপনি এই শর্তগুলোতে সম্মত হচ্ছেন। সম্মত না হলে সেবা ব্যবহার বন্ধ রাখুন।",
     ],
     icon: "terms",
     sections: [
-      { heading: ["1. About Studio Seba", "১. স্টুডিও সেবা সম্পর্কে"], paragraphs: [[
-        "Studio Seba is built and maintained independently. It provides digital tools that may include photo and image editing, AI-assisted features, document and PDF utilities, templates, and other productivity tools. Available features may change as development continues.",
-        "স্টুডিও সেবা স্বাধীনভাবে তৈরি ও পরিচালিত হচ্ছে। এখানে ছবি সম্পাদনা, এআই-সহায়ক সুবিধা, ডকুমেন্ট ও পিডিএফ টুল, টেমপ্লেট এবং অন্যান্য কাজের টুল থাকতে পারে। উন্নয়নের সঙ্গে সুবিধাগুলো পরিবর্তিত হতে পারে।",
+      { heading: ["1. About Seba Lagbe", "১. “সেবা লাগবে” সম্পর্কে"], paragraphs: [[
+        "Seba Lagbe is built and maintained independently. It provides digital tools that may include photo and image editing, AI-assisted features, document and PDF utilities, templates, and other productivity tools. Available features may change as development continues.",
+        "“সেবা লাগবে” স্বাধীনভাবে তৈরি ও পরিচালিত হচ্ছে। এখানে ছবি সম্পাদনা, এআই-সহায়ক সুবিধা, ডকুমেন্ট ও পিডিএফ টুল, টেমপ্লেট এবং অন্যান্য কাজের টুল থাকতে পারে। উন্নয়নের সঙ্গে সুবিধাগুলো পরিবর্তিত হতে পারে।",
       ]] },
       { heading: ["2. Accounts and access", "২. অ্যাকাউন্ট ও ব্যবহার"], bullets: [
         ["Provide information that is accurate to the best of your knowledge and keep your sign-in details secure.", "আপনার জানা অনুযায়ী সঠিক তথ্য দিন এবং লগইনের তথ্য নিরাপদে রাখুন।"],
@@ -41,8 +41,8 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         "Tools and AI-assisted outputs are provided to help with everyday tasks. Results may be incomplete, inaccurate, or unsuitable for a particular purpose. Review every generated or edited result before relying on it, publishing it, printing it, or submitting it to an authority.",
         "দৈনন্দিন কাজ সহজ করার জন্য টুল ও এআই-সহায়ক ফলাফল দেওয়া হয়। ফলাফল অসম্পূর্ণ, ভুল বা কোনো নির্দিষ্ট কাজের জন্য অনুপযুক্ত হতে পারে। তৈরি বা সম্পাদিত ফলাফল ব্যবহার, প্রকাশ, প্রিন্ট বা কোনো কর্তৃপক্ষের কাছে জমা দেওয়ার আগে নিজে যাচাই করুন।",
       ], [
-        "Studio Seba does not replace professional, legal, financial, medical, government, or other official advice or decisions.",
-        "স্টুডিও সেবা পেশাগত, আইনি, আর্থিক, চিকিৎসা, সরকারি বা অন্য কোনো আনুষ্ঠানিক পরামর্শ কিংবা সিদ্ধান্তের বিকল্প নয়।",
+        "Seba Lagbe does not replace professional, legal, financial, medical, government, or other official advice or decisions.",
+        "“সেবা লাগবে” পেশাগত, আইনি, আর্থিক, চিকিৎসা, সরকারি বা অন্য কোনো আনুষ্ঠানিক পরামর্শ কিংবা সিদ্ধান্তের বিকল্প নয়।",
       ]] },
       { heading: ["4. Acceptable use", "৪. গ্রহণযোগ্য ব্যবহার"], bullets: [
         ["Use the platform only for lawful purposes and only with material you have the right to use.", "শুধু আইনসম্মত কাজে এবং আপনার ব্যবহারের অধিকার আছে এমন উপকরণ দিয়েই প্ল্যাটফর্ম ব্যবহার করুন।"],
@@ -50,8 +50,8 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         ["Do not attempt to disrupt, reverse-engineer, bypass access controls, or gain unauthorized access to the service or its systems.", "সেবা বা এর সিস্টেমে বিঘ্ন ঘটানো, অনুমতি ছাড়া প্রবেশ, নিরাপত্তা ব্যবস্থা এড়ানো বা অননুমোদিতভাবে প্রযুক্তিগত কাঠামো বিশ্লেষণের চেষ্টা করবেন না।"],
       ] },
       { heading: ["5. Your files and content", "৫. আপনার ফাইল ও কনটেন্ট"], paragraphs: [[
-        "You keep the rights you already hold in the files, photos, text, and other material you submit. You give Studio Seba permission to process that material only as reasonably needed to provide the feature you request, maintain security, and troubleshoot the service.",
-        "আপনার আপলোড করা ফাইল, ছবি, লেখা ও অন্যান্য উপকরণের ওপর আগে থেকে থাকা অধিকার আপনারই থাকবে। আপনি যে সুবিধাটি চান তা দিতে, নিরাপত্তা বজায় রাখতে এবং সমস্যা সমাধান করতে যতটুকু প্রয়োজন, ততটুকু প্রক্রিয়াকরণের অনুমতি স্টুডিও সেবাকে দিচ্ছেন।",
+        "You keep the rights you already hold in the files, photos, text, and other material you submit. You give Seba Lagbe permission to process that material only as reasonably needed to provide the feature you request, maintain security, and troubleshoot the service.",
+        "আপনার আপলোড করা ফাইল, ছবি, লেখা ও অন্যান্য উপকরণের ওপর আগে থেকে থাকা অধিকার আপনারই থাকবে। আপনি যে সুবিধাটি চান তা দিতে, নিরাপত্তা বজায় রাখতে এবং সমস্যা সমাধান করতে যতটুকু প্রয়োজন, ততটুকু প্রক্রিয়াকরণের অনুমতি “সেবা লাগবে”-কে দিচ্ছেন।",
       ], [
         "Make sure you have permission to upload any personal information, photograph, document, or third-party work. Avoid uploading sensitive information unless the feature requires it and you are authorized to do so.",
         "ব্যক্তিগত তথ্য, ছবি, নথি বা অন্যের কাজ আপলোড করার অনুমতি আপনার আছে কি না নিশ্চিত করুন। কোনো সুবিধার জন্য প্রয়োজনীয় ও অনুমোদিত না হলে সংবেদনশীল তথ্য আপলোড করা এড়িয়ে চলুন।",
@@ -64,12 +64,12 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         "পেমেন্ট তৃতীয় পক্ষের পেমেন্ট সেবাদাতার মাধ্যমে পরিচালিত হতে পারে। তাদের শর্ত ও গোপনীয়তার নিয়মও প্রযোজ্য হতে পারে। ভুল বা অনুপস্থিত লেনদেনের ক্ষেত্রে লেনদেনের রেফারেন্স ও প্রাসঙ্গিক তথ্যসহ যোগাযোগ করুন; ইমেইলে সম্পূর্ণ কার্ডের তথ্য পাঠাবেন না।",
       ]] },
       { heading: ["7. Platform intellectual property", "৭. প্ল্যাটফর্মের মেধাস্বত্ব"], paragraphs: [[
-        "Unless stated otherwise, Studio Seba’s original branding, interface, written material, and platform code are owned by or used with permission by the platform operator. These terms do not transfer ownership to you. Separate licences may apply to third-party assets and open-source software.",
-        "অন্যভাবে উল্লেখ না থাকলে স্টুডিও সেবাের নিজস্ব ব্র্যান্ডিং, ইন্টারফেস, লেখা ও প্ল্যাটফর্মের কোড প্ল্যাটফর্ম পরিচালকের মালিকানাধীন অথবা অনুমতিসাপেক্ষে ব্যবহৃত। এই শর্তের মাধ্যমে সেগুলোর মালিকানা আপনার কাছে হস্তান্তর হয় না। তৃতীয় পক্ষের উপকরণ ও ওপেন-সোর্স সফটওয়্যারে আলাদা লাইসেন্স প্রযোজ্য হতে পারে।",
+        "Unless stated otherwise, Seba Lagbe’s original branding, interface, written material, and platform code are owned by or used with permission by the platform operator. These terms do not transfer ownership to you. Separate licences may apply to third-party assets and open-source software.",
+        "অন্যভাবে উল্লেখ না থাকলে “সেবা লাগবে”-এর নিজস্ব ব্র্যান্ডিং, ইন্টারফেস, লেখা ও প্ল্যাটফর্মের কোড প্ল্যাটফর্ম পরিচালকের মালিকানাধীন অথবা অনুমতিসাপেক্ষে ব্যবহৃত। এই শর্তের মাধ্যমে সেগুলোর মালিকানা আপনার কাছে হস্তান্তর হয় না। তৃতীয় পক্ষের উপকরণ ও ওপেন-সোর্স সফটওয়্যারে আলাদা লাইসেন্স প্রযোজ্য হতে পারে।",
       ]] },
       { heading: ["8. External services", "৮. বাহ্যিক সেবা"], paragraphs: [[
-        "Some features may rely on external hosting, AI, payment, messaging, or other service providers. Studio Seba is not responsible for independent services that it does not operate, and their availability may affect the corresponding feature.",
-        "কিছু সুবিধা বাহ্যিক হোস্টিং, এআই, পেমেন্ট, বার্তা পাঠানো বা অন্যান্য সেবাদাতার ওপর নির্ভর করতে পারে। স্টুডিও সেবাের নিয়ন্ত্রণে নেই এমন স্বতন্ত্র সেবার জন্য স্টুডিও সেবা দায়ী নয় এবং সেগুলোর প্রাপ্যতা সংশ্লিষ্ট সুবিধায় প্রভাব ফেলতে পারে।",
+        "Some features may rely on external hosting, AI, payment, messaging, or other service providers. Seba Lagbe is not responsible for independent services that it does not operate, and their availability may affect the corresponding feature.",
+        "কিছু সুবিধা বাহ্যিক হোস্টিং, এআই, পেমেন্ট, বার্তা পাঠানো বা অন্যান্য সেবাদাতার ওপর নির্ভর করতে পারে। “সেবা লাগবে”-এর নিয়ন্ত্রণে নেই এমন স্বতন্ত্র সেবার জন্য “সেবা লাগবে” দায়ী নয় এবং সেগুলোর প্রাপ্যতা সংশ্লিষ্ট সুবিধায় প্রভাব ফেলতে পারে।",
       ]] },
       { heading: ["9. Availability and liability", "৯. সেবার প্রাপ্যতা ও দায়"], paragraphs: [[
         "We aim to keep the platform useful and available, but we cannot promise uninterrupted access or that every feature will always be error-free. To the extent permitted by applicable law, the platform is provided on an “as available” basis and we are not liable for indirect loss caused by reliance on an unverified result or a temporary outage.",
@@ -84,17 +84,17 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         "আইনগতভাবে বাদ দেওয়া যায় না এমন ভোক্তা বা অন্যান্য অধিকার সাপেক্ষে, এই শর্তাবলি বাংলাদেশের প্রযোজ্য আইন অনুযায়ী ব্যাখ্যা করার উদ্দেশ্যে তৈরি।",
       ]] },
       { heading: ["12. Contact", "১২. যোগাযোগ"], paragraphs: [[
-        "For questions about these terms, contact the Studio Seba operator using the details below.",
-        "এই শর্তাবলি সম্পর্কে প্রশ্ন থাকলে নিচের তথ্য ব্যবহার করে স্টুডিও সেবা পরিচালকের সঙ্গে যোগাযোগ করুন।",
+        "For questions about these terms, contact the Seba Lagbe operator using the details below.",
+        "এই শর্তাবলি সম্পর্কে প্রশ্ন থাকলে নিচের তথ্য ব্যবহার করে “সেবা লাগবে” পরিচালকের সঙ্গে যোগাযোগ করুন।",
       ]] },
     ],
   },
   privacy: {
-    eyebrow: ["STUDIO SEBA · YOUR DATA", "স্টুডিও সেবা · আপনার তথ্য"],
+    eyebrow: ["SEBA LAGBE · YOUR DATA", "“সেবা লাগবে” · আপনার তথ্য"],
     title: ["Privacy Policy", "গোপনীয়তা নীতি"],
     intro: [
-      "This policy explains what information may be processed when you use Studio Seba and how it is used to operate the platform. The exact information depends on the features you choose and the details you provide.",
-      "স্টুডিও সেবা ব্যবহার করার সময় কী ধরনের তথ্য প্রক্রিয়াকরণ হতে পারে এবং প্ল্যাটফর্ম চালাতে সেগুলো কীভাবে ব্যবহৃত হয়, এই নীতিতে তা ব্যাখ্যা করা হয়েছে। আপনি কোন সুবিধা ব্যবহার করছেন এবং কী তথ্য দিচ্ছেন তার ওপর তথ্যের ধরন নির্ভর করে।",
+      "This policy explains what information may be processed when you use Seba Lagbe and how it is used to operate the platform. The exact information depends on the features you choose and the details you provide.",
+      "“সেবা লাগবে” ব্যবহার করার সময় কী ধরনের তথ্য প্রক্রিয়াকরণ হতে পারে এবং প্ল্যাটফর্ম চালাতে সেগুলো কীভাবে ব্যবহৃত হয়, এই নীতিতে তা ব্যাখ্যা করা হয়েছে। আপনি কোন সুবিধা ব্যবহার করছেন এবং কী তথ্য দিচ্ছেন তার ওপর তথ্যের ধরন নির্ভর করে।",
     ],
     icon: "privacy",
     sections: [
@@ -121,7 +121,7 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
       ]] },
       { heading: ["5. When information may be shared", "৫. কখন তথ্য ভাগ করা হতে পারে"], paragraphs: [[
         "We do not sell personal information as a business model. Information may be processed by providers that help operate the platform, such as hosting, authentication, payment, messaging, or AI providers, but only as relevant to the feature or transaction. Information may also be disclosed when required by applicable law or when needed to protect the platform and its users.",
-        "ব্যক্তিগত তথ্য বিক্রি করা স্টুডিও সেবাের ব্যবসায়িক মডেল নয়। হোস্টিং, পরিচয় যাচাই, পেমেন্ট, বার্তা বা এআই সেবাদাতার মতো প্ল্যাটফর্ম পরিচালনায় সহায়তাকারী সেবাদাতারা সংশ্লিষ্ট সুবিধা বা লেনদেনের জন্য প্রয়োজনমতো তথ্য প্রক্রিয়া করতে পারে। প্রযোজ্য আইন অনুযায়ী বাধ্য হলে বা প্ল্যাটফর্ম ও ব্যবহারকারীদের সুরক্ষায় প্রয়োজন হলেও তথ্য প্রকাশ হতে পারে।",
+        "ব্যক্তিগত তথ্য বিক্রি করা “সেবা লাগবে”-এর ব্যবসায়িক মডেল নয়। হোস্টিং, পরিচয় যাচাই, পেমেন্ট, বার্তা বা এআই সেবাদাতার মতো প্ল্যাটফর্ম পরিচালনায় সহায়তাকারী সেবাদাতারা সংশ্লিষ্ট সুবিধা বা লেনদেনের জন্য প্রয়োজনমতো তথ্য প্রক্রিয়া করতে পারে। প্রযোজ্য আইন অনুযায়ী বাধ্য হলে বা প্ল্যাটফর্ম ও ব্যবহারকারীদের সুরক্ষায় প্রয়োজন হলেও তথ্য প্রকাশ হতে পারে।",
       ]] },
       { heading: ["6. Cookies and local storage", "৬. কুকি ও স্থানীয় সংরক্ষণ"], paragraphs: [[
         "The site may use cookies, local storage, or similar technologies to remember your language or preferences, maintain sessions, and support security or essential functionality. Browser settings may allow you to clear or block some of these technologies, although parts of the platform may then not work as intended.",
@@ -136,8 +136,8 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         "আপনার দেওয়া ব্যক্তিগত তথ্য সম্পর্কে জানতে, সংশোধন করতে বা প্রযোজ্য ক্ষেত্রে মুছে ফেলার অনুরোধ করতে পারেন। নিরাপত্তা, লেনদেনের রেকর্ড, আইনি বাধ্যবাধকতা বা বিরোধ নিষ্পত্তির জন্য কিছু তথ্য রাখা প্রয়োজন হতে পারে। অনুরোধে ব্যবস্থা নেওয়ার আগে পরিচয় যাচাই করতে হতে পারে।",
       ]] },
       { heading: ["9. Children’s privacy", "৯. শিশুদের গোপনীয়তা"], paragraphs: [[
-        "Studio Seba is not designed to encourage children to submit personal information without adult guidance. If you are a parent or guardian and believe a child has provided personal information inappropriately, contact us so we can review the situation.",
-        "প্রাপ্তবয়স্কের তত্ত্বাবধান ছাড়া শিশুদের ব্যক্তিগত তথ্য দিতে উৎসাহিত করার জন্য স্টুডিও সেবা তৈরি করা হয়নি। আপনি অভিভাবক হলে এবং মনে করেন কোনো শিশু অনুপযুক্তভাবে ব্যক্তিগত তথ্য দিয়েছে, তাহলে বিষয়টি যাচাইয়ের জন্য যোগাযোগ করুন।",
+        "Seba Lagbe is not designed to encourage children to submit personal information without adult guidance. If you are a parent or guardian and believe a child has provided personal information inappropriately, contact us so we can review the situation.",
+        "প্রাপ্তবয়স্কের তত্ত্বাবধান ছাড়া শিশুদের ব্যক্তিগত তথ্য দিতে উৎসাহিত করার জন্য “সেবা লাগবে” তৈরি করা হয়নি। আপনি অভিভাবক হলে এবং মনে করেন কোনো শিশু অনুপযুক্তভাবে ব্যক্তিগত তথ্য দিয়েছে, তাহলে বিষয়টি যাচাইয়ের জন্য যোগাযোগ করুন।",
       ]] },
       { heading: ["10. Updates and contact", "১০. নীতির পরিবর্তন ও যোগাযোগ"], paragraphs: [[
         "We may update this policy when the platform or its practices change. The latest version will be published on this page. For privacy questions or requests, contact us using the details below.",
@@ -146,30 +146,30 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
     ],
     },
   copyright: {
-    eyebrow: ["STUDIO SEBA · ORIGINAL WORK & RIGHTS", "স্টুডিও সেবা · সৃজনশীল কাজ ও অধিকার"],
+    eyebrow: ["SEBA LAGBE · ORIGINAL WORK & RIGHTS", "“সেবা লাগবে” · সৃজনশীল কাজ ও অধিকার"],
     title: ["Copyright Policy", "কপিরাইট নীতি"],
     intro: [
-      "Studio Seba respects the rights of creators and expects users to do the same. This policy explains the general approach to original platform material, user-submitted content, and reports of possible copyright infringement.",
-      "স্টুডিও সেবা স্রষ্টাদের অধিকারকে সম্মান করে এবং ব্যবহারকারীদেরও তা করতে উৎসাহিত করে। নিজস্ব প্ল্যাটফর্মের উপকরণ, ব্যবহারকারীর জমা দেওয়া কনটেন্ট এবং সম্ভাব্য কপিরাইট লঙ্ঘনের অভিযোগ সম্পর্কে এই নীতিতে ব্যাখ্যা করা হয়েছে।",
+      "Seba Lagbe respects the rights of creators and expects users to do the same. This policy explains the general approach to original platform material, user-submitted content, and reports of possible copyright infringement.",
+      "“সেবা লাগবে” স্রষ্টাদের অধিকারকে সম্মান করে এবং ব্যবহারকারীদেরও তা করতে উৎসাহিত করে। নিজস্ব প্ল্যাটফর্মের উপকরণ, ব্যবহারকারীর জমা দেওয়া কনটেন্ট এবং সম্ভাব্য কপিরাইট লঙ্ঘনের অভিযোগ সম্পর্কে এই নীতিতে ব্যাখ্যা করা হয়েছে।",
     ],
     icon: "copyright",
     sections: [
-      { heading: ["1. Studio Seba material", "১. স্টুডিও সেবাের নিজস্ব উপকরণ"], paragraphs: [[
-        "Unless a page or asset states otherwise, the Studio Seba name and branding, original written content, interface design, original graphics, and platform code are owned by the operator or used with permission. Third-party logos, libraries, fonts, images, and open-source components may be governed by their own licences.",
-        "কোনো পেজ বা উপকরণে ভিন্নভাবে উল্লেখ না থাকলে স্টুডিও সেবাের নাম ও ব্র্যান্ডিং, নিজস্ব লেখা, ইন্টারফেস ডিজাইন, নিজস্ব গ্রাফিক্স এবং প্ল্যাটফর্ম কোড পরিচালকের মালিকানাধীন অথবা অনুমতিসাপেক্ষে ব্যবহৃত। তৃতীয় পক্ষের লোগো, লাইব্রেরি, ফন্ট, ছবি ও ওপেন-সোর্স উপাদানের ক্ষেত্রে তাদের নিজস্ব লাইসেন্স প্রযোজ্য হতে পারে।",
+      { heading: ["1. Seba Lagbe material", "১. “সেবা লাগবে”-এর নিজস্ব উপকরণ"], paragraphs: [[
+        "Unless a page or asset states otherwise, the Seba Lagbe name and branding, original written content, interface design, original graphics, and platform code are owned by the operator or used with permission. Third-party logos, libraries, fonts, images, and open-source components may be governed by their own licences.",
+        "কোনো পেজ বা উপকরণে ভিন্নভাবে উল্লেখ না থাকলে “সেবা লাগবে”-এর নাম ও ব্র্যান্ডিং, নিজস্ব লেখা, ইন্টারফেস ডিজাইন, নিজস্ব গ্রাফিক্স এবং প্ল্যাটফর্ম কোড পরিচালকের মালিকানাধীন অথবা অনুমতিসাপেক্ষে ব্যবহৃত। তৃতীয় পক্ষের লোগো, লাইব্রেরি, ফন্ট, ছবি ও ওপেন-সোর্স উপাদানের ক্ষেত্রে তাদের নিজস্ব লাইসেন্স প্রযোজ্য হতে পারে।",
       ]] },
       { heading: ["2. Content you submit or create", "২. আপনার জমা দেওয়া বা তৈরি কনটেন্ট"], paragraphs: [[
         "You remain responsible for ensuring that you own or have permission to use material you upload, edit, or provide as an AI prompt. You retain any rights you hold in your own material. You allow the platform to process it only as needed to provide the requested feature, subject to the Terms of Service and the applicable feature’s operation.",
         "আপলোড, সম্পাদনা বা এআই প্রম্পট হিসেবে দেওয়া উপকরণের মালিকানা বা ব্যবহারের অনুমতি আছে কি না নিশ্চিত করার দায়িত্ব আপনার। নিজের উপকরণের ওপর আপনার বিদ্যমান অধিকার আপনার কাছেই থাকবে। ব্যবহারের শর্ত ও সংশ্লিষ্ট সুবিধার কার্যপ্রণালি অনুযায়ী অনুরোধ করা সুবিধা দিতে যতটুকু প্রয়োজন, ততটুকু প্রক্রিয়াকরণের অনুমতি আপনি প্ল্যাটফর্মকে দিচ্ছেন।",
       ]] },
       { heading: ["3. What users may not do", "৩. ব্যবহারকারীর নিষিদ্ধ কাজ"], bullets: [
-        ["Do not copy, sell, republish, or distribute Studio Seba’s original material except where permission or an applicable licence allows it.", "অনুমতি বা প্রযোজ্য লাইসেন্স না থাকলে স্টুডিও সেবাের নিজস্ব উপকরণ কপি, বিক্রি, পুনঃপ্রকাশ বা বিতরণ করবেন না।"],
+        ["Do not copy, sell, republish, or distribute Seba Lagbe’s original material except where permission or an applicable licence allows it.", "অনুমতি বা প্রযোজ্য লাইসেন্স না থাকলে “সেবা লাগবে”-এর নিজস্ব উপকরণ কপি, বিক্রি, পুনঃপ্রকাশ বা বিতরণ করবেন না।"],
         ["Do not upload, process, or share another person’s copyrighted work in a way that infringes their rights.", "অন্যের কপিরাইট লঙ্ঘন করে এমনভাবে তার কাজ আপলোড, প্রক্রিয়াকরণ বা শেয়ার করবেন না।"],
         ["If a tool’s output resembles third-party material, check the rights and permissions before using or publishing it.", "কোনো টুলের ফলাফল তৃতীয় পক্ষের উপকরণের মতো হলে তা ব্যবহার বা প্রকাশের আগে অধিকার ও অনুমতি যাচাই করুন।"],
       ] },
       { heading: ["4. How to report a copyright concern", "৪. কপিরাইট-সংক্রান্ত অভিযোগ জানানোর নিয়ম"], paragraphs: [[
-        "If you believe material available through Studio Seba infringes a copyright you own or are authorized to represent, email us with enough detail for us to identify and review the material.",
-        "স্টুডিও সেবাের মাধ্যমে পাওয়া কোনো উপকরণ আপনার মালিকানাধীন বা আপনার প্রতিনিধিত্বের অনুমতি আছে এমন কপিরাইট লঙ্ঘন করছে বলে মনে হলে উপকরণটি শনাক্ত ও যাচাই করার মতো পর্যাপ্ত তথ্যসহ ইমেইল করুন।",
+        "If you believe material available through Seba Lagbe infringes a copyright you own or are authorized to represent, email us with enough detail for us to identify and review the material.",
+        "“সেবা লাগবে”-এর মাধ্যমে পাওয়া কোনো উপকরণ আপনার মালিকানাধীন বা আপনার প্রতিনিধিত্বের অনুমতি আছে এমন কপিরাইট লঙ্ঘন করছে বলে মনে হলে উপকরণটি শনাক্ত ও যাচাই করার মতো পর্যাপ্ত তথ্যসহ ইমেইল করুন।",
       ]], bullets: [
         ["Your name and a working contact email.", "আপনার নাম ও সচল যোগাযোগের ইমেইল।"],
         ["A description of the copyrighted work and where the original can be found, if available.", "কপিরাইটযুক্ত কাজের বিবরণ এবং সম্ভব হলে মূল কাজটি কোথায় পাওয়া যাবে।"],
@@ -181,8 +181,8 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
         "আমরা সৎ বিশ্বাসে অভিযোগ যাচাই করব এবং অতিরিক্ত তথ্য চাইতে পারি। উপযুক্ত ক্ষেত্রে যাচাই চলাকালে উপকরণে প্রবেশ সীমিত বা সেটি সরানো হতে পারে। অভিযোগ জমা দিলেই নির্দিষ্ট ফলাফলের নিশ্চয়তা নেই; জেনেশুনে মিথ্যা বা বিভ্রান্তিকর অভিযোগ উপেক্ষা করা হতে পারে বা আইন অনুযায়ী ব্যবস্থা নেওয়া হতে পারে।",
       ]] },
       { heading: ["6. Changes and contact", "৬. পরিবর্তন ও যোগাযোগ"], paragraphs: [[
-        "We may update this policy as Studio Seba develops. For copyright questions or a notice, contact the platform operator at the address below.",
-        "স্টুডিও সেবাের উন্নয়নের সঙ্গে এই নীতি পরিবর্তিত হতে পারে। কপিরাইট-সংক্রান্ত প্রশ্ন বা অভিযোগের জন্য নিচের ঠিকানায় প্ল্যাটফর্ম পরিচালকের সঙ্গে যোগাযোগ করুন।",
+        "We may update this policy as Seba Lagbe develops. For copyright questions or a notice, contact the platform operator at the address below.",
+        "“সেবা লাগবে”-এর উন্নয়নের সঙ্গে এই নীতি পরিবর্তিত হতে পারে। কপিরাইট-সংক্রান্ত প্রশ্ন বা অভিযোগের জন্য নিচের ঠিকানায় প্ল্যাটফর্ম পরিচালকের সঙ্গে যোগাযোগ করুন।",
       ]] },
     ],
   },
@@ -244,14 +244,14 @@ export default function PolicyPage({ type }: { type: "terms" | "privacy" | "copy
             <div className="sh-policy-contact">
               <div className="sh-policy-contact-icon"><Mail size={19} /></div>
               <div>
-                <h2>{isBn ? "যোগাযোগ" : "Contact Studio Seba"}</h2>
+                <h2>{isBn ? "যোগাযোগ" : "Contact Seba Lagbe"}</h2>
                 <p>{isBn ? "এই নীতিগুলো সম্পর্কে প্রশ্ন, তথ্য সংশোধন বা কপিরাইট-সংক্রান্ত অনুরোধের জন্য যোগাযোগ করুন।" : "For policy questions, data requests, or copyright concerns, contact us."}</p>
                 <a href="mailto:jahidulhassansrizon@gmail.com">jahidulhassansrizon@gmail.com</a><br />
                 <a href="tel:+88017836666743">017836666743</a>
                 <p style={{ marginTop: 7 }}>{isBn ? "বউ বাজার রোড, টঙ্গী, গাজীপুর ১২৩০, বাংলাদেশ" : "Bou Bazar Road, Tongi, Gazipur 1230, Bangladesh"}</p>
               </div>
             </div>
-            <p className="sh-policy-note">{isBn ? "এই নীতিগুলো স্টুডিও সেবাের বর্তমান কার্যপ্রণালি সম্পর্কে সাধারণ তথ্য দেয়। প্রকাশের আগে প্রযোজ্য আইন ও বাস্তব ডেটা-প্রক্রিয়াকরণের সঙ্গে মিলিয়ে নিন।" : "These policies describe the platform’s current intended practices. They should be reviewed against applicable law and actual data-handling practices before launch."}</p>
+            <p className="sh-policy-note">{isBn ? "এই নীতিগুলো “সেবা লাগবে”-এর বর্তমান কার্যপ্রণালি সম্পর্কে সাধারণ তথ্য দেয়। প্রকাশের আগে প্রযোজ্য আইন ও বাস্তব ডেটা-প্রক্রিয়াকরণের সঙ্গে মিলিয়ে নিন।" : "These policies describe the platform’s current intended practices. They should be reviewed against applicable law and actual data-handling practices before launch."}</p>
           </div>
         </article>
       </div>

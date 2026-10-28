@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState, type SyntheticEvent } 
 import ReactCrop, { type Crop, type PixelCrop, centerCrop } from "react-image-crop";
 import { Check, Crop as CropIcon, FlipHorizontal2, Minus, Plus, RotateCcw, ScanLine, X, LoaderCircle } from "lucide-react";
 import { useAiTemplateText } from "./aiTemplateI18n";
+import BrandName from "@/app/_components/BrandName";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -190,9 +191,9 @@ export const PhotoCropModal = React.memo(function PhotoCropModal({
 
       <header className="flex h-[56px] shrink-0 items-center justify-between border-b border-[#E3D6B8] bg-[#F2E8D2] text-[#3B2F1E]">
         <div className="flex h-full min-w-0 items-center gap-3 px-3 sm:px-5">
-          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-base font-bold leading-none text-white">SK</div>
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-base font-bold leading-none text-white">SL</div>
           <div className="hidden leading-none sm:block">
-            <div className="text-[17px] font-bold tracking-tight">Studio Seba</div>
+            <BrandName className="text-[17px] font-bold tracking-tight" accentClassName="text-[#DC2626]" />
             <div className="mt-[3px] text-[12px] uppercase tracking-[0.12em] text-[#6B5A40]">www.sohozkaj.com</div>
           </div>
           <div className="mx-1 hidden h-7 w-px bg-[#E3D6B8] sm:block" />

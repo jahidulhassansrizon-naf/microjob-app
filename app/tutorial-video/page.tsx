@@ -1,16 +1,18 @@
 "use client";
-import { T } from "@/components/i18n/I18nProvider";
+import { T, useI18n } from "@/components/i18n/I18nProvider";
 import Link from "next/link";
 import { ArrowLeft, Clock3, PlayCircle, Sparkles } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 const topics = [
     "AI Editor ও AI Photo Edit",
-    "SohozTools-এর PDF, Image, Text ও Video tools",
+    "Seba Lagbe Tools: PDF, Image, Text and Video tools",
     "Bulk Photo Edit এবং AI Template",
     "Question Papers ও Print Media",
     "Profile, Subscription ও Account features",
 ];
 export default function TutorialVideoPage() {
+    const { locale } = useI18n();
+    const topicsForLocale = topics.map((topic) => topic.startsWith("Seba Lagbe Tools:") && locale === "bn" ? "সেবা লাগবে টুলসের PDF, Image, Text ও Video tools" : topic);
     return (<div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
       <DashboardNavbar />
 
@@ -52,7 +54,7 @@ export default function TutorialVideoPage() {
             </div>
 
             <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {topics.map((topic, index) => (<div key={topic} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              {topicsForLocale.map((topic, index) => (<div key={topic} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                   <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#2563EB]"><T>{"Tutorial "}</T>{String(index + 1).padStart(2, "0")}
                   </span>
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-800">

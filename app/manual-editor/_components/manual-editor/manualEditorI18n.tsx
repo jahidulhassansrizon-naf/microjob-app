@@ -191,6 +191,19 @@ const MANUAL_EDITOR_BN: Record<string, string> = {
   "edited": "সম্পাদিত",
   "original": "মূল",
   "compare": "তুলনা",
+  "auto enhance": "অটো ইনহ্যান্স",
+  "denoise & deblur": "ডিনয়েজ ও ডিব্লার",
+  "relight": "রিলাইট",
+  "old photo": "পুরনো ছবি",
+  "retouch": "রিটাচ",
+  "tool guide": "টুল গাইড",
+  "hover over a tool to see what it does.": "কোন টুল কী করে দেখতে সেটির উপর মাউস রাখুন।",
+  "what it does": "কী করে",
+  "use it when": "কখন ব্যবহার করবেন",
+  "good to know": "যা জানা দরকার",
+  "how to use each tool": "প্রতিটি টুল কীভাবে ব্যবহার করবেন",
+  "this browser has no gpu acceleration for ai, so upscaling runs on the cpu and takes longer. use the latest chrome or edge for a much faster result.": "এই ব্রাউজারে এআইয়ের জন্য GPU গতি সুবিধা নেই, তাই ছবির মান ও আকার বাড়ানো CPU-তে চলছে এবং বেশি সময় লাগবে। অনেক দ্রুত ফলের জন্য Chrome বা Edge-এর সর্বশেষ সংস্করণ ব্যবহার করুন।",
+  "background removal is only available in the browser.": "ব্যাকগ্রাউন্ড রিমুভ শুধু ব্রাউজারেই ব্যবহার করা যায়।",
 };
 
 const MOJIBAKE: Record<string, string> = {
@@ -268,6 +281,7 @@ function translateManualEditorText(
     [/^please upload a jpg, jpeg, png or webp image\.$/i, () => "JPG, JPEG, PNG অথবা WebP ছবি আপলোড করুন।"],
     [/^this image could not be read\. please choose another image\.$/i, () => "এই ছবিটি পড়া যায়নি। অন্য একটি ছবি নির্বাচন করুন।"],
     [/^image segmentation is only available in the browser\.$/i, () => "ছবি সেগমেন্টেশন শুধু ব্রাউজারেই ব্যবহার করা যায়।"],
+    [/^this photo is already large \((\d+) x (\d+) px\)\. upscale is for small photos \(up to (\d+) px on the longest side on this device\)\.$/i, (_m: string, w: string, h: string, max: string) => `এই ছবিটি আগে থেকেই বড় (${w} × ${h} পিক্সেল)। এই টুল ছোট ছবির জন্য, যা এই ডিভাইসে লম্বা দিকে সর্বোচ্চ ${max} পিক্সেল পর্যন্ত।`],
     [/^automatic selection failed\.$/i, () => "স্বয়ংক্রিয় নির্বাচন ব্যর্থ হয়েছে।"],
   ];
   for (const [pattern, renderer] of dynamic) {

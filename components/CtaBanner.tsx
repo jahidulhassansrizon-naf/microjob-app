@@ -85,7 +85,7 @@ export default function CtaBanner() {
           >
             <T>
               {
-                "Join our platform today and make your daily work easier with Studio Seba.\r\n        "
+                "Join our platform today and make your daily work easier with Seba Lagbe.\r\n        "
               }
             </T>
           </motion.p>

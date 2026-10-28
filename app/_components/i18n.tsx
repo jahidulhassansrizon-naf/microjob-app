@@ -16,6 +16,9 @@ const COOKIE_KEY = "sohojkaj_language";
  * crashes.
  */
 const PHRASES: Record<string, string> = {
+  "Seba Lagbe": "সেবা লাগবে",
+  "Seba Lagbe Tools": "সেবা লাগবে টুলস",
+  "DIGITAL SERVICES": "ডিজিটাল সেবা",
   "ATS Friendly CV Maker": "ATS ফ্রেন্ডলি CV মেকার",
   "Add Watermark": "ওয়াটারমার্ক যোগ করুন",
   "Age Calculator": "বয়স ক্যালকুলেটর",

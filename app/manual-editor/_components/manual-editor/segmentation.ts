@@ -181,8 +181,34 @@ export function disposeSegmenter() {
   worker?.terminate();
 }
 
+/*
+ * The selfie model works on 256x256 input, so sending it the full 12 MP photo
+ * only makes the worker convert pixels that are thrown away. A 1024 px copy
+ * keeps all the detail the model can use.
+ */
+const SEGMENTATION_INPUT_SIDE = 1024;
+
+async function createSegmentationBitmap(image: HTMLImageElement) {
+  const { naturalWidth, naturalHeight } = image;
+  const size = fitSize(naturalWidth, naturalHeight, SEGMENTATION_INPUT_SIDE);
+
+  if (size.width === naturalWidth && size.height === naturalHeight) {
+    return createImageBitmap(image);
+  }
+
+  const canvas = createCanvas(size.width, size.height);
+
+  get2d(canvas).drawImage(image, 0, 0, size.width, size.height);
+
+  try {
+    return await createImageBitmap(canvas);
+  } finally {
+    releaseCanvas(canvas);
+  }
+}
+
 async function runSegmentation(image: HTMLImageElement): Promise<ClassMasks> {
-  const bitmap = await createImageBitmap(image);
+  const bitmap = await createSegmentationBitmap(image);
   const id = ++segmentationRequestId;
 
   try {
@@ -524,24 +550,227 @@ export async function detectTargetMask(
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Background removal                                                  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Background removal uses @imgly/background-removal (same engine as the
+ * dedicated Remove Background tool). What is different here is how it is fed:
+ *
+ *  1. The model always works on a 1024x1024 input internally, so we hand it a
+ *     <= 1024 px copy instead of the full photo. Nothing the model can see is
+ *     lost, but decoding, resizing and compositing a 3000+ px photo (for
+ *     example after Upscale or Object Adjust) no longer happens inside the
+ *     library.
+ *  2. The returned cut-out is only used as a soft alpha mask: it is scaled up
+ *     and applied to the ORIGINAL pixels, so the result keeps the photo's full
+ *     resolution (capped at CUTOUT_MAX_SIDE) and colours.
+ *  3. The mask is cached per file, so Remove BG -> Cutout Editor on the same
+ *     photo does not run the model twice.
+ *  4. preloadBackgroundRemoval() lets the editor fetch the model and start
+ *     the runtime before the person clicks.
+ */
+
+/* Longest side of the copy that is sent to the model. */
+const BG_MODEL_INPUT_SIDE = 1024;
+
+type ImglyConfig = Record<string, unknown>;
+
+let backgroundDevice: "gpu" | "cpu" | null = null;
+
+/*
+ * WebGPU is intentionally disabled for background removal. On several
+ * GPU/driver combinations it returns an empty mask, and falling back to the
+ * CPU afterwards in the same page fails with "WebAssembly is not initialized
+ * yet" because the runtime is already bound to the WebGPU build. The CPU path
+ * is what the dedicated Remove Background tool uses and it is reliable.
+ */
+function hasWebGpu() {
+  return false;
+}
+
+function backgroundConfig(device: "gpu" | "cpu"): ImglyConfig {
+  return {
+    device,
+    output: { format: "image/png", quality: 1 },
+  };
+}
+
+let backgroundPreload: Promise<void> | null = null;
+
 /**
- * Cuts the person out of the photo and returns a transparent PNG.
+ * Downloads the background-removal model and initialises the runtime in the
+ * background. Safe to call many times; failures are ignored (the real call
+ * will report its own error).
+ */
+export function preloadBackgroundRemoval(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+
+  if (!backgroundPreload) {
+    const device = backgroundDevice ?? (hasWebGpu() ? "gpu" : "cpu");
+
+    backgroundPreload = import("@imgly/background-removal")
+      .then((module) =>
+        module.preload(backgroundConfig(device) as Parameters<typeof module.preload>[0]),
+      )
+      .then(() => undefined)
+      .catch(() => {
+        backgroundPreload = null;
+      });
+  }
+
+  return backgroundPreload;
+}
+
+const foregroundMaskCache = new WeakMap<Blob, Promise<Blob>>();
+
+/*
+ * Fraction of the mask that is solid (alpha > 50 %). Some GPU / driver
+ * combinations run the WebGPU model without throwing but return a fully
+ * transparent mask, which makes the person disappear after "Remove BG".
+ */
+const MIN_FOREGROUND_COVERAGE = 0.01;
+
+async function maskCoverage(maskBlob: Blob): Promise<number> {
+  const bitmap = await createImageBitmap(maskBlob);
+
+  try {
+    const size = fitSize(bitmap.width, bitmap.height, 128);
+    const canvas = createCanvas(size.width, size.height);
+
+    try {
+      const ctx = get2d(canvas);
+
+      ctx.drawImage(bitmap, 0, 0, size.width, size.height);
+
+      const { data } = ctx.getImageData(0, 0, size.width, size.height);
+      let solid = 0;
+
+      for (let index = 3; index < data.length; index += 4) {
+        if (data[index] > 127) solid += 1;
+      }
+
+      return solid / (size.width * size.height);
+    } finally {
+      releaseCanvas(canvas);
+    }
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function runForegroundModel(smallPhoto: Blob): Promise<Blob> {
+  const { removeBackground } = await import("@imgly/background-removal");
+
+  const run = (device: "gpu" | "cpu") =>
+    removeBackground(
+      smallPhoto,
+      backgroundConfig(device) as Parameters<typeof removeBackground>[1],
+    );
+
+  const first = backgroundDevice ?? (hasWebGpu() ? "gpu" : "cpu");
+
+  let result: Blob | null = null;
+
+  if (first === "gpu") {
+    try {
+      const gpuResult = await run("gpu");
+
+      // GPU ran but gave an empty mask: treat it like a GPU failure.
+      if ((await maskCoverage(gpuResult)) >= MIN_FOREGROUND_COVERAGE) {
+        result = gpuResult;
+        backgroundDevice = "gpu";
+      }
+    } catch {
+      // GPU runtime refused (driver / flag): fall through to the CPU.
+    }
+
+    if (!result) {
+      backgroundDevice = "cpu";
+      backgroundPreload = null;
+    }
+  }
+
+  if (!result) {
+    result = await run("cpu");
+    backgroundDevice = "cpu";
+
+    if ((await maskCoverage(result)) < MIN_FOREGROUND_COVERAGE) {
+      throw new Error(
+        "No person was detected in this photo. Try a clearer photo.",
+      );
+    }
+  }
+
+  return result;
+}
+
+async function getForegroundMask(
+  imageFile: Blob,
+  decoded: ImageBitmap,
+): Promise<Blob> {
+  const cached = foregroundMaskCache.get(imageFile);
+
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const size = fitSize(decoded.width, decoded.height, BG_MODEL_INPUT_SIDE);
+    const small = createCanvas(size.width, size.height);
+
+    try {
+      get2d(small).drawImage(decoded, 0, 0, size.width, size.height);
+
+      const smallBlob = await canvasToBlob(small, "image/png");
+
+      return await runForegroundModel(smallBlob);
+    } finally {
+      releaseCanvas(small);
+    }
+  })();
+
+  foregroundMaskCache.set(imageFile, promise);
+
+  promise.catch(() => foregroundMaskCache.delete(imageFile));
+
+  return promise;
+}
+
+/**
+ * Cuts the person out of the photo and returns a transparent PNG at the
+ * photo's own resolution (longest side capped at CUTOUT_MAX_SIDE).
  */
 export async function removeBackgroundFromImage(
   imageFile: Blob,
 ): Promise<Blob> {
-  /*
-   * Keep Object Adjust / Face / Skin / Hair segmentation on the existing
-   * MediaPipe pipeline above. Background removal intentionally mirrors the
-   * dedicated Remove Background tool and uses the same @imgly/background-removal
-   * implementation supplied by that production-ready screen.
-   *
-   * Dynamic import keeps this browser-only package out of SSR and avoids
-   * loading its model assets until the user actually requests BG removal.
-   */
-  const { removeBackground } = await import("@imgly/background-removal");
+  if (typeof window === "undefined") {
+    throw new Error("Background removal is only available in the browser.");
+  }
 
-  return removeBackground(imageFile, {
-    output: { format: "image/png" },
-  });
+  const decoded = await createImageBitmap(imageFile);
+
+  try {
+    const maskBlob = await getForegroundMask(imageFile, decoded);
+    const mask = await createImageBitmap(maskBlob);
+
+    const size = fitSize(decoded.width, decoded.height, CUTOUT_MAX_SIDE);
+    const output = createCanvas(size.width, size.height);
+
+    try {
+      const ctx = get2d(output);
+
+      // Original pixels first, then keep only where the soft mask is opaque.
+      ctx.drawImage(decoded, 0, 0, size.width, size.height);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.drawImage(mask, 0, 0, size.width, size.height);
+      ctx.globalCompositeOperation = "source-over";
+
+      return await canvasToBlob(output, "image/png");
+    } finally {
+      mask.close();
+      releaseCanvas(output);
+    }
+  } finally {
+    decoded.close();
+  }
 }

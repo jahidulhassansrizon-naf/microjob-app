@@ -11,8 +11,8 @@ export default function FaqSection() {
   const faqs = [
       {
           id: "01",
-          question: "What is Studio Seba and how does it work?",
-          answer: "Studio Seba is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
+          question: "What is Seba Lagbe and how does it work?",
+          answer: "Seba Lagbe is an online document, photo editing, and print media platform. You can use 500+ ready-made templates to easily create various types of documents and edit photos online. Simply select a template, enter the required information or upload a photo to edit, and download your file within minutes.",
       },
       {
           id: "02",
@@ -36,8 +36,8 @@ export default function FaqSection() {
       },
       {
           id: "06",
-          question: "Can Studio Seba be used on mobile?",
-          answer: "Yes, Studio Seba is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
+          question: "Can Seba Lagbe be used on mobile?",
+          answer: "Yes, Seba Lagbe is fully responsive and works smoothly on mobile browsers without requiring any app installation.",
       },
       {
           id: "07",
@@ -66,7 +66,7 @@ export default function FaqSection() {
       },
       {
           id: "12",
-          question: "Do I need to create an account to use Studio Seba?",
+          question: "Do I need to create an account to use Seba Lagbe?",
           answer: "You can browse templates freely, but an account is required to save and download your generated documents.",
       },
       {
@@ -110,7 +110,7 @@ export default function FaqSection() {
           </h2>
 
           <p className="text-base leading-relaxed text-slate-600">
-            <T>{"Some common questions about Studio Seba.\r\n          "}</T>
+            <T>{"Some common questions about Seba Lagbe.\r\n          "}</T>
           </p>
         </motion.div>
 

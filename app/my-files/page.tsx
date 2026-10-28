@@ -95,12 +95,12 @@ const PAGE_BN: Record<string, string> = {
   "Loading your files": "আপনার ফাইলগুলো লোড হচ্ছে",
   "Loading tool files": "টুলের ফাইলগুলো লোড হচ্ছে",
   "My Files": "আমার ফাইল",
-  "Everything you make with Studio Seba — edited photos, templates, print designs and question papers — is saved here.":
-    "স্টুডিও সেবায় আপনার তৈরি করা সবকিছু—সম্পাদিত ছবি, টেমপ্লেট, প্রিন্ট ডিজাইন ও প্রশ্নপত্র—এখানে সংরক্ষিত থাকে।",
+  "Everything you make with Seba Lagbe — edited photos, templates, print designs and question papers — is saved here.":
+    "‘সেবা লাগবে’-তে আপনার তৈরি করা সবকিছু—সম্পাদিত ছবি, টেমপ্লেট, প্রিন্ট ডিজাইন ও প্রশ্নপত্র—এখানে সংরক্ষিত থাকে।",
   "Files are deleted automatically after 30 days, so download what you need before then.":
     "৩০ দিন পর ফাইলগুলো স্বয়ংক্রিয়ভাবে মুছে যায়। তাই প্রয়োজনীয় ফাইল তার আগেই ডাউনলোড করে নিন।",
-  "Seba Tools Files": "সেবা টুলসের ফাইল",
-  "Seba Tools files": "সেবা টুলসের ফাইল",
+  "Seba Lagbe Tools Files": "সেবা লাগবে টুলসের ফাইল",
+  "Seba Lagbe Tools files": "সেবা লাগবে টুলসের ফাইল",
   "File categories": "ফাইলের ধরনসমূহ",
   "My files": "আমার ফাইল",
   "Showing results from": "ফলাফল দেখানো হচ্ছে",
@@ -108,15 +108,15 @@ const PAGE_BN: Record<string, string> = {
   "We couldn't find any file with that name. Try a different word.":
     "ওই নামে কোনো ফাইল পাওয়া যায়নি। অন্য কোনো শব্দ দিয়ে খুঁজে দেখুন।",
   "No tool files yet": "এখনও কোনো টুল ফাইল নেই",
-  "Choose a tool from Seba Tools and press Save. Your file will appear here.":
-    "সেবা টুলস থেকে যেকোনো টুল ব্যবহার করে Save চাপুন। আপনার ফাইল এখানে দেখা যাবে।",
+  "Choose a tool from Seba Lagbe Tools and press Save. Your file will appear here.":
+    "সেবা লাগবে টুলস থেকে যেকোনো টুল ব্যবহার করে Save চাপুন। আপনার ফাইল এখানে দেখা যাবে।",
   "Search by file or tool name": "ফাইল বা টুলের নাম দিয়ে খুঁজুন",
   "Search tool files": "টুলের ফাইল খুঁজুন",
   "Filter by file type": "ফাইলের ধরন দিয়ে ফিল্টার করুন",
-  "Files saved from Seba Tools — such as scanned documents, compressed PDFs, and resized photos — appear here.":
-    "সেবা টুলস থেকে সেভ করা ফাইল—যেমন স্ক্যান করা ডকুমেন্ট, কমপ্রেস করা PDF বা সাইজ পরিবর্তন করা ছবি—এখানে দেখা যাবে।",
-  "Close Seba Tools sidebar": "সেবা টুলসের পাশের প্যানেল বন্ধ করুন",
-  "Browse Seba Tools": "সেবা টুলস দেখুন",
+  "Files saved from Seba Lagbe Tools — such as scanned documents, compressed PDFs, and resized photos — appear here.":
+    "সেবা লাগবে টুলস থেকে সেভ করা ফাইল—যেমন স্ক্যান করা ডকুমেন্ট, কমপ্রেস করা PDF বা সাইজ পরিবর্তন করা ছবি—এখানে দেখা যাবে।",
+  "Close Seba Lagbe Tools sidebar": "সেবা লাগবে টুলসের পাশের প্যানেল বন্ধ করুন",
+  "Browse Seba Lagbe Tools": "সেবা লাগবে টুলস দেখুন",
   Delete: "মুছুন",
   View: "দেখুন",
   "Delete this file?": "এই ফাইলটি মুছে ফেলবেন?",
@@ -211,7 +211,7 @@ type ToolGroupId =
   | "video"
   | "general"
   | "educational";
-// Seba Tools-এ সেভ হওয়া একটা ফাইল (যেমন Document Scanner থেকে স্ক্যান করা ডকুমেন্ট)
+// Seba Lagbe Tools-এ সেভ হওয়া একটা ফাইল (যেমন Document Scanner থেকে স্ক্যান করা ডকুমেন্ট)
 interface ToolFile {
   id: string;
   name: string;
@@ -360,7 +360,7 @@ const primaryBtn =
   "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-4 text-base font-semibold text-white transition-all duration-150 hover:bg-[#B91C1C] active:bg-[#991B1B] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
 const secondaryBtn =
   "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-[#FBB6B6] bg-[#FBF6E8] px-4 text-base font-semibold text-[#B91C1C] transition-all duration-150 hover:bg-[#FEE9E9] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
-// Dedicated muted premium-blue style for the Seba Tools Files toggle button.
+// Dedicated muted premium-blue style for the Seba Lagbe Tools Files toggle button.
 // Kept separate so the other secondary buttons preserve their existing red theme.
 const sidebarToggleBtn =
   "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-[#B8CBE0] bg-[#F5F8FC] px-4 text-base font-semibold text-[#315B85] transition-all duration-150 hover:border-[#91B2D4] hover:bg-[#EAF1F9] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F7FAF]/40";
@@ -706,7 +706,7 @@ export default function MyFilesPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sort, setSort] = useState<SortOrder>("newest");
   const [switchNotice, setSwitchNotice] = useState<CategoryId | "">("");
-  // ডান সাইডবার: Seba Tools
+  // ডান সাইডবার: Seba Lagbe Tools
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true); // ডেস্কটপে ডান পাশের প্যানেল
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false); // মোবাইলে ড্রয়ার
   const [toolGroup, setToolGroup] = useState<ToolGroupId>("all");
@@ -899,7 +899,7 @@ export default function MyFilesPage() {
   const ToolEmptyIcon = hasToolSearch ? Search : currentGroup.icon;
   let toolEmptyTitle = "No tool files yet";
   let toolEmptyText =
-    "Choose a tool from Seba Tools and press Save. Your file will appear here.";
+    "Choose a tool from Seba Lagbe Tools and press Save. Your file will appear here.";
   if (hasToolSearch) {
     toolEmptyTitle = "No matching results";
     toolEmptyText = "We couldn't find any file with that name.";
@@ -983,7 +983,7 @@ export default function MyFilesPage() {
             <p className="mt-1 text-[15px] leading-6 text-[#5A4A32] sm:text-base">
               <T>
                 {
-                  "Everything you make with Studio Seba \u2014 edited photos, templates,\n              print designs and question papers \u2014 is saved here.\n            "
+                  "Everything you make with Seba Lagbe \u2014 edited photos, templates,\n              print designs and question papers \u2014 is saved here.\n            "
                 }
               </T>
             </p>
@@ -1004,7 +1004,7 @@ export default function MyFilesPage() {
             className={`${sidebarToggleBtn} w-full justify-center sm:w-auto ${sidebarOpen ? "lg:bg-[#EAF1F9]" : ""} ${mobileSidebarOpen ? "bg-[#EAF1F9]" : ""}`}
           >
             <Wrench size={15} className="text-[#426D98]" />
-            <T>{"Seba Tools Files\n            "}</T>
+            <T>{"Seba Lagbe Tools Files\n            "}</T>
             {sidebarOpen ? (
               <PanelRightClose
                 size={15}
@@ -1271,7 +1271,7 @@ export default function MyFilesPage() {
             </div>
           </section>
 
-          {/* ===================== Seba Tools sidebar ===================== */}
+          {/* ===================== Seba Lagbe Tools sidebar ===================== */}
           {mobileSidebarOpen && (
             <div
               aria-hidden="true"
@@ -1283,7 +1283,7 @@ export default function MyFilesPage() {
           {(sidebarOpen || mobileSidebarOpen) && (
             <aside
               id="sebatools-sidebar"
-              aria-label={translatePageText("Seba Tools files", locale)}
+              aria-label={translatePageText("Seba Lagbe Tools files", locale)}
               className={`flex-col border border-[#E3D6B8] bg-[#F2E8D2] lg:min-h-0 lg:overflow-hidden lg:rounded-2xl ${
                 mobileSidebarOpen
                   ? "fixed inset-y-0 right-0 z-[60] flex w-[90vw] max-w-sm overflow-hidden rounded-l-2xl shadow-xl"
@@ -1297,7 +1297,7 @@ export default function MyFilesPage() {
               <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E3D6B8] px-4 py-3">
                 <div className="min-w-0">
                   <h2 className="text-base font-semibold text-[#3B2F1E]">
-                    <T>{"Seba Tools Files\n                  "}</T>
+                    <T>{"Seba Lagbe Tools Files\n                  "}</T>
                   </h2>
                   <p className="text-sm text-[#7A6A50]">
                     {filesLoading ? (
@@ -1311,7 +1311,7 @@ export default function MyFilesPage() {
                   type="button"
                   onClick={closeSidebar}
                   aria-label={translatePageText(
-                    "Close Seba Tools sidebar",
+                    "Close Seba Lagbe Tools sidebar",
                     locale,
                   )}
                   className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"
@@ -1324,7 +1324,7 @@ export default function MyFilesPage() {
                 <p className="text-sm leading-6 text-[#7A6A50]">
                   <T>
                     {
-                      "Files saved from Seba Tools \u2014 such as scanned documents, compressed PDFs,\n                  and resized photos \u2014 appear here.\n                "
+                      "Files saved from Seba Lagbe Tools \u2014 such as scanned documents, compressed PDFs,\n                  and resized photos \u2014 appear here.\n                "
                     }
                   </T>
                 </p>
@@ -1457,7 +1457,7 @@ export default function MyFilesPage() {
                         href="/sohoj-tools"
                         className={`${primaryBtn} mt-4`}
                       >
-                        <T>{"Browse Seba Tools\n                        "}</T>
+                        <T>{"Browse Seba Lagbe Tools\n                        "}</T>
                         <ArrowRight size={14} />
                       </Link>
                     )}
@@ -1544,7 +1544,7 @@ export default function MyFilesPage() {
         </div>
       )}
 
-      {/* ===================== Seba Tools file preview ===================== */}
+      {/* ===================== Seba Lagbe Tools file preview ===================== */}
       {previewToolFile?.url && (
         <ToolFilePreviewModal
           file={previewToolFile}

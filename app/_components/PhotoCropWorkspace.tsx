@@ -1,6 +1,7 @@
 "use client";
 
 import "react-image-crop/dist/ReactCrop.css";
+import BrandName from "@/app/_components/BrandName";
 
 import React, {
   useCallback,
@@ -351,12 +352,12 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
       <header className="flex h-[50px] shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 text-slate-900">
         <div className="flex h-full min-w-0 items-center gap-3 px-3 sm:px-5">
           <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black leading-none text-white">
-            SK
+            SL
           </div>
           <div className="hidden leading-none sm:block">
-            <div className="text-[14px] font-black tracking-tight">Studio Seba</div>
+            <BrandName className="text-[14px] font-black tracking-tight" accentClassName="text-blue-600" />
             <div className="mt-[3px] text-[7px] uppercase tracking-[0.16em] text-slate-500">
-              www.sohozkaj.com
+              sebalagbe.com
             </div>
           </div>
           <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />

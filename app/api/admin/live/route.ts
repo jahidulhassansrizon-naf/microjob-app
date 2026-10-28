@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       return [{
         userId,
         sessionId: String(session.sessionId),
-        fullName: user.fullName || "Studio Seba user",
+        fullName: user.fullName || "Seba Lagbe user",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
         profileImageUrl: user.profileImageUrl || "",

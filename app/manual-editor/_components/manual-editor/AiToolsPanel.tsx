@@ -1,20 +1,51 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { Droplets, Eraser, Eye, FileEdit, Grid, History, Loader2, Maximize2, Plus, Redo2, RefreshCcw, ScanLine, Sparkles, Sun, Undo2, UserCheck, Zap, } from "lucide-react";
 import type { ObjectTab } from "./types";
 import { useManualEditor } from "./EditorProvider";
 import { preloadFaceDetector, preloadUpscaler } from "./aiEnhancement";
+import { preloadBackgroundRemoval } from "./segmentation";
+import { TOOL_GUIDE, TOOL_GUIDE_ORDER, type ToolGuideId } from "./toolGuide";
 import type { PhotoAsset } from "./types";
 import CutoutEditorModal from "./CutoutEditorModal";
 import RetouchEditorModal from "./RetouchEditorModal";
 import PhotoEnhanceModal from "./PhotoEnhanceModal";
 export default function AiToolsPanel() {
-    const { t } = useManualEditorText();
+    const { t, locale } = useManualEditorText();
+    const isBn = String(locale ?? "").toLowerCase().startsWith("bn");
+    // Hover guide is a floating tooltip (position: fixed), so showing or hiding
+    // it never changes the height of the scrollable side panel. An in-flow card
+    // resized the panel on every hover, which made the content jump under the
+    // pointer and caused the flicker.
+    const [hoverGuide, setHoverGuide] = useState<{ id: ToolGuideId; top: number; left: number; } | null>(null);
+    const guideOf = (id: ToolGuideId) => TOOL_GUIDE[id][isBn ? "bn" : "en"];
+    const showGuide = (id: ToolGuideId, el: HTMLElement) => {
+        const rect = el.getBoundingClientRect();
+        const panel = el.closest("aside")?.getBoundingClientRect();
+        const width = 320;
+        const left = Math.max(8, Math.min((panel ? panel.right : rect.right) + 12, window.innerWidth - width - 8));
+        const top = Math.max(8, Math.min(rect.top, window.innerHeight - 280));
+        setHoverGuide((current) => current && current.id === id && current.top === top && current.left === left
+            ? current
+            : { id, top, left });
+    };
+    const hoverProps = (id: ToolGuideId, onEnter?: () => void) => ({
+        onPointerEnter: (event: React.PointerEvent<HTMLElement>) => {
+            onEnter?.();
+            if (event.pointerType === "touch")
+                return;
+            showGuide(id, event.currentTarget);
+        },
+        onPointerLeave: () => setHoverGuide(null),
+        onFocus: (event: React.FocusEvent<HTMLElement>) => showGuide(id, event.currentTarget),
+        onBlur: () => setHoverGuide(null),
+    });
     const { activeAiTool, showUnsupportedAiMessage, runUpscale, runFaceEnhance, aiProcessing, isRemovingBackground, aiNotice, activePhoto, setActiveAiTool, setAiNotice, objectTab, setObjectTab, objectBrightness, objectContrast, objectSaturation, objectHue, shadowStrength, brushSize, setObjectBrightness, setObjectContrast, setObjectSaturation, setObjectHue, setShadowStrength, setBrushSize, objectPreview, setObjectPreview, objectBrushMode, setObjectBrushMode, objectMaskBusy, objectApplyBusy, undoObjectMask, redoObjectMask, resetObjectAdjust, cancelObjectAdjust, applyObjectAdjust, } = useManualEditor();
     const [cutoutSource, setCutoutSource] = useState<PhotoAsset | null>(null);
     const [retouchSource, setRetouchSource] = useState<PhotoAsset | null>(null);
     const [enhanceSource, setEnhanceSource] = useState<{ photo: PhotoAsset; tab: "auto" | "clean" | "relight" | "restore"; } | null>(null);
+    const shownGuide = hoverGuide ? guideOf(hoverGuide.id) : null;
     return (<>
       <style>{`
         @keyframes manual-editor-button-scan {
@@ -60,7 +91,14 @@ export default function AiToolsPanel() {
                 label: "Upscale",
                 icon: <Maximize2 className="h-5 w-5 text-[#7A6A50]"/>,
             },
-        ].map((tool) => (<button key={tool.id} type="button" onClick={() => {
+        ].map((tool) => (<button key={tool.id} type="button" {...hoverProps(tool.id, () => {
+                if (tool.id === "face")
+                    preloadFaceDetector();
+                if (tool.id === "upscale")
+                    preloadUpscaler();
+                if (tool.id === "transparent")
+                    void preloadBackgroundRemoval();
+            })} onClick={() => {
                 if (tool.id === "face") {
                     void runFaceEnhance();
                     return;
@@ -70,11 +108,6 @@ export default function AiToolsPanel() {
                     return;
                 }
                 showUnsupportedAiMessage(tool.id);
-            }} onPointerEnter={() => {
-                if (tool.id === "face")
-                    preloadFaceDetector();
-                if (tool.id === "upscale")
-                    preloadUpscaler();
             }} disabled={Boolean(aiProcessing)} aria-busy={aiProcessing === tool.id} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border p-2 text-center transition cursor-pointer ${activeAiTool === tool.id
                 ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
                 : "border-[#E3D6B8] bg-[#FBF6E8] hover:border-[#D8C9A6]"} disabled:cursor-not-allowed disabled:opacity-60`}>
@@ -103,7 +136,7 @@ export default function AiToolsPanel() {
             setAiNotice("");
             setActiveAiTool("cutout");
             setCutoutSource(activePhoto);
-          }} disabled={Boolean(aiProcessing) || isRemovingBackground} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "cutout"
+          }} {...hoverProps("cutout", () => void preloadBackgroundRemoval())} disabled={Boolean(aiProcessing) || isRemovingBackground} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "cutout"
             ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
             : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
           <FileEdit className="h-5 w-5 text-[#7A6A50]"/>
@@ -117,11 +150,11 @@ export default function AiToolsPanel() {
             setAiNotice("");
             setActiveAiTool("retouch");
             setRetouchSource(activePhoto);
-          }} disabled={Boolean(aiProcessing) || isRemovingBackground} title="Remove objects, heal spots, fix red-eye, smooth skin, blur or pixelate" className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "retouch"
+          }} disabled={Boolean(aiProcessing) || isRemovingBackground} {...hoverProps("retouch")} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "retouch"
             ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
             : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
           <Eraser className="h-5 w-5 text-[#7A6A50]"/>
-          <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]">Retouch</span>
+          <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]"><T>{"Retouch"}</T></span>
         </button>
       </div>
 
@@ -139,11 +172,11 @@ export default function AiToolsPanel() {
             setAiNotice("");
             setActiveAiTool("enhance");
             setEnhanceSource({ photo: activePhoto, tab: item.tab });
-          }} disabled={Boolean(aiProcessing) || isRemovingBackground} title={item.hint} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "enhance" && enhanceSource?.tab === item.tab
+          }} disabled={Boolean(aiProcessing) || isRemovingBackground} {...hoverProps(item.tab)} className={`flex h-24 lg:h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border bg-[#FBF6E8] p-2 text-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeAiTool === "enhance" && enhanceSource?.tab === item.tab
             ? "border-[#DC2626] bg-[#F6D9A8] ring-1 ring-[#DC2626]"
             : "border-[#E3D6B8] hover:border-[#D8C9A6]"}`}>
             {item.icon}
-            <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]">{item.label}</span>
+            <span className="text-[11px] font-bold leading-tight text-[#3B2F1E]"><T>{item.label}</T></span>
           </button>))}
       </div>
 
@@ -251,7 +284,27 @@ export default function AiToolsPanel() {
             </button>
           </div>
         </div>)}
+      <details className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3 text-[11px] leading-[1.55] text-[#5A4A32]">
+        <summary className="cursor-pointer text-[12px] font-extrabold text-[#3B2F1E]">{t("How to use each tool")}</summary>
+        <div className="mt-3 space-y-3">
+          {TOOL_GUIDE_ORDER.map((id) => {
+            const guide = guideOf(id);
+            return (<div key={id} className="border-t border-[#E3D6B8] pt-2 first:border-t-0 first:pt-0">
+                <p className="text-[12px] font-extrabold text-[#3B2F1E]">{guide.name}</p>
+                <p className="mt-1">{guide.summary}</p>
+                <p className="mt-1"><span className="font-extrabold text-[#DC2626]">{t("Use it when")}: </span>{guide.useWhen}</p>
+                <p className="mt-1"><span className="font-extrabold text-[#DC2626]">{t("Good to know")}: </span>{guide.limits}</p>
+              </div>);
+          })}
+        </div>
+      </details>
     </section>
+    {shownGuide && hoverGuide && (<div role="tooltip" className="pointer-events-none fixed z-[60] w-[320px] rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3 text-[11px] leading-[1.55] text-[#5A4A32] shadow-xl" style={{ top: hoverGuide.top, left: hoverGuide.left }}>
+        <p className="text-[12px] font-extrabold text-[#3B2F1E]">{shownGuide.name}</p>
+        <p className="mt-1"><span className="font-extrabold text-[#DC2626]">{t("What it does")}: </span>{shownGuide.summary}</p>
+        <p className="mt-1"><span className="font-extrabold text-[#DC2626]">{t("Use it when")}: </span>{shownGuide.useWhen}</p>
+        <p className="mt-1"><span className="font-extrabold text-[#DC2626]">{t("Good to know")}: </span>{shownGuide.limits}</p>
+      </div>)}
     {cutoutSource && (<CutoutEditorModal sourcePhoto={cutoutSource} onClose={() => {
         setCutoutSource(null);
         setActiveAiTool(null);

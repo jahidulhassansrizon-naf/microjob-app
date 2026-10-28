@@ -1,4 +1,5 @@
 "use client";
+import React, { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { ManualT as T } from "./_components/manual-editor/manualEditorI18n";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import PhotoSizePanel from "./_components/manual-editor/PhotoSizePanel";
@@ -11,8 +12,84 @@ import GeneratedPhotosPanel from "./_components/manual-editor/GeneratedPhotosPan
 import ScanModal from "./_components/manual-editor/ScanModal";
 import PrintStudioModal from "./_components/manual-editor/PrintStudioModal";
 import { ManualEditorProvider, useManualEditor, } from "./_components/manual-editor/EditorProvider";
+/*
+ * The left panel has no visible scrollbar, so let the mouse drag it
+ * (press on an empty area / between buttons and pull up or down). Wheel,
+ * touch and keyboard scrolling keep working natively. A drag never clicks
+ * the button it started on.
+ */
+function useDragScroll() {
+    const drag = useRef<{ y: number; top: number; moved: boolean; id: number; } | null>(null);
+    const suppressClick = useRef(false);
+    const finish = (event: ReactPointerEvent<HTMLElement>) => {
+        const d = drag.current;
+        if (!d)
+            return;
+        drag.current = null;
+        delete event.currentTarget.dataset.dragging;
+        if (d.moved) {
+            suppressClick.current = true;
+            window.setTimeout(() => {
+                suppressClick.current = false;
+            }, 0);
+            try {
+                event.currentTarget.releasePointerCapture(d.id);
+            }
+            catch {
+                // capture already released
+            }
+        }
+    };
+    // Marks the panel as scrollable only while its content really overflows,
+    // so the grab cursor and drag-scroll appear exactly when they are useful.
+    const syncScrollable = (el: HTMLElement) => {
+        const overflowing = el.scrollHeight - el.clientHeight > 2;
+        if (overflowing)
+            el.dataset.scrollable = "1";
+        else
+            delete el.dataset.scrollable;
+        return overflowing;
+    };
+    return {
+        onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+            if (event.pointerType !== "mouse" || event.button !== 0)
+                return;
+            if (!syncScrollable(event.currentTarget))
+                return;
+            if ((event.target as HTMLElement).closest("input, select, textarea, [role=\"slider\"]"))
+                return;
+            drag.current = { y: event.clientY, top: event.currentTarget.scrollTop, moved: false, id: event.pointerId };
+        },
+        onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
+            const d = drag.current;
+            if (!d) {
+                if (event.pointerType === "mouse")
+                    syncScrollable(event.currentTarget);
+                return;
+            }
+            const dy = event.clientY - d.y;
+            if (!d.moved) {
+                if (Math.abs(dy) < 6)
+                    return;
+                d.moved = true;
+                event.currentTarget.dataset.dragging = "1";
+                event.currentTarget.setPointerCapture(d.id);
+            }
+            event.currentTarget.scrollTop = d.top - dy;
+        },
+        onPointerUp: finish,
+        onPointerCancel: finish,
+        onClickCapture: (event: React.MouseEvent<HTMLElement>) => {
+            if (suppressClick.current) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        },
+    };
+}
 function ManualEditorScreen() {
     const { loading, isAuthenticated } = useManualEditor();
+    const leftDragScroll = useDragScroll();
     if (loading) {
         return (<div className="page-font min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -27,7 +104,7 @@ function ManualEditorScreen() {
       <DashboardNavbar />
       <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
-          <aside className="me-left scroll lg:col-span-3 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
+          <aside {...leftDragScroll} className="me-left scroll lg:col-span-3 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
             <PhotoSizePanel />
             <BackgroundPanel />
             <AiToolsPanel />
@@ -69,6 +146,14 @@ function ManualEditorScreen() {
         .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
         .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
         .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
+
+        /* Left panel: still scrolls (wheel / touch / keyboard) but shows no scrollbar. */
+        .manual-editor-root .me-left { scrollbar-width: none; -ms-overflow-style: none; overflow-anchor: none; overscroll-behavior: contain; }
+        .manual-editor-root .me-left::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        /* Open hand on empty areas, closed hand (everywhere) while dragging. */
+        .manual-editor-root .me-left[data-scrollable="1"] { cursor: grab; }
+        .manual-editor-root .me-left[data-dragging="1"],
+        .manual-editor-root .me-left[data-dragging="1"] * { cursor: grabbing !important; }
 
         .manual-editor-root button:not(:disabled),
         .manual-editor-root [role="button"],

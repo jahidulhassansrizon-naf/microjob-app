@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import BrandName from "@/app/_components/BrandName";
 
 /**
  * This is only a client-side fast-path hint, not authentication. Protected API
@@ -59,8 +60,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     language: isBn ? "ভাষা" : "Language",
     loginTitle: isBn ? "আপনার অ্যাকাউন্টে প্রবেশ করুন" : "Sign in to your account",
     loginSubtitle: isBn
-      ? "আপনার Studio Seba অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন।"
-      : "Enter your details to access your Studio Seba account.",
+      ? "আপনার সেবা লাগবে অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন।"
+      : "Enter your details to access your Seba Lagbe account.",
     identifier: isBn ? "ফোন নম্বর বা ইমেইল" : "Phone number or email",
     identifierPlaceholder: isBn
       ? "ফোন নম্বর বা ইমেইল লিখুন"
@@ -382,14 +383,12 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
             <div className="mb-7 flex flex-col items-center text-center">
               <Link href="/" className="group mb-6 inline-flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-lg font-black tracking-tight text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
-                  SS
+                  SL
                 </span>
                 <span className="flex flex-col items-start leading-none">
-                  <span className="text-2xl font-black tracking-tight text-slate-900">
-                    Studio <span className="text-blue-600">Seba</span>
-                  </span>
+                  <BrandName className="text-2xl font-black tracking-tight text-slate-900" accentClassName="text-blue-600" />
                   <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-slate-400">
-                    STUDIO SEBA
+                    {isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}
                   </span>
                 </span>
               </Link>
@@ -542,7 +541,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         </section>
 
         <footer className="pb-2 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} Studio Seba. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+          © {new Date().getFullYear()} <BrandName accentClassName="text-slate-400" />. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
         </footer>
       </div>
     </main>

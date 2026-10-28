@@ -2,6 +2,7 @@
 "use client";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
+import BrandName from "@/app/_components/BrandName";
 import {
   useEffect,
   useLayoutEffect,
@@ -622,7 +623,7 @@ const NAV_ITEMS: NavConfig[] = [
   {
     id: "sohoj-tools",
     href: "/sohoj-tools",
-    label: "Seba Tools",
+    label: "Seba Lagbe Tools",
     icon: AllToolsIcon,
     tone: "orange",
     match: "/sohoj-tools",
@@ -1151,18 +1152,6 @@ export default function DashboardNavbar({
   const changeLanguage = (targetLang: "EN" | "BN") => {
     setLocale(targetLang === "BN" ? "bn" : "en");
   };
-  /* Default language: Bangla on the first visit of a browser session.
-     After that the user's own EN/BN choice is respected. */
-  useEffect(() => {
-    try {
-      if (window.sessionStorage.getItem("sohoj_nav_bn_default") === "1") return;
-      window.sessionStorage.setItem("sohoj_nav_bn_default", "1");
-    } catch {
-      /* storage unavailable: still apply the default once */
-    }
-    if (locale !== "bn") setLocale("bn");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   /* ------------------------------------------------------------------ */
   /* Keyboard                                                           */
   /* ------------------------------------------------------------------ */
@@ -1249,16 +1238,11 @@ export default function DashboardNavbar({
           >
             <Link href="/" className="flex min-w-0 shrink items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#EF4444] to-[#B91C1C] text-[16px] font-bold tracking-tight text-white ring-1 ring-[#F87171]/60 shadow-[0_6px_14px_-6px_rgba(220,38,38,0.6)]">
-                SS
+                SL
               </div>
 
               <div className="flex min-w-0 flex-col leading-none">
-                <span className="truncate text-[19px] font-bold tracking-tight text-[#3B2F1E] sm:text-[21px]">
-                  <DT>{"Studio"}</DT>
-                  <span className="text-[#DC2626]">
-                    <DT>{" Seba"}</DT>
-                  </span>
-                </span>
+                <BrandName className="truncate text-[19px] font-bold tracking-tight text-[#3B2F1E] sm:text-[21px]" accentClassName="text-[#DC2626]" />
               </div>
             </Link>
 

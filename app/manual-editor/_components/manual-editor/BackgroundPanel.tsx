@@ -3,6 +3,7 @@ import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { Check, Eraser, Loader2, Palette } from "lucide-react";
 import { BACKGROUNDS } from "./constants";
 import { useManualEditor } from "./EditorProvider";
+import { preloadBackgroundRemoval } from "./segmentation";
 export default function BackgroundPanel() {
     const { t } = useManualEditorText();
     const { selectedBg, setSelectedBg, customBg, setCustomBg, handleRemoveBackground, isRemovingBackground, backgroundRemoved, setBackgroundRemoved, } = useManualEditor();
@@ -70,7 +71,7 @@ export default function BackgroundPanel() {
         {/* -------------------------------------------------------------- */}
         {/* Remove Background                                               */}
         {/* -------------------------------------------------------------- */}
-        <button type="button" disabled={isRemovingBackground} onClick={() => void handleRemoveBackground()} aria-label={t("Remove background")} title={isRemovingBackground
+        <button type="button" disabled={isRemovingBackground} onClick={() => void handleRemoveBackground()} onPointerEnter={() => void preloadBackgroundRemoval()} onFocus={() => void preloadBackgroundRemoval()} aria-label={t("Remove background")} title={isRemovingBackground
             ? t("Removing background...")
             : t("Remove background")} className={`col-span-2 h-12 lg:h-10 rounded-2xl border px-3 flex items-center justify-center gap-2 text-[12px] font-extrabold transition-all duration-200 shadow-sm active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed ${backgroundRemoved
             ? "border-[#10B981] bg-[#10B981] text-white hover:bg-emerald-600"

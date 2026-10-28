@@ -12,7 +12,7 @@ import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
 import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
 import PrePaintScript from "./_components/PrePaintScript";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
-import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from "@/lib/i18n";
+import { LOCALE_COOKIE, type Locale } from "@/lib/i18n";
 import "@rrweb/replay/dist/style.css";
 import "./globals.css";
 
@@ -28,7 +28,7 @@ const banglaSans = Noto_Sans_Bengali({
 });
 
 export const metadata: Metadata = {
-  title: "Studio Seba - All your digital tasks in one place",
+  title: "Seba Lagbe - All your digital tasks in one place",
   description: "Create documents, designs, and print media easily.",
 };
 
@@ -37,7 +37,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
-  const initialLocale: Locale = cookieLocale === "bn" ? "bn" : DEFAULT_LOCALE;
+  const initialLocale: Locale = cookieLocale === "bn" ? "bn" : "en";
   const showLoginSuccess =
     cookieStore.get("sohoj_login_success")?.value === "1";
   const rawLoginName = cookieStore.get("sohoj_login_name")?.value ?? "";

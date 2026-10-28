@@ -4070,13 +4070,14 @@ export default function DocumentScanner() {
     [],
   );
   const selectedImageSrc = images[selectedIndex] || "";
-  const loadSavedDocuments = useCallback(async () => {
+  const loadSavedDocuments = useCallback(async (signal?: AbortSignal) => {
     setIsLoadingSavedDocuments(true);
     try {
       const response = await fetch("/api/scanned-documents", {
         method: "GET",
         cache: "no-store",
         credentials: "include",
+        signal,
       });
       const result = await response.json();
       if (!response.ok || !result?.success) {
@@ -4098,15 +4099,18 @@ export default function DocumentScanner() {
       }, 0);
       savedDocumentCounterRef.current = highestNumber;
       setSavedDocuments(normalized);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === "AbortError") return;
       console.error("Failed to load saved documents:", error);
       setErrorMessage("Saved documents could not be loaded. Please try again.");
     } finally {
-      setIsLoadingSavedDocuments(false);
+      if (!signal?.aborted) setIsLoadingSavedDocuments(false);
     }
   }, []);
   useEffect(() => {
-    void loadSavedDocuments();
+    const controller = new AbortController();
+    void loadSavedDocuments(controller.signal);
+    return () => controller.abort();
   }, [loadSavedDocuments]);
   useEffect(() => {
     if (!previewSavedDocument) return;
@@ -4852,7 +4856,7 @@ export default function DocumentScanner() {
     },
     [selectedIndex, requestPageNavigation],
   );
-  const createProcessedSnapshot = useCallback(async (): Promise<string> => {
+  const createProcessedCanvas = useCallback(async (): Promise<HTMLCanvasElement> => {
     if (!cleanBaseSrc) throw new Error("No processed document available");
     const baseImg = await loadImage(cleanBaseSrc);
     const pendingRotation = normalizeAngle(rotation - bakedRotation);
@@ -4892,7 +4896,10 @@ export default function DocumentScanner() {
       }
       ctx.putImageData(imageData, 0, 0);
     }
-    return canvas.toDataURL("image/png", 1);
+    // The intermediate rotated canvas is no longer needed: free its memory now.
+    rotatedCanvas.width = 0;
+    rotatedCanvas.height = 0;
+    return canvas;
   }, [
     cleanBaseSrc,
     rotation,
@@ -4903,6 +4910,66 @@ export default function DocumentScanner() {
     loadImage,
     createRotatedCanvas,
   ]);
+  // Cloud upload copy. Encodes straight to a Blob (no huge base64 string) and
+  // keeps the file under the host's request-body limit so saving does not fail
+  // for large pages: PNG first, then high-quality JPEG, then a smaller JPEG.
+  const createProcessedUploadBlob = useCallback(async (): Promise<{
+    blob: Blob;
+    ext: "png" | "jpg";
+  }> => {
+    const canvas = await createProcessedCanvas();
+    const MAX_UPLOAD_BYTES = 3.5 * 1024 * 1024;
+    const encode = (type: string, quality?: number) =>
+      new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), type, quality),
+      );
+    try {
+      const png = await encode("image/png");
+      if (png && png.size > 0 && png.size <= MAX_UPLOAD_BYTES) {
+        return { blob: png, ext: "png" };
+      }
+      // JPEG has no alpha: paint white under the page first.
+      const flat = document.createElement("canvas");
+      flat.width = canvas.width;
+      flat.height = canvas.height;
+      const fctx = flat.getContext("2d");
+      if (!fctx) throw new Error("Canvas context unavailable");
+      fctx.fillStyle = "#ffffff";
+      fctx.fillRect(0, 0, flat.width, flat.height);
+      fctx.drawImage(canvas, 0, 0);
+      try {
+        for (const quality of [0.95, 0.9, 0.82, 0.74]) {
+          const jpg = await new Promise<Blob | null>((resolve) =>
+            flat.toBlob((b) => resolve(b), "image/jpeg", quality),
+          );
+          if (jpg && jpg.size > 0 && jpg.size <= MAX_UPLOAD_BYTES) {
+            return { blob: jpg, ext: "jpg" };
+          }
+        }
+        // Still too big: scale down once and encode again.
+        const small = document.createElement("canvas");
+        small.width = Math.max(1, Math.round(flat.width * 0.7));
+        small.height = Math.max(1, Math.round(flat.height * 0.7));
+        const sctx = small.getContext("2d");
+        if (!sctx) throw new Error("Canvas context unavailable");
+        sctx.imageSmoothingQuality = "high";
+        sctx.drawImage(flat, 0, 0, small.width, small.height);
+        const last = await new Promise<Blob | null>((resolve) =>
+          small.toBlob((b) => resolve(b), "image/jpeg", 0.85),
+        );
+        small.width = 0;
+        small.height = 0;
+        if (last && last.size > 0) return { blob: last, ext: "jpg" };
+        throw new Error("Final document image could not be encoded.");
+      } finally {
+        flat.width = 0;
+        flat.height = 0;
+      }
+    } finally {
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+  }, [createProcessedCanvas]);
   const handleSaveDocument = async (): Promise<boolean> => {
     if (
       !selectedImageSrc ||
@@ -4921,20 +4988,12 @@ export default function DocumentScanner() {
     setErrorMessage(null);
     let uploadedPublicId = "";
     try {
-      const snapshotSrc = await createProcessedSnapshot();
-      if (!snapshotSrc) {
-        throw new Error("Final document image could not be generated.");
-      }
-      const blobResponse = await fetch(snapshotSrc);
-      if (!blobResponse.ok) {
-        throw new Error("Could not prepare the document image for upload.");
-      }
-      const blob = await blobResponse.blob();
+      const { blob, ext } = await createProcessedUploadBlob();
       if (!blob.size) {
         throw new Error("Final document image is empty.");
       }
       const formData = new FormData();
-      formData.append("file", blob, `scanned-document-${Date.now()}.png`);
+      formData.append("file", blob, `scanned-document-${Date.now()}.${ext}`);
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
@@ -5037,8 +5096,8 @@ export default function DocumentScanner() {
         setErrorMessage(null);
         return true;
       }
-      savedDocumentCounterRef.current += 1;
-      const title = `Document ${String(savedDocumentCounterRef.current).padStart(2, "0")}`;
+      const nextDocumentNumber = savedDocumentCounterRef.current + 1;
+      const title = `Document ${String(nextDocumentNumber).padStart(2, "0")}`;
       const databaseResponse = await fetch("/api/scanned-documents", {
         method: "POST",
         headers: {
@@ -5083,6 +5142,10 @@ export default function DocumentScanner() {
         createdAt: saved.createdAt || new Date().toISOString(),
         updatedAt: saved.updatedAt,
       };
+      savedDocumentCounterRef.current = Math.max(
+        savedDocumentCounterRef.current,
+        nextDocumentNumber,
+      );
       setSavedDocuments((prev) => [newDocument, ...prev]);
       setEditingSavedDocumentId(null);
       setHasUnsavedChanges(false);
@@ -5181,7 +5244,11 @@ export default function DocumentScanner() {
       dw,
       dh,
     );
-    return out.toDataURL("image/png");
+    const composed = out.toDataURL("image/png");
+    // Free the A4-sized backing store (~35 MB) right away.
+    out.width = 0;
+    out.height = 0;
+    return composed;
   };
   const handleDownloadImage = async () => {
     if (!processedImageSrc) return;

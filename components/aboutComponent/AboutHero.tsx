@@ -62,7 +62,7 @@ export default function AboutHero() {
         <motion.div variants={itemVariants} className="mt-7 max-w-[850px]">
           <p className="text-[16px] leading-[1.45] tracking-[-0.01em] text-slate-600 sm:text-[17px]"><T>{"Our journey began in 2012, with the founding of BDThemes. With the\r\n            addition of new products and\r\n            "}</T><br className="hidden sm:block"/><T>{"services over time, in 2020, we built Sigmative \u2014 a technology-based\r\n            organization, where a skilled team\r\n            "}</T><br className="hidden sm:block"/><T>{"of 20+ members is working today.\r\n          "}</T></p>
 
-          <p className="mt-3 text-[13px] leading-5 text-slate-500"><T>{"Studio Seba is a service of"}</T>{<T>{" "}</T>}
+          <p className="mt-3 text-[13px] leading-5 text-slate-500"><T>{"Seba Lagbe is a service of"}</T>{<T>{" "}</T>}
             <span className="font-semibold text-[#0F172A]"><T>{"Sigmative"}</T></span><T>{".\r\n          "}</T></p>
         </motion.div>
 
