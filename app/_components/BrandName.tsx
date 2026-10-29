@@ -1,6 +1,8 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/siteSettings";
 
 type BrandNameProps = {
   className?: string;
@@ -13,12 +15,13 @@ export default function BrandName({
   accentClassName = "text-[#DC2626]",
 }: BrandNameProps) {
   const { locale } = useI18n();
+  const { settings } = useSiteSettings();
   const isBangla = locale === "bn";
+  const isDefaultName = settings.branding.siteName.trim() === DEFAULT_SITE_SETTINGS.branding.siteName;
 
   return (
     <span className={className} translate="no">
-      {isBangla ? "সেবা" : "Seba"}{" "}
-      <span className={accentClassName}>{isBangla ? "লাগবে" : "Lagbe"}</span>
+      {isDefaultName ? <>{isBangla ? "সেবা" : "Seba"}{" "}<span className={accentClassName}>{isBangla ? "লাগবে" : "Lagbe"}</span></> : settings.branding.siteName}
     </span>
   );
 }

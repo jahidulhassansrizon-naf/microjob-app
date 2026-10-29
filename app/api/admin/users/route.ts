@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
-import { getRoleForEmail } from "@/lib/roles";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { requireAdmin } from "../_lib/adminAuth";
 
@@ -55,7 +54,7 @@ export async function GET(request: Request) {
     const [total, usersRaw] = await Promise.all([
       User.countDocuments(filter),
       User.find(filter)
-        .select("fullName email phoneNumber country district role createdAt lastLoginAt lastSeenAt loginCount manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt manualAccessGrantedBy")
+        .select("fullName email phoneNumber country district role isBanned bannedAt bannedBy banReason createdAt lastLoginAt lastSeenAt loginCount manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt manualAccessGrantedBy")
         .sort({ lastLoginAt: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -86,7 +85,11 @@ export async function GET(request: Request) {
       phoneNumber: user.phoneNumber || "",
       country: user.country || "",
       district: user.district || "",
-      role: getRoleForEmail(user.email),
+      role: user.role === "admin" ? "admin" : "user",
+      isBanned: user.isBanned === true,
+      bannedAt: user.bannedAt || null,
+      bannedBy: user.bannedBy || "",
+      banReason: user.banReason || "",
       createdAt: user.createdAt || null,
       lastLoginAt: user.lastLoginAt || null,
       lastSeenAt: user.lastSeenAt || null,

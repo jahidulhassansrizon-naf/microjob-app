@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
+import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import {
   ENV_ADMIN_USER_ID,
   getAdminCredentialVersion,
@@ -34,10 +35,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ message: "Invalid request body." }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
     const submittedIdentifier = body?.phoneNumber ?? body?.identifier ?? body?.email ?? "";
     const formattedInput = submittedIdentifier ? String(submittedIdentifier).trim().toLowerCase() : "";
     const submittedPassword = typeof body?.password === "string" ? body.password : "";
+
+    // A shared MongoDB counter prevents rapid credential guessing across app instances.
+    await connectDB();
+    const rateLimit = await enforceAuthRateLimit(req, "auth-login", 80, 10 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "Too many login attempts. Please wait before trying again." },
+        { status: 429, headers: { "Cache-Control": "no-store, max-age=0", "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
+    }
 
     // The single configured admin is authenticated from server-only environment
     // credentials. No database user/signup is required, and normal users cannot
@@ -86,7 +100,6 @@ export async function POST(req: Request) {
     }
 
     // Existing database-backed login flow for ordinary users remains intact.
-    await connectDB();
     const user = await User.findOne({
       $or: [{ phoneNumber: submittedIdentifier }, { email: formattedInput }],
     });
@@ -100,18 +113,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Invalid password!" }, { status: 400 });
     }
 
-    const role = "user" as const;
+    // Keep a database-granted admin role. Ordinary users can never promote
+    // themselves because this value comes only from the saved account record.
+    const role = user.role === "admin" ? ("admin" as const) : ("user" as const);
     const loginAt = new Date();
     await User.updateOne(
       { _id: user._id },
       {
-        $set: { role, lastLoginAt: loginAt, lastSeenAt: loginAt },
+        $set: { lastLoginAt: loginAt, lastSeenAt: loginAt },
         $inc: { loginCount: 1 },
       },
     );
 
     const token = jwt.sign(
-      { userId: user._id, phoneNumber: user.phoneNumber },
+      {
+        userId: String(user._id),
+        phoneNumber: user.phoneNumber,
+        // A signed role claim enables correct middleware navigation. Privileged
+        // pages and APIs still verify the current MongoDB role/sessionVersion.
+        role,
+        sessionVersion: Number(user.sessionVersion || 0),
+      },
       JWT_SECRET,
       { expiresIn: "7d" },
     );
@@ -130,6 +152,7 @@ export async function POST(req: Request) {
           profileImageUrl: user.profileImageUrl || "",
           profileImagePublicId: user.profileImagePublicId || "",
           role,
+          isBanned: user.isBanned === true,
           lastLoginAt: loginAt,
           loginCount: Number(user.loginCount || 0) + 1,
         },
@@ -154,9 +177,10 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error: unknown) {
+    console.error("Authentication login failed:", error);
     return NextResponse.json(
-      { message: "Server error", error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
+      { message: "Login could not be completed. Please try again." },
+      { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 }

@@ -23,7 +23,7 @@ function serializeMessage(message: any) {
 }
 
 async function getUserSession(request: Request) {
-  const session = getVerifiedRequestSession(request);
+  const session = await getVerifiedRequestSession(request);
   if (!session) {
     return { session: null, response: NextResponse.json({ success: false, message: "Please log in to use chat." }, { status: 401 }) };
   }

@@ -1,4 +1,6 @@
 "use client";
+
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
@@ -374,25 +376,8 @@ export default function Navbar() {
           }`}
         >
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <motion.div
-              whileHover={{ rotate: -4, scale: 1.06 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-[13px] font-black tracking-tight text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/20"
-            >
-              SL
-            </motion.div>
-            <div className="leading-none">
-              <h2 className="text-[19px] font-extrabold tracking-tight text-slate-900">
-                Seba{" "}
-                <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                  Lagbe
-                </span>
-              </h2>
-              <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                SEBA LAGBE
-              </p>
-            </div>
+          <Link href="/" className="flex items-center">
+            <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
           </Link>
 
           {/* Center: Navigation (Desktop) */}
@@ -712,17 +697,7 @@ export default function Navbar() {
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-xs font-black text-white shadow-md shadow-indigo-500/30">
-                    SL
-                  </div>
-                  <span className="text-base font-extrabold tracking-tight text-slate-900">
-                    Seba{" "}
-                    <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                      Lagbe
-                    </span>
-                  </span>
-                </div>
+                <SiteBrandLogo width={140} height={45} className="h-[40px] w-auto" />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 import Footer from "@/components/Footer";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { replaceSiteNameInText } from "@/lib/siteSettings";
 
-const FOUNDER_IMAGE_URL =
-  "https://scontent.fdac165-1.fna.fbcdn.net/v/t39.30808-6/830162073_122117058801455546_9222997689185944451_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=s1024x1536&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFXk2DRYIMaT2rWUpeNS_QDO3oAE2SwZaw7egATZLBlrFuLbZxjfp2t1mEf0QSZ0qIfZc4Yht_g_s0X90DPJ-dn&_nc_ohc=7x8U3zFbJlgQ7kNvwG6ns6H&_nc_oc=AdrRhGzk9peqPK8DDRPa7fIiogRY07OV8My9-5h2RtQ-f2-_zmcWUpuDgjB4GtgwOxQ&_nc_zt=23&_nc_ht=scontent.fdac165-1.fna&_nc_gid=Ma3aijScui9BVI5wKi8slg&_nc_ss=7b2a8&oh=00_AQPvQJenAoDJpFaA4PQUyawFs7XV4baUGHBtVFlzMZtpjA&oe=6AD5352F";
+const FOUNDER_IMAGE_URL = "/adminpic/srizonFbPic.jpg";
 
 type Opportunity = {
   title: string;
@@ -99,7 +100,9 @@ function RoleIcon({ index }: { index: number }) {
 
 export default function OurTeamPage() {
   const { locale } = useI18n();
+  const { settings } = useSiteSettings();
   const isBn = locale === "bn";
+  const displayText = (value: string) => replaceSiteNameInText(value, settings.branding.siteName);
   const [photoFailed, setPhotoFailed] = useState(false);
 
   return (
@@ -113,10 +116,10 @@ export default function OurTeamPage() {
           </div>
 
           <section className="team-intro">
-            <div className="eyebrow"><SparkIcon />{isBn ? "সেবা লাগবে গড়ে তুলি একসঙ্গে" : "Building Seba Lagbe together"}</div>
+            <div className="eyebrow"><SparkIcon />{displayText(isBn ? "সেবা লাগবে গড়ে তুলি একসঙ্গে" : "Building Seba Lagbe together")}</div>
             <h1><T>One founder. A growing vision.</T></h1>
             <p className="intro-copy">
-              {isBn ? "সেবা লাগবে ধাপে ধাপে তৈরি হচ্ছে, একটি স্পষ্ট লক্ষ্য নিয়ে: দরকারি ডিজিটাল কাজকে আরও সহজ ও সবার নাগালে আনা।" : "Seba Lagbe is being built step by step, with a clear goal: make useful digital work simpler and more accessible."}
+              {displayText(isBn ? "সেবা লাগবে ধাপে ধাপে তৈরি হচ্ছে, একটি স্পষ্ট লক্ষ্য নিয়ে: দরকারি ডিজিটাল কাজকে আরও সহজ ও সবার নাগালে আনা।" : "Seba Lagbe is being built step by step, with a clear goal: make useful digital work simpler and more accessible.")}
             </p>
           </section>
 
@@ -126,13 +129,13 @@ export default function OurTeamPage() {
                 <img
                   className="founder-photo"
                   src={FOUNDER_IMAGE_URL}
-                  alt={isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder"}
+                  alt={displayText(isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder")}
                   loading="eager"
                   referrerPolicy="no-referrer"
                   onError={() => setPhotoFailed(true)}
                 />
               ) : (
-                <div className="founder-photo-fallback" aria-label={isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder"}>SL</div>
+                <div className="founder-photo-fallback" aria-label={displayText(isBn ? "সেবা লাগবে-এর প্রতিষ্ঠাতা" : "Seba Lagbe founder")}>SL</div>
               )}
               <span className="founder-online-dot" aria-hidden="true" />
             </div>
@@ -141,7 +144,7 @@ export default function OurTeamPage() {
             <h2 id="founder-heading"><T>Founder & Website Administrator</T></h2>
             <p className="founder-subtitle"><T>Solo Full-Stack Developer</T></p>
             <p className="founder-bio">
-              {isBn ? "আমি প্রায় দুই মাস আগে নিজের উদ্যোগে সেবা লাগবে তৈরি করা শুরু করেছি। নিজেই হাতে-কলমে কাজ করছি, শিখছি এবং ব্যবহারিক পণ্য ও ভালো সহযোগিতায় আগ্রহী মানুষের সঙ্গে প্ল্যাটফর্মটিকে এগিয়ে নিতে চাই।" : "I started building Seba Lagbe independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork."}
+              {displayText(isBn ? "আমি প্রায় দুই মাস আগে নিজের উদ্যোগে সেবা লাগবে তৈরি করা শুরু করেছি। নিজেই হাতে-কলমে কাজ করছি, শিখছি এবং ব্যবহারিক পণ্য ও ভালো সহযোগিতায় আগ্রহী মানুষের সঙ্গে প্ল্যাটফর্মটিকে এগিয়ে নিতে চাই।" : "I started building Seba Lagbe independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.")}
             </p>
             <div className="founder-tags">
               <span><T>Built independently</T></span>
@@ -156,7 +159,7 @@ export default function OurTeamPage() {
           <section className="opportunities-section" aria-labelledby="opportunities-heading">
             <div className="section-heading">
               <div className="eyebrow"><SparkIcon /><T>Open collaboration opportunities</T></div>
-              <h2 id="opportunities-heading">{isBn ? "সেবা লাগবে-এর ভবিষ্যৎ গড়তে সাহায্য করুন।" : "Help shape what Seba Lagbe becomes."}</h2>
+              <h2 id="opportunities-heading">{displayText(isBn ? "সেবা লাগবে-এর ভবিষ্যৎ গড়তে সাহায্য করুন।" : "Help shape what Seba Lagbe becomes.")}</h2>
               <p>
                 <T>I’m currently building the platform on my own. If you have skills, ideas, or energy to help it grow, there may be a place for you here.</T>
               </p>
@@ -170,7 +173,7 @@ export default function OurTeamPage() {
                     <span className="opportunity-type"><T>{opportunity.type}</T></span>
                   </div>
                   <h3><T>{opportunity.title}</T></h3>
-                  <p><T>{opportunity.description.replace(/সেবা লাগবে|Seba Lagbe/g, isBn ? "সেবা লাগবে" : "Seba Lagbe")}</T></p>
+                  <p><T>{settings.branding.siteName === "Seba Lagbe" ? opportunity.description.replace(/সেবা লাগবে|Seba Lagbe/g, isBn ? "সেবা লাগবে" : "Seba Lagbe") : replaceSiteNameInText(opportunity.description, settings.branding.siteName)}</T></p>
                   <a href="/contact" className="opportunity-link">
                     <T>Discuss this opportunity</T><ArrowIcon />
                   </a>

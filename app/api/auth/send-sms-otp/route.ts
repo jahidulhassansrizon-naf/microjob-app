@@ -1,44 +1,19 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import User from "@/models/User";
-import Otp from "@/models/Otp";
-import { validatePhoneNumber } from "@/lib/phoneValidation";
 
-export async function POST(req: Request) {
-  try {
-    await connectDB();
-    const { phoneNumber, country } = await req.json();
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-    const validationError = validatePhoneNumber(country, phoneNumber);
-    if (validationError) {
-      return NextResponse.json({ message: validationError }, { status: 400 });
-    }
-
-    const cleanPhone = phoneNumber.toString().trim();
-
-    const existingUser = await User.findOne({ phoneNumber: cleanPhone });
-    if (existingUser) {
-      return NextResponse.json(
-        { message: "This phone number is already registered!" },
-        { status: 400 },
-      );
-    }
-
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await Otp.deleteMany({ phoneNumber: cleanPhone });
-    await Otp.create({ phoneNumber: cleanPhone, otp: otpCode });
-
-    console.log(`[TEST MODE] Phone OTP for ${cleanPhone} is: ${otpCode}`);
-
-    return NextResponse.json(
-      { message: "OTP sent successfully to your phone number!" },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    return NextResponse.json(
-      { message: "Server error", error: error.message },
-      { status: 500 },
-    );
-  }
+/** SMS verification is intentionally disabled in the registration UI until a provider is configured. */
+export async function POST() {
+  return NextResponse.json(
+    { message: "SMS verification is temporarily unavailable. Please choose email verification." },
+    {
+      status: 503,
+      headers: {
+        "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    },
+  );
 }

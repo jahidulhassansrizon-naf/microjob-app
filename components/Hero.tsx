@@ -4,7 +4,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Play, RotateCcw, Zap } from "lucide-react";
+import { ArrowRight, ChevronDown, Play, RotateCcw, Zap } from "lucide-react";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 
 const VIDEO_SRC = "/intro/sohojhubIntro.mp4";
@@ -12,6 +12,7 @@ const VIDEO_SRC = "/intro/sohojhubIntro.mp4";
 export default function Hero() {
   const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   // `showOverlay` controls the play button on top of the video. It is visible
   // before the first play and again after the video finishes (replay).
   const [showOverlay, setShowOverlay] = useState(true);
@@ -42,12 +43,26 @@ export default function Hero() {
     }
   };
 
+  // Smoothly scrolls to the end of the hero, just under the sticky navbar.
+  const scrollToNext = () => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const navbarHeight = window.innerWidth >= 768 ? 76 : 64;
+    window.scrollTo({
+      top: window.scrollY + el.getBoundingClientRect().bottom - navbarHeight,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <section className="relative isolate w-full overflow-hidden bg-white py-10 sm:py-14 lg:py-16">
+    <section
+      ref={sectionRef}
+      className="relative isolate w-full overflow-hidden bg-white pb-12 pt-12 sm:pb-24 sm:pt-16 lg:pb-28 lg:pt-20"
+    >
       {/* ================= BACKGROUND (grid + glow) ================= */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.06)_1px,transparent_1px)] [background-size:64px_64px] [-webkit-mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,#000_35%,transparent_100%)] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,#000_35%,transparent_100%)]" />
-        <div className="absolute left-1/2 top-[-14rem] h-[34rem] w-[70rem] max-w-none -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-500/25 via-indigo-500/20 to-violet-500/25 blur-3xl" />
+        <div className="absolute left-1/2 top-[-14rem] h-[34rem] w-[70rem] max-w-none -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-500/18 via-indigo-500/14 to-violet-500/18 blur-3xl" />
       </div>
 
       {/* ================= HERO: VIDEO LEFT, CONTENT RIGHT ================= */}
@@ -65,7 +80,7 @@ export default function Hero() {
             className="absolute inset-x-5 bottom-[-1.5rem] top-8 -z-10 rounded-[32px] bg-gradient-to-r from-blue-500/25 via-indigo-500/20 to-violet-500/25 blur-3xl sm:inset-x-8 sm:bottom-[-2rem]"
           />
 
-          <div className="rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-100/70 p-1.5 shadow-[0_30px_80px_-24px_rgba(30,41,99,0.40)] ring-1 ring-slate-900/10 sm:rounded-3xl sm:p-2">
+          <div className="rounded-2xl bg-gradient-to-b from-slate-200/90 to-slate-100/70 p-1.5 shadow-[0_24px_60px_-28px_rgba(30,41,99,0.35)] ring-1 ring-slate-900/10 sm:rounded-3xl sm:p-2">
             <div className="relative aspect-[1672/941] w-full overflow-hidden rounded-xl bg-slate-900 sm:rounded-2xl">
               <video
                 ref={videoRef}
@@ -96,10 +111,6 @@ export default function Hero() {
                 }`}
               >
                 <span className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20 lg:h-24 lg:w-24">
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 animate-ping rounded-full bg-white/50 [animation-duration:2s]"
-                  />
                   <span className="relative flex h-full w-full items-center justify-center rounded-full bg-white/95 text-indigo-600 shadow-2xl shadow-indigo-900/40 ring-4 ring-white/40 transition-transform duration-200 group-hover:scale-110 group-focus-visible:ring-indigo-300 group-active:scale-95">
                     {hasEnded ? (
                       <RotateCcw className="h-6 w-6 sm:h-8 sm:w-8 lg:h-9 lg:w-9" />
@@ -150,7 +161,7 @@ export default function Hero() {
           <div className="mt-7 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start">
             <Link
               href="/dashboard"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:shadow-xl hover:shadow-indigo-500/40 sm:w-auto"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 h-12 px-7 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:shadow-lg hover:shadow-indigo-500/35 sm:w-auto"
             >
               <T>{"Start for Free"}</T>
               <ArrowRight
@@ -160,12 +171,37 @@ export default function Hero() {
             </Link>
             <Link
               href="/login?redirect=/sohoj-tools"
-              className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-7 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white h-12 px-7 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
             >
               <T>{"View all tools"}</T>
             </Link>
           </div>
         </motion.div>
+      </div>
+
+      {/* ================= SECTION DIVIDER: hairlines + scroll cue ================= */}
+      <div className="absolute inset-x-0 bottom-0 hidden sm:block">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center gap-5 px-4 pb-6 sm:px-6 md:px-10 2xl:max-w-[1640px]">
+          <span
+            aria-hidden
+            className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300/80 to-slate-300"
+          />
+          <button
+            type="button"
+            onClick={scrollToNext}
+            aria-label={t("Scroll down")}
+            className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-[0_6px_18px_-8px_rgba(30,41,99,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+          >
+            <ChevronDown
+              size={20}
+              className="transition-transform duration-200 group-hover:translate-y-0.5"
+            />
+          </button>
+          <span
+            aria-hidden
+            className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-300/80 to-slate-300"
+          />
+        </div>
       </div>
     </section>
   );

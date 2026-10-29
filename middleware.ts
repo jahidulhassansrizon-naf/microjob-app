@@ -128,19 +128,24 @@ async function verifySessionToken(token: string): Promise<SessionClaims | null> 
       return null;
     }
 
-    const looksLikeAdmin =
-      claims.admin === true ||
-      claims.role === "admin" ||
-      claims.userId === ADMIN_USER_ID;
+    // The environment-configured root administrator is the only session whose
+    // identity is bound to ADMIN_EMAIL / ADMIN_PASSWORD. Database administrators
+    // have a MongoDB ObjectId and are validated against the User document by the
+    // protected page/API before privileged data or actions are served.
+    const isEnvironmentAdmin =
+      claims.admin === true || claims.userId === ADMIN_USER_ID;
 
-    if (looksLikeAdmin) {
+    if (isEnvironmentAdmin) {
       return (await isCurrentAdminSession(claims, jwtSecret)) ? claims : null;
     }
 
-    // Normal user JWTs are issued from MongoDB ObjectIds.
+    // All database-backed sessions are issued for MongoDB ObjectIds. The signed
+    // role claim is used only for navigation; app/admin/page.tsx and admin APIs
+    // re-check the live role and sessionVersion against MongoDB.
     if (
       typeof claims.userId !== "string" ||
-      !/^[a-f\d]{24}$/i.test(claims.userId)
+      !/^[a-f\d]{24}$/i.test(claims.userId) ||
+      claims.admin === true
     ) {
       return null;
     }
@@ -188,11 +193,24 @@ export default async function middleware(request: NextRequest) {
   const claims = token ? await verifySessionToken(token) : null;
   if (!claims) return loginRedirect(request);
 
-  if (
-    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
-    !(claims.admin === true && claims.role === "admin" && claims.userId === ADMIN_USER_ID)
-  ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isEnvironmentAdmin =
+    claims.admin === true &&
+    claims.role === "admin" &&
+    claims.userId === ADMIN_USER_ID;
+
+  // For a database-backed identity, let the server-rendered admin page perform
+  // the authoritative role + sessionVersion check. Middleware cannot query the
+  // live role; rejecting a valid pre-role-claim JWT here can cause a redirect
+  // loop for legacy database administrators. Admin APIs independently require
+  // an active database administrator session before returning or changing data.
+
+  // Only the environment administrator is force-routed here at middleware
+  // level. Database admins are revalidated by /dashboard and /admin; avoiding
+  // role-claim redirects here prevents a stale token after demotion from causing
+  // a /dashboard <-> /admin redirect loop.
+  if (isEnvironmentAdmin && !isAdminPath) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return NextResponse.next();
@@ -207,6 +225,11 @@ export const config = {
     "/my-files/:path*",
     "/subscription/:path*",
     "/sohoj-tools/:path*",
+    "/dorkar-link/:path*",
+    "/dorkari-document/:path*",
+    "/customers-invoices/:path*",
+    "/income-expenses/:path*",
+    "/questions-create/:path*",
     "/ai-editor/:path*",
     "/ai-photo/:path*",
     "/ai-template/:path*",
@@ -214,10 +237,6 @@ export const config = {
     "/manual-editor/:path*",
     "/print-media/:path*",
     "/tools/:path*",
-    "/questions-create/:path*",
-    "/customers-invoices/:path*",
-    "/income-expenses/:path*",
-    "/dorkari-document/:path*",
     "/login-success/:path*",
     "/payment/manual/:path*",
   ],

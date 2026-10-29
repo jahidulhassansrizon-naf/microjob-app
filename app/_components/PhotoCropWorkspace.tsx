@@ -1,7 +1,8 @@
 "use client";
 
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+
 import "react-image-crop/dist/ReactCrop.css";
-import BrandName from "@/app/_components/BrandName";
 
 import React, {
   useCallback,
@@ -351,15 +352,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
 
       <header className="flex h-[50px] shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 text-slate-900">
         <div className="flex h-full min-w-0 items-center gap-3 px-3 sm:px-5">
-          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black leading-none text-white">
-            SL
-          </div>
-          <div className="hidden leading-none sm:block">
-            <BrandName className="text-[14px] font-black tracking-tight" accentClassName="text-blue-600" />
-            <div className="mt-[3px] text-[7px] uppercase tracking-[0.16em] text-slate-500">
-              sebalagbe.com
-            </div>
-          </div>
+          <SiteBrandLogo width={140} height={45} className="h-[30px] w-auto shrink-0" />
           <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
           <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl bg-slate-200 text-blue-600">
             <CropIcon size={16} strokeWidth={2.3} />

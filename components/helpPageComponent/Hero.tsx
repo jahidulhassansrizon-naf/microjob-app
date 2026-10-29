@@ -2,6 +2,8 @@
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 import React from "react";
 import { Play, Mail, Phone } from "lucide-react";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { getContactList } from "@/app/_components/contactSettings";
 type Tutorial = {
     id: number;
     title: string;
@@ -136,16 +138,17 @@ function VideoPreview({ large = false }: { large?: boolean }) {
 function TutorialCard({ tutorial }: {
     tutorial: Tutorial;
 }) {
+    const { settings } = useSiteSettings();
     return (<article className="rounded-[7px] border border-[#E2E8F0] bg-white p-[10px] shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
       <div className="mb-[4px] text-[9px] font-medium text-[#64748B]"><T>{"Video "}</T>{tutorial.id}
       </div>
 
       <h3 className="min-h-[34px] text-[13px] font-bold leading-[1.35] text-[#0F172A]">
-        {<T>{tutorial.title}</T>}
+        {<T>{tutorial.title.replaceAll("Seba Lagbe", settings.branding.siteName)}</T>}
       </h3>
 
       <p className="mt-[7px] min-h-[44px] text-[9px] leading-[1.55] text-[#475569]">
-        {<T>{tutorial.description}</T>}
+        {<T>{tutorial.description.replaceAll("Seba Lagbe", settings.branding.siteName)}</T>}
       </p>
 
       <div className="mt-[10px]">
@@ -155,6 +158,9 @@ function TutorialCard({ tutorial }: {
 }
 export default function Hero() {
     const { t } = useI18n();
+    const { settings } = useSiteSettings();
+    const contactEmails = getContactList(settings.contact, "emails");
+    const contactPhones = getContactList(settings.contact, "phones");
     return (<main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       {/* Large intro area */}
       <section className="relative h-[470px] overflow-hidden border-b border-[#E2E8F0] bg-[linear-gradient(180deg,#EFF6FF_0%,#F8FAFC_100%)]">
@@ -162,11 +168,11 @@ export default function Hero() {
           <span className="rounded-full border border-[#2563EB]/20 bg-white px-[14px] py-[6px] text-[11px] font-semibold text-[#2563EB] shadow-sm"><T>{"Our specialty\r\n          "}</T></span>
 
           <h1 className="mt-[28px] font-extrabold leading-none tracking-[-0.045em] text-[#0F172A]">
-            <span className="text-[50px] text-[#2563EB] sm:text-[52px]"><T>{"Seba Lagbe\r\n            "}</T></span>
+            <span className="text-[50px] text-[#2563EB] sm:text-[52px]">{settings.branding.siteName}</span>
             <span className="text-[50px] sm:text-[52px]"><T>{"Introduction"}</T></span>
           </h1>
 
-          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#334155]"><T>{"Watch the video tutorials below to learn how to use Seba Lagbe.\r\n          "}</T></p>
+          <p className="mt-[34px] max-w-[570px] text-[16px] font-normal leading-7 text-[#334155]">{`Watch the video tutorials below to learn how to use ${settings.branding.siteName}.`}</p>
         </div>
       </section>
 
@@ -177,7 +183,7 @@ export default function Hero() {
           <div>
             <div className="mb-[10px] text-[11px] font-medium text-[#64748B]"><T>{"Video 1\r\n            "}</T></div>
 
-            <h2 className="text-[16px] font-bold leading-6 text-[#0F172A]"><T>{"Seba Lagbe introduction\r\n            "}</T></h2>
+            <h2 className="text-[16px] font-bold leading-6 text-[#0F172A]">{`${settings.branding.siteName} introduction`}</h2>
 
             <p className="mt-[4px] text-[11px] leading-5 text-[#334155]"><T>{"Use various digital tools to help computer operators complete\r\n              their daily tasks of images, documents, applications, and other\r\n              necessary tasks easily and quickly.\r\n            "}</T></p>
 
@@ -196,18 +202,18 @@ export default function Hero() {
             <h2 className="text-[15px] font-bold text-[#0F172A]"><T>{"Contact"}</T></h2>
 
             <div className="mt-[10px] rounded-[7px] border border-[#E2E8F0] bg-[#EFF6FF]/60 px-[16px] py-[14px]">
-              <p className="text-[10px] leading-5 text-[#475569]"><T>{"Contact us for any Seba Lagbe support or information.\r\n              "}</T></p>
+              <p className="text-[10px] leading-5 text-[#475569]">{`Contact us for ${settings.branding.siteName} support or information.`}</p>
 
               <div className="mt-[9px] flex flex-wrap items-center gap-x-[24px] gap-y-[7px] text-[10px] font-medium text-[#64748B] italic">
-                <div className="inline-flex items-center gap-[6px] not-italic">
+                {contactEmails.map((email, index) => <div key={`${email}-${index}`} className="inline-flex items-center gap-[6px] not-italic">
                   <Mail size={13} className="text-[#2563EB]"/>
-                  <span><T>{"Email address will be updated soon..."}</T></span>
-                </div>
+                  <a href={`mailto:${email}`} className="not-italic hover:text-blue-600">{email}</a>
+                </div>)}
 
-                <div className="inline-flex items-center gap-[6px] not-italic">
+                {contactPhones.map((phone, index) => <div key={`${phone}-${index}`} className="inline-flex items-center gap-[6px] not-italic">
                   <Phone size={13} className="text-[#10B981]"/>
-                  <span><T>{"Phone number will be updated soon..."}</T></span>
-                </div>
+                  <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="not-italic hover:text-blue-600">{phone}</a>
+                </div>)}
               </div>
             </div>
           </div>
@@ -215,10 +221,7 @@ export default function Hero() {
       </section>
 
       {/* Floating WhatsApp button */}
-      <a href="#" onClick={(e) => {
-            e.preventDefault();
-            alert(t("WhatsApp contact will be updated soon..."));
-        }} aria-label={t("Contact us on WhatsApp")} className="fixed bottom-[22px] right-[22px] z-50 grid h-[56px] w-[56px] place-items-center rounded-full bg-[#10B981] text-white shadow-[0_10px_28px_rgba(16,185,129,0.30)] transition hover:scale-105">
+      <a href={settings.contact.whatsapp ? `https://wa.me/${settings.contact.whatsapp.replace(/\D/g, "")}` : `tel:${contactPhones[0] || settings.contact.phone}`} target="_blank" rel="noreferrer" aria-label={t("Contact us on WhatsApp")} className="fixed bottom-[22px] right-[22px] z-50 grid h-[56px] w-[56px] place-items-center rounded-full bg-[#10B981] text-white shadow-[0_10px_28px_rgba(16,185,129,0.30)] transition hover:scale-105">
         <span className="text-[28px] leading-none"><T>{"\u25D4"}</T></span>
       </a>
     </main>);

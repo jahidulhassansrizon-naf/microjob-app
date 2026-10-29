@@ -5,12 +5,15 @@ import React, { useState } from "react";
 import { Phone, Mail, Clock, Loader2, House } from "lucide-react";
 import { motion } from "framer-motion";
 import emailjs from "@emailjs/browser";
-
-const CONTACT_PHONE = "017836666743";
-const CONTACT_EMAIL = "jahidulhassansrizon@gmail.com";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { getContactList } from "@/app/_components/contactSettings";
 
 export default function ContactHero() {
   const { t } = useI18n();
+  const { settings } = useSiteSettings();
+  const contactPhones = getContactList(settings.contact, "phones");
+  const contactEmails = getContactList(settings.contact, "emails");
+  const CONTACT_EMAIL = contactEmails[0] || settings.contact.email;
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,6 +37,8 @@ export default function ContactHero() {
       phone_number: formData.phone,
       subject: formData.subject,
       message: formData.details,
+      to_email: CONTACT_EMAIL,
+      reply_to: formData.email,
     };
 
     try {
@@ -71,11 +76,11 @@ export default function ContactHero() {
             <T>{"Do you have questions or ideas?"}</T>
           </span>
           <h1 className="mt-6 text-[38px] font-extrabold leading-tight tracking-[-1.2px] text-[#121827] sm:text-[52px]">
-            <span className="text-[#4259D9]"><T>{"Let's talk"}</T></span>{" "}
-            <T>{"about your project."}</T>
+            <span className="text-[#4259D9]">{settings.contactPage.heroTitle}</span>{" "}
+            
           </h1>
           <p className="mx-auto mt-5 max-w-[710px] text-[16px] leading-7 text-[#555D70] sm:text-[17px]">
-            <T>{"Seba Lagbe is independently built and operated from a home workspace in Tongi, Bangladesh. Send a message about support, feedback, or collaboration, and I'll reply as soon as I can."}</T>
+            {settings.contactPage.heroSubtitle.replaceAll("Seba Lagbe", settings.branding.siteName)}
           </p>
         </motion.div>
 
@@ -90,7 +95,7 @@ export default function ContactHero() {
               <T>{"Send your message."}</T>
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[#60677A]">
-              <T>{"Tell me a little about what you need. I'll get back to you as soon as I can."}</T>
+              {settings.contactPage.contactPrompt}
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -128,41 +133,41 @@ export default function ContactHero() {
           </motion.div>
 
           <div className="space-y-4">
-            <motion.a href={`tel:${CONTACT_PHONE}`} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.18 }} whileHover={{ y: -3 }} className="block rounded-[23px] border border-[#E9E2CC] bg-white/80 p-5 shadow-[0_12px_32px_rgba(48,48,80,0.05)] sm:p-6">
+            <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.18 }} whileHover={{ y: -3 }} className="rounded-[23px] border border-[#E9E2CC] bg-white/80 p-5 shadow-[0_12px_32px_rgba(48,48,80,0.05)] sm:p-6">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-emerald-500 text-white"><Phone className="h-6 w-6" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[16px] font-extrabold text-[#171D2D]"><T>{"Phone"}</T></span>
-                  <span className="mt-1 block text-[12px] leading-5 text-[#697084]"><T>{"Call if you need a quick reply"}</T></span>
+                  <span className="mt-1 block text-[12px] leading-5 text-[#697084]">{settings.contactPage.callDescription}</span>
                 </span>
               </div>
               <div className="my-4 h-px bg-[#EBE6D8]" />
-              <span className="text-[15px] font-semibold text-[#3E58D7]">{CONTACT_PHONE}</span>
-            </motion.a>
+              <div className="space-y-2">{contactPhones.map((phone, index) => <a key={`${phone}-${index}`} href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="block break-words text-[15px] font-semibold text-[#3E58D7] hover:underline">{phone}</a>)}</div>
+            </motion.div>
 
-            <motion.a href={`mailto:${CONTACT_EMAIL}`} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.25 }} whileHover={{ y: -3 }} className="block rounded-[23px] border border-[#E9E2CC] bg-white/80 p-5 shadow-[0_12px_32px_rgba(48,48,80,0.05)] sm:p-6">
+            <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.25 }} whileHover={{ y: -3 }} className="rounded-[23px] border border-[#E9E2CC] bg-white/80 p-5 shadow-[0_12px_32px_rgba(48,48,80,0.05)] sm:p-6">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#4260DB] text-white"><Mail className="h-6 w-6" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[16px] font-extrabold text-[#171D2D]"><T>{"Email"}</T></span>
-                  <span className="mt-1 block text-[12px] leading-5 text-[#697084]"><T>{"Reach out any time"}</T></span>
+                  <span className="mt-1 block text-[12px] leading-5 text-[#697084]">{settings.contactPage.emailDescription}</span>
                 </span>
               </div>
               <div className="my-4 h-px bg-[#EBE6D8]" />
-              <span className="break-all text-[13px] font-semibold text-[#3E58D7]">{CONTACT_EMAIL}</span>
-            </motion.a>
+              <div className="space-y-2">{contactEmails.map((email, index) => <a key={`${email}-${index}`} href={`mailto:${email}`} className="block break-all text-[13px] font-semibold text-[#3E58D7] hover:underline">{email}</a>)}</div>
+            </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.32 }} whileHover={{ y: -3 }} className="rounded-[23px] border border-[#E9E2CC] bg-white/80 p-5 shadow-[0_12px_32px_rgba(48,48,80,0.05)] sm:p-6">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-violet-500 text-white"><House className="h-6 w-6" /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[16px] font-extrabold text-[#171D2D]"><T>{"Home-based workspace"}</T></span>
+                  <span className="block text-[16px] font-extrabold text-[#171D2D]">{settings.contactPage.officeTitle}</span>
                   <span className="mt-1 block text-[12px] leading-5 text-[#697084]"><T>{"Flexible availability"}</T></span>
                 </span>
               </div>
               <div className="my-4 h-px bg-[#EBE6D8]" />
-              <p className="text-[13px] leading-6 text-[#555D70]"><T>{"I work from home and am usually reachable throughout the day. Urgent work or errands may occasionally delay a reply, so please contact me before visiting."}</T></p>
-              <div className="mt-4 flex items-center gap-2 text-[12px] font-semibold text-[#3E58D7]"><Clock className="h-4 w-4" /><T>{"No fixed office hours"}</T></div>
+              <p className="text-[13px] leading-6 text-[#555D70]">{settings.contactPage.officeDescription}</p>
+              <div className="mt-4 flex items-center gap-2 text-[12px] font-semibold text-[#3E58D7]"><Clock className="h-4 w-4" />{settings.contact.supportHours}</div>
             </motion.div>
           </div>
         </div>

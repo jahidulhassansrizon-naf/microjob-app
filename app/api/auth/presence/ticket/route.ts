@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * heartbeat/polling, so tickets and provider-specific WebSocket upgrades are not needed.
  */
 export async function POST(request: Request) {
-  const session = getVerifiedRequestSession(request);
+  const session = await getVerifiedRequestSession(request);
 
   if (!session) {
     return NextResponse.json(

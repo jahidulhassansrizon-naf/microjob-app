@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import ScannedDocument from "@/models/ScannedDocument";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -134,6 +135,8 @@ function serializeDocument(item: any) {
 
 export async function GET(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
@@ -338,6 +341,8 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
@@ -493,6 +498,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
 
     const { searchParams } = new URL(request.url);

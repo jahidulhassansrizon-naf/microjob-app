@@ -55,7 +55,7 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "flexible subscription plans": "আপনার সুবিধামতো সাবস্ক্রিপশন প্ল্যান",
   "see all tools": "সব টুল দেখুন",
   "paid and free tools": "পেইড ও ফ্রি টুল",
-  "explore the tools on sohozkaj": "Sohozkaj-এর টুলগুলো দেখুন",
+  "explore the tools on seba lagbe": "সেবা লাগবে-এর টুলগুলো দেখুন",
   "your subscription unlocks paid tools. manual editor is free, while ai editor, ai template, print media, and bulk photo edit require an active subscription.": "সাবস্ক্রিপশন থাকলে পেইড টুলগুলো ব্যবহার করতে পারবেন। ম্যানুয়াল এডিটর বিনামূল্যে ব্যবহারযোগ্য; AI Editor, AI Template, Print Media ও Bulk Photo Edit ব্যবহারে সক্রিয় সাবস্ক্রিপশন প্রয়োজন।",
   "paid": "পেইড",
   "credits": "ক্রেডিট",
@@ -699,7 +699,7 @@ export default function PricingPage() {
               <T>{"Paid and free tools"}</T>
             </span>
             <h2 className="mb-3 text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
-              <T>{"Explore the tools on Sohozkaj"}</T>
+              <T>{"Explore the tools on Seba Lagbe"}</T>
             </h2>
             <p className="max-w-2xl text-sm font-medium leading-6 text-slate-500 md:text-base">
               <T>{"Your subscription unlocks paid tools. Manual Editor is free, while AI Editor, AI Template, Print Media, and Bulk Photo Edit require an active subscription."}</T>

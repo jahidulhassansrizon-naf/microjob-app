@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const ID_PATTERN = /^[a-zA-Z0-9._:-]{16,120}$/;
 
 export async function GET(request: Request) {
-  const auth = getVerifiedRequestSession(request);
+  const auth = await getVerifiedRequestSession(request);
   if (!auth || auth.role !== "user") {
     return NextResponse.json({ success: false, message: "Please sign in as a user." }, { status: 401 });
   }
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = getVerifiedRequestSession(request);
+  const auth = await getVerifiedRequestSession(request);
   if (!auth || auth.role !== "user") {
     return NextResponse.json({ success: false, message: "Please sign in as a user." }, { status: 401 });
   }

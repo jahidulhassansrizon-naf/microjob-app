@@ -34,7 +34,7 @@ function roomNameForSession(sessionId: string) {
 export async function POST(request: Request) {
   const adminAuth = await requireAdmin(request);
   const isAdmin = !adminAuth.response;
-  const userAuth = isAdmin ? null : getVerifiedRequestSession(request);
+  const userAuth = isAdmin ? null : await getVerifiedRequestSession(request);
 
   if (!isAdmin && (!userAuth || userAuth.role !== "user")) {
     return adminAuth.response || NextResponse.json({ success: false, message: "Please sign in." }, { status: 401 });

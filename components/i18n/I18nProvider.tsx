@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { translateComponentText } from "@/components/i18n/componentTranslations";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { replaceSiteNameInText } from "@/lib/siteSettings";
 import {
   DEFAULT_LOCALE,
   persistLocale,
@@ -63,6 +65,10 @@ export function useI18n() {
 
 export function T({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
-  if (typeof children === "string" || typeof children === "number") return <>{t(children)}</>;
+  const { settings } = useSiteSettings();
+  if (typeof children === "string" || typeof children === "number") {
+    const translated = t(children);
+    return <>{replaceSiteNameInText(translated, settings.branding.siteName)}</>;
+  }
   return <>{children}</>;
 }

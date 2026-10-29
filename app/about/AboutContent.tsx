@@ -17,6 +17,8 @@ import {
   Users,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { replaceSiteNameInText } from "@/lib/siteSettings";
 
 const copy = {
   en: {
@@ -135,7 +137,14 @@ const principles = [
 
 export default function AboutContent() {
   const { locale } = useI18n();
-  const t = copy[locale === "bn" ? "bn" : "en"];
+  const { settings } = useSiteSettings();
+  const selectedCopy = copy[locale === "bn" ? "bn" : "en"];
+  const t = Object.fromEntries(
+    Object.entries(selectedCopy).map(([key, value]) => [
+      key,
+      replaceSiteNameInText(value, settings.branding.siteName),
+    ]),
+  ) as typeof selectedCopy;
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#FFFDF3] text-slate-900">
@@ -161,7 +170,7 @@ export default function AboutContent() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="mailto:jahidulhassansrizon@gmail.com?subject=Let%27s%20collaborate%20on%20Sohoj%20Hub"
+                href={`mailto:${settings.contact.email}?subject=Let%27s%20collaborate%20on%20${encodeURIComponent(settings.branding.siteName)}`}
                 className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
               >
                 {t.primaryCta}
@@ -283,7 +292,7 @@ export default function AboutContent() {
             </div>
             <div className="flex flex-col items-start gap-3 lg:min-w-[225px] lg:items-stretch">
               <a
-                href="mailto:jahidulhassansrizon@gmail.com?subject=Let%27s%20collaborate%20on%20Sohoj%20Hub"
+                href={`mailto:${settings.contact.email}?subject=Let%27s%20collaborate%20on%20${encodeURIComponent(settings.branding.siteName)}`}
                 className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 {t.primaryCta}<ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

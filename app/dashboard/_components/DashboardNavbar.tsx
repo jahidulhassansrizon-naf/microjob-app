@@ -1,8 +1,9 @@
 // app/dashboard/_components/DashboardNavbar.tsx
 "use client";
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
-import BrandName from "@/app/_components/BrandName";
 import {
   useEffect,
   useLayoutEffect,
@@ -725,11 +726,15 @@ const itemActive =
 const itemIdle =
   "text-[#3B2F1E] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] hover:shadow-[inset_0_0_0_1px_rgba(216,201,166,0.9)]";
 function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
+  const { settings } = useSiteSettings();
+  const label = item.label === "Seba Lagbe Tools" && settings.branding.siteName !== "Seba Lagbe"
+    ? `${settings.branding.siteName} Tools`
+    : item.label;
   return (
     <>
       <IconTile icon={item.icon} tone={item.tone} />
 
-      <span>{<DT>{item.label}</DT>}</span>
+      <span>{<DT>{label}</DT>}</span>
 
       {item.proBadge && <ProBadge />}
 
@@ -1237,13 +1242,7 @@ export default function DashboardNavbar({
             className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5"
           >
             <Link href="/" className="flex min-w-0 shrink items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#EF4444] to-[#B91C1C] text-[16px] font-bold tracking-tight text-white ring-1 ring-[#F87171]/60 shadow-[0_6px_14px_-6px_rgba(220,38,38,0.6)]">
-                SL
-              </div>
-
-              <div className="flex min-w-0 flex-col leading-none">
-                <BrandName className="truncate text-[19px] font-bold tracking-tight text-[#3B2F1E] sm:text-[21px]" accentClassName="text-[#DC2626]" />
-              </div>
+              <SiteBrandLogo width={140} height={45} className="h-[40px] w-auto" />
             </Link>
 
             <Link

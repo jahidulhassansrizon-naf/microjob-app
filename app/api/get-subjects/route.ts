@@ -173,7 +173,7 @@ async function generateSubjects(
 }
 
 export async function POST(req: Request) {
-  if (!hasVerifiedRequestSession(req)) {
+  if (!(await hasVerifiedRequestSession(req))) {
     return errorResponse("Authentication required. Please log in to continue.", 401);
   }
   try {

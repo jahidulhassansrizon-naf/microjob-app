@@ -1,5 +1,6 @@
 "use client";
 
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 import BrandName from "@/app/_components/BrandName";
 import { useState, type FormEvent } from "react";
@@ -42,6 +43,8 @@ export default function ForgotPasswordPage() {
     try {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
@@ -49,7 +52,9 @@ export default function ForgotPasswordPage() {
       if (!response.ok) {
         throw new Error(data.message || data.error || "Failed to send OTP.");
       }
-      setMessage("An OTP code has been sent to your email.");
+      setMessage(isBn
+        ? "এই ইমেইলের সঙ্গে অ্যাকাউন্ট থাকলে রিসেট কোড পাঠানো হবে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।"
+        : "If an account matches this email, a reset code will be sent. Check your inbox and spam folder.");
       setStep(2);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -80,6 +85,8 @@ export default function ForgotPasswordPage() {
     try {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim(),
@@ -115,12 +122,8 @@ export default function ForgotPasswordPage() {
       </div>
 
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
-        <Link href="/" aria-label={isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home"} className="group inline-flex min-w-0 items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">SL</span>
-          <span className="min-w-0 leading-none">
-            <BrandName className="block text-lg font-black tracking-tight text-slate-900 sm:text-xl" accentClassName="text-indigo-600" />
-            <span className="mt-1.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400 sm:text-[9px]">{isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}</span>
-          </span>
+        <Link href="/" aria-label={isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home"} className="inline-flex min-w-0 items-center">
+          <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
         </Link>
         <Link href="/login" className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200/90 bg-white/80 px-3.5 py-2.5 text-xs font-bold text-slate-600 shadow-sm backdrop-blur transition hover:border-indigo-200 hover:text-indigo-600 sm:px-4">
           <ArrowLeft size={14} />
@@ -144,7 +147,7 @@ export default function ForgotPasswordPage() {
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
               {step === 1
                 ? <T>Enter your account email to receive a password reset OTP code.</T>
-                : <T>{`Enter the 6-digit OTP code sent to ${email}`}</T>}
+                : <T>{`If an account exists for ${email}, enter the 6-digit code. If no code arrives, check the address and spam folder.`}</T>}
             </p>
           </div>
 
@@ -169,14 +172,14 @@ export default function ForgotPasswordPage() {
                   <label htmlFor="recovery-email" className={labelClass}><T>Email Address</T></label>
                   <div className="relative">
                     <Mail size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input id="recovery-email" type="email" autoComplete="email" required placeholder="Enter your email" value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} />
+                    <input id="recovery-email" type="email" autoComplete="email" required placeholder="Enter your email" value={email} onChange={(event) => { setEmail(event.target.value); setError(""); setMessage(""); }} className={inputClass} />
                   </div>
                 </div>
                 <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
                   {loading && <Loader2 size={16} className="animate-spin" />}
                   {loading ? <T>Sending OTP...</T> : <T>Send OTP Code</T>}
                 </button>
-                <p className="text-center text-[11px] leading-5 text-slate-400"><T>We will email you a one-time code to help protect your account.</T></p>
+                <p className="text-center text-[11px] leading-5 text-slate-400"><T>If an account exists for this email, a one-time code will be emailed. For your security, the same message is shown either way.</T></p>
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
@@ -188,14 +191,14 @@ export default function ForgotPasswordPage() {
                   <label htmlFor="new-password" className={labelClass}><T>New Password</T></label>
                   <div className="relative">
                     <Lock size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input id="new-password" type="password" autoComplete="new-password" required minLength={8} placeholder="Enter new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={inputClass} />
+                    <input id="new-password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} placeholder="Enter new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={inputClass} />
                   </div>
                 </div>
                 <div>
                   <label htmlFor="confirm-new-password" className={labelClass}><T>Confirm New Password</T></label>
                   <div className="relative">
                     <Lock size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input id="confirm-new-password" type="password" autoComplete="new-password" required minLength={8} placeholder="Confirm new password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} />
+                    <input id="confirm-new-password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} placeholder="Confirm new password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={inputClass} />
                   </div>
                 </div>
                 <button type="submit" disabled={loading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">

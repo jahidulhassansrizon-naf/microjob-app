@@ -5,9 +5,9 @@ function normalizedEmail(value: unknown): string {
 }
 
 /**
- * A database user account is never promoted to admin just because its email
- * matches ADMIN_EMAIL. The single environment-configured admin has a separate
- * signed server session and is not a registered User document.
+ * The primary administrator is configured in server environment variables and
+ * is not a User document. Other administrator roles must come from a verified
+ * database User record, never from an email address alone.
  */
 export function isAdminEmail(email: unknown): boolean {
   const configured = normalizedEmail(process.env.ADMIN_EMAIL);
@@ -15,7 +15,7 @@ export function isAdminEmail(email: unknown): boolean {
   return Boolean(configured && candidate && configured === candidate);
 }
 
-/** Public/database accounts always have the user role. */
+/** Compatibility helper: email alone never grants database administrator access. */
 export function getRoleForEmail(_email: unknown): AppRole {
   return "user";
 }

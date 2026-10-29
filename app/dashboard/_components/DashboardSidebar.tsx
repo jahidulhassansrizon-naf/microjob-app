@@ -1,12 +1,13 @@
 // app/dashboard/_components/DashboardSidebar.tsx
 "use client";
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X, User as UserIcon, LayoutDashboard, FileText, Languages, Wallet, Settings, MessageCircle, PlayCircle, LogOut, Sparkles, PenLine, Images, LayoutTemplate, Printer, Wrench, Users, type LucideIcon, } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
-import BrandName from "@/app/_components/BrandName";
 interface UserData {
     fullName?: string;
     phoneNumber?: string;
@@ -159,12 +160,16 @@ function NavLink({ item, active, onClick, }: {
     active: boolean;
     onClick: () => void;
 }) {
+    const { settings } = useSiteSettings();
+    const label = item.label === "Seba Lagbe Tools" && settings.branding.siteName !== "Seba Lagbe"
+        ? `${settings.branding.siteName} Tools`
+        : item.label;
     return (<Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[15.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${active
             ? "bg-[#F6D9A8] text-[#3B2F1E]"
             : "text-[#3B2F1E] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}>
       {active && (<span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#DC2626]"/>)}
       <IconChip icon={item.icon} tone={item.tone}/>
-      <span className="flex-1 truncate">{<DT>{item.label}</DT>}</span>
+      <span className="flex-1 truncate">{<DT>{label}</DT>}</span>
       {item.badge && <NavBadge type={item.badge}/>}
     </Link>);
 }
@@ -214,10 +219,7 @@ export default function DashboardSidebar({ isOpen, onClose, user, onLogout, }: D
         {/* Header */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#E3D6B8] px-4">
           <Link href="/dashboard" onClick={onClose} translate="no" className="flex cursor-pointer items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DC2626] text-[15px] font-bold tracking-tight text-white">
-              SL
-            </span>
-            <BrandName className="text-[19px] font-bold tracking-tight text-[#3B2F1E]" accentClassName="text-[#DC2626]" />
+            <SiteBrandLogo width={140} height={45} className="h-[36px] w-auto" />
           </Link>
           <button onClick={onClose} aria-label={t("Close menu")} className="cursor-pointer rounded-lg p-2 text-[#7A6A50] transition-colors hover:bg-[#EFE3C8] hover:text-[#5A4A32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40">
             <X size={18} strokeWidth={1.75}/>

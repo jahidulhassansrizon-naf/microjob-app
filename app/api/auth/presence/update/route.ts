@@ -12,7 +12,7 @@ const SESSION_ID_PATTERN = /^[a-zA-Z0-9._:-]{16,120}$/;
  * accepts or stores page paths, click actions, or activity-sharing consent.
  */
 export async function POST(request: Request) {
-  const session = getVerifiedRequestSession(request);
+  const session = await getVerifiedRequestSession(request);
   if (!session) {
     return NextResponse.json(
       { success: false, message: "Please sign in to update your live status." },

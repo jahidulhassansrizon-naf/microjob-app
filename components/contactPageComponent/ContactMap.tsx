@@ -3,13 +3,17 @@
 import { T } from "@/components/i18n/I18nProvider";
 import { motion } from "framer-motion";
 import { ArrowUpRight, House, MapPin, Mail, Phone } from "lucide-react";
-
-const ADDRESS = "Bou Bazar Rd, Tongi 1230, Bangladesh";
-const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
-const PHONE = "017836666743";
-const EMAIL = "jahidulhassansrizon@gmail.com";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { getContactList } from "@/app/_components/contactSettings";
 
 export default function ContactMap() {
+  const { settings } = useSiteSettings();
+  const addresses = getContactList(settings.contact, "locations");
+  const phones = getContactList(settings.contact, "phones");
+  const emails = getContactList(settings.contact, "emails");
+  const ADDRESS = addresses[0] || settings.contact.address;
+  const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
+  const EMAIL = emails[0] || settings.contact.email;
   return (
     <section className="relative overflow-hidden bg-[#FFFBE7] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_12%_50%,rgba(81,99,224,0.09),transparent_35%),radial-gradient(ellipse_at_90%_20%,rgba(123,34,213,0.07),transparent_32%)]" />
@@ -20,11 +24,11 @@ export default function ContactMap() {
             <T>{"A home workspace,"}</T><br /><span className="text-[#4359DC]"><T>{"built for a bigger idea."}</T></span>
           </h2>
           <p className="mt-5 max-w-[560px] text-[15px] leading-7 text-[#555D70] sm:text-[16px]">
-            <T>{"Seba Lagbe is an independently built digital platform, currently developed and managed from a home workspace in Tongi, Bangladesh. There is no separate walk-in office, so please get in touch before planning a visit."}</T>
+            {`${settings.branding.siteName} is an independently built digital platform, currently developed and managed from a home workspace in Tongi, Bangladesh. There is no separate walk-in office, so please get in touch before planning a visit.`}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a href={MAP_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#3F60DD] to-[#7215D5] px-5 py-3 text-[13px] font-bold text-white shadow-md transition hover:brightness-105">
-              <MapPin className="h-4 w-4" /><T>{"Find the area on Google Maps"}</T><ArrowUpRight className="h-4 w-4" />
+              <MapPin className="h-4 w-4" />{settings.contactPage.mapLabel}<ArrowUpRight className="h-4 w-4" />
             </a>
             <a href={`mailto:${EMAIL}`} className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#E4DEC9] bg-white/80 px-5 py-3 text-[13px] font-bold text-[#29324B] transition hover:border-[#8D97EC]">
               <Mail className="h-4 w-4" /><T>{"Contact before visiting"}</T>
@@ -43,17 +47,17 @@ export default function ContactMap() {
               </div>
             </div>
             <div className="my-6 h-px bg-white/10" />
-            <p className="text-[16px] font-semibold leading-7 text-white"><T>{ADDRESS}</T></p>
+            <div className="space-y-2">{addresses.map((address, index) => <a key={`${address}-${index}`} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="block text-[16px] font-semibold leading-7 text-white hover:underline"><T>{address}</T></a>)}</div>
             <p className="mt-3 text-[13px] leading-6 text-slate-300"><T>{"This is a home-based working location, not a public reception or registered corporate office."}</T></p>
             <div className="mt-6 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
-              <a href={`tel:${PHONE}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
+              {phones.map((phone, index) => <a key={`${phone}-${index}`} href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
                 <Phone className="h-4 w-4 shrink-0 text-emerald-300" />
-                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Phone"}</T></span><span className="mt-1 block truncate text-[12px] font-semibold">{PHONE}</span></span>
-              </a>
-              <a href={`mailto:${EMAIL}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
+                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Phone"}</T></span><span className="mt-1 block break-words text-[12px] font-semibold">{phone}</span></span>
+              </a>)}
+              {emails.map((email, index) => <a key={`${email}-${index}`} href={`mailto:${email}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 transition hover:bg-white/[0.08]">
                 <Mail className="h-4 w-4 shrink-0 text-sky-300" />
-                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Email"}</T></span><span className="mt-1 block truncate text-[12px] font-semibold">{EMAIL}</span></span>
-              </a>
+                <span className="min-w-0"><span className="block text-[11px] text-slate-400"><T>{"Email"}</T></span><span className="mt-1 block break-all text-[12px] font-semibold">{email}</span></span>
+              </a>)}
             </div>
           </div>
         </motion.div>

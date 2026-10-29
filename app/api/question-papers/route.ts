@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import QuestionPaper from "@/models/QuestionPaper";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +71,8 @@ function serialize(paper: any) {
 
 export async function GET(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = userIdFromRequest(request);
     await connectDB();
 
@@ -92,6 +95,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = userIdFromRequest(request);
     const body = await request.json().catch(() => ({}));
 
@@ -165,6 +170,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = userIdFromRequest(request);
     const id = new URL(request.url).searchParams.get("id") || "";
 

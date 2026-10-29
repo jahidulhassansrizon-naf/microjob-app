@@ -4,13 +4,17 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
 import User from "@/models/User";
+import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "";
 
 type JwtPayload = {
   userId?: string;
+  role?: string;
+  admin?: boolean;
   exp?: number;
+  sessionVersion?: number;
 };
 
 type AuthSuccess = {
@@ -162,7 +166,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
       .select("_id")
       .lean(),
     User.findById(userId)
-      .select("manualAccessEnabled manualAccessExpiresAt")
+      .select("manualAccessEnabled manualAccessExpiresAt isBanned role")
       .lean(),
   ]);
 
@@ -172,71 +176,131 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
   const hasManualAccess =
     user?.manualAccessEnabled === true && manualExpiry > now.getTime();
 
+  if (user?.isBanned === true && user.role !== "admin") return false;
+  if (user?.role === "admin") return true;
   return Boolean(subscription || hasManualAccess);
 }
 
-/**
- * Server-side guard for paid tool/API operations.
- *
- * This deliberately checks the database on every protected request rather
- * than trusting client-side UI state, localStorage, or query parameters.
- */
-export async function requireActiveSubscription(
-  request: Request,
-): Promise<SubscriptionAuthResult> {
-  const token = getTokenFromRequest(request);
+export type ToolAccessResult =
+  | { ok: true; userId: string; role: "user" | "admin"; isRootAdmin: boolean }
+  | { ok: false; response: NextResponse };
 
+/**
+ * Verifies a signed session against the latest account state. This is the
+ * shared server-side ban check for tool pages and tool APIs.
+ */
+export async function requireToolAccess(request: Request): Promise<ToolAccessResult> {
+  const token = getTokenFromRequest(request);
   if (!token) {
     return {
       ok: false,
       response: NextResponse.json(
-        {
-          success: false,
-          code: "AUTH_REQUIRED",
-          message: "Please log in before using this paid tool.",
-        },
+        { success: false, code: "AUTH_REQUIRED", message: "Please log in before using this tool." },
         { status: 401 },
       ),
     };
   }
 
-  let userId: string | null = null;
-
+  let decoded: JwtPayload;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    userId =
-      typeof decoded.userId === "string" ? decoded.userId : null;
+    decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
   } catch {
     return {
       ok: false,
       response: NextResponse.json(
-        {
-          success: false,
-          code: "INVALID_SESSION",
-          message: "Your login session is invalid or expired.",
-        },
+        { success: false, code: "INVALID_SESSION", message: "Your login session is invalid or expired." },
         { status: 401 },
       ),
     };
   }
 
-  if (!userId || !mongoose.isValidObjectId(userId)) {
+  if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
+    if (!isCurrentAdminToken(decoded)) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, code: "INVALID_SESSION", message: "Your administrator session is invalid or expired." },
+          { status: 401 },
+        ),
+      };
+    }
+    return { ok: true, userId: ENV_ADMIN_USER_ID, role: "admin", isRootAdmin: true };
+  }
+
+  const userId = typeof decoded.userId === "string" ? decoded.userId : "";
+  if (!mongoose.isValidObjectId(userId)) {
     return {
       ok: false,
       response: NextResponse.json(
-        {
-          success: false,
-          code: "INVALID_SESSION",
-          message: "Invalid user session.",
-        },
+        { success: false, code: "INVALID_SESSION", message: "Invalid user session." },
         { status: 401 },
       ),
     };
   }
 
   try {
-    const active = await hasActiveSubscription(userId);
+    await connectDB();
+    const user = await User.findById(userId).select("role isBanned sessionVersion").lean();
+    if (!user) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, code: "INVALID_SESSION", message: "This account no longer exists." },
+          { status: 401 },
+        ),
+      };
+    }
 
+    if (Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, code: "SESSION_REVOKED", message: "Your session has been reset. Please log in again." },
+          { status: 401 },
+        ),
+      };
+    }
+
+    const role = user.role === "admin" ? "admin" : "user";
+    if (role !== "admin" && user.isBanned === true) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, code: "USER_BANNED", message: "Tool access for this account has been disabled by an administrator." },
+          { status: 403 },
+        ),
+      };
+    }
+
+    return { ok: true, userId, role, isRootAdmin: false };
+  } catch (error) {
+    console.error("[tool-access] account lookup failed:", error);
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, code: "ACCESS_CHECK_FAILED", message: "Could not verify tool access. Please try again." },
+        { status: 503 },
+      ),
+    };
+  }
+}
+
+/**
+ * Server-side guard for paid tool/API operations. The account ban is checked
+ * first, even when the endpoint has its own subscription access logic.
+ */
+export async function requireActiveSubscription(
+  request: Request,
+): Promise<SubscriptionAuthResult> {
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess;
+
+  if (toolAccess.role === "admin") {
+    return { ok: true, userId: toolAccess.userId };
+  }
+
+  try {
+    const active = await hasActiveSubscription(toolAccess.userId);
     if (!active) {
       return {
         ok: false,
@@ -244,8 +308,7 @@ export async function requireActiveSubscription(
           {
             success: false,
             code: "SUBSCRIPTION_REQUIRED",
-            message:
-              "An active subscription is required to use this paid tool.",
+            message: "An active subscription is required to use this paid tool.",
           },
           { status: 403 },
         ),
@@ -253,7 +316,6 @@ export async function requireActiveSubscription(
     }
   } catch (error) {
     console.error("[subscription-guard] subscription lookup failed:", error);
-
     return {
       ok: false,
       response: NextResponse.json(
@@ -267,5 +329,5 @@ export async function requireActiveSubscription(
     };
   }
 
-  return { ok: true, userId };
+  return { ok: true, userId: toolAccess.userId };
 }

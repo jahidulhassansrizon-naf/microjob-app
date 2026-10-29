@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import SavedForm from "@/models/SavedForm";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +67,8 @@ function handleAuthError(error: unknown) {
 
 export async function GET(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     await connectDB();
 
@@ -88,6 +91,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     const body = await request.json();
 
@@ -116,6 +121,8 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
@@ -161,6 +168,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";

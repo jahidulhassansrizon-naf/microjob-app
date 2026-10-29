@@ -7,6 +7,7 @@ import AIGeneration from "@/models/AIGeneration";
 import ScannedDocument from "@/models/ScannedDocument";
 import SavedForm from "@/models/SavedForm";
 import QuestionPaper from "@/models/QuestionPaper";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -181,6 +182,8 @@ async function deleteCloudinaryAsset(publicId: string) {
 
 export async function GET(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserId(request);
     await connectDB();
     const objectId = new mongoose.Types.ObjectId(userId);
@@ -303,6 +306,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserId(request);
     const body = await request.json().catch(() => ({}));
     const name = clean(body?.name, "Saved file").slice(0, 180);
@@ -383,6 +388,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
     const userId = getUserId(request);
     const body = await request.json().catch(() => ({}));
     const rawId = clean(body?.id);

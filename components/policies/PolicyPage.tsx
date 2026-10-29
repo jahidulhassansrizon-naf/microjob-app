@@ -3,6 +3,8 @@
 import Footer from "@/components/Footer";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Mail, ShieldCheck, FileText, Copyright } from "lucide-react";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { getContactList } from "@/app/_components/contactSettings";
 
 type LocalePair = [en: string, bn: string];
 type PolicySection = {
@@ -190,6 +192,10 @@ const policies: Record<"terms" | "privacy" | "copyright", PolicyContent> = {
 
 export default function PolicyPage({ type }: { type: "terms" | "privacy" | "copyright" }) {
   const { locale } = useI18n();
+  const { settings } = useSiteSettings();
+  const contactEmails = getContactList(settings.contact, "emails");
+  const contactPhones = getContactList(settings.contact, "phones");
+  const contactLocations = getContactList(settings.contact, "locations");
   const isBn = String(locale).toLowerCase().startsWith("bn");
   const index = isBn ? 1 : 0;
   const policy = policies[type];
@@ -199,13 +205,14 @@ export default function PolicyPage({ type }: { type: "terms" | "privacy" | "copy
   return (
     <main className="sh-policy-page">
       <style>{`
-        .sh-policy-page{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(99,102,241,.09),transparent 42%),#fff9df;color:#111827;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+        .sh-policy-page{position:relative;isolation:isolate;min-height:100vh;background:radial-gradient(ellipse 60% 34% at 20% 0%,rgba(59,130,246,.14),transparent 70%),radial-gradient(ellipse 60% 34% at 80% 0%,rgba(124,58,237,.11),transparent 70%),#f8fafc;color:#0f172a;font-family:inherit;-webkit-font-smoothing:antialiased}
+        .sh-policy-page::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(to right,rgba(15,23,42,.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,23,42,.05) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse 75% 55% at 50% 0%,#000 30%,transparent 100%);mask-image:radial-gradient(ellipse 75% 55% at 50% 0%,#000 30%,transparent 100%)}
         .sh-policy-page *{box-sizing:border-box}
         .sh-policy-shell{width:min(100% - 32px,980px);margin:0 auto;padding:64px 0 68px}
-        .sh-policy-card{overflow:hidden;border:1px solid rgba(15,23,42,.09);border-radius:24px;background:rgba(255,255,255,.78);box-shadow:0 22px 65px rgba(15,23,42,.08);backdrop-filter:blur(12px)}
-        .sh-policy-hero{padding:clamp(25px,5vw,50px);background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(245,243,255,.86));border-bottom:1px solid rgba(15,23,42,.08)}
-        .sh-policy-eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(99,102,241,.18);background:#fff9e8;color:#4f46e5;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:800;letter-spacing:.1em}
-        .sh-policy-title{margin:19px 0 12px;font-size:clamp(30px,5vw,43px);line-height:1.1;letter-spacing:-.045em;font-weight:850;color:#111827}
+        .sh-policy-card{overflow:hidden;border:1px solid rgba(15,23,42,.08);border-radius:24px;background:#fff;box-shadow:0 24px 60px -28px rgba(30,41,99,.30)}
+        .sh-policy-hero{padding:clamp(25px,5vw,50px);background:linear-gradient(135deg,#fff,#eff6ff);border-bottom:1px solid rgba(15,23,42,.08)}
+        .sh-policy-eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(37,99,235,.2);background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:800;letter-spacing:.1em}
+        .sh-policy-title{margin:19px 0 12px;font-size:clamp(30px,5vw,43px);line-height:1.1;letter-spacing:-.045em;font-weight:850;color:#0f172a}
         .sh-policy-intro{max-width:790px;margin:0;color:#475569;font-size:15px;line-height:1.85}
         .sh-policy-meta{margin-top:20px;color:#64748b;font-size:12px}
         .sh-policy-content{padding:clamp(24px,5vw,49px)}
@@ -216,7 +223,7 @@ export default function PolicyPage({ type }: { type: "terms" | "privacy" | "copy
         .sh-policy-section ul{padding-left:23px;margin:0;color:#475569}
         .sh-policy-section li{font-size:14px;line-height:1.85;margin:0 0 8px;padding-left:3px}
         .sh-policy-section li::marker{color:#6366f1}
-        .sh-policy-contact{margin-top:27px;padding:21px 22px;border:1px solid rgba(99,102,241,.18);border-radius:18px;background:linear-gradient(125deg,rgba(238,242,255,.72),rgba(255,251,235,.9));display:flex;gap:14px;align-items:flex-start}
+        .sh-policy-contact{margin-top:27px;padding:21px 22px;border:1px solid rgba(99,102,241,.18);border-radius:18px;background:linear-gradient(125deg,#eef2ff,#eff6ff);display:flex;gap:14px;align-items:flex-start}
         .sh-policy-contact-icon{width:42px;height:42px;display:grid;place-items:center;flex-shrink:0;border-radius:13px;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:white}
         .sh-policy-contact h2{margin:1px 0 6px;font-size:16px;font-weight:800}
         .sh-policy-contact p{margin:0 0 7px;font-size:13px;line-height:1.6;color:#64748b}
@@ -244,11 +251,13 @@ export default function PolicyPage({ type }: { type: "terms" | "privacy" | "copy
             <div className="sh-policy-contact">
               <div className="sh-policy-contact-icon"><Mail size={19} /></div>
               <div>
-                <h2>{isBn ? "যোগাযোগ" : "Contact Seba Lagbe"}</h2>
+                <h2>{isBn ? "যোগাযোগ" : `Contact ${settings.branding.siteName}`}</h2>
                 <p>{isBn ? "এই নীতিগুলো সম্পর্কে প্রশ্ন, তথ্য সংশোধন বা কপিরাইট-সংক্রান্ত অনুরোধের জন্য যোগাযোগ করুন।" : "For policy questions, data requests, or copyright concerns, contact us."}</p>
-                <a href="mailto:jahidulhassansrizon@gmail.com">jahidulhassansrizon@gmail.com</a><br />
-                <a href="tel:+88017836666743">017836666743</a>
-                <p style={{ marginTop: 7 }}>{isBn ? "বউ বাজার রোড, টঙ্গী, গাজীপুর ১২৩০, বাংলাদেশ" : "Bou Bazar Road, Tongi, Gazipur 1230, Bangladesh"}</p>
+                <div className="space-y-1">
+                  {contactEmails.map((email, index) => <a key={`${email}-${index}`} className="block" href={`mailto:${email}`}>{email}</a>)}
+                  {contactPhones.map((phone, index) => <a key={`${phone}-${index}`} className="block" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>{phone}</a>)}
+                </div>
+                {contactLocations.map((location, index) => <p key={`${location}-${index}`} style={{ marginTop: 7 }}>{location}</p>)}
               </div>
             </div>
             <p className="sh-policy-note">{isBn ? "এই নীতিগুলো “সেবা লাগবে”-এর বর্তমান কার্যপ্রণালি সম্পর্কে সাধারণ তথ্য দেয়। প্রকাশের আগে প্রযোজ্য আইন ও বাস্তব ডেটা-প্রক্রিয়াকরণের সঙ্গে মিলিয়ে নিন।" : "These policies describe the platform’s current intended practices. They should be reviewed against applicable law and actual data-handling practices before launch."}</p>

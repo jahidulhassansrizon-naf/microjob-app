@@ -5,6 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import AIGeneration from "@/models/AIGeneration";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -305,8 +306,11 @@ async function deleteCloudinaryAsset(publicId: string) {
 }
 
 export async function GET(request: Request) {
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess.response;
+  const accessibleUserId = toolAccess.userId;
   try {
-    const userId = getUserIdFromRequest(request);
+    const userId = accessibleUserId;
     await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const sourceParam = searchParams.get("source")?.trim() || "";
@@ -377,8 +381,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess.response;
+  const accessibleUserId = toolAccess.userId;
   try {
-    const userId = getUserIdFromRequest(request);
+    const userId = accessibleUserId;
     await requireActiveSubscription(userId);
     const body = (await request.json().catch(() => ({}))) as
       | GenerationBody
@@ -439,8 +446,11 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess.response;
+  const accessibleUserId = toolAccess.userId;
   try {
-    const userId = getUserIdFromRequest(request);
+    const userId = accessibleUserId;
     await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
@@ -542,8 +552,11 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess.response;
+  const accessibleUserId = toolAccess.userId;
   try {
-    const userId = getUserIdFromRequest(request);
+    const userId = accessibleUserId;
     await requireActiveSubscription(userId);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";

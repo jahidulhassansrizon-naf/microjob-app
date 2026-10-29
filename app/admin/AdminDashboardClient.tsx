@@ -12,12 +12,15 @@ import { useRouter } from "next/navigation";
 import {
   Activity,
   BadgeCheck,
+  Ban,
   BarChart3,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  Copy,
   Clock3,
   CreditCard,
+  KeyRound,
   LayoutDashboard,
   LogIn,
   LogOut,
@@ -26,24 +29,32 @@ import {
   ReceiptText,
   RefreshCw,
   Search,
+  Shield,
   ShieldCheck,
+  Settings2,
   Trash2,
+  Unlock,
+  UserCog,
   Users,
   X,
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
 import AdminLivePanel from "./_components/AdminLivePanel";
+import SiteSettingsPanel from "./_components/SiteSettingsPanel";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live" | "settings";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 type AdminProfile = {
+  id?: string;
   fullName?: string;
   email?: string;
   phoneNumber?: string;
   role?: string;
+  isRootAdmin?: boolean;
 };
 type UserRow = {
   id: string;
@@ -51,6 +62,10 @@ type UserRow = {
   email: string;
   phoneNumber: string;
   role: "admin" | "user";
+  isBanned?: boolean;
+  bannedAt?: string | null;
+  bannedBy?: string;
+  banReason?: string;
   createdAt?: string | null;
   lastLoginAt?: string | null;
   lastSeenAt?: string | null;
@@ -342,6 +357,7 @@ function subscriptionTones(item: SubscriptionRow) {
 
 export default function AdminDashboardClient() {
   const router = useRouter();
+  const { settings: siteSettings } = useSiteSettings();
   const [tab, setTab] = useState<TabKey>("overview");
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
   // app/admin/page.tsx has ALREADY verified the admin token on the server before this component is
@@ -372,6 +388,10 @@ export default function AdminDashboardClient() {
   const [accessDurationMonths, setAccessDurationMonths] = useState("6");
   const [accessSaving, setAccessSaving] = useState(false);
   const [accessError, setAccessError] = useState("");
+  const [userActionBusy, setUserActionBusy] = useState(false);
+  const [userActionError, setUserActionError] = useState("");
+  const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [temporaryPasswordCopied, setTemporaryPasswordCopied] = useState(false);
   const [confirmingUserDelete, setConfirmingUserDelete] = useState(false);
   const [deleteUserConfirmationText, setDeleteUserConfirmationText] = useState("");
   const [deleteUserError, setDeleteUserError] = useState("");
@@ -530,6 +550,60 @@ export default function AdminDashboardClient() {
       );
     } finally {
       setAccessSaving(false);
+    }
+  };
+
+  const performUserAction = async (
+    action: "ban" | "unban" | "grant-admin" | "remove-admin" | "reset-password",
+  ) => {
+    const target = accessModalUser;
+    if (!target || userActionBusy) return;
+
+    const prompts: Record<typeof action, string> = {
+      ban: `Disable all tool access for ${target.fullName || target.email}? They will still be able to log in and browse the website.`,
+      unban: `Restore tool access for ${target.fullName || target.email}?`,
+      "grant-admin": `Grant full administrator access to ${target.fullName || target.email}? This allows access to the admin workspace.`,
+      "remove-admin": `Remove administrator privileges from ${target.fullName || target.email}?`,
+      "reset-password": `Reset the password for ${target.fullName || target.email}? Existing signed-in sessions will be invalidated.`,
+    };
+    if (!window.confirm(prompts[action])) return;
+
+    setUserActionBusy(true);
+    setUserActionError("");
+    setTemporaryPassword("");
+    setTemporaryPasswordCopied(false);
+    setAccessError("");
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(target.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not update this account.");
+      }
+
+      if (typeof data.temporaryPassword === "string") {
+        setTemporaryPassword(data.temporaryPassword);
+      }
+      if (action === "ban" || action === "unban" || action === "grant-admin" || action === "remove-admin") {
+        setAccessModalUser((current) => current && current.id === target.id
+          ? {
+              ...current,
+              isBanned: Boolean(data.isBanned),
+              role: data.role === "admin" ? "admin" : data.role === "user" ? "user" : current.role,
+            }
+          : current);
+      }
+      setUsersNotice(data.message || "Account updated successfully.");
+      await Promise.all([loadUsers(userPagination.page), loadOverview(true)]);
+    } catch (error) {
+      setUserActionError(error instanceof Error ? error.message : "Could not update this account.");
+    } finally {
+      setUserActionBusy(false);
     }
   };
 
@@ -864,6 +938,12 @@ export default function AdminDashboardClient() {
         icon: Activity,
         badgeCount: 0,
       },
+      {
+        key: "settings" as const,
+        label: "Site Settings",
+        icon: Settings2,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -876,7 +956,9 @@ export default function AdminDashboardClient() {
           ? "Subscription management"
           : tab === "chats"
             ? "User chats"
-            : "Live user activity";
+            : tab === "live"
+              ? "Live user activity"
+              : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -890,6 +972,7 @@ export default function AdminDashboardClient() {
       await loadSubscriptions(subscriptionPagination.page);
     else if (tab === "chats") setChatRefreshKey((current) => current + 1);
     else if (tab === "live") setLiveRefreshKey((current) => current + 1);
+    else if (tab === "settings") router.refresh();
     else await loadOverview();
     setRefreshing(false);
   };
@@ -988,11 +1071,14 @@ export default function AdminDashboardClient() {
                   </div>
                 </td>
                 <td className="px-5 py-3.5">
-                  {user.isOnline ? (
-                    <StatusPill label="Online now" tone="green" />
-                  ) : (
-                    <StatusPill label="Offline" />
-                  )}
+                  <div className="flex flex-col items-start gap-1.5">
+                    {user.isBanned && <StatusPill label="Tools blocked" tone="red" />}
+                    {user.isOnline ? (
+                      <StatusPill label="Online now" tone="green" />
+                    ) : (
+                      <StatusPill label="Offline" />
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-3.5">
                   <div className="space-y-2">
@@ -1039,6 +1125,9 @@ export default function AdminDashboardClient() {
                         setAccessDurationMonths("6");
                         setAccessError("");
                         setUsersNotice("");
+                        setUserActionError("");
+                        setTemporaryPassword("");
+                        setTemporaryPasswordCopied(false);
                         setConfirmingUserDelete(false);
                         setDeleteUserConfirmationText("");
                         setDeleteUserError("");
@@ -1065,11 +1154,14 @@ export default function AdminDashboardClient() {
                   <span className="truncate text-sm font-medium text-slate-900">
                     {user.fullName || "Unnamed user"}
                   </span>
-                  {user.isOnline ? (
-                    <StatusPill label="Online" tone="green" />
-                  ) : (
-                    <StatusPill label="Offline" />
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    {user.isBanned && <StatusPill label="Tools blocked" tone="red" />}
+                    {user.isOnline ? (
+                      <StatusPill label="Online" tone="green" />
+                    ) : (
+                      <StatusPill label="Offline" />
+                    )}
+                  </div>
                 </div>
                 <div className="mt-1 truncate text-sm text-slate-600">
                   {user.email || "—"}
@@ -1101,6 +1193,9 @@ export default function AdminDashboardClient() {
                       setAccessDurationMonths("6");
                       setAccessError("");
                       setUsersNotice("");
+                      setUserActionError("");
+                      setTemporaryPassword("");
+                      setTemporaryPasswordCopied(false);
                       setConfirmingUserDelete(false);
                       setDeleteUserConfirmationText("");
                       setDeleteUserError("");
@@ -1340,7 +1435,7 @@ export default function AdminDashboardClient() {
           </div>
           <div className="leading-tight">
             <div className="text-[15px] font-semibold tracking-tight text-slate-900">
-              Sohozkaj
+              {siteSettings.branding.siteName || "Website"}
             </div>
             <div className="text-xs text-slate-500">Admin workspace</div>
           </div>
@@ -1961,12 +2056,13 @@ export default function AdminDashboardClient() {
 
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
           {tab === "live" && <AdminLivePanel refreshKey={liveRefreshKey} />}
+          {tab === "settings" && <SiteSettingsPanel />}
 
           {accessModalUser && (
             <div
               className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
               onClick={() => {
-                if (!accessSaving && !userDeleting) setAccessModalUser(null);
+                if (!accessSaving && !userDeleting && !userActionBusy) setAccessModalUser(null);
               }}
             >
               <section
@@ -1979,7 +2075,7 @@ export default function AdminDashboardClient() {
                 <button
                   type="button"
                   aria-label="Close access management"
-                  disabled={accessSaving || userDeleting}
+                  disabled={accessSaving || userDeleting || userActionBusy}
                   onClick={() => setAccessModalUser(null)}
                   className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                 >
@@ -1988,7 +2084,7 @@ export default function AdminDashboardClient() {
 
                 <div className="pr-8">
                   <h2 id="manual-access-title" className="text-lg font-semibold text-slate-900">
-                    Manage paid-tool access
+                    Manage user account
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
                     {accessModalUser.fullName || "Unnamed user"}
@@ -1996,6 +2092,83 @@ export default function AdminDashboardClient() {
                   <p className="text-xs text-slate-500">
                     {accessModalUser.email || accessModalUser.phoneNumber || accessModalUser.id}
                   </p>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-indigo-600" />
+                    <h3 className="text-sm font-semibold text-slate-900">Account security and permissions</h3>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <StatusPill
+                      label={accessModalUser.role === "admin" ? "Administrator" : "Regular user"}
+                      tone={accessModalUser.role === "admin" ? "indigo" : "slate"}
+                    />
+                    {accessModalUser.isBanned && <StatusPill label="Tool access blocked" tone="red" />}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {accessModalUser.role !== "admin" && (
+                      <button
+                        type="button"
+                        disabled={userActionBusy || userDeleting || confirmingUserDelete}
+                        onClick={() => void performUserAction(accessModalUser.isBanned ? "unban" : "ban")}
+                        className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${accessModalUser.isBanned ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"}`}
+                      >
+                        {accessModalUser.isBanned ? <Unlock size={15} /> : <Ban size={15} />}
+                        {userActionBusy ? "Saving…" : accessModalUser.isBanned ? "Restore tool access" : "Block all tools"}
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={userActionBusy || userDeleting || confirmingUserDelete || (accessModalUser.role === "admin" && !admin?.isRootAdmin)}
+                      onClick={() => void performUserAction("reset-password")}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <KeyRound size={15} /> Reset password
+                    </button>
+
+                    {admin?.isRootAdmin && accessModalUser.id !== admin.id && (
+                      <button
+                        type="button"
+                        disabled={userActionBusy || userDeleting || confirmingUserDelete}
+                        onClick={() => void performUserAction(accessModalUser.role === "admin" ? "remove-admin" : "grant-admin")}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <UserCog size={15} />
+                        {accessModalUser.role === "admin" ? "Remove admin role" : "Grant admin role"}
+                      </button>
+                    )}
+                  </div>
+
+                  {accessModalUser.role === "admin" && !admin?.isRootAdmin && (
+                    <p className="mt-3 text-xs leading-5 text-slate-500">Only the primary environment-configured administrator can modify another administrator account or reset its password.</p>
+                  )}
+
+                  {temporaryPassword && (
+                    <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5">
+                      <p className="text-sm font-semibold text-emerald-900">Temporary password generated</p>
+                      <p className="mt-1 text-xs leading-5 text-emerald-800">Copy it now and share it with the user through a private channel. It will not be shown again after this modal closes.</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <code className="min-w-0 flex-1 select-all break-all rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900">{temporaryPassword}</code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!navigator.clipboard?.writeText) {
+                              setUserActionError("Clipboard access is unavailable. Select the password and copy it manually.");
+                              return;
+                            }
+                            void navigator.clipboard.writeText(temporaryPassword).then(() => setTemporaryPasswordCopied(true)).catch(() => setUserActionError("Could not copy automatically. Select the password and copy it manually."));
+                          }}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                        >
+                          <Copy size={14} /> {temporaryPasswordCopied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {userActionError && <p role="alert" className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">{userActionError}</p>}
                 </div>
 
                 <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/40 p-4">
@@ -2030,8 +2203,8 @@ export default function AdminDashboardClient() {
                       />
                       {deleteUserError && <p role="alert" className="mt-2 text-xs font-medium text-rose-700">{deleteUserError}</p>}
                       <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <button type="button" disabled={userDeleting} onClick={() => { setConfirmingUserDelete(false); setDeleteUserConfirmationText(""); setDeleteUserError(""); }} className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-                        <button type="button" disabled={userDeleting || deleteUserConfirmationText !== "DELETE"} onClick={() => void deleteUserAccount()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        <button type="button" disabled={userDeleting || userActionBusy} onClick={() => { setConfirmingUserDelete(false); setDeleteUserConfirmationText(""); setDeleteUserError(""); }} className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+                        <button type="button" disabled={userDeleting || userActionBusy || deleteUserConfirmationText !== "DELETE"} onClick={() => void deleteUserAccount()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
                           <Trash2 size={14} /> {userDeleting ? "Deleting account…" : "Permanently delete"}
                         </button>
                       </div>
@@ -2071,7 +2244,7 @@ export default function AdminDashboardClient() {
                   id="manual-access-duration"
                   value={accessDurationMonths}
                   onChange={(event) => setAccessDurationMonths(event.target.value)}
-                  disabled={accessSaving || userDeleting || confirmingUserDelete}
+                  disabled={accessSaving || userDeleting || userActionBusy || confirmingUserDelete}
                   className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
                 >
                   <option value="1">1 month</option>
@@ -2094,7 +2267,7 @@ export default function AdminDashboardClient() {
                   {accessModalUser.manualAccess?.enabled ? (
                     <button
                       type="button"
-                      disabled={accessSaving || userDeleting || confirmingUserDelete}
+                      disabled={accessSaving || userDeleting || userActionBusy || confirmingUserDelete}
                       onClick={() => void updateManualAccess("revoke")}
                       className="rounded-xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -2106,7 +2279,7 @@ export default function AdminDashboardClient() {
                   <div className="flex flex-col-reverse gap-2 sm:flex-row">
                     <button
                       type="button"
-                      disabled={accessSaving || userDeleting}
+                      disabled={accessSaving || userDeleting || userActionBusy}
                       onClick={() => setAccessModalUser(null)}
                       className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                     >
@@ -2114,7 +2287,7 @@ export default function AdminDashboardClient() {
                     </button>
                     <button
                       type="button"
-                      disabled={accessSaving || userDeleting || confirmingUserDelete}
+                      disabled={accessSaving || userDeleting || userActionBusy || confirmingUserDelete}
                       onClick={() => void updateManualAccess("grant")}
                       className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >

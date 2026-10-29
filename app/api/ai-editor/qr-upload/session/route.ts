@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QrUploadSession from "@/models/QrUploadSession";
-import { getUserIdFromToken, requireActiveSubscription } from "@/app/api/_lib/requireActiveSubscription";
+import { requireActiveSubscription, requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { hashQrUploadToken, noStoreHeaders } from "../_lib";
 
 export const runtime = "nodejs";
@@ -19,35 +19,22 @@ async function isFreeManualEditorRequest(request: Request): Promise<boolean> {
   }
 }
 
-function getLoggedInUserId(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
-  let token: string | null = null;
-  if (authorization?.startsWith("Bearer ")) token = authorization.slice(7).trim() || null;
-  if (!token) {
-    const cookieHeader = request.headers.get("cookie") || "";
-    const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
-    token = match ? decodeURIComponent(match[1]) : null;
-  }
-  return getUserIdFromToken(token);
-}
 
 export async function POST(request: Request) {
+  // Check the database ban flag before allowing even the free manual-editor QR flow.
+  const toolAccess = await requireToolAccess(request);
+  if (!toolAccess.ok) return toolAccess.response;
+
   let access: { ok: true; userId: string } | { ok: false; response: NextResponse };
   if (await isFreeManualEditorRequest(request)) {
-    const userId = getLoggedInUserId(request);
-    access = userId
-      ? { ok: true, userId }
-      : {
-          ok: false,
-          response: NextResponse.json(
-            { success: false, code: "AUTH_REQUIRED", message: "Please log in to use phone upload." },
-            { status: 401, headers: noStoreHeaders() },
-          ),
-        };
+    access = { ok: true, userId: toolAccess.userId };
   } else {
     access = await requireActiveSubscription(request);
   }
   if (!access.ok) return access.response;
+  if (!mongoose.isValidObjectId(access.userId)) {
+    return NextResponse.json({ success: false, code: "INVALID_USER_SESSION", message: "This upload session requires a regular user account." }, { status: 403, headers: noStoreHeaders() });
+  }
 
   try {
     await connectDB();

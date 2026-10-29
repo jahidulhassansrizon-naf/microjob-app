@@ -1,5 +1,7 @@
 "use client";
 
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,9 +20,12 @@ import {
   Search,
   ChevronDown,
   ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import BrandName from "@/app/_components/BrandName";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { replaceSiteNameInText } from "@/lib/siteSettings";
 
 interface Country {
   name: string;
@@ -131,7 +136,11 @@ function friendlyError(message: string, isBn: boolean): string {
   const lower = message.toLowerCase();
   if (lower.includes("password") && lower.includes("match")) return "পাসওয়ার্ড দুটি মিলছে না।";
   if (lower.includes("invalid phone number format")) return "নির্বাচিত দেশের নিয়ম অনুযায়ী ফোন নম্বরটি সঠিক নয়। নম্বরটি যাচাই করুন।";
-  if (lower.includes("failed to send otp")) return "OTP পাঠানো যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।";
+  if (lower.includes("failed to send otp") || lower.includes("could not send a verification email")) return "OTP পাঠানো যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।";
+  if (lower.includes("phone number is already registered")) return "এই ফোন নম্বরটি ইতিমধ্যে নিবন্ধিত আছে। অন্য নম্বর ব্যবহার করুন।";
+  if (lower.includes("email is already registered")) return "এই ইমেইলটি ইতিমধ্যে নিবন্ধিত আছে। অন্য ইমেইল ব্যবহার করুন।";
+  if (lower.includes("exact name already exists") || lower.includes("name already exists")) return "এই একই নামে একটি অ্যাকাউন্ট আগে থেকেই আছে। নামটি একটু পরিবর্তন করুন—যেমন মধ্যনাম বা একটি সংখ্যা যোগ করুন।";
+  if (lower.includes("verification code was sent recently")) return "একটি যাচাইকরণ কোড সম্প্রতি পাঠানো হয়েছে। নতুন কোড চাওয়ার আগে একটু অপেক্ষা করুন।";
   if (lower.includes("valid 6-digit otp") || lower.includes("enter a valid otp")) return "সঠিক ৬ সংখ্যার OTP কোড লিখুন।";
   if (lower.includes("registration failed")) return "নিবন্ধন সম্পন্ন হয়নি। তথ্য যাচাই করে আবার চেষ্টা করুন।";
   if (lower.includes("network") || lower.includes("fetch")) return "সংযোগে সমস্যা হয়েছে। ইন্টারনেট পরীক্ষা করে আবার চেষ্টা করুন।";
@@ -141,6 +150,7 @@ function friendlyError(message: string, isBn: boolean): string {
 export default function RegisterPage() {
   const router = useRouter();
   const { locale, setLocale } = useI18n();
+  const { settings } = useSiteSettings();
   const isBn = locale === "bn";
   const tx = (en: string, bn: string) => (isBn ? bn : en);
 
@@ -155,6 +165,7 @@ export default function RegisterPage() {
   const [otpMethod, setOtpMethod] = useState<OtpMethod>("email");
   const [methodNotice, setMethodNotice] = useState("");
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
   const [formData, setFormData] = useState({
@@ -207,7 +218,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
     setMethodNotice("");
@@ -216,7 +227,32 @@ export default function RegisterPage() {
       return;
     }
     if (!validatePhonePattern()) return;
-    setIsMethodModalOpen(true);
+
+    // Validate against the live server/database as soon as Create Account is clicked.
+    // The email-OTP endpoint rechecks these values immediately before sending too.
+    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/check-registration", {
+        method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          phoneNumber: formData.phone,
+          country: `${formData.countryName} (${formData.countryCode})`,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || tx("Please check your account details.", "আপনার অ্যাকাউন্টের তথ্যগুলো যাচাই করুন।"));
+      setIsMethodModalOpen(true);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : tx("Could not validate your details.", "তথ্য যাচাই করা যায়নি।");
+      setErrorMessage(friendlyError(message, isBn));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSendOtp = async () => {
@@ -233,10 +269,13 @@ export default function RegisterPage() {
     try {
       const response = await fetch("/api/auth/send-email-otp", {
         method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           phoneNumber: formData.phone,
+          fullName: formData.fullName,
           country: `${formData.countryName} (${formData.countryCode})`,
           identifier: formData.email,
         }),
@@ -263,6 +302,8 @@ export default function RegisterPage() {
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           country: `${formData.countryName} (${formData.countryCode})`,
@@ -276,14 +317,8 @@ export default function RegisterPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || tx("Registration failed.", "নিবন্ধন সম্পন্ন হয়নি।"));
-      window.alert(tx("Registration successful! Please sign in.", "নিবন্ধন সফল হয়েছে! এবার লগইন করুন।"));
       setIsOtpModalOpen(false);
-      const params = new URLSearchParams(window.location.search);
-      const requestedTarget = params.get("callbackUrl") || params.get("redirect") || "";
-      const safeTarget = requestedTarget.startsWith("/") && !requestedTarget.startsWith("//") && !/^\/(?:login|register)(?:[/?#]|$)/i.test(requestedTarget)
-        ? requestedTarget
-        : "";
-      router.push(safeTarget ? `/login?callbackUrl=${encodeURIComponent(safeTarget)}` : "/login");
+      setIsSuccessModalOpen(true);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : tx("Registration failed.", "নিবন্ধন সম্পন্ন হয়নি।");
       setOtpError(friendlyError(message, isBn));
@@ -292,11 +327,21 @@ export default function RegisterPage() {
     }
   };
 
+  const continueToSignIn = () => {
+    setIsSuccessModalOpen(false);
+    const params = new URLSearchParams(window.location.search);
+    const requestedTarget = params.get("callbackUrl") || params.get("redirect") || "";
+    const safeTarget = requestedTarget.startsWith("/") && !requestedTarget.startsWith("//") && !/^\/(?:login|register)(?:[/?#]|$)/i.test(requestedTarget)
+      ? requestedTarget
+      : "";
+    router.push(safeTarget ? `/login?callbackUrl=${encodeURIComponent(safeTarget)}` : "/login");
+  };
+
   const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
   const labelClass = "mb-1.5 block text-xs font-semibold text-slate-700";
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-[#F7F8FC] to-indigo-50/70 font-sans text-slate-900">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-[#F7F8FC] to-indigo-50/70 text-slate-900">
       {/* Registration form */}
       <main className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-between p-5 sm:p-8 lg:px-10 lg:py-8 xl:px-12">
         <div className="flex w-full items-center justify-between gap-4">
@@ -312,15 +357,11 @@ export default function RegisterPage() {
 
         <section className="mx-auto my-auto w-full max-w-xl py-8">
           <div className="mb-6 flex flex-col items-center text-center">
-            <Link href="/" className="group mb-3 inline-flex items-center gap-3" aria-label={isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home"}>
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-base font-black text-white shadow-lg shadow-indigo-500/20 transition group-hover:scale-105">SL</span>
-              <span className="text-left">
-                <BrandName className="block text-2xl font-black tracking-tight text-slate-900" accentClassName="text-blue-600" />
-                <span className="mt-0.5 block text-[9px] font-bold tracking-[0.22em] text-slate-400">{isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}</span>
-              </span>
+            <Link href="/" className="mb-3 inline-flex items-center" aria-label={replaceSiteNameInText(isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home", settings.branding.siteName)}>
+              <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
             </Link>
             <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{tx("Create your account", "আপনার অ্যাকাউন্ট তৈরি করুন")}</h2>
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{tx("Join Seba Lagbe to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে ‘সেবা লাগবে’-তে যোগ দিন।")}</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{replaceSiteNameInText(tx("Join Seba Lagbe to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে ‘সেবা লাগবে’-তে যোগ দিন।"), settings.branding.siteName)}</p>
           </div>
 
           <div className="relative rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
@@ -359,14 +400,14 @@ export default function RegisterPage() {
 
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Phone number", "ফোন নম্বর")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="tel" required autoComplete="tel-national" value={formData.phone} onChange={(event) => setFormData((previous) => ({ ...previous, phone: event.target.value }))} placeholder={tx("Enter number without country code", "কান্ট্রি কোড ছাড়া নম্বর লিখুন")} className={`${inputClass} pl-9`} /></div>
+                  <div className="relative"><Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="tel" required autoComplete="tel-national" value={formData.phone} onChange={(event) => { setFormData((previous) => ({ ...previous, phone: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("Enter number without country code", "কান্ট্রি কোড ছাড়া নম্বর লিখুন")} className={`${inputClass} pl-9`} /></div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Email address", "ইমেইল ঠিকানা")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="email" required autoComplete="email" value={formData.email} onChange={(event) => setFormData((previous) => ({ ...previous, email: event.target.value }))} placeholder={tx("you@example.com", "আপনার ইমেইল ঠিকানা")} className={`${inputClass} pl-9`} /></div>
+                  <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="email" required autoComplete="email" value={formData.email} onChange={(event) => { setFormData((previous) => ({ ...previous, email: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("you@example.com", "আপনার ইমেইল ঠিকানা")} className={`${inputClass} pl-9`} /></div>
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Full name", "পূর্ণ নাম")} <span className="text-red-500">*</span></label>
@@ -387,11 +428,11 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Password", "পাসওয়ার্ড")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showPassword ? "text" : "password"} required autoComplete="new-password" minLength={6} value={formData.password} onChange={(event) => setFormData((previous) => ({ ...previous, password: event.target.value }))} placeholder={tx("Create a password", "একটি পাসওয়ার্ড তৈরি করুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
+                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.password} onChange={(event) => setFormData((previous) => ({ ...previous, password: event.target.value }))} placeholder={tx("Create a password", "একটি পাসওয়ার্ড তৈরি করুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Confirm password", "পাসওয়ার্ড নিশ্চিত করুন")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showConfirmPassword ? "text" : "password"} required autoComplete="new-password" minLength={6} value={formData.confirmPassword} onChange={(event) => setFormData((previous) => ({ ...previous, confirmPassword: event.target.value }))} placeholder={tx("Re-enter your password", "আবার পাসওয়ার্ড লিখুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowConfirmPassword((shown) => !shown)} aria-label={showConfirmPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
+                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showConfirmPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.confirmPassword} onChange={(event) => setFormData((previous) => ({ ...previous, confirmPassword: event.target.value }))} placeholder={tx("Re-enter your password", "আবার পাসওয়ার্ড লিখুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowConfirmPassword((shown) => !shown)} aria-label={showConfirmPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
                 </div>
               </div>
 
@@ -444,9 +485,8 @@ export default function RegisterPage() {
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
             <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
             <div className="mb-5 flex justify-center">
-              <Link href="/" aria-label={isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home"} className="inline-flex items-center gap-2.5 rounded-2xl px-3 py-2 transition hover:bg-slate-50">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-black text-white shadow-lg shadow-indigo-500/20">SL</span>
-                <span className="text-left"><BrandName className="block text-lg font-black tracking-tight text-slate-900" accentClassName="text-blue-600" /><span className="mt-0.5 block text-[8px] font-bold tracking-[0.2em] text-slate-400">{isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}</span></span>
+              <Link href="/" aria-label={replaceSiteNameInText(isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home", settings.branding.siteName)} className="inline-flex items-center">
+                <SiteBrandLogo width={140} height={45} className="h-[40px] w-auto" />
               </Link>
             </div>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-violet-100 text-indigo-600 ring-1 ring-indigo-100"><ShieldCheck size={25} /></div>
@@ -465,7 +505,65 @@ export default function RegisterPage() {
             <button type="button" onClick={handleSendOtp} disabled={loading} className="mt-3 w-full rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:text-indigo-600 disabled:opacity-50">{tx("Didn't receive the code? Resend", "কোড পাননি? আবার পাঠান")}</button>
           </div>
         </div>
+)}
+
+      {/* Registration success modal: replaces the browser-native alert. */}
+      {isSuccessModalOpen && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="registration-success-title"
+          aria-describedby="registration-success-description"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) continueToSignIn();
+          }}
+        >
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/80 bg-white shadow-2xl shadow-indigo-950/25">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
+            <button
+              type="button"
+              onClick={continueToSignIn}
+              aria-label={tx("Continue to sign in", "লগইন পেজে যান")}
+              className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/15"
+            >
+              <X size={18} />
+            </button>
+            <div className="px-6 pb-7 pt-9 text-center sm:px-9 sm:pb-9 sm:pt-11">
+              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 ring-8 ring-emerald-50/60">
+                <CheckCircle2 size={42} strokeWidth={1.8} className="text-emerald-600" aria-hidden="true" />
+              </div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                {tx("ACCOUNT CREATED", "অ্যাকাউন্ট তৈরি সম্পন্ন")}
+              </div>
+              <h2 id="registration-success-title" className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+                {tx("Registration successful", "নিবন্ধন সফল হয়েছে")}
+              </h2>
+              <p id="registration-success-description" className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600">
+                {tx("Your email has been verified and your account is ready. Sign in to continue to your workspace.", "আপনার ইমেইল যাচাই হয়েছে এবং অ্যাকাউন্ট ব্যবহারের জন্য প্রস্তুত। আপনার ড্যাশবোর্ডে যেতে এখন লগইন করুন।")}
+              </p>
+              <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left">
+                <Mail size={16} className="shrink-0 text-slate-500" aria-hidden="true" />
+                <span className="min-w-0 break-all text-xs font-semibold text-slate-700">{formData.email}</span>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                onClick={continueToSignIn}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-indigo-500/25 active:scale-[0.99]"
+              >
+                {tx("Continue to sign in", "লগইন করুন")}
+                <ArrowRight size={17} aria-hidden="true" />
+              </button>
+              <p className="mt-4 text-[11px] leading-5 text-slate-400">
+                {tx("Your account details are saved securely.", "আপনার অ্যাকাউন্টের তথ্য নিরাপদে সংরক্ষিত হয়েছে।")}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
+
     </div>
   );
 }

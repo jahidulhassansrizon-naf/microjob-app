@@ -50,7 +50,7 @@ function escapeRegex(value: string): string {
 }
 
 export async function GET(request: Request) {
-  if (!hasVerifiedRequestSession(request)) {
+  if (!(await hasVerifiedRequestSession(request))) {
     return NextResponse.json(
       { success: false, error: "Authentication required. Please log in to continue." },
       { status: 401, headers: { "Cache-Control": "no-store" } },

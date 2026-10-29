@@ -58,6 +58,9 @@ export async function PUT(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
+    if (Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) {
+      return NextResponse.json({ error: "Your session has been reset. Please log in again." }, { status: 401 });
+    }
 
     // কারেন্ট পাসওয়ার্ডের সাথে ডাটাবেসের হ্যাশ পাসওয়ার্ড মিলানো
     const isPasswordMatch = await bcrypt.compare(
@@ -77,6 +80,8 @@ export async function PUT(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     user.password = hashedPassword;
+    user.passwordChangedAt = new Date();
+    user.sessionVersion = Number(user.sessionVersion || 0) + 1;
     await user.save();
 
     return NextResponse.json(

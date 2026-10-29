@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
-import { getRoleForEmail } from "@/lib/roles";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { requireAdmin } from "../_lib/adminAuth";
 
@@ -65,12 +64,12 @@ export async function GET(request: Request) {
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
       User.find({})
-        .select("fullName email phoneNumber role country district createdAt lastLoginAt lastSeenAt loginCount")
+        .select("fullName email phoneNumber role isBanned country district createdAt lastLoginAt lastSeenAt loginCount")
         .sort({ createdAt: -1 })
         .limit(7)
         .lean(),
       User.find({ lastLoginAt: { $ne: null, $exists: true } })
-        .select("fullName email phoneNumber role lastLoginAt lastSeenAt loginCount")
+        .select("fullName email phoneNumber role isBanned lastLoginAt lastSeenAt loginCount")
         .sort({ lastLoginAt: -1 })
         .limit(7)
         .lean(),
@@ -131,7 +130,8 @@ export async function GET(request: Request) {
       return {
         ...user,
         id: String(user._id),
-        role: getRoleForEmail(user.email),
+        role: user.role === "admin" ? "admin" : "user",
+        isBanned: user.isBanned === true,
         isOnline: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeCutoff.getTime()),
         subscription: activeSubscription
           ? {
@@ -146,7 +146,8 @@ export async function GET(request: Request) {
     const recentLogins = recentLoginsRaw.map((user: any) => ({
       ...user,
       id: String(user._id),
-      role: getRoleForEmail(user.email),
+      role: user.role === "admin" ? "admin" : "user",
+      isBanned: user.isBanned === true,
       isOnline: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeCutoff.getTime()),
     }));
     const recentSubscriptions = recentSubscriptionsRaw.map((subscription: any) => ({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QrUploadSession from "@/models/QrUploadSession";
+import User from "@/models/User";
 import { detectRasterImageMime, hashQrUploadToken, isValidQrUploadToken, noStoreHeaders, QR_UPLOAD_DATA_CLEANUP_TTL_MS, QR_UPLOAD_IN_PROGRESS_TTL_MS, QR_UPLOAD_MAX_BYTES, safeUploadFileName } from "../_lib";
 
 export const runtime = "nodejs";
@@ -12,6 +13,19 @@ async function getTokenHash(context: RouteContext): Promise<string | null> {
   return hashQrUploadToken(token);
 }
 
+async function checkSessionOwnerAccess(tokenHash: string) {
+  const session = await QrUploadSession.findOne({ tokenHash }).select("userId").lean();
+  if (!session) return null;
+  const owner = await User.findById(session.userId).select("role isBanned").lean();
+  if (!owner || (owner.role !== "admin" && owner.isBanned === true)) {
+    return NextResponse.json(
+      { success: false, code: "USER_BANNED", message: "Tool access for this account has been disabled." },
+      { status: 403, headers: noStoreHeaders() },
+    );
+  }
+  return null;
+}
+
 export async function GET(request: Request, context: RouteContext) {
   const tokenHash = await getTokenHash(context);
   if (!tokenHash) {
@@ -20,6 +34,8 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     await connectDB();
+    const ownerAccessError = await checkSessionOwnerAccess(tokenHash);
+    if (ownerAccessError) return ownerAccessError;
     const now = new Date();
     const url = new URL(request.url);
     if (url.searchParams.get("download") === "1") {
@@ -84,6 +100,8 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     await connectDB();
+    const ownerAccessError = await checkSessionOwnerAccess(tokenHash);
+    if (ownerAccessError) return ownerAccessError;
     const contentType = request.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const body = await request.json().catch(() => null);

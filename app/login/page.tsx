@@ -1,5 +1,6 @@
 // app/login/page.tsx
 "use client";
+import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
 
 import { useState, useEffect, Suspense, type FormEvent } from "react";
 import Link from "next/link";
@@ -15,34 +16,29 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import BrandName from "@/app/_components/BrandName";
+import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import { replaceSiteNameInText } from "@/lib/siteSettings";
 
 /**
- * This is only a client-side fast-path hint, not authentication. Protected API
- * routes still verify the JWT on the server. We only skip blocking the page
- * transition when a cached identity exists and the JWT has not expired.
+ * Resolve post-login navigation by the role verified by the server.
+ * Administrators always enter the admin workspace; ordinary users cannot use
+ * a stale callbackUrl to enter the admin area.
  */
-function hasUnexpiredJwt(token: string): boolean {
-  try {
-    const payloadPart = token.split(".")[1];
-    if (!payloadPart) return false;
+function resolvePostLoginPath(role: unknown, requestedTarget: string): string {
+  const isAdmin = role === "admin";
+  const target = requestedTarget.trim();
+  const isSafeLocalTarget =
+    target.startsWith("/") &&
+    !target.startsWith("//") &&
+    !/^\/(?:login|register|login-success)(?:[/?#]|$)/i.test(target);
+  const isAdminTarget = /^\/admin(?:[/?#]|$)/i.test(target);
 
-    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    const bytes = Uint8Array.from(window.atob(padded), (character) =>
-      character.charCodeAt(0),
-    );
-    const payload = JSON.parse(new TextDecoder().decode(bytes)) as {
-      exp?: unknown;
-    };
-
-    return (
-      typeof payload.exp === "number" &&
-      Number.isFinite(payload.exp) &&
-      payload.exp * 1000 > Date.now() + 5_000
-    );
-  } catch {
-    return false;
+  if (isAdmin) {
+    return isSafeLocalTarget && isAdminTarget ? target : "/admin";
   }
+
+  if (!isSafeLocalTarget || isAdminTarget) return "/dashboard";
+  return target;
 }
 
 type SearchParamsLike = { get(name: string): string | null } | null;
@@ -51,17 +47,20 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
   const router = useRouter();
   const callbackUrl =
     searchParams?.get("callbackUrl") || searchParams?.get("redirect") || "";
-  const [, setCheckingExistingSession] = useState(true);
   const { locale, setLocale } = useI18n();
+  const { settings } = useSiteSettings();
   const isBn = locale === "bn";
 
   const text = {
     back: isBn ? "ফিরে যান" : "Back",
     language: isBn ? "ভাষা" : "Language",
     loginTitle: isBn ? "আপনার অ্যাকাউন্টে প্রবেশ করুন" : "Sign in to your account",
-    loginSubtitle: isBn
-      ? "আপনার সেবা লাগবে অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন।"
-      : "Enter your details to access your Seba Lagbe account.",
+    loginSubtitle: replaceSiteNameInText(
+      isBn
+        ? "আপনার সেবা লাগবে অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন।"
+        : "Enter your details to access your Seba Lagbe account.",
+      settings.branding.siteName,
+    ),
     identifier: isBn ? "ফোন নম্বর বা ইমেইল" : "Phone number or email",
     identifierPlaceholder: isBn
       ? "ফোন নম্বর বা ইমেইল লিখুন"
@@ -91,92 +90,23 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
 
   useEffect(() => {
     let active = true;
-
-    const readCookieToken = () => {
-      const entry = document.cookie
-        .split(";")
-        .map((item) => item.trim())
-        .find((item) => item.startsWith("token="));
-      if (!entry) return "";
-      const value = entry.slice("token=".length);
-      try {
-        return decodeURIComponent(value);
-      } catch {
-        return value;
-      }
-    };
-
     const requestedTarget = callbackUrl.trim();
-    let safeTargetUrl =
-      requestedTarget.startsWith("/") &&
-      !requestedTarget.startsWith("//") &&
-      !requestedTarget.startsWith("/login")
-        ? requestedTarget
-        : "/dashboard";
 
-    let localToken = "";
-    let hasCachedIdentity = false;
-    let cachedRole = "user";
+    // Cached user roles can become stale when the primary administrator promotes
+    // an existing account. Use the cached token only as a credential; always ask
+    // the server for the current database role before redirecting.
+    let token = "";
     try {
-      localToken = localStorage.getItem("token") || "";
-      const cachedUserValue = localStorage.getItem("user");
-      if (cachedUserValue) {
-        const cachedUser = JSON.parse(cachedUserValue) as Record<
-          string,
-          unknown
-        > | null;
-        hasCachedIdentity = Boolean(
-          cachedUser &&
-            typeof cachedUser === "object" &&
-            (cachedUser.id ||
-              cachedUser._id ||
-              cachedUser.phoneNumber ||
-              cachedUser.email),
-        );
-        if (
-          cachedUser &&
-          typeof cachedUser === "object" &&
-          cachedUser.role === "admin"
-        ) {
-          cachedRole = "admin";
-        }
-      }
+      token = localStorage.getItem("token") || "";
     } catch {
-      // Continue with a cookie-based check if browser storage is unavailable.
+      // The HttpOnly cookie can still authenticate the request.
     }
-
-    if (!requestedTarget && cachedRole === "admin") safeTargetUrl = "/admin";
-
-    const token = localToken || readCookieToken();
-    const isDashboardTarget =
-      safeTargetUrl === "/dashboard" ||
-      safeTargetUrl.startsWith("/dashboard/") ||
-      safeTargetUrl.startsWith("/dashboard?");
-
-    if (isDashboardTarget && hasCachedIdentity && hasUnexpiredJwt(token)) {
-      window.dispatchEvent(
-        new CustomEvent("navigation-progress:start", {
-          detail: { targetPath: safeTargetUrl },
-        }),
-      );
-      router.replace(safeTargetUrl);
-      return () => {
-        active = false;
-      };
-    }
-
-    const progressStartTimer = window.setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent("navigation-progress:start", {
-          detail: { targetPath: safeTargetUrl },
-        }),
-      );
-    }, 0);
 
     const clearInvalidSession = () => {
       try {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("userData");
       } catch {
         // Storage cleanup is best-effort.
       }
@@ -197,41 +127,40 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     })
       .then(async (response) => {
         if (!active) return;
+
         if (response.ok) {
           const data = await response.json().catch(() => ({}));
-          if (data?.user) {
+          if (data?.user && typeof data.user === "object") {
             try {
               localStorage.setItem("user", JSON.stringify(data.user));
             } catch {
               // The authenticated session does not depend on cached user data.
             }
-          }
 
-          const verifiedTarget = requestedTarget
-            ? safeTargetUrl
-            : data.user.role === "admin"
-              ? "/admin"
-              : "/dashboard";
-          router.replace(verifiedTarget);
-          return;
+            const verifiedTarget = resolvePostLoginPath(
+              data.user.role,
+              requestedTarget,
+            );
+            window.dispatchEvent(
+              new CustomEvent("navigation-progress:start", {
+                detail: { targetPath: verifiedTarget },
+              }),
+            );
+            router.replace(verifiedTarget);
+            return;
+          }
         }
 
         if ([401, 403, 404].includes(response.status)) {
           clearInvalidSession();
         }
-        setCheckingExistingSession(false);
-        window.dispatchEvent(new Event("navigation-progress:finish"));
       })
       .catch(() => {
-        if (active) {
-          setCheckingExistingSession(false);
-          window.dispatchEvent(new Event("navigation-progress:finish"));
-        }
+        // If the role lookup fails temporarily, leave the sign-in form available.
       });
 
     return () => {
       active = false;
-      window.clearTimeout(progressStartTimer);
     };
   }, [callbackUrl, router]);
 
@@ -258,6 +187,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
+        cache: "no-store",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumber: formData.identifier,
@@ -291,23 +222,10 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
 
       window.dispatchEvent(new Event("sohojhub:auth-changed"));
 
-      const fallbackTarget =
-        data?.user?.role === "admin" ? "/admin" : "/dashboard";
-      const requestedTarget = callbackUrl.trim();
-      const isSafeLocalTarget =
-        requestedTarget.startsWith("/") &&
-        !requestedTarget.startsWith("//") &&
-        !/^\/(?:login|register|login-success)(?:[/?#]|$)/i.test(
-          requestedTarget,
-        );
-      const targetUrl = isSafeLocalTarget ? requestedTarget : fallbackTarget;
-
-      let target = new URL(targetUrl, window.location.origin);
-      if (target.origin !== window.location.origin) {
-        target = new URL(fallbackTarget, window.location.origin);
-      }
-      target.searchParams.delete("loginSuccess");
-      const targetPath = `${target.pathname}${target.search}${target.hash}`;
+      const targetPath = resolvePostLoginPath(
+        data?.user?.role,
+        callbackUrl.trim(),
+      );
 
       const secureCookie =
         window.location.protocol === "https:" ? "; Secure" : "";
@@ -335,7 +253,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
   };
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 font-sans text-slate-900">
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-8 sm:py-7">
         <header className="flex w-full items-center justify-between">
           <button
@@ -381,16 +299,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         <section className="flex flex-1 items-center justify-center py-10 sm:py-14">
           <div className="w-full max-w-md">
             <div className="mb-7 flex flex-col items-center text-center">
-              <Link href="/" className="group mb-6 inline-flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-lg font-black tracking-tight text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
-                  SL
-                </span>
-                <span className="flex flex-col items-start leading-none">
-                  <BrandName className="text-2xl font-black tracking-tight text-slate-900" accentClassName="text-blue-600" />
-                  <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-slate-400">
-                    {isBn ? "ডিজিটাল সেবা" : "DIGITAL SERVICES"}
-                  </span>
-                </span>
+              <Link href="/" className="mb-6 inline-flex items-center">
+                <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
               </Link>
 
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">

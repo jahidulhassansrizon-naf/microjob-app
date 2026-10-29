@@ -6,6 +6,16 @@ const UserSchema = new Schema(
       type: String,
       required: [true, "Full name is required"],
       trim: true,
+      maxlength: 100,
+    },
+
+    // Server-generated normalized value. Public request bodies must never set it.
+    // The partial unique index handles concurrent registrations without blocking
+    // legacy user documents that have not yet acquired this field.
+    fullNameNormalized: {
+      type: String,
+      select: false,
+      immutable: false,
     },
 
     phoneNumber: {
@@ -136,6 +146,43 @@ const UserSchema = new Schema(
       index: true,
     },
 
+    // Tool access can be suspended without blocking login or normal site browsing.
+    isBanned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
+
+    bannedBy: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    banReason: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 240,
+    },
+
+    // Incrementing this value invalidates existing signed-in sessions.
+    sessionVersion: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    passwordChangedAt: {
+      type: Date,
+      default: null,
+    },
+
     lastLoginAt: {
       type: Date,
       default: null,
@@ -192,6 +239,15 @@ const UserSchema = new Schema(
   },
   {
     timestamps: true,
+  },
+);
+
+UserSchema.index(
+  { fullNameNormalized: 1 },
+  {
+    unique: true,
+    name: "uniq_users_full_name_normalized",
+    partialFilterExpression: { fullNameNormalized: { $type: "string" } },
   },
 );
 

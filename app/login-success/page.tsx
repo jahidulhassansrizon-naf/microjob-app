@@ -19,10 +19,31 @@ function LoginSuccessContent() {
         }
     }, [searchParams]);
     useEffect(() => {
+        let active = true;
         const timer = window.setTimeout(() => {
-            router.replace(nextPath);
+            void fetch("/api/auth/me", {
+                method: "GET",
+                credentials: "include",
+                cache: "no-store",
+            })
+                .then(async (response) => {
+                    const data = await response.json().catch(() => ({}));
+                    if (!active) return;
+                    const isAdmin = response.ok && data?.user?.role === "admin";
+                    const isAdminTarget = /^\/admin(?:[/?#]|$)/i.test(nextPath);
+                    const destination = isAdmin
+                        ? (isAdminTarget ? nextPath : "/admin")
+                        : (isAdminTarget ? "/dashboard" : nextPath);
+                    router.replace(destination);
+                })
+                .catch(() => {
+                    if (active) router.replace(nextPath);
+                });
         }, 1600);
-        return () => window.clearTimeout(timer);
+        return () => {
+            active = false;
+            window.clearTimeout(timer);
+        };
     }, [nextPath, router]);
     return (<main className="flex min-h-screen items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm font-sans">
       <div role="dialog" aria-modal="true" aria-labelledby="login-success-title" className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl animate-in fade-in zoom-in-95 duration-300">

@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import AIGeneration from "@/models/AIGeneration";
 import { connectDB } from "@/lib/db";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
@@ -241,6 +242,8 @@ function getTokenFromRequest(request: Request): string | null {
 }
 
 async function requireActiveSubscription(request: Request) {
+  const accountAccess = await requireToolAccess(request);
+  if (!accountAccess.ok) return accountAccess.response;
   const token = getTokenFromRequest(request);
 
   if (!token) {
