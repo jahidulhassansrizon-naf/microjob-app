@@ -1,4 +1,4 @@
-import type { FilterQuery } from "mongoose";
+import type { QueryFilter } from "mongoose";
 import User from "@/models/User";
 
 /** Canonical representation for strict, case-insensitive account-name uniqueness. */
@@ -53,7 +53,7 @@ export async function findDuplicateFullName(
   if (!normalized) return null;
 
   const legacyPattern = legacyNamePattern(normalized);
-  const filter: FilterQuery<any> = {
+  const filter: QueryFilter<any> = {
     $or: [
       { fullNameNormalized: normalized },
       {
