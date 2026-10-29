@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "bootstrap:admin": "node scripts/bootstrap-primary-admin.mjs"
+    "bootstrap:admin": "node scripts/bootstrap-primary-admin.mjs",
+    "diagnose:login": "node scripts/diagnose-login.mjs",
+    "test:auth": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -86,6 +88,7 @@
     "eslint-config-next": "16.3.4",
     "playwright": "^1.63.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

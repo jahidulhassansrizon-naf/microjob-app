@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Play, RotateCcw, Zap } from "lucide-react";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 
-const VIDEO_SRC = "/intro/sohojhubIntro.mp4";
+const VIDEO_SRC = "/intro/heroIntro.mp4";
 
 export default function Hero() {
   const { t } = useI18n();
@@ -88,11 +88,17 @@ export default function Hero() {
                 aria-label={t("Seba Lagbe - Your Creative Toolbox")}
                 playsInline
                 loop={false}
-                controls={!showOverlay}
+                controls={false}
                 preload="metadata"
-                className="absolute inset-0 h-full w-full select-none object-cover"
+                className="absolute inset-0 h-full w-full cursor-pointer select-none object-cover"
                 disablePictureInPicture
                 controlsList="nodownload noplaybackrate noremoteplayback"
+                // Native controls are hidden; clicking the video pauses it.
+                onClick={() => {
+                  const video = videoRef.current;
+                  if (video && !video.paused) video.pause();
+                }}
+                onPause={() => setShowOverlay(true)}
                 onEnded={() => {
                   setHasEnded(true);
                   setShowOverlay(true);

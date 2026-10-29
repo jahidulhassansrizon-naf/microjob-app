@@ -8,13 +8,13 @@ import {
   Check,
   Palette,
   X,
-  ImageIcon,
   Loader2,
   Ban,
   Search,
 } from "lucide-react";
 import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES } from "./editingGuides";
 import GuideIcon from "./GuideIcon";
+import PhotoSizeIcon from "./PhotoSizeIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
 export interface PhotoSizeOption {
   id: string;
@@ -830,8 +830,14 @@ export default function GenerationSettings({
                       : "border-[#E3D6B8] text-[#3B2F1E] hover:border-stone-300"
                   }`}
                 >
-                  <div className="w-6 h-6 mb-1 rounded bg-stone-100 flex items-center justify-center text-stone-500">
-                    <ImageIcon size={14} />
+                  <div
+                    className={`w-12 h-12 mb-1 rounded-xl flex items-center justify-center transition-colors ${
+                      isActive
+                        ? "bg-[#DC2626]/10 text-[#DC2626]"
+                        : "bg-[#F5EDD8] text-[#5A4A32]"
+                    }`}
+                  >
+                    <PhotoSizeIcon id={size.id} size={40} />
                   </div>
 
                   <span className="truncate max-w-full">
@@ -891,7 +897,7 @@ export default function GenerationSettings({
             <AiT>{"BACKGROUND"}</AiT>
           </div>
 
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-x-2 gap-y-3 justify-items-center">
             {backgroundColors.map((bg, idx) => {
               const isSelected = selectedBg === idx;
               if (bg.type === "transparent") {
@@ -905,7 +911,7 @@ export default function GenerationSettings({
                     }}
                     title={t("Transparent background")}
                     aria-label={t("Transparent background")}
-                    className={`h-9 rounded-xl relative flex items-center justify-center overflow-hidden transition-transform hover:scale-105 cursor-pointer border border-stone-300 ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]" : ""}`}
+                    className={`w-full max-w-[40px] aspect-square rounded-full relative flex items-center justify-center overflow-hidden transition-transform hover:scale-110 cursor-pointer border border-stone-300 ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2] shadow-md" : ""}`}
                     style={{
                       backgroundImage:
                         "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
@@ -941,13 +947,14 @@ export default function GenerationSettings({
                       setShowColorPicker(true);
                     }}
                     style={{ backgroundColor: customBgColor }}
-                    className={`h-9 rounded-xl relative flex items-center justify-center transition-transform hover:scale-105 shadow-inner cursor-pointer ${
+                    className={`w-full max-w-[40px] aspect-square rounded-full relative flex items-center justify-center transition-transform hover:scale-110 shadow-[0_2px_6px_rgba(60,40,10,0.25)] cursor-pointer ${
                       isSelected
-                        ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]"
+                        ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2] shadow-md"
                         : "border border-stone-200"
                     }`}
                   >
-                    <Palette size={16} className="text-white drop-shadow-md" />
+                    <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.14),transparent_50%)] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.28)]" />
+                    <Palette size={16} className="relative text-white drop-shadow-md" />
 
                     {isSelected && (
                       <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white rounded-full p-0.5">
@@ -965,8 +972,9 @@ export default function GenerationSettings({
                     setSelectedBg(isSelected ? -1 : idx);
                     setShowColorPicker(false);
                   }}
-                  className={`h-9 rounded-xl ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-105 cursor-pointer ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]" : ""}`}
+                  className={`w-full max-w-[40px] aspect-square rounded-full ${bg.className || ""} relative flex items-center justify-center transition-transform hover:scale-110 cursor-pointer shadow-[0_2px_6px_rgba(60,40,10,0.25)] ${isSelected ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F2E8D2]" : ""}`}
                 >
+                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.14),transparent_50%)] shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.28)]" />
                   {isSelected && (
                     <span className="absolute bg-[#DC2626] text-white rounded-full p-1 shadow">
                       <Check size={14} strokeWidth={3} />

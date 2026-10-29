@@ -186,6 +186,20 @@ async function main() {
     });
   }
 
+  // Read-back verification against the same database the login API will query.
+  // This proves the stored hash verifies with bcryptjs (the library the login
+  // route uses) and surfaces wrong-database or duplicate-email situations.
+  const stored = await User.findOne({ email }).select("password role isPrimaryAdmin").lean();
+  const emailVariants = await User.countDocuments({ email: new RegExp(`^${escapeRegex(email)}$`, "i") });
+  const hashVerifies = typeof stored?.password === "string" && (await bcrypt.compare(password, stored.password));
+  if (!stored || stored.role !== "admin" || stored.isPrimaryAdmin !== true || !hashVerifies) {
+    throw new Error("Post-write verification FAILED: the saved account does not verify with the entered password. Do not rely on this setup.");
+  }
+  if (emailVariants !== 1) {
+    console.warn(`WARNING: ${emailVariants} user documents match this email ignoring case. Resolve duplicates before relying on login.`);
+  }
+  console.log(`\nVerified in database "${mongoose.connection.name}" (host ${mongoose.connection.host}): role=admin, isPrimaryAdmin=true, password hash verifies.`);
+  console.log("Run this command separately for each database (local and production) that must accept this login.");
   console.log("\nPrimary Admin setup completed.");
   console.log("- Sign in with this email and the password you just set.");
   console.log("- The password is saved only as a bcrypt hash.");

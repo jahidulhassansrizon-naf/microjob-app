@@ -1,7 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
+import { authenticateLogin } from "@/lib/loginCore";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
@@ -19,56 +22,77 @@ function loginCookie(response: NextResponse, token: string) {
   });
 }
 
+/**
+ * Safe diagnostics: failure category + correlation id + non-secret deployment
+ * facts. Never logs the identifier, password, hash, cookies, tokens or URIs.
+ */
+function logLoginFailure(requestId: string, category: string, status: number) {
+  const dbName = mongoose.connection?.name || "unconnected";
+  const deployment = process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown";
+  const build = (process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 7) || "n/a";
+  console.warn(
+    `[auth-login] requestId=${requestId} status=${status} category=${category} db=${dbName} env=${deployment} build=${build}`,
+  );
+}
+
 export async function POST(req: Request) {
+  const requestId = randomUUID();
+  const headers = { "Cache-Control": "no-store, max-age=0", "X-Request-Id": requestId };
+
   try {
     if (process.env.NODE_ENV === "production" && !JWT_SECRET.trim()) {
+      logLoginFailure(requestId, "jwt_secret_missing", 503);
       return NextResponse.json(
-        { message: "Secure authentication is not configured on the server." },
-        { status: 503 },
+        { message: "Secure authentication is not configured on the server.", requestId },
+        { status: 503, headers },
       );
     }
 
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ message: "Invalid request body." }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } });
-    }
-    const submittedIdentifier = body?.phoneNumber ?? body?.identifier ?? body?.email ?? "";
-    const formattedInput = submittedIdentifier ? String(submittedIdentifier).trim().toLowerCase() : "";
-    const submittedPassword = typeof body?.password === "string" ? body.password : "";
-    if (!formattedInput || formattedInput.length > 254 || submittedPassword.length > 128 || !submittedPassword) {
-      return NextResponse.json({ message: "Enter a valid email/phone number and password." }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } });
-    }
 
-    // A shared MongoDB counter prevents rapid credential guessing across app instances.
     await connectDB();
-    const ipRateLimit = await enforceAuthRateLimit(req, "auth-login-ip", 40, 10 * 60 * 1000);
-    const identifierRateLimit = await enforceAuthRateLimit(req, "auth-login-identifier", 10, 15 * 60 * 1000, formattedInput);
-    const rateLimit = !ipRateLimit.allowed ? ipRateLimit : identifierRateLimit;
-    if (!rateLimit.allowed) {
+
+    const outcome = await authenticateLogin(
+      {
+        findUser: (filter) => User.findOne(filter).lean().exec() as Promise<any>,
+        comparePassword: (plain, hash) => bcrypt.compare(plain, hash),
+        // The shared MongoDB counters stay active. Both are always evaluated so
+        // neither window can be bypassed by exhausting the other first.
+        checkRateLimit: (scope, identifier) =>
+          scope === "ip"
+            ? enforceAuthRateLimit(req, "auth-login-ip", 40, 10 * 60 * 1000)
+            : enforceAuthRateLimit(req, "auth-login-identifier", 10, 15 * 60 * 1000, identifier),
+      },
+      body,
+    );
+
+    if (outcome.kind === "bad_request") {
       return NextResponse.json(
-        { message: "Too many login attempts. Please wait before trying again." },
-        { status: 429, headers: { "Cache-Control": "no-store, max-age=0", "Retry-After": String(rateLimit.retryAfterSeconds) } },
+        { message: "Enter a valid email/phone number and password.", code: "BAD_REQUEST", requestId },
+        { status: 400, headers },
       );
     }
 
-    // Every account, including the primary administrator, is authenticated from
-    // MongoDB. Admin credentials are never read from ADMIN_EMAIL/ADMIN_PASSWORD.
-    // Existing database-backed login flow for ordinary users remains intact.
-    const user = await User.findOne({
-      $or: [{ phoneNumber: submittedIdentifier }, { email: formattedInput }],
-    });
-
-    if (!user) {
-      return NextResponse.json({ message: "Invalid email/phone number or password." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
+    if (outcome.kind === "rate_limited") {
+      logLoginFailure(requestId, "rate_limited", 429);
+      return NextResponse.json(
+        { message: "Too many login attempts. Please wait before trying again.", code: "RATE_LIMITED", requestId },
+        { status: 429, headers: { ...headers, "Retry-After": String(outcome.retryAfterSeconds) } },
+      );
     }
 
-    const isMatch = await bcrypt.compare(submittedPassword, user.password);
-    if (!isMatch) {
-      return NextResponse.json({ message: "Invalid email/phone number or password." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
+    if (outcome.kind === "invalid_credentials") {
+      logLoginFailure(requestId, outcome.category, 401);
+      // One generic response for unknown account, wrong password and a missing hash.
+      return NextResponse.json(
+        { message: "Invalid email/phone number or password.", code: "INVALID_CREDENTIALS", requestId },
+        { status: 401, headers },
+      );
     }
 
-    // Keep a database-granted admin role. Ordinary users can never promote
-    // themselves because this value comes only from the saved account record.
+    const user = outcome.user as Record<string, any>;
+
+    // The role comes only from the saved account record; clients cannot set it.
     const role = user.role === "admin" ? ("admin" as const) : ("user" as const);
     const loginAt = new Date();
     await User.updateOne(
@@ -83,8 +107,8 @@ export async function POST(req: Request) {
       {
         userId: String(user._id),
         phoneNumber: user.phoneNumber,
-        // A signed role claim enables correct middleware navigation. Privileged
-        // pages and APIs still verify the current MongoDB role/sessionVersion.
+        // Signed role claim is for navigation only; privileged pages and APIs
+        // re-check the live MongoDB role and sessionVersion.
         role,
         primaryAdmin: user.isPrimaryAdmin === true,
         sessionVersion: Number(user.sessionVersion || 0),
@@ -114,7 +138,7 @@ export async function POST(req: Request) {
           loginCount: Number(user.loginCount || 0) + 1,
         },
       },
-      { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } },
+      { status: 200, headers },
     );
 
     const activeSubscription = await Subscription.findOne({
@@ -134,10 +158,11 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error: unknown) {
-    console.error("Authentication login failed:", error);
+    // Infrastructure faults are a 5xx, never a credential failure.
+    console.error(`[auth-login] requestId=${requestId} category=server_error`, error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
-      { message: "Login could not be completed. Please try again." },
-      { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } },
+      { message: "Login could not be completed. Please try again.", code: "SERVER_ERROR", requestId },
+      { status: 500, headers },
     );
   }
 }

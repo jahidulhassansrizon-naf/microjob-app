@@ -79,6 +79,12 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     invalidCredentials: isBn
       ? "ফোন নম্বর/ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।"
       : "The phone/email or password is incorrect. Please try again.",
+    tooManyAttempts: isBn
+      ? "অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।"
+      : "Too many login attempts. Please wait a few minutes and try again.",
+    missingFields: isBn
+      ? "সঠিক ফোন নম্বর/ইমেইল এবং পাসওয়ার্ড লিখুন।"
+      : "Enter a valid phone number/email and password.",
     loginFailed: isBn
       ? "লগইন করা যায়নি। আপনার তথ্য যাচাই করে আবার চেষ্টা করুন।"
       : "Unable to sign in. Please check your details and try again.",
@@ -191,17 +197,22 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phoneNumber: formData.identifier,
+          identifier: formData.identifier.trim(),
           password: formData.password,
         }),
       });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        if ([400, 401, 403].includes(response.status)) {
+        // Keep distinct failures distinct: a rate limit or server fault must
+        // not be shown as "wrong password".
+        if (response.status === 429) throw new Error(text.tooManyAttempts);
+        if (response.status === 400) throw new Error(text.missingFields);
+        if ([401, 403].includes(response.status)) {
           throw new Error(text.invalidCredentials);
         }
-        throw new Error(text.loginFailed);
+        const requestId = typeof data?.requestId === "string" ? data.requestId : "";
+        throw new Error(requestId ? `${text.loginFailed} (${requestId.slice(0, 8)})` : text.loginFailed);
       }
 
       const isAdminLogin = data?.user?.role === "admin";
