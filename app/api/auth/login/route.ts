@@ -6,13 +6,6 @@ import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
-import {
-  ENV_ADMIN_USER_ID,
-  getAdminCredentialVersion,
-  getAdminCredentials,
-  isConfiguredAdminEmail,
-  safeSecretEquals,
-} from "@/lib/adminCredentials";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
@@ -42,10 +35,15 @@ export async function POST(req: Request) {
     const submittedIdentifier = body?.phoneNumber ?? body?.identifier ?? body?.email ?? "";
     const formattedInput = submittedIdentifier ? String(submittedIdentifier).trim().toLowerCase() : "";
     const submittedPassword = typeof body?.password === "string" ? body.password : "";
+    if (!formattedInput || formattedInput.length > 254 || submittedPassword.length > 128 || !submittedPassword) {
+      return NextResponse.json({ message: "Enter a valid email/phone number and password." }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
 
     // A shared MongoDB counter prevents rapid credential guessing across app instances.
     await connectDB();
-    const rateLimit = await enforceAuthRateLimit(req, "auth-login", 80, 10 * 60 * 1000);
+    const ipRateLimit = await enforceAuthRateLimit(req, "auth-login-ip", 40, 10 * 60 * 1000);
+    const identifierRateLimit = await enforceAuthRateLimit(req, "auth-login-identifier", 10, 15 * 60 * 1000, formattedInput);
+    const rateLimit = !ipRateLimit.allowed ? ipRateLimit : identifierRateLimit;
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { message: "Too many login attempts. Please wait before trying again." },
@@ -53,64 +51,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // The single configured admin is authenticated from server-only environment
-    // credentials. No database user/signup is required, and normal users cannot
-    // acquire admin privileges by setting an email or a browser role.
-    const admin = getAdminCredentials();
-    if (admin.email && isConfiguredAdminEmail(formattedInput)) {
-      if (!admin.password) {
-        return NextResponse.json(
-          { message: "Administrator login is not configured on the server." },
-          { status: 503 },
-        );
-      }
-      if (!safeSecretEquals(submittedPassword, admin.password)) {
-        return NextResponse.json({ message: "Invalid email or password." }, { status: 400 });
-      }
-
-      const token = jwt.sign(
-        {
-          userId: ENV_ADMIN_USER_ID,
-          email: admin.email,
-          role: "admin",
-          admin: true,
-          adminCredentialVersion: getAdminCredentialVersion(admin.email, admin.password),
-        },
-        JWT_SECRET,
-        { expiresIn: "7d" },
-      );
-      const response = NextResponse.json(
-        {
-          message: "Login successful!",
-          // Admin JWT is only sent as an HttpOnly cookie; never expose it to JS/localStorage.
-          user: {
-            id: ENV_ADMIN_USER_ID,
-            fullName: admin.fullName,
-            phoneNumber: "",
-            email: admin.email,
-            role: "admin",
-            profileImageUrl: "",
-            profileImagePublicId: "",
-          },
-        },
-        { status: 200 },
-      );
-      loginCookie(response, token);
-      return response;
-    }
-
+    // Every account, including the primary administrator, is authenticated from
+    // MongoDB. Admin credentials are never read from ADMIN_EMAIL/ADMIN_PASSWORD.
     // Existing database-backed login flow for ordinary users remains intact.
     const user = await User.findOne({
       $or: [{ phoneNumber: submittedIdentifier }, { email: formattedInput }],
     });
 
     if (!user) {
-      return NextResponse.json({ message: "User not found!" }, { status: 400 });
+      return NextResponse.json({ message: "Invalid email/phone number or password." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     const isMatch = await bcrypt.compare(submittedPassword, user.password);
     if (!isMatch) {
-      return NextResponse.json({ message: "Invalid password!" }, { status: 400 });
+      return NextResponse.json({ message: "Invalid email/phone number or password." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     // Keep a database-granted admin role. Ordinary users can never promote
@@ -132,6 +86,7 @@ export async function POST(req: Request) {
         // A signed role claim enables correct middleware navigation. Privileged
         // pages and APIs still verify the current MongoDB role/sessionVersion.
         role,
+        primaryAdmin: user.isPrimaryAdmin === true,
         sessionVersion: Number(user.sessionVersion || 0),
       },
       JWT_SECRET,
@@ -141,7 +96,8 @@ export async function POST(req: Request) {
     const response = NextResponse.json(
       {
         message: "Login successful!",
-        token,
+        // Admin JWTs remain only in the HttpOnly cookie; do not expose them to JS.
+        ...(role === "admin" ? {} : { token }),
         user: {
           id: user._id,
           fullName: user.fullName,
@@ -152,12 +108,13 @@ export async function POST(req: Request) {
           profileImageUrl: user.profileImageUrl || "",
           profileImagePublicId: user.profileImagePublicId || "",
           role,
+          isRootAdmin: user.isPrimaryAdmin === true,
           isBanned: user.isBanned === true,
           lastLoginAt: loginAt,
           loginCount: Number(user.loginCount || 0) + 1,
         },
       },
-      { status: 200 },
+      { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } },
     );
 
     const activeSubscription = await Subscription.findOne({

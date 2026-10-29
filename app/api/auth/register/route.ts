@@ -5,7 +5,6 @@ import User from "@/models/User";
 import Otp from "@/models/Otp";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
-import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { ensureUniqueFullNameIndex, findDuplicateFullName, normalizeFullName } from "@/app/api/_lib/userIdentity";
 import {
   attemptsQuery,
@@ -73,9 +72,6 @@ export async function POST(req: Request) {
       return json({ message: "Password must be between 8 and 128 characters long." }, 400);
     }
     if (!/^\d{6}$/.test(cleanOtp)) return json({ message: "Enter a valid 6-digit OTP code." }, 400);
-    if (isConfiguredAdminEmail(cleanEmail)) {
-      return json({ message: "This email is reserved for the administrator and cannot be registered as a regular user." }, 409);
-    }
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(req, "register-submit", 60, 10 * 60 * 1000);

@@ -66,13 +66,17 @@ export async function getClientSession(): Promise<ClientSession> {
 
     if (response.ok && data?.user) {
       const user = data.user as ClientAuthUser;
+      const isAdmin = user.role === "admin";
       try {
         localStorage.setItem("user", JSON.stringify(user));
+        // Admin sessions are cookie-only; clear any old JS-readable JWT left by
+        // a previous user login on this browser.
+        if (isAdmin) localStorage.removeItem("token");
       } catch {
         // Cache is optional.
       }
 
-      return { authenticated: true, user, token, verified: true };
+      return { authenticated: true, user, token: isAdmin ? null : token, verified: true };
     }
 
     if (response.status === 401 || response.status === 403) {

@@ -1,10 +1,6 @@
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import {
-  ENV_ADMIN_USER_ID,
-  isCurrentAdminToken,
-  type AdminTokenClaims,
-} from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, type AdminTokenClaims } from "@/lib/adminCredentials";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
@@ -59,18 +55,9 @@ export async function getVerifiedRequestSession(
     return null;
   }
 
-  const isEnvironmentAdmin =
-    claims.admin === true || claims.userId === ENV_ADMIN_USER_ID;
-
-  if (isEnvironmentAdmin) {
-    if (!isCurrentAdminToken(claims)) return null;
-    return {
-      userId: ENV_ADMIN_USER_ID,
-      role: "admin",
-      isBanned: false,
-      claims,
-    };
-  }
+  // Invalidate the old synthetic environment-admin identity. Active admin
+  // accounts are verified as ordinary database users below.
+  if (claims.admin === true || claims.userId === ENV_ADMIN_USER_ID) return null;
 
   if (
     typeof claims.userId !== "string" ||

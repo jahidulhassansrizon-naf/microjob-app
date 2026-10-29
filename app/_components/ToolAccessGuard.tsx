@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShieldOff, ArrowLeft } from "lucide-react";
 
@@ -86,11 +86,43 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
   }, [pathname, toolPath]);
 
   const status = !toolPath ? "allowed" : gate.pathname !== pathname ? "checking" : gate.status;
+  const lastAllowedContentRef = useRef<{
+    pathname: string;
+    children: React.ReactNode;
+  } | null>(null);
+
+  // Keep the last settled page mounted during a client-side tool navigation.
+  // This avoids a blank white flash while the access check runs and does not
+  // render the destination tool until the server confirms access is allowed.
+  useLayoutEffect(() => {
+    if (status === "allowed") {
+      lastAllowedContentRef.current = { pathname, children };
+    }
+  }, [children, pathname, status]);
 
   if (status === "checking") {
-    // Keep the protected tool tree unmounted while the fresh server-side session
-    // check runs, but do not expose an internal access-check spinner/message.
-    return <main aria-busy="true" aria-hidden="true" className="min-h-[55vh]" />;
+    const previous = lastAllowedContentRef.current;
+    if (previous) return <>{previous.children}</>;
+
+    // On a cold/direct load there is no previous page to retain. Use a neutral,
+    // text-free skeleton instead of an empty white screen. No access-check copy
+    // or internal authorization status is exposed to the user.
+    return (
+      <main
+        aria-busy="true"
+        aria-hidden="true"
+        className="min-h-[65vh] bg-gradient-to-b from-slate-50 to-white px-4 py-8 sm:px-6"
+      >
+        <div className="mx-auto max-w-6xl space-y-5">
+          <div className="h-9 w-48 animate-pulse rounded-xl bg-slate-200/70" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
+            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
+            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (status === "blocked") {

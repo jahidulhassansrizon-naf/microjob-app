@@ -32,10 +32,6 @@ async function updateProfile(req: Request) {
     if (!session) {
       return NextResponse.json({ message: "Invalid or expired session." }, { status: 401, headers: NO_STORE_HEADERS });
     }
-    if (session.userId === "env-admin") {
-      return NextResponse.json({ message: "The environment administrator profile is managed through server configuration." }, { status: 403, headers: NO_STORE_HEADERS });
-    }
-
     // Read request body only after authentication.
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {

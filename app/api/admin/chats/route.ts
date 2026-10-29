@@ -162,7 +162,7 @@ export async function POST(request: Request) {
       conversationId: conversation._id,
       userId: user._id,
       senderRole: "admin",
-      senderId: auth.admin?.id || "env-admin",
+      senderId: auth.admin?.id || "unknown-admin",
       text,
       readByAdmin: true,
       readByUser: false,

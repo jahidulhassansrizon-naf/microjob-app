@@ -3,11 +3,7 @@ import mongoose from "mongoose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminDashboardClient from "./AdminDashboardClient";
-import {
-  ENV_ADMIN_USER_ID,
-  isCurrentAdminToken,
-  type AdminTokenClaims,
-} from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, type AdminTokenClaims } from "@/lib/adminCredentials";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
@@ -28,8 +24,7 @@ export default async function AdminPage() {
   }
 
   if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
-    if (!isCurrentAdminToken(decoded)) redirect("/login?redirect=%2Fadmin");
-    return <AdminDashboardClient />;
+    redirect("/login?redirect=%2Fadmin");
   }
 
   if (typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) {

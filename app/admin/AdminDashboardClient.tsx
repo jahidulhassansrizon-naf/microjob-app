@@ -62,6 +62,7 @@ type UserRow = {
   email: string;
   phoneNumber: string;
   role: "admin" | "user";
+  isPrimaryAdmin?: boolean;
   isBanned?: boolean;
   bannedAt?: string | null;
   bannedBy?: string;
@@ -2104,6 +2105,7 @@ export default function AdminDashboardClient() {
                       label={accessModalUser.role === "admin" ? "Administrator" : "Regular user"}
                       tone={accessModalUser.role === "admin" ? "indigo" : "slate"}
                     />
+                    {accessModalUser.isPrimaryAdmin && <StatusPill label="Primary administrator" tone="indigo" />}
                     {accessModalUser.isBanned && <StatusPill label="Tool access blocked" tone="red" />}
                   </div>
 
@@ -2122,14 +2124,14 @@ export default function AdminDashboardClient() {
 
                     <button
                       type="button"
-                      disabled={userActionBusy || userDeleting || confirmingUserDelete || (accessModalUser.role === "admin" && !admin?.isRootAdmin)}
+                      disabled={userActionBusy || userDeleting || confirmingUserDelete || accessModalUser.isPrimaryAdmin === true || accessModalUser.id === admin?.id || (accessModalUser.role === "admin" && !admin?.isRootAdmin)}
                       onClick={() => void performUserAction("reset-password")}
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <KeyRound size={15} /> Reset password
                     </button>
 
-                    {admin?.isRootAdmin && accessModalUser.id !== admin.id && (
+                    {admin?.isRootAdmin && accessModalUser.id !== admin.id && accessModalUser.isPrimaryAdmin !== true && (
                       <button
                         type="button"
                         disabled={userActionBusy || userDeleting || confirmingUserDelete}
@@ -2143,7 +2145,7 @@ export default function AdminDashboardClient() {
                   </div>
 
                   {accessModalUser.role === "admin" && !admin?.isRootAdmin && (
-                    <p className="mt-3 text-xs leading-5 text-slate-500">Only the primary environment-configured administrator can modify another administrator account or reset its password.</p>
+                    <p className="mt-3 text-xs leading-5 text-slate-500">Only the primary administrator can modify another administrator account or reset its password.</p>
                   )}
 
                   {temporaryPassword && (
@@ -2177,12 +2179,13 @@ export default function AdminDashboardClient() {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-slate-900">Delete user account permanently</h3>
                       <p className="mt-1 text-xs leading-5 text-slate-500">Permanently removes this account and its subscription, chat history, saved files and other user-owned database records. This cannot be undone.</p>
+                      {(accessModalUser.role === "admin" || accessModalUser.isPrimaryAdmin === true) && <p className="mt-2 text-xs font-medium text-amber-700">Administrator accounts are protected. Remove an ordinary admin role before deletion; the primary administrator cannot be deleted here.</p>}
                     </div>
                   </div>
                   {!confirmingUserDelete ? (
                     <button
                       type="button"
-                      disabled={accessSaving || userDeleting}
+                      disabled={accessSaving || userDeleting || accessModalUser.role === "admin" || accessModalUser.isPrimaryAdmin === true}
                       onClick={() => { setConfirmingUserDelete(true); setDeleteUserConfirmationText(""); setDeleteUserError(""); }}
                       className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -2204,7 +2207,7 @@ export default function AdminDashboardClient() {
                       {deleteUserError && <p role="alert" className="mt-2 text-xs font-medium text-rose-700">{deleteUserError}</p>}
                       <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button type="button" disabled={userDeleting || userActionBusy} onClick={() => { setConfirmingUserDelete(false); setDeleteUserConfirmationText(""); setDeleteUserError(""); }} className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-                        <button type="button" disabled={userDeleting || userActionBusy || deleteUserConfirmationText !== "DELETE"} onClick={() => void deleteUserAccount()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        <button type="button" disabled={userDeleting || userActionBusy || accessModalUser.role === "admin" || accessModalUser.isPrimaryAdmin === true || deleteUserConfirmationText !== "DELETE"} onClick={() => void deleteUserAccount()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
                           <Trash2 size={14} /> {userDeleting ? "Deleting account…" : "Permanently delete"}
                         </button>
                       </div>

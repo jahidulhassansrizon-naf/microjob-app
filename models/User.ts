@@ -138,12 +138,18 @@ const UserSchema = new Schema(
     },
 
     // Role is assigned by the server. Public registration always creates users.
-    // The environment-managed administrator is not stored as a User document.
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
       index: true,
+    },
+
+    // Exactly one trusted primary admin is provisioned with a one-time CLI script.
+    // Public registration and profile endpoints must never be allowed to set this.
+    isPrimaryAdmin: {
+      type: Boolean,
+      default: false,
     },
 
     // Tool access can be suspended without blocking login or normal site browsing.
@@ -239,6 +245,15 @@ const UserSchema = new Schema(
   },
   {
     timestamps: true,
+  },
+);
+
+UserSchema.index(
+  { isPrimaryAdmin: 1 },
+  {
+    unique: true,
+    name: "uniq_primary_admin_account",
+    partialFilterExpression: { isPrimaryAdmin: true },
   },
 );
 

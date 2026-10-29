@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
 import User from "@/models/User";
-import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "";
@@ -215,16 +215,13 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
   }
 
   if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
-    if (!isCurrentAdminToken(decoded)) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { success: false, code: "INVALID_SESSION", message: "Your administrator session is invalid or expired." },
-          { status: 401 },
-        ),
-      };
-    }
-    return { ok: true, userId: ENV_ADMIN_USER_ID, role: "admin", isRootAdmin: true };
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, code: "INVALID_SESSION", message: "Your administrator session has been retired. Please sign in again." },
+        { status: 401 },
+      ),
+    };
   }
 
   const userId = typeof decoded.userId === "string" ? decoded.userId : "";
@@ -240,7 +237,7 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
 
   try {
     await connectDB();
-    const user = await User.findById(userId).select("role isBanned sessionVersion").lean();
+    const user = await User.findById(userId).select("role isBanned sessionVersion isPrimaryAdmin").lean();
     if (!user) {
       return {
         ok: false,
@@ -272,7 +269,7 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
       };
     }
 
-    return { ok: true, userId, role, isRootAdmin: false };
+    return { ok: true, userId, role, isRootAdmin: user.isPrimaryAdmin === true };
   } catch (error) {
     console.error("[tool-access] account lookup failed:", error);
     return {

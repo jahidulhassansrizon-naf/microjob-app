@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Otp from "@/models/Otp";
-import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
 import { sendTransactionalEmail } from "@/app/api/_lib/emailDelivery";
@@ -65,9 +64,6 @@ export async function POST(req: Request) {
     }
     const phoneError = validatePhoneNumber(country, cleanPhone);
     if (phoneError) return json({ message: phoneError }, 400);
-    if (isConfiguredAdminEmail(cleanEmail)) {
-      return json({ message: "This email is reserved for the administrator." }, 409);
-    }
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(req, "register-email-otp", 30, 10 * 60 * 1000);

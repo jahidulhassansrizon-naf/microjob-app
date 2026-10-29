@@ -21,6 +21,9 @@ interface UserProfile {
     postcode?: string;
     about?: string;
     isEmailVerified?: boolean;
+    role?: "user" | "admin";
+    isRootAdmin?: boolean;
+    isPrimaryAdmin?: boolean;
 }
 interface DeviceSession {
     id: string;
@@ -137,10 +140,6 @@ export default function SettingsPage() {
     }, []);
     const fetchProfile = useCallback(async (showLoader = true) => {
         const token = getToken();
-        if (!token) {
-            router.replace("/login");
-            return;
-        }
         if (showLoader)
             setLoading(true);
         else
@@ -148,8 +147,9 @@ export default function SettingsPage() {
         try {
             const response = await fetch(API.me, {
                 method: "GET",
+                credentials: "include",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     "Content-Type": "application/json",
                 },
                 cache: "no-store",
@@ -227,10 +227,6 @@ export default function SettingsPage() {
     const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const token = getToken();
-        if (!token) {
-            router.replace("/login");
-            return;
-        }
         if (!profileForm.fullName.trim()) {
             showToast("error", "Full name is required.");
             return;
@@ -239,8 +235,9 @@ export default function SettingsPage() {
         try {
             const response = await fetch(API.updateProfile, {
                 method: "PUT",
+                credentials: "include",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -321,8 +318,9 @@ export default function SettingsPage() {
             showToast("error", "Please complete all password fields.");
             return;
         }
-        if (newPassword.length < 8) {
-            showToast("error", "New password must be at least 8 characters long.");
+        const minimumPasswordLength = user?.isRootAdmin ? 12 : 8;
+        if (newPassword.length < minimumPasswordLength) {
+            showToast("error", `New password must be at least ${minimumPasswordLength} characters long.`);
             return;
         }
         if (newPassword !== confirmPassword) {
@@ -330,16 +328,13 @@ export default function SettingsPage() {
             return;
         }
         const token = getToken();
-        if (!token) {
-            router.replace("/login");
-            return;
-        }
         setSavingPassword(true);
         try {
             const response = await fetch(API.changePassword, {
                 method: "PUT",
+                credentials: "include",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ currentPassword, newPassword }),
@@ -353,7 +348,15 @@ export default function SettingsPage() {
             if (!response.ok)
                 throw new Error(getApiError(data, "Unable to change your password."));
             setPasswordForm(emptyPasswordForm);
-            showToast("success", data.message || "Password changed successfully.");
+            try {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.dispatchEvent(new Event("sohojhub:auth-changed"));
+            } catch {
+                // Session cleanup must not expose or restore the previous token.
+            }
+            showToast("success", data.message || "Password changed successfully. Please sign in again.");
+            window.setTimeout(() => router.replace("/login"), 900);
         }
         catch (err) {
             showToast("error", err instanceof Error ? err.message : "Unable to change your password.");

@@ -5,10 +5,7 @@ type SessionClaims = {
   userId?: unknown;
   exp?: unknown;
   nbf?: unknown;
-  email?: unknown;
-  role?: unknown;
   admin?: unknown;
-  adminCredentialVersion?: unknown;
 };
 
 const ADMIN_USER_ID = "env-admin";
@@ -25,61 +22,7 @@ function decodeBase64Url(value: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-function bytesToHex(bytes: ArrayBuffer): string {
-  return Array.from(new Uint8Array(bytes))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function hmacSha256Hex(secret: string, value: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  return bytesToHex(
-    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)),
-  );
-}
-
-function safeEqualString(left: string, right: string): boolean {
-  if (left.length !== right.length) return false;
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
-  }
-  return difference === 0;
-}
-
-async function isCurrentAdminSession(
-  claims: SessionClaims,
-  jwtSecret: string,
-): Promise<boolean> {
-  const configuredEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
-  const configuredPassword = process.env.ADMIN_PASSWORD || "";
-  if (
-    claims.admin !== true ||
-    claims.role !== "admin" ||
-    claims.userId !== ADMIN_USER_ID ||
-    typeof claims.email !== "string" ||
-    claims.email.trim().toLowerCase() !== configuredEmail ||
-    !configuredEmail ||
-    !configuredPassword
-  ) {
-    return false;
-  }
-
-  const expectedVersion = await hmacSha256Hex(
-    jwtSecret,
-    `${configuredEmail}\u0000${configuredPassword}`,
-  );
-  return (
-    typeof claims.adminCredentialVersion === "string" &&
-    safeEqualString(claims.adminCredentialVersion, expectedVersion)
-  );
-}
+// Old synthetic `env-admin` sessions are intentionally rejected after migration.
 
 /**
  * Verify the signed session cookie before a protected page is rendered.
@@ -128,16 +71,9 @@ async function verifySessionToken(token: string): Promise<SessionClaims | null> 
       return null;
     }
 
-    // The environment-configured root administrator is the only session whose
-    // identity is bound to ADMIN_EMAIL / ADMIN_PASSWORD. Database administrators
-    // have a MongoDB ObjectId and are validated against the User document by the
-    // protected page/API before privileged data or actions are served.
-    const isEnvironmentAdmin =
-      claims.admin === true || claims.userId === ADMIN_USER_ID;
-
-    if (isEnvironmentAdmin) {
-      return (await isCurrentAdminSession(claims, jwtSecret)) ? claims : null;
-    }
+    // Old environment-configured admin tokens are intentionally rejected. All
+    // active sessions now identify a MongoDB User document.
+    if (claims.admin === true || claims.userId === ADMIN_USER_ID) return null;
 
     // All database-backed sessions are issued for MongoDB ObjectIds. The signed
     // role claim is used only for navigation; app/admin/page.tsx and admin APIs
@@ -193,26 +129,8 @@ export default async function middleware(request: NextRequest) {
   const claims = token ? await verifySessionToken(token) : null;
   if (!claims) return loginRedirect(request);
 
-  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isEnvironmentAdmin =
-    claims.admin === true &&
-    claims.role === "admin" &&
-    claims.userId === ADMIN_USER_ID;
-
-  // For a database-backed identity, let the server-rendered admin page perform
-  // the authoritative role + sessionVersion check. Middleware cannot query the
-  // live role; rejecting a valid pre-role-claim JWT here can cause a redirect
-  // loop for legacy database administrators. Admin APIs independently require
-  // an active database administrator session before returning or changing data.
-
-  // Only the environment administrator is force-routed here at middleware
-  // level. Database admins are revalidated by /dashboard and /admin; avoiding
-  // role-claim redirects here prevents a stale token after demotion from causing
-  // a /dashboard <-> /admin redirect loop.
-  if (isEnvironmentAdmin && !isAdminPath) {
-    return NextResponse.redirect(new URL("/admin", request.url));
-  }
-
+  // The login endpoint routes administrators to /admin. Page/API handlers then
+  // verify the current database role and sessionVersion to avoid stale-role loops.
   return NextResponse.next();
 }
 

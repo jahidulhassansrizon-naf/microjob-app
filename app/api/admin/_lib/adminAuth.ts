@@ -1,12 +1,7 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import {
-  ENV_ADMIN_USER_ID,
-  getAdminCredentials,
-  isCurrentAdminToken,
-  type AdminTokenClaims,
-} from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, type AdminTokenClaims } from "@/lib/adminCredentials";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
@@ -70,19 +65,10 @@ export async function requireAdmin(request: Request): Promise<{
     return { admin: null, response: NextResponse.json({ success: false, message: "Your login session is invalid or expired." }, { status: 401 }) };
   }
 
-  const isEnvironmentAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
-  if (isEnvironmentAdmin) {
-    const configured = getAdminCredentials();
-    if (!configured.email || !configured.password || !isCurrentAdminToken(decoded)) {
-      return {
-        admin: null,
-        response: NextResponse.json({ success: false, message: "Your primary administrator session is invalid or expired." }, { status: 401 }),
-      };
-    }
-    return {
-      admin: { id: ENV_ADMIN_USER_ID, fullName: configured.fullName, email: configured.email, phoneNumber: "", isRootAdmin: true },
-      response: null,
-    };
+  // Retire legacy environment-backed administrator tokens. The primary admin
+  // is now a real User record with a database-granted isPrimaryAdmin flag.
+  if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
+    return { admin: null, response: NextResponse.json({ success: false, message: "Your administrator session has been retired. Please sign in again." }, { status: 401 }) };
   }
 
   if (typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) {
@@ -92,7 +78,7 @@ export async function requireAdmin(request: Request): Promise<{
   try {
     await connectDB();
     const user = await User.findById(decoded.userId)
-      .select("fullName email phoneNumber role sessionVersion")
+      .select("fullName email phoneNumber role sessionVersion isPrimaryAdmin")
       .lean();
 
     if (!user || user.role !== "admin") {
@@ -109,7 +95,7 @@ export async function requireAdmin(request: Request): Promise<{
         fullName: user.fullName || "Administrator",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
-        isRootAdmin: false,
+        isRootAdmin: user.isPrimaryAdmin === true,
       },
       response: null,
     };

@@ -49,9 +49,8 @@ export async function POST(req: Request) {
         { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(rateLimit.retryAfterSeconds) } },
       );
     }
-    const user = await User.findOne({ email: cleanEmail }).select("_id sessionVersion").lean();
+    const user = await User.findOne({ email: cleanEmail }).select("_id sessionVersion isPrimaryAdmin").lean();
     if (!user) return invalidOtpResponse();
-
     const cutoff = new Date(Date.now() - OTP_TTL_MS);
     const otpRecord = await Otp.findOne({
       identifier: cleanEmail,
@@ -74,6 +73,12 @@ export async function POST(req: Request) {
       return invalidOtpResponse();
     }
 
+    // Only reveal/apply the stronger primary-admin password policy after OTP
+    // ownership is proven, avoiding account-role enumeration through this API.
+    if (user.isPrimaryAdmin === true && newPassword.length < 12) {
+      return json({ message: "The primary administrator password must be at least 12 characters long." }, 400);
+    }
+
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     // Atomically consume the matching OTP exactly once before changing credentials.
@@ -88,7 +93,7 @@ export async function POST(req: Request) {
     if (!consumedOtp) return invalidOtpResponse();
 
     const updatedUser = await User.updateOne(
-      { _id: user._id },
+      { _id: user._id, sessionVersion: Number(user.sessionVersion || 0) },
       {
         $set: { password: passwordHash, passwordChangedAt: new Date() },
         $inc: { sessionVersion: 1 },
@@ -96,7 +101,7 @@ export async function POST(req: Request) {
       { runValidators: true },
     );
     if (updatedUser.matchedCount !== 1) {
-      return json({ message: "The account could not be updated. Request a new reset code and try again." }, 500);
+      return json({ message: "The account changed during this reset. Request a new reset code and try again." }, 409);
     }
 
     await Otp.deleteMany({ identifier: cleanEmail });

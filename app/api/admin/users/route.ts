@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const [total, usersRaw] = await Promise.all([
       User.countDocuments(filter),
       User.find(filter)
-        .select("fullName email phoneNumber country district role isBanned bannedAt bannedBy banReason createdAt lastLoginAt lastSeenAt loginCount manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt manualAccessGrantedBy")
+        .select("fullName email phoneNumber country district role isBanned bannedAt bannedBy banReason createdAt lastLoginAt lastSeenAt loginCount manualAccessEnabled manualAccessExpiresAt manualAccessGrantedAt manualAccessGrantedBy isPrimaryAdmin")
         .sort({ lastLoginAt: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -86,6 +86,7 @@ export async function GET(request: Request) {
       country: user.country || "",
       district: user.district || "",
       role: user.role === "admin" ? "admin" : "user",
+      isPrimaryAdmin: user.isPrimaryAdmin === true,
       isBanned: user.isBanned === true,
       bannedAt: user.bannedAt || null,
       bannedBy: user.bannedBy || "",

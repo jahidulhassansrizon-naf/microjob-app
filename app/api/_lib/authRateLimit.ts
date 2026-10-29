@@ -20,6 +20,7 @@ export async function enforceAuthRateLimit(
   scope: string,
   limit: number,
   windowMs: number,
+  subject?: string,
 ): Promise<RateLimitResult> {
   const now = Date.now();
   const windowStart = Math.floor(now / windowMs);
@@ -27,11 +28,14 @@ export async function enforceAuthRateLimit(
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const remoteIp = request.headers.get("x-real-ip")?.trim() || forwarded || "unknown";
   const secret = getRateLimitSecret();
-  const ipFingerprint = createHash("sha256")
-    .update(`${secret}\u0000${remoteIp}`)
+  const rateLimitIdentity = typeof subject === "string" && subject.trim()
+    ? `subject:${subject.trim().toLowerCase()}`
+    : `ip:${remoteIp}`;
+  const identityFingerprint = createHash("sha256")
+    .update(`${secret}\u0000${scope}\u0000${rateLimitIdentity}`)
     .digest("hex")
     .slice(0, 40);
-  const key = `${scope}:${ipFingerprint}:${windowStart}`;
+  const key = `${scope}:${identityFingerprint}:${windowStart}`;
   const expiresAt = new Date(windowEnd + windowMs);
 
   let count = 0;

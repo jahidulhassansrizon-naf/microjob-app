@@ -16,7 +16,7 @@ import QuestionPaper from "@/models/QuestionPaper";
 import SavedForm from "@/models/SavedForm";
 import ScannedDocument from "@/models/ScannedDocument";
 import Otp from "@/models/Otp";
-import { ENV_ADMIN_USER_ID, isConfiguredAdminEmail } from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
 import { requireAdmin } from "@/app/api/admin/_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -147,6 +147,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 
+    if (user.isPrimaryAdmin === true) {
+      return NextResponse.json({ success: false, message: "The primary administrator account cannot be modified from user management. Use its own account settings instead." }, { status: 403 });
+    }
+
     const isDatabaseAdmin = user.role === "admin";
     if (isDatabaseAdmin && !auth.admin.isRootAdmin) {
       return NextResponse.json({ success: false, message: "Only the primary administrator can manage another administrator account." }, { status: 403 });
@@ -154,17 +158,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (action === "grant-admin" || action === "remove-admin") {
       if (!auth.admin.isRootAdmin) {
-        return NextResponse.json({ success: false, message: "Only the primary environment-configured administrator can change administrator roles." }, { status: 403 });
-      }
-      if (isConfiguredAdminEmail(user.email)) {
-        return NextResponse.json({ success: false, message: "The primary environment-configured administrator cannot be changed here." }, { status: 403 });
+        return NextResponse.json({ success: false, message: "Only the primary administrator can change administrator roles." }, { status: 403 });
       }
 
       if (action === "grant-admin") {
         // Atomic role update + version bump prevents concurrent security actions
         // from overwriting one another or leaving a just-issued session valid.
         const updated = await User.updateOne(
-          { _id: user._id, role: user.role },
+          { _id: user._id, role: user.role, isPrimaryAdmin: { $ne: true } },
           {
             $set: {
               role: "admin",
@@ -190,7 +191,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       // reused after this demotion. The role predicate prevents conflicting
       // concurrent role changes from silently overwriting each other.
       const updated = await User.updateOne(
-        { _id: user._id, role: "admin" },
+        { _id: user._id, role: "admin", isPrimaryAdmin: { $ne: true } },
         {
           $set: {
             role: "user",
@@ -288,12 +289,12 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     await connectDB();
     const user = await User.findById(userId).select(
-      "_id fullName email phoneNumber role profileImagePublicId profileImageUrl",
+      "_id fullName email phoneNumber role isPrimaryAdmin profileImagePublicId profileImageUrl",
     );
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found. They may already have been deleted." }, { status: 404 });
     }
-    if (user.role === "admin" || isConfiguredAdminEmail(user.email)) {
+    if (user.role === "admin" || user.isPrimaryAdmin === true) {
       return NextResponse.json({ success: false, message: "Administrator accounts must be demoted by the primary administrator before they can be deleted." }, { status: 403 });
     }
 

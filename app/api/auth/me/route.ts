@@ -3,12 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import {
-  ENV_ADMIN_USER_ID,
-  getAdminCredentials,
-  isCurrentAdminToken,
-  type AdminTokenClaims,
-} from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, type AdminTokenClaims } from "@/lib/adminCredentials";
 
 export const dynamic = "force-dynamic";
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -37,7 +32,7 @@ export async function GET(req: Request) {
     }
 
     const token = getBearerToken(req) || getTokenFromCookie(req.headers.get("cookie"));
-    if (!token) return NextResponse.json({ message: "No token provided!" }, { status: 401 });
+    if (!token) return NextResponse.json({ message: "No token provided!" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
 
     let decoded: AdminTokenClaims;
     try {
@@ -46,25 +41,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "Invalid or expired token!" }, { status: 401 });
     }
 
-    // An environment-configured admin is not a User document in MongoDB.
+    // Old environment-admin tokens cannot be used after migration.
     if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
-      if (!isCurrentAdminToken(decoded)) {
-        return NextResponse.json({ message: "Invalid or expired administrator session." }, { status: 401 });
-      }
-      const admin = getAdminCredentials();
-      return NextResponse.json({
-        user: {
-          id: ENV_ADMIN_USER_ID,
-          fullName: admin.fullName,
-          email: admin.email,
-          phoneNumber: "",
-          role: "admin",
-          isRootAdmin: true,
-          isBanned: false,
-          profileImageUrl: "",
-          profileImagePublicId: "",
-        },
-      }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } });
+      return NextResponse.json({ message: "Administrator session retired. Please sign in again." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     if (
@@ -89,7 +68,7 @@ export async function GET(req: Request) {
         id: String(user._id),
         role: user.role === "admin" ? "admin" : "user",
         isBanned: user.isBanned === true,
-        isRootAdmin: false,
+        isRootAdmin: user.isPrimaryAdmin === true,
       },
     }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } });
   } catch (error: unknown) {

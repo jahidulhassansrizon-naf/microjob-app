@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
-import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
 import { isValidEmail, NO_STORE_HEADERS } from "@/app/api/_lib/otpSecurity";
@@ -33,9 +32,6 @@ export async function POST(request: Request) {
     if (!/^\d{5,15}$/.test(phoneNumber)) return json({ message: "Enter a valid phone number." }, 400);
     const phoneError = validatePhoneNumber(country, phoneNumber);
     if (phoneError) return json({ message: phoneError }, 400);
-    if (isConfiguredAdminEmail(email)) {
-      return json({ message: "This email is reserved for the administrator and cannot be registered as a regular user." }, 409);
-    }
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(request, "register-preflight", 40, 10 * 60 * 1000);

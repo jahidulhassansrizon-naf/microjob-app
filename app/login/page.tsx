@@ -230,11 +230,13 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       const secureCookie =
         window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `sohoj_login_success=1; path=/; max-age=30; SameSite=Lax${secureCookie}`;
-      const loginFirstName = String(
-        data?.user?.fullName ?? data?.user?.name ?? "",
-      )
-        .trim()
-        .split(/\s+/)[0] ?? "";
+      // Show a respectful role-based greeting for admins instead of their
+      // account/profile name (for example, a test name like "Test").
+      const loginFirstName = isAdminLogin
+        ? "Administrator"
+        : (String(data?.user?.fullName ?? data?.user?.name ?? "")
+            .trim()
+            .split(/\s+/)[0] ?? "");
       if (loginFirstName) {
         document.cookie = `sohoj_login_name=${encodeURIComponent(loginFirstName)}; path=/; max-age=30; SameSite=Lax${secureCookie}`;
       }
