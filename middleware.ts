@@ -113,6 +113,6 @@ export const config = {
     "/subscription/:path*", "/sohoj-tools/:path*", "/dorkar-link/:path*", "/dorkari-document/:path*",
     "/customers-invoices/:path*", "/income-expenses/:path*", "/questions-create/:path*", "/ai-editor/:path*",
     "/ai-photo/:path*", "/ai-template/:path*", "/bulk-photo-edit/:path*", "/manual-editor/:path*",
-    "/print-media/:path*", "/tools/:path*", "/login-success/:path*", "/payment/manual/:path*",
+    "/print-media/:path*", "/tools/:path*", "/login-success/:path*",
   ],
 };

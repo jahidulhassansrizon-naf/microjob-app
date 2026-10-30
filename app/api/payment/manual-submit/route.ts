@@ -191,6 +191,7 @@ export async function POST(request: Request) {
       planName: plan.name,
       months: plan.months,
       amount: plan.price,
+      paymentProvider: "Manual",
       paymentMethod: method,
       senderNumber,
       transactionId,

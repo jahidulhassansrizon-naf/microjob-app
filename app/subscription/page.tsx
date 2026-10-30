@@ -112,7 +112,7 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "manage your subscription status from this page":
     "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
   "payment verification and subscription access are handled automatically":
-    "অ্যাডমিন যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
+    "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "admin reviews the payment before subscription access is activated":
     "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "back to tools": "টুলসে ফিরে যান",
@@ -262,8 +262,8 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
       title: "অ্যাডমিন যাচাই করবেন",
       body: (
         <>
-          আপনার পেমেন্ট ম্যানুয়ালি যাচাই করা হবে। Approve হলেই ৩০ দিনের
-          অ্যাক্সেস চালু হবে।
+          আপনার পেমেন্ট ম্যানুয়ালি যাচাই করা হবে। Approve হলেই নির্বাচিত
+          প্যাকেজের মেয়াদ অনুযায়ী অ্যাক্সেস চালু হবে।
         </>
       ),
     },
@@ -291,6 +291,10 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
           <span className="inline-flex items-center gap-2 rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-2 text-sm font-extrabold text-[#B91C1C] sm:text-base">
             <Check size={15} strokeWidth={3} /> ধাপে ধাপে গাইড
           </span>
+        </div>
+        <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-base font-semibold leading-7 text-amber-900 sm:text-lg">
+          <p className="font-extrabold">PipraPay পেমেন্ট গেটওয়ে শিগগিরই যুক্ত হচ্ছে।</p>
+          <p className="mt-1">PipraPay integration সম্পন্ন ও পরীক্ষা না হওয়া পর্যন্ত আপাতত নিচের bKash অথবা Nagad পদ্ধতিতে পেমেন্ট করুন। TrxID জমা দেওয়ার পর অ্যাডমিন যাচাই করে অনুমোদন দিলে আপনার সাবস্ক্রিপশন চালু হবে।</p>
         </div>
         <ol className="mt-5 grid gap-3">
           {steps.map((step, index) => (

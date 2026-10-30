@@ -39,6 +39,21 @@ const SubscriptionSchema = new Schema(
       sparse: true,
     },
 
+    paymentProvider: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+
+    // PipraPay V2 may return invoice_id separately from pp_id.
+    providerInvoiceId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+
     transactionId: {
       type: String,
       default: "",

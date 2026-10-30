@@ -13,7 +13,7 @@ import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
 import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
 
-/* Subscription plan details are shared with the manual payment page via app/_lib/subscriptionPlans.ts. */
+/* Subscription plan details are shared with PipraPay checkout via app/_lib/subscriptionPlans.ts. */
 const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
 const getDiscount = (price: number, regularPrice: number) =>
   Math.max(0, Math.round((1 - price / regularPrice) * 100));
@@ -103,7 +103,7 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
   "use the same account across supported tools": "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
   "manage your subscription status from this page": "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
-  "payment verification and subscription access are handled automatically": "অ্যাডমিন যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
+  "payment verification and subscription access are handled automatically": "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "admin reviews the payment before subscription access is activated": "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
   "back to tools": "টুলসে ফিরে যান",
   "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
@@ -448,7 +448,21 @@ export default function PricingPage() {
         throw new Error("Unable to verify your login session. Please try again.");
       }
 
-      window.location.href = `/payment/manual?plan=${encodeURIComponent(selected.id)}`;
+      const checkoutResponse = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(storedToken ? { Authorization: `Bearer ${storedToken}` } : {}),
+        },
+        cache: "no-store",
+        body: JSON.stringify({ planId: selected.id }),
+      });
+      const checkoutData = await checkoutResponse.json().catch(() => ({}));
+      if (!checkoutResponse.ok || !checkoutData?.success || typeof checkoutData?.payment_url !== "string") {
+        throw new Error(checkoutData?.message || "PipraPay checkout could not be started. Please try again.");
+      }
+      window.location.assign(checkoutData.payment_url);
       return;
     } catch (error) {
       console.error("Checkout error:", error);

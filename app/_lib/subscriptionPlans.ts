@@ -1,7 +1,6 @@
 /**
  * Single source of truth for subscription pricing.
- * The visible plans here are used by the subscription UI, checkout, manual payments,
- * and subscription approval so the displayed and stored amounts stay in sync.
+ * Shared plan catalogue for subscription UI, manual payments, PipraPay checkout, and admin records.
  */
 export const SUBSCRIPTION_PLAN_BY_ID = {
   "1-month": {

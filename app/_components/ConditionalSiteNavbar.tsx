@@ -15,11 +15,17 @@ export default function ConditionalSiteNavbar({ children }: { children: ReactNod
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password";
-  const isDashboardPaymentFlow =
-    pathname === "/subscription" ||
-    pathname === "/payment/manual";
+  const isDashboardSubscription = pathname === "/subscription";
+  // The global components/Navbar.tsx should stay hidden on the manual payment page.
+  const isManualPaymentPage = pathname === "/payment/manual";
 
-  if (isMobileQrUpload || isAdminWorkspace || isAuthPage || isDashboardPaymentFlow) {
+  if (
+    isMobileQrUpload ||
+    isAdminWorkspace ||
+    isAuthPage ||
+    isDashboardSubscription ||
+    isManualPaymentPage
+  ) {
     return null;
   }
 

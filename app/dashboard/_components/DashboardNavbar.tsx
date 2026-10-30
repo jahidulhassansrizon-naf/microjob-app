@@ -851,8 +851,11 @@ function NavDropdown({
 /* ------------------------------------------------------------------ */
 export default function DashboardNavbar({
   scaleWithZoom = false,
+  hideAccountContact = false,
 }: {
   scaleWithZoom?: boolean;
+  /** Hide the signed-in user's phone/email in the profile area on focused pages. */
+  hideAccountContact?: boolean;
 } = {}) {
   const pathname = usePathname();
   /* Zoom-out scale (শুধু ডেস্কটপ/মাউস ডিভাইসে, scaleWithZoom চালু থাকলে).
@@ -1391,14 +1394,16 @@ export default function DashboardNavbar({
                     ) : null}
                   </span>
 
-                  <span
-                    className="user-sub-pre max-w-[120px] truncate text-[13px] text-[#6B5A40]"
-                    data-k={userHydrated ? 1 : 0}
-                  >
-                    {userHydrated ? (
-                      <DT>{user?.phoneNumber || user?.email || "User"}</DT>
-                    ) : null}
-                  </span>
+                  {!hideAccountContact && (
+                    <span
+                      className="user-sub-pre max-w-[120px] truncate text-[13px] text-[#6B5A40]"
+                      data-k={userHydrated ? 1 : 0}
+                    >
+                      {userHydrated ? (
+                        <DT>{user?.phoneNumber || user?.email || "User"}</DT>
+                      ) : null}
+                    </span>
+                  )}
                 </div>
 
                 <ChevronDown
@@ -1420,9 +1425,11 @@ export default function DashboardNavbar({
                       <DT>{user?.fullName || "User Account"}</DT>
                     </p>
 
-                    <p className="mt-0.5 truncate text-sm text-[#7A6A50]">
-                      <DT>{user?.phoneNumber || user?.email || "User"}</DT>
-                    </p>
+                    {!hideAccountContact && (
+                      <p className="mt-0.5 truncate text-sm text-[#7A6A50]">
+                        <DT>{user?.phoneNumber || user?.email || "User"}</DT>
+                      </p>
+                    )}
                   </div>
 
                   {/* Language */}

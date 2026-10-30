@@ -100,6 +100,7 @@ type SubscriptionRow = {
   months: number;
   amount: number;
   invoiceId: string;
+  paymentProvider?: string;
   transactionId: string;
   paymentMethod: string;
   senderNumber?: string;
@@ -788,7 +789,7 @@ export default function AdminDashboardClient() {
   }, [authHeaders, loadOverview, loadSubscriptions, loadUsers, reviewingSubscriptionId, subscriptionActionBusyId, subscriptionDeleteBusyId, subscriptionPagination.page, subscriptions.length, userPagination.page]);
 
   const subscriptionReviewActions = (item: SubscriptionRow) => {
-    const canReview = item.paymentStatus === "PENDING" && Boolean(item.transactionId);
+    const canReview = item.paymentStatus === "PENDING" && Boolean(item.transactionId) && ["Nagad", "bKash"].includes(item.paymentMethod) && (!item.paymentProvider || item.paymentProvider === "Manual");
     const active = subscriptionTones(item).active;
     const reviewBusy = reviewingSubscriptionId === item.id;
     const deactivateBusy = subscriptionActionBusyId === item.id;
@@ -1272,6 +1273,7 @@ export default function AdminDashboardClient() {
                       label={item.paymentStatus || "Unknown"}
                       tone={paymentTone}
                     />
+                    {item.paymentProvider && <div className="mt-1 text-xs font-semibold text-slate-500">Provider: {item.paymentProvider}</div>}
                     {item.paymentMethod && <div className="mt-1 text-xs font-semibold text-slate-700">{item.paymentMethod}</div>}
                     {item.transactionId && <div className="mt-1 max-w-[190px] break-all text-xs text-slate-500">TrxID: {item.transactionId}</div>}
                     {item.senderNumber && <div className="mt-1 text-xs text-slate-500">From: {item.senderNumber}</div>}
@@ -1337,6 +1339,7 @@ export default function AdminDashboardClient() {
               </div>
               {(item.paymentMethod || item.transactionId || item.senderNumber) && (
                 <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                  {item.paymentProvider && <div>Provider: <strong>{item.paymentProvider}</strong></div>}
                   {item.paymentMethod && <div>Method: <strong>{item.paymentMethod}</strong></div>}
                   {item.transactionId && <div className="mt-1 break-all">TrxID: <strong>{item.transactionId}</strong></div>}
                   {item.senderNumber && <div className="mt-1">Sender: <strong>{item.senderNumber}</strong></div>}

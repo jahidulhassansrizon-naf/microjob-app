@@ -154,7 +154,7 @@ export default function ManualPaymentPage() {
         }
         .page-font h1, .page-font h2, .page-font h3, .page-font h4 { letter-spacing: -0.01em; }
       `}</style>
-      <DashboardNavbar />
+      <DashboardNavbar hideAccountContact />
       <main className="font-bengali-ui mx-auto w-full max-w-6xl px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           <Link href="/subscription" className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-lg font-extrabold text-[#DC2626] transition hover:text-[#B91C1C]">

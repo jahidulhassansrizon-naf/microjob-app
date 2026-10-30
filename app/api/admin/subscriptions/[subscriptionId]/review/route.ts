@@ -34,6 +34,14 @@ export async function POST(request: Request, context: RouteContext) {
     if (subscription.paymentStatus !== "PENDING" || subscription.accessStatus !== "PENDING") {
       return NextResponse.json({ success: false, message: "This payment has already been reviewed." }, { status: 409 });
     }
+    const isManualWalletPayment = ["Nagad", "bKash"].includes(String(subscription.paymentMethod || ""));
+    const paymentProvider = String(subscription.paymentProvider || "").trim();
+    if (!isManualWalletPayment || !["", "Manual"].includes(paymentProvider) || !String(subscription.transactionId || "").trim()) {
+      return NextResponse.json(
+        { success: false, message: "Only pending manual bKash/Nagad payments with a TrxID can be reviewed here." },
+        { status: 409 },
+      );
+    }
 
     const reviewedAt = new Date();
     const reviewer = authorization.admin?.email || "admin";
