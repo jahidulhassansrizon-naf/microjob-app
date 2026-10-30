@@ -463,6 +463,21 @@ export default function GenerationSettings({
 }: GenerationSettingsProps) {
   const { t } = useAiEditorText();
   const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
+  useEffect(() => {
+    const clearEditorPreviewCache = () => {
+      // These blob URLs are editor-local previews, not persistent user files.
+      for (const objectUrl of recoloredSvgCache.values()) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      recoloredSvgCache.clear();
+      rawSvgCache.clear();
+    };
+    window.addEventListener("beforeunload", clearEditorPreviewCache);
+    return () => {
+      window.removeEventListener("beforeunload", clearEditorPreviewCache);
+      clearEditorPreviewCache();
+    };
+  }, []);
   // Where the colour popup sits: right next to the clothing tile that was clicked.
   const [clothingPopupPos, setClothingPopupPos] = useState<{
     left: number;

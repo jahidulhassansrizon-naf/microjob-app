@@ -12,7 +12,7 @@ import RecentGenerations from "./_components/RecentGenerations";
 import ImagePreviewModal from "./_components/ImagePreviewModal";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
 import AiPrintStudioModal from "./_components/AiPrintStudioModal";
-import { printSinglePhoto } from "./_components/photoExport";
+import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import CropStage from "./_components/CropStage";
 import "react-image-crop/dist/ReactCrop.css";
@@ -55,6 +55,7 @@ export default function PhotoEditorPage() {
     // Photo that was just generated: drives the right-side actions panel and the inline print studio.
     const [resultItem, setResultItem] = useState<GeneratedResultItem | null>(null);
     const [printSession, setPrintSession] = useState<PrintSession | null>(null);
+    const [bulkPrintSources, setBulkPrintSources] = useState<Array<{ image: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> | null>(null);
     const [previewStartWithEdit, setPreviewStartWithEdit] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     // Prevent duplicate generation submissions before React has time to re-render.
@@ -1528,6 +1529,22 @@ export default function PhotoEditorPage() {
                 URL.revokeObjectURL(tempImageForCrop);
         };
     }, [tempImageForCrop]);
+    const handleBulkPrint = async (items: any[]) => {
+        try {
+            const sources: Array<{ image: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> = [];
+            for (const item of items) {
+                const payload = await buildPrintStudioPayload(item);
+                sources.push({ image: payload.dataUrl, preset: payload.preset });
+            }
+            setPrintSession(null);
+            setBulkPrintSources(sources);
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : "Could not prepare selected photos for printing.");
+            throw error;
+        }
+    };
+
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -1649,7 +1666,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>)}
 
-      <AiPrintStudioModal open={!!printSession} image={printSession?.image ?? null} preset={printSession?.preset ?? null} onClose={() => setPrintSession(null)} onPrintSingle={resultItem ? async () => {
+      <AiPrintStudioModal open={!!printSession || !!bulkPrintSources?.length} image={bulkPrintSources?.[0]?.image ?? printSession?.image ?? null} preset={bulkPrintSources?.[0]?.preset ?? printSession?.preset ?? null} images={bulkPrintSources ?? undefined} onClose={() => { setPrintSession(null); setBulkPrintSources(null); }} onPrintSingle={!bulkPrintSources && resultItem ? async () => {
         try {
             await printSinglePhoto(resultItem);
         }
@@ -1673,8 +1690,8 @@ export default function PhotoEditorPage() {
                 <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
               </div>
               {/* Options appear right beside the generated photo */}
-              {resultItem && !printSession && (<div className="flex justify-center xl:block xl:shrink-0">
-                  <GeneratedResultPanel item={resultItem} onClose={() => setResultItem(null)} onEdit={(item) => { setPreviewStartWithEdit(true); setPreviewModalImage(item); }} onDelete={handleDeleteImage} onPrint={(session) => setPrintSession(session)}/>
+              {resultItem && !printSession && !bulkPrintSources && (<div className="flex justify-center xl:block xl:shrink-0">
+                  <GeneratedResultPanel item={resultItem} onClose={() => setResultItem(null)} onEdit={(item) => { setPreviewStartWithEdit(true); setPreviewModalImage(item); }} onDelete={handleDeleteImage} onPrint={(session) => { setBulkPrintSources(null); setPrintSession(session); }}/>
                 </div>)}
             </div>
           </div>
@@ -1687,7 +1704,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>
 
-                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} isLoading={isFetching}/>
+                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching}/>
       </div>
       <ConfirmDeleteModal open={!!deleteTarget} imageUrl={deleteTarget?.url} onCancel={() => setDeleteTarget(null)} onConfirm={() => performDeleteImage(deleteTarget)}/>
       </div>);

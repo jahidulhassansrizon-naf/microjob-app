@@ -7,9 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "bootstrap:admin": "node scripts/bootstrap-primary-admin.mjs",
-    "diagnose:login": "node scripts/diagnose-login.mjs",
-    "test:auth": "tsx --test tests/*.test.ts"
+    "test:auth": "tsx --test tests/*.test.ts",
+    "restore:env-admin": "node scripts/restore-env-admin.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -21,7 +20,6 @@
     "@huggingface/inference": "^4.13.30",
     "@huggingface/transformers": "^4.3.0",
     "@imgly/background-removal": "^1.7.0",
-    "@next/env": "16.3.4",
     "@jspawn/qpdf-wasm": "^0.0.2",
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",

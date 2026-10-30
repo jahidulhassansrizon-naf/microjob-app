@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { getVerifiedRequestSession } from "@/lib/serverAuth";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { ensureUniqueFullNameIndex, findDuplicateFullName, normalizeFullName } from "@/app/api/_lib/userIdentity";
 import { isValidEmail, NO_STORE_HEADERS } from "@/app/api/_lib/otpSecurity";
 
@@ -31,6 +32,9 @@ async function updateProfile(req: Request) {
     const session = await getVerifiedRequestSession(req);
     if (!session) {
       return NextResponse.json({ message: "Invalid or expired session." }, { status: 401, headers: NO_STORE_HEADERS });
+    }
+    if (session.isRootAdmin) {
+      return NextResponse.json({ message: "Main Admin profile details are managed through ADMIN_EMAIL and ADMIN_NAME in server environment settings." }, { status: 403, headers: NO_STORE_HEADERS });
     }
     // Read request body only after authentication.
     const body = await req.json().catch(() => null);
@@ -63,6 +67,9 @@ async function updateProfile(req: Request) {
       updateData.email = updateData.email.trim().toLowerCase();
       if (!isValidEmail(updateData.email)) {
         return NextResponse.json({ message: "Enter a valid email address." }, { status: 400, headers: NO_STORE_HEADERS });
+      }
+      if (isConfiguredAdminEmail(updateData.email)) {
+        return NextResponse.json({ message: "This email is reserved for the Main Administrator." }, { status: 409, headers: NO_STORE_HEADERS });
       }
     }
     if (updateData.phoneNumber !== undefined && !/^\d{5,15}$/.test(updateData.phoneNumber)) {

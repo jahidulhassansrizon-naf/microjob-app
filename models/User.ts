@@ -145,8 +145,9 @@ const UserSchema = new Schema(
       index: true,
     },
 
-    // Exactly one trusted primary admin is provisioned with a one-time CLI script.
-    // Public registration and profile endpoints must never be allowed to set this.
+    // Legacy field retained for safe migration from database-primary-admin mode.
+    // The current Main Admin is the server-configured ENV identity; authorization
+    // must never be granted from this field. Database role=admin accounts are sub-admins.
     isPrimaryAdmin: {
       type: Boolean,
       default: false,

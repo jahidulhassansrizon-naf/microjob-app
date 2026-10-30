@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import dns from "dns";
-import { createHash } from "node:crypto";
 
 // আইএসপি ব্লকিং এড়াতে পাবলিক ডিএনএস আগে সেট করে নেওয়া হচ্ছে
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
@@ -17,18 +16,9 @@ export async function connectDB() {
 
   if (!MONGODB_URI) {
     throw new Error(
-      "Please define the MONGODB_URI environment variable inside the active Next.js environment configuration.",
+      "Please define the MONGODB_URI environment variable inside .env.local",
     );
   }
-
-  // Prevent a hot-reloaded development process from silently reusing a MongoDB
-  // connection created with a different URI. Restart the server after changing
-  // MONGODB_URI; never print or persist the URI itself.
-  const uriFingerprint = createHash("sha256").update(MONGODB_URI).digest("hex");
-  if (cached.uriFingerprint && cached.uriFingerprint !== uriFingerprint && (cached.conn || cached.promise)) {
-    throw new Error("MONGODB_URI changed after the database connection was initialized. Restart the Next.js server to connect to the configured database.");
-  }
-  cached.uriFingerprint = uriFingerprint;
 
   if (cached.conn) {
     return cached.conn;

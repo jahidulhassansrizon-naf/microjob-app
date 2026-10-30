@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
@@ -58,6 +59,9 @@ export async function POST(req: Request) {
     }
     if (!isValidEmail(cleanEmail)) {
       return json({ message: "Enter a valid email address." }, 400);
+    }
+    if (isConfiguredAdminEmail(cleanEmail)) {
+      return json({ message: "This email is reserved for the Main Administrator." }, 409);
     }
     if (!/^\d{5,15}$/.test(cleanPhone)) {
       return json({ message: "Enter a valid phone number." }, 400);

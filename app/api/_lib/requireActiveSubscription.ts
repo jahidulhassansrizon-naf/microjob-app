@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
 import User from "@/models/User";
-import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "";
@@ -119,19 +119,12 @@ export function getSubscriptionAccessCookieName() {
 
 
 function getTokenFromRequest(request: Request): string | null {
-  // Browser HttpOnly cookie is canonical; fall back to Bearer for API clients.
   const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/(?:^|;\s*)token=([^;]*)/);
-  if (match) {
-    try { return decodeURIComponent(match[1]); }
-    catch { return match[1]; }
-  }
+  const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+  if (match) return decodeURIComponent(match[1]);
 
   const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    const token = authorization.slice(7).trim();
-    if (token) return token;
-  }
+  if (authorization?.startsWith("Bearer ")) return authorization.slice(7).trim() || null;
   return null;
 }
 
@@ -218,13 +211,10 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
   }
 
   if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { success: false, code: "INVALID_SESSION", message: "Your administrator session has been retired. Please sign in again." },
-        { status: 401 },
-      ),
-    };
+    if (!isCurrentAdminToken(decoded)) {
+      return { ok: false, response: NextResponse.json({ success: false, code: "INVALID_SESSION", message: "Your Main Admin session is invalid or expired." }, { status: 401 }) };
+    }
+    return { ok: true, userId: ENV_ADMIN_USER_ID, role: "admin", isRootAdmin: true };
   }
 
   const userId = typeof decoded.userId === "string" ? decoded.userId : "";
@@ -272,7 +262,7 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
       };
     }
 
-    return { ok: true, userId, role, isRootAdmin: user.isPrimaryAdmin === true };
+    return { ok: true, userId, role, isRootAdmin: false };
   } catch (error) {
     console.error("[tool-access] account lookup failed:", error);
     return {

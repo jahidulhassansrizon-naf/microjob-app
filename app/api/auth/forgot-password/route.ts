@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
 import { sendTransactionalEmail } from "@/app/api/_lib/emailDelivery";
 import { claimAuthCooldown, enforceAuthRateLimit, releaseAuthCooldown } from "@/app/api/_lib/authRateLimit";
@@ -44,6 +45,8 @@ export async function POST(req: Request) {
     const emailInput = body && typeof body.email === "string" ? body.email : "";
     const cleanEmail = emailInput.trim().toLowerCase();
     if (!isValidEmail(cleanEmail)) return json({ message: "Enter a valid email address." }, 400);
+
+    if (isConfiguredAdminEmail(cleanEmail)) return json({ message: genericMessage, expiresInSeconds: 300 });
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(req, "password-reset-email-otp", 30, 10 * 60 * 1000);

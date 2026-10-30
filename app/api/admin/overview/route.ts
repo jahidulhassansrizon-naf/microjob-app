@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
+import { getAdminCredentials } from "@/lib/adminCredentials";
 import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,8 @@ export async function GET(request: Request) {
     await connectDB();
     const now = new Date();
     const activeCutoff = new Date(now.getTime() - PRESENCE_STALE_AFTER_MS);
+    const mainAdminEmail = getAdminCredentials().email;
+    const databaseUserFilter = mainAdminEmail ? { email: { $ne: mainAdminEmail } } : {};
     const activeSubscriptionFilter = {
       paymentStatus: "COMPLETED",
       accessStatus: "ACTIVE",
@@ -46,9 +49,9 @@ export async function GET(request: Request) {
       recentSubscriptionsRaw,
       registrationRows,
     ] = await Promise.all([
-      User.countDocuments({}),
-      User.countDocuments({ lastSeenAt: { $gte: activeCutoff } }),
-      User.countDocuments({ lastLoginAt: { $gte: startOfToday } }),
+      User.countDocuments(databaseUserFilter),
+      User.countDocuments({ ...databaseUserFilter, lastSeenAt: { $gte: activeCutoff } }),
+      User.countDocuments({ ...databaseUserFilter, lastLoginAt: { $gte: startOfToday } }),
       Subscription.countDocuments(activeSubscriptionFilter),
       Subscription.distinct("userId", activeSubscriptionFilter),
       Subscription.countDocuments({}),
@@ -63,12 +66,12 @@ export async function GET(request: Request) {
         },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
-      User.find({})
+      User.find(databaseUserFilter)
         .select("fullName email phoneNumber role isBanned country district createdAt lastLoginAt lastSeenAt loginCount")
         .sort({ createdAt: -1 })
         .limit(7)
         .lean(),
-      User.find({ lastLoginAt: { $ne: null, $exists: true } })
+      User.find({ ...databaseUserFilter, lastLoginAt: { $ne: null, $exists: true } })
         .select("fullName email phoneNumber role isBanned lastLoginAt lastSeenAt loginCount")
         .sort({ lastLoginAt: -1 })
         .limit(7)
@@ -79,7 +82,7 @@ export async function GET(request: Request) {
         .populate({ path: "userId", select: "fullName email phoneNumber" })
         .lean(),
       User.aggregate([
-        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $match: { ...databaseUserFilter, createdAt: { $gte: sevenDaysAgo } } },
         {
           $group: {
             _id: {

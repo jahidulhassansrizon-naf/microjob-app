@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import {
@@ -41,6 +42,8 @@ export async function POST(req: Request) {
       return json({ message: "Password must be between 8 and 128 characters long." }, 400);
     }
 
+    if (isConfiguredAdminEmail(cleanEmail)) return invalidOtpResponse();
+
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(req, "password-reset-submit", 30, 10 * 60 * 1000);
     if (!rateLimit.allowed) {
@@ -75,9 +78,6 @@ export async function POST(req: Request) {
 
     // Only reveal/apply the stronger primary-admin password policy after OTP
     // ownership is proven, avoiding account-role enumeration through this API.
-    if (user.isPrimaryAdmin === true && newPassword.length < 12) {
-      return json({ message: "The primary administrator password must be at least 12 characters long." }, 400);
-    }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
 

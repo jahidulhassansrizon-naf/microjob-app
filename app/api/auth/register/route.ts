@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
 
     if (!fullName || fullName.length > 100) return json({ message: "Enter your name (up to 100 characters)." }, 400);
     if (!isValidEmail(cleanEmail)) return json({ message: "Enter a valid email address." }, 400);
+    if (isConfiguredAdminEmail(cleanEmail)) return json({ message: "This email is reserved for the Main Administrator." }, 409);
     if (!cleanPhone || !/^\d{5,15}$/.test(cleanPhone)) return json({ message: "Enter a valid phone number." }, 400);
     const phoneError = validatePhoneNumber(country, cleanPhone);
     if (phoneError) return json({ message: phoneError }, 400);

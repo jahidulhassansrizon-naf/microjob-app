@@ -444,7 +444,13 @@ export default function SettingsPage() {
 
             {activeSection === "Personal Information" && (<PersonalInfoTab user={user} profileForm={profileForm} setProfileForm={setProfileForm} isEditOpen={isEditOpen} setIsEditOpen={setIsEditOpen} onEdit={openEditModal} onSubmit={handleProfileSave} savingProfile={savingProfile} isEmailVerified={Boolean(user?.isEmailVerified)} verifyingEmail={verifyingEmail} onSendVerification={handleSendVerification}/>)}
 
-            {activeSection === "Change Password" && (<ChangePasswordTab passwordForm={passwordForm} setPasswordForm={setPasswordForm} savingPassword={savingPassword} showCurrentPassword={showCurrentPassword} showNewPassword={showNewPassword} showConfirmPassword={showConfirmPassword} setShowCurrentPassword={setShowCurrentPassword} setShowNewPassword={setShowNewPassword} setShowConfirmPassword={setShowConfirmPassword} onSubmit={handlePasswordSave}/>)}
+            {activeSection === "Change Password" && (user?.isRootAdmin ? (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
+                Main Administrator credentials are managed through the server environment settings. Update <strong>ADMIN_PASSWORD</strong> in your local environment file or Vercel Environment Variables, then restart/redeploy the application. Database sub-admins can continue changing their own passwords here.
+              </div>
+            ) : (
+              <ChangePasswordTab passwordForm={passwordForm} setPasswordForm={setPasswordForm} savingPassword={savingPassword} showCurrentPassword={showCurrentPassword} showNewPassword={showNewPassword} showConfirmPassword={showConfirmPassword} setShowCurrentPassword={setShowCurrentPassword} setShowNewPassword={setShowNewPassword} setShowConfirmPassword={setShowConfirmPassword} onSubmit={handlePasswordSave}/>
+            ))}
 
             {activeSection === "Devices Login" && (<DevicesLoginTab devices={devices} loadingDevices={loadingDevices} onRefresh={() => void loadDevices()}/>)}
           </section>

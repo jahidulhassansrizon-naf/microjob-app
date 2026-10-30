@@ -16,7 +16,7 @@ import QuestionPaper from "@/models/QuestionPaper";
 import SavedForm from "@/models/SavedForm";
 import ScannedDocument from "@/models/ScannedDocument";
 import Otp from "@/models/Otp";
-import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { requireAdmin } from "@/app/api/admin/_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -146,9 +146,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
-
-    if (user.isPrimaryAdmin === true) {
-      return NextResponse.json({ success: false, message: "The primary administrator account cannot be modified from user management. Use its own account settings instead." }, { status: 403 });
+    if (isConfiguredAdminEmail(user.email)) {
+      return NextResponse.json({ success: false, message: "The Main Admin identity is managed through server environment settings." }, { status: 403 });
     }
 
     const isDatabaseAdmin = user.role === "admin";
@@ -165,7 +164,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         // Atomic role update + version bump prevents concurrent security actions
         // from overwriting one another or leaving a just-issued session valid.
         const updated = await User.updateOne(
-          { _id: user._id, role: user.role, isPrimaryAdmin: { $ne: true } },
+          { _id: user._id, role: user.role },
           {
             $set: {
               role: "admin",
@@ -191,7 +190,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       // reused after this demotion. The role predicate prevents conflicting
       // concurrent role changes from silently overwriting each other.
       const updated = await User.updateOne(
-        { _id: user._id, role: "admin", isPrimaryAdmin: { $ne: true } },
+        { _id: user._id, role: "admin" },
         {
           $set: {
             role: "user",
@@ -289,12 +288,15 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     await connectDB();
     const user = await User.findById(userId).select(
-      "_id fullName email phoneNumber role isPrimaryAdmin profileImagePublicId profileImageUrl",
+      "_id fullName email phoneNumber role profileImagePublicId profileImageUrl",
     );
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found. They may already have been deleted." }, { status: 404 });
     }
-    if (user.role === "admin" || user.isPrimaryAdmin === true) {
+    if (isConfiguredAdminEmail(user.email)) {
+      return NextResponse.json({ success: false, message: "The Main Admin identity is managed through server environment settings." }, { status: 403 });
+    }
+    if (user.role === "admin") {
       return NextResponse.json({ success: false, message: "Administrator accounts must be demoted by the primary administrator before they can be deleted." }, { status: 403 });
     }
 

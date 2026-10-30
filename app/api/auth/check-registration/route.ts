@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { validatePhoneNumber } from "@/lib/phoneValidation";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
 
     if (!fullName || fullName.length > 100) return json({ message: "Enter your name (up to 100 characters)." }, 400);
     if (!isValidEmail(email)) return json({ message: "Enter a valid email address." }, 400);
+    if (isConfiguredAdminEmail(email)) return json({ message: "This email is reserved for the Main Administrator." }, 409);
     if (!/^\d{5,15}$/.test(phoneNumber)) return json({ message: "Enter a valid phone number." }, 400);
     const phoneError = validatePhoneNumber(country, phoneNumber);
     if (phoneError) return json({ message: phoneError }, 400);

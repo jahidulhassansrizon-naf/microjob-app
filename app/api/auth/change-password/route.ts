@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import { ENV_ADMIN_USER_ID } from "@/lib/adminCredentials";
+import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -35,8 +35,7 @@ export async function PUT(req: NextRequest) {
     }
     const authHeader = req.headers.get("authorization");
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-    // Prefer the canonical HttpOnly cookie over stale localStorage credentials.
-    const token = cookiePair ? cookieToken : bearer;
+    const token = cookieToken || bearer;
     if (!token) {
       return NextResponse.json(
         { error: "Unauthorized access. Please login again." },
@@ -53,18 +52,15 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    if (!decoded || typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) {
-      return NextResponse.json(
-        { error: "Invalid token payload." },
-        { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
-      );
+    if (decoded?.admin === true || decoded?.userId === ENV_ADMIN_USER_ID) {
+      if (!isCurrentAdminToken(decoded)) {
+        return NextResponse.json({ error: "Main Admin session is invalid or expired." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
+      }
+      return NextResponse.json({ error: "Main Admin password is managed through ADMIN_PASSWORD in the server environment settings." }, { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
-    if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
-      return NextResponse.json(
-        { error: "This legacy administrator session is no longer valid. Please sign in again." },
-        { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } },
-      );
+    if (!decoded || typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) {
+      return NextResponse.json({ error: "Invalid token payload." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     const body = await req.json();
@@ -91,12 +87,6 @@ export async function PUT(req: NextRequest) {
     }
     if (Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) {
       return NextResponse.json({ error: "Your session has been reset. Please log in again." }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
-    }
-    if (user.isPrimaryAdmin === true && newPassword.length < 12) {
-      return NextResponse.json(
-        { error: "The primary administrator password must be at least 12 characters long." },
-        { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } },
-      );
     }
     const accountRateLimit = await enforceAuthRateLimit(req, "password-change-account", 8, 15 * 60 * 1000, String(user._id));
     if (!accountRateLimit.allowed) {

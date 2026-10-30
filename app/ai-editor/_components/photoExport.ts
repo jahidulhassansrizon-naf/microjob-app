@@ -1,3 +1,5 @@
+import jsPDF from "jspdf";
+
 export const EXPORT_DPI = 300;
 export type PhysicalSize = {
     width: number;
@@ -261,6 +263,9 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
     sourceCtx.imageSmoothingEnabled = true;
     sourceCtx.imageSmoothingQuality = "high";
     sourceCtx.drawImage(img, 0, 0, sourceWidth, sourceHeight);
+    img.onload = null;
+    img.onerror = null;
+    img.src = "";
     const photoSizeLabel = image.size || "35×45 mm";
     const dpi = Number(image.dpi) || EXPORT_DPI;
     if (isOriginalSizeLabel(photoSizeLabel)) {
@@ -300,6 +305,9 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
     context.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, drawX, drawY, drawWidth, drawHeight);
+    // The output canvas now owns the finished pixels; discard the full-source backing store.
+    sourceCanvas.width = 0;
+    sourceCanvas.height = 0;
     return {
         canvas: outputCanvas,
         widthPx: target.widthPx,
@@ -310,13 +318,19 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
 }
 export async function downloadPhotoFormat(image: ExportableImage, format: "jpg" | "png") {
     const exported = await renderPhotoToExportCanvas(image);
-    const rawBlob = await canvasToBlob(exported.canvas, format);
-    const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
-    const sizeToken = image.size
-        ?.replace(/[×x]/g, "x")
-        .replace(/\s+/g, "")
-        .replace(/[^a-zA-Z0-9._-]/g, "") || "photo";
-    downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${format}`);
+    try {
+        const rawBlob = await canvasToBlob(exported.canvas, format);
+        const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
+        const sizeToken = image.size
+            ?.replace(/[×x]/g, "x")
+            .replace(/\s+/g, "")
+            .replace(/[^a-zA-Z0-9._-]/g, "") || "photo";
+        downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${format}`);
+    }
+    finally {
+        exported.canvas.width = 0;
+        exported.canvas.height = 0;
+    }
 }
 function drawContain(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, width: number, height: number) {
     const scale = Math.min(width / img.naturalWidth, height / img.naturalHeight);
@@ -325,78 +339,110 @@ function drawContain(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: nu
     ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
 }
 export async function downloadPhotoPrintSheet(image: ExportableImage) {
-    const editedCanvas = await renderPhotoToExportCanvas(image).then((result) => {
-        // The print sheet uses the photo as-is (no forced export size).
-        return result.canvas;
-    });
-    const source = new Image();
-    source.src = editedCanvas.toDataURL("image/png");
-    await new Promise<void>((resolve, reject) => {
-        source.onload = () => resolve();
-        source.onerror = () => reject(new Error("Unable to build print sheet."));
-    });
-    const printCanvas = document.createElement("canvas");
-    printCanvas.width = 1800;
-    printCanvas.height = 1200;
-    const ctx = printCanvas.getContext("2d");
-    if (!ctx)
-        throw new Error("Canvas is not supported by this browser.");
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, printCanvas.width, printCanvas.height);
-    const cols = 4;
-    const rows = 2;
-    const gap = 24;
-    const cellWidth = (printCanvas.width - gap * (cols + 1)) / cols;
-    const cellHeight = (printCanvas.height - gap * (rows + 1)) / rows;
-    for (let row = 0; row < rows; row += 1) {
-        for (let col = 0; col < cols; col += 1) {
-            const x = gap + col * (cellWidth + gap);
-            const y = gap + row * (cellHeight + gap);
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(x, y, cellWidth, cellHeight);
-            drawContain(ctx, source, x, y, cellWidth, cellHeight);
-            ctx.strokeStyle = "#D1D5DB";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, cellWidth, cellHeight);
+    const editedCanvas = await renderPhotoToExportCanvas(image).then((result) => result.canvas);
+    let source: HTMLImageElement | null = null;
+    let printCanvas: HTMLCanvasElement | null = null;
+    try {
+        const sourceData = editedCanvas.toDataURL("image/png");
+        editedCanvas.width = 0;
+        editedCanvas.height = 0;
+        source = new Image();
+        source.decoding = "async";
+        await new Promise<void>((resolve, reject) => {
+            source!.onload = () => resolve();
+            source!.onerror = () => reject(new Error("Unable to build print sheet."));
+            source!.src = sourceData;
+        });
+        printCanvas = document.createElement("canvas");
+        printCanvas.width = 1800;
+        printCanvas.height = 1200;
+        const ctx = printCanvas.getContext("2d");
+        if (!ctx)
+            throw new Error("Canvas is not supported by this browser.");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, printCanvas.width, printCanvas.height);
+        const cols = 4;
+        const rows = 2;
+        const gap = 24;
+        const cellWidth = (printCanvas.width - gap * (cols + 1)) / cols;
+        const cellHeight = (printCanvas.height - gap * (rows + 1)) / rows;
+        for (let row = 0; row < rows; row += 1) {
+            for (let col = 0; col < cols; col += 1) {
+                const x = gap + col * (cellWidth + gap);
+                const y = gap + row * (cellHeight + gap);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(x, y, cellWidth, cellHeight);
+                drawContain(ctx, source, x, y, cellWidth, cellHeight);
+                ctx.strokeStyle = "#D1D5DB";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, cellWidth, cellHeight);
+            }
+        }
+        const rawBlob = await canvasToBlob(printCanvas, "jpg");
+        const finalBlob = await addDpiMetadata(rawBlob, "jpg", 300);
+        downloadBlob(finalBlob, `print-sheet-4x6in-1800x1200-300dpi-${Date.now()}.jpg`);
+    }
+    finally {
+        editedCanvas.width = 0;
+        editedCanvas.height = 0;
+        if (printCanvas) {
+            printCanvas.width = 0;
+            printCanvas.height = 0;
+        }
+        if (source) {
+            source.onload = null;
+            source.onerror = null;
+            source.src = "";
         }
     }
-    const rawBlob = await canvasToBlob(printCanvas, "jpg");
-    const finalBlob = await addDpiMetadata(rawBlob, "jpg", 300);
-    downloadBlob(finalBlob, `print-sheet-4x6in-1800x1200-300dpi-${Date.now()}.jpg`);
 }
+
 /** Prepares the data the Print Studio needs (image data URL + physical size in mm). */
 export async function buildPrintStudioPayload(image: ExportableImage) {
     const img = await loadImageElement(image.url);
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth || img.width;
     canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx)
-        throw new Error("Canvas is not supported by this browser.");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/png");
-    const dpi = Number(image.dpi) || 0;
-    const wPx = Number(image.widthPx) || 0;
-    const hPx = Number(image.heightPx) || 0;
-    let widthMm: number;
-    let heightMm: number;
-    if (dpi > 0 && wPx > 0 && hPx > 0) {
-        widthMm = (wPx / dpi) * 25.4;
-        heightMm = (hPx / dpi) * 25.4;
+    try {
+        const ctx = canvas.getContext("2d");
+        if (!ctx)
+            throw new Error("Canvas is not supported by this browser.");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const pixelWidth = canvas.width;
+        const pixelHeight = canvas.height;
+        const dataUrl = canvas.toDataURL("image/png");
+        const dpi = Number(image.dpi) || 0;
+        const wPx = Number(image.widthPx) || 0;
+        const hPx = Number(image.heightPx) || 0;
+        let widthMm: number;
+        let heightMm: number;
+        if (dpi > 0 && wPx > 0 && hPx > 0) {
+            widthMm = (wPx / dpi) * 25.4;
+            heightMm = (hPx / dpi) * 25.4;
+        }
+        else {
+            widthMm = 100;
+            heightMm = (100 * pixelHeight) / Math.max(1, pixelWidth);
+        }
+        return {
+            dataUrl,
+            preset: { id: "ai-photo", label: "Photo", widthMm, heightMm },
+        };
     }
-    else {
-        widthMm = 100;
-        heightMm = (100 * canvas.height) / Math.max(1, canvas.width);
+    finally {
+        canvas.width = 0;
+        canvas.height = 0;
+        img.onload = null;
+        img.onerror = null;
+        img.src = "";
     }
-    return {
-        dataUrl,
-        preset: { id: "ai-photo", label: "Photo", widthMm, heightMm },
-    };
 }
+
 export async function printSinglePhoto(image: ExportableImage, preExported?: { canvas: HTMLCanvasElement; physical: { width: number; height: number; unit: "mm" | "in" } }) {
     let printRoot: HTMLDivElement | null = null;
     let printStyle: HTMLStyleElement | null = null;
     let cleanupTimer: number | null = null;
+    let printStartTimer: number | null = null;
     let cleanedUp = false;
     const cleanupPrintDocument = () => {
         if (cleanedUp)
@@ -406,8 +452,17 @@ export async function printSinglePhoto(image: ExportableImage, preExported?: { c
             window.clearTimeout(cleanupTimer);
             cleanupTimer = null;
         }
+        if (printStartTimer !== null) {
+            window.clearTimeout(printStartTimer);
+            printStartTimer = null;
+        }
         window.removeEventListener("afterprint", cleanupPrintDocument);
+        window.removeEventListener("pagehide", cleanupPrintDocument);
+        window.removeEventListener("beforeunload", cleanupPrintDocument);
         if (printRoot?.parentNode) {
+            const printImage = printRoot.querySelector("img");
+            if (printImage)
+                printImage.removeAttribute("src");
             printRoot.parentNode.removeChild(printRoot);
         }
         if (printStyle?.parentNode) {
@@ -417,6 +472,10 @@ export async function printSinglePhoto(image: ExportableImage, preExported?: { c
     try {
         const exported = preExported ?? await renderPhotoToExportCanvas(image);
         const imageData = exported.canvas.toDataURL("image/jpeg", 0.95);
+        if (!preExported) {
+            exported.canvas.width = 0;
+            exported.canvas.height = 0;
+        }
         const unit = exported.physical.unit;
         const widthText = `${exported.physical.width}${unit}`;
         const heightText = `${exported.physical.height}${unit}`;
@@ -519,22 +578,30 @@ break-inside: avoid !important;
         printPreview.appendChild(printImage);
         printRoot.appendChild(printPreview);
         document.body.appendChild(printRoot);
-        window.addEventListener("afterprint", cleanupPrintDocument);
-        cleanupTimer = window.setTimeout(cleanupPrintDocument, 120000);
+        window.addEventListener("afterprint", cleanupPrintDocument, { once: true });
+        window.addEventListener("pagehide", cleanupPrintDocument, { once: true });
+        window.addEventListener("beforeunload", cleanupPrintDocument, { once: true });
+        // Fallback for browsers that do not dispatch afterprint consistently.
+        cleanupTimer = window.setTimeout(cleanupPrintDocument, 10 * 60 * 1000);
         const printImageReady = () => {
-            window.setTimeout(() => {
-                window.print();
+            if (!printImage.naturalWidth || !printImage.naturalHeight) {
+                cleanupPrintDocument();
+                return;
+            }
+            printStartTimer = window.setTimeout(() => {
+                printStartTimer = null;
+                if (!cleanedUp)
+                    window.print();
             }, 50);
         };
         if (printImage.complete) {
+            if (!printImage.naturalWidth || !printImage.naturalHeight)
+                throw new Error("Unable to prepare the photo for printing.");
             printImageReady();
         }
         else {
             printImage.addEventListener("load", printImageReady, { once: true });
-            printImage.addEventListener("error", () => {
-                cleanupPrintDocument();
-                throw new Error("Unable to prepare the photo for printing.");
-            }, { once: true });
+            printImage.addEventListener("error", cleanupPrintDocument, { once: true });
         }
     }
     catch (error) {
@@ -543,3 +610,131 @@ break-inside: avoid !important;
         throw error;
     }
     }
+
+
+/**
+ * Creates a standards-compliant, uncompressed ZIP archive in the browser.
+ * Keeping this dependency-free avoids introducing another package to the app.
+ */
+function createStoredZip(files: Array<{ name: string; bytes: Uint8Array }>): Blob {
+    const encoder = new TextEncoder();
+    const localParts: Uint8Array[] = [];
+    const centralParts: Uint8Array[] = [];
+    let localOffset = 0;
+    const now = new Date();
+    const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+    const dosDate = ((Math.max(1980, now.getFullYear()) - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const write16 = (view: DataView, offset: number, value: number) => view.setUint16(offset, value, true);
+    const write32 = (view: DataView, offset: number, value: number) => view.setUint32(offset, value >>> 0, true);
+
+    for (const file of files) {
+        const nameBytes = encoder.encode(file.name);
+        const crc = crc32(file.bytes);
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const localView = new DataView(localHeader.buffer);
+        write32(localView, 0, 0x04034b50);
+        write16(localView, 4, 20);
+        write16(localView, 6, 0x0800); // UTF-8 filenames
+        write16(localView, 8, 0); // Stored (no compression)
+        write16(localView, 10, dosTime);
+        write16(localView, 12, dosDate);
+        write32(localView, 14, crc);
+        write32(localView, 18, file.bytes.length);
+        write32(localView, 22, file.bytes.length);
+        write16(localView, 26, nameBytes.length);
+        write16(localView, 28, 0);
+        localHeader.set(nameBytes, 30);
+        localParts.push(localHeader, file.bytes);
+
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const centralView = new DataView(centralHeader.buffer);
+        write32(centralView, 0, 0x02014b50);
+        write16(centralView, 4, 20);
+        write16(centralView, 6, 20);
+        write16(centralView, 8, 0x0800);
+        write16(centralView, 10, 0);
+        write16(centralView, 12, dosTime);
+        write16(centralView, 14, dosDate);
+        write32(centralView, 16, crc);
+        write32(centralView, 20, file.bytes.length);
+        write32(centralView, 24, file.bytes.length);
+        write16(centralView, 28, nameBytes.length);
+        write16(centralView, 30, 0);
+        write16(centralView, 32, 0);
+        write16(centralView, 34, 0);
+        write16(centralView, 36, 0);
+        write32(centralView, 38, 0);
+        write32(centralView, 42, localOffset);
+        centralHeader.set(nameBytes, 46);
+        centralParts.push(centralHeader);
+        localOffset += localHeader.length + file.bytes.length;
+    }
+
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const end = new Uint8Array(22);
+    const endView = new DataView(end.buffer);
+    write32(endView, 0, 0x06054b50);
+    write16(endView, 4, 0);
+    write16(endView, 6, 0);
+    write16(endView, 8, files.length);
+    write16(endView, 10, files.length);
+    write32(endView, 12, centralSize);
+    write32(endView, 16, localOffset);
+    write16(endView, 20, 0);
+    return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
+}
+
+function exportFilenameToken(value?: string): string {
+    return String(value || "photo")
+        .replace(/[×x]/g, "x")
+        .replace(/\s+/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "") || "photo";
+}
+
+/** Downloads all selected photos in one ZIP containing full-resolution images. */
+export async function downloadPhotosArchive(images: ExportableImage[], format: "jpg" | "png"): Promise<void> {
+    if (!images.length) throw new Error("Please select at least one photo.");
+    const files: Array<{ name: string; bytes: Uint8Array }> = [];
+    for (let index = 0; index < images.length; index += 1) {
+        const image = images[index];
+        const exported = await renderPhotoToExportCanvas(image);
+        try {
+            const rawBlob = await canvasToBlob(exported.canvas, format);
+            const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
+            const name = `photo-${String(index + 1).padStart(3, "0")}-${exportFilenameToken(image.size)}.${format}`;
+            files.push({ name, bytes: new Uint8Array(await finalBlob.arrayBuffer()) });
+        }
+        finally {
+            exported.canvas.width = 0;
+            exported.canvas.height = 0;
+        }
+    }
+    downloadBlob(createStoredZip(files), `selected-photos-${format}-${Date.now()}.zip`);
+}
+
+/** Exports all selected photos into a single multi-page PDF (one photo per page). */
+export async function downloadPhotosPdf(images: ExportableImage[]): Promise<void> {
+    if (!images.length) throw new Error("Please select at least one photo.");
+    let pdf: jsPDF | null = null;
+    for (let index = 0; index < images.length; index += 1) {
+        const exported = await renderPhotoToExportCanvas(images[index]);
+        const widthMm = exported.physical.unit === "in" ? exported.physical.width * 25.4 : exported.physical.width;
+        const heightMm = exported.physical.unit === "in" ? exported.physical.height * 25.4 : exported.physical.height;
+        const orientation = widthMm > heightMm ? "landscape" : "portrait";
+        if (!pdf) {
+            pdf = new jsPDF({ orientation, unit: "mm", format: [widthMm, heightMm], compress: true });
+        }
+        else {
+            pdf.addPage([widthMm, heightMm], orientation);
+        }
+        try {
+            const imageData = exported.canvas.toDataURL("image/jpeg", 0.97);
+            pdf.addImage(imageData, "JPEG", 0, 0, widthMm, heightMm);
+        }
+        finally {
+            exported.canvas.width = 0;
+            exported.canvas.height = 0;
+        }
+    }
+    pdf?.save(`selected-photos-${Date.now()}.pdf`);
+}

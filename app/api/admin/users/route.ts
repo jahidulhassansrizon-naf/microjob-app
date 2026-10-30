@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
+import { getAdminCredentials } from "@/lib/adminCredentials";
 import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "20", 10) || 20));
     const now = new Date();
     const filter: Record<string, any> = {};
+    const mainAdminEmail = getAdminCredentials().email;
+    if (mainAdminEmail) filter.email = { $ne: mainAdminEmail };
 
     if (q) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -86,7 +89,8 @@ export async function GET(request: Request) {
       country: user.country || "",
       district: user.district || "",
       role: user.role === "admin" ? "admin" : "user",
-      isPrimaryAdmin: user.isPrimaryAdmin === true,
+      // The configured ENV Main Admin is synthetic and never appears as a DB user.
+      isPrimaryAdmin: false,
       isBanned: user.isBanned === true,
       bannedAt: user.bannedAt || null,
       bannedBy: user.bannedBy || "",
