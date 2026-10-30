@@ -582,7 +582,7 @@ export default function PhotoPreviewArea({
           {/* ONE wide frame and ONE gate: both photos fall in together, one group photo comes out. */}
           <FitFrame info={{ text: "90×55 mm", style: { width: "540px", height: "330px" } }} imageSrc={dualResultImage || leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
             <div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
-              {dualResultImage ? (<img src={dualResultImage} alt="Dual photo" className="h-full w-full object-contain"/>) : (<div className="flex h-full w-full">
+              {dualResultImage ? (<img src={dualResultImage} alt={t("Dual photo")} className="h-full w-full object-contain"/>) : (<div className="flex h-full w-full">
                   <div className="h-full w-1/2" style={getBackgroundStyle(currentBgColorValue)}>
                     {leftImage && (<img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>)}
                   </div>

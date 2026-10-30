@@ -4,10 +4,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNod
 import { createPortal } from "react-dom";
 import { AlignCenterHorizontal, AlignLeft, AlignRight, ArrowLeftRight, ChevronDown, Copy, Download, Frame, Grid3X3, Image as ImageIcon, LayoutGrid, Minus, Move, Plus, Printer, Redo2, RotateCw, Ruler, Trash2, Undo2, X, } from "lucide-react";
 import jsPDF from "jspdf";
+import type { PrintSessionSnapshot } from "./printSessionStore";
 
 const EXPORT_DPI = 300;
 const MAX_ITEMS = 80;
 const MAX_HISTORY = 50;
+const MAX_PAGES = 20;
 const DEFAULT_GAP_MM = 3;
 const DEFAULT_MARGIN_MM = 3;
 const DEFAULT_IMAGE_BORDER_MM = 0.25;
@@ -35,7 +37,7 @@ type Orientation = "portrait" | "landscape";
 type Unit = "mm" | "cm" | "in";
 type CutStyle = "dashed" | "solid" | "marks";
 type HAlign = "left" | "center" | "right";
-type SectionKey = "quick" | "custom" | "border" | "page";
+type SectionKey = "recent" | "quick" | "custom" | "border" | "page";
 type StudioItem = {
     id: string;
     label: string;
@@ -46,6 +48,10 @@ type StudioItem = {
     rotation: number;
     /** The source image for this placed item; omitted items use the primary image. */
     image?: string;
+    /** Sheet number this item sits on (0 = first sheet). Omitted means the first sheet. */
+    page?: number;
+    /** Key of the recent-generations photo this item came from (used for the "×N" badge). */
+    sourceKey?: string;
 };
 type Preset = {
     id: string;
@@ -190,6 +196,40 @@ function findFreePosition(widthMm: number, heightMm: number, pageWidthMm: number
     }
     return null;
 }
+function pageOf(item: StudioItem): number {
+    return item.page ?? 0;
+}
+/** Sorted list of the sheet numbers that actually hold photos (always at least one). */
+function getPageNumbers(list: StudioItem[]): number[] {
+    const pages = Array.from(new Set(list.map(pageOf))).sort((a, b) => a - b);
+    return pages.length ? pages : [0];
+}
+/**
+ * Finds room for a photo on the existing sheets first (first sheet first) and
+ * opens a new sheet only when none of them has room. `onlyPage` limits the
+ * search to one sheet and never opens a new one.
+ */
+function findFreePositionMulti(widthMm: number, heightMm: number, pageWidthMm: number, pageHeightMm: number, current: StudioItem[], gapMm: number, marginMm: number, onlyPage?: number): {
+    page: number;
+    xMm: number;
+    yMm: number;
+} | null {
+    let pages: number[];
+    if (onlyPage !== undefined) {
+        pages = [onlyPage];
+    }
+    else {
+        pages = getPageNumbers(current);
+        if (current.length && pages.length < MAX_PAGES)
+            pages = [...pages, pages[pages.length - 1] + 1];
+    }
+    for (const page of pages) {
+        const position = findFreePosition(widthMm, heightMm, pageWidthMm, pageHeightMm, current.filter((item) => pageOf(item) === page), gapMm, marginMm);
+        if (position)
+            return { page, ...position };
+    }
+    return null;
+}
 function packItems(list: StudioItem[], pageWidthMm: number, pageHeightMm: number, gapMm: number, marginMm: number, sortByArea = true): {
     placed: StudioItem[];
     failed: number;
@@ -201,12 +241,12 @@ function packItems(list: StudioItem[], pageWidthMm: number, pageHeightMm: number
     let failed = 0;
     for (const source of ordered) {
         const item = { ...source, rotation: 0 };
-        const position = findFreePosition(item.widthMm, item.heightMm, pageWidthMm, pageHeightMm, placed, gapMm, marginMm);
+        const position = findFreePositionMulti(item.widthMm, item.heightMm, pageWidthMm, pageHeightMm, placed, gapMm, marginMm);
         if (!position) {
             failed += 1;
             continue;
         }
-        placed.push({ ...item, xMm: position.xMm, yMm: position.yMm });
+        placed.push({ ...item, xMm: position.xMm, yMm: position.yMm, page: position.page });
     }
     return { placed, failed };
 }
@@ -219,16 +259,17 @@ function alignRows(list: StudioItem[], pageWidthMm: number, marginMm: number, mo
         return list;
     const entries = list
         .map((item) => ({ item, box: getItemBox(item) }))
-        .sort((a, b) => a.box.yMm - b.box.yMm);
-    const clusters: { bottom: number; members: typeof entries }[] = [];
+        .sort((a, b) => pageOf(a.item) - pageOf(b.item) || a.box.yMm - b.box.yMm);
+    const clusters: { page: number; bottom: number; members: typeof entries }[] = [];
     for (const entry of entries) {
         const last = clusters[clusters.length - 1];
-        if (last && entry.box.yMm < last.bottom - 0.001) {
+        if (last && last.page === pageOf(entry.item) && entry.box.yMm < last.bottom - 0.001) {
             last.members.push(entry);
             last.bottom = Math.max(last.bottom, entry.box.yMm + entry.box.heightMm);
         }
         else {
             clusters.push({
+                page: pageOf(entry.item),
                 bottom: entry.box.yMm + entry.box.heightMm,
                 members: [entry],
             });
@@ -267,8 +308,11 @@ function escapeHtml(value: string): string {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
 }
-/** Exact-size print sheet: 1 image = 1 page, no scaling, no margins. */
-function buildPrintHtml(src: string, widthMm: number, heightMm: number, title: string): string {
+/** Exact-size print sheets: 1 image = 1 page, no scaling, no margins. */
+function buildPrintHtml(srcs: string[], widthMm: number, heightMm: number, title: string): string {
+    const sheets = srcs
+        .map((src, index) => `<div class="sheet"><img class="sheet-img" id="sheet-${index}" src="${src}" alt="" /></div>`)
+        .join("\n");
     return `<!doctype html>
 <html>
 <head>
@@ -277,13 +321,14 @@ function buildPrintHtml(src: string, widthMm: number, heightMm: number, title: s
 <style>
 @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; width: ${widthMm}mm; height: ${heightMm}mm; background: #fff; overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.sheet { position: relative; width: ${widthMm}mm; height: ${heightMm}mm; overflow: hidden; page-break-after: avoid; page-break-inside: avoid; }
+html, body { margin: 0; padding: 0; width: ${widthMm}mm; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet { position: relative; width: ${widthMm}mm; height: ${heightMm}mm; overflow: hidden; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
+.sheet:last-child { page-break-after: auto; break-after: auto; }
 .sheet img { position: absolute; left: 0; top: 0; display: block; width: ${widthMm}mm; height: ${heightMm}mm; }
 </style>
 </head>
 <body>
-<div class="sheet"><img id="sheet" src="${src}" alt="" /></div>
+${sheets}
 </body>
 </html>`;
 }
@@ -538,19 +583,31 @@ export type AiPrintStudioProps = {
     /** Optional: print the single image on its own sheet (the old behaviour). */
     onPrintSingle?: () => void | Promise<void>;
     /** Distinct source photos to place together in the print studio. */
-    images?: Array<{ image: string; preset?: { id?: string; label?: string; widthMm: number; heightMm: number } | null }>;
+    images?: Array<{ image: string; sourceKey?: string; preset?: { id?: string; label?: string; widthMm: number; heightMm: number } | null }>;
+    /** Recently generated photos the user can add to the sheets with one click. */
+    recentImages?: Array<{ key: string; url: string }>;
+    /** Loads one recent photo as print-ready data (called when the user clicks it). */
+    onResolveRecent?: (key: string) => Promise<{ image: string; preset?: { id?: string; label?: string; widthMm: number; heightMm: number } | null }>;
+    /** Called when the user chooses to keep the layout while closing. */
+    onSaveSession?: (snapshot: PrintSessionSnapshot) => Promise<void>;
+    /** A previously saved layout to restore instead of auto-placing the photos. */
+    initialSnapshot?: PrintSessionSnapshot | null;
     /** Render inside the page layout (fills its parent) instead of a full-screen overlay. */
     inline?: boolean;
 };
 
-export default function AiPrintStudioModal({ open, image, preset, onClose, onPrintSingle, images, inline = false }: AiPrintStudioProps) {
+export default function AiPrintStudioModal({ open, image, preset, onClose, onPrintSingle, images, recentImages, onResolveRecent, onSaveSession, initialSnapshot, inline = false }: AiPrintStudioProps) {
     const { t } = useAiEditorText();
     const printStudioOpen = open;
     const currentPreset = preset;
     const sourceImages = useMemo(() => images?.length ? images : image ? [{ image, preset: currentPreset }] : [], [images, image, currentPreset]);
     const printStudioImage = sourceImages[0]?.image ?? image;
     const closePrintStudio = onClose;
-    const pageRef = useRef<HTMLDivElement | null>(null);
+    const openRef = useRef(open);
+    openRef.current = open;
+    const savedSigRef = useRef<string | null>(null);
+    const justRestoredRef = useRef(false);
+    const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const workspaceRef = useRef<HTMLDivElement | null>(null);
     const toastTimerRef = useRef<number | null>(null);
     const printCleanupRef = useRef<(() => void) | null>(null);
@@ -596,7 +653,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         () => Object.fromEntries(PRESETS.map((entry) => [entry.id, { widthMm: entry.widthMm, heightMm: entry.heightMm }]))
     );
     const [applyAllSizeId, setApplyAllSizeId] = useState("");
+    const [sessionMulti, setSessionMulti] = useState(false);
+    const [addingKey, setAddingKey] = useState<string | null>(null);
+    const [confirmClose, setConfirmClose] = useState(false);
+    const [isSavingSession, setIsSavingSession] = useState(false);
     const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
+        recent: true,
         quick: true,
         custom: true,
         border: true,
@@ -610,7 +672,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const [future, setFuture] = useState<StudioItem[][]>([]);
     itemsRef.current = items;
     zoomRef.current = zoom;
-    const isMultiPhotoSession = sourceImages.length > 1;
+    const isMultiPhotoSession = sessionMulti || sourceImages.length > 1;
     const selectedItem = items.find((item) => item.id === selectedId) ?? null;
 
     const sourcePreset = useMemo<Preset>(() => {
@@ -719,6 +781,31 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         setHistory([]);
         setFuture([]);
         setSelectedId(null);
+        setConfirmClose(false);
+        setAddingKey(null);
+        savedSigRef.current = null;
+        justRestoredRef.current = false;
+        setSessionMulti(sourceImages.length > 1);
+        if (initialSnapshot && initialSnapshot.items.length) {
+            const saved = initialSnapshot;
+            const savedPage = (saved.pageSizeKey in PAGE_SIZES ? saved.pageSizeKey : "A4") as PageSizeKey;
+            setPageSizeKey(savedPage);
+            setOrientation(saved.orientation === "landscape" ? "landscape" : "portrait");
+            setHAlign(saved.hAlign ?? "left");
+            setAutoLayout(!!saved.autoLayout);
+            setGapMm(Number.isFinite(saved.gapMm) ? saved.gapMm : DEFAULT_GAP_MM);
+            setMarginMm(Number.isFinite(saved.marginMm) ? saved.marginMm : DEFAULT_MARGIN_MM);
+            setCuttingBorder(!!saved.cuttingBorder);
+            setCutStyle(saved.cutStyle ?? "dashed");
+            setCutMm(Number.isFinite(saved.cutMm) ? saved.cutMm : DEFAULT_CUT_MM);
+            setImageBorder(!!saved.imageBorder);
+            setImageBorderMm(Number.isFinite(saved.imageBorderMm) ? saved.imageBorderMm : DEFAULT_IMAGE_BORDER_MM);
+            setImageBorderColor(saved.imageBorderColor || "#000000");
+            setItems(saved.items.map((item) => ({ ...item })));
+            setSessionMulti(new Set(saved.items.map((item) => item.image)).size > 1 || sourceImages.length > 1);
+            justRestoredRef.current = true;
+            return;
+        }
         if (!printStudioImage) {
             setItems([]);
             return;
@@ -731,7 +818,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             const fit = Math.min(1, 190 / requested.widthMm, 277 / requested.heightMm);
             const widthMm = Math.round(requested.widthMm * fit * 10) / 10;
             const heightMm = Math.round(requested.heightMm * fit * 10) / 10;
-            const placement = findFreePosition(widthMm, heightMm, PAGE_SIZES.A4.widthMm, PAGE_SIZES.A4.heightMm, nextItems, DEFAULT_GAP_MM, DEFAULT_MARGIN_MM);
+            const placement = findFreePositionMulti(widthMm, heightMm, PAGE_SIZES.A4.widthMm, PAGE_SIZES.A4.heightMm, nextItems, DEFAULT_GAP_MM, DEFAULT_MARGIN_MM);
             if (!placement) {
                 skipped += 1;
                 continue;
@@ -745,14 +832,16 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 yMm: placement.yMm,
                 rotation: 0,
                 image: source.image,
+                page: placement.page,
+                sourceKey: source.sourceKey,
             });
         }
         setItems(nextItems);
         setSelectedId(sourceImages.length > 1 ? null : nextItems[0]?.id ?? null);
         if (skipped || sources.length > MAX_ITEMS) {
-            showToast(`${skipped + Math.max(0, sources.length - MAX_ITEMS)} selected photo(s) did not fit on this page. Choose a larger page or remove unused items.`, "Page Full");
+            showToast(`${skipped + Math.max(0, sources.length - MAX_ITEMS)}টি ছবি যোগ করা যায়নি (সর্বোচ্চ ${MAX_ITEMS}টি ছবি / ${MAX_PAGES} পেজ)।`, "Page Full");
         }
-    }, [currentPreset, printStudioImage, showToast, sourceImages, sourcePreset]);
+    }, [currentPreset, initialSnapshot, printStudioImage, showToast, sourceImages, sourcePreset]);
     useEffect(() => setMounted(true), []);
     useEffect(() => {
         if (printStudioOpen) {
@@ -791,7 +880,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             return;
         setFuture((currentFuture) => [items.map((item) => ({ ...item })), ...currentFuture].slice(0, MAX_HISTORY));
         setItems(previous.map((item) => ({ ...item })));
-        setSelectedId(previous[0]?.id ?? null);
+        setSelectedId(null);
         setHistory((current) => current.slice(0, -1));
     }, [history, items]);
     const redo = useCallback(() => {
@@ -800,7 +889,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             return;
         setHistory((currentHistory) => [...currentHistory, items.map((item) => ({ ...item }))].slice(-MAX_HISTORY));
         setItems(next.map((item) => ({ ...item })));
-        setSelectedId(next[0]?.id ?? null);
+        setSelectedId(null);
         setFuture((current) => current.slice(1));
     }, [future, items]);
     const removeItem = useCallback((id: string) => {
@@ -822,6 +911,79 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         commit(next, items);
     }, [commit, items, pageHeightMm, pageWidthMm, selectedId]);
 
+    // Everything needed to rebuild this layout later.
+    const snapshot = useMemo<PrintSessionSnapshot>(() => ({
+        pageSizeKey,
+        orientation,
+        hAlign,
+        autoLayout,
+        gapMm,
+        marginMm,
+        cuttingBorder,
+        cutStyle,
+        cutMm,
+        imageBorder,
+        imageBorderMm,
+        imageBorderColor,
+        items: items.map((item) => ({
+            id: item.id,
+            label: item.label,
+            widthMm: item.widthMm,
+            heightMm: item.heightMm,
+            xMm: item.xMm,
+            yMm: item.yMm,
+            rotation: item.rotation,
+            image: item.image ?? printStudioImage ?? "",
+            page: pageOf(item),
+            sourceKey: item.sourceKey,
+        })),
+    }), [autoLayout, cutMm, cutStyle, cuttingBorder, gapMm, hAlign, imageBorder, imageBorderColor, imageBorderMm, items, marginMm, orientation, pageSizeKey, printStudioImage]);
+    const snapshotSig = useMemo(() => JSON.stringify({
+        ...snapshot,
+        items: snapshot.items.map((item) => [item.id, item.widthMm, item.heightMm, item.xMm, item.yMm, item.rotation, item.page, item.image.length]),
+    }), [snapshot]);
+    useEffect(() => {
+        // A layout that was just restored from "saved prints" counts as already saved.
+        if (justRestoredRef.current && items.length > 0) {
+            savedSigRef.current = snapshotSig;
+            justRestoredRef.current = false;
+        }
+    }, [items.length, snapshotSig]);
+    useEffect(() => {
+        if (!confirmClose)
+            return;
+        // The question is only valid for the layout it was asked about.
+        if (!items.length)
+            setConfirmClose(false);
+    }, [confirmClose, items.length]);
+    const requestClose = useCallback(() => {
+        if (isSavingSession)
+            return;
+        const worthAsking = !!onSaveSession && items.length > 0 && (isMultiPhotoSession || items.length > 1) && savedSigRef.current !== snapshotSig;
+        if (!worthAsking) {
+            closePrintStudio();
+            return;
+        }
+        setConfirmClose(true);
+    }, [closePrintStudio, isMultiPhotoSession, isSavingSession, items.length, onSaveSession, snapshotSig]);
+    const saveAndClose = useCallback(async () => {
+        if (!onSaveSession || isSavingSession)
+            return;
+        setIsSavingSession(true);
+        try {
+            await onSaveSession(snapshot);
+            savedSigRef.current = snapshotSig;
+            setConfirmClose(false);
+            closePrintStudio();
+        }
+        catch (error) {
+            setConfirmClose(false);
+            showToast(error instanceof Error && error.message ? error.message : "সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।", "সংরক্ষণ ব্যর্থ");
+        }
+        finally {
+            setIsSavingSession(false);
+        }
+    }, [closePrintStudio, isSavingSession, onSaveSession, showToast, snapshot, snapshotSig]);
     useEffect(() => {
         if (!printStudioOpen)
             return;
@@ -840,10 +1002,14 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                     target?.blur();
                     return;
                 }
-                closePrintStudio();
+                if (confirmClose) {
+                    setConfirmClose(false);
+                    return;
+                }
+                requestClose();
                 return;
             }
-            if (typing)
+            if (typing || confirmClose)
                 return;
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
                 event.preventDefault();
@@ -889,7 +1055,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 document.body.style.overflow = previousOverflow;
             window.removeEventListener("keydown", onKeyDown);
         };
-    }, [printStudioOpen, closePrintStudio, redo, undo, inline, selectedId, removeItem, nudgeSelected]);
+    }, [printStudioOpen, requestClose, confirmClose, redo, undo, inline, selectedId, removeItem, nudgeSelected]);
     useEffect(() => {
         const workspace = workspaceRef.current;
         if (!workspace)
@@ -928,7 +1094,57 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const flowed = reflow(list);
         return flowed.failed ? list : flowed.placed;
     }, [autoLayout, reflow]);
-    const addPreset = useCallback((entry: Preset, quantity = 1, silent = false) => {
+    const addRecentPhoto = useCallback(async (key: string) => {
+        if (!onResolveRecent || addingKey)
+            return;
+        if (itemsRef.current.length >= MAX_ITEMS) {
+            showToast(`সর্বোচ্চ ${MAX_ITEMS}টি ছবি যোগ করা যায়।`, "Page Full");
+            return;
+        }
+        setAddingKey(key);
+        try {
+            const payload = await onResolveRecent(key);
+            if (!openRef.current)
+                return;
+            const requested = payload.preset?.widthMm && payload.preset?.heightMm ? payload.preset : sourcePreset;
+            const fit = Math.min(1, Math.max(10, pageWidthMm - marginMm * 2) / requested.widthMm, Math.max(10, pageHeightMm - marginMm * 2) / requested.heightMm);
+            const widthMm = Math.round(requested.widthMm * fit * 10) / 10;
+            const heightMm = Math.round(requested.heightMm * fit * 10) / 10;
+            const current = itemsRef.current;
+            const placement = findFreePositionMulti(widthMm, heightMm, pageWidthMm, pageHeightMm, current, gapMm, marginMm);
+            if (!placement) {
+                showToast("এই ছবি যোগ করা যায়নি (সর্বোচ্চ পেজ সীমা)।", "Page Full");
+                return;
+            }
+            const created: StudioItem = {
+                id: uniqueId(),
+                label: requested.label || "Photo",
+                widthMm,
+                heightMm,
+                xMm: placement.xMm,
+                yMm: placement.yMm,
+                rotation: 0,
+                image: payload.image,
+                page: placement.page,
+                sourceKey: key,
+            };
+            const nextList = finalizeAuto([...current, created]);
+            commit(nextList, current);
+            setSessionMulti(true);
+            setSelectedId(created.id);
+            if (getPageNumbers(nextList).length > getPageNumbers(current).length) {
+                showToast("আগের পেজে জায়গা শেষ, তাই ছবিটি নতুন পেজে যোগ হয়েছে।", "নতুন পেজ");
+            }
+        }
+        catch (error) {
+            showToast(error instanceof Error && error.message ? error.message : "ছবিটি যোগ করা যায়নি।", "Error");
+        }
+        finally {
+            setAddingKey(null);
+        }
+    }, [addingKey, commit, finalizeAuto, gapMm, marginMm, onResolveRecent, pageHeightMm, pageWidthMm, showToast, sourcePreset]);
+
+    const addPreset = useCallback((entry: Preset, quantity = 1, silent = false, onlyPage?: number) => {
         const activeImage = selectedItem?.image ?? (isMultiPhotoSession ? null : printStudioImage);
         if (!activeImage) {
             showToast("প্রথমে পেজ থেকে একটি ছবি নির্বাচন করুন। সব ছবির সাইজ বদলাতে উপরের Apply to all অপশন ব্যবহার করুন।", "ছবি নির্বাচন করুন");
@@ -939,11 +1155,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             return;
         }
         const next = [...items];
+        const pagesBefore = getPageNumbers(items).length;
         let added = 0;
         for (let index = 0; index < quantity; index += 1) {
             if (next.length >= MAX_ITEMS)
                 break;
-            const placement = findFreePosition(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm);
+            const placement = findFreePositionMulti(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm, onlyPage);
             if (!placement)
                 break;
             next.push({
@@ -955,18 +1172,23 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 yMm: placement.yMm,
                 rotation: 0,
                 image: activeImage,
+                page: placement.page,
             });
             added += 1;
         }
         if (!added) {
-            showToast("Page is full, can't add more images.", "Page Full");
+            showToast(onlyPage !== undefined ? "এই পেজটি ভরা, আর ছবি বসানো যাচ্ছে না।" : "আর ছবি যোগ করা যাচ্ছে না (সর্বোচ্চ সীমা)।", "Page Full");
             return;
         }
         if (added < quantity && !silent) {
-            showToast("Page is full, can't add more images.", "Page Full");
+            showToast("সব ছবি যোগ করা যায়নি (সর্বোচ্চ সীমা)।", "Page Full");
         }
-        commit(finalizeAuto(next), items);
+        const finalList = finalizeAuto(next);
+        commit(finalList, items);
         setSelectedId(next[next.length - 1]?.id ?? null);
+        if (onlyPage === undefined && getPageNumbers(finalList).length > pagesBefore) {
+            showToast("প্রথম পেজে জায়গা শেষ, তাই নতুন পেজে ছবি যোগ হয়েছে।", "নতুন পেজ");
+        }
     }, [
         commit,
         finalizeAuto,
@@ -994,7 +1216,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 continue;
             const entry = { ...baseEntry, ...(presetDimensions[presetId] ?? {}) };
             for (let index = 0; index < quantity; index += 1) {
-                const placement = findFreePosition(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm);
+                const placement = findFreePositionMulti(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm);
                 if (!placement) {
                     missing += 1;
                     continue;
@@ -1008,6 +1230,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                     yMm: placement.yMm,
                     rotation: 0,
                     image: activeImage,
+                    page: placement.page,
                 });
             }
         }
@@ -1015,61 +1238,54 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         commit(alignRows(next, pageWidthMm, marginMm, hAlign), items);
         setSelectedId(null);
         if (missing) {
-            showToast(`${missing} photo(s) did not fit on this page. Try a bigger page size.`, "Page Full");
+            showToast(`${missing}টি ছবি বসানো যায়নি। বড় পেজ সাইজ নির্বাচন করুন।`, "Page Full");
         }
     }, [commit, gapMm, hAlign, isMultiPhotoSession, items, marginMm, pageHeightMm, pageWidthMm, presetDimensions, printStudioImage, selectedItem, showToast]);
-    const addCustom = useCallback((quantity: number, silent = false) => {
+    const addCustom = useCallback((quantity: number, silent = false, onlyPage?: number) => {
         addPreset({
             id: "custom",
             label: "Custom",
             widthMm: customWidthMm,
             heightMm: customHeightMm,
-        }, quantity, silent);
+        }, quantity, silent, onlyPage);
     }, [addPreset, customHeightMm, customWidthMm]);
     const applySizeToAllPhotos = useCallback((entry: Preset) => {
-        if (!items.length && !sourceImages.length)
+        // Only the photos that are on the sheets right now are resized. A photo the
+        // user removed (X / Delete) is never brought back.
+        if (!items.length)
             return;
         if (entry.widthMm < MIN_ITEM_MM || entry.heightMm < MIN_ITEM_MM || entry.widthMm > 600 || entry.heightMm > 600) {
-            showToast("ছবির সাইজ ৫ mm থেকে ৬০০ mm-এর মধ্যে হতে হবে।", "Invalid size");
+            showToast("ছবির সাইজ ৫ মিমি থেকে ৬০০ মিমি-এর মধ্যে হতে হবে।", "Invalid size");
             return;
         }
-
-        // Keep one placed item for every originally selected source photo. A source
-        // that could not fit in the initial mixed-size layout is restored here.
-        const remainingItems = [...items];
-        const originalSourceItems: StudioItem[] = sourceImages.map((source) => {
-            const matchIndex = remainingItems.findIndex((item) => item.image === source.image);
-            if (matchIndex >= 0) {
-                return remainingItems.splice(matchIndex, 1)[0];
-            }
-            return {
-                id: uniqueId(),
-                label: source.preset?.label ?? entry.label,
-                widthMm: source.preset?.widthMm ?? entry.widthMm,
-                heightMm: source.preset?.heightMm ?? entry.heightMm,
-                xMm: marginMm,
-                yMm: marginMm,
-                rotation: 0,
-                image: source.image,
-            };
-        });
-        // Also resize any extra copies the user added after selecting the photos.
-        const resized = [...originalSourceItems, ...remainingItems].map((item) => ({
+        if (entry.widthMm > pageWidthMm + 0.001 || entry.heightMm > pageHeightMm + 0.001) {
+            showToast(`${entry.label} সাইজ (${roundNice(entry.widthMm)}×${roundNice(entry.heightMm)} mm) এই পেজের চেয়ে বড়। বড় পেজ বা ছোট সাইজ নির্বাচন করুন। কোনো ছবি পরিবর্তন করা হয়নি।`, "সাইজ বড়");
+            return;
+        }
+        // Keep the order the user sees: sheet by sheet, top to bottom, left to right.
+        const ordered = [...items].sort((a, b) => pageOf(a) - pageOf(b) ||
+            Math.round(a.yMm * 2) - Math.round(b.yMm * 2) ||
+            a.xMm - b.xMm);
+        const resized = ordered.map((item) => ({
             ...item,
             label: entry.label,
             widthMm: entry.widthMm,
             heightMm: entry.heightMm,
             rotation: 0,
         }));
-        const layout = flowLayout(resized, pageWidthMm, pageHeightMm, gapMm, marginMm, hAlign, true);
+        const layout = flowLayout(resized, pageWidthMm, pageHeightMm, gapMm, marginMm, hAlign, false);
         if (layout.failed) {
-            showToast(`${entry.label} সাইজে সব ${resized.length}টি ছবি এই পেজে ফিট হবে না। ছোট সাইজ বা বড় পেজ নির্বাচন করুন। কোনো ছবি পরিবর্তন করা হয়নি।`, "সব ছবি ফিট হচ্ছে না");
+            showToast(`${layout.failed}টি ছবি বসানো যায়নি (সর্বোচ্চ ${MAX_PAGES} পেজ)। কোনো ছবি পরিবর্তন করা হয়নি।`, "সব ছবি ফিট হচ্ছে না");
             return;
         }
+        const pageCount = getPageNumbers(layout.placed).length;
         setAutoLayout(true);
         commit(layout.placed, items);
-        showToast(`সব ${resized.length}টি ছবিতে ${entry.label} (${roundNice(entry.widthMm)}×${roundNice(entry.heightMm)} mm) প্রয়োগ হয়েছে।`, "সব ছবির সাইজ আপডেট হয়েছে");
-    }, [commit, gapMm, hAlign, items, marginMm, pageHeightMm, pageWidthMm, showToast, sourceImages]);
+        setSelectedId(null);
+        showToast(pageCount > 1
+            ? `সব ${resized.length}টি ছবিতে ${entry.label} (${roundNice(entry.widthMm)}×${roundNice(entry.heightMm)} mm) প্রয়োগ হয়েছে। এক পেজে জায়গা হয়নি, তাই ${pageCount} পেজে সাজানো হয়েছে।`
+            : `সব ${resized.length}টি ছবিতে ${entry.label} (${roundNice(entry.widthMm)}×${roundNice(entry.heightMm)} mm) প্রয়োগ হয়েছে।`, "সব ছবির সাইজ আপডেট হয়েছে");
+    }, [commit, gapMm, hAlign, items, marginMm, pageHeightMm, pageWidthMm, showToast]);
     const duplicateSelected = useCallback(() => {
         const source = items.find((item) => item.id === selectedId);
         if (!source)
@@ -1078,9 +1294,9 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             showToast("Page is full, can't add more images.", "Page Full");
             return;
         }
-        const placement = findFreePosition(source.widthMm, source.heightMm, pageWidthMm, pageHeightMm, items, gapMm, marginMm);
+        const placement = findFreePositionMulti(source.widthMm, source.heightMm, pageWidthMm, pageHeightMm, items, gapMm, marginMm);
         if (!placement) {
-            showToast("Page is full, can't add more images.", "Page Full");
+            showToast("আর ছবি যোগ করা যাচ্ছে না (সর্বোচ্চ সীমা)।", "Page Full");
             return;
         }
         const copy: StudioItem = {
@@ -1089,6 +1305,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             xMm: placement.xMm,
             yMm: placement.yMm,
             rotation: 0,
+            page: placement.page,
         };
         commit(finalizeAuto([...items, copy]), items);
         setSelectedId(copy.id);
@@ -1246,7 +1463,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const interaction = interactionRef.current;
         if (!interaction || interaction.pointerId !== event.pointerId)
             return;
-        const page = pageRef.current;
+        const page = pageRefs.current.get(pageOf(interaction.startItem));
         if (!page)
             return;
         const rect = page.getBoundingClientRect();
@@ -1366,7 +1583,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         }
         catch { }
     }, []);
-    const renderStudioCanvas = useCallback(async () => {
+    const renderStudioCanvas = useCallback(async (pageValue: number) => {
         if (!printStudioImage) {
             throw new Error("No photo is available for printing.");
         }
@@ -1392,6 +1609,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             ctx.imageSmoothingQuality = "high";
             const minLine = 1 / scale;
             for (const item of items) {
+                if (pageOf(item) !== pageValue)
+                    continue;
                 const image = await getSourceImage(item.image ?? printStudioImage);
                 const width = item.widthMm * scale;
                 const height = item.heightMm * scale;
@@ -1469,22 +1688,35 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         setIsExporting(true);
         let canvas: HTMLCanvasElement | null = null;
         try {
-            canvas = await renderStudioCanvas();
-            const imageData = canvas.toDataURL("image/jpeg", 0.97);
-            const pdf = new jsPDF({
-                orientation: pageWidthMm > pageHeightMm ? "landscape" : "portrait",
-                unit: "mm",
-                format: [pageWidthMm, pageHeightMm],
-                compress: true,
-            });
-            pdf.addImage(imageData, "JPEG", 0, 0, pageWidthMm, pageHeightMm);
-            pdf.save(nameForPdf(pageSizeKey));
+            const pageNumbers = getPageNumbers(items);
+            const pdfOrientation = pageWidthMm > pageHeightMm ? "landscape" : "portrait";
+            let pdf: jsPDF | null = null;
+            for (const pageValue of pageNumbers) {
+                canvas = await renderStudioCanvas(pageValue);
+                const imageData = canvas.toDataURL("image/jpeg", 0.97);
+                // Drop the high-resolution backing store before the next sheet (A4 at 300 DPI is ~35 MB).
+                canvas.width = 0;
+                canvas.height = 0;
+                canvas = null;
+                if (!pdf) {
+                    pdf = new jsPDF({
+                        orientation: pdfOrientation,
+                        unit: "mm",
+                        format: [pageWidthMm, pageHeightMm],
+                        compress: true,
+                    });
+                }
+                else {
+                    pdf.addPage([pageWidthMm, pageHeightMm], pdfOrientation);
+                }
+                pdf.addImage(imageData, "JPEG", 0, 0, pageWidthMm, pageHeightMm);
+            }
+            pdf?.save(nameForPdf(pageSizeKey));
         }
         catch (error) {
             showToast(error instanceof Error ? error.message : "Could not create PDF.", "Error");
         }
         finally {
-            // Drop the high-resolution backing store promptly (A4 at 300 DPI is ~35 MB).
             if (canvas) {
                 canvas.width = 0;
                 canvas.height = 0;
@@ -1494,7 +1726,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         }
     }, [
         isExporting,
-        items.length,
+        items,
         pageHeightMm,
         pageSizeKey,
         pageWidthMm,
@@ -1505,7 +1737,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         if (!items.length || isExporting)
             return;
         setIsExporting(true);
-        let objectUrl: string | null = null;
+        let objectUrls: string[] = [];
         let frame: HTMLIFrameElement | null = null;
         let fallbackTimer: number | null = null;
         let canvas: HTMLCanvasElement | null = null;
@@ -1520,32 +1752,30 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             }
             window.removeEventListener("pagehide", cleanup);
             window.removeEventListener("beforeunload", cleanup);
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-                objectUrl = null;
-            }
             if (frame) {
                 frame.onload = null;
                 frame.onerror = null;
-                const printSheet = frame.contentDocument?.getElementById("sheet") as HTMLImageElement | null;
-                if (printSheet)
-                    printSheet.removeAttribute("src");
+                frame.contentDocument?.querySelectorAll("img.sheet-img").forEach((printSheet) => printSheet.removeAttribute("src"));
                 frame.remove();
                 frame = null;
             }
+            objectUrls.forEach((url) => URL.revokeObjectURL(url));
+            objectUrls = [];
             if (printCleanupRef.current === cleanup)
                 printCleanupRef.current = null;
         };
         try {
-            canvas = await renderStudioCanvas();
-            const blob = await new Promise<Blob | null>((resolve) => canvas!.toBlob(resolve, "image/png"));
-            // The print iframe only needs the encoded blob; release the large canvas now.
-            canvas.width = 0;
-            canvas.height = 0;
-            canvas = null;
-            if (!blob)
-                throw new Error("Could not prepare the print file.");
-            objectUrl = URL.createObjectURL(blob);
+            for (const pageValue of getPageNumbers(items)) {
+                canvas = await renderStudioCanvas(pageValue);
+                const blob = await new Promise<Blob | null>((resolve) => canvas!.toBlob(resolve, "image/png"));
+                // The print iframe only needs the encoded blob; release the large canvas now.
+                canvas.width = 0;
+                canvas.height = 0;
+                canvas = null;
+                if (!blob)
+                    throw new Error("Could not prepare the print file.");
+                objectUrls.push(URL.createObjectURL(blob));
+            }
             const iframe = document.createElement("iframe");
             frame = iframe;
             iframe.setAttribute("aria-hidden", "true");
@@ -1554,31 +1784,35 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             await new Promise<void>((resolve, reject) => {
                 iframe.onload = () => resolve();
                 iframe.onerror = () => reject(new Error("Could not open print preview."));
-                iframe.srcdoc = buildPrintHtml(objectUrl as string, pageWidthMm, pageHeightMm, t("Print Photo Layout"));
+                iframe.srcdoc = buildPrintHtml(objectUrls, pageWidthMm, pageHeightMm, t("Print Photo Layout"));
                 document.body.appendChild(iframe);
             });
             const printWindow = iframe.contentWindow;
             const printDocument = iframe.contentDocument;
             if (!printWindow || !printDocument)
                 throw new Error("Could not open print preview.");
-            const sheet = printDocument.getElementById("sheet") as HTMLImageElement | null;
-            if (sheet && !sheet.complete) {
-                await new Promise<void>((resolve, reject) => {
-                    sheet.onload = () => resolve();
-                    sheet.onerror = () => reject(new Error("Could not load the print image."));
-                });
-            }
-            if (sheet && typeof sheet.decode === "function") {
-                try {
-                    await sheet.decode();
+            const sheets = Array.from(printDocument.querySelectorAll("img.sheet-img")) as HTMLImageElement[];
+            if (!sheets.length)
+                throw new Error("Could not open print preview.");
+            for (const sheet of sheets) {
+                if (!sheet.complete) {
+                    await new Promise<void>((resolve, reject) => {
+                        sheet.onload = () => resolve();
+                        sheet.onerror = () => reject(new Error("Could not load the print image."));
+                    });
                 }
-                catch {
-                    if (!sheet.complete || sheet.naturalWidth === 0)
-                        throw new Error("Could not decode the print image.");
+                if (typeof sheet.decode === "function") {
+                    try {
+                        await sheet.decode();
+                    }
+                    catch {
+                        if (!sheet.complete || sheet.naturalWidth === 0)
+                            throw new Error("Could not decode the print image.");
+                    }
                 }
+                if (!sheet.complete || sheet.naturalWidth <= 0 || sheet.naturalHeight <= 0)
+                    throw new Error("The print image could not be loaded at full resolution.");
             }
-            if (sheet && (!sheet.complete || sheet.naturalWidth <= 0 || sheet.naturalHeight <= 0))
-                throw new Error("The print image could not be loaded at full resolution.");
             // Keep the iframe and its object URL alive until the native print dialog closes.
             printCleanupRef.current = cleanup;
             printWindow.addEventListener("afterprint", () => window.setTimeout(cleanup, 500), { once: true });
@@ -1604,7 +1838,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         }
     }, [
         isExporting,
-        items.length,
+        items,
         pageHeightMm,
         pageWidthMm,
         renderStudioCanvas,
@@ -1615,8 +1849,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     if (!mounted || !printStudioOpen || !printStudioImage)
         return null;
 
+    const pageNumbers = getPageNumbers(items);
+    const sheetCount = pageNumbers.length;
     const usedArea = items.reduce((sum, item) => sum + item.widthMm * item.heightMm, 0);
-    const pageUsage = Math.min(100, Math.round((usedArea / (pageWidthMm * pageHeightMm)) * 100));
+    const pageUsage = Math.min(100, Math.round((usedArea / (pageWidthMm * pageHeightMm * sheetCount)) * 100));
+    const activePhotoCount = new Set(items.map((item) => item.image ?? printStudioImage)).size;
+    const activePageValue = selectedItem ? pageOf(selectedItem) : pageNumbers[pageNumbers.length - 1];
     const sourceRatio = sourcePreset.widthMm / sourcePreset.heightMm;
     const customRatio = customWidthMm / customHeightMm;
     const customWillCrop = Math.abs(sourceRatio / customRatio - 1) > 0.03;
@@ -1642,7 +1880,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             <p className="text-[11px] text-[#3B2F1E]/60 truncate">{t("Photo Layout & Print Studio")}</p>
           </div>
         </div>
-        <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] flex items-center justify-center cursor-pointer text-[#3B2F1E] transition-colors" aria-label={t("Close print studio")}>
+        <button type="button" onClick={requestClose} className="w-8 h-8 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] flex items-center justify-center cursor-pointer text-[#3B2F1E] transition-colors" aria-label={t("Close print studio")}>
           <X size={16}/>
         </button>
       </header>
@@ -1650,6 +1888,23 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <aside className="w-[340px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* ───────── Recent photos ───────── */}
+            {!!recentImages?.length && !!onResolveRecent && (<Section title={t("Recent Photos")} icon={<ImageIcon size={13}/>} open={openSections.recent} onToggle={() => toggleSection("recent")}>
+                <p className="text-[10px] text-[#3B2F1E]/60 leading-snug mb-2">{t("Click a photo to add it to the print sheets.")}</p>
+                <div className="grid grid-cols-4 gap-1.5 max-h-[188px] overflow-y-auto pr-0.5">
+                  {recentImages.map((entry) => {
+                const count = items.filter((item) => item.sourceKey === entry.key).length;
+                const busy = addingKey === entry.key;
+                return (<button key={entry.key} type="button" onClick={() => { void addRecentPhoto(entry.key); }} disabled={!!addingKey} title={t("Add to print")} className={`relative aspect-[4/5] overflow-hidden rounded-md border bg-[#F2E8D2] cursor-pointer transition ${count ? "border-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]/60"} disabled:cursor-wait disabled:opacity-60`}>
+                      <img src={entry.url} alt="" loading="lazy" draggable={false} className="h-full w-full object-cover"/>
+                      {busy && (<span className="absolute inset-0 flex items-center justify-center bg-white/60"><span className="h-4 w-4 animate-spin rounded-full border-2 border-[#DC2626]/30 border-t-[#DC2626]"/></span>)}
+                      {!busy && count > 0 && (<span className="absolute right-0.5 top-0.5 min-w-[18px] rounded-full bg-[#DC2626] px-1 text-[10px] font-extrabold leading-[18px] text-white">×{count}</span>)}
+                      {!busy && (<span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white"><Plus size={10}/></span>)}
+                    </button>);
+            })}
+                </div>
+              </Section>)}
+
             {/* ───────── Quick Add ───────── */}
             <Section title={t("Quick Add")} icon={<LayoutGrid size={13}/>} open={openSections.quick} onToggle={() => toggleSection("quick")}>
               <div className="flex items-center gap-2 mb-3">
@@ -1657,7 +1912,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                   selectedItem?.image ? (
                     <img src={selectedItem.image} alt={t("Selected photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
                   ) : (
-                    <div className="w-12 h-14 rounded-md border border-dashed border-[#CDBD9D] bg-[#F2E8D2] text-[#9A8664] flex items-center justify-center" aria-label="No photo selected">
+                    <div className="w-12 h-14 rounded-md border border-dashed border-[#CDBD9D] bg-[#F2E8D2] text-[#9A8664] flex items-center justify-center" aria-label={t("No photo selected")}>
                       <ImageIcon size={18}/>
                     </div>
                   )
@@ -1665,7 +1920,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                   <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
                 )}
                 <div className="min-w-0">
-                  <p className="text-[12px] font-extrabold text-[#3B2F1E]">{isMultiPhotoSession ? `${sourceImages.length} selected photos` : t("Current photo")}</p>
+                  <p className="text-[12px] font-extrabold text-[#3B2F1E]">{isMultiPhotoSession ? `${activePhotoCount} selected photos` : t("Current photo")}</p>
                   <p className="text-[11px] text-[#3B2F1E]/60 mt-0.5 leading-relaxed">
                     {isMultiPhotoSession
                       ? selectedItem?.image
@@ -1683,9 +1938,9 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                     <option value="">ছবির সাইজ নির্বাচন করুন</option>
                     {PRESETS.map((entry) => {
                       const dimensions = presetDimensions[entry.id] ?? entry;
-                      return <option key={entry.id} value={entry.id}>{t(entry.label)} — {roundNice(dimensions.widthMm)}×{roundNice(dimensions.heightMm)} mm</option>;
+                      return <option key={entry.id} value={entry.id}>{t(entry.label)} — {roundNice(dimensions.widthMm)}×{roundNice(dimensions.heightMm)} মিমি</option>;
                     })}
-                    <option value="custom">নিজের মতো মাপ (Custom)</option>
+                    <option value="custom">নিজের মতো মাপ (কাস্টম)</option>
                   </select>
 
                   {applyAllSizeId === "custom" && (
@@ -1702,7 +1957,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                       </div>
                       <div className="grid grid-cols-[1fr_30px_1fr] items-end gap-1.5">
                         <div className="min-w-0">
-                          <p className="mb-1 text-[10px] font-bold text-[#3B2F1E]/65">Width</p>
+                          <p className="mb-1 text-[10px] font-bold text-[#3B2F1E]/65">প্রস্থ</p>
                           <NumberField ariaLabel={t("Width")} value={formatInUnit(customWidthMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={600 / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => setCustomWidthMm(clamp(value * UNIT_FACTOR[unit], MIN_ITEM_MM, 600))}/>
                         </div>
                         <button type="button" onClick={() => {
@@ -1712,11 +1967,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                           <ArrowLeftRight size={13}/>
                         </button>
                         <div className="min-w-0">
-                          <p className="mb-1 text-[10px] font-bold text-[#3B2F1E]/65">Height</p>
+                          <p className="mb-1 text-[10px] font-bold text-[#3B2F1E]/65">উচ্চতা</p>
                           <NumberField ariaLabel={t("Height")} value={formatInUnit(customHeightMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={600 / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => setCustomHeightMm(clamp(value * UNIT_FACTOR[unit], MIN_ITEM_MM, 600))}/>
                         </div>
                       </div>
-                      <p className="mt-1.5 text-[10px] font-semibold text-[#3B2F1E]/60">মাপ: {roundNice(customWidthMm)} × {roundNice(customHeightMm)} mm · সর্বনিম্ন ৫ mm, সর্বোচ্চ ৬০০ mm</p>
+                      <p className="mt-1.5 text-[10px] font-semibold text-[#3B2F1E]/60">মাপ: {roundNice(customWidthMm)} × {roundNice(customHeightMm)} মিমি · সর্বনিম্ন ৫ মিমি, সর্বোচ্চ ৬০০ মিমি</p>
                     </div>
                   )}
 
@@ -1737,7 +1992,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                     {quantity}U
                   </button>))}
               </div>
-              <button type="button" onClick={() => addPreset(activePhotoPreset, MAX_ITEMS, true)} disabled={!hasActivePhotoForQuickAdd} className="w-full mt-1.5 h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+              <button type="button" onClick={() => addPreset(activePhotoPreset, MAX_ITEMS, true, activePageValue)} disabled={!hasActivePhotoForQuickAdd} className="w-full mt-1.5 h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
                 <Grid3X3 size={12}/>
                 {t("Fill page")}
               </button>
@@ -1757,12 +2012,12 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                       <label className="flex min-w-0 items-center gap-1 text-[9px] font-bold text-[#3B2F1E]/65">
                         <span>W</span>
                         <PresetDimensionField value={entry.widthMm} ariaLabel={`${entry.label} width`} onCommit={(value) => updatePresetDimension(entry.id, "widthMm", value)}/>
-                        <span>mm</span>
+                        <span>মিমি</span>
                       </label>
                       <label className="flex min-w-0 items-center gap-1 text-[9px] font-bold text-[#3B2F1E]/65">
                         <span>H</span>
                         <PresetDimensionField value={entry.heightMm} ariaLabel={`${entry.label} height`} onCommit={(value) => updatePresetDimension(entry.id, "heightMm", value)}/>
-                        <span>mm</span>
+                        <span>মিমি</span>
                       </label>
                     </div>
                   </div>))}
@@ -1783,18 +2038,18 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                   return <div key={entry.id} className="rounded-lg border border-[#E3D6B8] bg-white/45 p-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-bold text-[#3B2F1E]">{entry.label}</span>
-                      <button type="button" onClick={() => addPreset(entry)} disabled={!hasActivePhotoForQuickAdd} className="h-6 min-w-10 rounded-md bg-[#DC2626] px-2 text-[10px] font-extrabold text-white transition-colors hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40">+ Add</button>
+                      <button type="button" onClick={() => addPreset(entry)} disabled={!hasActivePhotoForQuickAdd} className="h-6 min-w-10 rounded-md bg-[#DC2626] px-2 text-[10px] font-extrabold text-white transition-colors hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40">+ যোগ</button>
                     </div>
                     <div className="mt-1.5 grid grid-cols-2 gap-1.5">
                       <label className="flex min-w-0 items-center gap-1 text-[9px] font-bold text-[#3B2F1E]/65">
                         <span>W</span>
                         <PresetDimensionField value={entry.widthMm} ariaLabel={`${entry.label} width`} onCommit={(value) => updatePresetDimension(entry.id, "widthMm", value)}/>
-                        <span>mm</span>
+                        <span>মিমি</span>
                       </label>
                       <label className="flex min-w-0 items-center gap-1 text-[9px] font-bold text-[#3B2F1E]/65">
                         <span>H</span>
                         <PresetDimensionField value={entry.heightMm} ariaLabel={`${entry.label} height`} onCommit={(value) => updatePresetDimension(entry.id, "heightMm", value)}/>
-                        <span>mm</span>
+                        <span>মিমি</span>
                       </label>
                     </div>
                   </div>;
@@ -1826,7 +2081,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 </div>
               </div>
               <p className="text-[10px] text-[#3B2F1E]/55 mt-1.5">
-                = {roundNice(customWidthMm)} × {roundNice(customHeightMm)} mm
+                = {roundNice(customWidthMm)} × {roundNice(customHeightMm)} মিমি
               </p>
               {customWillCrop && (<p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-2 leading-snug">
                   {t("This ratio is different from your photo, so the photo will be center-cropped to fit.")}
@@ -1835,7 +2090,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 {[1, 4, 8].map((quantity) => (<button key={quantity} type="button" onClick={() => addCustom(quantity)} disabled={!hasActivePhotoForQuickAdd} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[11px] font-extrabold cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                     +{quantity}
                   </button>))}
-                <button type="button" onClick={() => addCustom(MAX_ITEMS, true)} disabled={!hasActivePhotoForQuickAdd} className="h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => addCustom(MAX_ITEMS, true, activePageValue)} disabled={!hasActivePhotoForQuickAdd} className="h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   {t("Fill")}
                 </button>
               </div>
@@ -1961,7 +2216,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
               <div className="flex items-center justify-between">
                 <p className="text-[11px] uppercase font-bold text-[#3B2F1E]/50">{t("Total")}</p>
                 <p className="text-[11px] font-bold text-[#3B2F1E]/60">
-                  {pageUsage}% {t("page used")}
+                  {sheetCount > 1 ? `${sheetCount} পেজ · ` : ""}{pageUsage}% {t("page used")}
                 </p>
               </div>
               <p className="text-[13px] font-extrabold text-[#3B2F1E] mt-0.5">
@@ -1987,7 +2242,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             <p className="mt-2 text-[10px] leading-snug text-[#3B2F1E]/60">
               {t("Print tip: select the same paper size, set Margins to None, Scale to 100%, and turn off Headers and footers.")}{" "}
               <span className="font-bold text-[#3B2F1E]/80">
-                {t("Paper size")}: {pageWidthMm} × {pageHeightMm} mm
+                {t("Paper size")}: {pageWidthMm} × {pageHeightMm} মিমি
               </span>
             </p>
             {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#d8c9a4] text-[#3B2F1E] text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
@@ -2000,7 +2255,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F2E8D2]">
           <div className="h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-4 flex items-center justify-between">
             <div className="text-[11px] font-bold text-[#3B2F1E]/70">
-              {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{pageHeightMm.toFixed(1)} mm
+              {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{pageHeightMm.toFixed(1)} মিমি{sheetCount > 1 ? ` • ${sheetCount} পেজ` : ""}
             </div>
             <div className="flex items-center gap-1.5">
               <button type="button" onClick={() => setZoomCentered(zoom - ZOOM_STEP)} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
@@ -2017,8 +2272,10 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
           </div>
 
           <div ref={workspaceRef} className={`relative flex-1 min-h-0 overflow-auto select-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={onWorkspacePointerDown} onPointerMove={onWorkspacePointerMove} onPointerUp={endWorkspacePan} onPointerCancel={endWorkspacePan}>
-            <div className="flex min-h-full min-w-full w-max p-5 sm:p-6">
-            <div ref={pageRef} className="relative m-auto shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
+            <div className="flex flex-col items-center justify-center gap-8 min-h-full min-w-full w-max p-5 sm:p-6">
+            {pageNumbers.map((pageValue, pageIndex) => (<div key={pageValue} className="shrink-0">
+            {sheetCount > 1 && (<p className="mb-1.5 text-[11px] font-extrabold text-[#3B2F1E]/70">পেজ {pageIndex + 1} / {sheetCount}</p>)}
+            <div ref={(node) => { if (node) pageRefs.current.set(pageValue, node); else pageRefs.current.delete(pageValue); }} className="relative shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
             width: `${pageWidthMm * visualScale}px`,
             height: `${pageHeightMm * visualScale}px`,
         }}>
@@ -2028,7 +2285,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 right: `${marginGuidePx}px`,
                 bottom: `${marginGuidePx}px`,
             }}/>)}
-              {items.map((item) => {
+              {items.filter((item) => pageOf(item) === pageValue).map((item) => {
             const selected = item.id === selectedId;
             const left = (item.xMm / pageWidthMm) * 100;
             const top = (item.yMm / pageHeightMm) * 100;
@@ -2065,14 +2322,14 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                           </button>
 
                           <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-[#3B2F1E]/90 text-white px-1.5 py-1 text-[11px] font-bold whitespace-nowrap pointer-events-none">
-                            {t(item.label)} · {item.widthMm.toFixed(1)}×{item.heightMm.toFixed(1)} mm
+                            {t(item.label)} · {item.widthMm.toFixed(1)}×{item.heightMm.toFixed(1)} মিমি
                           </div>
                         </>)}
                     </div>
                   </div>);
         })}
 
-              {!items.length && (<div className="absolute inset-0 flex items-center justify-center text-center pointer-events-none">
+              {!items.length && pageIndex === 0 && (<div className="absolute inset-0 flex items-center justify-center text-center pointer-events-none">
                   <div>
                     <div className="w-11 h-11 rounded-xl bg-[#E3D6B8] flex items-center justify-center mx-auto mb-2 text-[#3B2F1E]/40">
                       <Grid3X3 size={19}/>
@@ -2082,10 +2339,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                   </div>
                 </div>)}
             </div>
+            </div>))}
             </div>
           </div>
 
-          <div className="h-9 shrink-0 bg-white/80 border-t border-[#E3D6B8] px-4 flex items-center justify-center gap-2 text-[11px] text-[#3B2F1E]/60">
+          <div className="min-h-[36px] shrink-0 bg-white/80 border-t border-[#E3D6B8] px-4 py-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] text-[#3B2F1E]/60">
             <Move size={11}/>
             {t("Drag")}
             <span>•</span>
@@ -2096,6 +2354,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             {t("Resize")}
             <span>•</span>
             <span>{t("Drag empty space to move around · Ctrl+scroll to zoom · Arrow keys: nudge · Delete: remove")}</span>
+            <span>•</span>
+            <span className="font-bold text-[#DC2626]">{t("To delete a photo: click it, then press the red ✕ (or the Delete key).")}</span>
             {selectedItem && (<>
                 <span>•</span>
                 <span>{t(selectedItem.label)}</span>
@@ -2108,6 +2368,24 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             <p className="text-[11px] text-[#3B2F1E]/70 mt-0.5 leading-relaxed">{t(toast.message)}</p>
           </div>)}
       </div>
+
+      {confirmClose && (<div className="absolute inset-0 z-[10040] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={t("Keep this layout?")} onMouseDown={(event) => { if (event.currentTarget === event.target && !isSavingSession) setConfirmClose(false); }}>
+          <div className="w-full max-w-[420px] rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-5 shadow-2xl">
+            <h2 className="text-base font-extrabold text-[#3B2F1E]">{t("Keep this layout?")}</h2>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[#3B2F1E]/70">{t("If you save it, this layout stays under 'Saved Prints' on the page so you can open and print it again later.")}</p>
+            <div className="mt-4 grid gap-2">
+              <button type="button" onClick={() => { void saveAndClose(); }} disabled={isSavingSession} className="h-10 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-[13px] font-extrabold cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-wait">
+                {isSavingSession ? t("Saving…") : t("Save and close")}
+              </button>
+              <button type="button" onClick={() => { setConfirmClose(false); closePrintStudio(); }} disabled={isSavingSession} className="h-10 rounded-lg border border-[#DC2626]/40 bg-white text-[#DC2626] hover:bg-[#DC2626]/5 text-[13px] font-extrabold cursor-pointer transition-colors disabled:opacity-60">
+                {t("Close without saving")}
+              </button>
+              <button type="button" onClick={() => setConfirmClose(false)} disabled={isSavingSession} className="h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#d8c9a4] text-[#3B2F1E] text-[12px] font-bold cursor-pointer transition-colors disabled:opacity-60">
+                {t("Go back")}
+              </button>
+            </div>
+          </div>
+        </div>)}
 
       <footer className="h-8 shrink-0 bg-[#FBF6E8] border-t border-[#E3D6B8] px-4 flex items-center justify-between text-[11px] text-[#3B2F1E]/50">
         <span>{t("Photo Layout & Print Studio")}</span>

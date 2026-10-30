@@ -34,6 +34,7 @@ import {
   Paintbrush,
   PenLine,
   Pencil,
+  RotateCw,
   Pipette,
   Printer,
   Ruler,
@@ -123,6 +124,7 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
 
   // Eyes & Facial Details
   "Straighten Head": ScanFace,
+  "Straighten Tilted Photo": RotateCw,
   "Keep Marks": ShieldCheck,
   "Brighten Eyes": Eye,
   "Sharpen Eye Details": ScanEye,
@@ -236,6 +238,7 @@ export const EDITING_GUIDES: EditingGuidePreset[] = [
   { label: "Lipstick", category: "portrait-skin", prompt: "Apply subtle, natural-looking lipstick in a flattering shade that suits the person's skin tone. Preserve the original lip shape, teeth, expression, facial identity, and realistic lip texture." },
 
   // Eyes & Facial Details (12)
+  { label: "Straighten Tilted Photo", category: "eyes-details", prompt: "The photo was taken at a tilt (crooked phone, leaning head or neck, slanted shoulders). Rotate and level the whole subject so the head, neck and shoulders sit naturally upright and symmetrical, facing the camera, with level shoulders and a vertical spine/neck line. Keep the person's identity, facial features, expression, skin tone, hair and clothing exactly the same; do not change face shape or proportions, and rebuild any edge areas revealed by the rotation naturally." },
   { label: "Straighten Head", category: "eyes-details", prompt: "Correct the head angle so the face is naturally upright and looking toward the camera, preserving facial proportions and a realistic neck and shoulder position." },
   { label: "Keep Marks", category: "eyes-details", prompt: "Preserve natural identifying marks such as freckles, moles, scars, birthmarks, and other stable facial details." },
   { label: "Brighten Eyes", category: "eyes-details", prompt: "Make the eyes appear a little clearer and more lively with subtle, realistic brightness. Preserve the original eye shape, iris color, gaze, and expression." },
@@ -363,6 +366,7 @@ export const EDITING_GUIDE_META: Record<string, EditingGuideMeta> = {
 
   // Pose
   "Straighten Head": { changesPose: true },
+  "Straighten Tilted Photo": { changesPose: true },
   "Align Eye Line": { changesPose: true },
 
   // Background-touching presets

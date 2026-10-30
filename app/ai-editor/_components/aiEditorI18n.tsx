@@ -130,6 +130,7 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Brighten Image": "ছবি উজ্জ্বল করুন",
   "Studio Lighting": "স্টুডিও আলো",
   "Straighten Head": "মাথার অবস্থান সোজা করুন",
+  "Straighten Tilted Photo": "বাঁকা ছবি সোজা করুন",
   "Keep Marks": "স্বাভাবিক দাগ রাখুন",
   Lipstick: "লিপস্টিক",
   "All categories": "সব বিভাগ",
@@ -584,9 +585,70 @@ const AI_EDITOR_BN: Record<string, string> = {
   "You moved photos by hand. Press Auto to apply the new gap and margin.": "আপনি ছবি হাতে সরিয়েছেন। নতুন ফাঁক ও মার্জিন লাগাতে Auto চাপুন।",
   "Print tip: in the print dialog set Margins to None and Scale to 100%.": "প্রিন্ট টিপ: প্রিন্ট ডায়ালগে Margins = None আর Scale = 100% দিন।",
   "Paper size": "কাগজের মাপ",
+  "Recent Photos": "সাম্প্রতিক ছবি",
+  "Click a photo to add it to the print sheets.": "ছবিতে ক্লিক করলে সেটি প্রিন্ট পেজে যোগ হবে।",
+  "Add to print": "প্রিন্টে যোগ করুন",
+  "To delete a photo: click it, then press the red ✕ (or the Delete key).": "ছবি মুছতে: ছবিতে ক্লিক করুন, তারপর লাল ✕ চাপুন (বা Delete কী)।",
+  "Keep this layout?": "এই পরিবর্তনটি কি এভাবেই রাখতে চান?",
+  "If you save it, this layout stays under 'Saved Prints' on the page so you can open and print it again later.": "সংরক্ষণ করলে এই লেআউট পেজের নিচের 'সংরক্ষিত প্রিন্ট' অংশে থাকবে, পরে আবার খুলে প্রিন্ট করতে পারবেন।",
+  "Saving…": "সংরক্ষণ হচ্ছে…",
+  "Save and close": "সংরক্ষণ করে বন্ধ করুন",
+  "Close without saving": "সংরক্ষণ ছাড়া বন্ধ করুন",
+  "Go back": "ফিরে যান",
   "Could not prepare the print file.": "প্রিন্ট ফাইল তৈরি করা যায়নি।",
   "Could not load the print image.": "প্রিন্টের ছবি লোড করা যায়নি।",
   "Printing failed. Please use Download PDF and print the PDF instead.": "প্রিন্ট করা যায়নি। অনুগ্রহ করে PDF ডাউনলোড করে সেই PDF প্রিন্ট করুন।",
+};
+
+/** Additional UI strings (kept separate so they can never clash with keys above). */
+const AI_EDITOR_BN_EXTRA: Record<string, string> = {
+  "Passport": "পাসপোর্ট", "Dual": "ডুয়াল", "E-Pass": "ই-পাস", "Visa": "ভিসা", "Birth": "জন্ম নিবন্ধন",
+  "BACKGROUND": "ব্যাকগ্রাউন্ড", "PNG": "PNG", "selected": "টি নির্বাচিত", "Done": "সম্পন্ন", "Cancel": "বাতিল",
+  "Close": "বন্ধ করুন", "Locked": "লক করা", "Clothing": "পোশাক", "Default Clothing": "ডিফল্ট পোশাক",
+  "Edit": "সম্পাদনা", "Delete": "মুছুন", "Print": "প্রিন্ট", "Download": "ডাউনলোড", "Transparent": "স্বচ্ছ",
+  "Save": "সংরক্ষণ", "Share": "শেয়ার", "Compare": "তুলনা", "Orig": "আসল", "Comp": "নতুন",
+  "Regenerate": "আবার জেনারেট করুন", "Retry": "আবার চেষ্টা করুন", "Rotate": "ঘোরান", "Crop": "ক্রপ",
+  "Brush": "ব্রাশ", "Eraser": "ইরেজার", "px": "পিক্সেল", "Adjustments": "অ্যাডজাস্টমেন্ট", "View": "দেখুন",
+  "Copied": "কপি হয়েছে", "+ Add": "+ যোগ", "mm": "মিমি", "Dual photo": "ডুয়াল ছবি",
+  "No photo selected": "কোনো ছবি নির্বাচিত নেই", "Invalid size": "ভুল মাপ",
+  "Recommended for Passport & Visa": "পাসপোর্ট ও ভিসার জন্য প্রস্তাবিত",
+  "Print Sheet (4×6\")": "প্রিন্ট শিট (৪×৬\")",
+  "QR code unavailable": "QR কোড পাওয়া যাচ্ছে না", "Seba Lagbe": "সেবা লাগবে",
+  "Print Studio is not available.": "প্রিন্ট স্টুডিও এখন পাওয়া যাচ্ছে না।",
+  "Could not complete the selected action.": "নির্বাচিত কাজটি সম্পন্ন করা যায়নি।",
+  "Could not open the print studio.": "প্রিন্ট স্টুডিও খোলা যায়নি।",
+  "Opening print studio failed:": "প্রিন্ট স্টুডিও খুলতে ব্যর্থ:",
+  "Could not decode the print image.": "প্রিন্টের ছবি পড়া যায়নি।",
+  "The print image could not be loaded at full resolution.": "প্রিন্টের ছবি পূর্ণ রেজোলিউশনে লোড করা যায়নি।",
+  "Print tip: select the same paper size, set Margins to None, Scale to 100%, and turn off Headers and footers.": "প্রিন্ট টিপ: একই কাগজের মাপ নিন, Margins = None, Scale = 100% দিন এবং Headers and footers বন্ধ রাখুন।",
+  "Choose a JPG, PNG, or WebP image. Images are resized securely before sending.": "JPG, PNG বা WebP ছবি বেছে নিন। পাঠানোর আগে ছবি নিরাপদে ছোট করা হবে।",
+  "Unable to render the local upload QR code:": "আপলোড QR কোড তৈরি করা যায়নি:",
+  "The QR upload was received, but its temporary server copy could not be cleared immediately.": "QR আপলোড পাওয়া গেছে, কিন্তু সার্ভারের সাময়িক কপিটি এখনই মোছা যায়নি।",
+  "Could not transfer the phone photo to the editor:": "ফোনের ছবি এডিটরে আনা যায়নি:",
+  "Please select a valid image file.": "অনুগ্রহ করে সঠিক ছবির ফাইল বেছে নিন।",
+  "Image is too large. Please choose an image under 12 MB.": "ছবিটি অনেক বড়। ১২ MB-এর কম ছবি বেছে নিন।",
+  "Image upload failed.": "ছবি আপলোড করা যায়নি।",
+  "Could not process this image. Please try another image.": "এই ছবিটি প্রসেস করা যায়নি। অন্য ছবি চেষ্টা করুন।",
+  "Could not open this dual photo for regeneration.": "এই ডুয়াল ছবিটি আবার জেনারেট করার জন্য খোলা যায়নি।",
+  "Dual mode needs both left and right photos.": "ডুয়াল মোডে বাম ও ডান দুটি ছবিই লাগবে।",
+  "Upload a photo before generating.": "জেনারেট করার আগে একটি ছবি আপলোড করুন।",
+  "Could not prepare selected photos for printing.": "নির্বাচিত ছবি প্রিন্টের জন্য প্রস্তুত করা যায়নি।",
+  "Could not print this image.": "এই ছবি প্রিন্ট করা যায়নি।",
+  "Could not load image for the dual photo.": "ডুয়াল ছবির জন্য ছবি লোড করা যায়নি।",
+  "Could not create the dual photo canvas.": "ডুয়াল ছবির ক্যানভাস তৈরি করা যায়নি।",
+  "Could not split the dual photo.": "ডুয়াল ছবি আলাদা করা যায়নি।",
+  "Could not save the combined original photo:": "একত্রিত আসল ছবি সংরক্ষণ করা যায়নি:",
+  "Generation error:": "জেনারেশনে ত্রুটি:",
+  "Error deleting image:": "ছবি মুছতে ত্রুটি:",
+  "Cloudinary Upload Error:": "আপলোডে ত্রুটি:",
+  "Crop & Upload error:": "ক্রপ ও আপলোডে ত্রুটি:",
+  "Dual regenerate error:": "ডুয়াল আবার জেনারেটে ত্রুটি:",
+  "Subscription gate check failed:": "সাবস্ক্রিপশন যাচাই ব্যর্থ:",
+  "Generation settings": "জেনারেশন সেটিংস",
+  "White": "সাদা", "Black": "কালো", "Red": "লাল", "Blue": "নীল", "Green": "সবুজ", "Navy": "নেভি", "Gray": "ধূসর",
+  "Brown": "বাদামি", "Yellow": "হলুদ", "Pink": "গোলাপি", "Purple": "বেগুনি", "Orange": "কমলা", "Maroon": "মেরুন",
+  "Teal": "টিল", "Olive": "জলপাই", "Beige": "বেইজ", "Amber": "অ্যাম্বার", "Magenta": "ম্যাজেন্টা", "Cyan": "সায়ান",
+  "Letter — 216×279 mm": "লেটার — ২১৬×২৭৯ মিমি",
 };
 
 function normalizeAiText(value: string): string {
@@ -608,7 +670,16 @@ function translateAiText(
   if (!locale || !locale.toLowerCase().startsWith("bn")) return raw;
 
   const key = normalizeAiText(raw);
+  if (AI_EDITOR_BN_EXTRA[key]) return AI_EDITOR_BN_EXTRA[key];
   if (AI_EDITOR_BN[key]) return AI_EDITOR_BN[key];
+
+  // "Some prefix: details" — translate the known prefix, keep the dynamic details.
+  const colon = key.indexOf(":");
+  if (colon > 0) {
+    const head = `${key.slice(0, colon)}:`;
+    const known = AI_EDITOR_BN_EXTRA[head] ?? AI_EDITOR_BN[head];
+    if (known) return `${known} ${key.slice(colon + 1).trim()}`.trim();
+  }
 
   let match = key.match(/^(\d+)\s+images?$/i);
   if (match) return `${match[1]}টি ছবি`;
@@ -661,8 +732,12 @@ function translateAiText(
   return raw;
 }
 
+/** The AI Editor page is always shown in Bangla. Set to false to follow the site language toggle again. */
+const FORCE_BANGLA = true;
+
 export function useAiEditorText() {
-  const { locale, L: baseL } = useSebaLagbeToolsI18n();
+  const { locale: siteLocale, L: baseL } = useSebaLagbeToolsI18n();
+  const locale = FORCE_BANGLA ? "bn" : siteLocale;
   const t = useCallback(
     (value: string) => translateAiText(value, locale, baseL),
     [locale, baseL],

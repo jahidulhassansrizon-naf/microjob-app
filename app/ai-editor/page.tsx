@@ -1,6 +1,6 @@
 "use client";
 import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import SubscriptionLock from "./_components/SubscriptionLock";
@@ -13,6 +13,7 @@ import ImagePreviewModal from "./_components/ImagePreviewModal";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
 import AiPrintStudioModal from "./_components/AiPrintStudioModal";
 import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
+import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import CropStage from "./_components/CropStage";
 import "react-image-crop/dist/ReactCrop.css";
@@ -55,7 +56,11 @@ export default function PhotoEditorPage() {
     // Photo that was just generated: drives the right-side actions panel and the inline print studio.
     const [resultItem, setResultItem] = useState<GeneratedResultItem | null>(null);
     const [printSession, setPrintSession] = useState<PrintSession | null>(null);
-    const [bulkPrintSources, setBulkPrintSources] = useState<Array<{ image: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> | null>(null);
+    const [bulkPrintSources, setBulkPrintSources] = useState<Array<{ image: string; sourceKey?: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> | null>(null);
+    // Print layouts the user kept when closing the print studio (stored in this browser).
+    const [savedSessions, setSavedSessions] = useState<PrintSessionMeta[]>([]);
+    const [savedSnapshot, setSavedSnapshot] = useState<PrintSessionSnapshot | null>(null);
+    const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
     const [previewStartWithEdit, setPreviewStartWithEdit] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     // Prevent duplicate generation submissions before React has time to re-render.
@@ -1531,18 +1536,79 @@ export default function PhotoEditorPage() {
     }, [tempImageForCrop]);
     const handleBulkPrint = async (items: any[]) => {
         try {
-            const sources: Array<{ image: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> = [];
+            const sources: Array<{ image: string; sourceKey?: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> = [];
             for (const item of items) {
                 const payload = await buildPrintStudioPayload(item);
-                sources.push({ image: payload.dataUrl, preset: payload.preset });
+                sources.push({ image: payload.dataUrl, sourceKey: String(item.url), preset: payload.preset });
             }
             setPrintSession(null);
+            setSavedSnapshot(null);
+            setActiveSavedId(null);
             setBulkPrintSources(sources);
         }
         catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "Could not prepare selected photos for printing.");
             throw error;
         }
+    };
+
+    const refreshSavedSessions = useCallback(async () => {
+        try {
+            setSavedSessions(await listPrintSessions());
+        }
+        catch {
+            setSavedSessions([]);
+        }
+    }, []);
+    useEffect(() => {
+        void refreshSavedSessions();
+    }, [refreshSavedSessions]);
+    const handleSavePrintSession = async (snapshot: PrintSessionSnapshot) => {
+        const id = await savePrintSession(snapshot, activeSavedId);
+        setActiveSavedId(id);
+        await refreshSavedSessions();
+    };
+    const handleOpenSavedSession = async (id: string) => {
+        try {
+            const snapshot = await getPrintSession(id);
+            if (!snapshot || !snapshot.items.length) {
+                setErrorMessage("এই সংরক্ষিত প্রিন্টটি খুঁজে পাওয়া যায়নি।");
+                await refreshSavedSessions();
+                return;
+            }
+            const distinct = new Map<string, { image: string; sourceKey?: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }>();
+            for (const item of snapshot.items) {
+                if (!distinct.has(item.image)) {
+                    distinct.set(item.image, { image: item.image, sourceKey: item.sourceKey, preset: { id: "saved-photo", label: item.label, widthMm: item.widthMm, heightMm: item.heightMm } });
+                }
+            }
+            setPrintSession(null);
+            setSavedSnapshot(snapshot);
+            setActiveSavedId(id);
+            setBulkPrintSources(Array.from(distinct.values()));
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : "সংরক্ষিত প্রিন্ট খোলা যায়নি।");
+        }
+    };
+    const handleDeleteSavedSession = async (id: string) => {
+        try {
+            await deletePrintSession(id);
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : "সংরক্ষিত প্রিন্ট মোছা যায়নি।");
+        }
+        await refreshSavedSessions();
+    };
+    const recentPrintImages = useMemo(() => recentList
+        .filter((entry) => entry && typeof entry.url === "string" && entry.url)
+        .map((entry) => ({ key: String(entry.url), url: String(entry.url) })), [recentList]);
+    const resolveRecentForPrint = async (key: string) => {
+        const entry = recentList.find((candidate) => candidate && String(candidate.url) === key);
+        if (!entry)
+            throw new Error("ছবিটি খুঁজে পাওয়া যায়নি।");
+        const payload = await buildPrintStudioPayload(entry);
+        return { image: payload.dataUrl, preset: payload.preset };
     };
 
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
@@ -1563,7 +1629,7 @@ export default function PhotoEditorPage() {
       <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden"/>
 
       {errorMessage && (<div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-red-700 shadow-xl">
-          {errorMessage}
+          <AiT>{errorMessage}</AiT>
         </div>)}
 
       {showCropModal && (<div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
@@ -1666,7 +1732,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>)}
 
-      <AiPrintStudioModal open={!!printSession || !!bulkPrintSources?.length} image={bulkPrintSources?.[0]?.image ?? printSession?.image ?? null} preset={bulkPrintSources?.[0]?.preset ?? printSession?.preset ?? null} images={bulkPrintSources ?? undefined} onClose={() => { setPrintSession(null); setBulkPrintSources(null); }} onPrintSingle={!bulkPrintSources && resultItem ? async () => {
+      <AiPrintStudioModal open={!!printSession || !!bulkPrintSources?.length} image={bulkPrintSources?.[0]?.image ?? printSession?.image ?? null} preset={bulkPrintSources?.[0]?.preset ?? printSession?.preset ?? null} images={bulkPrintSources ?? undefined} recentImages={recentPrintImages} onResolveRecent={resolveRecentForPrint} onSaveSession={handleSavePrintSession} initialSnapshot={savedSnapshot} onClose={() => { setPrintSession(null); setBulkPrintSources(null); setSavedSnapshot(null); setActiveSavedId(null); }} onPrintSingle={!bulkPrintSources && resultItem ? async () => {
         try {
             await printSinglePhoto(resultItem);
         }
@@ -1704,7 +1770,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>
 
-                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching}/>
+                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession}/>
       </div>
       <ConfirmDeleteModal open={!!deleteTarget} imageUrl={deleteTarget?.url} onCancel={() => setDeleteTarget(null)} onConfirm={() => performDeleteImage(deleteTarget)}/>
       </div>);

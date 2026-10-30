@@ -69,14 +69,31 @@ export interface GenerationSettingsProps {
   onResetSettings?: () => void;
 }
 const QUICK_EDITING_GUIDES = [
-  "Glow & Makeup",
-  "Smooth Skin",
-  "Brighten Image",
-  "Studio Lighting",
+  // Essentials for passport / visa / ID photos come first.
+  "Restore Old Photo",
+  "Straighten Tilted Photo",
   "Straighten Head",
+  "Brighten Image",
+  "Smooth Skin",
+  "Studio Lighting",
+  "Glow & Makeup",
   "Keep Marks",
   "Lipstick",
-  "Restore Old Photo",
+  "Even Face Lighting",
+  "Fix Underexposure",
+  "Reduce Harsh Shadows",
+  "Clean ID Photo Background",
+  "Passport Photo Polish",
+  "Deblur Image",
+  "Sharpen Details",
+  "Reduce Glasses Glare",
+  "Tame Stray Hair",
+  "Align Eye Line",
+  "Refine Photo Framing",
+  "Correct Perspective",
+  "Remove Blemishes",
+  "Even Skin Tone",
+  "Reduce Dark Circles",
 ];
 const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
@@ -730,43 +747,116 @@ export default function GenerationSettings({
   // zoom = min(1, H / R); wrapper height = H / zoom  =>  clothing area never < CLOTHING_MIN_H.
   const fitWrapRef = useRef<HTMLDivElement | null>(null);
   const zoomRef = useRef(1);
-  const CLOTHING_MIN_H = 330;
+  // Both lists always show WHOLE rows (never a half-cut row). Row counts are tried from
+  // roomiest to tightest; the first combination that keeps the zoom comfortable wins.
+  const FIT_LEVELS = [
+    { c: 5, g: 4 },
+    { c: 4, g: 4 },
+    { c: 4, g: 3 },
+    { c: 3, g: 3 },
+    { c: 3, g: 2 },
+    { c: 2, g: 2 },
+  ];
+  const MIN_COMFORT_ZOOM = 0.66;
+  const MIN_FIT_ZOOM = 0.5;
+  // Height of `rows` whole rows of tiles inside a scroller (tile height + gaps + padding).
+  const rowsHeight = (box: HTMLElement | null, rows: number, fallback: number) => {
+    if (!box) return fallback;
+    const tile = box.querySelector("button") as HTMLElement | null;
+    const grid = box.querySelector(".grid") as HTMLElement | null;
+    if (!tile) return fallback;
+    const cs = getComputedStyle(box);
+    const gap = grid ? parseFloat(getComputedStyle(grid).rowGap || "0") || 0 : 0;
+    const pad = (parseFloat(cs.paddingTop || "0") || 0) + (parseFloat(cs.paddingBottom || "0") || 0);
+    return Math.ceil(rows * tile.getBoundingClientRect().height + (rows - 1) * gap + pad);
+  };
   const fitPanelToViewport = () => {
     const root = panelRootRef.current;
     const wrap = fitWrapRef.current;
     if (!root || !wrap) return;
     const scroller = wrap.querySelector("[data-scroller]") as HTMLElement | null;
+    const guideScroller = wrap.querySelector("[data-guide-scroller]") as HTMLElement | null;
     const savedScroll = scroller ? scroller.scrollTop : 0;
+    const resetLists = () => {
+      if (scroller) {
+        scroller.style.flex = "";
+        scroller.style.height = "";
+        scroller.style.minHeight = "";
+      }
+      if (guideScroller) guideScroller.style.height = "";
+    };
     wrap.style.zoom = "";
     wrap.style.height = "auto";
-    if (scroller) scroller.style.minHeight = "";
+    wrap.style.setProperty("--tz", "1");
+    resetLists();
     zoomRef.current = 1;
     if (!window.matchMedia("(min-width: 1280px)").matches) {
       wrap.style.height = "";
       return;
-    }
-    // flex-basis 0% resolves to content height in an auto-height parent, so pin the
-    // clothing list to its minimum while measuring.
-    if (scroller) {
-      scroller.style.flex = "0 0 auto";
-      scroller.style.height = `${CLOTHING_MIN_H}px`;
     }
     const cs = getComputedStyle(root);
     const H =
       root.clientHeight -
       parseFloat(cs.paddingTop || "0") -
       parseFloat(cs.paddingBottom || "0");
-    const R = wrap.getBoundingClientRect().height + 1;
-    if (scroller) {
-      scroller.style.flex = "";
-      scroller.style.height = "";
-      scroller.style.minHeight = `${CLOTHING_MIN_H}px`;
+    // For one row-count combination: size both lists to whole rows, then settle the zoom.
+    // Text is counter-scaled by 1 / zoom (CSS var --tz) so labels keep their on-screen size,
+    // which makes the panel a little taller, so a few passes are needed.
+    const settle = (lv: { c: number; g: number }) => {
+      let z = 1;
+      let R = 1;
+      for (let i = 0; i < 5; i++) {
+        wrap.style.setProperty("--tz", String(z));
+        wrap.style.zoom = "";
+        wrap.style.height = "auto";
+        resetLists();
+        const ch = rowsHeight(scroller, lv.c, 250);
+        const gh = rowsHeight(guideScroller, lv.g, 200);
+        if (scroller) {
+          scroller.style.flex = "0 0 auto";
+          scroller.style.height = `${ch}px`;
+        }
+        if (guideScroller) guideScroller.style.height = `${gh}px`;
+        R = wrap.getBoundingClientRect().height + 1;
+        const next = Math.max(0.3, Math.min(1, H / R));
+        const done = Math.abs(next - z) < 0.005;
+        z = next;
+        if (done) break;
+      }
+      return { z, R };
+    };
+    let chosen = FIT_LEVELS[FIT_LEVELS.length - 1];
+    let res = { z: 1, R: 1 };
+    for (let i = 0; i < FIT_LEVELS.length; i++) {
+      chosen = FIT_LEVELS[i];
+      res = settle(chosen);
+      if (res.z >= MIN_COMFORT_ZOOM) break;
     }
-    const z = Math.max(0.55, Math.min(1, H / R));
+    // Leave the last pass for the chosen level applied (settle() ends with it applied).
+    if (FIT_LEVELS[FIT_LEVELS.length - 1] !== chosen || res.z < MIN_COMFORT_ZOOM) {
+      res = settle(chosen);
+    }
+    // Viewport far too short for even the tightest layout (e.g. browser zoom 150%+):
+    // never squash or break it. Show it at natural size and let the panel scroll instead.
+    if (res.z < MIN_FIT_ZOOM) {
+      wrap.style.setProperty("--tz", "1");
+      wrap.style.zoom = "";
+      wrap.style.height = "";
+      resetLists();
+      const last = FIT_LEVELS[FIT_LEVELS.length - 1];
+      if (scroller) {
+        scroller.style.flex = "0 0 auto";
+        scroller.style.height = `${rowsHeight(scroller, last.c, 250)}px`;
+      }
+      if (guideScroller) guideScroller.style.height = `${rowsHeight(guideScroller, last.g, 200)}px`;
+      zoomRef.current = 1;
+      return;
+    }
+    const z = res.z;
+    wrap.style.setProperty("--tz", String(z));
     zoomRef.current = z;
     if (z < 1) wrap.style.zoom = String(z);
     wrap.style.height = `${H / z}px`;
-    // Measuring shrinks the list for a moment, which clamps its scroll position.
     if (scroller && scroller.scrollTop !== savedScroll) scroller.scrollTop = savedScroll;
   };
   useLayoutEffect(() => {
@@ -784,7 +874,7 @@ export default function GenerationSettings({
     };
   }, []);
   return (
-    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="ai-scroll w-full max-w-full lg:w-[340px] xl:w-[420px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
+    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
       <style>{`
         .ai-scroll [data-grab], .ai-scroll [data-grab] * { cursor: grab; }
         .ai-scroll input, .ai-scroll textarea { cursor: text; }
@@ -800,7 +890,7 @@ export default function GenerationSettings({
       <div ref={fitWrapRef} className="flex flex-col">
       <div className="xl:flex-1 xl:min-h-0 flex flex-col">
         <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
-          <span className="font-semibold text-base text-[#3B2F1E] flex items-center gap-2">
+          <span className="font-semibold text-base xl:text-[length:calc(20px/var(--tz,1))] text-[#3B2F1E] flex items-center gap-2">
             <span className="w-1 h-4 bg-[#DC2626] rounded-full" />
             <AiT>{"Generation settings\n          "}</AiT>
           </span>
@@ -811,7 +901,7 @@ export default function GenerationSettings({
           className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={visaPopupRef}
         >
-          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
+          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <span>
               <AiT>{"PHOTO SIZE"}</AiT>
             </span>
@@ -839,7 +929,7 @@ export default function GenerationSettings({
                   onClick={() => handleSizeClick(size.id)}
                   title={size.tooltip ? t(size.tooltip) : undefined}
                   type="button"
-                  className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[12px] relative transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.55vh,8px)] rounded-xl border text-[12px] xl:text-[length:calc(14px/var(--tz,1))] xl:font-semibold relative transition-all cursor-pointer ${
                     isActive
                       ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626] font-medium"
                       : "border-[#E3D6B8] text-[#3B2F1E] hover:border-stone-300"
@@ -908,11 +998,11 @@ export default function GenerationSettings({
           className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={colorPickerRef}
         >
-          <div className="text-sm text-stone-500 mb-2">
+          <div className="text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <AiT>{"BACKGROUND"}</AiT>
           </div>
 
-          <div className="grid grid-cols-5 gap-x-2 gap-y-3 justify-items-center">
+          <div className="grid grid-cols-5 xl:grid-cols-10 gap-x-2 gap-y-3 xl:gap-y-[clamp(4px,0.8vh,12px)] justify-items-center">
             {backgroundColors.map((bg, idx) => {
               const isSelected = selectedBg === idx;
               if (bg.type === "transparent") {
@@ -1057,12 +1147,12 @@ export default function GenerationSettings({
           className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative flex flex-col xl:flex-1 xl:min-h-0"
           ref={clothingColorPopupRef}
         >
-          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
+          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <span>
               <AiT>{"CLOTHING STYLE"}</AiT>
             </span>
 
-            <span className="text-[12px] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-medium">
+            <span className="text-[12px] xl:text-[length:calc(14px/var(--tz,1))] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-semibold">
               {CLOTHING_NAMES.length}/{CLOTHING_NAMES.length}
             </span>
           </div>
@@ -1078,7 +1168,7 @@ export default function GenerationSettings({
             className="ai-scroll cursor-grab relative rounded-2xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[340px] xl:max-h-none xl:flex-1 xl:min-h-[150px]"
           >
             {!isDualMode ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
+              <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                 <button
                   type="button"
                   onClick={() => {
@@ -1093,7 +1183,7 @@ export default function GenerationSettings({
                   aria-label={t("No clothing")}
                 >
                   <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                  <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
+                  <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                 </button>
 
                 {CLOTHING_NAMES.map((name, idx) => {
@@ -1129,11 +1219,11 @@ export default function GenerationSettings({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <p className="text-[13px] font-medium text-stone-600 mb-1.5">
+                  <p className="text-[13px] xl:text-[length:calc(14px/var(--tz,1))] font-semibold text-stone-700 mb-1.5">
                     <AiT>{"Left Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                     <button
                       type="button"
                       onClick={() => {
@@ -1148,7 +1238,7 @@ export default function GenerationSettings({
                       aria-label={t("No clothing")}
                     >
                       <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                      <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
+                      <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                     </button>
 
                     {CLOTHING_NAMES.map((name, idx) => (
@@ -1180,11 +1270,11 @@ export default function GenerationSettings({
                 </div>
 
                 <div>
-                  <p className="text-[13px] font-medium text-stone-600 mb-1.5">
+                  <p className="text-[13px] xl:text-[length:calc(14px/var(--tz,1))] font-semibold text-stone-700 mb-1.5">
                     <AiT>{"Right Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 justify-items-stretch">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                     <button
                       type="button"
                       onClick={() => {
@@ -1199,7 +1289,7 @@ export default function GenerationSettings({
                       aria-label={t("No clothing")}
                     >
                       <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                      <span className="w-full truncate text-center text-[12px] leading-tight font-medium text-stone-600">{t("No clothing")}</span>
+                      <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                     </button>
 
                     {CLOTHING_NAMES.map((name, idx) => (
@@ -1308,13 +1398,13 @@ export default function GenerationSettings({
         </div>
 
         {/* EXTRA EDITING GUIDE */}
-        <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative">
-          <div className="flex justify-between items-center text-sm text-stone-500 mb-2">
-            <span className="font-medium">
+        <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative shrink-0">
+          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2 pt-1">
+            <span className="font-semibold">
               <AiT>{"EXTRA EDITING GUIDE"}</AiT>
             </span>
             <span
-              className="text-[12px] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-medium tabular-nums"
+              className="text-[12px] xl:text-[length:calc(14px/var(--tz,1))] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-semibold tabular-nums"
               title={t("Editing presets plus custom instruction")}
             >
               {activeGuides.length}/{EDITING_GUIDES.length + 1}
@@ -1322,7 +1412,8 @@ export default function GenerationSettings({
           </div>
 
           <div className="rounded-2xl p-0.5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 xl:gap-[clamp(4px,0.8vh,8px)]">
+            <div data-guide-scroller data-scroller data-grab className="ai-scroll cursor-grab rounded-xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[300px] xl:max-h-none xl:h-[236px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-5 gap-2 xl:gap-2">
               {QUICK_EDITING_GUIDES.map((item) => {
                 const active = activeGuides.includes(item);
                 return (
@@ -1332,7 +1423,7 @@ export default function GenerationSettings({
                     aria-pressed={active}
                     onClick={() => toggleGuide(item)}
                     title={t(item)}
-                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-[clamp(2px,0.5vh,8px)] rounded-xl border text-[13px] xl:text-[clamp(13px,1.5vh,14.5px)] font-medium text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
+                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-2 rounded-xl border text-[13px] xl:text-[length:calc(13px/var(--tz,1))] font-semibold text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                       active
                         ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
                         : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"
@@ -1340,16 +1431,17 @@ export default function GenerationSettings({
                   >
                     <span
                       aria-hidden="true"
-                      className={`mb-0.5 flex h-11 w-11 xl:h-[clamp(24px,3.4vh,40px)] xl:w-[clamp(24px,3.4vh,40px)] items-center justify-center rounded-lg transition-colors ${
+                      className={`mb-0.5 flex h-11 w-11 xl:h-[56px] xl:w-[56px] items-center justify-center rounded-lg transition-colors ${
                         active ? "bg-transparent" : "bg-transparent"
                       }`}
                     >
                       <GuideIcon label={item} size="100%" />
                     </span>
-                    <span className="leading-[1.15] line-clamp-2">{t(item)}</span>
+                    <span className="leading-[1.15] line-clamp-2 xl:line-clamp-3 break-words">{t(item)}</span>
                   </button>
                 );
               })}
+            </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1373,7 +1465,7 @@ export default function GenerationSettings({
                   setCustomInstructionDraft("");
                   setShowCustomInstructionModal(true);
                 }}
-                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[13px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
+                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[13px] xl:text-[length:calc(15px/var(--tz,1))] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                   activeGuides.some((entry) =>
                     entry.startsWith("Custom Instruction:"),
                   )
@@ -1381,7 +1473,7 @@ export default function GenerationSettings({
                     : "border-dashed border-[#B0A080] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8]"
                 }`}
               >
-                <Sparkles size={13} aria-hidden="true" />
+                <Sparkles size={18} aria-hidden="true" />
                 {activeGuides.some((entry) =>
                   entry.startsWith("Custom Instruction:"),
                 ) ? (
@@ -1393,16 +1485,16 @@ export default function GenerationSettings({
               <button
                 type="button"
                 onClick={() => setShowEditingGuideLibrary(true)}
-                className="min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] text-[#B91C1C] text-[13px] font-medium transition-colors hover:bg-[#F6D9A8] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]"
+                className="min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] text-[#B91C1C] text-[13px] xl:text-[length:calc(15px/var(--tz,1))] font-semibold transition-colors hover:bg-[#F6D9A8] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]"
               >
-                <Search size={13} aria-hidden="true" />
+                <Search size={18} aria-hidden="true" />
                 <AiT>{"Browse all editing guides"}</AiT>
                 <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
                   {EDITING_GUIDES.length}
                 </span>
               </button>
             </div>
-            <p className="mt-1.5 text-[13px] leading-snug text-stone-500">
+            <p className="mt-1.5 text-[13px] xl:text-[length:calc(13px/var(--tz,1))] leading-snug text-stone-700">
               <AiT>{"Choose a few compatible edits for the best result."}</AiT>
             </p>
           </div>
@@ -1414,7 +1506,7 @@ export default function GenerationSettings({
           type="button"
           onClick={onGenerate}
           disabled={isGenerating}
-          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2 ${
+          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-base xl:text-[length:calc(18px/var(--tz,1))] flex items-center justify-center gap-2 ${
             isGenerating
               ? "bg-[#D42020]/70 text-white cursor-not-allowed opacity-90"
               : "bg-[#D42020] hover:bg-[#AE1717] text-white cursor-pointer active:scale-[0.98]"

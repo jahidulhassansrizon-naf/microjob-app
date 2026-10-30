@@ -38,7 +38,7 @@ function LocalQrCode({ value, label, sizeClass = "h-40 w-40" }: { value: string;
     }
   }, [value]);
 
-  if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-sm text-stone-500`}>QR code unavailable</div>;
+  if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-sm text-stone-500`}><AiT>QR code unavailable</AiT></div>;
   const extent = qr.count + 8;
   return (
     <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1`} shapeRendering="crispEdges">

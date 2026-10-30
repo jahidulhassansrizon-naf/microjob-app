@@ -169,7 +169,7 @@ export default function MobileUploadClient({ token }: { token: string }) {
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-5 flex items-center justify-center gap-3 text-stone-800">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm"><Smartphone size={23} /></div>
-          <div><p className="text-sm font-medium text-stone-500">Seba Lagbe</p><h1 className="text-xl font-bold"><span>{t("Upload a photo from your phone")}</span></h1></div>
+          <div><p className="text-sm font-medium text-stone-500">সেবা লাগবে</p><h1 className="text-xl font-bold"><span>{t("Upload a photo from your phone")}</span></h1></div>
         </div>
 
         <section className="w-full overflow-hidden rounded-2xl border border-stone-100 bg-[#FBF6E8] shadow-none sm:rounded-3xl">

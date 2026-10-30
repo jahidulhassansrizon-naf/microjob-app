@@ -9,6 +9,25 @@ const D = (id: string, a: string, b: string, vertical = true) => (
 );
 
 const ART: Record<string, () => React.ReactElement> = {
+  "Straighten Tilted Photo": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <defs>
+        {D("gi-st-bg", "#e0f2fe", "#93c5fd")}
+        {D("gi-st-sh", "#475569", "#0f172a")}
+      </defs>
+      <g transform="rotate(-16 24 25)" opacity=".4">
+        <rect x="9" y="7" width="30" height="36" rx="3" fill="#cbd5e1" stroke="#64748b" strokeWidth="1" strokeDasharray="3 2" />
+      </g>
+      <rect x="9" y="6" width="30" height="36" rx="3" fill="url(#gi-st-bg)" stroke="#1e3a8a" strokeWidth="1.4" />
+      <path d="M12 42 Q13 31 24 30 Q35 31 36 42Z" fill="url(#gi-st-sh)" />
+      <rect x="21.5" y="26" width="5" height="5" rx="1.5" fill="#f1c9a0" />
+      <ellipse cx="24" cy="19.5" rx="6.2" ry="7.4" fill="#f6d7b4" />
+      <path d="M17.6 18.5 Q18 11.5 24 11.5 Q30 11.5 30.4 18.5 Q28 15 24 15.4 Q20 15 17.6 18.5Z" fill="#3a281a" />
+      <line x1="24" y1="2" x2="24" y2="46" stroke="#16a34a" strokeWidth="1.6" strokeDasharray="3 2.4" />
+      <path d="M6 14 A19 19 0 0 1 17 4.5" stroke="#16a34a" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <path d="M13.5 3 L17.5 4.5 L15.2 8.2" stroke="#16a34a" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   Lipstick: () => (
     <svg viewBox="0 0 48 48" width="100%" height="100%">
       <defs>

@@ -12,9 +12,11 @@ import {
     FileText,
     Printer,
     Settings,
+    Trash2,
     X,
 } from "lucide-react";
 import { downloadPhotosArchive, downloadPhotosPdf } from "./photoExport";
+import type { PrintSessionMeta } from "./printSessionStore";
 
 export interface GenerationItem {
     id?: string | number;
@@ -35,6 +37,10 @@ export interface RecentGenerationsProps {
     onImageClick?: (item: GenerationItem) => void;
     onBulkPrint?: (items: GenerationItem[]) => void | Promise<void>;
     isLoading?: boolean;
+    /** Print layouts the user chose to keep when closing the print studio. */
+    savedSessions?: PrintSessionMeta[];
+    onOpenSaved?: (id: string) => void | Promise<void>;
+    onDeleteSaved?: (id: string) => void | Promise<void>;
 }
 const TRANSPARENT_THUMBNAIL_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
@@ -57,6 +63,7 @@ function imageKey(item: GenerationItem, index: number) {
 
 export default function RecentGenerations({
     generations = [], onImageClick = () => { }, onBulkPrint, isLoading = false,
+    savedSessions = [], onOpenSaved, onDeleteSaved,
 }: RecentGenerationsProps) {
     const { t } = useAiEditorText();
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -66,6 +73,20 @@ export default function RecentGenerations({
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
     const [isProcessing, setIsProcessing] = useState(false);
     const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [openingId, setOpeningId] = useState<string | null>(null);
+    const savedCount = savedSessions.length;
+    const openSaved = async (id: string) => {
+        if (!onOpenSaved || openingId)
+            return;
+        setOpeningId(id);
+        try {
+            await onOpenSaved(id);
+        }
+        finally {
+            setOpeningId(null);
+        }
+    };
     const selectedItems = generations.filter((item, index) => selectedKeys.has(imageKey(item, index)));
     const isSelecting = bulkAction !== null;
 
@@ -98,7 +119,7 @@ export default function RecentGenerations({
         setBulkMessage(null);
         try {
             if (bulkAction === "print") {
-                if (!onBulkPrint) throw new Error("Print Studio is not available.");
+                if (!onBulkPrint) throw new Error(t("Print Studio is not available."));
                 await onBulkPrint(selectedItems);
                 cancelSelection();
             }
@@ -112,7 +133,7 @@ export default function RecentGenerations({
             }
         }
         catch (error) {
-            setBulkMessage(error instanceof Error ? error.message : "Could not complete the selected action.");
+            setBulkMessage(error instanceof Error ? t(error.message) : t("Could not complete the selected action."));
         }
         finally {
             setIsProcessing(false);
@@ -154,18 +175,47 @@ export default function RecentGenerations({
         );
     };
 
+    const renderSavedCards = () => savedSessions.map((session) => {
+            const asking = confirmDeleteId === session.id;
+            const date = new Date(session.updatedAt);
+            return (<div key={session.id} className="group relative flex h-36 w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] xl:h-[clamp(72px,10.5vh,112px)] xl:w-[clamp(120px,16vh,176px)]">
+                <button type="button" onClick={() => { void openSaved(session.id); }} disabled={!!openingId} aria-label={`সংরক্ষিত প্রিন্ট খুলুন: ${session.photoCount}টি ছবি`} className="relative flex-1 min-h-0 cursor-pointer overflow-hidden disabled:cursor-wait">
+                  <span className="grid h-full w-full grid-cols-2 gap-px bg-[#E3D6B8]">
+                    {(session.thumbs.length ? session.thumbs.slice(0, 4) : [""]).map((thumb, index) => thumb
+                        ? <img key={index} src={thumb} alt="" draggable={false} className="h-full w-full object-cover"/>
+                        : <span key={index} className="h-full w-full bg-[#F2E8D2]"/>)}
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                    {openingId === session.id ? "খোলা হচ্ছে..." : "খুলুন"}
+                  </span>
+                </button>
+                <span className="block truncate bg-[#3B2F1E] px-2 py-1 text-[11px] leading-tight text-white">
+                  {session.photoCount}টি ছবি · {session.pageCount} পেজ · {Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString()}
+                </span>
+                {asking ? (<div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-white/92 p-2 text-center">
+                    <p className="text-[11px] font-bold text-[#3B2F1E]">মুছে ফেলবেন?</p>
+                    <div className="flex gap-1.5">
+                      <button type="button" onClick={() => { setConfirmDeleteId(null); void onDeleteSaved?.(session.id); }} className="cursor-pointer rounded-md bg-[#DC2626] px-2 py-1 text-[11px] font-bold text-white hover:bg-[#B91C1C]">হ্যাঁ</button>
+                      <button type="button" onClick={() => setConfirmDeleteId(null)} className="cursor-pointer rounded-md border border-[#E3D6B8] bg-white px-2 py-1 text-[11px] font-bold text-[#3B2F1E] hover:bg-[#F2E8D2]">না</button>
+                    </div>
+                  </div>) : (onDeleteSaved && (<button type="button" onClick={() => setConfirmDeleteId(session.id)} aria-label="সংরক্ষিত প্রিন্ট মুছুন" title="মুছুন" className="absolute right-1 top-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-[#DC2626] shadow transition hover:bg-white"><Trash2 size={12}/></button>))}
+              </div>);
+          });
+
     return (<>
       <section className="mt-4 w-full max-w-[1400px] xl:max-w-none shrink-0 rounded-2xl bg-[#F2E8D2] p-4 shadow-sm sm:p-6 xl:mt-3 xl:px-4 xl:py-2.5 text-[#3B2F1E]">
-        <div className="mb-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-3 sm:p-4">
-          <div className="mb-3">
-            <h3 className="text-lg font-extrabold text-[#3B2F1E]">একাধিক ছবি একসাথে সিলেক্ট করুন</h3>
-            <p className="mt-1 text-xs leading-relaxed text-[#3B2F1E]/70 sm:text-sm">ছবিগুলো বেছে নিয়ে একসাথে প্রিন্ট করুন, PNG/JPG ZIP হিসেবে ডাউনলোড করুন অথবা সবগুলো একটি PDF-এ নিন।</p>
+        <div className="mb-3 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-3 sm:p-4 xl:mb-2 xl:px-3 xl:py-1.5">
+          <div className="xl:flex xl:flex-wrap xl:items-center xl:justify-between xl:gap-x-4 xl:gap-y-1.5">
+          <div className="mb-3 xl:mb-0">
+            <h3 className="text-lg font-extrabold text-[#3B2F1E] xl:text-base">একাধিক ছবি একসাথে সিলেক্ট করুন</h3>
+            <p className="mt-1 text-xs leading-relaxed text-[#3B2F1E]/70 sm:text-sm xl:hidden">ছবিগুলো বেছে নিয়ে একসাথে প্রিন্ট করুন, PNG/JPG ZIP হিসেবে ডাউনলোড করুন অথবা সবগুলো একটি PDF-এ নিন।</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("print")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#10B981] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#059669] disabled:cursor-not-allowed disabled:opacity-40"><Printer size={14}/>একসাথে প্রিন্ট</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("png")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40"><FileImage size={14}/>PNG ডাউনলোড</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("jpg")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#3B2F1E] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#59452A] disabled:cursor-not-allowed disabled:opacity-40"><FileArchive size={14}/>JPG ডাউনলোড</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("pdf")} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DC2626]/40 bg-white px-3 py-2 text-xs font-bold text-[#DC2626] transition hover:bg-[#DC2626]/5 disabled:cursor-not-allowed disabled:opacity-40"><FileText size={14}/>এক PDF ডাউনলোড</button>
+          </div>
           </div>
           {isSelecting && (
             <div className="mt-3 rounded-lg border border-[#DC2626]/25 bg-white/70 p-2.5">
@@ -185,6 +235,19 @@ export default function RecentGenerations({
               {bulkMessage && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{bulkMessage}</p>}
             </div>
           )}
+          {savedCount > 0 && (
+            <div className="mt-3 border-t border-[#E3D6B8] pt-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="h-4 w-1.5 rounded-full bg-[#10B981]" />
+                <h4 className="text-sm font-bold text-[#3B2F1E]">সংরক্ষিত প্রিন্ট</h4>
+                <span className="rounded-full bg-[#DC2626]/10 px-2 py-0.5 text-[12px] font-semibold text-[#DC2626]">{savedCount}</span>
+                <span className="text-[11px] text-[#3B2F1E]/55">খুলে আরও ছবি যোগ করুন বা প্রিন্ট করুন</span>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
+                {renderSavedCards()}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-4 flex flex-col justify-between gap-3 border-b border-[#E3D6B8] pb-3 sm:flex-row sm:items-center xl:mb-2 xl:pb-2">
@@ -192,7 +255,7 @@ export default function RecentGenerations({
             <span className="h-5 w-1.5 rounded-full bg-[#DC2626]" />
             <h3 className="text-base font-semibold text-[#3B2F1E]"><AiT>RECENT GENERATIONS</AiT></h3>
             <span className="rounded-full bg-[#10B981]/15 px-2 py-0.5 text-[12px] font-semibold text-[#10B981]">{generations.length}</span>
-            {isSelecting && <span className="rounded-full bg-[#DC2626]/10 px-2 py-0.5 text-[11px] font-bold text-[#DC2626]">{selectedItems.length} selected</span>}
+            {isSelecting && <span className="rounded-full bg-[#DC2626]/10 px-2 py-0.5 text-[11px] font-bold text-[#DC2626]">{selectedItems.length}টি নির্বাচিত</span>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => scroll("left")} className="cursor-pointer rounded-lg border border-[#E3D6B8] p-1.5 text-[#3B2F1E] transition hover:bg-[#E3D6B8]" aria-label={t("Previous generations")}><ChevronLeft size={16}/></button>
