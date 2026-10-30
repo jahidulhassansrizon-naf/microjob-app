@@ -183,6 +183,7 @@ export async function verifyAndActivateSubscription(
   const metadataSubscriptionId = getMetadataValue(metadata, "subscription_id", "subscriptionId");
   const metadataUserId = getMetadataValue(metadata, "user_id", "userId");
   const metadataPlanId = getMetadataValue(metadata, "plan_id", "planId");
+  const expectedUserId = String(options?.expectedUserId || "").trim();
   const expectedSubscriptionId = String(options?.expectedSubscriptionId || "").trim();
 
   if (metadataSubscriptionId && expectedSubscriptionId && metadataSubscriptionId !== expectedSubscriptionId) {
