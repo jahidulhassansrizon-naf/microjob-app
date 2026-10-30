@@ -27,15 +27,16 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const authHeader = req.headers.get("authorization");
-    const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
     const cookiePair = req.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("token="));
     let cookieToken = "";
     if (cookiePair) {
       try { cookieToken = decodeURIComponent(cookiePair.slice("token=".length)); }
       catch { cookieToken = cookiePair.slice("token=".length); }
     }
-    const token = bearer || cookieToken;
+    const authHeader = req.headers.get("authorization");
+    const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    // Prefer the canonical HttpOnly cookie over stale localStorage credentials.
+    const token = cookiePair ? cookieToken : bearer;
     if (!token) {
       return NextResponse.json(
         { error: "Unauthorized access. Please login again." },

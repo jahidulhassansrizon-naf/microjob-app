@@ -119,17 +119,20 @@ export function getSubscriptionAccessCookieName() {
 
 
 function getTokenFromRequest(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
+  // Browser HttpOnly cookie is canonical; fall back to Bearer for API clients.
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/(?:^|;\s*)token=([^;]*)/);
+  if (match) {
+    try { return decodeURIComponent(match[1]); }
+    catch { return match[1]; }
+  }
 
+  const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
     const token = authorization.slice(7).trim();
     if (token) return token;
   }
-
-  const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
-
-  return match ? decodeURIComponent(match[1]) : null;
+  return null;
 }
 
 export function getUserIdFromToken(token: string | null): string | null {

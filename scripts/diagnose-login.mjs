@@ -4,28 +4,18 @@
 // repeatedly: it tells you which database you are talking to and whether the
 // entered email/password pair would pass the same checks as /api/auth/login.
 //
-//   npm run diagnose:login                # uses MONGODB_URI from .env.local / .env
+//   npm run diagnose:login                # uses Next.js env-file precedence
 //   MONGODB_URI=<production uri> npm run diagnose:login   # check another database
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import readline from "node:readline";
 import { stdin, stdout } from "node:process";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { loadEnvConfig } from "@next/env";
 
-async function loadEnv() {
-  for (const filename of [".env.local", ".env"]) {
-    let text = "";
-    try { text = await readFile(resolve(process.cwd(), filename), "utf8"); } catch (e) { if (e?.code !== "ENOENT") throw e; continue; }
-    for (const raw of text.split(/\r?\n/)) {
-      const m = raw.trim().match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-      if (!m || m[1].startsWith("#") || process.env[m[1]] !== undefined) continue;
-      let v = m[2].trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
-      else v = v.replace(/\s+#.*$/, "").trim();
-      process.env[m[1]] = v;
-    }
-  }
+function loadProjectEnv() {
+  // Keep diagnostic database selection identical to Next.js and the bootstrap.
+  const dev = process.env.NODE_ENV !== "production";
+  loadEnvConfig(process.cwd(), dev);
 }
 
 function ask(prompt, hidden = false) {
@@ -51,7 +41,7 @@ function ask(prompt, hidden = false) {
 }
 
 async function main() {
-  await loadEnv();
+  loadProjectEnv();
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri) throw new Error("MONGODB_URI is required.");
   await mongoose.connect(uri, { autoIndex: false, bufferCommands: false });
@@ -68,6 +58,10 @@ async function main() {
 
   console.log(`\nDocuments matched by the login query: ${matches.length}`);
   console.log(`Documents matching this email ignoring case: ${looseMatches}`);
+  if (looseMatches > 1 || matches.length > 1) {
+    console.log("RESULT: duplicate_identifier -> more than one document can match this login identifier. Resolve duplicates before further password changes.");
+    return;
+  }
   if (matches.length === 0) {
     console.log("RESULT: user_not_found -> the live login would return 401 for this identifier in THIS database.");
     return;

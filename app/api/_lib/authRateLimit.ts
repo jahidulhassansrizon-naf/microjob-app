@@ -64,6 +64,64 @@ export async function enforceAuthRateLimit(
   };
 }
 
+function makeSubjectWindowKey(scope: string, subject: string, windowMs: number, now: number) {
+  const windowStart = Math.floor(now / windowMs);
+  const secret = getRateLimitSecret();
+  const fingerprint = createHash("sha256")
+    .update(`${secret}\u0000${scope}\u0000subject:${subject.trim().toLowerCase()}`)
+    .digest("hex")
+    .slice(0, 40);
+  const windowEnd = (windowStart + 1) * windowMs;
+  return {
+    key: `${scope}:${fingerprint}:${windowStart}`,
+    expiresAt: new Date(windowEnd + windowMs),
+    retryAfterSeconds: Math.max(1, Math.ceil((windowEnd - now) / 1000)),
+  };
+}
+
+/**
+ * Checks the failed-credential counter without incrementing it. This lets
+ * successful logins on multiple devices avoid consuming the account's budget.
+ */
+export async function checkAuthFailureLimit(
+  scope: string,
+  subject: string,
+  limit: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const now = Date.now();
+  const { key, retryAfterSeconds } = makeSubjectWindowKey(scope, subject, windowMs, now);
+  const record = await AuthRateLimit.findOne({ key }).select("count").lean();
+  const count = Number(record?.count || 0);
+  return count < limit ? { allowed: true } : { allowed: false, retryAfterSeconds };
+}
+
+/** Atomically records one failed credential attempt without storing its identifier. */
+export async function recordAuthFailure(scope: string, subject: string, windowMs: number): Promise<void> {
+  const now = Date.now();
+  const { key, expiresAt } = makeSubjectWindowKey(scope, subject, windowMs, now);
+  try {
+    await AuthRateLimit.findOneAndUpdate(
+      { key },
+      { $setOnInsert: { key, expiresAt }, $inc: { count: 1 } },
+      { upsert: true, new: true },
+    ).select("count").lean();
+  } catch (error) {
+    if (!error || typeof error !== "object" || (error as { code?: unknown }).code !== 11000) throw error;
+    await AuthRateLimit.findOneAndUpdate(
+      { key },
+      { $inc: { count: 1 } },
+      { new: true },
+    ).select("count").lean();
+  }
+}
+
+/** Clears only the current fixed-window failed-attempt counter after success. */
+export async function clearAuthFailures(scope: string, subject: string, windowMs: number): Promise<void> {
+  const { key } = makeSubjectWindowKey(scope, subject, windowMs, Date.now());
+  await AuthRateLimit.deleteOne({ key });
+}
+
 
 export type CooldownResult = { allowed: true; leaseToken: string } | { allowed: false; retryAfterSeconds: number };
 

@@ -8,7 +8,7 @@ import { authenticateLogin } from "@/lib/loginCore";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
-import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
+import { clearAuthFailures, checkAuthFailureLimit, enforceAuthRateLimit, recordAuthFailure } from "@/app/api/_lib/authRateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
@@ -54,14 +54,19 @@ export async function POST(req: Request) {
 
     const outcome = await authenticateLogin(
       {
-        findUser: (filter) => User.findOne(filter).lean().exec() as Promise<any>,
+        // Explicitly select the hash even if the schema later marks it
+        // select:false. All other profile fields retain their normal defaults.
+        findUser: (filter) => User.findOne(filter).select("+password").lean().exec() as Promise<any>,
         comparePassword: (plain, hash) => bcrypt.compare(plain, hash),
-        // The shared MongoDB counters stay active. Both are always evaluated so
-        // neither window can be bypassed by exhausting the other first.
-        checkRateLimit: (scope, identifier) =>
-          scope === "ip"
-            ? enforceAuthRateLimit(req, "auth-login-ip", 40, 10 * 60 * 1000)
-            : enforceAuthRateLimit(req, "auth-login-identifier", 10, 15 * 60 * 1000, identifier),
+        // IP limits protect the endpoint. Per-account limits count only failed
+        // credentials, not successful logins from another device/browser.
+        checkIpRateLimit: () => enforceAuthRateLimit(req, "auth-login-ip", 40, 10 * 60 * 1000),
+        checkIdentifierFailureLimit: (identifier) =>
+          checkAuthFailureLimit("auth-login-identifier-failures-v2", identifier, 10, 15 * 60 * 1000),
+        recordIdentifierFailure: (identifier) =>
+          recordAuthFailure("auth-login-identifier-failures-v2", identifier, 15 * 60 * 1000),
+        clearIdentifierFailures: (identifier) =>
+          clearAuthFailures("auth-login-identifier-failures-v2", identifier, 15 * 60 * 1000),
       },
       body,
     );

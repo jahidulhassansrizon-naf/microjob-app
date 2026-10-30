@@ -99,8 +99,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     const requestedTarget = callbackUrl.trim();
 
     // Cached user roles can become stale when the primary administrator promotes
-    // an existing account. Use the cached token only as a credential; always ask
-    // the server for the current database role before redirecting.
+    // an existing account. The server prefers the HttpOnly cookie and uses this
+    // legacy Bearer token only as a fallback when no cookie is present.
     let token = "";
     try {
       token = localStorage.getItem("token") || "";

@@ -21,6 +21,7 @@
     "@huggingface/inference": "^4.13.30",
     "@huggingface/transformers": "^4.3.0",
     "@imgly/background-removal": "^1.7.0",
+    "@next/env": "16.3.4",
     "@jspawn/qpdf-wasm": "^0.0.2",
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",

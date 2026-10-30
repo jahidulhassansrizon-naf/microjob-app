@@ -19,25 +19,26 @@ export type VerifiedRequestSession = {
 };
 
 function extractRequestToken(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    const bearer = authorization.slice("Bearer ".length).trim();
-    if (bearer) return bearer;
-  }
-
+  // Prefer the browser's HttpOnly session cookie. A stale localStorage Bearer
+  // token must not shadow a newer cookie-backed session.
   const cookieHeader = request.headers.get("cookie") || "";
   const pair = cookieHeader
     .split(";")
     .map((part) => part.trim())
     .find((part) => part.startsWith("token="));
-  if (!pair) return null;
-
-  const value = pair.slice("token=".length);
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
+  if (pair) {
+    const value = pair.slice("token=".length);
+    try { return decodeURIComponent(value); }
+    catch { return value; }
   }
+
+  // Bearer fallback remains available for API clients without browser cookies.
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    const bearer = authorization.slice("Bearer ".length).trim();
+    if (bearer) return bearer;
+  }
+  return null;
 }
 
 /** Validate a signed session and resolve the current role and ban state from MongoDB. */

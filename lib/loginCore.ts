@@ -16,7 +16,14 @@ export type LoginDeps<U extends LoginUserRecord> = {
   /** Called with a strictly string-valued filter, never with client objects. */
   findUser: (filter: { $or: [{ phoneNumber: string }, { email: string }] }) => Promise<U | null>;
   comparePassword: (plain: string, hash: string) => Promise<boolean>;
-  checkRateLimit: (scope: "ip" | "identifier", identifier: string) => Promise<LoginRateLimitResult>;
+  /** Counts every request from one source IP (not shared across devices). */
+  checkIpRateLimit: () => Promise<LoginRateLimitResult>;
+  /** Checks only failed-password attempts for this normalized account identifier. */
+  checkIdentifierFailureLimit: (identifier: string) => Promise<LoginRateLimitResult>;
+  /** Records a failed credential attempt for the normalized identifier. */
+  recordIdentifierFailure: (identifier: string) => Promise<void>;
+  /** Clears prior failed attempts after a successful login. */
+  clearIdentifierFailures: (identifier: string) => Promise<void>;
 };
 
 export type LoginFailureCategory =
@@ -73,22 +80,38 @@ export async function authenticateLogin<U extends LoginUserRecord>(
     return { kind: "bad_request" };
   }
 
-  const ip = await deps.checkRateLimit("ip", identifier);
-  const perIdentifier = await deps.checkRateLimit("identifier", identifier);
-  const limited = !ip.allowed ? ip : perIdentifier;
-  if (!limited.allowed) return { kind: "rate_limited", retryAfterSeconds: limited.retryAfterSeconds };
+  // IP protection counts requests from the current source IP. It must not
+  // create a cross-device lock for every user who shares an account.
+  const ip = await deps.checkIpRateLimit();
+  if (!ip.allowed) return { kind: "rate_limited", retryAfterSeconds: ip.retryAfterSeconds };
+
+  // Account-level throttling counts failed credentials only. Successful logins
+  // from another browser/device do not consume this failure budget.
+  const identifierLimit = await deps.checkIdentifierFailureLimit(identifier);
+  if (!identifierLimit.allowed) {
+    return { kind: "rate_limited", retryAfterSeconds: identifierLimit.retryAfterSeconds };
+  }
 
   const user = await deps.findUser({ $or: [{ phoneNumber: identifier }, { email: identifier }] });
-  if (!user) return { kind: "invalid_credentials", category: "user_not_found" };
+  if (!user) {
+    await deps.recordIdentifierFailure(identifier);
+    return { kind: "invalid_credentials", category: "user_not_found" };
+  }
 
   if (typeof user.password !== "string" || !user.password) {
+    await deps.recordIdentifierFailure(identifier);
     return { kind: "invalid_credentials", category: "missing_password_hash" };
   }
 
   // Exceptions (for example a database fault) propagate to the caller and
   // become a 5xx; they are never converted into "wrong password".
   const matches = await deps.comparePassword(password, user.password);
-  if (!matches) return { kind: "invalid_credentials", category: "password_mismatch" };
+  if (!matches) {
+    await deps.recordIdentifierFailure(identifier);
+    return { kind: "invalid_credentials", category: "password_mismatch" };
+  }
 
+  // A correct credential clears only the current identifier failure window.
+  await deps.clearIdentifierFailures(identifier);
   return { kind: "ok", user };
 }

@@ -13,22 +13,25 @@ type AdminClaims = AdminTokenClaims & {
 };
 
 function getToken(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    const bearer = authorization.slice("Bearer ".length).trim();
-    if (bearer) return bearer;
-  }
+  // The HttpOnly cookie is the canonical browser session. A stale Bearer token
+  // left in localStorage must never override a newer valid cookie.
   const pair = request.headers
     .get("cookie")
     ?.split(";")
     .map((part) => part.trim())
     .find((part) => part.startsWith("token="));
-  if (!pair) return null;
-  try {
-    return decodeURIComponent(pair.slice("token=".length));
-  } catch {
-    return pair.slice("token=".length);
+  if (pair) {
+    try { return decodeURIComponent(pair.slice("token=".length)); }
+    catch { return pair.slice("token=".length); }
   }
+
+  // Keep Bearer support for trusted non-browser/API clients when no cookie exists.
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    const bearer = authorization.slice("Bearer ".length).trim();
+    if (bearer) return bearer;
+  }
+  return null;
 }
 
 export type AdminIdentity = {

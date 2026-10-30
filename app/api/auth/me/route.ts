@@ -31,7 +31,8 @@ export async function GET(req: Request) {
       );
     }
 
-    const token = getBearerToken(req) || getTokenFromCookie(req.headers.get("cookie"));
+    const cookieToken = getTokenFromCookie(req.headers.get("cookie"));
+    const token = cookieToken !== null ? cookieToken : getBearerToken(req);
     if (!token) return NextResponse.json({ message: "No token provided!" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } });
 
     let decoded: AdminTokenClaims;

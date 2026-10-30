@@ -10,15 +10,17 @@ export const revalidate = 0;
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
 function getToken(request: Request) {
+  const pair = request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("token="));
+  if (pair) {
+    try { return decodeURIComponent(pair.slice("token=".length)); }
+    catch { return pair.slice("token=".length); }
+  }
   const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
     const value = authorization.slice("Bearer ".length).trim();
     if (value) return value;
   }
-  const pair = request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("token="));
-  if (!pair) return null;
-  try { return decodeURIComponent(pair.slice("token=".length)); }
-  catch { return pair.slice("token=".length); }
+  return null;
 }
 
 export async function POST(request: Request) {

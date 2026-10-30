@@ -4,30 +4,14 @@ import bcrypt from "bcryptjs";
 import readline from "node:readline";
 import { stdin, stdout } from "node:process";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { loadEnvConfig } from "@next/env";
 
-function loadEnvText(text) {
-  for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const match = line.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (!match || process.env[match[1]] !== undefined) continue;
-    let value = match[2].trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    } else {
-      value = value.replace(/\s+#.*$/, "").trim();
-    }
-    process.env[match[1]] = value;
-  }
-}
-
-async function loadLocalEnv() {
-  for (const filename of [".env.local", ".env"]) {
-    try { loadEnvText(await readFile(resolve(process.cwd(), filename), "utf8")); }
-    catch (error) { if (error?.code !== "ENOENT") throw error; }
-  }
+function loadProjectEnv() {
+  // Match the same environment-file precedence used by Next.js. This avoids
+  // provisioning an admin in .env.local while `next dev` reads
+  // .env.development.local (or an unexpected production env file).
+  const dev = process.env.NODE_ENV !== "production";
+  loadEnvConfig(process.cwd(), dev);
 }
 
 function escapeRegex(value) {
@@ -86,7 +70,7 @@ const normalizeEmail = (value) => value.trim().toLowerCase();
 const normalizeName = (value) => value.normalize("NFKC").trim().replace(/\s+/gu, " ").toLowerCase();
 
 async function main() {
-  await loadLocalEnv();
+  loadProjectEnv();
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri) throw new Error("MONGODB_URI is required. Put it in .env.local or export it for this command.");
 
@@ -126,6 +110,13 @@ async function main() {
   const existingByEmail = await User.findOne({ email }).select("_id fullName phoneNumber email role isPrimaryAdmin fullNameNormalized").lean();
   if (existingPrimary && String(existingPrimary._id) !== String(existingByEmail?._id || "")) {
     throw new Error(`A primary administrator already exists (${existingPrimary.email}). Stop here; do not create a second primary admin.`);
+  }
+  const emailVariantsBeforeWrite = await User.countDocuments({ email: new RegExp(`^${escapeRegex(email)}$`, "i") });
+  if (emailVariantsBeforeWrite > 1) {
+    throw new Error(`Multiple accounts match ${email} ignoring case. Resolve duplicate email records before changing any password.`);
+  }
+  if (existingByEmail && emailVariantsBeforeWrite !== 1) {
+    throw new Error("The existing account could not be uniquely identified. No password was changed.");
   }
 
   let fullName = String(existingByEmail?.fullName || "").trim();
