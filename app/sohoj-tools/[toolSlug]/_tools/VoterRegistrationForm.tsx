@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import {
   CalendarDays,
   Check,
@@ -294,7 +294,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 const VOTER_BN: Record<string, string> = Object.fromEntries(
   Object.entries({
-    "sohoz tools": "সহজ টুলস",
+    "seba lagbe tools": "সেবা লাগবে টুলস",
     "general tools": "সাধারণ টুলস",
     "voter registration form": "ভোটার নিবন্ধন ফর্ম",
     free: "বিনামূল্যে",
@@ -532,7 +532,7 @@ function translateVoterText(
 }
 
 function useVoterText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   return useCallback(
     (value: string) => translateVoterText(value, locale, baseL),
     [locale, baseL],
@@ -2813,7 +2813,7 @@ function AddressFields({
 /* -------------------------------------------------------------------------- */
 export default function VoterRegistrationForm() {
   const vt = useVoterText();
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   void locale;
   const [form, setForm] = useState<VoterFormState>(EMPTY_FORM);
   const [hydrated, setHydrated] = useState(false);
@@ -3223,7 +3223,7 @@ export default function VoterRegistrationForm() {
             <VT>{"/"}</VT>
           </span>
           <span>
-            <VT>{"Sohoz Tools"}</VT>
+            <VT>{"Seba Lagbe Tools"}</VT>
           </span>
           <span>
             <VT>{"/"}</VT>

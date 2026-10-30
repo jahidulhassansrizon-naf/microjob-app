@@ -558,7 +558,7 @@ export default function PhotoEditorPage() {
                     throw new Error("Could not read the temporary image.");
                 }
                 const blob = await blobResponse.blob();
-                const file = new File([blob], `sohozkaj-upload-${Date.now()}.${blob.type.includes("png") ? "png" : "jpg"}`, { type: blob.type || "image/jpeg" });
+                const file = new File([blob], `sebalagbe-upload-${Date.now()}.${blob.type.includes("png") ? "png" : "jpg"}`, { type: blob.type || "image/jpeg" });
                 const formData = new FormData();
                 formData.append("file", file);
                 uploadBody = formData;
@@ -1132,7 +1132,7 @@ export default function PhotoEditorPage() {
                 formData.append("imageUrl", image);
             }
             else {
-                const sourceFile = await dataUrlToFile(image, `sohozkaj-ai-source-${Date.now()}.jpg`);
+                const sourceFile = await dataUrlToFile(image, `sebalagbe-ai-source-${Date.now()}.jpg`);
                 formData.append("image", sourceFile);
             }
             // Dual mode only: the second person's photo travels in the same request.
@@ -1142,7 +1142,7 @@ export default function PhotoEditorPage() {
                     formData.append("imageUrl2", secondImage);
                 }
                 else {
-                    const secondFile = await dataUrlToFile(secondImage, `sohozkaj-ai-source2-${Date.now()}.jpg`);
+                    const secondFile = await dataUrlToFile(secondImage, `sebalagbe-ai-source2-${Date.now()}.jpg`);
                     formData.append("image2", secondFile);
                 }
             }
@@ -1526,13 +1526,13 @@ export default function PhotoEditorPage() {
 
       {showCropModal && (<div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
           <style>{`
-        .sohozkaj-crop-canvas .ReactCrop__crop-selection {
+        .sebalagbe-crop-canvas .ReactCrop__crop-selection {
           border: 2px solid #ffffff !important;
           box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
           cursor: move;
           touch-action: none;
         }
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle {
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle {
           display: block !important;
           opacity: 1 !important;
           width: 16px !important;
@@ -1545,14 +1545,14 @@ export default function PhotoEditorPage() {
         }
         /* Fixed aspect crops use custom side handles below so vertical/horizontal
            midpoint drags resize along the pointer axis instead of silently failing. */
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-n,
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-e,
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-s,
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle.ord-w {
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle.ord-n,
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle.ord-e,
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle.ord-s,
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle.ord-w {
           display: none !important;
         }
-        .sohozkaj-crop-canvas .ReactCrop__child-wrapper,
-        .sohozkaj-crop-canvas .ReactCrop__child-wrapper img {
+        .sebalagbe-crop-canvas .ReactCrop__child-wrapper,
+        .sebalagbe-crop-canvas .ReactCrop__child-wrapper img {
           user-select: none;
           -webkit-user-select: none;
           -webkit-user-drag: none;

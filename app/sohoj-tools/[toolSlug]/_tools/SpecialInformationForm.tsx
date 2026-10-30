@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import {
   CalendarDays,
   Check,
@@ -36,7 +36,7 @@ import {
 /* Page-specific, hydration-safe English ↔ Bangla translation                */
 /* -------------------------------------------------------------------------- */
 const SPECIAL_TRANSLATIONS: Record<string, string> = {
-  "Sohoz Tools": "সহজ টুলস",
+  "Seba Lagbe Tools": "সেবা লাগবে টুলস",
   "General Tools": "সাধারণ টুলস",
   "Special Information Form": "বিশেষ তথ্য ফর্ম",
   Free: "বিনামূল্যে",
@@ -266,7 +266,7 @@ function translateSpecialText(
 }
 
 function useSpecialTranslator() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const tx = useCallback(
     (value: string) => translateSpecialText(value, locale),
     [locale],
@@ -3161,7 +3161,7 @@ body:has(.special-information-page) {
             <T>{"/"}</T>
           </span>
           <span>
-            <T>{"Sohoz Tools"}</T>
+            <T>{"Seba Lagbe Tools"}</T>
           </span>
           <span>
             <T>{"/"}</T>

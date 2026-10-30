@@ -1335,7 +1335,7 @@ export default function UsefulDocumentTemplatesPage() {
           <div className="hero-inner">
             <div className="eyebrow"><T>{"50+ Document Templates"}</T></div>
             <h1><T>{"Essential "}</T><span><T>{"Document"}</T></span><T>{"Templates\r\n            "}</T></h1>
-            <p className="hero-copy"><T>{"Agreements, deeds, applications and many more essential document\r\n              templates. Choose any template and create it instantly in the\r\n              SohozKaj app.\r\n            "}</T></p>
+            <p className="hero-copy"><T>{"Agreements, deeds, applications and many more essential document\r\n              templates. Choose any template and create it instantly in the\r\n              Seba Lagbe app.\r\n            "}</T></p>
 
             <div className="search-row">
               <label className="search-box">

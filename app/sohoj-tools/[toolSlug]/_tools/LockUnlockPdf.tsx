@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -299,7 +299,7 @@ function translateLockUnlockPdfText(
 }
 
 function PdfT({ children }: { children: React.ReactNode }) {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{translateLockUnlockPdfText(children, locale)}</>;
 }
@@ -347,7 +347,7 @@ function toRealArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return buffer;
 }
 export default function LockUnlockPdf() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const tx = (value: string) => translateLockUnlockPdfText(value, locale);
   const pageRef = useRef<HTMLDivElement>(null);
   // Measure the real bottom edge of the site header so the page starts

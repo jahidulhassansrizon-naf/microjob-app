@@ -165,7 +165,7 @@ const CropCanvas = React.memo(
       <ReactCrop
         crop={crop}
         onChange={(_, percentCrop) => setCrop(percentCrop)}
-        className="sohozkaj-crop-canvas max-w-[82vw] max-h-[72vh] select-none"
+        className="sebalagbe-crop-canvas max-w-[82vw] max-h-[72vh] select-none"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -319,13 +319,13 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
       aria-label={t("Crop & Rotate Image")}
     >
       <style>{`
-        .sohozkaj-crop-canvas .ReactCrop__crop-selection {
+        .sebalagbe-crop-canvas .ReactCrop__crop-selection {
           border: 2px solid #ffffff !important;
           box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
           cursor: move;
           touch-action: none;
         }
-        .sohozkaj-crop-canvas .ReactCrop__drag-handle {
+        .sebalagbe-crop-canvas .ReactCrop__drag-handle {
           display: block !important;
           opacity: 1 !important;
           width: 16px !important;
@@ -336,8 +336,8 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
           box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25) !important;
           touch-action: none;
         }
-        .sohozkaj-crop-canvas .ReactCrop__child-wrapper,
-        .sohozkaj-crop-canvas .ReactCrop__child-wrapper img {
+        .sebalagbe-crop-canvas .ReactCrop__child-wrapper,
+        .sebalagbe-crop-canvas .ReactCrop__child-wrapper img {
           user-select: none;
           -webkit-user-select: none;
           -webkit-user-drag: none;

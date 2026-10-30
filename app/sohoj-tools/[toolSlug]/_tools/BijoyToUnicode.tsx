@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,7 @@ const { ConvertToUnicode, ConvertToASCII, }: BijoyConverterModule = require("bij
 // Tools in same category data
 const BIJOY_BN: Record<string, string> = {
     "Go back": "পেছনে যান",
-    "Sohoj Tools": "সহজ টুলস",
+    "Seba Lagbe Tools": "সেবা লাগবে টুলস",
     "/": "/",
     "Text Tools": "লেখার টুলস",
     "Bijoy ↔ Unicode": "বিজয় ↔ Unicode",
@@ -81,7 +81,7 @@ function translateBijoyText(value: string, locale: string, baseL?: (text: string
 }
 
 function BijoyText({ children }: { children: React.ReactNode }) {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translateBijoyText(children, locale, L)}</>;
 }
@@ -101,7 +101,7 @@ const relatedTools = [
     },
 ];
 export default function BijoyToUnicode() {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     const EL = useCallback((value: string) => translateBijoyText(value, locale, L), [locale, L]);
     const router = useRouter();
     // States
@@ -209,7 +209,7 @@ export default function BijoyToUnicode() {
                 <ArrowLeft size={16}/>
               </button>
 
-              <Link href="/sohoj-tools" className="hover:text-[#DC2626]"><BijoyText>{"Sohoj Tools\n              "}</BijoyText></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#DC2626]"><BijoyText>{"Seba Lagbe Tools\n              "}</BijoyText></Link>
 
               <span><BijoyText>{"/"}</BijoyText></span>
 

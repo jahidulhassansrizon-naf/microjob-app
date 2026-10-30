@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState } from "react";
 import Link from "next/link";
 import { Minimize2, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Combine, FilePlus, FileCode, ArrowLeft, X, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
@@ -378,7 +378,7 @@ function translateCompressPdfText(value: string, locale: string | undefined): st
 }
 
 function CompressT({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translateCompressPdfText(children, locale)}</>;
 }
@@ -395,7 +395,7 @@ function getCompressPdfErrorMessage(error: unknown, locale: string | undefined):
 }
 
 export default function CompressPdf() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const tx = (value: string) => translateCompressPdfText(value, locale);
     const [tabMode, setTabMode] = useState<"preset" | "target">("preset");
     const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>("balanced");

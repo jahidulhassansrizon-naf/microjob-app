@@ -1,5 +1,5 @@
 "use client";
-import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,7 +49,7 @@ const MILESTONES: {
     { label: "Standard government retirement age", age: 59 },
 ];
 const AGE_CALCULATOR_BN: Record<string, string> = {
-    "Sohoj Tools": "সহজ টুলস",
+    "Seba Lagbe Tools": "সেবা লাগবে টুলস",
     "General Tools": "সাধারণ টুলস",
     "Age Calculator": "বয়স গণনা",
     "Free": "বিনামূল্যে",
@@ -145,7 +145,7 @@ function translateAgeText(text: string): string | undefined {
 }
 
 function AgeText({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (locale === "bn" && typeof children === "string") {
         const translated = translateAgeText(children);
         if (translated) return <>{translated}</>;
@@ -253,7 +253,7 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
     yearFrom: number;
     yearTo: number;
 }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const maxDay = month && year ? daysInMonth(Number(month), Number(year)) : 31;
     const days = Array.from({ length: maxDay }, (_, i) => i + 1);
     const years: number[] = [];
@@ -300,7 +300,7 @@ function DatePicker({ idPrefix, day, month, year, onDay, onMonth, onYear, yearFr
 // Main component
 // ---------------------------------------------------------------------------
 export default function AgeCalculator() {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     const L = (text: string) => locale === "bn"
         ? translateAgeText(text) ?? baseL(text)
         : baseL(text);
@@ -481,7 +481,7 @@ export default function AgeCalculator() {
               <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8]/60 rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1 cursor-pointer" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><AgeText>{"Sohoj Tools\n              "}</AgeText></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><AgeText>{"Seba Lagbe Tools\n              "}</AgeText></Link>
               <span><AgeText>{"/"}</AgeText></span>
               <span className="hover:text-[#3B2F1E] cursor-pointer"><AgeText>{"General Tools\n              "}</AgeText></span>
               <span><AgeText>{"/"}</AgeText></span>

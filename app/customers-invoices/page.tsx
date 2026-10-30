@@ -171,7 +171,7 @@ function downloadCsv(name: string, rows: (string | number)[][]) {
 }
 function printInvoice(inv: Invoice, customer: Customer | undefined): boolean {
     const t = totalsOf(inv);
-    let biz = "Sohozkaj";
+    let biz = "Seba Lagbe";
     try {
         const u = JSON.parse(localStorage.getItem("user") || "{}") as {
             businessName?: string;

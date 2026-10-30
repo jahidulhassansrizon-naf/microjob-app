@@ -10,7 +10,7 @@ import Link from "next/link";
 // ====================================================================
 /* ------------------------------------------------------------------ */
 /* Semantic mini-illustrations: each icon depicts the tool's action.   */
-/* Shared by Dashboard Popular Tools and the full SohojTools catalogue. */
+/* Shared by Dashboard Popular Tools and the full Seba Lagbe Tools catalogue. */
 /* ------------------------------------------------------------------ */
 type IconProps = {
   size?: number;
@@ -816,7 +816,7 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, warm = false,
     touchCompact?: boolean;
     // দিলে শুধু রঙিন বক্স (আইকন) এই % এ ছোট হবে; নাম পুরো ঘরের চওড়া পাবে ও ছোট লেখায় দেখাবে
     boxPercent?: number;
-    // Warm Sand + Red label styling (used by the Sohoj Tools page only; default keeps the old look)
+    // Warm Sand + Red label styling (used by the Seba Lagbe Tools page only; default keeps the old look)
     warm?: boolean;
 }) {
     const compact = typeof boxPercent === "number";

@@ -60,7 +60,7 @@ const serviceItems = [
 ];
 
 // Seba Lagbe Tools mega menu
-const sohojHubToolsCategories = [
+const sebaLagbeToolsCategories = [
   {
     title: "PDF Tools",
     count: "15 tools",
@@ -456,7 +456,7 @@ export default function Navbar() {
                   >
                     <div className="w-[min(1100px,calc(100vw-3rem))] rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl shadow-slate-900/10">
                       <div className="grid grid-cols-3 gap-5 xl:grid-cols-5">
-                        {sohojHubToolsCategories.map((cat, idx) => {
+                        {sebaLagbeToolsCategories.map((cat, idx) => {
                           const CatIcon = cat.icon;
                           return (
                             <div key={idx} className="flex flex-col gap-3">
@@ -748,7 +748,7 @@ export default function Navbar() {
                     <ArrowRight size={12} />
                   </Link>
                   <div className="flex flex-col gap-3">
-                    {sohojHubToolsCategories.map((cat, cIdx) => {
+                    {sebaLagbeToolsCategories.map((cat, cIdx) => {
                       const CatIcon = cat.icon;
                       return (
                         <div key={cIdx} className="flex flex-col gap-0.5">

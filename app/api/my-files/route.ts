@@ -52,7 +52,7 @@ function getWorkspace(item: { workspace?: unknown; category?: unknown }): FileWo
 
   // Existing UserFile rows were created before workspace was introduced.
   // Their category is enough to keep the old AI/editor files on the left side
-  // while keeping SohozTools-only records on the right.
+  // while keeping tool-only records on the right.
   return CREATIVE_FILE_CATEGORIES.has(clean(item.category))
     ? "creative"
     : "sohoz-tools";
@@ -76,6 +76,15 @@ function authError(error: unknown) {
   return null;
 }
 function clean(value: unknown, fallback = "") { return typeof value === "string" && value.trim() ? value.trim() : fallback; }
+
+// Normalize legacy tool labels only at the display/API boundary. Stored workspace
+// identifiers stay unchanged so existing saved files continue to be discovered.
+function normalizeToolDisplayName(value: unknown, fallback = "Seba Lagbe Tools") {
+  const name = clean(value, fallback);
+  return /^(?:sohoz\s*tools|sohoj\s*tools|sohoztools|sohojtools)$/i.test(name)
+    ? fallback
+    : name;
+}
 
 function configureCloudinary() {
   const cloudName =
@@ -265,9 +274,8 @@ export async function GET(request: Request) {
           item.formData && typeof item.formData === "object"
             ? item.formData
             : {};
-        const toolName = clean(
+        const toolName = normalizeToolDisplayName(
           data.toolName || data.tool || data.source,
-          "SohozTools",
         );
         const name = clean(
           data.fileName || data.title || data.name,
@@ -285,7 +293,7 @@ export async function GET(request: Request) {
       ...sohozToolUserFiles.map((item: any) => ({
         id: `user-file:${String(item._id)}`,
         name: clean(item.name, "Saved file"),
-        toolName: clean(item.toolName, "SohozTools"),
+        toolName: normalizeToolDisplayName(item.toolName),
         group: clean(item.group, "image"),
         createdAt: item.createdAt,
         url: item.url || "",
@@ -312,7 +320,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const name = clean(body?.name, "Saved file").slice(0, 180);
     const category = clean(body?.category, "generated-images");
-    const toolName = clean(body?.toolName, "SohozTools").slice(0, 120);
+    const toolName = normalizeToolDisplayName(body?.toolName).slice(0, 120);
     const group = clean(body?.group, "image").slice(0, 40);
     const url = clean(body?.url);
     const publicId = clean(body?.publicId);
@@ -345,7 +353,7 @@ export async function POST(request: Request) {
       CREATIVE_FILE_CATEGORIES.has(category)
     ) {
       return NextResponse.json(
-        { success: false, error: "Creative files cannot be saved in SohozTools Files." },
+        { success: false, error: "Creative files cannot be saved in Seba Lagbe Tools Files." },
         { status: 400 },
       );
     }

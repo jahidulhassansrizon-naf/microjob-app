@@ -20,7 +20,16 @@ export default function SiteBrandLogo({
   alt,
 }: SiteBrandLogoProps) {
   const { settings } = useSiteSettings();
-  const configuredSrc = settings.branding.logoUrl.trim() || ORIGINAL_LOGO;
+  const savedLogoUrl = settings.branding.logoUrl.trim();
+  const legacyBrandPattern = /(?:সহজ\s*কাজ|sohoj\s*kaj|sohojkaj|sohozkaj|shohozkaj|shohozkai|sohoj\s*hub|sohojhub|easy[\s_-]*work)/i;
+  const configuredSrc =
+    savedLogoUrl && !legacyBrandPattern.test(savedLogoUrl)
+      ? savedLogoUrl
+      : ORIGINAL_LOGO;
+  const configuredSiteName = settings.branding.siteName.trim();
+  const displaySiteName = legacyBrandPattern.test(configuredSiteName)
+    ? "Seba Lagbe"
+    : configuredSiteName || "Website";
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [failedOriginalFor, setFailedOriginalFor] = useState<string | null>(null);
   const src = failedSrc === configuredSrc ? ORIGINAL_LOGO : configuredSrc;
@@ -30,9 +39,9 @@ export default function SiteBrandLogo({
       <span
         className={`inline-flex items-center font-bold tracking-tight text-slate-900 ${className}`}
         role="img"
-        aria-label={alt || `${settings.branding.siteName || "Website"} logo`}
+        aria-label={alt || `${displaySiteName} logo`}
       >
-        {settings.branding.siteName || "Website"}
+        {displaySiteName}
       </span>
     );
   }
@@ -40,7 +49,7 @@ export default function SiteBrandLogo({
   return (
     <img
       src={src}
-      alt={alt || `${settings.branding.siteName || "Website"} logo`}
+      alt={alt || `${displaySiteName} logo`}
       width={width}
       height={height}
       className={`${className} max-w-full object-contain`}

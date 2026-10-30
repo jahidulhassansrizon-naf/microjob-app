@@ -31,7 +31,7 @@ export default function ToolGrid() {
             bg: "bg-[#FF9500]",
         },
         {
-            title: "Sohoz Tools",
+            title: "Seba Lagbe Tools",
             icon: <ShoppingBag size={38} className="text-white"/>,
             bg: "bg-[#FF5D73]",
         },

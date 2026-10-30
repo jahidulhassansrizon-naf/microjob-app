@@ -2307,7 +2307,7 @@ export default function AdminDashboardClient() {
           )}
 
           <footer className="flex flex-col gap-2 pt-8 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} Sohozkaj</span>
+            <span>© {new Date().getFullYear()} Seba Lagbe</span>
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck size={13} /> Admin access is verified on the server
             </span>

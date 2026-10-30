@@ -513,7 +513,7 @@ const FAQ_DATA = [
     },
     {
         q: "Do I need an account to use these?",
-        ans: "No account is required on SohojKaj to browse or access these public directory links.",
+        ans: "No account is required on Seba Lagbe to browse or access these public directory links.",
     },
     {
         q: "Are these official websites?",
@@ -631,7 +631,7 @@ const BN_UI: Record<string, string> = {
 };
 const BN_FAQ: Record<string, { q: string; ans: string }> = {
     "What is the useful link?": { q: "দরকারি লিংক কী?", ans: "দরকারি লিংক হলো গুরুত্বপূর্ণ সরকারি পোর্টাল, জনসেবা ও যাচাইকরণ ব্যবস্থার সরাসরি শর্টকাট, যা বেছে সাজানো হয়েছে।" },
-    "Do I need an account to use these?": { q: "এগুলো ব্যবহার করতে কি অ্যাকাউন্ট লাগবে?", ans: "এই পাবলিক ডিরেক্টরির লিংকগুলো দেখতে বা ব্যবহার করতে সহজকাজে কোনো অ্যাকাউন্ট লাগে না।" },
+    "Do I need an account to use these?": { q: "এগুলো ব্যবহার করতে কি অ্যাকাউন্ট লাগবে?", ans: "এই পাবলিক ডিরেক্টরির লিংকগুলো দেখতে বা ব্যবহার করতে সেবা লাগবে কোনো অ্যাকাউন্ট লাগে না।" },
     "Are these official websites?": { q: "এগুলো কি অফিসিয়াল ওয়েবসাইট?", ans: "আমরা সরাসরি সরকারি ও অনুমোদিত তৃতীয় পক্ষের অফিসিয়াল ডোমেইনের লিংক দিই।" },
     "Is my personal information safe?": { q: "আমার ব্যক্তিগত তথ্য কি নিরাপদ?", ans: "হ্যাঁ। বাইরের সরকারি পোর্টালে আপনি যে ব্যক্তিগত তথ্য বা পাসওয়ার্ড দেন, আমরা তা সংরক্ষণ, ট্র্যাক বা প্রসেস করি না।" },
     "How often are the links updated?": { q: "লিংকগুলো কত দিন পরপর আপডেট করা হয়?", ans: "লিংকগুলো সচল ও সঠিক রাখতে আমাদের টিম নিয়মিত ডিরেক্টরি পর্যালোচনা ও আপডেট করে।" },
@@ -844,7 +844,7 @@ function DorkarLinksContent({ searchParams }: { searchParams: SearchParamsLike }
           <div className="w-full mt-16 bg-[#E2E8F0]/40 border border-[#E2E8F0] rounded-3xl p-6 md:p-8 relative overflow-hidden flex flex-col items-center text-center">
             <div className="absolute right-4 top-4 text-slate-300/50 text-7xl font-black pointer-events-none select-none">!</div>
             <h3 className="text-sm font-extrabold text-[#0F172A] mb-3 tracking-wide">{isBn ? "দাবিত্যাগ" : "Disclaimer"}</h3>
-            <p className="text-[11px] md:text-xs text-slate-600 leading-relaxed max-w-3xl">{isBn ? "এই পাতায় দেওয়া লিংকগুলো মূলত বাংলাদেশ সরকার ও অন্যান্য কর্তৃপক্ষের (তৃতীয় পক্ষ) ওয়েবসাইট থেকে নেওয়া। ওই ওয়েবসাইটগুলোর কোনো তথ্য আমরা পরিবর্তন, নিয়ন্ত্রণ বা সংরক্ষণ করি না। সেবা গ্রহণকারীদের সুবিধার জন্য সব প্রয়োজনীয় লিংক এক জায়গায় সাজানো হয়েছে। সেখানকার কোনো ভুল তথ্য, সার্ভার সমস্যা বা আপনার ব্যক্তিগত তথ্যের জন্য সহজকাজ কর্তৃপক্ষ কোনোভাবেই দায়ী নয়।" : "The links provided on this page are mainly from the websites of the Bangladesh Government and other authorities (third parties). We do not modify, control or retain any information on those websites. For the convenience of the service users, all the necessary links have been arranged in one place. The SohojKaj Authority is in no way responsible for any incorrect information, server down or your personal data contained there."}</p>
+            <p className="text-[11px] md:text-xs text-slate-600 leading-relaxed max-w-3xl">{isBn ? "এই পাতায় দেওয়া লিংকগুলো মূলত বাংলাদেশ সরকার ও অন্যান্য কর্তৃপক্ষের (তৃতীয় পক্ষ) ওয়েবসাইট থেকে নেওয়া। ওই ওয়েবসাইটগুলোর কোনো তথ্য আমরা পরিবর্তন, নিয়ন্ত্রণ বা সংরক্ষণ করি না। সেবা গ্রহণকারীদের সুবিধার জন্য সব প্রয়োজনীয় লিংক এক জায়গায় সাজানো হয়েছে। সেখানকার কোনো ভুল তথ্য, সার্ভার সমস্যা বা আপনার ব্যক্তিগত তথ্যের জন্য সেবা লাগবে কর্তৃপক্ষ কোনোভাবেই দায়ী নয়।" : "The links provided on this page are mainly from the websites of the Bangladesh Government and other authorities (third parties). We do not modify, control or retain any information on those websites. For the convenience of the service users, all the necessary links have been arranged in one place. The Seba Lagbe Authority is in no way responsible for any incorrect information, server down or your personal data contained there."}</p>
           </div>
         </div>
       </div>

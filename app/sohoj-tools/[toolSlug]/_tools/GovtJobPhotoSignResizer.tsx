@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import Link from "next/link";
 import {
   useCallback,
@@ -39,7 +39,7 @@ const GOVT_JOB_BN: Record<string, string> = {
     "স্বাক্ষর — ৩০০×৮০ পিক্সেল / ৩ সেমি × ০.৮ সেমি",
   "For accurate physical size, print at 100% / Actual Size. Disable “Fit to page” or similar scaling in the printer dialog.":
     "সঠিক শারীরিক মাপ পেতে ১০০% / প্রকৃত আকারে প্রিন্ট করুন। প্রিন্টার ডায়ালগে “পাতায় ফিট করুন” বা অনুরূপ স্কেলিং বন্ধ রাখুন।",
-  "Sohoj Tools": "সহজ টুলস",
+  "Seba Lagbe Tools": "সেবা লাগবে টুলস",
   "Educational Tools": "শিক্ষা বিষয়ক টুলস",
   Free: "বিনামূল্যে",
   "Resize your application photo and signature to the required dimensions directly in your browser.":
@@ -236,7 +236,7 @@ function translateGovtJobText(
 }
 
 function useGovtJobText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateGovtJobText(value, locale, baseL),
     [locale, baseL],
@@ -1118,7 +1118,7 @@ export default function GovtJobPhotoSignResizer() {
                 href="/sohoj-tools"
                 className="transition-colors hover:text-[#B91C1C]"
               >
-                <GovtT>{"Sohoj Tools\n              "}</GovtT>
+                <GovtT>{"Seba Lagbe Tools\n              "}</GovtT>
               </Link>
               <span>
                 <GovtT>{"/"}</GovtT>

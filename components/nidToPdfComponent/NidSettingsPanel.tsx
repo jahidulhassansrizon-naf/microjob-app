@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React from "react";
 import {
   RotateCw,
@@ -94,7 +94,7 @@ function translateNidSettingsText(
 }
 
 function useNidSettingsText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = React.useCallback(
     (value: string) => translateNidSettingsText(value, locale, baseL),
     [locale, baseL],

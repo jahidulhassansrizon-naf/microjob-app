@@ -1,6 +1,6 @@
 "use client";
 
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, type ReactNode } from "react";
 
 /**
@@ -213,7 +213,7 @@ function translateProfileText(value: string, locale: string | undefined): string
 }
 
 export function useProfileText() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const t = useCallback((value: string) => translateProfileText(value, locale), [locale]);
   return { t, locale };
 }

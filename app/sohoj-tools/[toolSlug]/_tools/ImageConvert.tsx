@@ -1,5 +1,5 @@
 "use client";
-import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Image as ImageIcon, Star, Share2, ArrowLeft, Download, FileType, CreditCard, Zap, Scale, Feather, Loader2, CheckCircle2, Trash2 } from "lucide-react";
@@ -22,7 +22,7 @@ type ImageConvertTextProps = {
 // on the shared translator recognizing every multiline UI string.
 const IMAGE_CONVERT_BN: Record<string, string> = {
   "/": "/",
-  "sohoj tools": "সহজ টুলস",
+  "seba lagbe tools": "সেবা লাগবে টুলস",
   "image tools": "ছবির টুলস",
   "image convert": "ছবি রূপান্তর",
   "free": "বিনামূল্যে",
@@ -90,7 +90,7 @@ function ImageConvertText({ children, locale }: ImageConvertTextProps) {
 }
 
 export default function ImageConvert() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const L = (value: string) => translateImageConvertText(value, locale) ?? baseL(value);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [format, setFormat] = useState<OutputFormat>("jpg");
@@ -263,7 +263,7 @@ export default function ImageConvert() {
       <div className="flex items-center gap-2 text-sm text-[#5A4A32]">
         <Link href="/sohoj-tools" className="flex items-center gap-1 transition-colors hover:text-[#DC2626]">
           <ArrowLeft size={14} />
-          <span><ImageConvertText locale={locale}>{"Sohoj Tools"}</ImageConvertText></span>
+          <span><ImageConvertText locale={locale}>{"Seba Lagbe Tools"}</ImageConvertText></span>
         </Link>
         <span><ImageConvertText locale={locale}>{"/"}</ImageConvertText></span>
         <span><ImageConvertText locale={locale}>{"Image Tools"}</ImageConvertText></span>

@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
@@ -3666,7 +3666,7 @@ const translateDocumentText = (
 };
 
 function DocumentText({ children }: { children: React.ReactNode }) {
-  const { L, locale } = useSohozI18n();
+  const { L, locale } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{translateDocumentText(children, L, locale)}</>;
 }
@@ -3771,7 +3771,7 @@ function CompareSlider({
 }
 
 export default function DocumentScanner() {
-  const { L, locale } = useSohozI18n();
+  const { L, locale } = useSebaLagbeToolsI18n();
   const DL = useCallback(
     (value: string) => translateDocumentText(value, L, locale),
     [L, locale],

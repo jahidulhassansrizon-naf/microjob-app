@@ -1,5 +1,5 @@
 "use client";
-import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop, } from "react-image-crop";
@@ -47,7 +47,7 @@ const getNumericAspectRatio = (val: string): number | undefined => {
 };
 
 const CROP_IMAGE_BN: Record<string, string> = {
-    "Sohoj Tools": "সহজ টুলস",
+    "Seba Lagbe Tools": "সেবা লাগবে টুলস",
     "Image Tools": "ছবির টুলস",
     "Crop Image": "ছবি কাটছাঁট",
     "Free": "বিনামূল্যে",
@@ -81,7 +81,7 @@ function normalizeCropImageText(text: string): string {
 }
 
 function CropText({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (locale === "bn" && typeof children === "string") {
         const translated = CROP_IMAGE_BN[normalizeCropImageText(children)];
         if (translated) return <>{translated}</>;
@@ -90,7 +90,7 @@ function CropText({ children }: { children: React.ReactNode }) {
 }
 
 export default function CropImage() {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     const L = (text: string) => locale === "bn"
         ? CROP_IMAGE_BN[normalizeCropImageText(text)] ?? baseL(text)
         : baseL(text);
@@ -274,7 +274,7 @@ export default function CropImage() {
       <div className="flex items-center gap-2 text-sm text-[#5A4A32]">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
-          <span><CropText>{"Sohoj Tools"}</CropText></span>
+          <span><CropText>{"Seba Lagbe Tools"}</CropText></span>
         </Link>
         <span><CropText>{"/"}</CropText></span>
         <span><CropText>{"Image Tools"}</CropText></span>

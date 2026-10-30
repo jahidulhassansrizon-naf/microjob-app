@@ -1,5 +1,5 @@
 "use client";
-import { T as BaseT, useSohozI18n, L as baseL } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n, L as baseL } from "@/app/sohoj-tools/_i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -146,7 +146,7 @@ const REDUCE_VIDEO_BN: Record<string, string> = {
     "Smallest file": "সবচেয়ে ছোট ফাইল",
     "Lower quality": "মান কিছুটা কম হবে",
     "Original": "মূল ভিডিও",
-    "Sohoj Tools": "সহজ টুলস",
+    "Seba Lagbe Tools": "সেবা লাগবে টুলস",
     "Video Tools": "ভিডিও টুলস",
     "Reduce Video File Size": "ভিডিওর ফাইলের আকার কমান",
     "Free": "বিনামূল্যে",
@@ -235,7 +235,7 @@ function translateReduceVideoText(text: string): string | undefined {
 }
 
 function T({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (locale === "bn" && typeof children === "string") {
         const translated = translateReduceVideoText(children);
         if (translated) return <>{translated}</>;
@@ -247,7 +247,7 @@ function T({ children }: { children: React.ReactNode }) {
 /*                                  Component                                 */
 /* -------------------------------------------------------------------------- */
 export default function ReduceVideoFileSize() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const L = (text: string) => locale === "bn" ? translateReduceVideoText(text) ?? baseL(text) : baseL(text);
     const router = useRouter();
     // UI state
@@ -580,7 +580,7 @@ export default function ReduceVideoFileSize() {
               <button onClick={() => router.back()} className="p-1 hover:bg-[#F3E9D2] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Sohoj Tools\n              "}</T></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Seba Lagbe Tools\n              "}</T></Link>
               <span><T>{"/"}</T></span>
               <span className="hover:text-[#3B2F1E] cursor-pointer"><T>{"Video Tools\n              "}</T></span>
               <span><T>{"/"}</T></span>

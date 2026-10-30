@@ -1,5 +1,5 @@
 "use client";
-import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Clock3, Download, FileVideo, Home, Play, RotateCcw, Share2, Sparkles, Star, Upload, X, Zap, } from "lucide-react";
@@ -12,7 +12,7 @@ type ChangeSpeedTextProps = {
 
 const CHANGE_SPEED_BN: Record<string, string> = {
     "/": "/",
-    "sohoj tools": "সহজ টুলস",
+    "seba lagbe tools": "সেবা লাগবে টুলস",
     "video tools": "ভিডিও টুলস",
     "change speed": "ভিডিওর গতি পরিবর্তন",
     "free": "বিনামূল্যে",
@@ -56,7 +56,7 @@ const CHANGE_SPEED_BN: Record<string, string> = {
     "share": "শেয়ার করুন",
     "remove video": "ভিডিও সরান",
     "custom playback speed": "নিজস্ব ভিডিও চালানোর গতি",
-    "sohoj tools home": "সহজ টুলসের মূল পৃষ্ঠা",
+    "seba lagbe tools home": "সেবা লাগবে টুলসের মূল পৃষ্ঠা",
     "change video playback speed in your browser.": "আপনার ব্রাউজারেই ভিডিও চালানোর গতি পরিবর্তন করুন।",
     "no video selected.": "কোনো ভিডিও নির্বাচন করা হয়নি।",
     "please select a video.": "অনুগ্রহ করে একটি ভিডিও নির্বাচন করুন।",
@@ -121,7 +121,7 @@ function translateChangeSpeedStatus(message: string, status: string, hasFile: bo
 }
 
 export default function ChangeSpeed() {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     const L = (value: string) => translateChangeSpeedText(value, locale) ?? baseL(value);
     const { file, sourceUrl, result, status, progress, message, isBusy, selectFile, process, cancel, reset, } = useVideoSpeed();
     const [speed, setSpeed] = useState(1);
@@ -269,11 +269,11 @@ export default function ChangeSpeed() {
 
       <main className="mx-auto w-full max-w-[1320px] px-4 py-3.5 sm:px-6 lg:px-0 lg:py-4">
         <div className="flex items-center gap-2 text-[13px] text-[#5A4A32]">
-          <Link href="/sohoj-tools" aria-label={L("Sohoj Tools home")} title={L("Sohoj Tools home")} className="inline-flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
+          <Link href="/sohoj-tools" aria-label={L("Seba Lagbe Tools home")} title={L("Seba Lagbe Tools home")} className="inline-flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
             <Home size={13}/>
           </Link>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>
-          <Link href="/sohoj-tools" className="hover:text-[#3B2F1E] transition-colors"><ChangeSpeedText locale={locale}>{"Sohoj Tools\n          "}</ChangeSpeedText></Link>
+          <Link href="/sohoj-tools" className="hover:text-[#3B2F1E] transition-colors"><ChangeSpeedText locale={locale}>{"Seba Lagbe Tools\n          "}</ChangeSpeedText></Link>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>
           <span><ChangeSpeedText locale={locale}>{"Video Tools"}</ChangeSpeedText></span>
           <span><ChangeSpeedText locale={locale}>{"/"}</ChangeSpeedText></span>

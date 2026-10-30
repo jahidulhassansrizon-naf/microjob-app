@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { ArrowLeft, Star, Share, Copy, Check, ChevronDown, ChevronUp, Keyboard, 
 // content is deliberately left untouched.
 const BANGLISH_TYPING_BN: Record<string, string> = {
   "Go back": "ফিরে যান",
-  "Sohoj Tools": "সহজ টুলস",
+  "Seba Lagbe Tools": "সেবা লাগবে টুলস",
   "Text Tools": "লেখার সরঞ্জাম",
   "Banglish Typing": "বাংলিশ টাইপিং",
   "Free": "বিনামূল্যে",
@@ -308,7 +308,7 @@ const relatedTools = [
     },
 ];
 export default function BanglishTyping() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const BL = useCallback((value: string) => translateBanglishTypingText(value, locale), [locale]);
     const router = useRouter();
     // States
@@ -406,7 +406,7 @@ export default function BanglishTyping() {
               <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40" title={BL("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><BanglishTypingText locale={locale}>{"Sohoj Tools\n              "}</BanglishTypingText></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><BanglishTypingText locale={locale}>{"Seba Lagbe Tools\n              "}</BanglishTypingText></Link>
               <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>
               <span className="hover:text-[#3B2F1E] cursor-pointer"><BanglishTypingText locale={locale}>{"Text Tools\n              "}</BanglishTypingText></span>
               <span><BanglishTypingText locale={locale}>{"/"}</BanglishTypingText></span>

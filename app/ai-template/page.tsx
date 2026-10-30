@@ -296,7 +296,7 @@ export default function AITemplatePage() {
   }, []);
 
   const handleCropApplied = useCallback((blob: Blob) => {
-    const croppedFile = new File([blob], "sohozkaj-cropped-photo.jpg", {
+    const croppedFile = new File([blob], "sebalagbe-cropped-photo.jpg", {
       type: "image/jpeg",
     });
     const previewUrl = URL.createObjectURL(blob);

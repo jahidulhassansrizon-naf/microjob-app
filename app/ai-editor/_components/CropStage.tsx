@@ -189,7 +189,7 @@ function CropStage({ crop, aspect, imgRef, src, alt, zoom, rotate, onImageLoad, 
     }, [updateLive]);
     return (<ReactCrop crop={liveCrop} aspect={aspect} onChange={(_: any, percentCrop: any) => updateLive(percentCrop)} onComplete={(pixelCrop: any) => onCommit(pixelCrop)} renderSelectionAddon={() => (<div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
           {(["n", "e", "s", "w"] as const).map((direction) => (<button key={direction} type="button" aria-label={`Resize crop from ${HANDLE_LABEL[direction]} edge`} onPointerDown={startMidpointResize(direction)} style={{ ...HANDLE_STYLE, ...HANDLE_POSITION[direction] }}/>))}
-        </div>)} className="sohozkaj-crop-canvas max-h-[70vh]">
+        </div>)} className="sebalagbe-crop-canvas max-h-[70vh]">
       <img ref={imgRef} src={src} alt={alt} onLoad={onImageLoad} style={{
             transform: `scale(${zoom / 100}) rotate(${rotate}deg)`,
             transition: "transform 0.2s ease-in-out",

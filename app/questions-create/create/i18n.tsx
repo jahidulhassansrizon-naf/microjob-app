@@ -1,6 +1,6 @@
 "use client";
 
-import { T as BaseT, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, type ReactNode } from "react";
 
 /**
@@ -257,7 +257,7 @@ function translateQuestionText(
 }
 
 export function useQuestionText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateQuestionText(value, locale, baseL),
     [locale, baseL],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, type ReactNode } from "react";
 
 /**
@@ -237,7 +237,8 @@ function translateManualEditorText(
   const exact = MANUAL_EDITOR_BN[key];
   if (exact) return exact;
 
-  if (key === "সহজকাজ") return "সহজকাজ";
+  if (key === "সহজকাজ" || key === "সহজ কাজ") return "সেবা লাগবে";
+  if (key === "সেবা লাগবে") return "সেবা লাগবে";
 
   const dynamic = [
     [/^select (.+) background$/, (_m: string, name: string) => `${name === "custom" ? "নিজস্ব" : name} ব্যাকগ্রাউন্ড নির্বাচন করুন`],
@@ -300,7 +301,7 @@ function translateManualEditorText(
 }
 
 export function useManualEditorText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateManualEditorText(value, locale, baseL),
     [locale, baseL],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -210,7 +210,7 @@ function translateSubscriptionText(
 }
 
 function useSubscriptionText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateSubscriptionText(value, locale, baseL),
     [locale, baseL],

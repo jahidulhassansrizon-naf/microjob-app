@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ const VOTER_MIGRATION_BN: Record<string, string> = {
   "• turns 18 on:": "• ১৮ বছর পূর্ণ হবে:",
   "fix the date": "জন্মতারিখ ঠিক করুন",
   "continue anyway": "তবুও চালিয়ে যান",
-  "sohoj tools": "সহজ টুলস",
+  "seba lagbe tools": "সেবা লাগবে টুলস",
   "general tools": "সাধারণ টুলস",
   "voter migration form": "ভোটার এলাকা স্থানান্তর ফর্ম",
   "free": "বিনামূল্যে",
@@ -165,7 +165,7 @@ function translateVoterMigrationText(value: unknown, locale?: string): string {
 }
 
 function T({ children }: { children: React.ReactNode }) {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   if (typeof children === "string" || typeof children === "number") {
     return <>{translateVoterMigrationText(children, locale)}</>;
   }
@@ -557,7 +557,7 @@ function PostCodeBoxes({ value, onChange, }: {
     value: string;
     onChange: (v: string) => void;
 }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const refs = useRef<Array<HTMLInputElement | null>>([]);
     function focusBox(i: number) {
         const el = refs.current[Math.max(0, Math.min(3, i))];
@@ -630,7 +630,7 @@ function DobPicker({ value, onPick, placeholder, }: {
     onPick: (d: Date | null) => void;
     placeholder: string;
 }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const isBangla = String(locale).toLowerCase().startsWith("bn");
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(value ?? new Date(1995, 0, 1));
@@ -721,7 +721,7 @@ function MonthYearPicker({ month, year, onPick, placeholder, }: {
     onPick: (month: number, year: number) => void;
     placeholder: string;
 }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const isBangla = String(locale).toLowerCase().startsWith("bn");
     const [open, setOpen] = useState(false);
     const [viewYear, setViewYear] = useState<number>(year ?? new Date().getFullYear());
@@ -782,7 +782,7 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
     onFixDate: () => void;
     onContinue: () => void;
 }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const isBangla = String(locale).toLowerCase().startsWith("bn");
     return (<div className="print-hide fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div className="bg-[#FBF6E8] rounded-2xl max-w-sm w-full p-6 shadow-xl relative">
@@ -807,7 +807,7 @@ function AgeWarningModal({ age, turns18On, onFixDate, onContinue, }: {
     </div>);
 }
 export default function VoterMigrationForm() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const L = (value: string) => translateVoterMigrationText(value, locale);
     const router = useRouter();
     const [regDistrict, setRegDistrict] = useState("");
@@ -1448,7 +1448,7 @@ export default function VoterMigrationForm() {
               <button onClick={() => router.back()} className="p-1 hover:bg-[#EFE3C8]/60 rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1" title={L("Go back")}>
                 <ArrowLeft size={16}/>
               </button>
-              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Sohoj Tools\n              "}</T></Link>
+              <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Seba Lagbe Tools\n              "}</T></Link>
               <span><T>{"/"}</T></span>
               <span className="hover:text-[#3B2F1E] cursor-pointer"><T>{"General Tools\n              "}</T></span>
               <span><T>{"/"}</T></span>

@@ -48,7 +48,7 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
 
           {generatedImage && (<div className="generated-image-overlay">
               <span className="generated-image-badge">{t("Generated")}</span>
-              <a href={generatedImage} download={`sohozkaj-template-${selectedTemplate.id}.png`} className="generated-download-btn" aria-label={t("Download generated image")} title={t("Download generated image")}>
+              <a href={generatedImage} download={`sebalagbe-template-${selectedTemplate.id}.png`} className="generated-download-btn" aria-label={t("Download generated image")} title={t("Download generated image")}>
                 <Download size={17}/><span>{t("Download")}</span>
               </a>
             </div>)}

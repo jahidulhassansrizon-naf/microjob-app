@@ -17,7 +17,12 @@ export default function BrandName({
   const { locale } = useI18n();
   const { settings } = useSiteSettings();
   const isBangla = locale === "bn";
-  const isDefaultName = settings.branding.siteName.trim() === DEFAULT_SITE_SETTINGS.branding.siteName;
+  const configuredName = settings.branding.siteName.trim();
+  const legacyBrandPattern = /(?:সহজ\s*কাজ|sohoj\s*kaj|sohojkaj|sohozkaj|shohozkaj|shohozkai|sohoj\s*hub|sohojhub|easy[\s_-]*work)/i;
+  const isDefaultName =
+    !configuredName ||
+    configuredName === DEFAULT_SITE_SETTINGS.branding.siteName ||
+    legacyBrandPattern.test(configuredName);
 
   return (
     <span className={className} translate="no">

@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { createWorker } from "tesseract.js";
 /* Page-local English ↔ Bangla UI translation                                 */
 /* ========================================================================== */
 const IMAGE_TO_TEXT_BN: Record<string, string> = {
-    "sohoj tools": "সহজ টুলস",
+    "seba lagbe tools": "সেবা লাগবে টুলস",
     "text tools": "লেখার টুলস",
     "image to text": "ছবি থেকে লেখা",
     "free": "বিনামূল্যে",
@@ -19,7 +19,7 @@ const IMAGE_TO_TEXT_BN: Record<string, string> = {
     "add to favorites": "পছন্দের তালিকায় যোগ করুন",
     "link copied": "লিংক কপি হয়েছে",
     "share this tool": "এই টুলটি শেয়ার করুন",
-    "image to text — sohoj tools": "ছবি থেকে লেখা — Sohoj Tools",
+    "image to text — seba lagbe tools": "ছবি থেকে লেখা — Seba Lagbe Tools",
     "go back": "পেছনে যান",
     "files": "ফাইল",
     "files ": "ফাইল ",
@@ -121,14 +121,14 @@ function translateImageToTextText(value: unknown, locale?: string, fallback?: (v
     if (fallback) {
         const translated = fallback(raw);
         if (translated && translated !== raw && /[\u0980-\u09FF]/.test(translated)) {
-            const withoutKnownTerms = translated.replace(/\b(?:OCR|JPG|PNG|WebP|BMP|GIF|MB|Sohoj Tools|ANSI|Unicode|Banglish|Enter)\b/gi, "");
+            const withoutKnownTerms = translated.replace(/\b(?:OCR|JPG|PNG|WebP|BMP|GIF|MB|Seba Lagbe Tools|ANSI|Unicode|Banglish|Enter)\b/gi, "");
             if (!/[A-Za-z]{3,}/.test(withoutKnownTerms)) return translated;
         }
     }
     return raw;
 }
 function ImageToTextT({ children }: { children: React.ReactNode }) {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translateImageToTextText(children, locale, baseL)}</>;
 }
@@ -311,7 +311,7 @@ function useOcr() {
 /* Component                                                                  */
 /* ========================================================================== */
 export default function ImageToText() {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     const tx = useCallback((value: string) => translateImageToTextText(value, locale, baseL), [locale, baseL]);
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -346,7 +346,7 @@ export default function ImageToText() {
     const handleShare = async () => {
         const url = window.location.href;
         if (typeof navigator.share === "function") {
-            try { await navigator.share({ title: tx("Image to Text — Sohoj Tools"), url }); } catch { /* user dismissed the share sheet */ }
+            try { await navigator.share({ title: tx("Image to Text — Seba Lagbe Tools"), url }); } catch { /* user dismissed the share sheet */ }
             return;
         }
         await shareFeedback.copy(url);
@@ -374,7 +374,7 @@ export default function ImageToText() {
                   <button type="button" onClick={() => router.back()} className={`p-1 hover:bg-[#EFE3C8] rounded-md transition-colors text-[#3B2F1E] flex items-center justify-center -ml-1 ${focusRing}`} title={tx("Go back")} aria-label={tx("Go back")}>
                     <ArrowLeft size={18}/>
                   </button>
-                  <Link href="/sohoj-tools" className="hover:text-[#DC2626]"><ImageToTextT>{"Sohoj Tools\n              "}</ImageToTextT></Link>
+                  <Link href="/sohoj-tools" className="hover:text-[#DC2626]"><ImageToTextT>{"Seba Lagbe Tools\n              "}</ImageToTextT></Link>
                   <span aria-hidden="true"><ImageToTextT>{"/"}</ImageToTextT></span>
                   <span className="hover:text-[#DC2626] cursor-pointer"><ImageToTextT>{"Text Tools\n              "}</ImageToTextT></span>
                   <span aria-hidden="true"><ImageToTextT>{"/"}</ImageToTextT></span>

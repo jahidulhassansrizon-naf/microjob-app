@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { T, useSebaLagbeToolsI18n, L } from "@/app/sohoj-tools/_i18n";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -21,17 +21,17 @@ const categories = [
 // তাই রিলোডে প্রথম ফ্রেমেই সঠিক মাপ; JS state-এর জন্য অপেক্ষা নেই।
 // মোবাইল/ট্যাবলেটে আইকন বক্স ঘরের কত % নেবে: ToolTile-এ (touchCompact) আছে
 type SearchParamsLike = { get(name: string): string | null } | null;
-function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike }) {
+function SebaLagbeToolsContent({ searchParams }: { searchParams: SearchParamsLike }) {
     // subscribe to language changes so L("...") placeholders re-render (as the old page wrapper did)
     // hook-এর L ব্যবহার করছি (locale cookie থেকে আসে), তাই সার্ভার ও ক্লায়েন্টের HTML একই হয় — hydration error হয় না
-    const { L } = useSohozI18n();
+    const { L } = useSebaLagbeToolsI18n();
     const router = useRouter();
     // Keep the tools UI immediately visible; auth is verified in the background.
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [activeTab, setActiveTab] = useState<"All" | "Free" | "Paid">("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
-    // SohozTools পেজের নিজস্ব সার্চ বার সবসময় দৃশ্যমান থাকে
+    // সেবা লাগবে টুলস পেজের নিজস্ব সার্চ বার সবসময় দৃশ্যমান থাকে
     const searchInputRef = useRef<HTMLInputElement | null>(null);
     const isInitialLoadDone = useRef(false);
     const gridRef = useRef<HTMLDivElement | null>(null);
@@ -364,10 +364,10 @@ function SohojToolsContent({ searchParams }: { searchParams: SearchParamsLike })
 // is the final UI; the bridge below swaps in the live search params without changing the markup.
 function SearchParamsBridge() {
     const searchParams = useSearchParams();
-    return <SohojToolsContent searchParams={searchParams}/>;
+    return <SebaLagbeToolsContent searchParams={searchParams}/>;
 }
-export default function SohojToolsPage() {
-    return (<Suspense fallback={<SohojToolsContent searchParams={null}/>}>
+export default function SebaLagbeToolsPage() {
+    return (<Suspense fallback={<SebaLagbeToolsContent searchParams={null}/>}>
       <SearchParamsBridge />
     </Suspense>);
 }

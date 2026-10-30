@@ -1,7 +1,7 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 /**
- * NID Information Correction Form (Form-2) — Sohoj Tools
+ * NID Information Correction Form (Form-2) — Seba Lagbe Tools
  *
  * Dependencies (install once):
  *   npm i lucide-react html2canvas jspdf
@@ -255,7 +255,7 @@ const NID_BN_TO_EN: Record<string, string> = {
  */
 const NID_EN_TO_BN: Record<string, string> = {
   "NID Information Correction Form": "জাতীয় পরিচয়পত্রের তথ্য সংশোধন ফর্ম",
-  "Sohoz Tools": "সহজ টুলস",
+  "Seba Lagbe Tools": "সেবা লাগবে টুলস",
   "General Tools": "সাধারণ টুলস",
   Free: "বিনামূল্যে",
   Used: "ব্যবহার হয়েছে",
@@ -438,7 +438,7 @@ function isBanglaText(value: string) {
   return /[\u0980-\u09FF]/.test(value);
 }
 function NidT({ children }: { children: ReactNode }) {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{nidTranslateText(children, locale)}</>;
 }
@@ -1114,7 +1114,7 @@ function InputField({
   inputMode?: "text" | "tel" | "email" | "numeric";
 }) {
   const id = useId();
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   return (
     <div className="min-w-0">
       <label
@@ -1221,7 +1221,7 @@ function SubjectField({
   multiline?: boolean;
 }) {
   const id = useId();
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   return (
     <div>
       <label
@@ -1360,7 +1360,7 @@ const ACTION_BTN =
 const ICON_BTN =
   "flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] shadow-sm transition duration-150 hover:bg-[#FEE9E9] hover:text-[#B91C1C] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40";
 export default function NidInformationCorrectionForm() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [openSubject, setOpenSubject] = useState<SubjectKey | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -1707,7 +1707,7 @@ export default function NidInformationCorrectionForm() {
             <NidT>{"/"}</NidT>
           </span>
           <span>
-            <NidT>{"Sohoj Tools"}</NidT>
+            <NidT>{"Seba Lagbe Tools"}</NidT>
           </span>
           <span>
             <NidT>{"/"}</NidT>

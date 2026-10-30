@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 
 /**
  * Page-wide English → Bangla translator for the AI Editor.
@@ -554,7 +554,7 @@ function translateAiText(
 }
 
 export function useAiEditorText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateAiText(value, locale, baseL),
     [locale, baseL],

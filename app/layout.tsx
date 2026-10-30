@@ -39,9 +39,21 @@ export const revalidate = 0;
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getServerSiteSettings();
   const branding = settings.branding;
-  const siteName = branding.siteName.trim() || DEFAULT_SITE_SETTINGS.branding.siteName;
-  const title = buildSiteTitle(siteName, branding.metaTitle, branding.tagline);
-  const description = branding.metaDescription.trim() || DEFAULT_SITE_SETTINGS.branding.metaDescription;
+  const legacyBrandPattern = /(?:সহজ\s*কাজ|sohoj\s*kaj|sohojkaj|sohozkaj|shohozkaj|shohozkai|sohoj\s*hub|sohojhub|easy[\s_-]*work)/gi;
+  const normalizeBrandText = (value: string) =>
+    value
+      .replace(/(?:https?:\/\/)?(?:www\.)?(?:sohojkaj|sohozkaj|shohozkaj|shohozkai)\.com/gi, "sebalagbe.com")
+      .replace(legacyBrandPattern, (match) => /[\u0980-\u09FF]/.test(match) ? "সেবা লাগবে" : "Seba Lagbe");
+  const savedSiteName = normalizeBrandText(branding.siteName.trim());
+  const siteName = savedSiteName || DEFAULT_SITE_SETTINGS.branding.siteName;
+  const title = buildSiteTitle(
+    siteName,
+    normalizeBrandText(branding.metaTitle),
+    normalizeBrandText(branding.tagline),
+  );
+  const description = normalizeBrandText(
+    branding.metaDescription.trim() || DEFAULT_SITE_SETTINGS.branding.metaDescription,
+  );
 
   // Keep the original app/favicon.ico, app/icon.png and apple-icon assets as
   // browser icons. The full horizontal logo is not a suitable favicon: using

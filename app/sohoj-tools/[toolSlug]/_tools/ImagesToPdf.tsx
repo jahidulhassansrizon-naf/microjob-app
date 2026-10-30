@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -75,7 +75,7 @@ function resolvePageDimensions(imgObj: Pick<UploadedImage, "width" | "height">, 
 type ImagesToPdfTranslator = (value: string) => string;
 
 const IMAGES_TO_PDF_BN: Record<string, string> = {
-    "sohoj tools": "সহজ টুলস",
+    "seba lagbe tools": "সেবা লাগবে টুলস",
     "/": "/",
     "image tools": "ছবির টুলস",
     "images to pdf": "ছবি থেকে PDF",
@@ -190,7 +190,7 @@ function translateImagesToPdfText(
 }
 
 function ImagePdfT({ children }: { children: React.ReactNode }) {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translateImagesToPdfText(children, locale, baseL)}</>;
 }
@@ -200,7 +200,7 @@ function formatImagesToPdfNumber(value: number, locale: string | undefined): str
 }
 
 export default function ImagesToPdf() {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     const L = useCallback((value: string) => translateImagesToPdfText(value, locale, baseL), [locale, baseL]);
     // Navigation & Customization State
     const [activeTab, setActiveTab] = useState<ActiveTab>("page");
@@ -521,7 +521,7 @@ export default function ImagesToPdf() {
                 }
             }
             if (doc) {
-                doc.save("sohozkaj-images.pdf");
+                doc.save("sebalagbe-images.pdf");
             }
         }
         catch (error) {
@@ -634,7 +634,7 @@ export default function ImagesToPdf() {
       <div className="flex items-center gap-2 text-sm text-[#5A4A32]">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
-          <span><ImagePdfT>{"Sohoj Tools"}</ImagePdfT></span>
+          <span><ImagePdfT>{"Seba Lagbe Tools"}</ImagePdfT></span>
         </Link>
         <span><ImagePdfT>{"/"}</ImagePdfT></span>
         <span><ImagePdfT>{"Image Tools"}</ImagePdfT></span>

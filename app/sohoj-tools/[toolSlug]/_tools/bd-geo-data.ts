@@ -1,5 +1,5 @@
 /**
- * Bangladesh administrative geography data for Sohoj Tools.
+ * Bangladesh administrative geography data for Seba Lagbe Tools.
  * Self-contained: NO external npm package, API, fetch, or JSON import.
  *
  * Current working dataset:

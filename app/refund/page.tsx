@@ -298,7 +298,7 @@ export default function RefundPolicyPage() {
               <div className="refund-contact" style={{ marginTop: 5 }}>
                 <div>
                   <strong><T>{"Email:"}</T></strong>{<T>{" "}</T>}
-                  <a href="mailto:hello@sohozkaj.com"><T>{"hello@sohozkaj.com"}</T></a>
+                  <a href="mailto:hello@sebalagbe.com"><T>{"hello@sebalagbe.com"}</T></a>
                 </div>
                 <div><T>{"We will review your request within 3-5 business days."}</T></div>
               </div>
@@ -319,7 +319,7 @@ export default function RefundPolicyPage() {
             </RefundSection>
 
             <RefundSection number="7" title="Policy change">
-              <p><T>{"Easy Work may update the Refund Policy at any time. The changed\r\n                policy will be effective upon publication on the website.\r\n              "}</T></p>
+              <p><T>{"Seba Lagbe may update the Refund Policy at any time. The changed\r\n                policy will be effective upon publication on the website.\r\n              "}</T></p>
             </RefundSection>
 
             <RefundSection number="8" title="Communication">
@@ -327,7 +327,7 @@ export default function RefundPolicyPage() {
               <div className="refund-contact">
                 <div>
                   <strong><T>{"Email:"}</T></strong>{<T>{" "}</T>}
-                  <a href="mailto:hello@sohozkaj.com"><T>{"hello@sohozkaj.com"}</T></a>
+                  <a href="mailto:hello@sebalagbe.com"><T>{"hello@sebalagbe.com"}</T></a>
                 </div>
                 <div>
                   <strong><T>{"Phone:"}</T></strong>{<T>{" "}</T>}
@@ -335,14 +335,14 @@ export default function RefundPolicyPage() {
                 </div>
                 <div>
                   <strong><T>{"Website:"}</T></strong>{<T>{" "}</T>}
-                  <a href="https://www.sohozkaj.com" target="_blank" rel="noreferrer"><T>{"www.sohozkaj.com\r\n                  "}</T></a>
+                  <a href="https://sebalagbe.com" target="_blank" rel="noreferrer"><T>{"sebalagbe.com\r\n                  "}</T></a>
                 </div>
               </div>
             </RefundSection>
 
             <div className="refund-divider"/>
 
-            <div className="refund-closing"><T>{"If you purchase services from Easy Work, you will be deemed to\r\n              have accepted all the terms of this Refund Policy.\r\n            "}</T></div>
+            <div className="refund-closing"><T>{"If you purchase services from Seba Lagbe, you will be deemed to\r\n              have accepted all the terms of this Refund Policy.\r\n            "}</T></div>
           </article>
         </div>
       </main>

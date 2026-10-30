@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 
 /**
  * Page-local, hydration-safe English ↔ Bangla translations for Bulk Photo Edit.
@@ -355,7 +355,7 @@ function translateBulkPhotoText(value: string, locale: string | undefined): stri
 }
 
 export function useBulkPhotoText() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const t = useCallback(
     (value: string) => translateBulkPhotoText(value, locale),
     [locale],

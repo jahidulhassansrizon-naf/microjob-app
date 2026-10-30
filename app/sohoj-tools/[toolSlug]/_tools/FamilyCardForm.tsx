@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, {
   useCallback,
   useEffect,
@@ -68,7 +68,7 @@ const FAMILY_CARD_BN: Record<string, string> = {
     "স্বাক্ষর (প্রাপক / ওয়ার্ড প্রতিনিধি)",
   "yours faithfully,": "বিনীত,",
   "applicant signature": "আবেদনকারীর স্বাক্ষর",
-  "sohoj tools": "সহজ টুলস",
+  "seba lagbe tools": "সেবা লাগবে টুলস",
   "general tools": "সাধারণ টুলস",
   "family card form": "ফ্যামিলি কার্ড ফর্ম",
   free: "বিনামূল্যে",
@@ -203,7 +203,7 @@ function familyTranslate(value: string, locale: "en" | "bn") {
 }
 
 function FamilyT({ children }: { children: React.ReactNode }) {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   if (typeof children !== "string" && typeof children !== "number")
     return <>{children}</>;
   return <>{familyTranslate(String(children), locale)}</>;
@@ -351,7 +351,7 @@ function GeoCombobox({
   placeholder: string;
   disabled?: boolean;
 }) {
-  const { L: geoL } = useSohozI18n();
+  const { L: geoL } = useSebaLagbeToolsI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -1263,7 +1263,7 @@ function PrintHost({
 /*  Main component                                                            */
 /* ────────────────────────────────────────────────────────────────────────── */
 export default function FamilyCardForm() {
-  const { locale } = useSohozI18n();
+  const { locale } = useSebaLagbeToolsI18n();
   const router = useRouter();
   const familyL = useCallback(
     (value: string) => familyTranslate(value, locale),
@@ -1620,7 +1620,7 @@ export default function FamilyCardForm() {
               </button>
 
               <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]">
-                <FamilyT>{"Sohoj Tools\n              "}</FamilyT>
+                <FamilyT>{"Seba Lagbe Tools\n              "}</FamilyT>
               </Link>
 
               <span>

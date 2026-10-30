@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n, L } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n, L } from "@/app/sohoj-tools/_i18n";
 import { Check, ChevronDown, FileDown, FileText, Maximize, Minus, Plus, Printer, RotateCcw, Search, Share2, Star, X, } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 
 /* Fuel Card Form UI translations. The application sheet itself stays in Bangla. */
 const FUEL_UI_PAIRS: ReadonlyArray<readonly [string, string]> = [
-  ["Sohoz Tools", "সহজ টুলস"],
+  ["Seba Lagbe Tools", "সেবা লাগবে টুলস"],
   ["General Tools", "সাধারণ টুলস"],
   ["Fuel Card Form", "জ্বালানি তেলের আবেদনপত্র"],
   ["Free", "বিনামূল্যে"],
@@ -180,7 +180,7 @@ function translateFuelUiText(value: string, locale: unknown, fallback?: (value: 
 }
 
 function T({ children }: { children: ReactNode }) {
-  const { locale, L } = useSohozI18n();
+  const { locale, L } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{translateFuelUiText(children, locale, L)}</>;
 }
@@ -843,7 +843,7 @@ function TextField({ no, label, hint, value, placeholder, onChange, inputMode, m
     suffix?: string;
     validate?: (value: string) => string;
 }) {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     const [touched, setTouched] = useState(false);
     const message = validate ? validate(value) : "";
     const showError = Boolean(message) && touched;
@@ -896,7 +896,7 @@ function FuelTypeField({ no, value, onChange, }: {
     value: FuelCardFormState["fuelType"];
     onChange: (value: FuelType) => void;
 }) {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     return (<div>
       <FieldLabel no={no} hint={translateFuelUiText("Fuel type", locale, L)}><T>{"জ্বালানি তেলের ধরন"}</T></FieldLabel>
       <div role="radiogroup" aria-label={translateFuelUiText("Fuel type", locale, L)} className="grid grid-cols-3 gap-2">
@@ -944,7 +944,7 @@ function PreviewToolbar({ zoom, onZoomBy, onZoom100, onFit, hasData, live, onLiv
     bnDigits: boolean;
     onBnDigits: (value: boolean) => void;
 }) {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md border border-[#E3D6B8] bg-[#FBF6E8] text-[#7A6A50] hover:text-[#3B2F1E]";
     return (<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#E3D6B8] px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -1000,7 +1000,7 @@ function PrintRoot({ form, mode, bnDigits, }: {
 /*  Main component                                                            */
 /* ────────────────────────────────────────────────────────────────────────── */
 export default function FuelCardForm() {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     const FL = useCallback((value: string) => translateFuelUiText(value, locale, L), [locale, L]);
     const [form, setForm] = useState<FuelCardFormState>(EMPTY_FORM);
     const [hydrated, setHydrated] = useState(false);
@@ -1369,7 +1369,7 @@ export default function FuelCardForm() {
         <div className="mb-2 flex items-center gap-2 px-1 text-[12px] text-[#7A6A50]">
           <span><T>{"\u2302"}</T></span>
           <span><T>{"/"}</T></span>
-          <span><T>{"Sohoz Tools"}</T></span>
+          <span><T>{"Seba Lagbe Tools"}</T></span>
           <span><T>{"/"}</T></span>
           <span><T>{"General Tools"}</T></span>
           <span><T>{"/"}</T></span>

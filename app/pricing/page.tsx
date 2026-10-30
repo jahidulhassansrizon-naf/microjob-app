@@ -1,6 +1,6 @@
 "use client";
 
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -177,7 +177,7 @@ function translateSubscriptionText(
 }
 
 function useSubscriptionText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback((value: string) => translateSubscriptionText(value, locale, baseL), [locale, baseL]);
   return { t, locale };
 }
@@ -291,7 +291,7 @@ export default function PricingPage() {
   const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
 
   /**
-   * Keep tool cards on Pricing in sync with the normal Sohozkaj access flow:
+   * Keep tool cards on Pricing in sync with the normal Seba Lagbe access flow:
    * guests log in first, paid tools require an active subscription, and only
    * then does navigation continue to the selected tool.
    */
@@ -686,7 +686,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Featured navigation tools plus the current free/paid Sohozkaj catalogue */}
+        {/* Featured navigation tools plus the current free/paid Seba Lagbe catalogue */}
         <section className="mx-auto mt-10 mb-24 w-full max-w-[1240px] px-4 sm:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -384,7 +384,7 @@ const BN: Record<string, string> = {
   "+ organization information": "+ প্রতিষ্ঠানের তথ্য",
   "registered": "নিবন্ধিত",
   "address and license": "ঠিকানা ও লাইসেন্স",
-  "easy work is a service of sigmative. below is our registered office and trade license information.": "Easy Work হলো Sigmative-এর একটি সেবা। নিচে আমাদের নিবন্ধিত কার্যালয় ও ট্রেড লাইসেন্সের তথ্য দেওয়া হলো।",
+  "seba lagbe is a service of sigmative. below is our registered office and trade license information.": "Seba Lagbe হলো Sigmative-এর একটি সেবা। নিচে আমাদের নিবন্ধিত কার্যালয় ও ট্রেড লাইসেন্সের তথ্য দেওয়া হলো।",
   "bangladesh · head office": "বাংলাদেশ · প্রধান কার্যালয়",
   "trade license number will be updated soon...": "ট্রেড লাইসেন্স নম্বর শিগগিরই হালনাগাদ করা হবে...",
   "united states · hub": "যুক্তরাষ্ট্র · হাব",

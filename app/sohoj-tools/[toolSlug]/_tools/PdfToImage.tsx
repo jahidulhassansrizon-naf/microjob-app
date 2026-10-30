@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { FileImage, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Minimize2, Combine, FilePlus, ArrowLeft, X, Plus, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
@@ -349,7 +349,7 @@ function translatePdfToImageText(value: string, locale: string | undefined): str
 }
 
 function PdfT({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translatePdfToImageText(children, locale)}</>;
 }
@@ -366,7 +366,7 @@ function getPdfToImageErrorMessage(error: unknown, locale: string | undefined): 
 }
 
 export default function PdfToImage() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const tx = (value: string) => translatePdfToImageText(value, locale);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [imageFormat, setImageFormat] = useState<ImageFormat>("JPG");

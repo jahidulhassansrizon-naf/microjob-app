@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n, L as baseI18nL } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n, L as baseI18nL } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode, } from "react";
 import Link from "next/link";
 import { Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, ExternalLink, FileText, ImagePlus, LayoutTemplate, Link2, Mail, MapPin, Minus, Phone, Plus, Printer, RotateCw, Share2, ShieldCheck, Star, Trash2, Upload, UserRound, X, } from "lucide-react";
@@ -8,7 +8,7 @@ import { Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp
 /*                 Page-specific English ↔ Bangla localization               */
 /* -------------------------------------------------------------------------- */
 const ATS_CV_BN: Record<string, string> = {
-  "sohoz tools": "সহজ টুলস",
+  "seba lagbe tools": "সেবা লাগবে টুলস",
   "educational tools": "শিক্ষামূলক টুলস",
   "ats friendly cv maker": "ATS উপযোগী CV তৈরির টুল",
   "free": "বিনামূল্যে",
@@ -176,7 +176,7 @@ const ATS_CV_BN: Record<string, string> = {
   "3. watch the a4 preview update instantly as you type.": "৩. টাইপ করার সঙ্গে সঙ্গে A4 প্রিভিউ আপডেট হতে দেখুন।",
   "4. use print or download pdf, then choose save as pdf in your browser’s print dialog.": "৪. প্রিন্ট বা PDF ডাউনলোড নির্বাচন করুন, এরপর ব্রাউজারের প্রিন্ট উইন্ডোতে ‘Save as PDF’ বেছে নিন।",
   "tools in the same category": "একই বিভাগের অন্যান্য টুল",
-  "all sohoz tools": "সব সহজ টুল",
+  "all seba lagbe tools": "সব সহজ টুল",
   "explore the complete collection of browser-based tools in one place.": "ব্রাউজারেই ব্যবহারযোগ্য সব টুল এক জায়গায় দেখুন।",
   "uploaded profile": "আপলোড করা প্রোফাইল ছবি",
   "reset to fit the panel width": "প্রিভিউকে প্যানেলের প্রস্থ অনুযায়ী দেখান",
@@ -264,7 +264,7 @@ function L(value: string): string {
 }
 
 function AtsCvText({ children }: { children: ReactNode }) {
-  const { locale, L: globalL } = useSohozI18n();
+  const { locale, L: globalL } = useSebaLagbeToolsI18n();
   if (typeof children === "string" || typeof children === "number") {
     return <>{translateAtsCvText(children, locale, globalL(String(children)))}</>;
   }
@@ -1243,7 +1243,7 @@ async function optimizeImageDataUrl(dataUrl: string): Promise<string> {
     return canvas.toDataURL("image/jpeg", 0.84);
 }
 export default function AtsCvMaker() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const L = useCallback((value: string) => translateAtsCvText(value, locale, baseI18nL(value)), [locale]);
     const [cvData, dispatch] = useReducer(reducer, undefined, createInitialCVData);
     const [currentStep, setCurrentStep] = useState(1);
@@ -2157,7 +2157,7 @@ export default function AtsCvMaker() {
 
             <span><AtsCvText>{"/"}</AtsCvText></span>
 
-            <Link href="/sohoj-tools" className="transition hover:text-[#3B2F1E]"><AtsCvText>{"Sohoz Tools\n            "}</AtsCvText></Link>
+            <Link href="/sohoj-tools" className="transition hover:text-[#3B2F1E]"><AtsCvText>{"Seba Lagbe Tools\n            "}</AtsCvText></Link>
 
             <span><AtsCvText>{"/"}</AtsCvText></span>
             <span><AtsCvText>{"Educational Tools"}</AtsCvText></span>
@@ -2408,7 +2408,7 @@ export default function AtsCvMaker() {
             </div>
 
             <div>
-              <h4 className="text-[12px] font-bold text-[#3B2F1E] transition group-hover:text-[#DC2626]"><AtsCvText>{"All Sohoz Tools\n              "}</AtsCvText></h4>
+              <h4 className="text-[12px] font-bold text-[#3B2F1E] transition group-hover:text-[#DC2626]"><AtsCvText>{"All Seba Lagbe Tools\n              "}</AtsCvText></h4>
 
               <p className="mt-0.5 line-clamp-2 text-[11px] text-[#7A6A50]"><AtsCvText>{"Explore the complete collection of browser-based tools in one\n                place.\n              "}</AtsCvText></p>
             </div>

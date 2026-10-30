@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 
 const UI_BN: Record<string, string> = {
   "Watch video": "ভিডিও দেখুন",
@@ -247,7 +247,7 @@ export function translateAiTemplateText(value: string, locale: string | undefine
 }
 
 export function useAiTemplateText() {
-  const { locale, L: baseL } = useSohozI18n();
+  const { locale, L: baseL } = useSebaLagbeToolsI18n();
   const t = useCallback((value: string) => translateAiTemplateText(value, locale, baseL), [locale, baseL]);
   return { t, locale };
 }

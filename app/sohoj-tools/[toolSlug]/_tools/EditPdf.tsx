@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Pencil, Star, Share2, Upload, FileText, ChevronDown, ChevronUp, Minimize2, Combine, ArrowLeft, X, Plus, Lock, Type, Highlighter, PenTool, MousePointer2, Undo2, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle, } from "lucide-react";
@@ -140,13 +140,13 @@ function translateEditPdfText(value: string, locale: string | undefined, baseL?:
 }
 
 function EditPdfText({ children }: EditPdfTextProps) {
-  const { locale, L } = useSohozI18n();
+  const { locale, L } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{translateEditPdfText(children, locale, L)}</>;
 }
 
 export default function EditPdf() {
-    const { locale, L } = useSohozI18n();
+    const { locale, L } = useSebaLagbeToolsI18n();
     const EL = useCallback((value: string) => translateEditPdfText(value, locale, L), [locale, L]);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showHowToUse, setShowHowToUse] = useState(false);

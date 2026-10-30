@@ -1,5 +1,5 @@
 "use client";
-import { T, useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { T, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -46,7 +46,7 @@ const removeBgErrorText = (locale: "en" | "bn", text: string): string =>
   locale === "bn" ? (REMOVE_BG_ERROR_TEXT[text] ?? text) : text;
 
 export default function RemoveBackground() {
-  const { L } = useSohozI18n();
+  const { L } = useSebaLagbeToolsI18n();
   const { locale } = useI18n();
   const [bgType, setBgType] = useState<"transparent" | "solid" | "photo">(
     "transparent",
@@ -346,7 +346,7 @@ export default function RemoveBackground() {
         >
           <ArrowLeft size={14} />
           <span>
-            <T>{"Sohoj Tools"}</T>
+            <T>{"Seba Lagbe Tools"}</T>
           </span>
         </Link>
         <span>

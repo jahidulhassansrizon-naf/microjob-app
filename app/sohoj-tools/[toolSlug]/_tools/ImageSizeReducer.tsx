@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import JSZip from "jszip";
@@ -143,13 +143,13 @@ function translateImageSizeText(
 }
 
 function ImageSizeT({ children }: { children: React.ReactNode }) {
-  const { locale, L } = useSohozI18n();
+  const { locale, L } = useSebaLagbeToolsI18n();
   if (typeof children !== "string") return <>{children}</>;
   return <>{translateImageSizeText(children, locale, L)}</>;
 }
 
 export default function ImageSizeReducer() {
-    const { L, locale } = useSohozI18n();
+    const { L, locale } = useSebaLagbeToolsI18n();
     const IL = useCallback((value: string) => translateImageSizeText(value, locale, L), [locale, L]);
     const [quality, setQuality] = useState<number>(75);
     const [maxDimension, setMaxDimension] = useState<string>("Keep original size");

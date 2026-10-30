@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useState } from "react";
 import Link from "next/link";
 import { Combine, Star, Share2, Upload, FileText, Lock, ChevronDown, ChevronUp, Minimize2, FilePlus, FileCode, ArrowLeft, X, GripVertical, Loader2, Download, CheckCircle2, AlertCircle, } from "lucide-react";
@@ -156,7 +156,7 @@ function translateMergePdfText(value: string, locale: string | undefined): strin
 }
 
 function MergeT({ children }: { children: React.ReactNode }) {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     if (typeof children !== "string") return <>{children}</>;
     return <>{translateMergePdfText(children, locale)}</>;
 }
@@ -168,7 +168,7 @@ function getMergePdfErrorMessage(error: string | null, locale: string | undefine
 }
 
 export default function MergePdf() {
-    const { locale } = useSohozI18n();
+    const { locale } = useSebaLagbeToolsI18n();
     const tx = (value: string) => translateMergePdfText(value, locale);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [showHowToUse, setShowHowToUse] = useState(false);

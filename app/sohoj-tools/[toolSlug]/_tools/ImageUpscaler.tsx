@@ -1,5 +1,5 @@
 "use client";
-import { useSohozI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, Image as ImageIcon, Loader2, RotateCcw, Share2, Sparkles, Star, Upload, X, Zap, } from "lucide-react";
@@ -327,7 +327,7 @@ const getFriendlyError = (err: unknown): string => {
 /* Page-specific English ↔ Bangla translations                                */
 /* -------------------------------------------------------------------------- */
 const IMAGE_UPSCALER_BN: Record<string, string> = {
-    "sohoj tools": "সহজ টুলস",
+    "seba lagbe tools": "সেবা লাগবে টুলস",
     "image tools": "ছবির টুলস",
     "image upscaler": "ছবির রেজোলিউশন বাড়ান",
     "free": "বিনামূল্যে",
@@ -455,7 +455,7 @@ function translateUpscalerText(value: unknown, locale: string | undefined, baseL
 }
 
 function UpscalerText({ children }: { children: React.ReactNode }) {
-    const { locale, L: baseL } = useSohozI18n();
+    const { locale, L: baseL } = useSebaLagbeToolsI18n();
     if (typeof children !== "string" && typeof children !== "number") return <>{children}</>;
     return <>{translateUpscalerText(children, locale, baseL)}</>;
 }
@@ -464,7 +464,7 @@ function UpscalerText({ children }: { children: React.ReactNode }) {
 /*                                 Component                                  */
 /* -------------------------------------------------------------------------- */
 export default function ImageUpscaler() {
-    const { L: baseL, locale } = useSohozI18n();
+    const { L: baseL, locale } = useSebaLagbeToolsI18n();
     const UL = (value: string) => translateUpscalerText(value, locale, baseL);
     const [scale, setScale] = useState<ScaleOption>("2x");
     const [outputFormat, setOutputFormat] = useState<OutputFormat>("Original");
@@ -1031,7 +1031,7 @@ export default function ImageUpscaler() {
       <div className="flex flex-wrap items-center gap-2 text-sm text-[#7A6A50]">
         <Link href="/sohoj-tools" className="flex items-center gap-1 hover:text-[#3B2F1E] transition-colors">
           <ArrowLeft size={14}/>
-          <span><UpscalerText>{"Sohoj Tools"}</UpscalerText></span>
+          <span><UpscalerText>{"Seba Lagbe Tools"}</UpscalerText></span>
         </Link>
         <span><UpscalerText>{"/"}</UpscalerText></span>
         <span><UpscalerText>{"Image Tools"}</UpscalerText></span>

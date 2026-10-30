@@ -20,7 +20,7 @@ const blankForm = {
     number: "",
     role: "Customer Support",
     availability: "Sun-Thu, 10:00 AM - 8:00 PM",
-    message: "Hello, I need support with my SohozKaj account.",
+    message: "Hello, I need support with my Seba Lagbe account.",
     note: "",
 };
 function userScopeKey() {

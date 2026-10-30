@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import MobileUploadClient from "../MobileUploadClient";
 
 export const metadata: Metadata = {
-  title: "Upload photo from phone | Sohozkaj",
+  title: "Upload photo from phone | Seba Lagbe",
   robots: { index: false, follow: false, noarchive: true },
   referrer: "no-referrer",
 };

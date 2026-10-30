@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 const EXACT: Record<string, string> = {
-  "sohoz tools": "সহজ টুলস",
+  "seba lagbe tools": "সেবা লাগবে টুলস",
   "image tools": "ইমেজ টুলস",
   "text tools": "টেক্সট টুলস",
   "video tools": "ভিডিও টুলস",
@@ -164,11 +164,11 @@ const EXACT: Record<string, string> = {
   "filter by file type": "ফাইলের ধরন অনুযায়ী ফিল্টার করুন",
   "search by file or tool name": "ফাইল বা টুলের নাম দিয়ে খুঁজুন",
   "search tool files": "টুলের ফাইল খুঁজুন",
-  "sohoztools files": "সহজটুলসের ফাইল",
+  "seba lagbe tools files": "সেবা লাগবে টুলসের ফাইল",
   "loading…": "লোড হচ্ছে…",
-  "close sohoztools sidebar": "সহজটুলসের সাইডবার বন্ধ করুন",
-  "anything you save from a sohoztools tool — a scanned document, a compressed pdf, a resized photo — is stored here.": "সহজটুলসের যেকোনো টুল থেকে সেভ করা ফাইল—স্ক্যান করা ডকুমেন্ট, কমপ্রেস করা PDF বা সাইজ কমানো ছবি—এখানে সংরক্ষিত থাকে।",
-  "browse sohoztools": "সহজটুলস দেখুন",
+  "close seba lagbe tools sidebar": "সেবা লাগবে টুলসের সাইডবার বন্ধ করুন",
+  "anything you save from a seba lagbe tools tool — a scanned document, a compressed pdf, a resized photo — is stored here.": "সেবা লাগবে টুলসের যেকোনো টুল থেকে সেভ করা ফাইল—স্ক্যান করা ডকুমেন্ট, কমপ্রেস করা PDF বা সাইজ কমানো ছবি—এখানে সংরক্ষিত থাকে।",
+  "browse seba lagbe tools": "সেবা লাগবে টুলস দেখুন",
   "delete this file?": "এই ফাইলটি মুছে ফেলবেন?",
   "this action will permanently remove the saved file.": "এই কাজটি ফাইলটিকে স্থায়ীভাবে মুছে দেবে।",
   "delete": "মুছুন",
@@ -225,7 +225,7 @@ const EXACT: Record<string, string> = {
   "import an existing pdf or fill each step manually.": "আগের একটি PDF ইমপোর্ট করুন অথবা প্রতিটি ধাপ হাতে পূরণ করুন।",
   "watch the a4 preview update instantly as you type.": "লিখতে থাকলে A4 পূর্বরূপের তাৎক্ষণিক পরিবর্তন দেখুন।",
   "use print or download pdf, then choose save as pdf in your browser’s print dialog.": "প্রিন্ট বা PDF ডাউনলোড করুন, তারপর ব্রাউজারের প্রিন্ট ডায়ালগে “PDF হিসেবে সেভ করুন” নির্বাচন করুন।",
-  "all sohoz tools": "সব সহজটুলস",
+  "all seba lagbe tools": "সব সেবা লাগবে টুলস",
   "explore the complete collection of browser-based tools in one place.": "ব্রাউজারভিত্তিক সব টুল এক জায়গায় দেখুন।",
   "government job photo & sign resizer": "সরকারি চাকরির ছবি ও স্বাক্ষর রিসাইজার",
   "lock / unlock pdf": "PDF লক / আনলক",
@@ -639,7 +639,7 @@ export function translateSohozText(value: unknown, locale: "en" | "bn", fallback
 export function L(value: string): string {
   if (typeof document === "undefined") return value;
   const locale = document.documentElement.getAttribute("data-locale") === "bn" ? "bn" : "en";
-  // We cannot call React hooks here; the parent page consumes useSohozI18n so
+  // We cannot call React hooks here; the parent page consumes useSebaLagbeToolsI18n so
   // language changes trigger a rerender, after which this pure helper reads
   // the latest locale from the document.
   const fallback = value;
@@ -653,7 +653,7 @@ export function L(value: string): string {
   if (/[A-Za-z]/.test(smart) && smart.toLowerCase() !== value.toLowerCase()) return preserveWhitespace(value, smart);
   return fallback;
 }
-export function useSohozI18n() {
+export function useSebaLagbeToolsI18n() {
   const { locale, t } = useI18n();
   const L = useCallback((value: string) => translateSohozText(value, locale, t), [locale, t]);
   return useMemo(() => ({ locale, t, L }), [locale, t, L]);
