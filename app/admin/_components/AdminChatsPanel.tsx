@@ -91,6 +91,9 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   const selectedUserIdRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  messagesRef.current = messages;
 
   const loadUsers = useCallback(async (pageToLoad = 1, quiet = false) => {
     if (!quiet) setListLoading(true);
@@ -134,6 +137,11 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
       if (!response.ok) throw new Error(data?.message || "Could not load this conversation.");
       if (selectedUserIdRef.current !== userId) return;
       const incoming: ChatMessage[] = Array.isArray(data?.messages) ? data.messages : [];
+      // Background polling must never yank the admin back to the bottom while reading older messages.
+      const container = scrollContainerRef.current;
+      const nearBottom = !container || container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+      const knownIds = new Set(messagesRef.current.map((message) => message.id));
+      const hasNewMessages = incoming.some((message) => !knownIds.has(message.id));
       if (options?.before) setMessages((current) => mergeMessages(incoming, current));
       else setMessages((current) => mergeMessages(current, incoming));
       if (!options?.silent) setHasMore(Boolean(data?.hasMore));
@@ -142,7 +150,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
       }
       setUsers((current) => current.map((user) => user.id === userId ? { ...user, unreadCount: 0, hasConversation: Boolean(data?.hasConversation) } : user));
       setMessageError("");
-      if (!options?.before) shouldScrollRef.current = true;
+      if (!options?.before && (!options?.silent || (hasNewMessages && nearBottom))) shouldScrollRef.current = true;
     } catch (cause) {
       if (!options?.silent && selectedUserIdRef.current === userId) {
         setMessageError(cause instanceof Error ? cause.message : "Could not load this conversation.");
@@ -402,7 +410,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
                 <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:inline-flex ${selectedUser.isOnline ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}><span className={`h-1.5 w-1.5 rounded-full ${selectedUser.isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />{selectedUser.isOnline ? "Online" : "Offline"}</span>
               </header>
 
-              <div className="min-h-0 flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain bg-slate-50/70 px-4 py-5 sm:px-6">
+              <div ref={scrollContainerRef} className="min-h-0 flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain bg-slate-50/70 px-4 py-5 sm:px-6">
                 <div className="mx-auto flex max-w-sm items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-center text-[11px] text-slate-500"><MessageCircle size={13} className="shrink-0 text-indigo-500" /> Private conversation between this user and admin</div>
                 {hasMore && (
                   <div className="flex justify-center"><button type="button" disabled={olderLoading || !messages.length} onClick={() => void loadMessages(selectedUser.id, { before: messages[0]?.createdAt })} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">{olderLoading ? <LoaderCircle size={13} className="animate-spin" /> : <ChevronUp size={13} />} Load earlier messages</button></div>

@@ -17,6 +17,11 @@ type OfferVideoFrameProps = {
   maxHeightDvh?: number;
   /** Smaller frame for popups/modals: no decorative dots, thinner mat. */
   compact?: boolean;
+  /**
+   * Hide the browser's video controls (pause button, time, progress bar,
+   * volume, fullscreen). Clicking the video still pauses/resumes it.
+   */
+  hideControls?: boolean;
 };
 
 export default function OfferVideoFrame({
@@ -26,6 +31,7 @@ export default function OfferVideoFrame({
   replayLabel = "Replay video",
   maxHeightDvh = 44,
   compact = false,
+  hideControls = false,
 }: OfferVideoFrameProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -56,11 +62,27 @@ export default function OfferVideoFrame({
     }
   };
 
+  // Used only when the controls are hidden: click the video to pause/resume.
+  const handleVideoClick = () => {
+    if (!hideControls || showOverlay) return;
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      void video.play();
+    } else {
+      video.pause();
+    }
+  };
+
   return (
     <div
       className={`relative isolate mx-auto w-full ${className}`}
       // Keeps the 16:9 frame short enough to leave room for the content below it.
-      style={compact ? undefined : { maxWidth: `min(100%, calc(${maxHeightDvh}dvh * 16 / 9))` }}
+      style={
+        compact
+          ? undefined
+          : { maxWidth: `min(100%, calc(${maxHeightDvh}dvh * 16 / 9))` }
+      }
     >
       {/* Decorative dotted patterns peeking out from behind the frame */}
       {!compact && (
@@ -92,15 +114,16 @@ export default function OfferVideoFrame({
               src={videoSrc}
               playsInline
               preload="metadata"
-              controls={!showOverlay}
+              controls={!hideControls && !showOverlay}
               controlsList="nodownload noplaybackrate noremoteplayback"
               disablePictureInPicture
+              onClick={handleVideoClick}
               onContextMenu={(event) => event.preventDefault()}
               onEnded={() => {
                 setHasEnded(true);
                 setShowOverlay(true);
               }}
-              className="absolute inset-0 h-full w-full select-none object-cover"
+              className={`absolute inset-0 h-full w-full select-none object-cover ${hideControls ? "cursor-pointer" : ""}`}
             />
 
             <button

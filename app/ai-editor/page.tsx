@@ -10,6 +10,9 @@ import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import RecentGenerations from "./_components/RecentGenerations";
 import ImagePreviewModal from "./_components/ImagePreviewModal";
+import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
+import AiPrintStudioModal from "./_components/AiPrintStudioModal";
+import { printSinglePhoto } from "./_components/photoExport";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import CropStage from "./_components/CropStage";
 import "react-image-crop/dist/ReactCrop.css";
@@ -49,6 +52,10 @@ export default function PhotoEditorPage() {
     const [dualResultImage, setDualResultImage] = useState<string | null>(null);
     const [recentList, setRecentList] = useState<any[]>([]);
     const [previewModalImage, setPreviewModalImage] = useState<any>(null);
+    // Photo that was just generated: drives the right-side actions panel and the inline print studio.
+    const [resultItem, setResultItem] = useState<GeneratedResultItem | null>(null);
+    const [printSession, setPrintSession] = useState<PrintSession | null>(null);
+    const [previewStartWithEdit, setPreviewStartWithEdit] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     // Prevent duplicate generation submissions before React has time to re-render.
     // This lock is local to this user's page and never shared between users.
@@ -657,6 +664,8 @@ export default function PhotoEditorPage() {
             }
             setIsDualPreviewActive(false);
             setDualResultImage(null);
+            setResultItem(null);
+            setPrintSession(null);
             if (activeTarget === "left") {
                 setLeftImage(finalImageUrl);
                 setOriginalLeftImage(finalImageUrl);
@@ -744,6 +753,9 @@ export default function PhotoEditorPage() {
         setSelectedClothing(clothing);
     };
     const handleRegenerateFromModal = async (imageItem: any) => {
+        setResultItem(null);
+        setPrintSession(null);
+        setPreviewStartWithEdit(false);
         if (imageItem?.side === "dual") {
             // A combined dual photo: split the saved real photo back into left/right.
             try {
@@ -808,6 +820,9 @@ export default function PhotoEditorPage() {
                 ? { ...item, ...(savedItem || {}), url: finalUrl }
                 : item));
             setPreviewModalImage((prev: any) => prev && prev.id === updatedId
+                ? { ...prev, ...(savedItem || {}), url: finalUrl }
+                : prev);
+            setResultItem((prev) => prev && prev.id === updatedId
                 ? { ...prev, ...(savedItem || {}), url: finalUrl }
                 : prev);
         }
@@ -1225,6 +1240,8 @@ export default function PhotoEditorPage() {
         }
         generationInFlightRef.current = true;
         let generationSucceeded = false;
+        setResultItem(null);
+        setPrintSession(null);
         setIsGenerating(true);
         try {
             const currentSizeLabel = getCurrentSizeLabel();
@@ -1310,6 +1327,7 @@ export default function PhotoEditorPage() {
                         ...dualDocData,
                     };
                     setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
+                    setResultItem({ ...dualDocData, ...updatedItem } as GeneratedResultItem);
                 }
                 else {
                     const response = await fetch("/api/ai-generations", {
@@ -1329,6 +1347,7 @@ export default function PhotoEditorPage() {
                     if (createdItem) {
                         setRecentList((prev) => [createdItem, ...prev]);
                     }
+                    setResultItem({ ...dualDocData, ...(createdItem || {}) } as GeneratedResultItem);
                 }
                 generationSucceeded = true;
                 return;
@@ -1383,6 +1402,7 @@ export default function PhotoEditorPage() {
                     ...newDocData,
                 };
                 setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
+                setResultItem({ ...newDocData, ...updatedItem } as GeneratedResultItem);
             }
             else {
                 const response = await fetch("/api/ai-generations", {
@@ -1404,6 +1424,7 @@ export default function PhotoEditorPage() {
                 if (createdItem) {
                     setRecentList((prev) => [createdItem, ...prev]);
                 }
+                setResultItem({ ...newDocData, ...(createdItem || {}) } as GeneratedResultItem);
             }
             generationSucceeded = true;
         }
@@ -1460,6 +1481,8 @@ export default function PhotoEditorPage() {
                 throw new Error(deleteResult?.error || "Failed to delete the generated photo.");
             }
             setRecentList((prevList) => prevList.filter((item) => item.id !== imageToDelete.id && item.url !== imageToDelete.url));
+            setResultItem((current) => current && (current.id === imageToDelete.id || current.url === imageToDelete.url) ? null : current);
+            setPrintSession(null);
         }
         catch (error) {
             console.error("Error deleting image:", error);
@@ -1472,6 +1495,8 @@ export default function PhotoEditorPage() {
         }
     };
     const handleResetSettings = () => {
+        setResultItem(null);
+        setPrintSession(null);
         setSelectedSize("");
         setSelectedVisaSize("35×45 mm");
         setSelectedBg(-1);
@@ -1624,7 +1649,16 @@ export default function PhotoEditorPage() {
           </div>
         </div>)}
 
-      <ImagePreviewModal image={previewModalImage} onClose={() => setPreviewModalImage(null)} onDelete={handleDeleteImage} onRegenerate={handleRegenerateFromModal} onSaveImage={handleSaveEditedImage}/>
+      <AiPrintStudioModal open={!!printSession} image={printSession?.image ?? null} preset={printSession?.preset ?? null} onClose={() => setPrintSession(null)} onPrintSingle={resultItem ? async () => {
+        try {
+            await printSinglePhoto(resultItem);
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : "Could not print this image.");
+        }
+    } : undefined}/>
+
+      <ImagePreviewModal image={previewModalImage} onClose={() => { setPreviewModalImage(null); setPreviewStartWithEdit(false); }} onDelete={handleDeleteImage} onRegenerate={handleRegenerateFromModal} onSaveImage={handleSaveEditedImage} startWithEdit={previewStartWithEdit}/>
 
       <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
         <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
@@ -1633,7 +1667,16 @@ export default function PhotoEditorPage() {
           </div>
 
           <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
+            <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0">
+              {/* Photo preview (kept mounted, hidden while the print section is open) */}
+              <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
+                <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
+              </div>
+              {/* Options appear right beside the generated photo */}
+              {resultItem && !printSession && (<div className="flex justify-center xl:block xl:shrink-0">
+                  <GeneratedResultPanel item={resultItem} onClose={() => setResultItem(null)} onEdit={(item) => { setPreviewStartWithEdit(true); setPreviewModalImage(item); }} onDelete={handleDeleteImage} onPrint={(session) => setPrintSession(session)}/>
+                </div>)}
+            </div>
           </div>
 
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
@@ -1644,7 +1687,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>
 
-        <RecentGenerations generations={recentList} onImageClick={(img) => setPreviewModalImage(img)} isLoading={isFetching}/>
+                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} isLoading={isFetching}/>
       </div>
       <ConfirmDeleteModal open={!!deleteTarget} imageUrl={deleteTarget?.url} onCancel={() => setDeleteTarget(null)} onConfirm={() => performDeleteImage(deleteTarget)}/>
       </div>);

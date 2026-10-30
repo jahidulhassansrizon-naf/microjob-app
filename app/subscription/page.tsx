@@ -744,10 +744,11 @@ export default function SubscriptionPage() {
               className="w-full"
             >
               <OfferVideoFrame
-                src="/offervideo/offerwoman2.mp4"
+                src="/intro/subscrioptionvideointro.mp4"
                 playLabel={t("Watch video")}
                 replayLabel={t("Replay video")}
                 maxHeightDvh={30}
+                hideControls
               />
             </section>
 

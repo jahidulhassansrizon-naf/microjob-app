@@ -163,8 +163,10 @@ export type AiPrintStudioProps = {
     onClose: () => void;
     /** Optional: print the single image on its own sheet (the old behaviour). */
     onPrintSingle?: () => void | Promise<void>;
+    /** Render inside the page layout (fills its parent) instead of a full-screen overlay. */
+    inline?: boolean;
 };
-export default function AiPrintStudioModal({ open, image, preset, onClose, onPrintSingle }: AiPrintStudioProps) {
+export default function AiPrintStudioModal({ open, image, preset, onClose, onPrintSingle, inline = false }: AiPrintStudioProps) {
     const { t } = useAiEditorText();
     const printStudioOpen = open;
     const printStudioImage = image;
@@ -298,7 +300,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         if (!printStudioOpen)
             return;
         const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        if (!inline)
+            document.body.style.overflow = "hidden";
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape")
                 closePrintStudio();
@@ -313,10 +316,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         };
         window.addEventListener("keydown", onKeyDown);
         return () => {
-            document.body.style.overflow = previousOverflow;
+            if (!inline)
+                document.body.style.overflow = previousOverflow;
             window.removeEventListener("keydown", onKeyDown);
         };
-    }, [printStudioOpen, closePrintStudio, redo, undo]);
+    }, [printStudioOpen, closePrintStudio, redo, undo, inline]);
     useEffect(() => {
         const workspace = workspaceRef.current;
         if (!workspace)
@@ -678,7 +682,9 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
     if (!mounted || !printStudioOpen || !printStudioImage)
         return null;
     const selectedItem = items.find((item) => item.id === selectedId) ?? null;
-    const modal = (<div className="fixed inset-0 z-[10000] bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden">
+    const modal = (<div className={inline
+            ? "relative w-full h-full min-h-[640px] rounded-2xl border border-[#E3D6B8] shadow-sm bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden"
+            : "fixed inset-0 z-[10000] bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden"}>
       <header className="h-14 shrink-0 bg-[#FBF6E8] border-b border-[#E3D6B8] flex items-center justify-between px-4 sm:px-5 shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-[#DC2626] text-white flex items-center justify-center shrink-0">
@@ -695,8 +701,10 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
       </header>
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <aside className="w-[320px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-y-auto flex flex-col">
-          <div className="p-4 border-b border-[#E3D6B8]">
+        <aside className={inline
+            ? "w-[600px] max-w-[60%] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-hidden grid grid-cols-2 content-start"
+            : "w-[320px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-y-auto flex flex-col"}>
+          <div className={inline ? "p-3 border-b border-r border-[#E3D6B8] row-span-2" : "p-4 border-b border-[#E3D6B8]"}>
             <div className="flex items-center gap-2 mb-3">
               <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
               <div className="min-w-0">
@@ -755,7 +763,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="p-4 border-b border-[#E3D6B8]">
+          <div className={inline ? "p-3 border-b border-[#E3D6B8]" : "p-4 border-b border-[#E3D6B8]"}>
             <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Options\r\n            "}</T></p>
             <div className="space-y-1.5">
               {([
@@ -795,7 +803,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="p-4 border-b border-[#E3D6B8]">
+          <div className={inline ? "p-3 border-b border-[#E3D6B8]" : "p-4 border-b border-[#E3D6B8]"}>
             <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Page & Layout\r\n            "}</T></p>
 
             <select value={pageSizeKey} onChange={(event) => setPage(event.target.value as PageSizeKey)} className="w-full h-8 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] px-2 text-[11px] font-semibold cursor-pointer">
@@ -826,7 +834,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             </div>
           </div>
 
-          <div className="mt-auto p-4 border-t border-[#E3D6B8]">
+          <div className={inline ? "col-span-2 p-3 grid grid-cols-2 gap-x-3 gap-y-2 [&>*]:mt-0 [&>*]:mb-0" : "mt-auto p-4 border-t border-[#E3D6B8]"}>
             <div className="rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-2 mb-2.5">
               <p className="text-[11px] uppercase font-bold text-[#3B2F1E]/50"><T>{"Total\r\n              "}</T></p>
               <p className="text-[13px] font-extrabold text-[#3B2F1E] mt-0.5">
@@ -953,5 +961,5 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
           <RotateCw size={10}/><T>{"Rotate selected 90\u00B0\r\n        "}</T></button>
       </footer>
     </div>);
-    return createPortal(modal, document.body);
+    return inline ? modal : createPortal(modal, document.body);
 }
