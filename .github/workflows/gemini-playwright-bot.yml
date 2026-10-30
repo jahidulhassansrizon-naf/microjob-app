@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       keep_minutes:
-        description: "Keep the bot online for this many minutes"
+        description: "Keep the bot online for up to 6 hours (subject to the job limit)"
         required: false
-        default: "45"
+        default: "360"
         type: string
 
 permissions:
@@ -15,7 +15,7 @@ permissions:
 jobs:
   bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 360
 
     env:
       BOT_PORT: "4000"
@@ -28,6 +28,12 @@ jobs:
         working-directory: playwright-service
 
     steps:
+      - name: Record job start time
+        shell: bash
+        working-directory: .
+        run: |
+          echo "JOB_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Checkout repository
         uses: actions/checkout@v5
 
@@ -109,16 +115,50 @@ jobs:
 
       - name: Keep bot online
         shell: bash
+        env:
+          KEEP_MINUTES: ${{ inputs.keep_minutes }}
         run: |
-          MINUTES="${{ inputs.keep_minutes }}"
+          MINUTES="${KEEP_MINUTES:-360}"
           case "$MINUTES" in
             ''|*[!0-9]*) echo "keep_minutes must be a whole number."; exit 1 ;;
           esac
-          if [ "$MINUTES" -lt 1 ] || [ "$MINUTES" -gt 50 ]; then
-            echo "keep_minutes must be between 1 and 50."
+          if [ "$MINUTES" -lt 1 ] || [ "$MINUTES" -gt 360 ]; then
+            echo "keep_minutes must be between 1 and 360."
             exit 1
           fi
-          sleep "${MINUTES}m"
+
+          # Reserve 5 minutes inside the 6-hour job limit for logs and cleanup.
+          JOB_START="${JOB_START_EPOCH:-$(date +%s)}"
+          JOB_DEADLINE=$((JOB_START + 355 * 60))
+          NOW=$(date +%s)
+          AVAILABLE_SECONDS=$((JOB_DEADLINE - NOW))
+          REQUESTED_SECONDS=$((MINUTES * 60))
+
+          if [ "$AVAILABLE_SECONDS" -lt 1 ]; then
+            echo "Not enough job time remains to keep the bot online safely."
+            exit 1
+          fi
+
+          if [ "$REQUESTED_SECONDS" -gt "$AVAILABLE_SECONDS" ]; then
+            SLEEP_SECONDS="$AVAILABLE_SECONDS"
+          else
+            SLEEP_SECONDS="$REQUESTED_SECONDS"
+          fi
+
+          ACTUAL_MINUTES=$((SLEEP_SECONDS / 60))
+          echo "Requested bot uptime: ${MINUTES} minutes."
+          echo "Available safe uptime: approximately ${ACTUAL_MINUTES} minutes."
+          echo "The job will finish before GitHub's 6-hour hard limit."
+
+          {
+            echo "## Bot runtime"
+            echo
+            echo "- Requested uptime: ${MINUTES} minutes"
+            echo "- Actual keep-alive window: approximately ${ACTUAL_MINUTES} minutes"
+            echo "- Five-minute job-time safety margin reserved for logs and cleanup"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          sleep "$SLEEP_SECONDS"
 
       - name: Show logs
         if: always()
