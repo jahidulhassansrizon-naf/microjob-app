@@ -1,24 +1,41 @@
 "use client";
-import { AiT as T, useAiEditorText } from "./aiEditorI18n";
-import React, { useCallback, useEffect, useMemo, useRef, useState, } from "react";
+import { useAiEditorText } from "./aiEditorI18n";
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, } from "react";
 import { createPortal } from "react-dom";
-import { AlignCenterHorizontal, AlignRight, Download, Grid3X3, Image as ImageIcon, Minus, Move, Plus, Printer, Redo2, RotateCw, Trash2, Undo2, X, } from "lucide-react";
+import { AlignCenterHorizontal, AlignLeft, AlignRight, ArrowLeftRight, ChevronDown, Copy, Download, Frame, Grid3X3, Image as ImageIcon, LayoutGrid, Minus, Move, Plus, Printer, Redo2, RotateCw, Ruler, Trash2, Undo2, X, } from "lucide-react";
 import jsPDF from "jspdf";
+
 const EXPORT_DPI = 300;
 const MAX_ITEMS = 80;
+const MAX_HISTORY = 50;
 const DEFAULT_GAP_MM = 3;
+const DEFAULT_MARGIN_MM = 3;
+const DEFAULT_IMAGE_BORDER_MM = 0.25;
+const DEFAULT_CUT_MM = 0.2;
 const ZOOM_MIN = 50;
-const ZOOM_MAX = 300;
+const ZOOM_MAX = 400;
+const ZOOM_PRESETS = [100, 150, 200, 300];
 const ZOOM_STEP = 20;
-const MIN_ITEM_MM = 8;
+const MIN_ITEM_MM = 5;
+const CUT_COLOR = "#555555";
+const BORDER_COLORS = ["#000000", "#FFFFFF", "#6B7280", "#DC2626", "#1D4ED8"];
+
 const PAGE_SIZES = {
     A4: { label: "A4 — 210×297 mm", widthMm: 210, heightMm: 297 },
+    A5: { label: "A5 — 148×210 mm", widthMm: 148, heightMm: 210 },
+    Letter: { label: "Letter — 216×279 mm", widthMm: 216, heightMm: 279 },
+    "3R": { label: "3R — 89×127 mm", widthMm: 89, heightMm: 127 },
     "4R": { label: "4R — 102×152 mm", widthMm: 102, heightMm: 152 },
     "5R": { label: "5R — 127×178 mm", widthMm: 127, heightMm: 178 },
     "6R": { label: "6R — 152×203 mm", widthMm: 152, heightMm: 203 },
+    "8R": { label: "8R — 203×254 mm", widthMm: 203, heightMm: 254 },
 } as const;
 type PageSizeKey = keyof typeof PAGE_SIZES;
 type Orientation = "portrait" | "landscape";
+type Unit = "mm" | "cm" | "in";
+type CutStyle = "dashed" | "solid" | "marks";
+type HAlign = "left" | "center" | "right";
+type SectionKey = "quick" | "custom" | "border" | "page";
 type StudioItem = {
     id: string;
     label: string;
@@ -34,14 +51,26 @@ type Preset = {
     widthMm: number;
     heightMm: number;
 };
-type CheckboxOption = {
+type Combo = {
+    id: string;
     label: string;
-    checked: boolean;
-    setChecked: (value: boolean) => void;
+    parts: [string, number][];
 };
+type Box = {
+    xMm: number;
+    yMm: number;
+    widthMm: number;
+    heightMm: number;
+};
+
+const UNIT_FACTOR: Record<Unit, number> = { mm: 1, cm: 10, in: 25.4 };
+
 const PRESETS: Preset[] = [
     { id: "passport", label: "Passport", widthMm: 45, heightMm: 55 },
+    { id: "epassport", label: "E-Passport", widthMm: 25, heightMm: 30 },
+    { id: "visa", label: "Visa / Birth", widthMm: 35, heightMm: 45 },
     { id: "stamp", label: "Stamp", widthMm: 20, heightMm: 25 },
+    { id: "2x2", label: "2×2 inch", widthMm: 50.8, heightMm: 50.8 },
     { id: "2R", label: "2R", widthMm: 63.5, heightMm: 88.9 },
     { id: "3R", label: "3R", widthMm: 88.9, heightMm: 127 },
     { id: "4R", label: "4R", widthMm: 101.6, heightMm: 152.4 },
@@ -53,6 +82,13 @@ const PRESETS: Preset[] = [
     { id: "6B", label: "6B", widthMm: 152.4, heightMm: 203.2 },
     { id: "A4", label: "A4", widthMm: 210, heightMm: 297 },
 ];
+const BD_QUICK_IDS = ["passport", "epassport", "visa", "stamp", "2x2"];
+const COMBOS: Combo[] = [
+    { id: "combo-4-4", label: "4 Passport + 4 Stamp", parts: [["passport", 4], ["stamp", 4]] },
+    { id: "combo-6-8", label: "6 Passport + 8 Stamp", parts: [["passport", 6], ["stamp", 8]] },
+    { id: "combo-8-8", label: "8 Passport + 8 Stamp", parts: [["passport", 8], ["stamp", 8]] },
+];
+
 function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
@@ -61,6 +97,14 @@ function normalizeAngle(value: number): number {
 }
 function uniqueId(): string {
     return `print-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+function roundNice(value: number): number {
+    return parseFloat(value.toFixed(3));
+}
+function bnDigitsToEn(value: string): string {
+    return value
+        .replace(/[\u09E6-\u09EF]/g, (digit) => String(digit.charCodeAt(0) - 0x09e6))
+        .replace(/\u066B|,/g, ".");
 }
 function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -84,49 +128,162 @@ function getRotatedBounds(item: StudioItem): {
         heightMm: item.widthMm * sin + item.heightMm * cos,
     };
 }
-function overlaps(a: {
-    xMm: number;
-    yMm: number;
-    widthMm: number;
-    heightMm: number;
-}, b: {
-    xMm: number;
-    yMm: number;
-    widthMm: number;
-    heightMm: number;
-}, gapMm: number): boolean {
-    return !(a.xMm + a.widthMm + gapMm <= b.xMm ||
-        b.xMm + b.widthMm + gapMm <= a.xMm ||
-        a.yMm + a.heightMm + gapMm <= b.yMm ||
-        b.yMm + b.heightMm + gapMm <= a.yMm);
+/** Real on-page box of an item (rotation happens around the centre). */
+function getItemBox(item: StudioItem): Box {
+    const bounds = getRotatedBounds(item);
+    const cx = item.xMm + item.widthMm / 2;
+    const cy = item.yMm + item.heightMm / 2;
+    return {
+        xMm: cx - bounds.widthMm / 2,
+        yMm: cy - bounds.heightMm / 2,
+        widthMm: bounds.widthMm,
+        heightMm: bounds.heightMm,
+    };
 }
-function findFreePosition(widthMm: number, heightMm: number, pageWidthMm: number, pageHeightMm: number, current: StudioItem[], gapMm: number): {
+function overlaps(a: Box, b: Box, gapMm: number): boolean {
+    const eps = 0.001;
+    return !(a.xMm + a.widthMm + gapMm <= b.xMm + eps ||
+        b.xMm + b.widthMm + gapMm <= a.xMm + eps ||
+        a.yMm + a.heightMm + gapMm <= b.yMm + eps ||
+        b.yMm + b.heightMm + gapMm <= a.yMm + eps);
+}
+function uniqueSorted(values: number[]): number[] {
+    return Array.from(new Set(values.map((value) => Math.round(value * 1000) / 1000))).sort((a, b) => a - b);
+}
+/**
+ * Tight packing: candidate positions come from the page margin and from the
+ * edges of the photos that are already placed, so photos sit snugly with
+ * exactly the chosen gap between them.
+ */
+function findFreePosition(widthMm: number, heightMm: number, pageWidthMm: number, pageHeightMm: number, current: StudioItem[], gapMm: number, marginMm: number): {
     xMm: number;
     yMm: number;
 } | null {
-    if (widthMm > pageWidthMm || heightMm > pageHeightMm) {
+    const eps = 0.001;
+    if (widthMm > pageWidthMm + eps || heightMm > pageHeightMm + eps) {
         return null;
     }
-    const step = Math.max(1, Math.min(5, gapMm || 1));
-    const maxX = pageWidthMm - widthMm;
-    const maxY = pageHeightMm - heightMm;
-    for (let y = 0; y <= maxY + 0.001; y += step) {
-        for (let x = 0; x <= maxX + 0.001; x += step) {
-            const candidate = { xMm: x, yMm: y, widthMm, heightMm };
-            const blocked = current.some((item) => {
-                const bounds = getRotatedBounds(item);
-                return overlaps(candidate, {
-                    xMm: item.xMm,
-                    yMm: item.yMm,
-                    widthMm: bounds.widthMm,
-                    heightMm: bounds.heightMm,
-                }, gapMm);
-            });
-            if (!blocked)
+    const mx = Math.min(marginMm, Math.max(0, (pageWidthMm - widthMm) / 2));
+    const my = Math.min(marginMm, Math.max(0, (pageHeightMm - heightMm) / 2));
+    const boxes = current.map(getItemBox);
+    const xs = uniqueSorted([
+        mx,
+        ...boxes.flatMap((box) => [box.xMm, box.xMm + box.widthMm + gapMm]),
+    ]);
+    const ys = uniqueSorted([
+        my,
+        ...boxes.flatMap((box) => [box.yMm, box.yMm + box.heightMm + gapMm]),
+    ]);
+    for (const y of ys) {
+        if (y < my - eps || y + heightMm > pageHeightMm - my + eps)
+            continue;
+        for (const x of xs) {
+            if (x < mx - eps || x + widthMm > pageWidthMm - mx + eps)
+                continue;
+            const candidate: Box = { xMm: x, yMm: y, widthMm, heightMm };
+            if (!boxes.some((box) => overlaps(candidate, box, gapMm))) {
                 return { xMm: x, yMm: y };
+            }
         }
     }
     return null;
+}
+function packItems(list: StudioItem[], pageWidthMm: number, pageHeightMm: number, gapMm: number, marginMm: number, sortByArea = true): {
+    placed: StudioItem[];
+    failed: number;
+} {
+    const ordered = sortByArea
+        ? [...list].sort((a, b) => b.widthMm * b.heightMm - a.widthMm * a.heightMm)
+        : [...list];
+    const placed: StudioItem[] = [];
+    let failed = 0;
+    for (const source of ordered) {
+        const item = { ...source, rotation: 0 };
+        const position = findFreePosition(item.widthMm, item.heightMm, pageWidthMm, pageHeightMm, placed, gapMm, marginMm);
+        if (!position) {
+            failed += 1;
+            continue;
+        }
+        placed.push({ ...item, xMm: position.xMm, yMm: position.yMm });
+    }
+    return { placed, failed };
+}
+/**
+ * Aligns every "row" of photos like text-align: photos that share a horizontal
+ * band move together, so the gaps between them never change.
+ */
+function alignRows(list: StudioItem[], pageWidthMm: number, marginMm: number, mode: HAlign): StudioItem[] {
+    if (!list.length)
+        return list;
+    const entries = list
+        .map((item) => ({ item, box: getItemBox(item) }))
+        .sort((a, b) => a.box.yMm - b.box.yMm);
+    const clusters: { bottom: number; members: typeof entries }[] = [];
+    for (const entry of entries) {
+        const last = clusters[clusters.length - 1];
+        if (last && entry.box.yMm < last.bottom - 0.001) {
+            last.members.push(entry);
+            last.bottom = Math.max(last.bottom, entry.box.yMm + entry.box.heightMm);
+        }
+        else {
+            clusters.push({
+                bottom: entry.box.yMm + entry.box.heightMm,
+                members: [entry],
+            });
+        }
+    }
+    const shifts = new Map<string, number>();
+    for (const cluster of clusters) {
+        const minX = Math.min(...cluster.members.map((member) => member.box.xMm));
+        const maxX = Math.max(...cluster.members.map((member) => member.box.xMm + member.box.widthMm));
+        const width = maxX - minX;
+        const wanted = mode === "left"
+            ? marginMm
+            : mode === "center"
+                ? (pageWidthMm - width) / 2
+                : pageWidthMm - marginMm - width;
+        const target = clamp(wanted, 0, Math.max(0, pageWidthMm - width));
+        cluster.members.forEach((member) => shifts.set(member.item.id, target - minX));
+    }
+    return list.map((item) => ({
+        ...item,
+        xMm: item.xMm + (shifts.get(item.id) ?? 0),
+    }));
+}
+/** Pack photos with the exact gap/margin, then apply the horizontal alignment. */
+function flowLayout(list: StudioItem[], pageWidthMm: number, pageHeightMm: number, gapMm: number, marginMm: number, mode: HAlign, sortByArea: boolean): {
+    placed: StudioItem[];
+    failed: number;
+} {
+    const { placed, failed } = packItems(list, pageWidthMm, pageHeightMm, gapMm, marginMm, sortByArea);
+    return { placed: alignRows(placed, pageWidthMm, marginMm, mode), failed };
+}
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+/** Exact-size print sheet: 1 image = 1 page, no scaling, no margins. */
+function buildPrintHtml(src: string, widthMm: number, heightMm: number, title: string): string {
+    return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(title)}</title>
+<style>
+@page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: ${widthMm}mm; height: ${heightMm}mm; background: #fff; overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet { position: relative; width: ${widthMm}mm; height: ${heightMm}mm; overflow: hidden; page-break-after: avoid; page-break-inside: avoid; }
+.sheet img { position: absolute; left: 0; top: 0; display: block; width: ${widthMm}mm; height: ${heightMm}mm; }
+</style>
+</head>
+<body>
+<div class="sheet"><img id="sheet" src="${src}" alt="" /></div>
+</body>
+</html>`;
 }
 function fitItemsToPage(items: StudioItem[], widthMm: number, heightMm: number): StudioItem[] {
     return items.map((item) => {
@@ -153,9 +310,174 @@ function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: nu
     const cropY = Math.max(0, (sh - cropH) / 2);
     ctx.drawImage(image, cropX, cropY, cropW, cropH, x, y, width, height);
 }
+/** Corner crop marks (in mm) drawn just outside the photo, inside the gap. */
+function cropMarkSegments(widthMm: number, heightMm: number, gapMm: number): [number, number, number, number][] {
+    const offset = 0.3;
+    const length = clamp((gapMm - offset * 2) / 2, 0.8, 3);
+    const w = widthMm;
+    const h = heightMm;
+    return [
+        [-offset - length, 0, -offset, 0],
+        [0, -offset - length, 0, -offset],
+        [w + offset, 0, w + offset + length, 0],
+        [w, -offset - length, w, -offset],
+        [-offset - length, h, -offset, h],
+        [0, h + offset, 0, h + offset + length],
+        [w + offset, h, w + offset + length, h],
+        [w, h + offset, w, h + offset + length],
+    ];
+}
+function formatInUnit(mm: number, unit: Unit): number {
+    return roundNice(mm / UNIT_FACTOR[unit]);
+}
 function nameForPdf(pageSize: PageSizeKey): string {
     return `photo-print-${pageSize.toLowerCase()}.pdf`;
 }
+
+/* ───────────────────────────── small UI pieces ───────────────────────────── */
+
+function Section({ title, icon, open, onToggle, children, }: {
+    title: string;
+    icon: ReactNode;
+    open: boolean;
+    onToggle: () => void;
+    children: ReactNode;
+}) {
+    return (<div className="border-b border-[#E3D6B8]">
+      <button type="button" onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F2E8D2]/60 cursor-pointer transition-colors">
+        <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/70">
+          {icon}
+          {title}
+        </span>
+        <ChevronDown size={14} className={`text-[#3B2F1E]/50 transition-transform ${open ? "rotate-180" : ""}`}/>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>);
+}
+
+function Toggle({ checked, onChange, label, hint, }: {
+    checked: boolean;
+    onChange: (value: boolean) => void;
+    label: string;
+    hint?: string;
+}) {
+    return (<button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-left cursor-pointer transition-colors ${checked ? "border-[#DC2626]/40 bg-[#DC2626]/5" : "border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8]"}`}>
+      <span className="min-w-0">
+        <span className="block text-[12px] font-bold text-[#3B2F1E]">{label}</span>
+        {hint && (<span className="block text-[10px] text-[#3B2F1E]/55 leading-snug mt-0.5">{hint}</span>)}
+      </span>
+      <span className={`relative shrink-0 w-9 h-5 rounded-full transition-colors ${checked ? "bg-[#DC2626]" : "bg-[#3B2F1E]/25"}`}>
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : ""}`}/>
+      </span>
+    </button>);
+}
+
+function Segmented<V extends string>({ value, options, onChange, }: {
+    value: V;
+    options: { value: V; label: string }[];
+    onChange: (value: V) => void;
+}) {
+    return (<div className="grid gap-1 p-1 rounded-lg bg-[#E3D6B8]/60" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      {options.map((option) => (<button key={option.value} type="button" onClick={() => onChange(option.value)} className={`h-7 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${value === option.value ? "bg-white text-[#DC2626] shadow-sm" : "text-[#3B2F1E]/70 hover:text-[#3B2F1E]"}`}>
+          {option.label}
+        </button>))}
+    </div>);
+}
+
+function RangeField({ label, valueLabel, value, min, max, step, onChange, }: {
+    label: string;
+    valueLabel: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    onChange: (value: number) => void;
+}) {
+    return (<div>
+      <div className="flex items-center justify-between mb-1 text-[11px] font-bold text-[#3B2F1E]/70">
+        <span>{label}</span>
+        <span className="text-[#3B2F1E] font-extrabold">{valueLabel}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className="w-full accent-[#DC2626] cursor-pointer"/>
+    </div>);
+}
+
+function ColorField({ value, onChange, }: {
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return (<div className="flex items-center gap-1.5 flex-wrap">
+      {BORDER_COLORS.map((color) => (<button key={color} type="button" onClick={() => onChange(color)} aria-label={color} className={`w-6 h-6 rounded-full border cursor-pointer transition-transform hover:scale-110 ${value.toLowerCase() === color.toLowerCase() ? "ring-2 ring-[#DC2626] ring-offset-1 border-white" : "border-[#3B2F1E]/25"}`} style={{ backgroundColor: color }}/>))}
+      <label className="relative w-6 h-6 rounded-full border border-[#3B2F1E]/25 overflow-hidden cursor-pointer" style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }}>
+        <input type="color" value={value} onChange={(event) => onChange(event.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"/>
+      </label>
+    </div>);
+}
+
+function NumberField({ value, onCommit, min, max, suffix, ariaLabel, }: {
+    value: number;
+    onCommit: (value: number) => void;
+    min: number;
+    max: number;
+    suffix?: string;
+    ariaLabel: string;
+}) {
+    const [draft, setDraft] = useState(String(roundNice(value)));
+    const [focused, setFocused] = useState(false);
+    useEffect(() => {
+        if (!focused)
+            setDraft(String(roundNice(value)));
+    }, [value, focused]);
+    const commit = () => {
+        const parsed = parseFloat(bnDigitsToEn(draft));
+        if (Number.isFinite(parsed)) {
+            const next = clamp(parsed, min, max);
+            onCommit(next);
+            setDraft(String(roundNice(next)));
+        }
+        else {
+            setDraft(String(roundNice(value)));
+        }
+    };
+    return (<div className="relative">
+      <input type="text" inputMode="decimal" aria-label={ariaLabel} value={draft} onFocus={(event) => {
+            setFocused(true);
+            event.currentTarget.select();
+        }} onBlur={() => {
+            setFocused(false);
+            commit();
+        }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
+            event.stopPropagation();
+            if (event.key === "Enter")
+                event.currentTarget.blur();
+        }} className="h-8 w-full rounded-md border border-[#E3D6B8] bg-white px-2 pr-8 text-[12px] font-bold text-[#3B2F1E] outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]/30"/>
+      {suffix && (<span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#3B2F1E]/45">
+          {suffix}
+        </span>)}
+    </div>);
+}
+
+/** Vector overlay (in mm) shared by the live preview: image border + cutting guide. */
+function ItemOverlay({ widthMm, heightMm, gapMm, imageBorder, imageBorderMm, imageBorderColor, cuttingBorder, cutStyle, cutMm, }: {
+    widthMm: number;
+    heightMm: number;
+    gapMm: number;
+    imageBorder: boolean;
+    imageBorderMm: number;
+    imageBorderColor: string;
+    cuttingBorder: boolean;
+    cutStyle: CutStyle;
+    cutMm: number;
+}) {
+    if (!imageBorder && !cuttingBorder)
+        return null;
+    return (<svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${widthMm} ${heightMm}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
+      {imageBorder && (<rect x={imageBorderMm / 2} y={imageBorderMm / 2} width={Math.max(0, widthMm - imageBorderMm)} height={Math.max(0, heightMm - imageBorderMm)} fill="none" stroke={imageBorderColor} strokeWidth={imageBorderMm}/>)}
+      {cuttingBorder && cutStyle !== "marks" && (<rect x={0} y={0} width={widthMm} height={heightMm} fill="none" stroke={CUT_COLOR} strokeWidth={cutMm} strokeDasharray={cutStyle === "dashed" ? "1.1 1.1" : undefined}/>)}
+      {cuttingBorder && cutStyle === "marks" && cropMarkSegments(widthMm, heightMm, gapMm).map(([x1, y1, x2, y2], index) => (<line key={index} x1={x1} y1={y1} x2={x2} y2={y2} stroke={CUT_COLOR} strokeWidth={cutMm}/>))}
+    </svg>);
+}
+
 export type AiPrintStudioProps = {
     open: boolean;
     image: string | null;
@@ -166,6 +488,7 @@ export type AiPrintStudioProps = {
     /** Render inside the page layout (fills its parent) instead of a full-screen overlay. */
     inline?: boolean;
 };
+
 export default function AiPrintStudioModal({ open, image, preset, onClose, onPrintSingle, inline = false }: AiPrintStudioProps) {
     const { t } = useAiEditorText();
     const printStudioOpen = open;
@@ -174,6 +497,17 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const closePrintStudio = onClose;
     const pageRef = useRef<HTMLDivElement | null>(null);
     const workspaceRef = useRef<HTMLDivElement | null>(null);
+    const toastTimerRef = useRef<number | null>(null);
+    const itemsRef = useRef<StudioItem[]>([]);
+    const zoomRef = useRef(100);
+    const panRef = useRef<{
+        pointerId: number;
+        startX: number;
+        startY: number;
+        scrollLeft: number;
+        scrollTop: number;
+        moved: boolean;
+    } | null>(null);
     const interactionRef = useRef<{
         pointerId: number;
         id: string;
@@ -185,18 +519,38 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const [mounted, setMounted] = useState(false);
     const [pageSizeKey, setPageSizeKey] = useState<PageSizeKey>("A4");
     const [orientation, setOrientation] = useState<Orientation>("portrait");
+    const [hAlign, setHAlign] = useState<HAlign>("left");
+    const [autoLayout, setAutoLayout] = useState(true);
+    const [isPanning, setIsPanning] = useState(false);
     const [items, setItems] = useState<StudioItem[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [gapMm, setGapMm] = useState(DEFAULT_GAP_MM);
+    const [marginMm, setMarginMm] = useState(DEFAULT_MARGIN_MM);
     const [freeSize, setFreeSize] = useState(false);
     const [cuttingBorder, setCuttingBorder] = useState(false);
+    const [cutStyle, setCutStyle] = useState<CutStyle>("dashed");
+    const [cutMm, setCutMm] = useState(DEFAULT_CUT_MM);
     const [imageBorder, setImageBorder] = useState(false);
+    const [imageBorderMm, setImageBorderMm] = useState(DEFAULT_IMAGE_BORDER_MM);
+    const [imageBorderColor, setImageBorderColor] = useState("#000000");
+    const [unit, setUnit] = useState<Unit>("mm");
+    const [customWidthMm, setCustomWidthMm] = useState(35);
+    const [customHeightMm, setCustomHeightMm] = useState(45);
+    const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
+        quick: true,
+        custom: true,
+        border: true,
+        page: true,
+    });
     const [zoom, setZoom] = useState(100);
     const [fitScale, setFitScale] = useState(2.4);
     const [isExporting, setIsExporting] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
     const [history, setHistory] = useState<StudioItem[][]>([]);
     const [future, setFuture] = useState<StudioItem[][]>([]);
+    itemsRef.current = items;
+    zoomRef.current = zoom;
+
     const sourcePreset = useMemo<Preset>(() => {
         if (currentPreset?.widthMm && currentPreset?.heightMm) {
             const fit = Math.min(1, 190 / currentPreset.widthMm, 277 / currentPreset.heightMm);
@@ -207,7 +561,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 heightMm: Math.round(currentPreset.heightMm * fit * 10) / 10,
             };
         }
-        return (PRESETS.find((preset) => preset.id === "passport") ?? {
+        return (PRESETS.find((entry) => entry.id === "passport") ?? {
             id: "passport",
             label: "Passport",
             widthMm: 45,
@@ -221,25 +575,69 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         ? PAGE_SIZES[pageSizeKey].heightMm
         : PAGE_SIZES[pageSizeKey].widthMm;
     const visualScale = fitScale * (zoom / 100);
-    const showToast = useCallback((message: string) => {
-        setToast(message);
-        window.setTimeout(() => setToast(null), 2600);
+
+    const showToast = useCallback((message: string, title = "Notice") => {
+        setToast({ title, message });
+        if (toastTimerRef.current)
+            window.clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = window.setTimeout(() => setToast(null), 2800);
+    }, []);
+    useEffect(() => () => {
+        if (toastTimerRef.current)
+            window.clearTimeout(toastTimerRef.current);
+    }, []);
+    const toggleSection = useCallback((key: SectionKey) => {
+        setOpenSections((current) => ({ ...current, [key]: !current[key] }));
+    }, []);
+    const setZoomCentered = useCallback((next: number) => {
+        const clamped = clamp(Math.round(next), ZOOM_MIN, ZOOM_MAX);
+        const workspace = workspaceRef.current;
+        if (!workspace) {
+            setZoom(clamped);
+            return;
+        }
+        const fracX = (workspace.scrollLeft + workspace.clientWidth / 2) / Math.max(1, workspace.scrollWidth);
+        const fracY = (workspace.scrollTop + workspace.clientHeight / 2) / Math.max(1, workspace.scrollHeight);
+        setZoom(clamped);
+        window.requestAnimationFrame(() => {
+            workspace.scrollLeft = fracX * workspace.scrollWidth - workspace.clientWidth / 2;
+            workspace.scrollTop = fracY * workspace.scrollHeight - workspace.clientHeight / 2;
+        });
     }, []);
     const commit = useCallback((next: StudioItem[], previous: StudioItem[]) => {
         setHistory((current) => [
-            ...current.slice(-19),
+            ...current.slice(-(MAX_HISTORY - 1)),
             previous.map((item) => ({ ...item })),
         ]);
         setFuture([]);
         setItems(next);
     }, []);
     const createInitialLayout = useCallback(() => {
+        setPageSizeKey("A4");
+        setOrientation("portrait");
+        setHAlign("left");
+        setAutoLayout(true);
+        setGapMm(DEFAULT_GAP_MM);
+        setMarginMm(DEFAULT_MARGIN_MM);
+        setFreeSize(false);
+        setCuttingBorder(false);
+        setCutStyle("dashed");
+        setCutMm(DEFAULT_CUT_MM);
+        setImageBorder(false);
+        setImageBorderMm(DEFAULT_IMAGE_BORDER_MM);
+        setImageBorderColor("#000000");
+        setUnit("mm");
+        setCustomWidthMm(35);
+        setCustomHeightMm(45);
+        setZoom(100);
+        setHistory([]);
+        setFuture([]);
+        setSelectedId(null);
         if (!printStudioImage) {
             setItems([]);
-            setSelectedId(null);
             return;
         }
-        const placed = findFreePosition(sourcePreset.widthMm, sourcePreset.heightMm, PAGE_SIZES.A4.widthMm, PAGE_SIZES.A4.heightMm, [], DEFAULT_GAP_MM);
+        const placed = findFreePosition(sourcePreset.widthMm, sourcePreset.heightMm, PAGE_SIZES.A4.widthMm, PAGE_SIZES.A4.heightMm, [], DEFAULT_GAP_MM, DEFAULT_MARGIN_MM);
         setItems(placed
             ? [
                 {
@@ -253,16 +651,6 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 },
             ]
             : []);
-        setSelectedId(null);
-        setHistory([]);
-        setFuture([]);
-        setPageSizeKey("A4");
-        setOrientation("portrait");
-        setGapMm(DEFAULT_GAP_MM);
-        setFreeSize(false);
-        setCuttingBorder(false);
-        setImageBorder(false);
-        setZoom(100);
     }, [printStudioImage, sourcePreset]);
     useEffect(() => setMounted(true), []);
     useEffect(() => {
@@ -270,32 +658,44 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             createInitialLayout();
         }
     }, [printStudioOpen, createInitialLayout]);
+
     const undo = useCallback(() => {
-        setHistory((current) => {
-            if (!current.length)
-                return current;
-            const previous = current[current.length - 1];
-            if (!previous)
-                return current;
-            setFuture((currentFuture) => [items.map((item) => ({ ...item })), ...currentFuture].slice(0, 20));
-            setItems(previous.map((item) => ({ ...item })));
-            setSelectedId(previous[0]?.id ?? null);
-            return current.slice(0, -1);
-        });
-    }, [items]);
+        const previous = history[history.length - 1];
+        if (!previous)
+            return;
+        setFuture((currentFuture) => [items.map((item) => ({ ...item })), ...currentFuture].slice(0, MAX_HISTORY));
+        setItems(previous.map((item) => ({ ...item })));
+        setSelectedId(previous[0]?.id ?? null);
+        setHistory((current) => current.slice(0, -1));
+    }, [history, items]);
     const redo = useCallback(() => {
-        setFuture((current) => {
-            if (!current.length)
-                return current;
-            const next = current[0];
-            if (!next)
-                return current;
-            setHistory((currentHistory) => [...currentHistory, items.map((item) => ({ ...item }))].slice(-20));
-            setItems(next.map((item) => ({ ...item })));
-            setSelectedId(next[0]?.id ?? null);
-            return current.slice(1);
-        });
-    }, [items]);
+        const next = future[0];
+        if (!next)
+            return;
+        setHistory((currentHistory) => [...currentHistory, items.map((item) => ({ ...item }))].slice(-MAX_HISTORY));
+        setItems(next.map((item) => ({ ...item })));
+        setSelectedId(next[0]?.id ?? null);
+        setFuture((current) => current.slice(1));
+    }, [future, items]);
+    const removeItem = useCallback((id: string) => {
+        const next = items.filter((item) => item.id !== id);
+        commit(next, items);
+        setSelectedId((current) => (current === id ? null : current));
+    }, [commit, items]);
+    const nudgeSelected = useCallback((dx: number, dy: number) => {
+        if (!selectedId)
+            return;
+        const next = items.map((item) => item.id === selectedId
+            ? {
+                ...item,
+                xMm: clamp(item.xMm + dx, 0, Math.max(0, pageWidthMm - item.widthMm)),
+                yMm: clamp(item.yMm + dy, 0, Math.max(0, pageHeightMm - item.heightMm)),
+            }
+            : item);
+        setAutoLayout(false);
+        commit(next, items);
+    }, [commit, items, pageHeightMm, pageWidthMm, selectedId]);
+
     useEffect(() => {
         if (!printStudioOpen)
             return;
@@ -303,15 +703,58 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         if (!inline)
             document.body.style.overflow = "hidden";
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape")
+            const target = event.target as HTMLElement | null;
+            const typing = !!target &&
+                (target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.tagName === "SELECT" ||
+                    target.isContentEditable);
+            if (event.key === "Escape") {
+                if (typing) {
+                    target?.blur();
+                    return;
+                }
                 closePrintStudio();
+                return;
+            }
+            if (typing)
+                return;
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
                 event.preventDefault();
-                undo();
+                if (event.shiftKey)
+                    redo();
+                else
+                    undo();
+                return;
             }
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
                 event.preventDefault();
                 redo();
+                return;
+            }
+            if (!selectedId)
+                return;
+            if (event.key === "Delete" || event.key === "Backspace") {
+                event.preventDefault();
+                removeItem(selectedId);
+                return;
+            }
+            const step = event.shiftKey ? 5 : 0.5;
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                nudgeSelected(-step, 0);
+            }
+            else if (event.key === "ArrowRight") {
+                event.preventDefault();
+                nudgeSelected(step, 0);
+            }
+            else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                nudgeSelected(0, -step);
+            }
+            else if (event.key === "ArrowDown") {
+                event.preventDefault();
+                nudgeSelected(0, step);
             }
         };
         window.addEventListener("keydown", onKeyDown);
@@ -320,7 +763,20 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 document.body.style.overflow = previousOverflow;
             window.removeEventListener("keydown", onKeyDown);
         };
-    }, [printStudioOpen, closePrintStudio, redo, undo, inline]);
+    }, [printStudioOpen, closePrintStudio, redo, undo, inline, selectedId, removeItem, nudgeSelected]);
+    useEffect(() => {
+        const workspace = workspaceRef.current;
+        if (!workspace)
+            return;
+        const onWheel = (event: WheelEvent) => {
+            if (!event.ctrlKey && !event.metaKey)
+                return;
+            event.preventDefault();
+            setZoomCentered(zoomRef.current - Math.sign(event.deltaY) * 10);
+        };
+        workspace.addEventListener("wheel", onWheel, { passive: false });
+        return () => workspace.removeEventListener("wheel", onWheel);
+    }, [printStudioOpen, printStudioImage, mounted, setZoomCentered]);
     useEffect(() => {
         const workspace = workspaceRef.current;
         if (!workspace)
@@ -337,23 +793,35 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const observer = new ResizeObserver(updateScale);
         observer.observe(workspace);
         return () => observer.disconnect();
-    }, [pageWidthMm, pageHeightMm]);
-    const addPreset = useCallback((preset: Preset, quantity = 1) => {
+    }, [pageWidthMm, pageHeightMm, printStudioOpen, printStudioImage, mounted]);
+
+    const reflow = useCallback((list: StudioItem[], mode: HAlign = hAlign, sortByArea = false) => flowLayout(list, pageWidthMm, pageHeightMm, gapMm, marginMm, mode, sortByArea), [gapMm, hAlign, marginMm, pageHeightMm, pageWidthMm]);
+    const finalizeAuto = useCallback((list: StudioItem[]): StudioItem[] => {
+        if (!autoLayout)
+            return list;
+        const flowed = reflow(list);
+        return flowed.failed ? list : flowed.placed;
+    }, [autoLayout, reflow]);
+    const addPreset = useCallback((entry: Preset, quantity = 1, silent = false) => {
         if (!printStudioImage)
             return;
-        let next = [...items];
+        if (entry.widthMm > pageWidthMm + 0.001 || entry.heightMm > pageHeightMm + 0.001) {
+            showToast("This size is larger than the selected page.", "Size too large");
+            return;
+        }
+        const next = [...items];
         let added = 0;
         for (let index = 0; index < quantity; index += 1) {
             if (next.length >= MAX_ITEMS)
                 break;
-            const placement = findFreePosition(preset.widthMm, preset.heightMm, pageWidthMm, pageHeightMm, next, gapMm);
+            const placement = findFreePosition(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm);
             if (!placement)
                 break;
             next.push({
                 id: uniqueId(),
-                label: preset.label,
-                widthMm: preset.widthMm,
-                heightMm: preset.heightMm,
+                label: entry.label,
+                widthMm: entry.widthMm,
+                heightMm: entry.heightMm,
                 xMm: placement.xMm,
                 yMm: placement.yMm,
                 rotation: 0,
@@ -361,28 +829,149 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             added += 1;
         }
         if (!added) {
-            showToast("Page full - Page is full, can't add more images");
+            showToast("Page is full, can't add more images.", "Page Full");
             return;
         }
-        if (added < quantity) {
-            showToast("Page full - Page is full, can't add more images");
+        if (added < quantity && !silent) {
+            showToast("Page is full, can't add more images.", "Page Full");
         }
-        commit(next, items);
+        commit(finalizeAuto(next), items);
         setSelectedId(next[next.length - 1]?.id ?? null);
     }, [
         commit,
+        finalizeAuto,
         gapMm,
         items,
+        marginMm,
         pageHeightMm,
         pageWidthMm,
         printStudioImage,
         showToast,
     ]);
-    const removeItem = useCallback((id: string) => {
-        const next = items.filter((item) => item.id !== id);
+    const addCombo = useCallback((combo: Combo) => {
+        if (!printStudioImage)
+            return;
+        const next: StudioItem[] = [];
+        let missing = 0;
+        for (const [presetId, quantity] of combo.parts) {
+            const entry = PRESETS.find((candidate) => candidate.id === presetId);
+            if (!entry)
+                continue;
+            for (let index = 0; index < quantity; index += 1) {
+                const placement = findFreePosition(entry.widthMm, entry.heightMm, pageWidthMm, pageHeightMm, next, gapMm, marginMm);
+                if (!placement) {
+                    missing += 1;
+                    continue;
+                }
+                next.push({
+                    id: uniqueId(),
+                    label: entry.label,
+                    widthMm: entry.widthMm,
+                    heightMm: entry.heightMm,
+                    xMm: placement.xMm,
+                    yMm: placement.yMm,
+                    rotation: 0,
+                });
+            }
+        }
+        setAutoLayout(true);
+        commit(alignRows(next, pageWidthMm, marginMm, hAlign), items);
+        setSelectedId(null);
+        if (missing) {
+            showToast(`${missing} photo(s) did not fit on this page. Try a bigger page size.`, "Page Full");
+        }
+    }, [commit, gapMm, hAlign, items, marginMm, pageHeightMm, pageWidthMm, printStudioImage, showToast]);
+    const addCustom = useCallback((quantity: number, silent = false) => {
+        addPreset({
+            id: "custom",
+            label: "Custom",
+            widthMm: customWidthMm,
+            heightMm: customHeightMm,
+        }, quantity, silent);
+    }, [addPreset, customHeightMm, customWidthMm]);
+    const duplicateSelected = useCallback(() => {
+        const source = items.find((item) => item.id === selectedId);
+        if (!source)
+            return;
+        if (items.length >= MAX_ITEMS) {
+            showToast("Page is full, can't add more images.", "Page Full");
+            return;
+        }
+        const placement = findFreePosition(source.widthMm, source.heightMm, pageWidthMm, pageHeightMm, items, gapMm, marginMm);
+        if (!placement) {
+            showToast("Page is full, can't add more images.", "Page Full");
+            return;
+        }
+        const copy: StudioItem = {
+            ...source,
+            id: uniqueId(),
+            xMm: placement.xMm,
+            yMm: placement.yMm,
+            rotation: 0,
+        };
+        commit(finalizeAuto([...items, copy]), items);
+        setSelectedId(copy.id);
+    }, [commit, finalizeAuto, gapMm, items, marginMm, pageHeightMm, pageWidthMm, selectedId, showToast]);
+    const updateSelectedSize = useCallback((field: "widthMm" | "heightMm", value: number) => {
+        if (!selectedId)
+            return;
+        const resized = items.map((item) => {
+            if (item.id !== selectedId)
+                return item;
+            const limit = field === "widthMm" ? pageWidthMm : pageHeightMm;
+            const updated = { ...item, [field]: clamp(value, MIN_ITEM_MM, limit) };
+            return {
+                ...updated,
+                xMm: clamp(updated.xMm, 0, Math.max(0, pageWidthMm - updated.widthMm)),
+                yMm: clamp(updated.yMm, 0, Math.max(0, pageHeightMm - updated.heightMm)),
+            };
+        });
+        if (autoLayout) {
+            const flowed = reflow(resized);
+            if (flowed.failed) {
+                showToast("Not all photos fit at this size. Try a smaller size or a bigger page.", "Page Full");
+                return;
+            }
+            commit(flowed.placed, items);
+            return;
+        }
+        commit(resized, items);
+    }, [autoLayout, commit, items, pageHeightMm, pageWidthMm, reflow, selectedId, showToast]);
+    const applySizeToAll = useCallback(() => {
+        const source = items.find((item) => item.id === selectedId);
+        if (!source)
+            return;
+        const resized = items.map((item) => ({
+            ...item,
+            widthMm: source.widthMm,
+            heightMm: source.heightMm,
+        }));
+        const { placed, failed } = reflow(resized, hAlign, true);
+        if (failed) {
+            showToast("Not all photos fit at this size. Try a smaller size or a bigger page.", "Page Full");
+            return;
+        }
+        setAutoLayout(true);
+        commit(placed, items);
+    }, [commit, hAlign, items, reflow, selectedId, showToast]);
+    const applyPageChange = useCallback((width: number, height: number) => {
+        let next: StudioItem[];
+        if (autoLayout) {
+            const flowed = flowLayout(items, width, height, gapMm, marginMm, hAlign, false);
+            if (flowed.failed) {
+                next = fitItemsToPage(items, width, height);
+                setAutoLayout(false);
+                showToast("Some photos do not fit on this page. Press Auto or pick a bigger page.", "Page Full");
+            }
+            else {
+                next = flowed.placed;
+            }
+        }
+        else {
+            next = fitItemsToPage(items, width, height);
+        }
         commit(next, items);
-        setSelectedId((current) => (current === id ? null : current));
-    }, [commit, items]);
+    }, [autoLayout, commit, gapMm, hAlign, items, marginMm, showToast]);
     const setPage = useCallback((value: PageSizeKey) => {
         setPageSizeKey(value);
         const width = orientation === "portrait"
@@ -391,9 +980,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const height = orientation === "portrait"
             ? PAGE_SIZES[value].heightMm
             : PAGE_SIZES[value].widthMm;
-        const next = fitItemsToPage(items, width, height);
-        commit(next, items);
-    }, [commit, items, orientation]);
+        applyPageChange(width, height);
+    }, [applyPageChange, orientation]);
     const setPageOrientation = useCallback((value: Orientation) => {
         setOrientation(value);
         const width = value === "portrait"
@@ -402,54 +990,55 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const height = value === "portrait"
             ? PAGE_SIZES[pageSizeKey].heightMm
             : PAGE_SIZES[pageSizeKey].widthMm;
-        const next = fitItemsToPage(items, width, height);
-        commit(next, items);
-    }, [commit, items, pageSizeKey]);
+        applyPageChange(width, height);
+    }, [applyPageChange, pageSizeKey]);
     const autoArrange = useCallback(() => {
         if (!items.length)
             return;
-        const sorted = [...items].sort((a, b) => b.widthMm * b.heightMm - a.widthMm * a.heightMm);
-        const arranged: StudioItem[] = [];
-        let cursorX = gapMm;
-        let cursorY = gapMm;
-        let rowHeight = 0;
-        for (const source of sorted) {
-            const item = { ...source, rotation: 0 };
-            if (item.widthMm > pageWidthMm || item.heightMm > pageHeightMm)
-                continue;
-            if (cursorX + item.widthMm + gapMm > pageWidthMm) {
-                cursorX = gapMm;
-                cursorY += rowHeight + gapMm;
-                rowHeight = 0;
+        const { placed, failed } = reflow(items, hAlign, true);
+        if (failed) {
+            showToast("Not all photos fit with these settings. Reduce the gap or margin, or use a bigger page.", "Page Full");
+            return;
+        }
+        setAutoLayout(true);
+        commit(placed, items);
+        setSelectedId(null);
+    }, [commit, hAlign, items, reflow, showToast]);
+    const applyAlign = useCallback((mode: HAlign) => {
+        setHAlign(mode);
+        if (!items.length)
+            return;
+        if (autoLayout) {
+            const flowed = reflow(items, mode);
+            if (flowed.failed) {
+                showToast("Not all photos fit with these settings. Reduce the gap or margin, or use a bigger page.", "Page Full");
+                return;
             }
-            if (cursorY + item.heightMm + gapMm > pageHeightMm)
-                continue;
-            item.xMm = cursorX;
-            item.yMm = cursorY;
-            arranged.push(item);
-            cursorX += item.widthMm + gapMm;
-            rowHeight = Math.max(rowHeight, item.heightMm);
+            commit(flowed.placed, items);
+            return;
         }
-        if (arranged.length !== items.length) {
-            showToast("Page full - Page is full, can't add more images");
+        commit(alignRows(items, pageWidthMm, marginMm, mode), items);
+    }, [autoLayout, commit, items, marginMm, pageWidthMm, reflow, showToast]);
+    // Changing the gap or margin re-flows an automatic layout live.
+    const layoutKey = `${gapMm}|${marginMm}`;
+    const lastLayoutKeyRef = useRef(layoutKey);
+    useEffect(() => {
+        if (lastLayoutKeyRef.current === layoutKey)
+            return;
+        lastLayoutKeyRef.current = layoutKey;
+        if (!printStudioOpen || !autoLayout)
+            return;
+        const current = itemsRef.current;
+        if (!current.length)
+            return;
+        const flowed = reflow(current);
+        if (flowed.failed) {
+            showToast("Not all photos fit with this gap or margin. The layout was kept as it is.", "Page Full");
+            return;
         }
-        commit(arranged, items);
-        setSelectedId(arranged[0]?.id ?? null);
-    }, [commit, gapMm, items, pageHeightMm, pageWidthMm, showToast]);
-    const centerAlign = useCallback(() => {
-        const next = items.map((item) => ({
-            ...item,
-            xMm: clamp((pageWidthMm - item.widthMm) / 2, 0, Math.max(0, pageWidthMm - item.widthMm)),
-        }));
-        commit(next, items);
-    }, [commit, items, pageWidthMm]);
-    const rightAlign = useCallback(() => {
-        const next = items.map((item) => ({
-            ...item,
-            xMm: Math.max(0, pageWidthMm - item.widthMm),
-        }));
-        commit(next, items);
-    }, [commit, items, pageWidthMm]);
+        setItems(flowed.placed);
+    }, [layoutKey, printStudioOpen, autoLayout, reflow, showToast]);
+
     const beginInteraction = useCallback((event: React.PointerEvent<HTMLElement>, id: string, mode: "drag" | "resize" | "rotate") => {
         if (event.button !== 0)
             return;
@@ -524,10 +1113,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             JSON.stringify(current) !== JSON.stringify(interaction.startItem)) {
             const previousSnapshot = currentSnapshot.map((item) => item.id === interaction.id ? { ...interaction.startItem } : item);
             setHistory((historyItems) => [
-                ...historyItems.slice(-19),
+                ...historyItems.slice(-(MAX_HISTORY - 1)),
                 previousSnapshot,
             ]);
             setFuture([]);
+            setAutoLayout(false);
         }
         interactionRef.current = null;
     }, [items]);
@@ -537,8 +1127,64 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const next = items.map((item) => item.id === selectedId
             ? { ...item, rotation: normalizeAngle(item.rotation + 90) }
             : item);
+        setAutoLayout(false);
         commit(next, items);
     }, [commit, items, selectedId]);
+
+    const onWorkspacePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        const workspace = workspaceRef.current;
+        if (!workspace)
+            return;
+        if (event.pointerType === "touch") {
+            setSelectedId(null);
+            return;
+        }
+        if (event.button !== 0 && event.button !== 1)
+            return;
+        if (event.button === 1)
+            event.preventDefault();
+        panRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            scrollLeft: workspace.scrollLeft,
+            scrollTop: workspace.scrollTop,
+            moved: false,
+        };
+        try {
+            workspace.setPointerCapture(event.pointerId);
+        }
+        catch { }
+    }, []);
+    const onWorkspacePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current;
+        const workspace = workspaceRef.current;
+        if (!pan || !workspace || pan.pointerId !== event.pointerId)
+            return;
+        const dx = event.clientX - pan.startX;
+        const dy = event.clientY - pan.startY;
+        if (!pan.moved) {
+            if (Math.hypot(dx, dy) < 4)
+                return;
+            pan.moved = true;
+            setIsPanning(true);
+        }
+        workspace.scrollLeft = pan.scrollLeft - dx;
+        workspace.scrollTop = pan.scrollTop - dy;
+    }, []);
+    const endWorkspacePan = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current;
+        if (!pan || pan.pointerId !== event.pointerId)
+            return;
+        if (!pan.moved && event.type === "pointerup")
+            setSelectedId(null);
+        panRef.current = null;
+        setIsPanning(false);
+        try {
+            workspaceRef.current?.releasePointerCapture(event.pointerId);
+        }
+        catch { }
+    }, []);
     const renderStudioCanvas = useCallback(async () => {
         if (!printStudioImage) {
             throw new Error("No photo is available for printing.");
@@ -555,6 +1201,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
+        const minLine = 1 / scale;
         items.forEach((item) => {
             const width = item.widthMm * scale;
             const height = item.heightMm * scale;
@@ -564,24 +1211,48 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             ctx.translate(x + width / 2, y + height / 2);
             ctx.rotate((normalizeAngle(item.rotation) * Math.PI) / 180);
             drawCover(ctx, image, -width / 2, -height / 2, width, height);
+            // Borders are drawn in millimetres so thickness is exact on paper.
+            ctx.save();
+            ctx.scale(scale, scale);
+            ctx.translate(-item.widthMm / 2, -item.heightMm / 2);
             if (imageBorder) {
-                ctx.strokeStyle = "#3B2F1E";
-                ctx.lineWidth = Math.max(1, 0.25 * scale);
-                ctx.strokeRect(-width / 2, -height / 2, width, height);
+                const thickness = Math.max(imageBorderMm, minLine);
+                ctx.setLineDash([]);
+                ctx.strokeStyle = imageBorderColor;
+                ctx.lineWidth = thickness;
+                ctx.strokeRect(thickness / 2, thickness / 2, Math.max(0, item.widthMm - thickness), Math.max(0, item.heightMm - thickness));
             }
             if (cuttingBorder) {
-                ctx.strokeStyle = "#6B5A40";
-                ctx.lineWidth = Math.max(1, 0.18 * scale);
-                ctx.setLineDash([1.1 * scale, 1.1 * scale]);
-                ctx.strokeRect(-width / 2, -height / 2, width, height);
-                ctx.setLineDash([]);
+                const thickness = Math.max(cutMm, minLine);
+                ctx.strokeStyle = CUT_COLOR;
+                ctx.lineWidth = thickness;
+                if (cutStyle === "marks") {
+                    ctx.setLineDash([]);
+                    cropMarkSegments(item.widthMm, item.heightMm, gapMm).forEach(([x1, y1, x2, y2]) => {
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+                }
+                else {
+                    ctx.setLineDash(cutStyle === "dashed" ? [1.1, 1.1] : []);
+                    ctx.strokeRect(0, 0, item.widthMm, item.heightMm);
+                    ctx.setLineDash([]);
+                }
             }
+            ctx.restore();
             ctx.restore();
         });
         return canvas;
     }, [
+        cutMm,
+        cutStyle,
         cuttingBorder,
+        gapMm,
         imageBorder,
+        imageBorderColor,
+        imageBorderMm,
         items,
         pageHeightMm,
         pageWidthMm,
@@ -603,7 +1274,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             pdf.save(nameForPdf(pageSizeKey));
         }
         catch (error) {
-            showToast(error instanceof Error ? error.message : "Could not create PDF.");
+            showToast(error instanceof Error ? error.message : "Could not create PDF.", "Error");
         }
         finally {
             setIsExporting(false);
@@ -620,53 +1291,65 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const printLayout = useCallback(async () => {
         if (!items.length || isExporting)
             return;
-        const printWindow = window.open("", "_blank", "width=1200,height=1000");
-        if (!printWindow) {
-            showToast("Please allow pop-ups to print.");
-            return;
-        }
         setIsExporting(true);
+        let objectUrl: string | null = null;
+        let frame: HTMLIFrameElement | null = null;
+        const cleanup = () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = null;
+            }
+            if (frame) {
+                frame.remove();
+                frame = null;
+            }
+        };
         try {
             const canvas = await renderStudioCanvas();
-            const dataUrl = canvas.toDataURL("image/png");
-            const safeUrl = dataUrl.replace(/"/g, "&quot;");
-            printWindow.document.open();
-            printWindow.document.write(`<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>${t("Print Photo Layout")}</title>
-<style>
-@page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
-html,body { margin:0; padding:0; width:100%; height:100%; background:#fff; }
-body { display:flex; align-items:center; justify-content:center; overflow:hidden; }
-img { display:block; width:${pageWidthMm}mm; height:${pageHeightMm}mm; max-width:100vw; max-height:100vh; object-fit:fill; }
-</style>
-</head>
-<body>
-<img id="print-layout" src="${safeUrl}" alt="Print layout" />
-<script>
-const image = document.getElementById("print-layout");
-const run = () => setTimeout(() => { window.focus(); window.print(); }, 120);
-if (image.complete) run(); else image.addEventListener("load", run, { once:true });
-</script>
-</body>
-</html>`);
-            printWindow.document.close();
-            printWindow.focus();
-            const close = () => window.setTimeout(() => {
+            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+            if (!blob)
+                throw new Error("Could not prepare the print file.");
+            objectUrl = URL.createObjectURL(blob);
+            const iframe = document.createElement("iframe");
+            frame = iframe;
+            iframe.setAttribute("aria-hidden", "true");
+            iframe.tabIndex = -1;
+            iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${pageWidthMm}mm;height:${pageHeightMm}mm;border:0;opacity:0;pointer-events:none;`;
+            await new Promise<void>((resolve, reject) => {
+                iframe.onload = () => resolve();
+                iframe.onerror = () => reject(new Error("Could not open print preview."));
+                iframe.srcdoc = buildPrintHtml(objectUrl as string, pageWidthMm, pageHeightMm, t("Print Photo Layout"));
+                document.body.appendChild(iframe);
+            });
+            const printWindow = iframe.contentWindow;
+            const printDocument = iframe.contentDocument;
+            if (!printWindow || !printDocument)
+                throw new Error("Could not open print preview.");
+            const sheet = printDocument.getElementById("sheet") as HTMLImageElement | null;
+            if (sheet && !sheet.complete) {
+                await new Promise<void>((resolve, reject) => {
+                    sheet.onload = () => resolve();
+                    sheet.onerror = () => reject(new Error("Could not load the print image."));
+                });
+            }
+            if (sheet && typeof sheet.decode === "function") {
                 try {
-                    printWindow.close();
+                    await sheet.decode();
                 }
                 catch { }
-            }, 300);
-            printWindow.addEventListener("afterprint", close, { once: true });
-            window.setTimeout(close, 6000);
+            }
+            // The sheet is removed only after the print dialog has really finished.
+            // It is never closed on a timer while the dialog may still be open.
+            printWindow.addEventListener("afterprint", () => window.setTimeout(cleanup, 500), { once: true });
+            window.setTimeout(cleanup, 10 * 60 * 1000);
+            printWindow.focus();
+            printWindow.print();
         }
         catch (error) {
-            showToast(error instanceof Error
+            cleanup();
+            showToast(error instanceof Error && error.message
                 ? error.message
-                : "Could not open print preview.");
+                : "Printing failed. Please use Download PDF and print the PDF instead.", "Error");
         }
         finally {
             setIsExporting(false);
@@ -678,10 +1361,24 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
         pageWidthMm,
         renderStudioCanvas,
         showToast,
+        t,
     ]);
+
     if (!mounted || !printStudioOpen || !printStudioImage)
         return null;
+
     const selectedItem = items.find((item) => item.id === selectedId) ?? null;
+    const usedArea = items.reduce((sum, item) => sum + item.widthMm * item.heightMm, 0);
+    const pageUsage = Math.min(100, Math.round((usedArea / (pageWidthMm * pageHeightMm)) * 100));
+    const sourceRatio = sourcePreset.widthMm / sourcePreset.heightMm;
+    const customRatio = customWidthMm / customHeightMm;
+    const customWillCrop = Math.abs(sourceRatio / customRatio - 1) > 0.03;
+    const unitLabel = unit === "in" ? "inch" : unit;
+    const bdPresets = BD_QUICK_IDS.map((id) => PRESETS.find((entry) => entry.id === id)).filter((entry): entry is Preset => !!entry);
+    const marginGuidePx = marginMm * visualScale;
+    const alignBtn = "h-8 rounded-md border text-[10px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors";
+    const alignClass = (mode: HAlign) => `${alignBtn} ${hAlign === mode ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]" : "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E]"}`;
+
     const modal = (<div className={inline
             ? "relative w-full h-full min-h-[640px] rounded-2xl border border-[#E3D6B8] shadow-sm bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden"
             : "fixed inset-0 z-[10000] bg-[#F2E8D2] text-[#3B2F1E] flex flex-col ai-editor-font overflow-hidden"}>
@@ -691,8 +1388,8 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
             <ImageIcon size={16}/>
           </div>
           <div className="min-w-0">
-            <h1 className="text-base font-extrabold truncate text-[#3B2F1E]"><T>{"Print This Image\r\n            "}</T></h1>
-            <p className="text-[11px] text-[#3B2F1E]/60 truncate"><T>{"Photo Layout & Print Studio\r\n            "}</T></p>
+            <h1 className="text-base font-extrabold truncate text-[#3B2F1E]">{t("Print This Image")}</h1>
+            <p className="text-[11px] text-[#3B2F1E]/60 truncate">{t("Photo Layout & Print Studio")}</p>
           </div>
         </div>
         <button type="button" onClick={closePrintStudio} className="w-8 h-8 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] flex items-center justify-center cursor-pointer text-[#3B2F1E] transition-colors" aria-label={t("Close print studio")}>
@@ -701,193 +1398,300 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
       </header>
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <aside className={inline
-            ? "w-[600px] max-w-[60%] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-hidden grid grid-cols-2 content-start"
-            : "w-[320px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] overflow-y-auto flex flex-col"}>
-          <div className={inline ? "p-3 border-b border-r border-[#E3D6B8] row-span-2" : "p-4 border-b border-[#E3D6B8]"}>
-            <div className="flex items-center gap-2 mb-3">
-              <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
-              <div className="min-w-0">
-                <p className="text-[12px] font-extrabold text-[#3B2F1E]"><T>{"Quick Add\r\n                "}</T></p>
-                <p className="text-[11px] text-[#3B2F1E]/60 mt-0.5 leading-relaxed"><T>{"Add multiple copies of the current photo in different sizes.\r\n                "}</T></p>
+        <aside className="w-[340px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* ───────── Quick Add ───────── */}
+            <Section title={t("Quick Add")} icon={<LayoutGrid size={13}/>} open={openSections.quick} onToggle={() => toggleSection("quick")}>
+              <div className="flex items-center gap-2 mb-3">
+                <img src={printStudioImage} alt={t("Current photo")} className="w-12 h-14 object-cover rounded-md border border-[#E3D6B8] bg-[#F2E8D2]"/>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-extrabold text-[#3B2F1E]">{t("Current photo")}</p>
+                  <p className="text-[11px] text-[#3B2F1E]/60 mt-0.5 leading-relaxed">
+                    {t("Add multiple copies of the current photo in different sizes.")}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Units\r\n            "}</T></p>
-            <div className="grid grid-cols-4 gap-1.5 mb-3">
-              {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-extrabold cursor-pointer transition-colors" title={t(`Add ${quantity} ${sourcePreset.label} photo${quantity === 1 ? "" : "s"}`)}>
-                    {quantity}<T>{"U\r\n                  "}</T></button>))}
-            </div>
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5">{t("Units")}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {Array.from({ length: 8 }, (_, index) => index + 1).map((quantity) => (<button key={quantity} type="button" onClick={() => addPreset(sourcePreset, quantity)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[11px] font-extrabold cursor-pointer transition-colors" title={`${t("Add")} ${quantity} × ${t(sourcePreset.label)}`}>
+                    {quantity}U
+                  </button>))}
+              </div>
+              <button type="button" onClick={() => addPreset(sourcePreset, MAX_ITEMS, true)} className="w-full mt-1.5 h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors flex items-center justify-center gap-1.5">
+                <Grid3X3 size={12}/>
+                {t("Fill page")}
+              </button>
 
-            <div className="space-y-2">
-              {(["passport", "stamp"] as const).map((id) => {
-            const preset = PRESETS.find((item) => item.id === id) ??
-                (id === "passport"
-                    ? {
-                        id: "passport",
-                        label: "Passport",
-                        widthMm: 45,
-                        heightMm: 55,
-                    }
-                    : {
-                        id: "stamp",
-                        label: "Stamp",
-                        widthMm: 20,
-                        heightMm: 25,
-                    });
-            return (<div key={preset.id} className="grid grid-cols-[1fr_repeat(3,32px)] gap-1.5 items-center">
-                    <div>
-                      <p className="text-[11px] font-bold text-[#3B2F1E]">
-                        <T>{preset.label}</T>
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mt-4 mb-1.5">{t("Bangladesh Sizes")}</p>
+              <div className="space-y-1.5">
+                {bdPresets.map((entry) => (<div key={entry.id} className="grid grid-cols-[1fr_repeat(3,36px)] gap-1.5 items-center">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold text-[#3B2F1E] truncate">{t(entry.label)}</p>
+                      <p className="text-[10px] text-[#3B2F1E]/55">
+                        {roundNice(entry.widthMm)}×{roundNice(entry.heightMm)} mm
                       </p>
-                      <p className="text-[11px] text-[#3B2F1E]/60">
-                        {preset.widthMm}<T>{"\u00D7"}</T>{preset.heightMm}<T>{"mm\r\n                      "}</T></p>
                     </div>
-                    {[1, 4, 8].map((quantity) => (<button key={`${preset.id}-${quantity}`} type="button" onClick={() => addPreset(preset, quantity)} className="h-7 rounded-md bg-[#3B2F1E] hover:bg-[#1E293B] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
-                        {quantity}<T>{"+\r\n                      "}</T></button>))}
-                  </div>);
-        })}
-            </div>
-
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mt-4 mb-1.5"><T>{"Photo Sizes\r\n            "}</T></p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {PRESETS.filter((item) => ["2R", "3R", "4R", "5R", "6R", "8R"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
-                  <T>{preset.label}</T>
-                </button>))}
-            </div>
-
-            <div className="grid grid-cols-4 gap-1.5 mt-1.5">
-              {PRESETS.filter((item) => ["4B", "5B", "6B", "A4"].includes(item.id)).map((preset) => (<button key={preset.id} type="button" onClick={() => addPreset(preset)} className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
-                  <T>{preset.label}</T>
-                </button>))}
-            </div>
-          </div>
-
-          <div className={inline ? "p-3 border-b border-[#E3D6B8]" : "p-4 border-b border-[#E3D6B8]"}>
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Options\r\n            "}</T></p>
-            <div className="space-y-1.5">
-              {([
-            {
-                label: "Free Size",
-                checked: freeSize,
-                setChecked: setFreeSize,
-            },
-            {
-                label: "Cutting Border",
-                checked: cuttingBorder,
-                setChecked: setCuttingBorder,
-            },
-            {
-                label: "Image Border",
-                checked: imageBorder,
-                setChecked: setImageBorder,
-            },
-        ] satisfies CheckboxOption[]).map(({ label, checked, setChecked }) => (<label key={label} className="flex items-center justify-between px-2.5 py-2 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] cursor-pointer transition-colors">
-                  <span className="text-[11px] font-semibold text-[#3B2F1E]">
-                    <T>{label}</T>
-                  </span>
-                  <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="accent-[#DC2626] cursor-pointer"/>
-                </label>))}
-            </div>
-
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-1 text-[11px] font-bold text-[#3B2F1E]/70">
-                <span><T>{"Image Gap (mm): "}</T>{gapMm}</span>
+                    {[1, 4, 8].map((quantity) => (<button key={`${entry.id}-${quantity}`} type="button" onClick={() => addPreset(entry, quantity)} className="h-7 rounded-md bg-[#3B2F1E] hover:bg-[#1E293B] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
+                        {quantity}+
+                      </button>))}
+                  </div>))}
               </div>
-              <input type="range" min={0} max={10} step={0.5} value={gapMm} onChange={(event) => setGapMm(Number(event.target.value))} className="w-full accent-[#DC2626] cursor-pointer"/>
-              <div className="flex justify-between text-[11px] text-[#3B2F1E]/50 mt-0.5">
-                <span><T>{"0"}</T></span>
-                <span><T>{"5"}</T></span>
-                <span><T>{"10"}</T></span>
+
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mt-4 mb-1">{t("Ready Sheets")}</p>
+              <p className="text-[10px] text-[#3B2F1E]/55 mb-1.5 leading-snug">{t("Replaces the current layout. You can undo it.")}</p>
+              <div className="space-y-1.5">
+                {COMBOS.map((combo) => (<button key={combo.id} type="button" onClick={() => addCombo(combo)} className="w-full h-8 rounded-md border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold cursor-pointer transition-colors">
+                    {t(combo.label)}
+                  </button>))}
               </div>
-            </div>
-          </div>
 
-          <div className={inline ? "p-3 border-b border-[#E3D6B8]" : "p-4 border-b border-[#E3D6B8]"}>
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-1.5"><T>{"Page & Layout\r\n            "}</T></p>
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mt-4 mb-1.5">{t("Photo Sizes")}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {PRESETS.filter((item) => ["2R", "3R", "4R", "5R", "6R", "8R"].includes(item.id)).map((entry) => (<button key={entry.id} type="button" onClick={() => addPreset(entry)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
+                    {entry.label}
+                  </button>))}
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                {PRESETS.filter((item) => ["4B", "5B", "6B", "A4"].includes(item.id)).map((entry) => (<button key={entry.id} type="button" onClick={() => addPreset(entry)} className="h-8 rounded-md bg-[#10B981] hover:bg-[#059669] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
+                    {entry.label}
+                  </button>))}
+              </div>
+            </Section>
 
-            <select value={pageSizeKey} onChange={(event) => setPage(event.target.value as PageSizeKey)} className="w-full h-8 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] px-2 text-[11px] font-semibold cursor-pointer">
-              {Object.entries(PAGE_SIZES).map(([key, page]) => (<option key={key} value={key}>
-                  {page.label}
-                </option>))}
-            </select>
-
-            <div className="grid grid-cols-2 gap-1.5 mt-2">
-              <button type="button" onClick={() => setPageOrientation("portrait")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#cbd5e1]"}`}><T>{"Portrait\r\n              "}</T></button>
-              <button type="button" onClick={() => setPageOrientation("landscape")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#cbd5e1]"}`}><T>{"Landscape\r\n              "}</T></button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1.5 mt-2">
-              <button type="button" onClick={centerAlign} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
-                <AlignCenterHorizontal size={11}/><T>{"Center\r\n              "}</T></button>
-              <button type="button" onClick={rightAlign} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
-                <AlignRight size={11}/><T>{"Right\r\n              "}</T></button>
-              <button type="button" onClick={autoArrange} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#1d4ed8] text-white text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors">
-                <Grid3X3 size={11}/><T>{"Auto\r\n              "}</T></button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5 mt-2">
-              <button type="button" onClick={undo} disabled={!history.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
-                <Undo2 size={11}/><T>{"Undo\r\n              "}</T></button>
-              <button type="button" onClick={redo} disabled={!future.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40">
-                <Redo2 size={11}/><T>{"Redo\r\n              "}</T></button>
-            </div>
-          </div>
-
-          <div className={inline ? "col-span-2 p-3 grid grid-cols-2 gap-x-3 gap-y-2 [&>*]:mt-0 [&>*]:mb-0" : "mt-auto p-4 border-t border-[#E3D6B8]"}>
-            <div className="rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-2 mb-2.5">
-              <p className="text-[11px] uppercase font-bold text-[#3B2F1E]/50"><T>{"Total\r\n              "}</T></p>
-              <p className="text-[13px] font-extrabold text-[#3B2F1E] mt-0.5">
-                {items.length} {items.length === 1 ? <T>{"photo"}</T> : <T>{"photos"}</T>}
+            {/* ───────── Custom Size ───────── */}
+            <Section title={t("Custom Size")} icon={<Ruler size={13}/>} open={openSections.custom} onToggle={() => toggleSection("custom")}>
+              <Segmented<Unit> value={unit} onChange={setUnit} options={[
+            { value: "mm", label: "mm" },
+            { value: "cm", label: "cm" },
+            { value: "in", label: "inch" },
+        ]}/>
+              <div className="grid grid-cols-[1fr_32px_1fr] gap-1.5 items-end mt-2.5">
+                <div>
+                  <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">{t("Width")}</p>
+                  <NumberField ariaLabel={t("Width")} value={formatInUnit(customWidthMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={600 / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => setCustomWidthMm(clamp(value * UNIT_FACTOR[unit], MIN_ITEM_MM, 600))}/>
+                </div>
+                <button type="button" onClick={() => {
+            setCustomWidthMm(customHeightMm);
+            setCustomHeightMm(customWidthMm);
+        }} className="h-8 rounded-md border border-[#E3D6B8] bg-[#F2E8D2] hover:bg-[#E3D6B8] flex items-center justify-center cursor-pointer text-[#3B2F1E]" title={t("Swap width and height")}>
+                  <ArrowLeftRight size={13}/>
+                </button>
+                <div>
+                  <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">{t("Height")}</p>
+                  <NumberField ariaLabel={t("Height")} value={formatInUnit(customHeightMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={600 / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => setCustomHeightMm(clamp(value * UNIT_FACTOR[unit], MIN_ITEM_MM, 600))}/>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#3B2F1E]/55 mt-1.5">
+                = {roundNice(customWidthMm)} × {roundNice(customHeightMm)} mm
               </p>
+              {customWillCrop && (<p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-2 leading-snug">
+                  {t("This ratio is different from your photo, so the photo will be center-cropped to fit.")}
+                </p>)}
+              <div className="grid grid-cols-4 gap-1.5 mt-2.5">
+                {[1, 4, 8].map((quantity) => (<button key={quantity} type="button" onClick={() => addCustom(quantity)} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[11px] font-extrabold cursor-pointer transition-colors">
+                    +{quantity}
+                  </button>))}
+                <button type="button" onClick={() => addCustom(MAX_ITEMS, true)} className="h-8 rounded-md border border-[#DC2626]/40 bg-[#DC2626]/5 hover:bg-[#DC2626]/10 text-[#DC2626] text-[11px] font-extrabold cursor-pointer transition-colors">
+                  {t("Fill")}
+                </button>
+              </div>
+
+              <div className="mt-3">
+                <Toggle checked={freeSize} onChange={setFreeSize} label={t("Free Size")} hint={t("Resize with the corner handle without keeping the ratio.")}/>
+              </div>
+
+              <div className="mt-3 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2]/60 p-2.5">
+                <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#3B2F1E]/60 mb-2">{t("Selected photo")}</p>
+                {selectedItem ? (<>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">{t("Width")}</p>
+                        <NumberField ariaLabel={t("Width")} value={formatInUnit(selectedItem.widthMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={pageWidthMm / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => updateSelectedSize("widthMm", value * UNIT_FACTOR[unit])}/>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">{t("Height")}</p>
+                        <NumberField ariaLabel={t("Height")} value={formatInUnit(selectedItem.heightMm, unit)} min={MIN_ITEM_MM / UNIT_FACTOR[unit]} max={pageHeightMm / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => updateSelectedSize("heightMm", value * UNIT_FACTOR[unit])}/>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 mt-2">
+                      <button type="button" onClick={duplicateSelected} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-white text-[#3B2F1E] text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
+                        <Copy size={11}/>
+                        {t("Duplicate")}
+                      </button>
+                      <button type="button" onClick={applySizeToAll} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-white text-[#3B2F1E] text-[11px] font-bold cursor-pointer">
+                        {t("Apply size to all")}
+                      </button>
+                    </div>
+                  </>) : (<p className="text-[10px] text-[#3B2F1E]/55 leading-snug">
+                    {t("Click a photo on the page to set its exact size.")}
+                  </p>)}
+              </div>
+            </Section>
+
+            {/* ───────── Borders & Cutting ───────── */}
+            <Section title={t("Borders & Cutting")} icon={<Frame size={13}/>} open={openSections.border} onToggle={() => toggleSection("border")}>
+              <Toggle checked={imageBorder} onChange={setImageBorder} label={t("Image Border")} hint={t("A border drawn inside the photo edge.")}/>
+              {imageBorder && (<div className="mt-2.5 space-y-2.5 pl-1">
+                  <RangeField label={t("Border thickness")} valueLabel={`${imageBorderMm.toFixed(2)} mm`} value={imageBorderMm} min={0.1} max={3} step={0.05} onChange={setImageBorderMm}/>
+                  <div>
+                    <p className="text-[11px] font-bold text-[#3B2F1E]/70 mb-1.5">{t("Border color")}</p>
+                    <ColorField value={imageBorderColor} onChange={setImageBorderColor}/>
+                  </div>
+                </div>)}
+
+              <div className="mt-3">
+                <Toggle checked={cuttingBorder} onChange={setCuttingBorder} label={t("Cutting Border")} hint={t("Guide lines to help you cut the photos.")}/>
+              </div>
+              {cuttingBorder && (<div className="mt-2.5 space-y-2.5 pl-1">
+                  <Segmented<CutStyle> value={cutStyle} onChange={setCutStyle} options={[
+                { value: "dashed", label: t("Dashed") },
+                { value: "solid", label: t("Solid") },
+                { value: "marks", label: t("Corner marks") },
+            ]}/>
+                  <RangeField label={t("Line thickness")} valueLabel={`${cutMm.toFixed(2)} mm`} value={cutMm} min={0.1} max={1} step={0.05} onChange={setCutMm}/>
+                  {cutStyle === "marks" && (<p className="text-[10px] text-[#3B2F1E]/55 leading-snug">
+                      {t("Corner marks are drawn in the gap between photos. Keep the gap at 2 mm or more.")}
+                    </p>)}
+                </div>)}
+            </Section>
+
+            {/* ───────── Page & Layout ───────── */}
+            <Section title={t("Page & Layout")} icon={<Printer size={13}/>} open={openSections.page} onToggle={() => toggleSection("page")}>
+              <select value={pageSizeKey} onChange={(event) => setPage(event.target.value as PageSizeKey)} className="w-full h-8 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] px-2 text-[11px] font-semibold cursor-pointer">
+                {Object.entries(PAGE_SIZES).map(([key, page]) => (<option key={key} value={key}>
+                    {page.label}
+                  </option>))}
+              </select>
+
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                <button type="button" onClick={() => setPageOrientation("portrait")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#d8c9a4]"}`}>{t("Portrait")}</button>
+                <button type="button" onClick={() => setPageOrientation("landscape")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#d8c9a4]"}`}>{t("Landscape")}</button>
+              </div>
+
+              <div className="mt-3 space-y-2.5">
+                <RangeField label={t("Image Gap (mm):")} valueLabel={`${gapMm}`} value={gapMm} min={0} max={10} step={0.5} onChange={setGapMm}/>
+                <RangeField label={t("Page margin (mm):")} valueLabel={`${marginMm}`} value={marginMm} min={0} max={15} step={0.5} onChange={setMarginMm}/>
+                <p className="text-[10px] text-[#3B2F1E]/55 leading-snug -mt-1">
+                  {t("Most home and shop printers cannot print right to the paper edge. A 3–5 mm margin is safe.")}
+                </p>
+                {!autoLayout && items.length > 0 && (<p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 leading-snug">
+                    {t("You moved photos by hand. Press Auto to apply the new gap and margin.")}
+                  </p>)}
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5 mt-3">
+                <button type="button" onClick={() => applyAlign("left")} className={alignClass("left")} title={t("Align left")}>
+                  <AlignLeft size={11}/>
+                  {t("Left")}
+                </button>
+                <button type="button" onClick={() => applyAlign("center")} className={alignClass("center")} title={t("Align center")}>
+                  <AlignCenterHorizontal size={11}/>
+                  {t("Center")}
+                </button>
+                <button type="button" onClick={() => applyAlign("right")} className={alignClass("right")} title={t("Align right")}>
+                  <AlignRight size={11}/>
+                  {t("Right")}
+                </button>
+                <button type="button" onClick={autoArrange} className="h-8 rounded-md bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[10px] font-bold cursor-pointer flex items-center justify-center gap-1 transition-colors" title={t("Arrange photos neatly")}>
+                  <Grid3X3 size={11}/>
+                  {t("Auto")}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                <button type="button" onClick={undo} disabled={!history.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                  <Undo2 size={11}/>
+                  {t("Undo")}
+                </button>
+                <button type="button" onClick={redo} disabled={!future.length} className="h-8 rounded-md border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                  <Redo2 size={11}/>
+                  {t("Redo")}
+                </button>
+              </div>
+            </Section>
+          </div>
+
+          {/* ───────── Always-visible action bar ───────── */}
+          <div className="shrink-0 p-3 border-t border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_-6px_16px_rgba(59,47,30,0.06)]">
+            <div className="rounded-lg border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-2 mb-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase font-bold text-[#3B2F1E]/50">{t("Total")}</p>
+                <p className="text-[11px] font-bold text-[#3B2F1E]/60">
+                  {pageUsage}% {t("page used")}
+                </p>
+              </div>
+              <p className="text-[13px] font-extrabold text-[#3B2F1E] mt-0.5">
+                {items.length} {items.length === 1 ? t("photo") : t("photos")}
+              </p>
+              <div className="h-1 rounded-full bg-[#3B2F1E]/10 mt-1.5 overflow-hidden">
+                <div className="h-full bg-[#10B981] transition-all" style={{ width: `${pageUsage}%` }}/>
+              </div>
             </div>
             <div className="grid grid-cols-[42px_1fr] gap-2">
-              <button type="button" onClick={() => commit([], items)} className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors" title={t("Remove all")}>
+              <button type="button" onClick={() => commit([], items)} disabled={!items.length} className="h-10 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-40" title={t("Remove all")}>
                 <Trash2 size={15}/>
               </button>
-              <button type="button" onClick={downloadPdf} disabled={!items.length || isExporting} className="h-10 rounded-lg bg-[#E3D6B8] hover:bg-[#cbd5e1] text-[#3B2F1E] text-[11px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors">
+              <button type="button" onClick={downloadPdf} disabled={!items.length || isExporting} className="h-10 rounded-lg bg-[#E3D6B8] hover:bg-[#d8c9a4] text-[#3B2F1E] text-[11px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 transition-colors">
                 <Download size={13}/>
-                {isExporting ? <T>{"Preparing…"}</T> : <T>{"Download PDF"}</T>}
+                {isExporting ? t("Preparing…") : t("Download PDF")}
               </button>
             </div>
             <button type="button" onClick={printLayout} disabled={!items.length || isExporting} className="w-full mt-2 h-11 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
-              <Printer size={15}/><T>{"Print\r\n            "}</T></button>
-            {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#cbd5e1] text-[#3B2F1E] text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
-              <ImageIcon size={13}/><T>{"Print single photo"}</T></button>)}
+              <Printer size={15}/>
+              {t("Print")}
+            </button>
+            <p className="mt-2 text-[10px] leading-snug text-[#3B2F1E]/60">
+              {t("Print tip: in the print dialog set Margins to None and Scale to 100%.")}{" "}
+              <span className="font-bold text-[#3B2F1E]/80">
+                {t("Paper size")}: {pageWidthMm} × {pageHeightMm} mm
+              </span>
+            </p>
+            {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#d8c9a4] text-[#3B2F1E] text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
+                <ImageIcon size={13}/>
+                {t("Print single photo")}
+              </button>)}
           </div>
         </aside>
 
         <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F2E8D2]">
           <div className="h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-4 flex items-center justify-between">
             <div className="text-[11px] font-bold text-[#3B2F1E]/70">
-              {items.length}<T>{"items \u2022 "}</T>{pageWidthMm.toFixed(1)}<T>{"\u00D7\r\n              "}</T>{pageHeightMm.toFixed(1)}<T>{"mm\r\n            "}</T></div>
+              {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{pageHeightMm.toFixed(1)} mm
+            </div>
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => setZoom((value) => clamp(value - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
+              <button type="button" onClick={() => setZoomCentered(zoom - ZOOM_STEP)} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
                 <Minus size={12}/>
               </button>
-              <span className="w-12 text-center text-[11px] font-extrabold text-[#3B2F1E]">
-                {zoom}<T>{"%\r\n              "}</T></span>
-              <button type="button" onClick={() => setZoom((value) => clamp(value + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX))} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
+              <span className="w-12 text-center text-[11px] font-extrabold text-[#3B2F1E]">{zoom}%</span>
+              <button type="button" onClick={() => setZoomCentered(zoom + ZOOM_STEP)} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
                 <Plus size={12}/>
               </button>
-              {[100, 120, 300].map((value) => (<button key={value} type="button" onClick={() => setZoom(value)} className="w-8 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-extrabold cursor-pointer hover:bg-[#F2E8D2]">
+              {ZOOM_PRESETS.map((value) => (<button key={value} type="button" onClick={() => setZoomCentered(value)} className="w-8 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] text-[11px] font-extrabold cursor-pointer hover:bg-[#F2E8D2]">
                   {value}
                 </button>))}
             </div>
           </div>
 
-          <div ref={workspaceRef} className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-5 sm:p-6" onPointerDown={() => setSelectedId(null)}>
-            <div ref={pageRef} className="relative shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
+          <div ref={workspaceRef} className={`relative flex-1 min-h-0 overflow-auto select-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={onWorkspacePointerDown} onPointerMove={onWorkspacePointerMove} onPointerUp={endWorkspacePan} onPointerCancel={endWorkspacePan}>
+            <div className="flex min-h-full min-w-full w-max p-5 sm:p-6">
+            <div ref={pageRef} className="relative m-auto shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
             width: `${pageWidthMm * visualScale}px`,
             height: `${pageHeightMm * visualScale}px`,
-        }} onPointerDown={(event) => event.stopPropagation()}>
+        }}>
+              {marginMm > 0 && (<div className="absolute pointer-events-none border border-dashed border-[#DC2626]/25" style={{
+                left: `${marginGuidePx}px`,
+                top: `${marginGuidePx}px`,
+                right: `${marginGuidePx}px`,
+                bottom: `${marginGuidePx}px`,
+            }}/>)}
               {items.map((item) => {
             const selected = item.id === selectedId;
             const left = (item.xMm / pageWidthMm) * 100;
             const top = (item.yMm / pageHeightMm) * 100;
             const width = (item.widthMm / pageWidthMm) * 100;
             const height = (item.heightMm / pageHeightMm) * 100;
-            return (<div key={item.id} className="absolute" style={{
+            return (<div key={item.id} className="absolute cursor-move" style={{
                     left: `${left}%`,
                     top: `${top}%`,
                     width: `${width}%`,
@@ -899,8 +1703,7 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                 }} onPointerDown={(event) => beginInteraction(event, item.id, "drag")} onPointerMove={moveInteraction} onPointerUp={endInteraction} onPointerCancel={endInteraction}>
                     <div className={`relative w-full h-full bg-[#FBF6E8] overflow-visible ${selected ? "ring-2 ring-[#DC2626] ring-offset-1" : ""}`}>
                       <img src={printStudioImage} alt={t(item.label)} draggable={false} className="block w-full h-full object-cover pointer-events-none select-none"/>
-                      {imageBorder && (<div className="absolute inset-0 border border-[#3B2F1E]/80 pointer-events-none"/>)}
-                      {cuttingBorder && (<div className="absolute inset-0 border border-dashed border-[#3B2F1E]/60 pointer-events-none"/>)}
+                      <ItemOverlay widthMm={item.widthMm} heightMm={item.heightMm} gapMm={gapMm} imageBorder={imageBorder} imageBorderMm={imageBorderMm} imageBorderColor={imageBorderColor} cuttingBorder={cuttingBorder} cutStyle={cutStyle} cutMm={cutMm}/>
 
                       {selected && (<>
                           <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => {
@@ -919,7 +1722,8 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                           </button>
 
                           <div className="absolute left-1/2 bottom-full -translate-x-1/2 mb-1 rounded-md bg-[#3B2F1E]/90 text-white px-1.5 py-1 text-[11px] font-bold whitespace-nowrap pointer-events-none">
-                            {<T>{item.label}</T>}<T>{"\u00B7 "}</T>{item.widthMm.toFixed(1)}<T>{"\u00D7\r\n                            "}</T>{item.heightMm.toFixed(1)}<T>{"mm\r\n                          "}</T></div>
+                            {t(item.label)} · {item.widthMm.toFixed(1)}×{item.heightMm.toFixed(1)} mm
+                          </div>
                         </>)}
                     </div>
                   </div>);
@@ -930,35 +1734,44 @@ if (image.complete) run(); else image.addEventListener("load", run, { once:true 
                     <div className="w-11 h-11 rounded-xl bg-[#E3D6B8] flex items-center justify-center mx-auto mb-2 text-[#3B2F1E]/40">
                       <Grid3X3 size={19}/>
                     </div>
-                    <p className="text-sm font-extrabold text-[#3B2F1E]/60"><T>{"Your print page is empty\r\n                    "}</T></p>
-                    <p className="text-[11px] text-[#3B2F1E]/40 mt-1"><T>{"Use Quick Add to place photos.\r\n                    "}</T></p>
+                    <p className="text-sm font-extrabold text-[#3B2F1E]/60">{t("Your print page is empty")}</p>
+                    <p className="text-[11px] text-[#3B2F1E]/40 mt-1">{t("Use Quick Add to place photos.")}</p>
                   </div>
                 </div>)}
+            </div>
             </div>
           </div>
 
           <div className="h-9 shrink-0 bg-white/80 border-t border-[#E3D6B8] px-4 flex items-center justify-center gap-2 text-[11px] text-[#3B2F1E]/60">
-            <Move size={11}/><T>{"Drag\r\n            "}</T><span><T>{"\u2022"}</T></span>
-            <RotateCw size={10}/><T>{"Rotate\r\n            "}</T><span><T>{"\u2022"}</T></span>
-            <Move size={10} className="rotate-45"/><T>{"Resize\r\n            "}</T>{selectedItem && (<>
-                <span><T>{"\u2022"}</T></span>
-                <span><T>{selectedItem.label}</T></span>
+            <Move size={11}/>
+            {t("Drag")}
+            <span>•</span>
+            <RotateCw size={10}/>
+            {t("Rotate")}
+            <span>•</span>
+            <Move size={10} className="rotate-45"/>
+            {t("Resize")}
+            <span>•</span>
+            <span>{t("Drag empty space to move around · Ctrl+scroll to zoom · Arrow keys: nudge · Delete: remove")}</span>
+            {selectedItem && (<>
+                <span>•</span>
+                <span>{t(selectedItem.label)}</span>
               </>)}
           </div>
         </main>
 
         {toast && (<div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-[#FBF6E8] shadow-xl p-3">
-            <p className="text-[12px] font-extrabold text-[#3B2F1E]"><T>{"Page Full\r\n            "}</T></p>
-            <p className="text-[11px] text-[#3B2F1E]/70 mt-0.5 leading-relaxed">
-              <T>{toast}</T>
-            </p>
+            <p className="text-[12px] font-extrabold text-[#3B2F1E]">{t(toast.title)}</p>
+            <p className="text-[11px] text-[#3B2F1E]/70 mt-0.5 leading-relaxed">{t(toast.message)}</p>
           </div>)}
       </div>
 
       <footer className="h-8 shrink-0 bg-[#FBF6E8] border-t border-[#E3D6B8] px-4 flex items-center justify-between text-[11px] text-[#3B2F1E]/50">
-        <span><T>{"Photo Layout & Print Studio"}</T></span>
+        <span>{t("Photo Layout & Print Studio")}</span>
         <button type="button" onClick={rotateSelected} disabled={!selectedId} className="flex items-center gap-1 hover:text-[#3B2F1E] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-          <RotateCw size={10}/><T>{"Rotate selected 90\u00B0\r\n        "}</T></button>
+          <RotateCw size={10}/>
+          {t("Rotate selected 90°")}
+        </button>
       </footer>
     </div>);
     return inline ? modal : createPortal(modal, document.body);
