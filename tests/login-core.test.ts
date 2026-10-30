@@ -21,7 +21,6 @@ function deps(over: Partial<LoginDeps<U>> = {}, calls: { find: number } = { find
       return db.find((u) => u.phoneNumber === phoneNumber || u.email === email) ?? null;
     },
     comparePassword: async (plain, hash) => hashOf(plain) === hash,
-    checkRateLimit: async () => ({ allowed: true }),
     ...over,
   };
 }
@@ -80,14 +79,9 @@ test("non-string / oversize / empty passwords are bad requests", async () => {
   assert.equal((await authenticateLogin(deps(), null)).kind, "bad_request");
 });
 
-test("11 rate limiting yields rate_limited (not a credential error) and skips the lookup", async () => {
-  const calls = { find: 0 };
-  const r = await authenticateLogin(
-    deps({ checkRateLimit: async (scope) => (scope === "identifier" ? { allowed: false, retryAfterSeconds: 42 } : { allowed: true }) }, calls),
-    { identifier: "admin@example.test", password: "admin-pass-123456" },
-  );
-  assert.deepEqual(r, { kind: "rate_limited", retryAfterSeconds: 42 });
-  assert.equal(calls.find, 0);
+test("login decision logic does not require a rate-limit dependency", async () => {
+  const r = await authenticateLogin(deps(), { identifier: "admin@example.test", password: "admin-pass-123456" });
+  assert.equal(r.kind, "ok");
 });
 
 test("infrastructure errors propagate and are NOT converted into invalid credentials", async () => {

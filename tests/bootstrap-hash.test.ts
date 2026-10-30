@@ -12,7 +12,6 @@ test("7 bootstrap-style bcrypt hash verifies through the login implementation", 
   const deps = {
     findUser: async () => doc,
     comparePassword: (p: string, h: string) => bcrypt.compare(p, h),
-    checkRateLimit: async () => ({ allowed: true as const }),
   };
   assert.equal((await authenticateLogin(deps, { identifier: "ADMIN@example.test", password })).kind, "ok");
   assert.equal((await authenticateLogin(deps, { identifier: "admin@example.test", password: password + "x" })).kind, "invalid_credentials");

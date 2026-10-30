@@ -68,6 +68,17 @@ function crc32(bytes: Uint8Array): number {
     }
     return (crc ^ 0xffffffff) >>> 0;
 }
+/**
+ * Creates a standalone ArrayBuffer for BlobPart compatibility.
+ * Recent TypeScript DOM definitions reject Uint8Array<ArrayBufferLike>
+ * because its backing buffer could be a SharedArrayBuffer.
+ */
+function toBlobArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+    const buffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(buffer).set(bytes);
+    return buffer;
+}
+
 async function addJpegDpi(blob: Blob, dpi: number): Promise<Blob> {
     const input = new Uint8Array(await blob.arrayBuffer());
     if (input.length < 2 || input[0] !== 0xff || input[1] !== 0xd8) {
@@ -105,7 +116,7 @@ async function addJpegDpi(blob: Blob, dpi: number): Promise<Blob> {
             input[offset + 13] = density & 0xff;
             input[offset + 14] = (density >> 8) & 0xff;
             input[offset + 15] = density & 0xff;
-            return new Blob([input], {
+            return new Blob([toBlobArrayBuffer(input)], {
                 type: "image/jpeg",
             });
         }
@@ -134,7 +145,7 @@ async function addJpegDpi(blob: Blob, dpi: number): Promise<Blob> {
     output.set(input.slice(0, 2), 0);
     output.set(app0, 2);
     output.set(input.slice(2), 2 + app0.length);
-    return new Blob([output], {
+    return new Blob([toBlobArrayBuffer(output)], {
         type: "image/jpeg",
     });
 }
@@ -181,7 +192,7 @@ async function addPngDpi(blob: Blob, dpi: number): Promise<Blob> {
     output.set(input.slice(0, insertAt), 0);
     output.set(chunk, insertAt);
     output.set(input.slice(insertAt), insertAt + chunk.length);
-    return new Blob([output], {
+    return new Blob([toBlobArrayBuffer(output)], {
         type: "image/png",
     });
 }
@@ -681,7 +692,15 @@ function createStoredZip(files: Array<{ name: string; bytes: Uint8Array }>): Blo
     write32(endView, 12, centralSize);
     write32(endView, 16, localOffset);
     write16(endView, 20, 0);
-    return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
+    // BlobPart in newer TypeScript requires ArrayBuffer-backed data. Convert each
+    // ZIP segment into a fresh ArrayBuffer instead of passing Uint8Array buffers
+    // that may be typed as ArrayBufferLike (and could theoretically be shared).
+    const blobParts: ArrayBuffer[] = [
+        ...localParts.map(toBlobArrayBuffer),
+        ...centralParts.map(toBlobArrayBuffer),
+        toBlobArrayBuffer(end),
+    ];
+    return new Blob(blobParts, { type: "application/zip" });
 }
 
 function exportFilenameToken(value?: string): string {
