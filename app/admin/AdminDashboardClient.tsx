@@ -42,9 +42,10 @@ import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
 import AdminLivePanel from "./_components/AdminLivePanel";
 import SiteSettingsPanel from "./_components/SiteSettingsPanel";
+import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live" | "settings";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live" | "settings" | "payment-gateway";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -946,6 +947,12 @@ export default function AdminDashboardClient() {
         icon: Settings2,
         badgeCount: 0,
       },
+      {
+        key: "payment-gateway" as const,
+        label: "Payment Gateway",
+        icon: KeyRound,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -960,7 +967,9 @@ export default function AdminDashboardClient() {
             ? "User chats"
             : tab === "live"
               ? "Live user activity"
-              : "Website settings";
+              : tab === "payment-gateway"
+                ? "Payment gateway configuration"
+                : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -2061,6 +2070,7 @@ export default function AdminDashboardClient() {
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
           {tab === "live" && <AdminLivePanel refreshKey={liveRefreshKey} />}
           {tab === "settings" && <SiteSettingsPanel />}
+          {tab === "payment-gateway" && <PaymentGatewaySettingsPanel />}
 
           {accessModalUser && (
             <div

@@ -6,6 +6,7 @@ import Subscription from "@/models/Subscription";
 import { verifyAndActivateSubscription } from "../_lib/piprapay";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
       message: result.message,
       payment: result.payment ? {
         pp_id: result.payment.pp_id || result.payment.payment_id || candidatePpId,
-        transaction_id: result.payment.transaction_id || null,
+        transaction_id: result.payment.transaction_id || result.payment.transactionId || result.payment.trx_id || result.payment.trxId || result.payment.trxID || null,
         sender_number: result.payment.sender_number || result.payment.sender || null,
         payment_method: result.payment.payment_method || result.payment.gateway || null,
         status: result.payment.payment_status || result.payment.status || null,

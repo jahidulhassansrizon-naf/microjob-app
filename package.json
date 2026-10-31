@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:auth": "tsx --test tests/*.test.ts",
-    "restore:env-admin": "node scripts/restore-env-admin.mjs"
+    "restore:env-admin": "node scripts/restore-env-admin.mjs",
+    "test:piprapay": "tsx --test tests/piprapay-encryption.test.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

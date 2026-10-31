@@ -4,8 +4,12 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { SUBSCRIPTION_PLAN_BY_ID, type SubscriptionPlanId } from "@/app/_lib/subscriptionPlans";
-import { getPipraPayConfig } from "@/app/api/payment/_lib/piprapay";
+import {
+  createPipraPayCheckout,
+  getPipraPayConfig,
+} from "@/app/api/payment/_lib/piprapay";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -39,44 +43,10 @@ function getTokenFromRequest(request: Request) {
   }
 }
 
-function providerMessage(payload: any) {
-  const message = payload?.message || payload?.error || payload?.data?.message;
-  return typeof message === "string" ? message.slice(0, 300) : "PipraPay could not create the payment request.";
-}
-
-function getCheckoutUrl(payload: any) {
-  const candidates = [
-    payload?.pp_url,
-    payload?.checkout_url,
-    payload?.payment_url,
-    payload?.url,
-    payload?.data?.pp_url,
-    payload?.data?.checkout_url,
-    payload?.data?.payment_url,
-    payload?.data?.url,
-  ];
-  const value = candidates.find((item) => typeof item === "string" && item.trim());
-  if (!value) return "";
-  try {
-    const parsed = new URL(String(value));
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return "";
-    if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") return "";
-    return parsed.toString();
-  } catch {
-    return "";
-  }
-}
-
 export async function POST(request: Request) {
   let subscriptionId = "";
 
   try {
-    if (String(process.env.PIPRAPAY_ENABLED || "").toLowerCase() !== "true") {
-      return NextResponse.json(
-        { success: false, message: "PipraPay is being integrated. Please use the available manual bKash/Nagad payment option for now." },
-        { status: 503 },
-      );
-    }
     if (!JWT_SECRET) {
       return NextResponse.json({ success: false, message: "Authentication is not configured on the server." }, { status: 500 });
     }
@@ -84,15 +54,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Set NEXT_PUBLIC_SITE_URL to your public HTTPS website URL." }, { status: 503 });
     }
 
-    const config = getPipraPayConfig();
-    if (!config.apiKey) {
-      return NextResponse.json({ success: false, message: "PIPRAPAY_API_KEY is not configured on the server." }, { status: 503 });
+    const config = await getPipraPayConfig();
+    if (!config.configured) {
+      return NextResponse.json({ success: false, message: "Save the PipraPay Base URL and API Key in Admin → Payment Gateway before testing checkout." }, { status: 503 });
     }
-    if (!config.baseUrl) {
-      return NextResponse.json({ success: false, message: "PIPRAPAY_BASE_URL is not configured on the server." }, { status: 503 });
-    }
-    if (process.env.NODE_ENV === "production" && !config.baseUrlExplicitlyConfigured) {
-      return NextResponse.json({ success: false, message: "Set PIPRAPAY_BASE_URL to the client's live PipraPay API domain before accepting production payments." }, { status: 503 });
+    if (!config.enabled) {
+      return NextResponse.json({ success: false, message: "PipraPay is configured but remains disabled until an administrator completes connection and payment testing." }, { status: 503 });
     }
 
     const token = getTokenFromRequest(request);
@@ -122,9 +89,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "User account was not found." }, { status: 404 });
     }
 
-    const emailMobile = String(user.email || user.phoneNumber || "").trim();
-    if (!emailMobile) {
-      return NextResponse.json({ success: false, message: "Add an email address or mobile number to your profile before paying." }, { status: 400 });
+    const emailAddress = String(user.email || "").trim();
+    const mobileNumber = String(user.phoneNumber || "").trim();
+    if (!emailAddress || !mobileNumber) {
+      return NextResponse.json(
+        { success: false, message: "Add both an email address and mobile number to your profile before paying with PipraPay." },
+        { status: 400 },
+      );
     }
 
     const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
@@ -142,17 +113,16 @@ export async function POST(request: Request) {
     });
     subscriptionId = String(subscription._id);
 
-    // PipraPay V2 returns pp_id through the redirect request body. Use a server
-    // callback so both GET and POST return modes can be normalized safely.
+    // Current self-hosted PipraPay redirect-checkout API. The provider's
+    // returned pp_id is stored before sending the checkout URL to the browser.
     const returnUrl = new URL("/api/payment/return", `${APP_URL}/`);
     returnUrl.searchParams.set("subscription_id", subscriptionId);
-    const cancelUrl = new URL("/subscription", `${APP_URL}/`);
-    cancelUrl.searchParams.set("payment", "cancelled");
 
-    const payload = {
-      full_name: String(user.fullName || "Customer").trim() || "Customer",
-      email_mobile: emailMobile,
-      amount: String(plan.price),
+    const provider = await createPipraPayCheckout({
+      fullName: String(user.fullName || "Customer").trim() || "Customer",
+      emailAddress,
+      mobileNumber,
+      amount: plan.price,
       metadata: {
         user_id: String(user._id),
         subscription_id: subscriptionId,
@@ -161,54 +131,21 @@ export async function POST(request: Request) {
         amount: plan.price,
         currency: "BDT",
       },
-      redirect_url: returnUrl.toString(),
-      return_type: "POST",
-      cancel_url: cancelUrl.toString(),
-      webhook_url: `${APP_URL}/api/payment/webhook`,
-      currency: "BDT",
-    };
-
-    const providerResponse = await fetch(`${config.apiBaseUrl}/create-charge`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "mh-piprapay-api-key": config.apiKey,
-      },
-      body: JSON.stringify(payload),
-      cache: "no-store",
-      signal: AbortSignal.timeout(20_000),
+      returnUrl: returnUrl.toString(),
+      webhookUrl: `${APP_URL}/api/payment/webhook`,
     });
 
-    const raw = await providerResponse.text();
-    let providerData: any = {};
-    try {
-      providerData = raw ? JSON.parse(raw) : {};
-    } catch {
-      providerData = { message: "PipraPay returned an unreadable response." };
-    }
-
-    if (!providerResponse.ok || providerData?.success === false || providerData?.status === false) {
+    if (!provider.providerOk || !provider.checkoutUrl) {
       await Subscription.findByIdAndUpdate(subscriptionId, { paymentStatus: "ERROR" });
+      const responseStatus = provider.httpStatus >= 400 ? provider.httpStatus : 502;
       return NextResponse.json(
-        { success: false, message: providerMessage(providerData) },
-        { status: providerResponse.ok ? 502 : providerResponse.status },
+        { success: false, message: provider.message },
+        { status: responseStatus },
       );
     }
 
-    const providerRecord = providerData?.data && typeof providerData.data === "object"
-      ? { ...providerData, ...providerData.data }
-      : providerData;
-    const paymentUrl = getCheckoutUrl(providerRecord);
-    if (!paymentUrl) {
-      await Subscription.findByIdAndUpdate(subscriptionId, { paymentStatus: "ERROR" });
-      return NextResponse.json(
-        { success: false, message: "PipraPay did not return a valid checkout URL. Check your API base URL and account API version." },
-        { status: 502 },
-      );
-    }
-
-    const providerPpId = String(providerRecord?.pp_id || providerRecord?.ppId || providerRecord?.payment_id || "").trim();
+    const providerRecord = provider.payment || {};
+    const providerPpId = provider.ppId;
     const providerInvoiceId = String(providerRecord?.invoice_id || providerRecord?.invoiceId || "").trim();
     const orderUpdate: Record<string, string> = {};
     if (providerPpId) orderUpdate.invoiceId = providerPpId;
@@ -219,7 +156,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      payment_url: paymentUrl,
+      payment_url: provider.checkoutUrl,
       subscription_id: subscriptionId,
       pp_id: providerPpId || null,
     }, { headers: { "Cache-Control": "no-store, max-age=0" } });

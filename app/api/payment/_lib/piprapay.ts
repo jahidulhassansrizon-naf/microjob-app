@@ -1,14 +1,72 @@
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
+import PipraPaySettings from "@/models/PipraPaySettings";
+import { decryptPipraPayApiKey } from "@/lib/serverPipraPaySettings";
 import { SUBSCRIPTION_PLAN_BY_ID } from "@/app/_lib/subscriptionPlans";
 
-const API_KEY = process.env.PIPRAPAY_API_KEY?.trim() || "";
-const RAW_BASE_URL = process.env.PIPRAPAY_BASE_URL?.trim() || "https://sandbox.piprapay.com";
-const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
-const API_BASE_URL = BASE_URL.endsWith("/api") ? BASE_URL : `${BASE_URL}/api`;
+type PipraPayRuntimeConfig = {
+  apiKey: string;
+  baseUrl: string;
+  apiBaseUrl: string;
+  configured: boolean;
+  enabled: boolean;
+};
+
+/**
+ * Load the active self-hosted PipraPay credentials from the encrypted Admin
+ * settings record. Never fall back to a sandbox or a public environment key:
+ * a missing/undecryptable database credential must fail closed.
+ */
+async function loadPipraPayRuntimeConfig(): Promise<PipraPayRuntimeConfig> {
+  await connectDB();
+  const saved = await PipraPaySettings.findOne({ key: "primary" })
+    .select("+apiKeyEncrypted baseUrl enabled")
+    .lean();
+
+  const baseUrl = String(saved?.baseUrl || "").trim().replace(/\/+$/, "");
+  const apiBaseUrl = baseUrl
+    ? (baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`)
+    : "";
+
+  let apiKey = "";
+  if (saved?.apiKeyEncrypted) {
+    try {
+      apiKey = decryptPipraPayApiKey(saved.apiKeyEncrypted).trim();
+    } catch {
+      throw new Error("The saved PipraPay API key could not be decrypted. Ask an administrator to save the API key again.");
+    }
+  }
+
+  return {
+    apiKey,
+    baseUrl,
+    apiBaseUrl,
+    configured: Boolean(apiKey && apiBaseUrl),
+    enabled: Boolean(saved?.enabled),
+  };
+}
 
 export type PipraPayRecord = Record<string, any>;
+
+export type CreatePipraPayCheckoutInput = {
+  fullName: string;
+  emailAddress: string;
+  mobileNumber: string;
+  amount: number;
+  metadata: PipraPayRecord;
+  returnUrl: string;
+  webhookUrl: string;
+};
+
+export type CreatePipraPayCheckoutResult = {
+  providerOk: boolean;
+  httpStatus: number;
+  ppId: string;
+  checkoutUrl: string;
+  payment: PipraPayRecord | null;
+  message: string;
+};
 
 export type VerifyActivationResult = {
   ok: boolean;
@@ -28,18 +86,128 @@ export type VerifyActivationResult = {
   alreadyCompleted?: boolean;
 };
 
-export function getPipraPayConfig() {
-  return {
-    apiKey: API_KEY,
-    baseUrl: BASE_URL,
-    apiBaseUrl: API_BASE_URL,
-    baseUrlExplicitlyConfigured: Boolean(process.env.PIPRAPAY_BASE_URL?.trim()),
-    configured: Boolean(API_KEY && BASE_URL),
-  };
+export async function getPipraPayConfig() {
+  return loadPipraPayRuntimeConfig();
 }
 
-export function getPipraPayApiKey() {
-  return API_KEY;
+export async function getPipraPayApiKey() {
+  const config = await loadPipraPayRuntimeConfig();
+  return config.apiKey;
+}
+
+function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Create a hosted checkout using the current PipraPay redirect-checkout API.
+ * The API key is only sent from this server; never call this helper in client code.
+ */
+export async function createPipraPayCheckout(
+  input: CreatePipraPayCheckoutInput,
+): Promise<CreatePipraPayCheckoutResult> {
+  const config = await loadPipraPayRuntimeConfig();
+  if (!config.configured || !config.apiKey) {
+    return {
+      providerOk: false,
+      httpStatus: 503,
+      ppId: "",
+      checkoutUrl: "",
+      payment: null,
+      message: "PipraPay Base URL and API Key have not been saved in Admin Settings.",
+    };
+  }
+  if (!config.enabled) {
+    return {
+      providerOk: false,
+      httpStatus: 503,
+      ppId: "",
+      checkoutUrl: "",
+      payment: null,
+      message: "PipraPay payments are disabled until the connection is tested and enabled by an administrator.",
+    };
+  }
+
+  const fullName = String(input.fullName || "").trim();
+  const emailAddress = String(input.emailAddress || "").trim();
+  const mobileNumber = String(input.mobileNumber || "").trim();
+  const amount = Number(input.amount);
+  if (!fullName || !emailAddress || !mobileNumber || !Number.isFinite(amount) || amount <= 0) {
+    return {
+      providerOk: false,
+      httpStatus: 400,
+      ppId: "",
+      checkoutUrl: "",
+      payment: null,
+      message: "PipraPay checkout requires valid customer details and a positive amount.",
+    };
+  }
+  if (!isHttpsUrl(input.returnUrl) || !isHttpsUrl(input.webhookUrl)) {
+    return {
+      providerOk: false,
+      httpStatus: 400,
+      ppId: "",
+      checkoutUrl: "",
+      payment: null,
+      message: "PipraPay return and webhook URLs must use HTTPS.",
+    };
+  }
+
+  // The current redirect-checkout API expects email and mobile separately.
+  // Its documentation describes metadata as a JSON string.
+  const requestBody = {
+    full_name: fullName,
+    email_address: emailAddress,
+    mobile_number: mobileNumber,
+    amount: amount.toFixed(2).replace(/\.00$/, ""),
+    currency: "BDT",
+    metadata: JSON.stringify(input.metadata || {}),
+    return_url: input.returnUrl,
+    webhook_url: input.webhookUrl,
+  };
+
+  const response = await fetch(`${config.apiBaseUrl}/checkout/redirect`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "MHS-PIPRAPAY-API-KEY": config.apiKey,
+    },
+    body: JSON.stringify(requestBody),
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+  });
+
+  const { payload, record } = await parseProviderResponse(response);
+  const explicitlyRejected =
+    payload?.success === false || payload?.status === false || record?.success === false || record?.status === false;
+  const ppId = String(record?.pp_id || record?.ppId || record?.payment_id || "").trim();
+  const rawCheckoutUrl = String(
+    record?.checkout_url || record?.pp_url || record?.redirect_url || record?.payment_url || record?.url || "",
+  ).trim();
+  const checkoutUrl = isHttpsUrl(rawCheckoutUrl) ? rawCheckoutUrl : "";
+  const providerOk = response.ok && !explicitlyRejected && Boolean(checkoutUrl);
+
+  return {
+    providerOk,
+    httpStatus: response.status,
+    ppId,
+    checkoutUrl,
+    payment: record,
+    message:
+      String(record?.message || payload?.message || "").trim() ||
+      (!response.ok
+        ? `PipraPay checkout request failed (${response.status}).`
+        : explicitlyRejected
+          ? "PipraPay rejected the checkout request."
+          : !checkoutUrl
+            ? "PipraPay did not return a valid HTTPS checkout URL."
+            : "PipraPay checkout session created."),
+  };
 }
 
 function unwrapProviderRecord(payload: PipraPayRecord): PipraPayRecord {
@@ -62,21 +230,22 @@ async function parseProviderResponse(response: Response) {
 }
 
 export async function verifyPipraPayPayment(ppId: string) {
-  if (!API_KEY) {
+  const config = await loadPipraPayRuntimeConfig();
+  if (!config.configured || !config.apiKey) {
     return {
       providerOk: false,
       httpStatus: 503,
       payment: null as PipraPayRecord | null,
-      message: "PIPRAPAY_API_KEY is not configured on the server.",
+      message: "PipraPay Base URL and API Key have not been saved in Admin Settings.",
     };
   }
 
-  const response = await fetch(`${API_BASE_URL}/verify-payments`, {
+  const response = await fetch(`${config.apiBaseUrl}/verify-payment`, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      "mh-piprapay-api-key": API_KEY,
+      "MHS-PIPRAPAY-API-KEY": config.apiKey,
     },
     body: JSON.stringify({ pp_id: ppId }),
     cache: "no-store",
@@ -84,7 +253,8 @@ export async function verifyPipraPayPayment(ppId: string) {
   });
 
   const { payload, record } = await parseProviderResponse(response);
-  const explicitlyRejected = payload?.success === false || payload?.status === false;
+  const explicitlyRejected =
+    payload?.success === false || payload?.status === false || record?.success === false || record?.status === false;
 
   return {
     providerOk: response.ok && !explicitlyRejected,
@@ -278,7 +448,9 @@ export async function verifyAndActivateSubscription(
   const startedAt = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
   const expiresAt = new Date(startedAt);
   expiresAt.setDate(expiresAt.getDate() + days);
-  const transactionId = String(payment.transaction_id || payment.transactionId || "").trim();
+  const transactionId = String(
+    payment.transaction_id || payment.transactionId || payment.trx_id || payment.trxId || payment.trxID || "",
+  ).trim();
   const paymentMethod = String(payment.payment_method || payment.paymentMethod || payment.gateway || "PipraPay").trim();
   const senderNumber = String(payment.sender_number || payment.senderNumber || payment.sender || "").trim();
 

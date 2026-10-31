@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getPipraPayApiKey, verifyAndActivateSubscription } from "../_lib/piprapay";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function isValidApiKey(received: string | null, expected: string) {
@@ -40,7 +41,7 @@ async function readBody(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const expectedApiKey = getPipraPayApiKey();
+    const expectedApiKey = await getPipraPayApiKey();
     const receivedApiKey = request.headers.get("mh-piprapay-api-key");
     if (!isValidApiKey(receivedApiKey, expectedApiKey)) {
       return NextResponse.json({ success: false, message: "Unauthorized PipraPay webhook." }, { status: 401 });
