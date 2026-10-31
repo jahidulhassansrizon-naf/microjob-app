@@ -740,141 +740,115 @@ export default function GenerationSettings({
     window.addEventListener("mouseup", onUp);
   };
 
-  // Keep the whole settings panel inside the viewport on desktop (no inner scrolling).
+  // Keep the whole settings panel inside the viewport on desktop (NO inner scrolling).
   const panelRootRef = useRef<HTMLDivElement | null>(null);
-  // Fit-to-height: measure how tall everything needs to be (with the clothing list
-  // showing at least ~3.5 rows), then scale the whole panel by H / R so it fits.
-  // zoom = min(1, H / R); wrapper height = H / zoom  =>  clothing area never < CLOTHING_MIN_H.
+  // Fit-to-height. Every list (clothing + editing guides) is always shown in full,
+  // so nothing needs scrolling. To make that fit, the panel tries a few "density"
+  // levels, from roomy (big tiles) to tight (small tiles, more columns). The CSS for
+  // each level is in the <style> block below (data-density="0".."3").
+  // The first level that fits comfortably wins; if even the tightest level is a bit too
+  // tall, the whole panel is scaled down slightly (CSS zoom) so it still fits.
   const fitWrapRef = useRef<HTMLDivElement | null>(null);
   const zoomRef = useRef(1);
-  // Both lists always show WHOLE rows (never a half-cut row). Row counts are tried from
-  // roomiest to tightest; the first combination that keeps the zoom comfortable wins.
-  const FIT_LEVELS = [
-    { c: 5, g: 4 },
-    { c: 4, g: 4 },
-    { c: 4, g: 3 },
-    { c: 3, g: 3 },
-    { c: 3, g: 2 },
-    { c: 2, g: 2 },
-  ];
-  const MIN_COMFORT_ZOOM = 0.66;
-  const MIN_FIT_ZOOM = 0.5;
-  // Height of `rows` whole rows of tiles inside a scroller (tile height + gaps + padding).
-  const rowsHeight = (box: HTMLElement | null, rows: number, fallback: number) => {
-    if (!box) return fallback;
-    const tile = box.querySelector("button") as HTMLElement | null;
-    const grid = box.querySelector(".grid") as HTMLElement | null;
-    if (!tile) return fallback;
-    const cs = getComputedStyle(box);
-    const gap = grid ? parseFloat(getComputedStyle(grid).rowGap || "0") || 0 : 0;
-    const pad = (parseFloat(cs.paddingTop || "0") || 0) + (parseFloat(cs.paddingBottom || "0") || 0);
-    return Math.ceil(rows * tile.getBoundingClientRect().height + (rows - 1) * gap + pad);
-  };
+  const FIT_LEVELS = [0, 1, 2, 3];
+  const COMFORT_ZOOM = 0.92; // a level is "comfortable" if it needs less than 8% shrinking
+  const MIN_FIT_ZOOM = 0.5; // below this we stop shrinking and let the panel scroll instead
   const fitPanelToViewport = () => {
     const root = panelRootRef.current;
     const wrap = fitWrapRef.current;
     if (!root || !wrap) return;
-    const scroller = wrap.querySelector("[data-scroller]") as HTMLElement | null;
-    const guideScroller = wrap.querySelector("[data-guide-scroller]") as HTMLElement | null;
-    const savedScroll = scroller ? scroller.scrollTop : 0;
-    const resetLists = () => {
-      if (scroller) {
-        scroller.style.flex = "";
-        scroller.style.height = "";
-        scroller.style.minHeight = "";
-      }
-      if (guideScroller) guideScroller.style.height = "";
+    const resetWrap = () => {
+      wrap.style.zoom = "";
+      wrap.style.height = "auto";
+      wrap.style.setProperty("--tz", "1");
     };
-    wrap.style.zoom = "";
-    wrap.style.height = "auto";
-    wrap.style.setProperty("--tz", "1");
-    resetLists();
+    resetWrap();
     zoomRef.current = 1;
     if (!window.matchMedia("(min-width: 1280px)").matches) {
       wrap.style.height = "";
+      wrap.removeAttribute("data-density");
       return;
     }
+    wrap.setAttribute("data-density", "0");
     const cs = getComputedStyle(root);
     const H =
       root.clientHeight -
       parseFloat(cs.paddingTop || "0") -
       parseFloat(cs.paddingBottom || "0");
-    // For one row-count combination: size both lists to whole rows, then settle the zoom.
-    // Text is counter-scaled by 1 / zoom (CSS var --tz) so labels keep their on-screen size,
-    // which makes the panel a little taller, so a few passes are needed.
-    const settle = (lv: { c: number; g: number }) => {
-      let z = 1;
-      let R = 1;
-      for (let i = 0; i < 5; i++) {
-        wrap.style.setProperty("--tz", String(z));
-        wrap.style.zoom = "";
-        wrap.style.height = "auto";
-        resetLists();
-        const ch = rowsHeight(scroller, lv.c, 250);
-        const gh = rowsHeight(guideScroller, lv.g, 200);
-        if (scroller) {
-          scroller.style.flex = "0 0 auto";
-          scroller.style.height = `${ch}px`;
-        }
-        if (guideScroller) guideScroller.style.height = `${gh}px`;
-        R = wrap.getBoundingClientRect().height + 1;
-        const next = Math.max(0.3, Math.min(1, H / R));
-        const done = Math.abs(next - z) < 0.005;
-        z = next;
-        if (done) break;
+    // Height the panel really takes on screen at zoom z. The zoom is applied for real
+    // while measuring, and text is counter-scaled by 1 / zoom (CSS var --tz) so labels
+    // keep their on-screen size.
+    const heightAt = (z: number) => {
+      wrap.style.setProperty("--tz", String(z));
+      wrap.style.zoom = z < 1 ? String(z) : "";
+      wrap.style.height = "auto";
+      return wrap.getBoundingClientRect().height;
+    };
+    // Biggest zoom (0..1) at which a density level fits in H. 0 = does not fit even at MIN_FIT_ZOOM.
+    const bestZoom = (level: number) => {
+      wrap.setAttribute("data-density", String(level));
+      if (heightAt(1) <= H) return 1;
+      if (heightAt(MIN_FIT_ZOOM) > H) return 0;
+      let lo = MIN_FIT_ZOOM;
+      let hi = 1;
+      for (let i = 0; i < 7; i++) {
+        const mid = (lo + hi) / 2;
+        if (heightAt(mid) <= H) lo = mid;
+        else hi = mid;
       }
-      return { z, R };
+      return lo;
     };
     let chosen = FIT_LEVELS[FIT_LEVELS.length - 1];
-    let res = { z: 1, R: 1 };
+    let z = 0;
     for (let i = 0; i < FIT_LEVELS.length; i++) {
       chosen = FIT_LEVELS[i];
-      res = settle(chosen);
-      if (res.z >= MIN_COMFORT_ZOOM) break;
+      z = bestZoom(chosen);
+      if (z >= COMFORT_ZOOM) break;
     }
-    // Leave the last pass for the chosen level applied (settle() ends with it applied).
-    if (FIT_LEVELS[FIT_LEVELS.length - 1] !== chosen || res.z < MIN_COMFORT_ZOOM) {
-      res = settle(chosen);
-    }
-    // Viewport far too short for even the tightest layout (e.g. browser zoom 150%+):
-    // never squash or break it. Show it at natural size and let the panel scroll instead.
-    if (res.z < MIN_FIT_ZOOM) {
-      wrap.style.setProperty("--tz", "1");
-      wrap.style.zoom = "";
+    // Viewport far too short even for the tightest level (e.g. browser zoom 150%+):
+    // never squash it. Show it at natural size and let the panel scroll instead.
+    if (z <= 0) {
+      wrap.setAttribute("data-density", String(FIT_LEVELS[FIT_LEVELS.length - 1]));
+      resetWrap();
       wrap.style.height = "";
-      resetLists();
-      const last = FIT_LEVELS[FIT_LEVELS.length - 1];
-      if (scroller) {
-        scroller.style.flex = "0 0 auto";
-        scroller.style.height = `${rowsHeight(scroller, last.c, 250)}px`;
-      }
-      if (guideScroller) guideScroller.style.height = `${rowsHeight(guideScroller, last.g, 200)}px`;
       zoomRef.current = 1;
       return;
     }
-    const z = res.z;
-    wrap.style.setProperty("--tz", String(z));
+    wrap.setAttribute("data-density", String(chosen));
+    heightAt(z);
     zoomRef.current = z;
-    if (z < 1) wrap.style.zoom = String(z);
     wrap.style.height = `${H / z}px`;
-    if (scroller && scroller.scrollTop !== savedScroll) scroller.scrollTop = savedScroll;
   };
   useLayoutEffect(() => {
     fitPanelToViewport();
-  }, [isDualMode]);
+  }, [isDualMode, t]);
   useEffect(() => {
-    const onResize = () => fitPanelToViewport();
+    // One re-fit per animation frame is plenty while the window is being dragged.
+    let frame = 0;
+    const onResize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => fitPanelToViewport());
+    };
     window.addEventListener("resize", onResize);
     const root = panelRootRef.current;
     const observer = root && typeof ResizeObserver !== "undefined" ? new ResizeObserver(onResize) : null;
     if (root && observer) observer.observe(root);
+    // Web fonts (Hind Siliguri etc.) change text heights once they finish loading.
+    let cancelled = false;
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (!cancelled) fitPanelToViewport();
+      });
+    }
     return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
       observer?.disconnect();
     };
   }, []);
   return (
-    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
+    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
       <style>{`
         .ai-scroll [data-grab], .ai-scroll [data-grab] * { cursor: grab; }
         .ai-scroll input, .ai-scroll textarea { cursor: text; }
@@ -886,10 +860,78 @@ export default function GenerationSettings({
         .ai-scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
         .ai-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
         .ai-scroll::-webkit-scrollbar-thumb:active { background: #991B1B; }
+        /* ---- Desktop: no inner scrolling. Density levels are chosen by fitPanelToViewport(). ---- */
+        @media (min-width: 1280px) {
+          .gs-wrap {
+            --gs-sec-gap: clamp(6px, 1.3vh, 20px); --gs-label-gap: 8px; --gs-label-font: 17px; --gs-dual-gap: 16px;
+            --gs-size-icon: 48px; --gs-size-svg: 40px; --gs-size-gap: 4px; --gs-bg: 40px;
+            --gs-cloth-cols: 10; --gs-cloth-gap: 6px; --gs-cloth-pad: 6px 4px 4px;
+            --gs-guide-cols: 5; --gs-guide-gap: 8px; --gs-guide-pad: 8px; --gs-guide-icon: 56px;
+            --gs-guide-font: 13px; --gs-guide-lines: 3;
+            --gs-btn-h: 36px; --gs-hint-font: 13px; --gs-hint-gap: 6px; --gs-gen-py: clamp(7px, 1.2vh, 12px);
+          }
+          .gs-wrap[data-density="1"] {
+            --gs-sec-gap: 10px; --gs-label-gap: 6px; --gs-dual-gap: 12px;
+            --gs-size-icon: 42px; --gs-size-svg: 34px; --gs-size-gap: 3px; --gs-bg: 36px;
+            --gs-cloth-cols: 11; --gs-cloth-gap: 5px; --gs-cloth-pad: 5px 3px 3px;
+            --gs-guide-cols: 6; --gs-guide-gap: 6px; --gs-guide-pad: 6px; --gs-guide-icon: 42px;
+            --gs-guide-font: 12.5px; --gs-guide-lines: 3;
+            --gs-btn-h: 34px; --gs-hint-gap: 5px; --gs-gen-py: 9px;
+          }
+          .gs-wrap[data-density="2"] {
+            --gs-sec-gap: 8px; --gs-label-gap: 4px; --gs-label-font: 16px; --gs-dual-gap: 8px;
+            --gs-size-icon: 36px; --gs-size-svg: 30px; --gs-size-gap: 2px; --gs-bg: 32px;
+            --gs-cloth-cols: 14; --gs-cloth-gap: 4px; --gs-cloth-pad: 3px 2px 2px;
+            --gs-guide-cols: 6; --gs-guide-gap: 5px; --gs-guide-pad: 4px; --gs-guide-icon: 32px;
+            --gs-guide-font: 12px; --gs-guide-lines: 3;
+            --gs-btn-h: 32px; --gs-hint-font: 12px; --gs-hint-gap: 4px; --gs-gen-py: 8px;
+          }
+          .gs-wrap[data-density="3"] {
+            --gs-sec-gap: 6px; --gs-label-gap: 3px; --gs-label-font: 15px; --gs-dual-gap: 6px;
+            --gs-size-icon: 30px; --gs-size-svg: 26px; --gs-size-gap: 1px; --gs-bg: 28px;
+            --gs-cloth-cols: 14; --gs-cloth-gap: 3px; --gs-cloth-pad: 3px 2px 2px;
+            --gs-guide-cols: 6; --gs-guide-gap: 4px; --gs-guide-pad: 3px; --gs-guide-icon: 28px;
+            --gs-guide-font: 11.5px; --gs-guide-lines: 2;
+            --gs-btn-h: 30px; --gs-hint-font: 12px; --gs-hint-gap: 3px; --gs-gen-py: 6px;
+          }
+          .gs-wrap .gs-sec, .gs-wrap .gs-head { margin-bottom: var(--gs-sec-gap); }
+          .gs-wrap .gs-label { margin-bottom: var(--gs-label-gap); font-size: calc(var(--gs-label-font) / var(--tz, 1)); }
+          .gs-wrap .gs-size-icon { width: var(--gs-size-icon); height: var(--gs-size-icon); margin-bottom: var(--gs-size-gap); }
+          .gs-wrap .gs-size-icon svg { width: var(--gs-size-svg); height: var(--gs-size-svg); }
+          .gs-wrap .gs-bgs > button { max-width: var(--gs-bg); }
+          .gs-wrap .gs-cloth-grid { grid-template-columns: repeat(var(--gs-cloth-cols), minmax(0, 1fr)); gap: var(--gs-cloth-gap); }
+          .gs-wrap .gs-cloth-grid > button { padding: var(--gs-cloth-pad); }
+          .gs-wrap .gs-guide-grid { grid-template-columns: repeat(var(--gs-guide-cols), minmax(0, 1fr)); gap: var(--gs-guide-gap); }
+          .gs-wrap .gs-guide-tile { padding: var(--gs-guide-pad); }
+          .gs-wrap .gs-guide-icon { width: var(--gs-guide-icon); height: var(--gs-guide-icon); }
+          .gs-wrap .gs-guide-text { font-size: calc(var(--gs-guide-font) / var(--tz, 1)); -webkit-line-clamp: var(--gs-guide-lines); }
+          .gs-wrap .gs-actions > button { min-height: var(--gs-btn-h); padding-top: 2px; padding-bottom: 2px; }
+          .gs-wrap .gs-hint { margin-top: var(--gs-hint-gap); font-size: calc(var(--gs-hint-font) / var(--tz, 1)); }
+          .gs-wrap .gs-gen { padding-top: var(--gs-gen-py); padding-bottom: var(--gs-gen-py); }
+          /* lists are never scrollable on desktop - everything is simply shown */
+          .gs-wrap .gs-noscroll { overflow: visible; max-height: none; height: auto; min-height: 0; flex: 0 0 auto; }
+          .ai-scroll .gs-noscroll, .ai-scroll .gs-noscroll * { cursor: auto; }
+          .ai-scroll .gs-noscroll button, .ai-scroll .gs-noscroll button * { cursor: pointer; }
+          /* tighter levels: popups sit right under their section, "No clothing" text hidden (icon + tooltip stay) */
+          .gs-wrap[data-density="1"] .gs-pop, .gs-wrap[data-density="2"] .gs-pop, .gs-wrap[data-density="3"] .gs-pop { top: calc(100% + 2px); }
+          .gs-wrap[data-density="2"] .gs-cloth-label, .gs-wrap[data-density="3"] .gs-cloth-label { display: none; }
+          /* tightest level: BACKGROUND title and its colour circles share one row */
+          .gs-wrap[data-density="3"] .gs-bg-sec { display: flex; align-items: center; gap: 10px; }
+          .gs-wrap[data-density="3"] .gs-bg-sec > .gs-label { margin-bottom: 0; flex: 0 0 auto; }
+          .gs-wrap[data-density="3"] .gs-bg-sec > .gs-bgs { flex: 1 1 0; min-width: 0; padding: 3px 0; }
+        }
+        /* Big screens (1800px+ wide): give the settings panel more width so everything fits in fewer rows. */
+        @media (min-width: 1800px) {
+          .ai-scroll.gs-root { width: 760px; }
+          .gs-wrap { --gs-cloth-cols: 12; --gs-guide-cols: 6; }
+          .gs-wrap[data-density="1"] { --gs-cloth-cols: 14; --gs-guide-cols: 8; }
+          .gs-wrap[data-density="2"] { --gs-cloth-cols: 19; --gs-guide-cols: 8; --gs-guide-lines: 3; }
+          .gs-wrap[data-density="3"] { --gs-cloth-cols: 19; --gs-guide-cols: 8; --gs-guide-lines: 3; }
+        }
       `}</style>
-      <div ref={fitWrapRef} className="flex flex-col">
-      <div className="xl:flex-1 xl:min-h-0 flex flex-col">
-        <div className="flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
+      <div ref={fitWrapRef} className="gs-wrap flex flex-col">
+      <div className="xl:flex-1 xl:min-h-0 xl:justify-between flex flex-col">
+        <div className="gs-head flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-base xl:text-[length:calc(20px/var(--tz,1))] text-[#3B2F1E] flex items-center gap-2">
             <span className="w-1 h-4 bg-[#DC2626] rounded-full" />
             <AiT>{"Generation settings\n          "}</AiT>
@@ -898,10 +940,10 @@ export default function GenerationSettings({
 
         {/* PHOTO SIZE SECTION */}
         <div
-          className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
+          className="gs-sec mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={visaPopupRef}
         >
-          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
+          <div className="gs-label flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <span>
               <AiT>{"PHOTO SIZE"}</AiT>
             </span>
@@ -920,7 +962,7 @@ export default function GenerationSettings({
             </button>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
+          <div className="gs-sizes grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
             {photoSizes.map((size) => {
               const isActive = selectedSize === size.id;
               return (
@@ -936,7 +978,7 @@ export default function GenerationSettings({
                   }`}
                 >
                   <div
-                    className={`w-12 h-12 mb-1 rounded-xl flex items-center justify-center transition-colors ${
+                    className={`gs-size-icon w-12 h-12 mb-1 rounded-xl flex items-center justify-center transition-colors ${
                       isActive
                         ? "bg-[#DC2626]/10 text-[#DC2626]"
                         : "bg-[#F5EDD8] text-[#5A4A32]"
@@ -960,7 +1002,7 @@ export default function GenerationSettings({
           </div>
 
           {showVisaPopup && (
-            <div className="absolute left-0 top-[85px] w-full max-w-[300px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+            <div className="gs-pop absolute left-0 top-[85px] w-full max-w-[300px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
               <h4 className="text-sm font-semibold text-[#3B2F1E] mb-3">
                 <AiT>{"Visa Photo Size\n              "}</AiT>
               </h4>
@@ -995,14 +1037,14 @@ export default function GenerationSettings({
 
         {/* BACKGROUND SECTION */}
         <div
-          className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
+          className="gs-sec gs-bg-sec mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative"
           ref={colorPickerRef}
         >
-          <div className="text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
+          <div className="gs-label text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <AiT>{"BACKGROUND"}</AiT>
           </div>
 
-          <div className="grid grid-cols-5 xl:grid-cols-10 gap-x-2 gap-y-3 xl:gap-y-[clamp(4px,0.8vh,12px)] justify-items-center">
+          <div className="gs-bgs grid grid-cols-5 xl:grid-cols-10 gap-x-2 gap-y-3 xl:gap-y-[clamp(4px,0.8vh,12px)] justify-items-center">
             {backgroundColors.map((bg, idx) => {
               const isSelected = selectedBg === idx;
               if (bg.type === "transparent") {
@@ -1091,7 +1133,7 @@ export default function GenerationSettings({
           </div>
 
           {showColorPicker && (
-            <div className="absolute left-0 top-[90px] w-full max-w-[260px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+            <div className="gs-pop absolute left-0 top-[90px] w-full max-w-[260px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm font-semibold text-[#3B2F1E]">
                   <AiT>{"Custom Background Color\n                "}</AiT>
@@ -1144,10 +1186,10 @@ export default function GenerationSettings({
 
         {/* CLOTHING STYLE SECTION */}
         <div
-          className="mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative flex flex-col xl:flex-1 xl:min-h-0"
+          className="gs-sec mb-6 xl:mb-[clamp(6px,1.3vh,20px)] relative flex flex-col xl:flex-none"
           ref={clothingColorPopupRef}
         >
-          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
+          <div className="gs-label flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2">
             <span>
               <AiT>{"CLOTHING STYLE"}</AiT>
             </span>
@@ -1165,10 +1207,10 @@ export default function GenerationSettings({
                 setShowClothingColorPicker(false);
               }
             }}
-            className="ai-scroll cursor-grab relative rounded-2xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[340px] xl:max-h-none xl:flex-1 xl:min-h-[150px]"
+            className="gs-noscroll ai-scroll cursor-grab relative rounded-2xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[340px]"
           >
             {!isDualMode ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
+              <div className="gs-cloth-grid grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                 <button
                   type="button"
                   onClick={() => {
@@ -1181,9 +1223,10 @@ export default function GenerationSettings({
                       : "border-[#E3D6B8]"
                   }`}
                   aria-label={t("No clothing")}
+                  title={t("No clothing")}
                 >
                   <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                  <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
+                  <span className="gs-cloth-label w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                 </button>
 
                 {CLOTHING_NAMES.map((name, idx) => {
@@ -1217,13 +1260,13 @@ export default function GenerationSettings({
                 })}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 xl:space-y-0 xl:flex xl:flex-col xl:gap-[var(--gs-dual-gap,16px)]">
                 <div>
                   <p className="text-[13px] xl:text-[length:calc(14px/var(--tz,1))] font-semibold text-stone-700 mb-1.5">
                     <AiT>{"Left Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
+                  <div className="gs-cloth-grid grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                     <button
                       type="button"
                       onClick={() => {
@@ -1236,9 +1279,10 @@ export default function GenerationSettings({
                           : "border-[#E3D6B8]"
                       }`}
                       aria-label={t("No clothing")}
+                  title={t("No clothing")}
                     >
                       <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                      <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
+                      <span className="gs-cloth-label w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                     </button>
 
                     {CLOTHING_NAMES.map((name, idx) => (
@@ -1274,7 +1318,7 @@ export default function GenerationSettings({
                     <AiT>{"Right Person\n                  "}</AiT>
                   </p>
 
-                  <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
+                  <div className="gs-cloth-grid grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                     <button
                       type="button"
                       onClick={() => {
@@ -1287,9 +1331,10 @@ export default function GenerationSettings({
                           : "border-[#E3D6B8]"
                       }`}
                       aria-label={t("No clothing")}
+                  title={t("No clothing")}
                     >
                       <span className="flex w-full aspect-square items-center justify-center"><Ban size={28} className="text-stone-400" /></span>
-                      <span className="w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
+                      <span className="gs-cloth-label w-full truncate text-center text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
                     </button>
 
                     {CLOTHING_NAMES.map((name, idx) => (
@@ -1398,8 +1443,8 @@ export default function GenerationSettings({
         </div>
 
         {/* EXTRA EDITING GUIDE */}
-        <div className="mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative shrink-0">
-          <div className="flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2 pt-1">
+        <div className="gs-sec mb-4 xl:mb-[clamp(4px,0.8vh,12px)] relative shrink-0">
+          <div className="gs-label flex justify-between items-center text-sm text-stone-500 xl:text-[length:calc(17px/var(--tz,1))] xl:font-bold xl:text-[#3B2F1E] mb-2 pt-1">
             <span className="font-semibold">
               <AiT>{"EXTRA EDITING GUIDE"}</AiT>
             </span>
@@ -1412,8 +1457,8 @@ export default function GenerationSettings({
           </div>
 
           <div className="rounded-2xl p-0.5">
-            <div data-guide-scroller data-scroller data-grab className="ai-scroll cursor-grab rounded-xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[300px] xl:max-h-none xl:h-[236px]">
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-5 gap-2 xl:gap-2">
+            <div data-guide-scroller data-scroller data-grab className="gs-noscroll ai-scroll cursor-grab rounded-xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[300px]">
+            <div className="gs-guide-grid grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-5 gap-2 xl:gap-2">
               {QUICK_EDITING_GUIDES.map((item) => {
                 const active = activeGuides.includes(item);
                 return (
@@ -1423,7 +1468,7 @@ export default function GenerationSettings({
                     aria-pressed={active}
                     onClick={() => toggleGuide(item)}
                     title={t(item)}
-                    className={`xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-2 rounded-xl border text-[13px] xl:text-[length:calc(13px/var(--tz,1))] font-semibold text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
+                    className={`gs-guide-tile xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-2 rounded-xl border text-[13px] xl:text-[length:calc(13px/var(--tz,1))] font-semibold text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                       active
                         ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
                         : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"
@@ -1431,20 +1476,20 @@ export default function GenerationSettings({
                   >
                     <span
                       aria-hidden="true"
-                      className={`mb-0.5 flex h-11 w-11 xl:h-[56px] xl:w-[56px] items-center justify-center rounded-lg transition-colors ${
+                      className={`gs-guide-icon mb-0.5 flex h-11 w-11 xl:h-[56px] xl:w-[56px] items-center justify-center rounded-lg transition-colors ${
                         active ? "bg-transparent" : "bg-transparent"
                       }`}
                     >
                       <GuideIcon label={item} size="100%" />
                     </span>
-                    <span className="leading-[1.15] line-clamp-2 xl:line-clamp-3 break-words">{t(item)}</span>
+                    <span className="gs-guide-text leading-[1.15] line-clamp-2 xl:line-clamp-3 break-words">{t(item)}</span>
                   </button>
                 );
               })}
             </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="gs-actions grid grid-cols-2 gap-2 mt-2">
               <button
                 type="button"
                 aria-pressed={activeGuides.some((entry) =>
@@ -1494,7 +1539,7 @@ export default function GenerationSettings({
                 </span>
               </button>
             </div>
-            <p className="mt-1.5 text-[13px] xl:text-[length:calc(13px/var(--tz,1))] leading-snug text-stone-700">
+            <p className="gs-hint mt-1.5 text-[13px] xl:text-[length:calc(13px/var(--tz,1))] leading-snug text-stone-700">
               <AiT>{"Choose a few compatible edits for the best result."}</AiT>
             </p>
           </div>
@@ -1506,7 +1551,7 @@ export default function GenerationSettings({
           type="button"
           onClick={onGenerate}
           disabled={isGenerating}
-          className={`w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-base xl:text-[length:calc(18px/var(--tz,1))] flex items-center justify-center gap-2 ${
+          className={`gs-gen w-full font-medium py-3 xl:py-[clamp(7px,1.2vh,12px)] rounded-xl shadow-md transition-all text-base xl:text-[length:calc(18px/var(--tz,1))] flex items-center justify-center gap-2 ${
             isGenerating
               ? "bg-[#D42020]/70 text-white cursor-not-allowed opacity-90"
               : "bg-[#D42020] hover:bg-[#AE1717] text-white cursor-pointer active:scale-[0.98]"
