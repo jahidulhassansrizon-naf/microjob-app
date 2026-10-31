@@ -361,15 +361,15 @@ export async function testUddoktaPayConnection() {
     });
     const { payload, record } = await parseResponse(response);
     const message = String(record.message || payload.message || "").trim();
-    const authDenied = response.status === 401 || response.status === 403 || /unauthorized|invalid api key|authentication failed/i.test(message);
-    // UddoktaPay installations may describe a deliberately invalid dummy invoice as
-    // "Invalid Payment ID" rather than mentioning "invoice". Treat only an explicit
-    // invalid/missing invoice/payment-id error (with provider status ERROR) as the
-    // expected safe probe rejection; do not treat arbitrary HTTP 200 responses as success.
-    const dummyRejected = /invoice.*(not found|invalid|does not exist)|(not found|invalid|does not exist).*invoice|payment\s*id.*(not found|invalid|does not exist)|(not found|invalid|does not exist).*payment\s*id/i.test(message)
-      && String(record.status || "").toUpperCase() === "ERROR"
-      && [200, 400, 404, 422].includes(response.status);
-    if (!authDenied && dummyRejected) {
+    const normalizedMessage = message.replace(/[_-]+/g, " ").trim();
+    const authDenied = response.status === 401 || response.status === 403 || /unauthorized|invalid\s+(?:api\s+)?key|authentication failed|forbidden/i.test(normalizedMessage);
+    // Verify API errors for deliberately unknown references are expected. Some hosted
+    // panels return {status:"ERROR", message:"Invalid Payment ID"}; others use a
+    // boolean status or omit it. The explicit invalid-reference message plus a normal
+    // API response is sufficient for this read-only probe; auth failures are excluded.
+    const invalidReference = /\binvalid\s+(?:payment\s*id|invoice(?:\s*id)?)\b|\b(?:payment\s*id|invoice(?:\s*id)?)\b.{0,50}\b(?:invalid|not found|does not exist|unknown)\b|\b(?:not found|does not exist|unknown)\b.{0,50}\b(?:payment\s*id|invoice(?:\s*id)?)\b/i.test(normalizedMessage);
+    const dummyRejected = !authDenied && invalidReference && [200, 400, 404, 422].includes(response.status);
+    if (dummyRejected) {
       return { success: true, status: "connected", httpStatus: response.status, message: "UddoktaPay API connection confirmed. The dummy invoice was rejected as expected; no real payment was created." };
     }
     return { success: false, status: authDenied ? "auth-denied" : "unconfirmed", httpStatus: response.status, message: authDenied ? "UddoktaPay rejected the API key. Check that the key is active and has payment:verify permission." : `UddoktaPay responded, but the verification probe was inconclusive (HTTP ${response.status}). ${message}`.trim() };
