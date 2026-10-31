@@ -362,7 +362,11 @@ export async function testUddoktaPayConnection() {
     const { payload, record } = await parseResponse(response);
     const message = String(record.message || payload.message || "").trim();
     const authDenied = response.status === 401 || response.status === 403 || /unauthorized|invalid api key|authentication failed/i.test(message);
-    const dummyRejected = /invoice.*(not found|invalid|does not exist)|(not found|invalid|does not exist).*invoice/i.test(message)
+    // UddoktaPay installations may describe a deliberately invalid dummy invoice as
+    // "Invalid Payment ID" rather than mentioning "invoice". Treat only an explicit
+    // invalid/missing invoice/payment-id error (with provider status ERROR) as the
+    // expected safe probe rejection; do not treat arbitrary HTTP 200 responses as success.
+    const dummyRejected = /invoice.*(not found|invalid|does not exist)|(not found|invalid|does not exist).*invoice|payment\s*id.*(not found|invalid|does not exist)|(not found|invalid|does not exist).*payment\s*id/i.test(message)
       && String(record.status || "").toUpperCase() === "ERROR"
       && [200, 400, 404, 422].includes(response.status);
     if (!authDenied && dummyRejected) {
