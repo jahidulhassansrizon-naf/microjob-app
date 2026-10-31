@@ -1,8 +1,10 @@
+import NavigationProgressHold from "@/app/_components/NavigationProgressHold";
 import DashboardNavbar from "../../dashboard/_components/DashboardNavbar";
 
 export default function Loading() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans">
+      <NavigationProgressHold />
       <DashboardNavbar />
 
       <main className="flex-1 w-full px-4 py-6 sm:px-6">

@@ -21,6 +21,7 @@ import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
+import { AiEditorFetchError, getCachedAiEditorGenerations, refreshAiEditorGenerations, setCachedAiEditorGenerations } from "./_components/aiEditorData";
 export default function PhotoEditorPage() {
     const { t } = useAiEditorText();
     const router = useRouter();
@@ -96,46 +97,40 @@ export default function PhotoEditorPage() {
             ? ({ Authorization: `Bearer ${token}` } as Record<string, string>)
             : {};
     };
-    const fetchUserGenerationsFromMongo = async () => {
-        setIsFetching(true);
+    // Recent generations: shown instantly from the in-memory cache (filled by the
+    // navbar the moment the user points at "AI Editor"), then refreshed quietly.
+    const listSyncedWithServerRef = useRef(false);
+    const fetchUserGenerationsFromMongo = async (showSkeleton = true) => {
+        if (showSkeleton)
+            setIsFetching(true);
         try {
-            const response = await fetch("/api/ai-generations?source=ai-editor", {
-                method: "GET",
-                headers: {
-                    ...getAuthHeaders(),
-                },
-                credentials: "include",
-                cache: "no-store",
-            });
-            const result = await response.json().catch(() => null);
-            if (!response.ok || !result?.success) {
-                if (response.status === 401) {
-                    router.replace("/login");
-                    return;
-                }
-                const message = String(result?.error || result?.message || "").toLowerCase();
-                // A locked AI Editor is an expected state for users without an active
-                // subscription. Keep the page mounted so SubscriptionLock can show
-                // the normal upgrade UI instead of surfacing a runtime error overlay.
-                const subscriptionRequired = response.status === 402 ||
-                    response.status === 403 ||
-                    message.includes("active subscription") ||
-                    message.includes("subscription is required") ||
-                    message.includes("subscription required") ||
-                    message.includes("subscribe");
-                if (subscriptionRequired) {
-                    setRecentList([]);
-                    return;
-                }
-                throw new Error(result?.error ||
-                    result?.message ||
-                    "Failed to load recent generations.");
-            }
-            setRecentList(Array.isArray(result.data) ? result.data : []);
+            const list = await refreshAiEditorGenerations();
+            listSyncedWithServerRef.current = true;
+            setRecentList(list);
         }
         catch (error) {
+            const status = error instanceof AiEditorFetchError ? error.status : 0;
+            if (status === 401) {
+                router.replace("/login");
+                return;
+            }
+            const message = (error instanceof AiEditorFetchError ? error.serverMessage : "").toLowerCase();
+            // A locked AI Editor is an expected state for users without an active
+            // subscription. Keep the page mounted so SubscriptionLock can show
+            // the normal upgrade UI instead of surfacing a runtime error overlay.
+            const subscriptionRequired = status === 402 ||
+                status === 403 ||
+                message.includes("active subscription") ||
+                message.includes("subscription is required") ||
+                message.includes("subscription required") ||
+                message.includes("subscribe");
+            if (subscriptionRequired) {
+                setRecentList([]);
+                return;
+            }
             console.error("Error fetching AI generations from MongoDB:", error);
-            setRecentList([]);
+            if (showSkeleton)
+                setRecentList([]);
         }
         finally {
             setIsFetching(false);
@@ -143,6 +138,14 @@ export default function PhotoEditorPage() {
     };
     useEffect(() => {
         let mounted = true;
+        // Start loading the images right away (in parallel with the login check).
+        const cached = getCachedAiEditorGenerations();
+        if (cached) {
+            listSyncedWithServerRef.current = true;
+            setRecentList(cached);
+            setIsFetching(false);
+        }
+        void fetchUserGenerationsFromMongo(!cached);
         void getClientSession().then((session) => {
             if (!mounted)
                 return;
@@ -151,12 +154,17 @@ export default function PhotoEditorPage() {
                 return;
             }
             setAuthChecking(false);
-            void fetchUserGenerationsFromMongo();
         });
         return () => {
             mounted = false;
         };
     }, [router]);
+    // Keep the cache equal to what is on screen (after generate / edit / delete).
+    useEffect(() => {
+        if (!listSyncedWithServerRef.current || isFetching)
+            return;
+        setCachedAiEditorGenerations(recentList);
+    }, [recentList, isFetching]);
     const photoSizes = [
         {
             id: "Passport",

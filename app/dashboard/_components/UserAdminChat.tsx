@@ -11,6 +11,17 @@ import {
 import { ChevronUp, LoaderCircle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 import AdminAvatarImage from "@/app/_components/AdminAvatarImage";
+import {
+  ChatDropOverlay,
+  ChatImageBubble,
+  ChatImagePicker,
+  prepareImageForChat,
+  stampImageDeadlines,
+  uploadChatImage,
+  useImageDrop,
+  useImageExpiry,
+  type ChatImageInfo,
+} from "@/app/_components/chatImage";
 
 type ChatMessage = {
   id: string;
@@ -19,6 +30,7 @@ type ChatMessage = {
   createdAt: string;
   readByAdmin: boolean;
   readByUser: boolean;
+  image?: ChatImageInfo;
 };
 
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
@@ -421,6 +433,7 @@ export default function UserAdminChat() {
   const [error, setError] = useState("");
   const [chatNotice, setChatNotice] = useState("");
   const [clearingChat, setClearingChat] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
@@ -475,7 +488,7 @@ export default function UserAdminChat() {
           throw new Error(data?.message || "Could not load chat messages.");
 
         const incoming: ChatMessage[] = Array.isArray(data?.messages)
-          ? data.messages
+          ? stampImageDeadlines<ChatMessage>(data.messages)
           : [];
         if (options?.before) {
           for (const message of incoming) knownMessageIdsRef.current.add(message.id);
@@ -627,6 +640,33 @@ export default function UserAdminChat() {
     }
   };
 
+  // Photos disappear from the screen after 2 minutes (the server deletes them at the same time).
+  useImageExpiry(setMessages);
+
+  const sendImage = async (file: File) => {
+    if (uploading || sending || clearingChat) return;
+    setUploading(true);
+    setError("");
+    setChatNotice("");
+    setChatTouched(true);
+    try {
+      const prepared = await prepareImageForChat(file);
+      const message = await uploadChatImage<ChatMessage>("/api/chat/image", prepared);
+      knownMessageIdsRef.current.add(message.id);
+      setMessages((current) => mergeMessages(current, [message]));
+      shouldScrollRef.current = true;
+      setUnreadCount(0);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "ছবি পাঠানো যায়নি।");
+    } finally {
+      setUploading(false);
+    }
+  };
+  const { dragging, bind: dropBind } = useImageDrop(
+    (file) => void sendImage(file),
+    uploading || sending || clearingChat,
+  );
+
   return (
     <div
       ref={chatRootRef}
@@ -663,8 +703,9 @@ export default function UserAdminChat() {
       <section
         ref={chatSectionRef}
         onPointerDown={() => setChatTouched(true)}
+        {...dropBind}
         aria-labelledby="user-admin-chat-title"
-        className="flex h-[324px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#FBF6E8]/25 bg-[#FBF6E8] shadow-[0_8px_24px_-10px_rgba(59,47,30,0.35)] sm:h-[338px] fit:h-[345px]"
+        className="relative flex h-[324px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#FBF6E8]/25 bg-[#FBF6E8] shadow-[0_8px_24px_-10px_rgba(59,47,30,0.35)] sm:h-[338px] fit:h-[345px]"
       >
         <header className="flex shrink-0 items-center gap-2.5 border-b border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FEE9E9] ring-1 ring-inset ring-[#FBB6B6]">
@@ -750,9 +791,13 @@ export default function UserAdminChat() {
                   <div
                     className={`max-w-[88%] rounded-xl px-2.5 py-1.5 shadow-sm ${mine ? "rounded-br-sm bg-[#DC2626] text-white" : "rounded-bl-sm border border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E]"}`}
                   >
-                    <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed sm:text-sm">
-                      {message.text}
-                    </p>
+                    {message.image ? (
+                      <ChatImageBubble image={message.image} tone={mine ? "dark" : "light"} />
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed sm:text-sm">
+                        {message.text}
+                      </p>
+                    )}
                     <div
                       className={`mt-1 flex items-center justify-end gap-1.5 text-[11px] ${mine ? "text-[#FEE9E9]" : "text-[#7A6A50]"}`}
                     >
@@ -820,6 +865,13 @@ export default function UserAdminChat() {
                 }
               }}
             />
+            <ChatImagePicker
+              onFile={(file) => void sendImage(file)}
+              uploading={uploading}
+              disabled={sending || clearingChat}
+              iconSize={15}
+              className="flex h-8 w-9 shrink-0 items-center justify-center rounded-md border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] transition hover:bg-[#EFE3C8] disabled:cursor-not-allowed disabled:opacity-50"
+            />
             <button
               type="submit"
               disabled={!draft.trim() || sending}
@@ -834,10 +886,11 @@ export default function UserAdminChat() {
             </button>
           </div>
           <div className="mt-1 flex items-center justify-between px-1 text-[11px] text-[#7A6A50]">
-            <span>Enter চাপলে মেসেজ যাবে</span>
+            <span>Enter = পাঠান · ছবি ড্রপ/পেস্ট করুন (২ মিনিট থাকবে)</span>
             <span>{draft.length}/2000</span>
           </div>
         </form>
+        <ChatDropOverlay show={dragging} />
       </section>
     </div>
   );

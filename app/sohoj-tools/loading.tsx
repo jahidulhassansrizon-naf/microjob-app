@@ -1,3 +1,4 @@
+import NavigationProgressHold from "@/app/_components/NavigationProgressHold";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 
 function ToolGridSkeleton() {
@@ -26,6 +27,7 @@ export default function Loading() {
           text-rendering: optimizeLegibility;
         }
       `}</style>
+      <NavigationProgressHold />
       <DashboardNavbar />
 
       <main className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6">

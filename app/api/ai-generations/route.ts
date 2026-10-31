@@ -311,7 +311,12 @@ export async function GET(request: Request) {
   const accessibleUserId = toolAccess.userId;
   try {
     const userId = accessibleUserId;
-    await requireActiveSubscription(userId);
+    // Subscription check and DB connection run together instead of one after the other.
+    const accessCheck = requireActiveSubscription(userId);
+    const dbReady = connectDB();
+    accessCheck.catch(() => undefined);
+    dbReady.catch(() => undefined);
+    await accessCheck;
     const { searchParams } = new URL(request.url);
     const sourceParam = searchParams.get("source")?.trim() || "";
 
@@ -326,7 +331,7 @@ export async function GET(request: Request) {
       );
     }
 
-    await connectDB();
+    await dbReady;
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const query: Record<string, unknown> = { userId: userObjectId };

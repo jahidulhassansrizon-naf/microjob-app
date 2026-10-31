@@ -21,6 +21,17 @@ import {
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 import AdminAvatarImage from "./AdminAvatarImage";
 import BrandName from "@/app/_components/BrandName";
+import {
+  ChatDropOverlay,
+  ChatImageBubble,
+  ChatImagePicker,
+  prepareImageForChat,
+  stampImageDeadlines,
+  uploadChatImage,
+  useImageDrop,
+  useImageExpiry,
+  type ChatImageInfo,
+} from "@/app/_components/chatImage";
 
 type ChatMessage = {
   id: string;
@@ -29,6 +40,7 @@ type ChatMessage = {
   createdAt: string;
   readByAdmin: boolean;
   readByUser: boolean;
+  image?: ChatImageInfo;
 };
 
 type ApiResponse = {
@@ -85,6 +97,7 @@ export default function FloatingUserAdminChat() {
   const [error, setError] = useState("");
   const [chatNotice, setChatNotice] = useState("");
   const [clearingChat, setClearingChat] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
   const [noticeText, setNoticeText] = useState("অ্যাডমিনের নতুন মেসেজ এসেছে");
 
@@ -283,7 +296,9 @@ export default function FloatingUserAdminChat() {
           );
         }
 
-        const incoming = Array.isArray(data?.messages) ? data.messages : [];
+        const incoming = Array.isArray(data?.messages)
+          ? stampImageDeadlines<ChatMessage>(data.messages)
+          : [];
         if (options?.before) {
           for (const item of incoming) knownMessageIdsRef.current.add(item.id);
           const merged = mergeMessages(incoming, messagesRef.current);
@@ -386,6 +401,36 @@ export default function FloatingUserAdminChat() {
       }
     },
     [clearNoticeTimer],
+  );
+
+  // Photos disappear from the screen after 2 minutes (the server deletes them at the same time).
+  useImageExpiry(setMessages, (ids) => {
+    messagesRef.current = messagesRef.current.filter((item) => !ids.includes(item.id));
+  });
+
+  const sendImage = async (file: File) => {
+    if (uploading || sending || clearingChat) return;
+    setUploading(true);
+    setError("");
+    setChatNotice("");
+    try {
+      const prepared = await prepareImageForChat(file);
+      const message = await uploadChatImage<ChatMessage>("/api/chat/image", prepared);
+      const merged = mergeMessages(messagesRef.current, [message]);
+      messagesRef.current = merged;
+      knownMessageIdsRef.current.add(message.id);
+      setMessages(merged);
+      setUnreadCount(0);
+      lastUnreadCountRef.current = 0;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "ছবি পাঠানো যায়নি।");
+    } finally {
+      setUploading(false);
+    }
+  };
+  const { dragging, bind: dropBind } = useImageDrop(
+    (file) => void sendImage(file),
+    uploading || sending || clearingChat,
   );
 
   const openChat = () => {
@@ -519,6 +564,7 @@ export default function FloatingUserAdminChat() {
           role="dialog"
           aria-label="অ্যাডমিন সাপোর্ট চ্যাট"
           aria-modal="false"
+          {...dropBind}
           className="fixed bottom-[88px] right-3 z-[120] flex max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_58px_-14px_rgba(15,23,42,0.48)] sm:right-5"
           style={{
             width: "min(380px, calc(100vw - 24px))",
@@ -631,9 +677,13 @@ export default function FloatingUserAdminChat() {
                     <div
                       className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 shadow-sm ${mine ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800"}`}
                     >
-                      <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed">
-                        {message.text}
-                      </p>
+                      {message.image ? (
+                        <ChatImageBubble image={message.image} tone={mine ? "dark" : "light"} />
+                      ) : (
+                        <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed">
+                          {message.text}
+                        </p>
+                      )}
                       <div
                         className={`mt-1.5 flex items-center justify-end gap-1.5 text-[10px] ${mine ? "text-indigo-100" : "text-slate-400"}`}
                       >
@@ -695,6 +745,13 @@ export default function FloatingUserAdminChat() {
                   }
                 }}
               />
+              <ChatImagePicker
+                onFile={(file) => void sendImage(file)}
+                uploading={uploading}
+                disabled={sending || clearingChat}
+                iconSize={17}
+                className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              />
               <button
                 type="submit"
                 disabled={!draft.trim() || sending}
@@ -709,10 +766,11 @@ export default function FloatingUserAdminChat() {
               </button>
             </div>
             <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-slate-400">
-              <span>Enter চাপলে পাঠানো হবে · Shift + Enter নতুন লাইন</span>
+              <span>Enter = পাঠান · ছবি ড্রপ/পেস্ট করুন (২ মিনিট থাকবে)</span>
               <span>{draft.length}/2000</span>
             </div>
           </form>
+          <ChatDropOverlay show={dragging} rounded="rounded-2xl" />
         </section>
       )}
 

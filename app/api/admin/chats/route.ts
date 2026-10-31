@@ -5,6 +5,14 @@ import User from "@/models/User";
 import ChatConversation from "@/models/ChatConversation";
 import ChatMessage from "@/models/ChatMessage";
 import { requireAdmin } from "@/app/api/admin/_lib/adminAuth";
+import {
+  containsImageMarker,
+  deleteChatImageByMessageText,
+  deleteChatImagesForUser,
+  previewText,
+  purgeExpiredChatImages,
+  serializeChatMessages,
+} from "@/app/_lib/chatImages";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -37,6 +45,8 @@ export async function GET(request: Request) {
 
   try {
     await connectDB();
+    // Photos older than 2 minutes are deleted (with their chat messages) before anything is returned.
+    await purgeExpiredChatImages();
     const url = new URL(request.url);
     if (url.searchParams.get("summary") === "1") {
       const summary = await ChatConversation.aggregate([
@@ -82,9 +92,10 @@ export async function GET(request: Request) {
           unreadCount: 0,
           hasConversation: fetched.length > 0,
           hasMore,
-          messages: selected.reverse().map((message: any) => serializeMessage(
-            message.senderRole === "user" ? { ...message, readByAdmin: true } : message,
-          )),
+          messages: await serializeChatMessages(
+            selected.reverse(),
+            (message: any) => (message.senderRole === "user" ? { ...message, readByAdmin: true } : message),
+          ),
         },
         { headers: { "Cache-Control": "no-store, max-age=0" } },
       );
@@ -120,7 +131,7 @@ export async function GET(request: Request) {
         phoneNumber: user.phoneNumber || "",
         profileImageUrl: user.profileImageUrl || "",
         isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 90_000),
-        lastMessage: conversation?.lastMessage || "",
+        lastMessage: previewText(conversation?.lastMessage || ""),
         lastMessageAt: conversation?.lastMessageAt || null,
         lastSenderRole: conversation?.lastSenderRole || null,
         unreadCount: Number(conversation?.unreadForAdmin || 0),
@@ -149,6 +160,7 @@ export async function POST(request: Request) {
     if (!mongoose.isValidObjectId(userId)) return NextResponse.json({ success: false, message: "Select a valid user first." }, { status: 400 });
     if (!text) return NextResponse.json({ success: false, message: "Write a message before sending." }, { status: 400 });
     if (text.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ success: false, message: `Messages must be ${MAX_MESSAGE_LENGTH} characters or fewer.` }, { status: 400 });
+    if (containsImageMarker(text)) return NextResponse.json({ success: false, message: "This message cannot be sent." }, { status: 400 });
 
     await connectDB();
     const user = await User.findById(userId).select("_id role").lean();
@@ -214,6 +226,7 @@ export async function DELETE(request: Request) {
       if (action === "clear") {
         // Also remove any orphaned/legacy messages if the conversation row is missing.
         const orphaned = await ChatMessage.deleteMany({ userId: user._id });
+        await deleteChatImagesForUser(user._id);
         return NextResponse.json({
           success: true,
           message: orphaned.deletedCount ? "All remaining chat messages were permanently deleted." : "This chat is already empty.",
@@ -230,11 +243,12 @@ export async function DELETE(request: Request) {
     let deletedCount = 0;
     let deletedMessageId = "";
     if (action === "delete-message") {
-      const message = await ChatMessage.findOne({ _id: messageId, userId: user._id, conversationId: conversation._id }).select("_id").lean();
+      const message = await ChatMessage.findOne({ _id: messageId, userId: user._id, conversationId: conversation._id }).select("_id text").lean();
       if (!message) {
         return NextResponse.json({ success: false, message: "The message could not be found in this user's chat." }, { status: 404 });
       }
       await ChatMessage.deleteOne({ _id: message._id });
+      await deleteChatImageByMessageText((message as any).text);
       deletedCount = 1;
       deletedMessageId = String(message._id);
     } else {
@@ -242,6 +256,7 @@ export async function DELETE(request: Request) {
         $or: [{ conversationId: conversation._id }, { userId: user._id }],
       });
       deletedCount = Number(result.deletedCount || 0);
+      await deleteChatImagesForUser(user._id);
     }
 
     const [latest, unreadForAdmin, unreadForUser] = await Promise.all([
@@ -252,7 +267,7 @@ export async function DELETE(request: Request) {
     await ChatConversation.updateOne(
       { _id: conversation._id },
       { $set: {
-        lastMessage: latest?.text || "",
+        lastMessage: previewText(latest?.text),
         lastMessageAt: latest?.createdAt || null,
         lastSenderRole: latest?.senderRole || "user",
         unreadForAdmin,
@@ -266,7 +281,7 @@ export async function DELETE(request: Request) {
       action,
       deletedCount,
       deletedMessageId,
-      lastMessage: latest?.text || "",
+      lastMessage: previewText(latest?.text),
       lastMessageAt: latest?.createdAt || null,
       lastSenderRole: latest?.senderRole || null,
       unreadCount: unreadForAdmin,

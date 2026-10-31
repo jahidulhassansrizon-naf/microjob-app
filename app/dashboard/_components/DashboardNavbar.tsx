@@ -34,6 +34,7 @@ import {
   clearMyFilesDataCache,
   prefetchMyFilesData,
 } from "@/app/my-files/myFilesData";
+import { clearAiEditorGenerationsCache, prefetchAiEditorGenerations } from "@/app/ai-editor/_components/aiEditorData";
 interface UserData {
   fullName?: string;
   phoneNumber?: string;
@@ -765,9 +766,13 @@ function NavLabel({ item, open }: { item: NavConfig; open?: boolean }) {
 }
 function NavItem({ item, active }: { item: NavConfig; active: boolean }) {
   const router = useRouter();
+  const prefetchData = (force = false) => {
+    if (item.href === "/my-files") prefetchMyFilesData(force);
+    else if (item.href === "/ai-editor") prefetchAiEditorGenerations(force);
+  };
   const prefetchDestination = () => {
     router.prefetch(item.href);
-    if (item.href === "/my-files") prefetchMyFilesData();
+    prefetchData();
   };
   return (
     <div className="relative flex h-full shrink-0 items-center">
@@ -779,15 +784,11 @@ function NavItem({ item, active }: { item: NavConfig; active: boolean }) {
         onMouseEnter={prefetchDestination}
         onFocus={prefetchDestination}
         onTouchStart={() => {
-          if (item.href === "/my-files") prefetchMyFilesData(true);
+          if (item.href === "/my-files" || item.href === "/ai-editor") prefetchData(true);
           else prefetchDestination();
         }}
-        onMouseDown={() => {
-          if (item.href === "/my-files") prefetchMyFilesData(true);
-        }}
-        onClick={() => {
-          if (item.href === "/my-files") prefetchMyFilesData(true);
-        }}
+        onMouseDown={() => prefetchData(true)}
+        onClick={() => prefetchData(true)}
         className={`${itemBase} ${active ? itemActive : itemIdle}`}
       >
         <NavLabel item={item} />
@@ -1014,6 +1015,7 @@ export default function DashboardNavbar({
 
         if ([401, 403, 404].includes(response.status)) {
           clearMyFilesDataCache();
+          clearAiEditorGenerationsCache();
           try {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
@@ -1203,6 +1205,7 @@ export default function DashboardNavbar({
   /* ------------------------------------------------------------------ */
   const handleLogout = () => {
     clearMyFilesDataCache();
+    clearAiEditorGenerationsCache();
     void logoutClientSession().finally(() => {
       setUser(null);
       window.location.replace("/login");

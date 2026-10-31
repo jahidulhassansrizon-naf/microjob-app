@@ -16,6 +16,17 @@ import {
   UserRound,
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import {
+  ChatDropOverlay,
+  ChatImageBubble,
+  ChatImagePicker,
+  prepareImageForChat,
+  stampImageDeadlines,
+  uploadChatImage,
+  useImageDrop,
+  useImageExpiry,
+  type ChatImageInfo,
+} from "@/app/_components/chatImage";
 
 type ChatUser = {
   id: string;
@@ -38,6 +49,7 @@ type ChatMessage = {
   createdAt: string;
   readByAdmin: boolean;
   readByUser: boolean;
+  image?: ChatImageInfo;
 };
 
 type Pagination = { page: number; limit: number; total: number; pages: number };
@@ -86,6 +98,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   const [sending, setSending] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState("");
   const [clearingChat, setClearingChat] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [draft, setDraft] = useState("");
   const [messageError, setMessageError] = useState("");
   const selectedUserIdRef = useRef<string | null>(null);
@@ -136,7 +149,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.message || "Could not load this conversation.");
       if (selectedUserIdRef.current !== userId) return;
-      const incoming: ChatMessage[] = Array.isArray(data?.messages) ? data.messages : [];
+      const incoming: ChatMessage[] = Array.isArray(data?.messages) ? stampImageDeadlines<ChatMessage>(data.messages) : [];
       // Background polling must never yank the admin back to the bottom while reading older messages.
       const container = scrollContainerRef.current;
       const nearBottom = !container || container.scrollHeight - container.scrollTop - container.clientHeight < 120;
@@ -321,6 +334,41 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
     }
   };
 
+  // Photos disappear from the screen after 2 minutes (the server deletes them at the same time).
+  useImageExpiry(setMessages, (ids) => {
+    messagesRef.current = messagesRef.current.filter((item) => !ids.includes(item.id));
+  });
+
+  const sendImage = async (file: File) => {
+    const targetUser = selectedUser;
+    if (!targetUser || uploading || sending || clearingChat) return;
+    setUploading(true);
+    setMessageError("");
+    try {
+      const prepared = await prepareImageForChat(file);
+      const message = await uploadChatImage<ChatMessage>("/api/admin/chats/image", prepared, { userId: targetUser.id });
+      if (selectedUserIdRef.current === targetUser.id) {
+        setMessages((current) => mergeMessages(current, [message]));
+        shouldScrollRef.current = true;
+      }
+      setUsers((current) => current.map((user) => user.id === targetUser.id ? {
+        ...user,
+        lastMessage: "📷 ছবি / Photo",
+        lastMessageAt: new Date().toISOString(),
+        lastSenderRole: "admin",
+        hasConversation: true,
+      } : user));
+    } catch (cause) {
+      setMessageError(cause instanceof Error ? cause.message : "The photo could not be sent.");
+    } finally {
+      setUploading(false);
+    }
+  };
+  const { dragging, bind: dropBind } = useImageDrop(
+    (file) => void sendImage(file),
+    !selectedUser || uploading || sending || clearingChat,
+  );
+
   return (
     <section className="flex h-[calc(100vh-190px)] min-h-[520px] max-h-[850px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
@@ -393,7 +441,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
           </div>
         </aside>
 
-        <div className={`${selectedUser ? "flex" : "hidden lg:flex"} min-h-0 min-w-0 flex-col overflow-hidden`}>
+        <div {...dropBind} className={`${selectedUser ? "relative flex" : "hidden lg:flex"} min-h-0 min-w-0 flex-col overflow-hidden`}>
           {selectedUser ? (
             <>
               <header className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5">
@@ -424,7 +472,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
                     <div key={message.id} className={`group flex items-end gap-1.5 ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[calc(100%_-_2.5rem)] rounded-2xl px-3.5 py-2.5 shadow-sm sm:max-w-[78%] ${mine ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800"}`}>
                         {!mine && <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-600">{selectedUser.fullName}</p>}
-                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.text}</p>
+                        {message.image ? <ChatImageBubble image={message.image} tone={mine ? "dark" : "light"} /> : <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.text}</p>}
                         <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[10px] ${mine ? "text-indigo-100" : "text-slate-400"}`}><span>{formatTime(message.createdAt, true)}</span>{mine && <span className="inline-flex items-center gap-0.5">{message.readByUser ? <CheckCheck size={12} /> : null}{message.readByUser ? "Seen" : "Sent"}</span>}</div>
                       </div>
                       <button type="button" onClick={() => void deleteMessage(message)} disabled={Boolean(deletingMessageId) || clearingChat} aria-label="Delete message permanently" title="Delete message permanently" className="mb-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rose-100 bg-white text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus:bg-rose-50 focus:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40">{deleting ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />}</button>
@@ -440,10 +488,12 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
               <form onSubmit={sendMessage} className="border-t border-slate-200 bg-white p-3 sm:p-4">
                 <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10">
                   <textarea value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={2000} rows={2} placeholder={`Message ${selectedUser.fullName.split(/\s+/)[0] || "user"}…`} aria-label="Message selected user" className="max-h-32 min-h-[44px] flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400" onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
+                  <ChatImagePicker onFile={(file) => void sendImage(file)} uploading={uploading} disabled={sending || clearingChat} iconSize={16} className="flex h-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50" />
                   <button type="submit" disabled={!draft.trim() || sending || clearingChat} className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{sending ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={15} />}<span className="hidden sm:inline">Send</span></button>
                 </div>
-                <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-slate-400"><span>Enter to send · Shift + Enter for a new line</span><span>{draft.length}/2000</span></div>
+                <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-slate-400"><span>Enter to send · drop or paste a photo (auto-deleted after 2 min)</span><span>{draft.length}/2000</span></div>
               </form>
+              <ChatDropOverlay show={dragging} rounded="rounded-none" />
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">

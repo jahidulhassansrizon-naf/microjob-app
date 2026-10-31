@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { downloadPhotosArchive, downloadPhotosPdf } from "./photoExport";
 import type { PrintSessionMeta } from "./printSessionStore";
+import { getAiEditorThumbnailUrl } from "./aiEditorData";
 
 export interface GenerationItem {
     id?: string | number;
@@ -59,6 +60,22 @@ function displayDate(value: unknown) {
 }
 function imageKey(item: GenerationItem, index: number) {
     return `${String(item.id ?? "generation")}:${index}:${item.url}`;
+}
+
+function RecentLoadingAnimation() {
+    return (<div role="status" aria-label="Loading recent photos" className="rg-anim flex w-full flex-col justify-center gap-2">
+        <div className="flex gap-4 overflow-hidden xl:gap-3">
+            {Array.from({ length: 10 }).map((_, index) => (<div key={index} className="relative h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 overflow-hidden rounded-xl border border-[#E3D6B8] bg-gradient-to-b from-[#FBF6E8] to-[#EADFC2]" style={{ animation: `rg-rise 500ms ease-out ${index * 70}ms both` }}>
+                <span className="absolute inset-0 flex items-center justify-center text-[#D9C9A0]" style={{ animation: `rg-float 1.8s ease-in-out ${index * 140}ms infinite` }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="3.4"/><path d="M5 20c.8-3.6 3.5-5.6 7-5.6s6.2 2 7 5.6"/></svg>
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/70 to-transparent" style={{ animation: `rg-sweep 1.6s ease-in-out ${index * 120}ms infinite` }}/>
+            </div>))}
+        </div>
+        <div className="relative h-[3px] w-full max-w-xs overflow-hidden rounded-full bg-[#E3D6B8]">
+            <span className="absolute inset-y-0 left-0 w-1/4 rounded-full bg-[#DC2626]" style={{ animation: "rg-line 1.4s ease-in-out infinite" }}/>
+        </div>
+    </div>);
 }
 
 export default function RecentGenerations({
@@ -152,7 +169,7 @@ export default function RecentGenerations({
                 className={`${compact ? `group relative ${item.side === "dual" ? "col-span-2 aspect-[90/55]" : "aspect-[4/5]"} ` : `group relative flex h-36 ${item.side === "dual" ? "w-56 xl:w-[calc(clamp(72px,10.5vh,112px)*1.56)]" : "w-28 xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)]"} xl:h-[clamp(72px,10.5vh,112px)] shrink-0 flex-col `}overflow-hidden rounded-xl border bg-[#F2E8D2] text-left transition ${isSelecting && selected ? "border-[#DC2626] ring-2 ring-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]"} cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#DC2626]`}
                 style={item.bgColor === "transparent" ? TRANSPARENT_THUMBNAIL_STYLE : undefined}
             >
-                <img src={item.url} alt={t("Generated photo")} loading="lazy" className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`} />
+                <img src={compact ? item.url : getAiEditorThumbnailUrl(item.url)} alt={t("Generated photo")} loading={!compact && index < 8 ? "eager" : "lazy"} decoding="async" ref={(el) => { if (el && el.complete) el.style.opacity = "1"; }} onLoad={(e) => { e.currentTarget.style.opacity = "1"; }} onError={(e) => { e.currentTarget.style.opacity = "1"; }} style={{ opacity: 0, transition: "opacity 450ms ease" }} className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`} />
                 {isSelecting ? (
                     <span className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 shadow ${selected ? "border-[#DC2626] bg-[#DC2626] text-white" : "border-white bg-black/35 text-transparent"}`}>
                         <Check size={15} strokeWidth={3} />
@@ -266,7 +283,7 @@ export default function RecentGenerations({
         </div>
 
         <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1">
-          {isLoading ? Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-36 w-28 xl:h-[clamp(72px,10.5vh,112px)] xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)] shrink-0 animate-pulse rounded-xl border border-[#E3D6B8] bg-[#E3D6B8]" />)
+          {isLoading ? <RecentLoadingAnimation />
           : generations.length === 0 ? <div className="flex min-h-[150px] w-full items-center justify-center xl:min-h-[clamp(72px,10.5vh,112px)]"><p className="text-sm italic text-[#3B2F1E]/60"><AiT>No recent generations yet. Click “Generate Photo” to add images here.</AiT></p></div>
           : generations.map((item, index) => renderImageCard(item, index))}
         </div>

@@ -5,6 +5,12 @@ import { getVerifiedRequestSession } from "@/lib/serverAuth";
 import User from "@/models/User";
 import ChatConversation from "@/models/ChatConversation";
 import ChatMessage from "@/models/ChatMessage";
+import {
+  containsImageMarker,
+  deleteChatImagesForUser,
+  purgeExpiredChatImages,
+  serializeChatMessages,
+} from "@/app/_lib/chatImages";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,6 +46,8 @@ export async function GET(request: Request) {
 
   try {
     await connectDB();
+    // Photos older than 2 minutes are deleted (with their chat messages) before anything is returned.
+    await purgeExpiredChatImages();
     const user = await User.findById(auth.session.userId).select("_id role").lean();
     if (!user) return NextResponse.json({ success: false, message: "User account was not found." }, { status: 404 });
     if (user.role === "admin") return NextResponse.json({ success: false, message: "Admin accounts cannot use the user chat endpoint." }, { status: 403 });
@@ -80,9 +88,10 @@ export async function GET(request: Request) {
         success: true,
         unreadCount: 0,
         hasMore,
-        messages: selected.reverse().map((message: any) => serializeMessage(
-          message.senderRole === "admin" ? { ...message, readByUser: true } : message,
-        )),
+        messages: await serializeChatMessages(
+          selected.reverse(),
+          (message: any) => (message.senderRole === "admin" ? { ...message, readByUser: true } : message),
+        ),
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
     );
@@ -102,6 +111,7 @@ export async function POST(request: Request) {
     const text = typeof body?.text === "string" ? body.text.trim() : "";
     if (!text) return NextResponse.json({ success: false, message: "Write a message before sending." }, { status: 400 });
     if (text.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ success: false, message: `Messages must be ${MAX_MESSAGE_LENGTH} characters or fewer.` }, { status: 400 });
+    if (containsImageMarker(text)) return NextResponse.json({ success: false, message: "This message cannot be sent." }, { status: 400 });
 
     await connectDB();
     const user = await User.findById(auth.session.userId).select("_id role").lean();
@@ -158,6 +168,7 @@ export async function DELETE(request: Request) {
     const messageFilters: Record<string, unknown>[] = [{ userId: user._id }];
     if (conversation) messageFilters.push({ conversationId: conversation._id });
     const deleted = await ChatMessage.deleteMany({ $or: messageFilters });
+    await deleteChatImagesForUser(user._id);
 
     if (conversation) {
       await ChatConversation.updateOne(

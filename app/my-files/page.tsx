@@ -2,6 +2,7 @@
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { translateText } from "@/lib/i18n";
 import { useState, useEffect, useMemo } from "react";
+import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
 import Link from "next/link";
 import {
   ImageIcon,
@@ -715,6 +716,8 @@ export default function MyFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [toolFiles, setToolFiles] = useState<ToolFile[]>([]);
   const [filesLoading, setFilesLoading] = useState<boolean>(true);
+  // Reload: the premium page loader stays up until the files are loaded (no skeleton).
+  usePageLoaderHold(filesLoading);
   // Image preview + delete state
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FileItem | null>(null);
@@ -1099,7 +1102,7 @@ export default function MyFilesPage() {
               )}
 
               {filesLoading ? (
-                <ScanSkeletonGrid />
+                null
               ) : visibleFiles.length > 0 ? (
                 <div
                   aria-live="polite"
@@ -1362,7 +1365,7 @@ export default function MyFilesPage() {
 
               <div className="scroll mt-3 min-h-0 flex-1 overflow-y-auto border-t border-[#E3D6B8]">
                 {filesLoading ? (
-                  <ScanSkeletonList />
+                  null
                 ) : visibleToolFiles.length > 0 ? (
                   <ul className="divide-y divide-[#E3D6B8]" aria-live="polite">
                     {visibleToolFiles.map((file) => {

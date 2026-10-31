@@ -95,13 +95,16 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning
       >
+        {/* First element in <body>: the full-screen loader is part of the very first paint. */}
+        <ConditionalSiteChrome>
+          <NavigationProgressBar suppressInitial={showLoginSuccess} />
+        </ConditionalSiteChrome>
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
         <I18nProvider initialLocale={initialLocale}>
           <ActivityTracker />
           <LiveScreenShareController />
           <ConditionalSiteChrome>
             <PageBackgroundInitializer />
-            <NavigationProgressBar />
           </ConditionalSiteChrome>
           <ConditionalSiteNavbar>
             <Navbar />

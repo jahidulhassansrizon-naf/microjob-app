@@ -25,6 +25,14 @@ const TOOL_PATHS = [
   "/my-files",
 ];
 
+// When the account was verified recently, opening another tool page needs no waiting:
+// the page opens at once and the access check runs quietly in the background (a ban is
+// still applied within moments, and the protected APIs enforce access on the server).
+// Only a cold load (reload / first visit) waits for the check, behind the page loader.
+const VERIFIED_FRESH_MS = 10 * 60 * 1000;
+let lastVerifiedAt = 0;
+const isRecentlyVerified = () => Date.now() - lastVerifiedAt < VERIFIED_FRESH_MS;
+
 function isToolPath(pathname: string) {
   if (pathname.startsWith("/sohoj-tools/")) return true;
   return TOOL_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -38,12 +46,36 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!toolPath) {
       setGate({ pathname, status: "allowed" });
+      // Warm up quietly (e.g. while on the dashboard) so the first click on a tool page
+      // also opens instantly. Nothing is shown or held while this runs.
+      if (!isRecentlyVerified()) {
+        void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+          .then((response) => response.json().catch(() => ({})).then((data) => ({ response, data })))
+          .then(({ response, data }) => {
+            const user = data?.user;
+            if (response.ok && user && !(user.role !== "admin" && user.isBanned === true)) {
+              lastVerifiedAt = Date.now();
+            }
+          })
+          .catch(() => undefined);
+      }
       return;
     }
 
     let active = true;
     let firstCheck = true;
-    setGate({ pathname, status: "checking" });
+    const optimistic = isRecentlyVerified();
+    setGate({ pathname, status: optimistic ? "allowed" : "checking" });
+
+    // Only a cold check keeps the full-screen page loader up (it covers the waiting).
+    // A quiet background re-check must never put a loader over an already open page.
+    let holdReleased = optimistic;
+    const releaseProgressHold = () => {
+      if (holdReleased) return;
+      holdReleased = true;
+      window.dispatchEvent(new Event("navigation-progress:release"));
+    };
+    if (!optimistic) window.dispatchEvent(new Event("navigation-progress:hold"));
 
     const checkAccess = async () => {
       try {
@@ -57,6 +89,7 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
         if (response.ok && data?.user) {
           const user = data.user;
           const blocked = user.role !== "admin" && user.isBanned === true;
+          lastVerifiedAt = blocked ? 0 : Date.now();
           setGate({
             pathname,
             status: blocked ? "blocked" : "allowed",
@@ -64,12 +97,14 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
           });
         } else {
           // Guests still see the existing page/login prompt. Protected APIs enforce auth.
+          lastVerifiedAt = Date.now();
           setGate({ pathname, status: "allowed" });
         }
       } catch {
         if (active) setGate({ pathname, status: "allowed" });
       } finally {
         firstCheck = false;
+        releaseProgressHold();
       }
     };
 
@@ -82,10 +117,17 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
     return () => {
       active = false;
       window.clearInterval(interval);
+      releaseProgressHold();
     };
   }, [pathname, toolPath]);
 
-  const status = !toolPath ? "allowed" : gate.pathname !== pathname ? "checking" : gate.status;
+  const status = !toolPath
+    ? "allowed"
+    : gate.pathname !== pathname
+      ? isRecentlyVerified()
+        ? "allowed"
+        : "checking"
+      : gate.status;
   const lastAllowedContentRef = useRef<{
     pathname: string;
     children: React.ReactNode;

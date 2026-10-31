@@ -755,13 +755,6 @@ export default function IncomeExpensesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {!loaded &&
-            Array.from({ length: 5 }).map((_, i) => (<tr key={`sk-${i}`}>
-                      <td colSpan={7} className="px-5 py-3">
-                        <div className="h-6 animate-pulse rounded-lg bg-slate-100"/>
-                      </td>
-                    </tr>))}
-
                 {loaded &&
             pageEntries.map((entry) => (<tr key={entry.id} className="transition-colors hover:bg-slate-50/70">
                       <td className="whitespace-nowrap px-5 py-3 text-xs font-semibold text-slate-600">
@@ -802,10 +795,6 @@ export default function IncomeExpensesPage() {
 
           {/* মোবাইল: কার্ড লিস্ট */}
           <ul className="divide-y divide-slate-100 md:hidden">
-            {!loaded &&
-            Array.from({ length: 4 }).map((_, i) => (<li key={`msk-${i}`} className="p-4">
-                  <div className="h-14 animate-pulse rounded-xl bg-slate-100"/>
-                </li>))}
             {loaded &&
             pageEntries.map((entry) => (<li key={entry.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -1165,7 +1154,7 @@ function SummaryCard({ label, value, tone, icon, loading = false, children, }: {
         {icon}
       </div>
       <p className="text-xs font-bold text-slate-500">{label}</p>
-      {loading ? (<div className="mt-2 h-7 w-28 animate-pulse rounded-lg bg-slate-100"/>) : (<p className="mt-1 truncate text-xl font-black tabular-nums text-slate-900" title={value}>
+      {loading ? (<div className="mt-2 h-7 w-28"/>) : (<p className="mt-1 truncate text-xl font-black tabular-nums text-slate-900" title={value}>
           {value}
         </p>)}
       {!loading && children}
