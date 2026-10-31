@@ -4,7 +4,7 @@ import { createCipheriv, hkdfSync, randomBytes } from "node:crypto";
 import {
   decryptPipraPayApiKey,
   encryptPipraPayApiKey,
-} from "../lib/serverPipraPaySettings.ts";
+} from "../lib/serverPipraPaySettings";
 
 const originalEncryptionKey = process.env.PIPRAPAY_ENCRYPTION_KEY;
 const originalJwtSecret = process.env.JWT_SECRET;
