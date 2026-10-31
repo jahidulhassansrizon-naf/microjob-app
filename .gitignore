@@ -27,3 +27,11 @@ Thumbs.db
 
 # deployment output
 .vercel
+
+# Dependencies
+**/node_modules/
+
+# Local Gemini authentication session
+/playwright-service/gemini-session.json
+
+**/node_modules/
