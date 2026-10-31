@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import type jsPDF from "jspdf";
 
 export const EXPORT_DPI = 300;
 export type PhysicalSize = {
@@ -734,6 +734,8 @@ export async function downloadPhotosArchive(images: ExportableImage[], format: "
 /** Exports all selected photos into a single multi-page PDF (one photo per page). */
 export async function downloadPhotosPdf(images: ExportableImage[]): Promise<void> {
     if (!images.length) throw new Error("Please select at least one photo.");
+    // jsPDF is large: it is only loaded when a PDF is really created, not with the page.
+    const { default: JsPdfClass } = await import("jspdf");
     let pdf: jsPDF | null = null;
     for (let index = 0; index < images.length; index += 1) {
         const exported = await renderPhotoToExportCanvas(images[index]);
@@ -741,7 +743,7 @@ export async function downloadPhotosPdf(images: ExportableImage[]): Promise<void
         const heightMm = exported.physical.unit === "in" ? exported.physical.height * 25.4 : exported.physical.height;
         const orientation = widthMm > heightMm ? "landscape" : "portrait";
         if (!pdf) {
-            pdf = new jsPDF({ orientation, unit: "mm", format: [widthMm, heightMm], compress: true });
+            pdf = new JsPdfClass({ orientation, unit: "mm", format: [widthMm, heightMm], compress: true });
         }
         else {
             pdf.addPage([widthMm, heightMm], orientation);

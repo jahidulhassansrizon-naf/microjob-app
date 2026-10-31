@@ -10,7 +10,7 @@ const TAU_SECONDS = 1.6;
 
 // A client-side page change opens the next page directly, exactly as before. The loader
 // only appears if the page is really slow, i.e. still not ready after this long.
-const SHOW_DELAY_MS = 700;
+const SHOW_DELAY_MS = 350;
 // Once visible, the loader stays at least this long so 0% -> 100% is always seen.
 const MIN_VISIBLE_MS = 300;
 // Lets freshly rendered loading screens register their "hold" before we finish.
@@ -106,6 +106,7 @@ export default function NavigationProgressBar({
     let last = 0;
 
     let showTimer: ReturnType<typeof setTimeout> | null = null;
+    let showDueAt = 0;
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
     let stuckTimer: ReturnType<typeof setTimeout> | null = null;
     let finishTimer: ReturnType<typeof setTimeout> | null = null;
@@ -175,6 +176,7 @@ export default function NavigationProgressBar({
 
     const showNow = () => {
       showTimer = clear(showTimer);
+      showDueAt = 0;
       if (visible) return;
       visible = true;
       shownAt = performance.now();
@@ -261,7 +263,10 @@ export default function NavigationProgressBar({
       paint();
 
       if (immediate) showNow();
-      else showTimer = setTimeout(showNow, SHOW_DELAY_MS);
+      else {
+        showDueAt = performance.now() + SHOW_DELAY_MS;
+        showTimer = setTimeout(showNow, SHOW_DELAY_MS);
+      }
 
       startLoop();
       armStuckTimer();
@@ -336,12 +341,26 @@ export default function NavigationProgressBar({
     const handleProgressFinish = () => requestFinish();
 
     // A loading screen is showing: keep the loader up until it is gone.
-    const handleHold = () => {
+    const handleHold = (event: Event) => {
       holds += 1;
+      const requested = (event as CustomEvent<{ showAfterMs?: number } | undefined>).detail
+        ?.showAfterMs;
       // Not shown at once: a loading screen that goes away quickly needs no loader.
       // If it stays longer than SHOW_DELAY_MS the loader appears.
       if (phase !== "running") startedByHold = true;
       startProgress(false);
+      // A page that draws nothing while it waits asks for an earlier loader (never a later one).
+      if (
+        typeof requested === "number" &&
+        phase === "running" &&
+        !visible &&
+        showTimer !== null &&
+        performance.now() + requested < showDueAt
+      ) {
+        showTimer = clear(showTimer);
+        showDueAt = performance.now() + requested;
+        showTimer = setTimeout(showNow, Math.max(0, requested));
+      }
     };
 
     const handleRelease = () => {

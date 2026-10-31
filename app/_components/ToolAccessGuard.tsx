@@ -146,24 +146,14 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
     const previous = lastAllowedContentRef.current;
     if (previous) return <>{previous.children}</>;
 
-    // On a cold/direct load there is no previous page to retain. Use a neutral,
-    // text-free skeleton instead of an empty white screen. No access-check copy
-    // or internal authorization status is exposed to the user.
+    // On a cold/direct load there is no previous page to retain. Draw only the plain site
+    // background (no skeleton blocks): the full-screen page loader covers the wait.
     return (
       <main
         aria-busy="true"
         aria-hidden="true"
-        className="min-h-[65vh] bg-gradient-to-b from-slate-50 to-white px-4 py-8 sm:px-6"
-      >
-        <div className="mx-auto max-w-6xl space-y-5">
-          <div className="h-9 w-48 animate-pulse rounded-xl bg-slate-200/70" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
-            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
-            <div className="h-36 animate-pulse rounded-2xl border border-slate-200/70 bg-slate-100/80" />
-          </div>
-        </div>
-      </main>
+        className="min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]"
+      />
     );
   }
 

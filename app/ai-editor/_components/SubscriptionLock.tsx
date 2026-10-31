@@ -7,9 +7,14 @@ import { useAiEditorText } from "./aiEditorI18n";
 
 type GateStatus = "checking" | "locked" | "active";
 
+// An account that was verified as active a moment ago opens the page with no "checking" badge;
+// the check still runs quietly in the background (and the server enforces access anyway).
+const ACTIVE_FRESH_MS = 10 * 60 * 1000;
+let lastActiveAt = 0;
+
 export default function SubscriptionLock() {
   const { t } = useAiEditorText();
-  const [status, setStatus] = useState<GateStatus>("checking");
+  const [status, setStatus] = useState<GateStatus>(() => Date.now() - lastActiveAt < ACTIVE_FRESH_MS ? "active" : "checking");
   const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
@@ -35,6 +40,8 @@ export default function SubscriptionLock() {
           subscription?.accessStatus === "ACTIVE" &&
           expiresAt > Date.now()
         ));
+        if (isActive) lastActiveAt = Date.now();
+        else lastActiveAt = 0;
         if (!cancelled) setStatus(isActive ? "active" : "locked");
       } catch (error) {
         console.error("Subscription gate check failed:", error);
@@ -60,7 +67,8 @@ export default function SubscriptionLock() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [showDialog]);
 
-  if (status === "active") return null;
+  // While the first check is running nothing is shown (no "Checking access..." badge).
+  if (status === "active" || (status === "checking" && !showDialog)) return null;
 
   const openDialog = (event?: ReactMouseEvent<HTMLButtonElement>) => {
     event?.preventDefault();

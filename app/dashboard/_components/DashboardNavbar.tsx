@@ -1203,6 +1203,11 @@ export default function DashboardNavbar({
   /* ------------------------------------------------------------------ */
   /* Actions                                                            */
   /* ------------------------------------------------------------------ */
+  // Warm the AI Editor recent images in the background, so the page opens with them already there.
+  useEffect(() => {
+    const timer = window.setTimeout(() => prefetchAiEditorGenerations(), 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
   const handleLogout = () => {
     clearMyFilesDataCache();
     clearAiEditorGenerationsCache();

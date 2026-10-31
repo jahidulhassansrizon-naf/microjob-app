@@ -11,7 +11,13 @@ import { useEffect } from "react";
  * The hold is always released after `maxMs`, so a slow or failing request can never leave
  * the loader stuck on screen.
  */
-export default function usePageLoaderHold(active: boolean, maxMs = 6000) {
+export default function usePageLoaderHold(
+  active: boolean,
+  maxMs = 6000,
+  // Optional: the page draws nothing while it waits, so let the loader show after this many ms
+  // (instead of the normal, longer delay) to avoid a long empty screen.
+  showAfterMs?: number,
+) {
   useEffect(() => {
     if (!active) return;
     let released = false;
@@ -20,11 +26,13 @@ export default function usePageLoaderHold(active: boolean, maxMs = 6000) {
       released = true;
       window.dispatchEvent(new Event("navigation-progress:release"));
     };
-    window.dispatchEvent(new Event("navigation-progress:hold"));
+    window.dispatchEvent(
+      new CustomEvent("navigation-progress:hold", { detail: { showAfterMs } }),
+    );
     const timer = window.setTimeout(release, maxMs);
     return () => {
       window.clearTimeout(timer);
       release();
     };
-  }, [active, maxMs]);
+  }, [active, maxMs, showAfterMs]);
 }

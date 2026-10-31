@@ -2,6 +2,7 @@
 import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import SubscriptionLock from "./_components/SubscriptionLock";
 import GenerationSettings from "./_components/GenerationSettings";
@@ -9,19 +10,22 @@ import { planEditingGuides } from "./_components/editingGuides";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import RecentGenerations from "./_components/RecentGenerations";
-import ImagePreviewModal from "./_components/ImagePreviewModal";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
-import AiPrintStudioModal from "./_components/AiPrintStudioModal";
 import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
 import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
-import CropStage from "./_components/CropStage";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
+import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
 import { AiEditorFetchError, getCachedAiEditorGenerations, refreshAiEditorGenerations, setCachedAiEditorGenerations } from "./_components/aiEditorData";
+// Heavy parts (print studio + PDF, photo preview editor, crop tool) load in the background, so the
+// AI Editor page itself opens much faster after a click.
+const AiPrintStudioModal = dynamic(() => import("./_components/AiPrintStudioModal"), { ssr: false, loading: () => null });
+const ImagePreviewModal = dynamic(() => import("./_components/ImagePreviewModal"), { ssr: false, loading: () => null });
+const CropStage = dynamic(() => import("./_components/CropStage"), { ssr: false, loading: () => null });
 export default function PhotoEditorPage() {
     const { t } = useAiEditorText();
     const router = useRouter();
@@ -70,6 +74,23 @@ export default function PhotoEditorPage() {
     const [customInstructionClearToken, setCustomInstructionClearToken] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
+    // Same as the other pages: when the recent photos are not ready yet (no cache), the premium page
+    // loader covers the page and shows only if it is really needed (slow load). When the photos
+    // are already cached, nothing is shown and the page simply opens with them.
+    const [openedWithCache] = useState(() => getCachedAiEditorGenerations() !== null);
+    // The very first load of this page: until the recent photos are ready, the page itself is not
+    // drawn at all (no half-built page "floating" for a moment). The full-screen loader covers the
+    // wait only if it is really needed, and the finished page then appears in one go.
+    // This flag only ever goes false -> true, so later refreshes never blank an open page.
+    const [firstLoadDone, setFirstLoadDone] = useState(openedWithCache);
+    usePageLoaderHold(!firstLoadDone, 8000, 120);
+    useEffect(() => {
+        if (firstLoadDone)
+            return;
+        // Safety net: never keep the page hidden for longer than this.
+        const timer = window.setTimeout(() => setFirstLoadDone(true), 8000);
+        return () => window.clearTimeout(timer);
+    }, [firstLoadDone]);
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
     const [showCropModal, setShowCropModal] = useState(false);
     const [isCropping, setIsCropping] = useState(false);
@@ -134,6 +155,7 @@ export default function PhotoEditorPage() {
         }
         finally {
             setIsFetching(false);
+            setFirstLoadDone(true);
         }
     };
     useEffect(() => {
@@ -1619,6 +1641,10 @@ export default function PhotoEditorPage() {
         return { image: payload.dataUrl, preset: payload.preset };
     };
 
+    // Not ready yet: draw nothing but the plain site background; the page loader handles the wait.
+    if (!firstLoadDone) {
+        return (<div aria-busy="true" className="min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]"/>);
+    }
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
