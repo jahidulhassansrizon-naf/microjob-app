@@ -10,7 +10,8 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Heart, X } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
+import LoginSuccessCard from "@/app/_components/LoginSuccessCard";
 import DashboardNavbar from "./_components/DashboardNavbar";
 import UserAdminChat from "./_components/UserAdminChat";
 import { getClientSession } from "@/lib/clientAuth";
@@ -797,25 +798,6 @@ function ContactCard() {
 }
 // my-nafia:end
 /* ------------------------------------------------------------------ */
-/* Login success progress bar                                          */
-/* ------------------------------------------------------------------ */
-// ১.৬ সেকেন্ডে ধীরে ধীরে ভরে ওঠে (modal বন্ধ হওয়ার সময়ের সাথে মিলিয়ে)
-function LoginProgress() {
-  const [go, setGo] = useState<boolean>(false);
-  useEffect(() => {
-    const id = setTimeout(() => setGo(true), 30);
-    return () => clearTimeout(id);
-  }, []);
-  return (
-    <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-[#F3E9D2]">
-      <div
-        className="h-full rounded-full bg-[#DC2626] transition-[width] ease-out"
-        style={{ width: go ? "100%" : "0%", transitionDuration: "1500ms" }}
-      />
-    </div>
-  );
-}
-/* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function DashboardClient({
@@ -831,6 +813,13 @@ export default function DashboardClient({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [showLoginSuccess, setShowLoginSuccess] =
     useState<boolean>(initialLoginSuccess);
+  // starts false so the success bar visibly fills 0% -> 100% after mount
+  const [loginBarGo, setLoginBarGo] = useState<boolean>(false);
+  useEffect(() => {
+    if (!initialLoginSuccess) return;
+    const id = window.setTimeout(() => setLoginBarGo(true), 30);
+    return () => window.clearTimeout(id);
+  }, [initialLoginSuccess]);
   // null = not known yet (see WelcomeBanner). The cached name is read before the first paint so
   // the common case never shows a placeholder at all.
   const [userName, setUserName] = useState<string | null>(null);
@@ -944,51 +933,23 @@ export default function DashboardClient({
       </div>
 
       {showLoginSuccess && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#3B2F1E]/50 px-4 backdrop-blur-sm animate-in fade-in duration-300">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="login-success-title"
-            className="relative w-full max-w-sm overflow-hidden rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-7 text-center shadow-xl animate-in zoom-in-95 duration-300"
-          >
-            {/* লাল রঙের ক্লোজ বাটন */}
-            <button
-              type="button"
-              onClick={() => {
-                setShowLoginSuccess(false);
-                router.replace("/dashboard");
-              }}
-              className="absolute right-3 top-3 z-10 cursor-pointer rounded-md p-1.5 text-[#7A6A50] transition-colors hover:bg-[#F3E9D2] hover:text-[#5A4A32]"
-              aria-label="Close modal"
-            >
-              <X size={16} />
-            </button>
-
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              <CheckCircle2
-                size={26}
-                strokeWidth={2}
-                className="animate-in zoom-in-50 duration-500"
-              />
-            </div>
-
-            <h3
-              id="login-success-title"
-              className="text-xl font-semibold text-[#3B2F1E]"
-            >
-              <DT>{"Login Successful!\n            "}</DT>
-            </h3>
-            <p className="mt-1 text-base text-[#7A6A50]">
-              <DT>{"Welcome back,"}</DT>
-              {<DT> </DT>}
-              <span className="font-medium text-[#3B2F1E]">
-                {userName ?? "User"}
-              </span>
-              <DT>{"!\n            "}</DT>
-            </p>
-
-            <LoginProgress />
-          </div>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#2A2118]/60 px-4 backdrop-blur-md animate-in fade-in duration-300">
+          <LoginSuccessCard
+            go={loginBarGo}
+            durationMs={1500}
+            closeLabel="Close modal"
+            onClose={() => {
+              setShowLoginSuccess(false);
+              router.replace("/dashboard");
+            }}
+            title={<DT>{"Login Successful!"}</DT>}
+            subtitle={
+              <>
+                <DT>{"Welcome back,"}</DT> <strong>{userName ?? "User"}</strong>
+                <DT>{"!"}</DT>
+              </>
+            }
+          />
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import LoginSuccessCard from "@/app/_components/LoginSuccessCard";
 function LoginSuccessContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -45,44 +46,18 @@ function LoginSuccessContent() {
             window.clearTimeout(timer);
         };
     }, [nextPath, router]);
-    return (<main className="flex min-h-screen items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm font-sans">
-      <div role="dialog" aria-modal="true" aria-labelledby="login-success-title" className="relative w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl animate-in fade-in zoom-in-95 duration-300">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-          <CheckCircle2 size={26} strokeWidth={2} className="animate-in zoom-in-50 duration-500"/>
-        </div>
-
-        <h1 id="login-success-title" className="text-lg font-semibold text-slate-900"><T>{"Login Successful!\n        "}</T></h1>
-
-        <p className="mt-1 text-sm text-slate-500"><T>{"Welcome back!\n        "}</T></p>
-
-        <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-full origin-left rounded-full bg-[#2563EB] animate-[loginProgress_1.6s_linear_forwards]"/>
-        </div>
-
-        <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-medium text-slate-400">
-          <Loader2 size={12} className="animate-spin"/><T>{"Taking you to your dashboard...\n        "}</T></div>
-      </div>
-
-      <style jsx global>{`
-        @keyframes loginProgress {
-          from {
-            transform: scaleX(0);
-          }
-          to {
-            transform: scaleX(1);
-          }
-        }
-      `}</style>
+    const [go, setGo] = useState(false);
+    useEffect(() => {
+        const id = window.setTimeout(() => setGo(true), 30);
+        return () => window.clearTimeout(id);
+    }, []);
+    return (<main className="flex min-h-screen items-center justify-center bg-[#2A2118]/60 px-4 backdrop-blur-md font-sans">
+      <LoginSuccessCard go={go} durationMs={1600} title={<T>{"Login Successful!"}</T>} subtitle={<T>{"Welcome back!"}</T>} footer={<><Loader2 size={12} className="animate-spin"/><T>{"Taking you to your dashboard..."}</T></>}/>
     </main>);
 }
 export default function LoginSuccessPage() {
-    return (<Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm font-sans">
-          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-7 text-center shadow-xl">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              <CheckCircle2 size={26} strokeWidth={2}/>
-            </div>
-            <h1 className="text-lg font-semibold text-slate-900"><T>{"Login Successful!\n            "}</T></h1>
-          </div>
+    return (<Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-[#2A2118]/60 px-4 backdrop-blur-md font-sans">
+          <LoginSuccessCard go={false} title={<T>{"Login Successful!"}</T>} subtitle={<T>{"Welcome back!"}</T>}/>
         </main>}>
       <LoginSuccessContent />
     </Suspense>);

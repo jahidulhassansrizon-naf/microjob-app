@@ -11,6 +11,12 @@ const TAU_SECONDS = 1.6;
 // A client-side page change opens the next page directly, exactly as before. The loader
 // only appears if the page is really slow, i.e. still not ready after this long.
 const SHOW_DELAY_MS = 350;
+// Heavy pages (big editors) are known to need a moment: their loader starts almost at once.
+// "/login" is included so a signed-in user who clicks Login sees the loader at once (not the form).
+const HEAVY_PATHS = ["/ai-editor", "/login"];
+const HEAVY_SHOW_DELAY_MS = 90;
+// A page that is held while it prepares: its loader starts after this long unless it asks for sooner.
+const HOLD_SHOW_DELAY_MS = SHOW_DELAY_MS;
 // Once visible, the loader stays at least this long so 0% -> 100% is always seen.
 const MIN_VISIBLE_MS = 300;
 // Lets freshly rendered loading screens register their "hold" before we finish.
@@ -107,6 +113,7 @@ export default function NavigationProgressBar({
 
     let showTimer: ReturnType<typeof setTimeout> | null = null;
     let showDueAt = 0;
+    let holdShowAfter = HOLD_SHOW_DELAY_MS;
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
     let stuckTimer: ReturnType<typeof setTimeout> | null = null;
     let finishTimer: ReturnType<typeof setTimeout> | null = null;
@@ -178,6 +185,9 @@ export default function NavigationProgressBar({
       showTimer = clear(showTimer);
       showDueAt = 0;
       if (visible) return;
+      // The new page has just arrived and is being checked: do not flash the loader over it.
+      // (The settle step decides: finish silently, or show the loader if the page is still held.)
+      if (settleTimer !== null) return;
       visible = true;
       shownAt = performance.now();
       root.dataset.state = "running";
@@ -239,18 +249,24 @@ export default function NavigationProgressBar({
         if (phase !== "running") return;
         if (holds > 0) {
           finishRequested = true;
+          // The page arrived but is still preparing itself (draws nothing yet): cover the wait.
+          if (!visible && showTimer === null) {
+            showDueAt = performance.now() + holdShowAfter;
+            showTimer = setTimeout(showNow, holdShowAfter);
+          }
           return;
         }
         finish();
       }, SETTLE_DELAY_MS);
     };
 
-    const startProgress = (immediate: boolean) => {
+    const startProgress = (immediate: boolean, delayMs: number = SHOW_DELAY_MS) => {
       if (phase === "running") {
         if (immediate) showNow();
         return;
       }
       if (performance.now() < quietUntil) return;
+      holdShowAfter = HOLD_SHOW_DELAY_MS;
 
       clearAllTimers();
       stopLoop();
@@ -264,8 +280,8 @@ export default function NavigationProgressBar({
 
       if (immediate) showNow();
       else {
-        showDueAt = performance.now() + SHOW_DELAY_MS;
-        showTimer = setTimeout(showNow, SHOW_DELAY_MS);
+        showDueAt = performance.now() + delayMs;
+        showTimer = setTimeout(showNow, delayMs);
       }
 
       startLoop();
@@ -334,7 +350,10 @@ export default function NavigationProgressBar({
       // Same page (hash or query-only change): the page does not reload.
       if (destination.pathname === window.location.pathname) return;
 
-      startProgress(false);
+      const heavy = HEAVY_PATHS.some(
+        (path) => destination.pathname === path || destination.pathname.startsWith(`${path}/`),
+      );
+      startProgress(false, heavy ? HEAVY_SHOW_DELAY_MS : SHOW_DELAY_MS);
     };
 
     const handleProgressStart = () => startProgress(false);
@@ -345,10 +364,10 @@ export default function NavigationProgressBar({
       holds += 1;
       const requested = (event as CustomEvent<{ showAfterMs?: number } | undefined>).detail
         ?.showAfterMs;
+      if (typeof requested === "number") holdShowAfter = Math.min(holdShowAfter, requested);
       // Not shown at once: a loading screen that goes away quickly needs no loader.
-      // If it stays longer than SHOW_DELAY_MS the loader appears.
       if (phase !== "running") startedByHold = true;
-      startProgress(false);
+      startProgress(false, holdShowAfter);
       // A page that draws nothing while it waits asks for an earlier loader (never a later one).
       if (
         typeof requested === "number" &&

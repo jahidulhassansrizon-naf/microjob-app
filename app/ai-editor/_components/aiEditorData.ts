@@ -1,3 +1,5 @@
+import { CLOTHING_STYLES } from "./clothingStyles";
+
 /**
  * Client-side, in-memory cache for the AI Editor "Recent generations" list.
  * Works like the My Files cache: the navbar starts the request the moment the
@@ -157,6 +159,13 @@ export async function refreshAiEditorGenerations(): Promise<AiEditorGeneration[]
 /** Start loading before navigation (navbar hover / press / click). */
 export function prefetchAiEditorGenerations(force = false): void {
   if (typeof window === "undefined") return;
+  const connection = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  const slowNetwork =
+    connection?.saveData === true ||
+    connection?.effectiveType === "slow-2g" ||
+    connection?.effectiveType === "2g" ||
+    connection?.effectiveType === "3g";
+  if (!slowNetwork) void warmAiEditorStaticAssets();
   const identity = getAuthIdentity();
   const usable =
     cacheEntry && cacheEntry.identity === identity && cacheEntry.epoch === cacheEpoch ? cacheEntry : null;
@@ -164,4 +173,56 @@ export function prefetchAiEditorGenerations(force = false): void {
   if (force || !usable || Date.now() - usable.fetchedAt >= PREFETCH_REFRESH_AFTER_MS) {
     void refreshAiEditorGenerations().catch(() => undefined);
   }
+}
+
+// ---------------------------------------------------------------------------
+// First-paint readiness. The AI Editor page is only drawn once its above-the-fold pictures
+// (clothing icons + the first recent photos) are already in the browser cache, so the page
+// appears finished in one go instead of filling in piece by piece in front of the user.
+// Navbar hover/press warms them in advance, so on a normal click this is already done.
+// ---------------------------------------------------------------------------
+const CLOTHING_ICON_COUNT = CLOTHING_STYLES.length;
+const FIRST_FOLD_THUMBS = 8;
+let staticAssetsPromise: Promise<void> | null = null;
+let staticAssetsWarm = false;
+
+function preloadOne(src: string): Promise<void> {
+  return new Promise((resolve) => {
+    const image = new window.Image();
+    image.decoding = "async";
+    image.onload = () => resolve();
+    image.onerror = () => resolve();
+    image.src = src;
+  });
+}
+
+/** Clothing icons (static files): loaded once per tab, cached by the browser afterwards. */
+export function warmAiEditorStaticAssets(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (!staticAssetsPromise) {
+    const jobs: Promise<void>[] = [];
+    for (let i = 1; i <= CLOTHING_ICON_COUNT; i += 1) jobs.push(preloadOne(`/icons/clothing-${i}.svg`));
+    staticAssetsPromise = Promise.all(jobs).then(() => {
+      staticAssetsWarm = true;
+    });
+  }
+  return staticAssetsPromise;
+}
+
+export function isAiEditorStaticWarm(): boolean {
+  return staticAssetsWarm;
+}
+
+/**
+ * Resolves when the small static clothing icons are loaded, or after `maxMs` at the latest.
+ * The recent photos are NOT awaited: they load in the background and fade in by themselves.
+ */
+export function waitForAiEditorFirstFold(list: AiEditorGeneration[], maxMs = 900): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  // Start the first photos loading now (not awaited), so they are ready as soon as possible.
+  for (const item of list.slice(0, FIRST_FOLD_THUMBS)) {
+    if (item?.url) void preloadOne(getAiEditorThumbnailUrl(String(item.url)));
+  }
+  const cap = new Promise<void>((resolve) => window.setTimeout(resolve, maxMs));
+  return Promise.race([warmAiEditorStaticAssets(), cap]);
 }

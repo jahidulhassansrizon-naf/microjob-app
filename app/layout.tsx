@@ -72,6 +72,7 @@ export default async function RootLayout({
   const initialLocale: Locale = cookieLocale === "bn" ? "bn" : "en";
   const showLoginSuccess =
     cookieStore.get("sohoj_login_success")?.value === "1";
+  const hasSessionCookie = Boolean(cookieStore.get("token")?.value);
   const rawLoginName = cookieStore.get("sohoj_login_name")?.value ?? "";
   let loginFirstName = rawLoginName;
   try {
@@ -96,7 +97,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         {/* First element in <body>: the full-screen loader is part of the very first paint. */}
-        <ConditionalSiteChrome>
+        <ConditionalSiteChrome showOnLoginWhenSignedIn={hasSessionCookie}>
           <NavigationProgressBar suppressInitial={showLoginSuccess} />
         </ConditionalSiteChrome>
         <SiteSettingsProvider initialSettings={initialSiteSettings}>

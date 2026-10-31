@@ -1,0 +1,37 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+/**
+ * Shown instead of the sign-in form when the visitor is already signed in.
+ * It paints the same cream colour as the site's page loader (never white, never the form),
+ * asks the loader to appear immediately and stay up, and opens the destination.
+ * The hold is released automatically when the destination page replaces this one.
+ */
+export default function SessionRedirect({ to }: { to: string }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("navigation-progress:hold", { detail: { showAfterMs: 0 } }),
+    );
+    // Safety net: never keep the loader forever if the navigation fails.
+    const safety = window.setTimeout(
+      () => window.dispatchEvent(new Event("navigation-progress:release")),
+      15000,
+    );
+    router.replace(to);
+    return () => {
+      window.clearTimeout(safety);
+      window.dispatchEvent(new Event("navigation-progress:release"));
+    };
+  }, [router, to]);
+
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 bg-gradient-to-b from-[#F2E8D2] to-[#EFE5CE]"
+    />
+  );
+}

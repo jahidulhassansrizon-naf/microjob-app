@@ -1204,10 +1204,38 @@ export default function DashboardNavbar({
   /* Actions                                                            */
   /* ------------------------------------------------------------------ */
   // Warm the AI Editor recent images in the background, so the page opens with them already there.
+  const warmRouter = useRouter();
   useEffect(() => {
-    const timer = window.setTimeout(() => prefetchAiEditorGenerations(), 1500);
-    return () => window.clearTimeout(timer);
-  }, []);
+    let idleHandle = 0;
+    const timer = window.setTimeout(() => {
+      // Light-weight warm-up only (files are downloaded and cached, nothing is run or drawn):
+      // the AI Editor page code + its recent photos, so the first click opens it at once.
+      // Skipped on slow networks and when the browser's data saver is on.
+      const connection = (navigator as unknown as {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }).connection;
+      const slow =
+        connection?.saveData === true ||
+        connection?.effectiveType === "slow-2g" ||
+        connection?.effectiveType === "2g" ||
+        connection?.effectiveType === "3g";
+      const warm = () => {
+        if (!slow) warmRouter.prefetch("/ai-editor");
+        prefetchAiEditorGenerations();
+      };
+      const idle = (window as unknown as {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }).requestIdleCallback;
+      if (idle) idleHandle = idle(warm, { timeout: 4000 });
+      else warm();
+    }, 1500);
+    return () => {
+      window.clearTimeout(timer);
+      const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void })
+        .cancelIdleCallback;
+      if (idleHandle && cancel) cancel(idleHandle);
+    };
+  }, [warmRouter]);
   const handleLogout = () => {
     clearMyFilesDataCache();
     clearAiEditorGenerationsCache();

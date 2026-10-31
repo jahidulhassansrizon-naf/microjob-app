@@ -20,7 +20,7 @@ import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
-import { AiEditorFetchError, getCachedAiEditorGenerations, refreshAiEditorGenerations, setCachedAiEditorGenerations } from "./_components/aiEditorData";
+import { AiEditorFetchError, getCachedAiEditorGenerations, isAiEditorStaticWarm, refreshAiEditorGenerations, setCachedAiEditorGenerations, waitForAiEditorFirstFold } from "./_components/aiEditorData";
 // Heavy parts (print studio + PDF, photo preview editor, crop tool) load in the background, so the
 // AI Editor page itself opens much faster after a click.
 const AiPrintStudioModal = dynamic(() => import("./_components/AiPrintStudioModal"), { ssr: false, loading: () => null });
@@ -82,15 +82,68 @@ export default function PhotoEditorPage() {
     // drawn at all (no half-built page "floating" for a moment). The full-screen loader covers the
     // wait only if it is really needed, and the finished page then appears in one go.
     // This flag only ever goes false -> true, so later refreshes never blank an open page.
-    const [firstLoadDone, setFirstLoadDone] = useState(openedWithCache);
-    usePageLoaderHold(!firstLoadDone, 8000, 120);
+    const [firstLoadDone, setFirstLoadDone] = useState(() => openedWithCache && isAiEditorStaticWarm());
+    // The page is drawn first (hidden under the loader), and only AFTER it has really been painted
+    // the loader is told to finish. So the heavy drawing work never happens while the loader is
+    // running its last steps: the loader finishes smoothly and the finished page is revealed.
+    const [pageSettled, setPageSettled] = useState(firstLoadDone);
+    usePageLoaderHold(!pageSettled, 8000, 120);
+    // Data is in: wait only very briefly for the small clothing icons. Photos that are not ready
+    // simply fade in afterwards, in the background.
     useEffect(() => {
-        if (firstLoadDone)
+        if (firstLoadDone || isFetching)
+            return;
+        let cancelled = false;
+        void waitForAiEditorFirstFold(recentList, 900).then(() => {
+            if (!cancelled)
+                setFirstLoadDone(true);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [firstLoadDone, isFetching, recentList]);
+    useEffect(() => {
+        if (!firstLoadDone || pageSettled)
+            return;
+        let inner = 0;
+        const outer = window.requestAnimationFrame(() => {
+            inner = window.requestAnimationFrame(() => setPageSettled(true));
+        });
+        return () => {
+            window.cancelAnimationFrame(outer);
+            if (inner)
+                window.cancelAnimationFrame(inner);
+        };
+    }, [firstLoadDone, pageSettled]);
+    // Page is open and painted: in free time, fetch the code of the heavy tools (print studio,
+    // preview editor, crop) so they open instantly when first used. Never delays the page itself.
+    useEffect(() => {
+        if (!pageSettled)
+            return;
+        const idle = (window as any).requestIdleCallback as ((cb: () => void, opts?: { timeout: number }) => number) | undefined;
+        const run = () => {
+            void import("./_components/ImagePreviewModal");
+            void import("./_components/CropStage");
+            void import("./_components/AiPrintStudioModal");
+        };
+        const handle = idle ? idle(run, { timeout: 6000 }) : window.setTimeout(run, 2500);
+        return () => {
+            if (idle)
+                (window as any).cancelIdleCallback?.(handle);
+            else
+                window.clearTimeout(handle);
+        };
+    }, [pageSettled]);
+    useEffect(() => {
+        if (pageSettled)
             return;
         // Safety net: never keep the page hidden for longer than this.
-        const timer = window.setTimeout(() => setFirstLoadDone(true), 8000);
+        const timer = window.setTimeout(() => {
+            setFirstLoadDone(true);
+            setPageSettled(true);
+        }, 8000);
         return () => window.clearTimeout(timer);
-    }, [firstLoadDone]);
+    }, [pageSettled]);
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
     const [showCropModal, setShowCropModal] = useState(false);
     const [isCropping, setIsCropping] = useState(false);
@@ -155,7 +208,6 @@ export default function PhotoEditorPage() {
         }
         finally {
             setIsFetching(false);
-            setFirstLoadDone(true);
         }
     };
     useEffect(() => {
