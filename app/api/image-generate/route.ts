@@ -8,16 +8,51 @@ import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
-// Gemini can take a while, and the Render Free service may need ~1 minute to wake up.
+// Gemini can take a while, and the image server may have a line of requests.
 export const maxDuration = 300;
 
 // Set these in .env.local (and in Vercel -> Settings -> Environment Variables):
-//   GEMINI_RENDER_URL=https://microjob-playwright.onrender.com
-//   GEMINI_RENDER_KEY=<same value as ASK_KEY on Render>   (only if you set ASK_KEY there)
+//   GEMINI_RENDER_URL=<public URL of the Gemini image server (playwright-service)>
+//   GEMINI_RENDER_KEY=<same value as ASK_KEY on that server>   (only if you set ASK_KEY there)
 const RENDER_URL = (process.env.GEMINI_RENDER_URL || "").replace(/\/+$/, "");
 const RENDER_KEY = process.env.GEMINI_RENDER_KEY || "";
 
-const REQUEST_TIMEOUT_MS = 330_000;
+// Kept a little below maxDuration so we can answer with a clean error
+// before the platform kills the function.
+const REQUEST_TIMEOUT_MS = 290_000;
+
+// Error that carries the HTTP status we want to answer with.
+class ServiceError extends Error {
+  status: number;
+  retryAfter: number;
+
+  constructor(message: string, status = 500, retryAfter = 0) {
+    super(message);
+    this.name = "ServiceError";
+    this.status = status;
+    this.retryAfter = retryAfter;
+  }
+}
+
+// One signal that aborts when ANY of the given signals aborts.
+function combineSignals(...signals: Array<AbortSignal | undefined>): AbortSignal {
+  const controller = new AbortController();
+
+  for (const signal of signals) {
+    if (!signal) continue;
+
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      break;
+    }
+
+    signal.addEventListener("abort", () => controller.abort(signal.reason), {
+      once: true,
+    });
+  }
+
+  return controller.signal;
+}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -176,6 +211,7 @@ async function callRenderService(
   filename: string,
   prompt: string,
   secondImage?: { blob: Blob; filename: string } | null,
+  clientSignal?: AbortSignal,
 ): Promise<string> {
   if (!RENDER_URL) {
     throw new Error("GEMINI_RENDER_URL is not set on the website server.");
@@ -197,14 +233,40 @@ async function callRenderService(
 
   const endpoint = secondImage ? "/edit-image-dual" : "/edit-image";
 
-  const response = await fetch(`${RENDER_URL}${endpoint}`, {
-    method: "POST",
-    headers,
-    body,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
+  // The signal also fires when the visitor closes the page. The image server
+  // then cancels that job right away instead of finishing an image nobody
+  // is waiting for, which frees its slot for the next person.
+  const signal = combineSignals(
+    AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    clientSignal,
+  );
 
-  const rawText = await response.text();
+  let response: Response;
+  let rawText: string;
+
+  try {
+    response = await fetch(`${RENDER_URL}${endpoint}`, {
+      method: "POST",
+      headers,
+      body,
+      signal,
+    });
+
+    rawText = await response.text();
+  } catch (error) {
+    if (clientSignal?.aborted) {
+      throw new ServiceError("Request was cancelled.", 499);
+    }
+
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new ServiceError(
+        "Image generation took too long. Please try again.",
+        504,
+      );
+    }
+
+    throw error;
+  }
 
   let data: { success?: boolean; image?: string; error?: string } | null = null;
 
@@ -217,9 +279,17 @@ async function callRenderService(
   if (!response.ok || !data?.success || !data.image) {
     const detail =
       data?.error ||
-      `Render service returned ${response.status}. ${rawText.slice(0, 200)}`;
+      `Image service returned ${response.status}. ${rawText.slice(0, 200)}`;
 
-    throw new Error(detail);
+    // 503 / 504 from the image server mean "busy" or "took too long".
+    // Keep that status so the website can show a friendly retry message.
+    const retryAfter = Number(response.headers.get("retry-after")) || 0;
+    const status =
+      response.status === 503 || response.status === 504
+        ? response.status
+        : 500;
+
+    throw new ServiceError(detail, status, retryAfter);
   }
 
   return data.image;
@@ -323,13 +393,15 @@ export async function POST(req: Request) {
       ? await getSourceImage(formData, userId, "image2", "imageUrl2")
       : null;
 
-    // Let each authenticated request reach the render service immediately.
-    // Concurrency is handled by isolated browser contexts in that service.
+    // Let each authenticated request reach the image service immediately.
+    // That service gives every request its own isolated browser context and
+    // keeps a fair line when many people generate at the same time.
     const image = await callRenderService(
       source.blob,
       source.filename,
       prompt,
       secondSource,
+      req.signal,
     );
 
     return NextResponse.json({
@@ -338,14 +410,30 @@ export async function POST(req: Request) {
       image,
     });
   } catch (error) {
+    const status = error instanceof ServiceError ? error.status : 500;
+
+    if (status === 499) {
+      // The visitor left; nobody is waiting for a response.
+      return NextResponse.json(
+        { success: false, error: "Request was cancelled." },
+        { status: 499 },
+      );
+    }
+
     console.error("Gemini image-generation route error:", error);
+
+    const headers: Record<string, string> = {};
+
+    if (error instanceof ServiceError && error.retryAfter) {
+      headers["Retry-After"] = String(error.retryAfter);
+    }
 
     return NextResponse.json(
       {
         success: false,
         error: getErrorMessage(error),
       },
-      { status: 500 },
+      { status, headers },
     );
   }
 }

@@ -408,11 +408,305 @@ function getExtension(mimeType) {
   return ".png";
 }
 
-// Reuse one Chromium process while giving every generation its own isolated
-// browser context. This avoids serializing unrelated users and is substantially
-// lighter than starting a new Chromium process for every request.
+// --------------------------------------------------
+// Concurrency settings
+//
+// All of these can be changed from environment variables (for example
+// in the GitHub Actions workflow) without touching the code.
+//
+//   MAX_CONCURRENT_GENERATIONS  how many Gemini jobs run at the same time
+//   MAX_QUEUE_LENGTH            how many more may wait in line
+//   QUEUE_WAIT_TIMEOUT_MS       longest a request may wait in line
+//   GENERATION_TIMEOUT_MS       longest a single job may run
+//   BROWSER_RECYCLE_AFTER_JOBS  restart the shared Chromium after N jobs
+//                               (only while idle) to avoid slow memory growth
+// --------------------------------------------------
+
+function readIntEnv(name, fallback, min, max) {
+  const parsed = Number.parseInt(process.env[name] || "", 10);
+
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, parsed));
+}
+
+const MAX_CONCURRENT_GENERATIONS = readIntEnv(
+  "MAX_CONCURRENT_GENERATIONS",
+  15,
+  1,
+  50,
+);
+const MAX_QUEUE_LENGTH = readIntEnv("MAX_QUEUE_LENGTH", 100, 0, 1000);
+const QUEUE_WAIT_TIMEOUT_MS = readIntEnv(
+  "QUEUE_WAIT_TIMEOUT_MS",
+  200_000,
+  5_000,
+  600_000,
+);
+const GENERATION_TIMEOUT_MS = readIntEnv(
+  "GENERATION_TIMEOUT_MS",
+  270_000,
+  30_000,
+  900_000,
+);
+const BROWSER_RECYCLE_AFTER_JOBS = readIntEnv(
+  "BROWSER_RECYCLE_AFTER_JOBS",
+  60,
+  5,
+  100_000,
+);
+
+// Temp folders created by this server (see withTempDir). Anything older than
+// this is a leftover from a crash and is removed by the sweeper.
+const TEMP_DIR_PREFIXES = [
+  "gemini-edit-",
+  "gemini-template-edit-",
+  "gemini-dual-edit-",
+];
+const TEMP_DIR_MAX_AGE_MS = 30 * 60 * 1000;
+const TEMP_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+
+// --------------------------------------------------
+// Errors
+// --------------------------------------------------
+
+class HttpError extends Error {
+  constructor(message, statusCode = 500, extra = {}) {
+    super(message);
+    this.name = "HttpError";
+    this.statusCode = statusCode;
+    this.retryAfter = extra.retryAfter || 0;
+  }
+}
+
+function makeClientClosedError() {
+  return new HttpError("Request was cancelled by the client.", 499);
+}
+
+function abortReason(signal) {
+  return signal && signal.reason instanceof Error
+    ? signal.reason
+    : makeClientClosedError();
+}
+
+function throwIfAborted(signal) {
+  if (signal && signal.aborted) {
+    throw abortReason(signal);
+  }
+}
+
+// --------------------------------------------------
+// Job queue (counting semaphore with a bounded waiting line)
+//
+// Every generation takes one slot. When all slots are busy, new requests
+// wait in line (up to MAX_QUEUE_LENGTH). If the line is full, or a request
+// waits too long, it gets a clear 503 instead of hanging forever.
+// A request whose client disconnects leaves the line immediately.
+// --------------------------------------------------
+
+let activeJobs = 0;
+const waitingJobs = [];
+
+function removeWaiter(waiter) {
+  const index = waitingJobs.indexOf(waiter);
+
+  if (index !== -1) {
+    waitingJobs.splice(index, 1);
+  }
+
+  clearTimeout(waiter.timer);
+  waiter.signal.removeEventListener("abort", waiter.onAbort);
+}
+
+function acquireSlot(signal) {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      return reject(abortReason(signal));
+    }
+
+    if (activeJobs < MAX_CONCURRENT_GENERATIONS) {
+      activeJobs += 1;
+      return resolve();
+    }
+
+    if (waitingJobs.length >= MAX_QUEUE_LENGTH) {
+      return reject(
+        new HttpError(
+          "The image server is busy right now. Please try again in a moment.",
+          503,
+          { retryAfter: 15 },
+        ),
+      );
+    }
+
+    const waiter = { signal, resolve, timer: null, onAbort: null };
+
+    waiter.timer = setTimeout(() => {
+      removeWaiter(waiter);
+      reject(
+        new HttpError(
+          "Too many people are generating images right now. Please try again in a moment.",
+          503,
+          { retryAfter: 15 },
+        ),
+      );
+    }, QUEUE_WAIT_TIMEOUT_MS);
+
+    waiter.onAbort = () => {
+      removeWaiter(waiter);
+      reject(abortReason(signal));
+    };
+
+    signal.addEventListener("abort", waiter.onAbort, { once: true });
+
+    waitingJobs.push(waiter);
+  });
+}
+
+function releaseSlot() {
+  const next = waitingJobs.shift();
+
+  if (next) {
+    // Hand the slot straight to the next person in line.
+    clearTimeout(next.timer);
+    next.signal.removeEventListener("abort", next.onAbort);
+    next.resolve();
+    return;
+  }
+
+  activeJobs = Math.max(0, activeJobs - 1);
+
+  if (activeJobs === 0) {
+    recycleBrowserIfIdle().catch(() => {});
+  }
+}
+
+// Runs `work(signal)` inside a slot. The signal is aborted when:
+//   - the client disconnects (browser closed, route.ts timed out, ...), or
+//   - the job runs longer than GENERATION_TIMEOUT_MS.
+// Aborting closes that job's browser context, so it never keeps working in
+// the background or blocks a slot for people waiting behind it.
+async function runGenerationJob(res, work) {
+  const controller = new AbortController();
+
+  const onClientClose = () => {
+    if (!res.writableEnded && !controller.signal.aborted) {
+      controller.abort(makeClientClosedError());
+    }
+  };
+
+  res.on("close", onClientClose);
+
+  let acquired = false;
+  let timer = null;
+
+  try {
+    await acquireSlot(controller.signal);
+    acquired = true;
+
+    timer = setTimeout(() => {
+      controller.abort(
+        new HttpError(
+          "Image generation took too long. Please try again.",
+          504,
+        ),
+      );
+    }, GENERATION_TIMEOUT_MS);
+
+    throwIfAborted(controller.signal);
+
+    return await work(controller.signal);
+  } finally {
+    clearTimeout(timer);
+    res.off("close", onClientClose);
+
+    if (acquired) {
+      releaseSlot();
+    }
+  }
+}
+
+function sendGenerationError(res, error, label) {
+  const statusCode =
+    error && typeof error.statusCode === "number" ? error.statusCode : 500;
+
+  if (statusCode === 499) {
+    console.log(`${label}: client disconnected, job cancelled.`);
+  } else {
+    console.error(`${label} error:`, error);
+  }
+
+  if (res.headersSent || res.writableEnded || res.destroyed) {
+    return;
+  }
+
+  if (error && error.retryAfter) {
+    res.set("Retry-After", String(error.retryAfter));
+  }
+
+  return res.status(statusCode).json({
+    success: false,
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
+
+// --------------------------------------------------
+// Temp folders
+// --------------------------------------------------
+
+async function withTempDir(prefix, work) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+
+  try {
+    return await work(dir);
+  } finally {
+    await fs
+      .rm(dir, {
+        recursive: true,
+        force: true,
+      })
+      .catch(() => {});
+  }
+}
+
+async function sweepStaleTempDirs() {
+  const root = os.tmpdir();
+  const entries = await fs.readdir(root).catch(() => []);
+  const now = Date.now();
+
+  for (const name of entries) {
+    if (!TEMP_DIR_PREFIXES.some((prefix) => name.startsWith(prefix))) {
+      continue;
+    }
+
+    const fullPath = path.join(root, name);
+
+    try {
+      const stat = await fs.stat(fullPath);
+
+      if (now - stat.mtimeMs > TEMP_DIR_MAX_AGE_MS) {
+        await fs.rm(fullPath, { recursive: true, force: true });
+        console.log(`Removed stale temp folder: ${name}`);
+      }
+    } catch {
+      // Already gone or not accessible. Nothing to do.
+    }
+  }
+}
+
+// --------------------------------------------------
+// Shared Chromium for generation
+//
+// One Chromium process, one isolated browser context per generation.
+// This avoids serializing unrelated users and is much lighter than
+// starting a new Chromium process for every request.
+// --------------------------------------------------
+
 let generationBrowser = null;
 let generationBrowserPromise = null;
+let jobsOnCurrentBrowser = 0;
 
 async function getGenerationBrowser() {
   if (generationBrowser && generationBrowser.isConnected()) {
@@ -431,6 +725,7 @@ async function getGenerationBrowser() {
       })
       .then((browser) => {
         generationBrowser = browser;
+        jobsOnCurrentBrowser = 0;
         browser.on("disconnected", () => {
           if (generationBrowser === browser) {
             generationBrowser = null;
@@ -446,27 +741,80 @@ async function getGenerationBrowser() {
   return generationBrowserPromise;
 }
 
+// Restart the shared Chromium after many jobs, but only while nobody is
+// generating, so no one's image is ever interrupted.
+async function recycleBrowserIfIdle() {
+  if (
+    activeJobs !== 0 ||
+    waitingJobs.length !== 0 ||
+    !generationBrowser ||
+    jobsOnCurrentBrowser < BROWSER_RECYCLE_AFTER_JOBS
+  ) {
+    return;
+  }
+
+  const browser = generationBrowser;
+  generationBrowser = null;
+  jobsOnCurrentBrowser = 0;
+
+  console.log("Recycling shared Chromium (idle, many jobs served).");
+
+  await browser.close().catch(() => {});
+}
+
 // --------------------------------------------------
-// Existing AI Editor Gemini generation
+// Gemini generation (shared by all three endpoints)
 // --------------------------------------------------
 
-async function generateWithGemini(imagePath, prompt, outputDir) {
+async function runGeminiGeneration({
+  imagePaths,
+  prompt,
+  outputDir,
+  settleMs,
+  defaultFilename,
+  signal,
+}) {
   const sessionFile = findSessionFile();
 
   if (!sessionFile) {
     throw new Error("Session file not found on server.");
   }
 
+  throwIfAborted(signal);
+
   let context = null;
   let page = null;
+  let onAbort = null;
 
   try {
     const browser = await getGenerationBrowser();
+
     context = await browser.newContext({
       storageState: sessionFile,
-      viewport: { width: 1440, height: 900 },
+      viewport: {
+        width: 1440,
+        height: 900,
+      },
       acceptDownloads: true,
     });
+
+    jobsOnCurrentBrowser += 1;
+
+    // If the job is cancelled, closing the context makes every pending
+    // Playwright call below fail right away.
+    if (signal) {
+      const activeContext = context;
+
+      onAbort = () => {
+        activeContext.close().catch(() => {});
+      };
+
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener("abort", onAbort, { once: true });
+      }
+    }
 
     page = await context.newPage();
 
@@ -507,7 +855,8 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
 
     await uploadToolsButton.click();
 
-    // 4. Click the local uploader and attach the image
+    // 4. Click the local uploader and attach the image(s).
+    //    With two images the order is kept: first file, then second file.
     const uploaderButton = page.locator(
       '[data-test-id="local-images-files-uploader-button"]',
     );
@@ -516,6 +865,8 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
       state: "visible",
       timeout: 15000,
     });
+
+    const filesToUpload = imagePaths.length === 1 ? imagePaths[0] : imagePaths;
 
     const chooserPromise = page
       .waitForEvent("filechooser", {
@@ -528,7 +879,7 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
     const fileChooser = await chooserPromise;
 
     if (fileChooser) {
-      await fileChooser.setFiles(imagePath);
+      await fileChooser.setFiles(filesToUpload);
     } else {
       const fileInput = page.locator('input[name="Filedata"]');
 
@@ -537,11 +888,11 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
         timeout: 15000,
       });
 
-      await fileInput.setInputFiles(imagePath);
+      await fileInput.setInputFiles(filesToUpload);
     }
 
-    // Give Gemini a moment to attach the image
-    await page.waitForTimeout(3000);
+    // Give Gemini a moment to attach the image(s)
+    await page.waitForTimeout(settleMs);
 
     // 5. Send
     const sendButton = page.getByRole("button", {
@@ -576,8 +927,7 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
 
     const download = await downloadPromise;
 
-    const suggestedFilename =
-      download.suggestedFilename() || "gemini-generated-image.png";
+    const suggestedFilename = download.suggestedFilename() || defaultFilename;
 
     const extension = path.extname(suggestedFilename) || ".png";
 
@@ -596,6 +946,11 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
       mimeType: getMimeType(extension),
     };
   } catch (error) {
+    // A cancelled job (client left / timeout) is not a Gemini failure.
+    if (signal && signal.aborted) {
+      throw abortReason(signal);
+    }
+
     const message = error instanceof Error ? error.message : String(error);
 
     let pageInfo = "";
@@ -614,6 +969,10 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
 
     throw new Error(`${message}${pageInfo}`);
   } finally {
+    if (signal && onAbort) {
+      signal.removeEventListener("abort", onAbort);
+    }
+
     if (context) {
       await context.close().catch(() => {});
     }
@@ -621,190 +980,39 @@ async function generateWithGemini(imagePath, prompt, outputDir) {
 }
 
 // --------------------------------------------------
-// NEW AI Template Gemini generation
+// Existing AI Editor Gemini generation (one image)
 // --------------------------------------------------
 
-async function generateTemplateWithGemini(
+function generateWithGemini(imagePath, prompt, outputDir, signal) {
+  return runGeminiGeneration({
+    imagePaths: [imagePath],
+    prompt,
+    outputDir,
+    settleMs: 3000,
+    defaultFilename: "gemini-generated-image.png",
+    signal,
+  });
+}
+
+// --------------------------------------------------
+// AI Template / Dual Gemini generation (two images, in order)
+// --------------------------------------------------
+
+function generateTemplateWithGemini(
   templateImagePath,
   userImagePath,
   prompt,
   outputDir,
+  signal,
 ) {
-  const sessionFile = findSessionFile();
-
-  if (!sessionFile) {
-    throw new Error("Session file not found on server.");
-  }
-
-  let context = null;
-  let page = null;
-
-  try {
-    const browser = await getGenerationBrowser();
-    context = await browser.newContext({
-      storageState: sessionFile,
-      viewport: {
-        width: 1440,
-        height: 900,
-      },
-      acceptDownloads: true,
-    });
-
-    page = await context.newPage();
-
-    // 1. Open Gemini
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    // 2. Type the template prompt
-    const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
-
-    await promptWrapper.waitFor({
-      state: "visible",
-      timeout: 45000,
-    });
-
-    const promptParagraph = promptWrapper.getByRole("paragraph").first();
-
-    await promptParagraph.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    await promptParagraph.click();
-
-    await page.keyboard.insertText(String(prompt).trim());
-
-    // 3. Open Upload & tools
-    const uploadToolsButton = page.getByRole("button", {
-      name: "Upload & tools",
-    });
-
-    await uploadToolsButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    await uploadToolsButton.click();
-
-    // 4. Attach BOTH images.
-    //
-    // First image  = template/reference
-    // Second image = user's own photo
-    const uploaderButton = page.locator(
-      '[data-test-id="local-images-files-uploader-button"]',
-    );
-
-    await uploaderButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    const filesToUpload = [templateImagePath, userImagePath];
-
-    const chooserPromise = page
-      .waitForEvent("filechooser", {
-        timeout: 5000,
-      })
-      .catch(() => null);
-
-    await uploaderButton.click();
-
-    const fileChooser = await chooserPromise;
-
-    if (fileChooser) {
-      await fileChooser.setFiles(filesToUpload);
-    } else {
-      const fileInput = page.locator('input[name="Filedata"]');
-
-      await fileInput.waitFor({
-        state: "attached",
-        timeout: 15000,
-      });
-
-      await fileInput.setInputFiles(filesToUpload);
-    }
-
-    // Give Gemini time to attach both images.
-    await page.waitForTimeout(4000);
-
-    // 5. Send
-    const sendButton = page.getByRole("button", {
-      name: "Send message",
-    });
-
-    await sendButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    await sendButton.click();
-
-    // 6. Wait for generated image
-    const downloadButton = page
-      .getByRole("button", {
-        name: "Download full size image",
-      })
-      .last();
-
-    await downloadButton.waitFor({
-      state: "visible",
-      timeout: 180000,
-    });
-
-    // 7. Download generated image
-    const downloadPromise = page.waitForEvent("download", {
-      timeout: 120000,
-    });
-
-    await downloadButton.click();
-
-    const download = await downloadPromise;
-
-    const suggestedFilename =
-      download.suggestedFilename() || "gemini-template-generated-image.png";
-
-    const extension = path.extname(suggestedFilename) || ".png";
-
-    const outputPath = path.join(outputDir, `generated${extension}`);
-
-    await download.saveAs(outputPath);
-
-    const buffer = await fs.readFile(outputPath);
-
-    if (!buffer.length) {
-      throw new Error("Gemini returned an empty image.");
-    }
-
-    return {
-      buffer,
-      mimeType: getMimeType(extension),
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    let pageInfo = "";
-
-    if (page) {
-      try {
-        const bodyText = await page.locator("body").innerText({
-          timeout: 3000,
-        });
-
-        pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
-      } catch {
-        pageInfo = ` [page: ${page.url()}]`;
-      }
-    }
-
-    throw new Error(`${message}${pageInfo}`);
-  } finally {
-    if (context) {
-      await context.close().catch(() => {});
-    }
-  }
+  return runGeminiGeneration({
+    imagePaths: [templateImagePath, userImagePath],
+    prompt,
+    outputDir,
+    settleMs: 4000,
+    defaultFilename: "gemini-template-generated-image.png",
+    signal,
+  });
 }
 
 // --------------------------------------------------
@@ -815,6 +1023,12 @@ app.get("/health", (req, res) => {
   res.json({
     success: true,
     status: "healthy",
+    generation: {
+      active: activeJobs,
+      waiting: waitingJobs.length,
+      maxConcurrent: MAX_CONCURRENT_GENERATIONS,
+      maxQueue: MAX_QUEUE_LENGTH,
+    },
   });
 });
 
@@ -972,19 +1186,21 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
     });
   }
 
-  let tempDir = null;
+  const file = req.file;
 
   try {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-edit-"));
+    const result = await runGenerationJob(res, (signal) =>
+      withTempDir("gemini-edit-", async (tempDir) => {
+        const sourcePath = path.join(
+          tempDir,
+          `source${getExtension(file.mimetype)}`,
+        );
 
-    const sourcePath = path.join(
-      tempDir,
-      `source${getExtension(req.file.mimetype)}`,
+        await fs.writeFile(sourcePath, file.buffer);
+
+        return generateWithGemini(sourcePath, prompt, tempDir, signal);
+      }),
     );
-
-    await fs.writeFile(sourcePath, req.file.buffer);
-
-    const result = await generateWithGemini(sourcePath, prompt, tempDir);
 
     return res.json({
       success: true,
@@ -992,21 +1208,7 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
       image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
     });
   } catch (error) {
-    console.error("edit-image error:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  } finally {
-    if (tempDir) {
-      await fs
-        .rm(tempDir, {
-          recursive: true,
-          force: true,
-        })
-        .catch(() => {});
-    }
+    return sendGenerationError(res, error, "edit-image");
   }
 });
 
@@ -1077,32 +1279,31 @@ app.post(
       });
     }
 
-    let tempDir = null;
-
     try {
-      tempDir = await fs.mkdtemp(
-        path.join(os.tmpdir(), "gemini-template-edit-"),
-      );
+      const result = await runGenerationJob(res, (signal) =>
+        withTempDir("gemini-template-edit-", async (tempDir) => {
+          const templatePath = path.join(
+            tempDir,
+            `template${getExtension(templateFile.mimetype)}`,
+          );
 
-      const templatePath = path.join(
-        tempDir,
-        `template${getExtension(templateFile.mimetype)}`,
-      );
+          const userPath = path.join(
+            tempDir,
+            `user${getExtension(userFile.mimetype)}`,
+          );
 
-      const userPath = path.join(
-        tempDir,
-        `user${getExtension(userFile.mimetype)}`,
-      );
+          await fs.writeFile(templatePath, templateFile.buffer);
 
-      await fs.writeFile(templatePath, templateFile.buffer);
+          await fs.writeFile(userPath, userFile.buffer);
 
-      await fs.writeFile(userPath, userFile.buffer);
-
-      const result = await generateTemplateWithGemini(
-        templatePath,
-        userPath,
-        prompt,
-        tempDir,
+          return generateTemplateWithGemini(
+            templatePath,
+            userPath,
+            prompt,
+            tempDir,
+            signal,
+          );
+        }),
       );
 
       return res.json({
@@ -1111,30 +1312,16 @@ app.post(
         image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
       });
     } catch (error) {
-      console.error("template-edit error:", error);
-
-      return res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      if (tempDir) {
-        await fs
-          .rm(tempDir, {
-            recursive: true,
-            force: true,
-          })
-          .catch(() => {});
-      }
+      return sendGenerationError(res, error, "template-edit");
     }
   },
 );
 
 // --------------------------------------------------
 // NEW AI Editor DUAL endpoint (two photos -> ONE group photo)
-// Existing endpoints above are untouched. This reuses the generic
-// two-image Gemini uploader (generateTemplateWithGemini), which just
-// attaches the two files in order and sends the prompt.
+// This reuses the generic two-image Gemini uploader
+// (generateTemplateWithGemini), which just attaches the two files in
+// order and sends the prompt.
 // --------------------------------------------------
 
 app.post(
@@ -1180,29 +1367,30 @@ app.post(
       });
     }
 
-    let tempDir = null;
-
     try {
-      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-dual-edit-"));
+      const result = await runGenerationJob(res, (signal) =>
+        withTempDir("gemini-dual-edit-", async (tempDir) => {
+          // File names keep the upload order: person 1 first, person 2 second.
+          const leftPath = path.join(
+            tempDir,
+            `person-1-left${getExtension(leftFile.mimetype)}`,
+          );
+          const rightPath = path.join(
+            tempDir,
+            `person-2-right${getExtension(rightFile.mimetype)}`,
+          );
 
-      // File names keep the upload order: person 1 first, person 2 second.
-      const leftPath = path.join(
-        tempDir,
-        `person-1-left${getExtension(leftFile.mimetype)}`,
-      );
-      const rightPath = path.join(
-        tempDir,
-        `person-2-right${getExtension(rightFile.mimetype)}`,
-      );
+          await fs.writeFile(leftPath, leftFile.buffer);
+          await fs.writeFile(rightPath, rightFile.buffer);
 
-      await fs.writeFile(leftPath, leftFile.buffer);
-      await fs.writeFile(rightPath, rightFile.buffer);
-
-      const result = await generateTemplateWithGemini(
-        leftPath,
-        rightPath,
-        prompt,
-        tempDir,
+          return generateTemplateWithGemini(
+            leftPath,
+            rightPath,
+            prompt,
+            tempDir,
+            signal,
+          );
+        }),
       );
 
       return res.json({
@@ -1211,21 +1399,7 @@ app.post(
         image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
       });
     } catch (error) {
-      console.error("edit-image-dual error:", error);
-
-      return res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      if (tempDir) {
-        await fs
-          .rm(tempDir, {
-            recursive: true,
-            force: true,
-          })
-          .catch(() => {});
-      }
+      return sendGenerationError(res, error, "edit-image-dual");
     }
   },
 );
@@ -1236,6 +1410,15 @@ app.post(
 
 const server = app.listen(PORT, "127.0.0.1", async () => {
   console.log(`Node API running on internal port ${PORT}`);
+  console.log(
+    `Generation limits: ${MAX_CONCURRENT_GENERATIONS} at once, ${MAX_QUEUE_LENGTH} waiting.`,
+  );
+
+  sweepStaleTempDirs().catch(() => {});
+
+  setInterval(() => {
+    sweepStaleTempDirs().catch(() => {});
+  }, TEMP_SWEEP_INTERVAL_MS).unref();
 
   if (process.env.SKIP_DESKTOP !== "1") {
     try {
@@ -1257,6 +1440,10 @@ async function shutdown(signal) {
     if (browserContext) {
       await browserContext.close().catch(() => {});
     }
+
+    if (generationBrowser) {
+      await generationBrowser.close().catch(() => {});
+    }
   } finally {
     for (const child of desktopProcesses) {
       child.kill("SIGTERM");
@@ -1275,3 +1462,12 @@ async function shutdown(signal) {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// A stray error inside one job must never take the whole service down.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});
