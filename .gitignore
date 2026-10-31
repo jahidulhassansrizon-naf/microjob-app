@@ -31,7 +31,5 @@ Thumbs.db
 # Dependencies
 **/node_modules/
 
-# Local Gemini authentication session
-/playwright-service/gemini-session.json
-
-**/node_modules/
+# TypeScript generated build files
+*.tsbuildinfo

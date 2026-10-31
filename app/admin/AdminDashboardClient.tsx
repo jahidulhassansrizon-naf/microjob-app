@@ -43,6 +43,7 @@ import AdminChatsPanel from "./_components/AdminChatsPanel";
 import AdminLivePanel from "./_components/AdminLivePanel";
 import SiteSettingsPanel from "./_components/SiteSettingsPanel";
 import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPanel";
+import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 
 type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live" | "settings" | "payment-gateway";
@@ -2070,7 +2071,7 @@ export default function AdminDashboardClient() {
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
           {tab === "live" && <AdminLivePanel refreshKey={liveRefreshKey} />}
           {tab === "settings" && <SiteSettingsPanel />}
-          {tab === "payment-gateway" && <PaymentGatewaySettingsPanel />}
+          {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
 
           {accessModalUser && (
             <div

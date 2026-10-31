@@ -656,6 +656,8 @@ export default function SubscriptionPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPipraPayProcessing, setIsPipraPayProcessing] = useState(false);
   const [isPipraPayEnabled, setIsPipraPayEnabled] = useState(false);
+  const [isUddoktaPayProcessing, setIsUddoktaPayProcessing] = useState(false);
+  const [isUddoktaPayEnabled, setIsUddoktaPayEnabled] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [currentSubscription, setCurrentSubscription] =
     useState<SubscriptionStatus | null>(null);
@@ -719,6 +721,19 @@ export default function SubscriptionPage() {
       .catch((error) => {
         if (!controller.signal.aborted) console.error("Failed to load PipraPay checkout status:", error);
       });
+    void fetch("/api/uddoktapay/status", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.success) setIsUddoktaPayEnabled(data.enabled === true);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) console.error("Failed to load UddoktaPay checkout status:", error);
+      });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -729,7 +744,7 @@ export default function SubscriptionPage() {
   };
 
   const handlePipraPayCheckout = async () => {
-    if (isPipraPayProcessing || isProcessing || !isPipraPayEnabled) return;
+    if (isPipraPayProcessing || isUddoktaPayProcessing || isProcessing || !isPipraPayEnabled) return;
     setIsPipraPayProcessing(true);
     setPaymentError("");
     try {
@@ -752,6 +767,31 @@ export default function SubscriptionPage() {
     } catch (error) {
       setPaymentError(error instanceof Error ? error.message : "PipraPay payment could not be started. Please try again.");
       setIsPipraPayProcessing(false);
+    }
+  };
+
+  const handleUddoktaPayCheckout = async () => {
+    if (isUddoktaPayProcessing || isPipraPayProcessing || isProcessing || !isUddoktaPayEnabled) return;
+    setIsUddoktaPayProcessing(true);
+    setPaymentError("");
+    try {
+      const response = await fetch("/api/uddoktapay/checkout", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: selected.id }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success !== true || typeof data?.payment_url !== "string") {
+        throw new Error(data?.message || "UddoktaPay payment could not be started. Please try again.");
+      }
+      const checkoutUrl = new URL(data.payment_url);
+      if (checkoutUrl.protocol !== "https:") throw new Error("UddoktaPay returned an unsafe checkout URL. Please contact support.");
+      window.location.assign(checkoutUrl.toString());
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "UddoktaPay payment could not be started. Please try again.");
+      setIsUddoktaPayProcessing(false);
     }
   };
 
@@ -1063,17 +1103,28 @@ export default function SubscriptionPage() {
                 <button
                   type="button"
                   onClick={() => void handlePipraPayCheckout()}
-                  disabled={isPipraPayProcessing || isProcessing}
+                  disabled={isPipraPayProcessing || isUddoktaPayProcessing || isProcessing}
                   className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-[#166534] px-6 py-2.5 text-center text-base font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#14532D] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
                 >
                   <Wallet size={18} />
                   {isPipraPayProcessing ? "PipraPay checkout খুলছে…" : `অনলাইনে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
                 </button>
               )}
+              {isUddoktaPayEnabled && (
+                <button
+                  type="button"
+                  onClick={() => void handleUddoktaPayCheckout()}
+                  disabled={isUddoktaPayProcessing || isPipraPayProcessing || isProcessing}
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-[#0F766E] px-6 py-2.5 text-center text-base font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#115E59] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
+                >
+                  <Wallet size={18} />
+                  {isUddoktaPayProcessing ? "UddoktaPay checkout খুলছে…" : `UddoktaPay দিয়ে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleContinue}
-                disabled={isProcessing || isPipraPayProcessing}
+                disabled={isProcessing || isPipraPayProcessing || isUddoktaPayProcessing}
                 className={`inline-flex min-h-10 max-w-full items-center justify-center rounded-xl px-6 py-2 text-center text-base font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8 ${isPipraPayEnabled ? "border border-[#D8C9A6] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#F6EEDB]" : "bg-[#D42020] text-white hover:bg-[#AE1717]"}`}
               >
                 {isProcessing ? (
@@ -1082,8 +1133,8 @@ export default function SubscriptionPage() {
                   "bKash / Nagad দিয়ে Manual Payment করুন"
                 )}
               </button>
-              {!isPipraPayEnabled && (
-                <p className="text-xs font-medium text-[#7A6A50]">অনলাইন PipraPay Checkout বর্তমানে চালু নেই। আপাতত Manual Payment ব্যবহার করতে পারবেন।</p>
+              {!isPipraPayEnabled && !isUddoktaPayEnabled && (
+                <p className="text-xs font-medium text-[#7A6A50]">অনলাইন পেমেন্ট বর্তমানে চালু নেই। আপাতত Manual bKash / Nagad Payment ব্যবহার করতে পারবেন।</p>
               )}
               {paymentError && (
                 <p

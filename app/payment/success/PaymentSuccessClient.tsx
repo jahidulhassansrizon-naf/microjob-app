@@ -6,39 +6,50 @@ import { CheckCircle2, CircleAlert, Clock3, LoaderCircle } from "lucide-react";
 
 type Phase = "loading" | "success" | "pending" | "error";
 
-export default function PaymentSuccessClient({ ppId, subscriptionId }: { ppId: string; subscriptionId: string }) {
-  const [status, setStatus] = useState("PipraPay payment যাচাই করা হচ্ছে...");
+export default function PaymentSuccessClient({ ppId, invoiceId, subscriptionId, provider = "piprapay", cancelled = false }: { ppId: string; invoiceId: string; subscriptionId: string; provider?: "piprapay" | "uddoktapay"; cancelled?: boolean }) {
+  const providerName = provider === "uddoktapay" ? "UddoktaPay" : "PipraPay";
+  const [status, setStatus] = useState(`${providerName} payment যাচাই করা হচ্ছে...`);
   const [phase, setPhase] = useState<Phase>("loading");
-  const [reference, setReference] = useState(ppId);
+  const [reference, setReference] = useState(provider === "uddoktapay" ? invoiceId : ppId);
   const [retryKey, setRetryKey] = useState(0);
 
   const verify = useCallback(async (signal?: AbortSignal) => {
-    if (!ppId && !subscriptionId) {
+    if (cancelled) {
+      setPhase("error");
+      setStatus("পেমেন্ট বাতিল করা হয়েছে। কোনো Subscription Access চালু করা হয়নি। চাইলে আবার পেমেন্ট চেষ্টা করুন।");
+      return true;
+    }
+    if (!ppId && !invoiceId && !subscriptionId) {
       setPhase("error");
       setStatus("পেমেন্ট রেফারেন্স পাওয়া যায়নি। পেমেন্ট সম্পন্ন হয়ে থাকলে সাপোর্টে যোগাযোগ করুন।");
       return true;
     }
 
     try {
-      const response = await fetch("/api/payment/verify", {
+      const response = await fetch(provider === "uddoktapay" ? "/api/uddoktapay/verify" : "/api/payment/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         cache: "no-store",
         signal,
-        body: JSON.stringify({ pp_id: ppId || undefined, subscription_id: subscriptionId || undefined }),
+        body: JSON.stringify(provider === "uddoktapay"
+          ? { invoice_id: invoiceId || undefined, subscription_id: subscriptionId || undefined }
+          : { pp_id: ppId || undefined, subscription_id: subscriptionId || undefined }),
       });
       const data = await response.json().catch(() => ({}));
       if (signal?.aborted) return false;
       if (response.ok && data?.success) {
         setPhase("success");
         setStatus("পেমেন্ট সফলভাবে যাচাই হয়েছে। আপনার Premium Access চালু করা হয়েছে।");
-        setReference(String(data?.payment?.pp_id || ppId || ""));
+        const verifiedReference = provider === "uddoktapay"
+          ? (data?.payment?.invoice_id || invoiceId)
+          : (data?.payment?.pp_id || ppId);
+        setReference(String(verifiedReference || ""));
         return true;
       }
       if (response.status === 202 || data?.paymentStatus === "PENDING" || data?.paymentStatus === "UNKNOWN") {
         setPhase("pending");
-        setStatus(data?.message || "PipraPay এখনো পেমেন্ট সম্পন্ন বলে নিশ্চিত করেনি। স্বয়ংক্রিয়ভাবে আবার যাচাই করা হবে।");
+        setStatus(data?.message || `${providerName} এখনো পেমেন্ট সম্পন্ন বলে নিশ্চিত করেনি। স্বয়ংক্রিয়ভাবে আবার যাচাই করা হবে।`);
         return false;
       }
       setPhase("error");
@@ -51,7 +62,7 @@ export default function PaymentSuccessClient({ ppId, subscriptionId }: { ppId: s
       }
       return false;
     }
-  }, [ppId, subscriptionId]);
+  }, [ppId, invoiceId, subscriptionId, provider, providerName, cancelled]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -82,7 +93,7 @@ export default function PaymentSuccessClient({ ppId, subscriptionId }: { ppId: s
         <Icon size={48} className={`mx-auto ${iconTone} ${phase === "loading" ? "animate-spin" : ""}`} />
         <h1 className="mt-4 text-2xl font-black">Payment Result</h1>
         <p role="status" aria-live="polite" className="mt-3 text-base leading-7 text-[#5A4A32]">{status}</p>
-        {reference ? <p className="mt-4 break-all rounded-xl bg-[#F2E8D2] px-3 py-2 text-xs text-[#6B5A40]">PipraPay reference: {reference}</p> : null}
+        {reference ? <p className="mt-4 break-all rounded-xl bg-[#F2E8D2] px-3 py-2 text-xs text-[#6B5A40]">{providerName} reference: {reference}</p> : null}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link href="/subscription" className="rounded-xl bg-[#D42020] px-5 py-2.5 font-bold text-white hover:bg-[#AE1717]">সাবস্ক্রিপশন দেখুন</Link>
           {phase !== "success" ? <button type="button" onClick={() => { setPhase("loading"); setRetryKey((value) => value + 1); }} className="rounded-xl border border-[#D8C9A6] px-5 py-2.5 font-bold text-[#5A4A32] hover:bg-[#F2E8D2]">আবার যাচাই করুন</button> : null}

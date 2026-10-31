@@ -122,6 +122,73 @@ export function decryptPipraPayApiKey(value: unknown): string {
   ]).toString("utf8");
 }
 
+const ENCRYPTION_CONTEXT_UDDOKTAPAY_V1 = "sebalagbe:uddoktapay:api-key:v1";
+
+function getUddoktaPayEncryptionKey(): Buffer {
+  const configuredKey = String(process.env.PIPRAPAY_ENCRYPTION_KEY || "").trim();
+  if (!/^[0-9a-fA-F]{64}$/.test(configuredKey)) {
+    throw new Error(
+      "PIPRAPAY_ENCRYPTION_KEY must be configured as exactly 64 hexadecimal characters (32 random bytes).",
+    );
+  }
+  return Buffer.from(
+    hkdfSync(
+      "sha256",
+      Buffer.from(configuredKey, "hex"),
+      ENCRYPTION_SALT,
+      Buffer.from(ENCRYPTION_CONTEXT_UDDOKTAPAY_V1, "utf8"),
+      32,
+    ),
+  );
+}
+
+/** UddoktaPay uses a separate HKDF context so its ciphertext cannot be confused with PipraPay credentials. */
+export function encryptUddoktaPayApiKey(value: string): EncryptedSecretV2 {
+  const apiKey = String(value || "").trim();
+  if (!apiKey) throw new Error("An UddoktaPay API key is required.");
+  return encryptWithKey(apiKey, getUddoktaPayEncryptionKey(), 2) as EncryptedSecretV2;
+}
+
+export function decryptUddoktaPayApiKey(value: unknown): string {
+  if (!value || typeof value !== "object") return "";
+  const encrypted = value as Partial<EncryptedSecret>;
+  if (encrypted.version !== 2 || !encrypted.iv || !encrypted.authTag || !encrypted.ciphertext) return "";
+
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    getUddoktaPayEncryptionKey(),
+    Buffer.from(encrypted.iv, "base64"),
+  );
+  decipher.setAuthTag(Buffer.from(encrypted.authTag, "base64"));
+  return Buffer.concat([
+    decipher.update(Buffer.from(encrypted.ciphertext, "base64")),
+    decipher.final(),
+  ]).toString("utf8");
+}
+
+export function validateUddoktaPayBaseUrl(value: unknown): { ok: true; baseUrl: string } | { ok: false; message: string } {
+  const raw = String(value || "").trim();
+  if (!raw) return { ok: false, message: "UddoktaPay Hosted Domain is required." };
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, message: "Enter a valid UddoktaPay HTTPS domain." };
+  }
+  if (parsed.protocol !== "https:") return { ok: false, message: "UddoktaPay domain must use HTTPS." };
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    return { ok: false, message: "Hosted Domain must not contain credentials, query strings or fragments." };
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (!hostname || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local") || !hostname.includes(".") || isIP(hostname) !== 0) {
+    return { ok: false, message: "Use the public HTTPS domain of your UddoktaPay hosted panel." };
+  }
+  if (parsed.port && parsed.port !== "443") return { ok: false, message: "UddoktaPay domain must use the standard HTTPS port (443)." };
+  const path = parsed.pathname.replace(/\/+$/, "");
+  if (path && path !== "/api") return { ok: false, message: "Enter only the UddoktaPay domain, without an API path." };
+  return { ok: true, baseUrl: parsed.origin };
+}
+
 export function validatePipraPayBaseUrl(value: unknown): { ok: true; baseUrl: string } | { ok: false; message: string } {
   const raw = String(value || "").trim();
   if (!raw) return { ok: false, message: "PipraPay Base URL is required." };

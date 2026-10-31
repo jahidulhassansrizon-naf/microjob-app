@@ -4,6 +4,8 @@ import { createCipheriv, hkdfSync, randomBytes } from "node:crypto";
 import {
   decryptPipraPayApiKey,
   encryptPipraPayApiKey,
+  decryptUddoktaPayApiKey,
+  encryptUddoktaPayApiKey,
 } from "../lib/serverPipraPaySettings";
 
 const originalEncryptionKey = process.env.PIPRAPAY_ENCRYPTION_KEY;
@@ -76,5 +78,15 @@ test("AES-GCM rejects tampered ciphertext", () => {
   const tampered = { ...encrypted, ciphertext: tamperedBytes.toString("base64") };
 
   assert.throws(() => decryptPipraPayApiKey(tampered));
+  restoreEnv();
+});
+
+
+test("UddoktaPay API keys use a separate derived encryption context", () => {
+  process.env.PIPRAPAY_ENCRYPTION_KEY = testKey;
+  const encrypted = encryptUddoktaPayApiKey("uddoktapay-secret-value");
+  assert.equal(encrypted.version, 2);
+  assert.equal(decryptUddoktaPayApiKey(encrypted), "uddoktapay-secret-value");
+  assert.throws(() => decryptPipraPayApiKey(encrypted));
   restoreEnv();
 });
