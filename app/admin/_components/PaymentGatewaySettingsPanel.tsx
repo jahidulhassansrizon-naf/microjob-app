@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, LockKeyhole, RefreshCw, Save, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, LockKeyhole, RefreshCw, Save, ShieldCheck, Power } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 
 const INPUT = "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
@@ -37,6 +37,7 @@ export default function PaymentGatewaySettingsPanel() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [testing, setTesting] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [connectionTest, setConnectionTest] = useState<ConnectionTestResult | null>(null);
 
   const loadSettings = useCallback(async () => {
@@ -92,6 +93,31 @@ export default function PaymentGatewaySettingsPanel() {
     }
   };
 
+  const toggleCheckout = async (enabled: boolean) => {
+    setToggling(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/payment-gateway-settings/toggle", {
+        method: "POST",
+        credentials: "include",
+        headers: { ...getClientAuthHeaders(), "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not change PipraPay checkout status.");
+      }
+      setSettings((current) => ({ ...current, enabled: Boolean(data.settings?.enabled) }));
+      setNotice(data.message || "PipraPay checkout status updated.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not change PipraPay checkout status.");
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const saveSettings = async () => {
     setSaving(true);
     setError("");
@@ -138,6 +164,9 @@ export default function PaymentGatewaySettingsPanel() {
           </button>
           <button type="button" onClick={() => void saveSettings()} disabled={loading || saving || testing || (!apiKey.trim() && !settings.apiKeyConfigured)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
             <Save size={15}/>{saving ? "Saving…" : "Save settings"}
+          </button>
+          <button type="button" onClick={() => void toggleCheckout(!settings.enabled)} disabled={loading || saving || testing || toggling || !settings.apiKeyConfigured || settings.baseUrl.trim() !== savedBaseUrl || Boolean(apiKey.trim())} className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${settings.enabled ? "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+            <Power size={15}/>{toggling ? "Updating…" : settings.enabled ? "Disable live checkout" : "Enable live checkout"}
           </button>
         </div>
       </div>
@@ -195,11 +224,12 @@ export default function PaymentGatewaySettingsPanel() {
 
             <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <LockKeyhole size={17} className="shrink-0"/>
-              <span>Saving these settings does not enable live payments. Checkout will remain disabled until API verification and webhook testing are completed.</span>
+              <span>Enable live checkout only when you are ready to accept real customer payments. Enabling performs a fresh V3+ verification probe; it does not create a charge. Disable it at any time. Keep manual bKash/Nagad available as a backup.</span>
             </div>
 
             <div className="flex flex-col gap-1 border-t border-slate-100 pt-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span>API key status: <strong className={settings.apiKeyConfigured ? "text-emerald-700" : "text-amber-700"}>{settings.apiKeyConfigured ? "Saved securely" : "Not configured"}</strong></span>
+              <span>Checkout status: <strong className={settings.enabled ? "text-emerald-700" : "text-amber-700"}>{settings.enabled ? "Live checkout enabled" : "Disabled"}</strong></span>
               {settings.updatedAt && <span>Last saved: {new Date(settings.updatedAt).toLocaleString()}</span>}
             </div>
           </div>

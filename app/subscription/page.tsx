@@ -113,8 +113,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
     "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
   "payment verification and subscription access are handled automatically":
     "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
-  "admin reviews the payment before subscription access is activated":
-    "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
+  "payment is verified before subscription access is activated":
+    "পেমেন্ট যাচাই হওয়ার পর সাবস্ক্রিপশন অ্যাক্সেস চালু হবে",
   "back to tools": "টুলসে ফিরে যান",
   "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
   "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
@@ -231,7 +231,7 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
   const bnAmount = toBnDigits(amount);
   const steps: { title: string; body: ReactNode }[] = [
     {
-      title: "আনলক বাটনে ক্লিক করুন",
+      title: "Manual Payment বাটনে ক্লিক করুন",
       body: <>আপনার নিজের পেমেন্ট পেজ খুলবে।</>,
     },
     {
@@ -293,8 +293,8 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
           </span>
         </div>
         <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-base font-semibold leading-7 text-amber-900 sm:text-lg">
-          <p className="font-extrabold">PipraPay পেমেন্ট গেটওয়ে শিগগিরই যুক্ত হচ্ছে।</p>
-          <p className="mt-1">PipraPay integration সম্পন্ন ও পরীক্ষা না হওয়া পর্যন্ত আপাতত নিচের bKash অথবা Nagad পদ্ধতিতে পেমেন্ট করুন। TrxID জমা দেওয়ার পর অ্যাডমিন যাচাই করে অনুমোদন দিলে আপনার সাবস্ক্রিপশন চালু হবে।</p>
+          <p className="font-extrabold">অনলাইন পেমেন্টে সমস্যা হলে Manual Payment ব্যবহার করুন।</p>
+          <p className="mt-1">bKash অথবা Nagad দিয়ে Send Money করে TrxID ও প্রেরকের নম্বর জমা দিন। অ্যাডমিন পেমেন্ট যাচাই করে Approve করলে আপনার সাবস্ক্রিপশন চালু হবে।</p>
         </div>
         <ol className="mt-5 grid gap-3">
           {steps.map((step, index) => (
@@ -654,6 +654,8 @@ export default function SubscriptionPage() {
   const { t, locale } = useSubscriptionText();
   const [selectedId, setSelectedId] = useState<string>("1-month");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPipraPayProcessing, setIsPipraPayProcessing] = useState(false);
+  const [isPipraPayEnabled, setIsPipraPayEnabled] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [currentSubscription, setCurrentSubscription] =
     useState<SubscriptionStatus | null>(null);
@@ -703,12 +705,54 @@ export default function SubscriptionPage() {
 
   useEffect(() => {
     void loadCurrentSubscription();
+    const controller = new AbortController();
+    void fetch("/api/payment/piprapay-status", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.success) setIsPipraPayEnabled(data.enabled === true);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) console.error("Failed to load PipraPay checkout status:", error);
+      });
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
     setPaymentError("");
+  };
+
+  const handlePipraPayCheckout = async () => {
+    if (isPipraPayProcessing || isProcessing || !isPipraPayEnabled) return;
+    setIsPipraPayProcessing(true);
+    setPaymentError("");
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: selected.id }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success !== true || typeof data?.payment_url !== "string") {
+        throw new Error(data?.message || "PipraPay payment could not be started. Please try again.");
+      }
+      const checkoutUrl = new URL(data.payment_url);
+      if (checkoutUrl.protocol !== "https:") {
+        throw new Error("PipraPay returned an unsafe checkout URL. Please contact support.");
+      }
+      window.location.assign(checkoutUrl.toString());
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "PipraPay payment could not be started. Please try again.");
+      setIsPipraPayProcessing(false);
+    }
   };
 
   const handleContinue = () => {
@@ -1015,18 +1059,32 @@ export default function SubscriptionPage() {
               aria-label={t("Continue to payment")}
               className="flex w-full flex-col items-center justify-center gap-2 py-0.5 text-center"
             >
+              {isPipraPayEnabled && (
+                <button
+                  type="button"
+                  onClick={() => void handlePipraPayCheckout()}
+                  disabled={isPipraPayProcessing || isProcessing}
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-[#166534] px-6 py-2.5 text-center text-base font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#14532D] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
+                >
+                  <Wallet size={18} />
+                  {isPipraPayProcessing ? "PipraPay checkout খুলছে…" : `অনলাইনে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleContinue}
-                disabled={isProcessing}
-                className="inline-flex min-h-10 max-w-full items-center justify-center rounded-xl bg-[#D42020] hover:bg-[#AE1717] px-6 py-2 text-center text-base font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
+                disabled={isProcessing || isPipraPayProcessing}
+                className={`inline-flex min-h-10 max-w-full items-center justify-center rounded-xl px-6 py-2 text-center text-base font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#EFE5CE] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:px-8 ${isPipraPayEnabled ? "border border-[#D8C9A6] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#F6EEDB]" : "bg-[#D42020] text-white hover:bg-[#AE1717]"}`}
               >
                 {isProcessing ? (
                   <T>{"Opening payment page..."}</T>
                 ) : (
-                  <T>{`Unlock ${selected.name.toLowerCase()} access for ${formatPrice(selected.price)}`}</T>
+                  "bKash / Nagad দিয়ে Manual Payment করুন"
                 )}
               </button>
+              {!isPipraPayEnabled && (
+                <p className="text-xs font-medium text-[#7A6A50]">অনলাইন PipraPay Checkout বর্তমানে চালু নেই। আপাতত Manual Payment ব্যবহার করতে পারবেন।</p>
+              )}
               {paymentError && (
                 <p
                   role="alert"

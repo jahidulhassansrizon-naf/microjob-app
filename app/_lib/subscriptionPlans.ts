@@ -45,7 +45,7 @@ export const SUBSCRIPTION_PLAN_FEATURES = [
   "AI Editor, AI Template, and Bulk Photo Edit are included",
   "Use the same account across supported tools",
   "Manage your subscription status from this page",
-  "Admin reviews the payment before subscription access is activated",
+  "Payment is verified before subscription access is activated",
 ] as const;
 
 export type SubscriptionPlanId = keyof typeof SUBSCRIPTION_PLAN_BY_ID;
