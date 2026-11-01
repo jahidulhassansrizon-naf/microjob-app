@@ -9,13 +9,14 @@ import GenerationSettings from "./_components/GenerationSettings";
 import { planEditingGuides } from "./_components/editingGuides";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
+import PhotoSetupWizard, { type WizardResult } from "./_components/PhotoSetupWizard";
 import RecentGenerations from "./_components/RecentGenerations";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
 import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
 import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
+import { X, Check, Image as ImageIcon, RotateCw, Loader2, SlidersHorizontal } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
@@ -161,6 +162,21 @@ export default function PhotoEditorPage() {
     const [showVisaPopup, setShowVisaPopup] = useState(false);
     const [selectedVisaSize, setSelectedVisaSize] = useState("35×45 mm");
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    // Guided setup wizard (opens after a photo is uploaded + cropped)
+    const WIZARD_DISABLED_KEY = "sebalagbe:ai-editor:setup-wizard-disabled";
+    const [showSetupWizard, setShowSetupWizard] = useState(false);
+    const [wizardDisabled, setWizardDisabled] = useState(false);
+    const [applyGuidesSignal, setApplyGuidesSignal] = useState<{ id: number; guides: string[] } | null>(null);
+    const [autoGenerateToken, setAutoGenerateToken] = useState(0);
+    const generatePhotoRef = useRef<() => void>(() => { });
+    useEffect(() => {
+        try {
+            setWizardDisabled(window.localStorage.getItem(WIZARD_DISABLED_KEY) === "1");
+        }
+        catch {
+            /* storage can be blocked; the wizard simply stays enabled */
+        }
+    }, []);
     const imgRef = useRef<HTMLImageElement | null>(null);
     const visaPopupRef = useRef<HTMLDivElement | null>(null);
     const colorPickerRef = useRef<HTMLDivElement | null>(null);
@@ -771,6 +787,10 @@ export default function PhotoEditorPage() {
             }
             setShowCropModal(false);
             setTempImageForCrop(null);
+            // First-time friendly flow: guide the user through size, clothing and edits.
+            if (activeTarget !== "left" && activeTarget !== "right" && !isDualMode && !wizardDisabled) {
+                setShowSetupWizard(true);
+            }
         }
         catch (error) {
             console.error("Crop & Upload error:", error);
@@ -947,6 +967,10 @@ export default function PhotoEditorPage() {
         "#C026D3": "magenta",
         "#06B6D4": "cyan",
     };
+    // Always-on professional skin retouch (applies to EVERY generation).
+    // Identity (face structure) stays locked; only skin cleanliness / brightness / evenness is improved.
+    const SKIN_IDENTITY_RULE = "IDENTITY: the result must be the exact same real person. Keep the face shape, bone structure, jaw, cheeks, forehead, eyes and eye shape, nose, lips, ears, expression, apparent age and permanent marks (moles, birthmarks, scars) unchanged. Keep the eyebrows, the facial hair (beard, mustache, stubble), the hairline and the hairstyle unchanged too, unless an eyebrow, beard/facial-hair, hair style or hair color edit is requested below; if such an edit is requested, apply it fully and exactly as described, and change nothing else about the face. Never create a different, generic, younger or idealized face.";
+    const SKIN_RETOUCH_RULE = "PROFESSIONAL SKIN RETOUCH (always apply, exactly like a skilled Photoshop retoucher preparing a clean studio ID photo): make the skin of the face, neck, ears and any visible skin look clean, fresh, healthy, bright and evenly lit. (1) BRIGHTNESS: lift the skin brightness and luminosity by a clearly visible, medium amount, giving a mid-level fairer, clearer, brighter complexion (not a dramatic whitening). Dull, dark, dusky, grayish, muddy, sun-tanned, oily or shadowy skin must become a bright, clean, healthy complexion. (2) EVEN TONE AND CLEANLINESS: remove dark patches, tan marks, uneven pigmentation, blotchy discoloration, dirty-looking spots, stains, dust specks, pimples, acne marks, dark under-eye circles, dark areas around the mouth and nose, and oily shine, so the forehead, cheeks, nose, chin, eye area, neck and ears all share one smooth, consistent tone. (3) COLOR: remove any dull gray, yellow, green, or red cast so the skin looks neutral-warm and radiant, with the face, neck and ears matching in color. (4) NATURAL FINISH: keep realistic fine skin texture and pores; no plastic, waxy, over-smoothed or beauty-filter look. (5) LIMITS: keep the person's natural undertone and ethnicity, do not make the skin pale, chalky, gray, orange or pink, and never change face structure. The final photo should look like the same person after a high-quality professional studio retouch, clean and bright but believable. If a requested edit below deliberately changes the overall color or tone look, follow that look for the mood but still keep the skin clean, even and spot-free. If the final photo is black and white, apply the same brightness, evenness and spot removal as tones only.";
     const BACKGROUND_COLOR_NAMES: Record<string, string> = {
         "#FFFFFF": "white",
         "#3B82F6": "blue",
@@ -1010,14 +1034,15 @@ export default function PhotoEditorPage() {
             "INPUTS: The FIRST attached photo shows Person A, who must appear on the LEFT side of the final image. The SECOND attached photo shows Person B, who must appear on the RIGHT side. Each attached photo contains exactly one person. Use each person's own photo as the one and only reference for that person's face.",
             "OUTPUT: Return exactly ONE image. It is a single photograph of both people sitting side by side in the same frame, as if one camera took one shot of them posing together. It is NOT a collage, NOT a split screen, NOT two separate photos placed next to each other, and has no divider, gap, border, frame, or line between them. Never return the attached photos unchanged.",
             "CANVAS: landscape, aspect ratio exactly 90:55 (about 1.64 : 1). The backdrop must fill the ENTIRE canvas edge to edge. No white, black, or colored bars, margins, strips, or letterboxing at the top, bottom, or sides.",
-            "IDENTITY LOCK (highest priority, above every other instruction): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyebrows, eyes and eye shape, nose, lips, teeth, ears, skin tone and skin texture, moles, scars, marks, facial hair, hairline and hairstyle, and apparent age. Do NOT beautify, slim, smooth, whiten, enlarge, sharpen, age, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and an identical face, choose the identical face. Both faces must be clearly recognizable as the people in their own photos.",
+            "IDENTITY LOCK (highest priority for face structure): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyes and eye shape, nose, lips, teeth, ears, moles, scars, birthmarks and apparent age. Also keep the eyebrows, facial hair, hairline and hairstyle (unless an eyebrow, beard/facial-hair, hair style or hair color edit is requested below; if one is requested, apply it fully to the person it is meant for). Do NOT slim, enlarge, age, reshape, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and a different face, choose the identical face structure. Both faces must be clearly recognizable as the people in their own photos. (Skin cleanliness and brightness are improved separately, see SKIN RETOUCH.)",
+            `${SKIN_RETOUCH_RULE} Apply this to BOTH people, with the same level of brightness and cleanliness, so the two people look consistent side by side.`,
             "POSE AND CAMERA: classic passport-studio pose for BOTH people. Sitting upright with straight backs, shoulders square to the camera and level, necks long and relaxed, heads perfectly straight with no tilt, turn, or lean, chin level, eyes open and looking directly into the lens, natural neutral expression with the mouth closed (a very slight natural smile at most). If a person's original photo is tilted, turned, or leaning, re-pose only the head and body to face the camera straight while keeping the face identical. The camera is at eye level, shot with a long portrait lens (about 85mm equivalent), no wide-angle distortion.",
             "FRAMING: Person A is centered in the left half and Person B is centered in the right half, sitting close together so their shoulders almost touch (a very slight overlap of shoulders is fine) with no faces overlapping or hidden. Both people are at exactly the same scale, with their eyes on the same horizontal line and the tops of their heads at the same height, with a small even headroom above. Show each person from the top of the head down to the upper chest. Both are fully inside the frame with nothing cut off.",
             backgroundRule,
-            "LIGHTING: soft, even, frontal studio lighting on both faces, identical color temperature and exposure for both people, no harsh shadows on faces, no shadow cast on the backdrop, no color cast. Natural skin tones, sharp focus, realistic DSLR photo quality.",
+            "LIGHTING: soft, even, frontal studio lighting on both faces, identical color temperature and exposure for both people, no harsh shadows on faces, no shadow cast on the backdrop, no color cast. Clean, bright, natural-looking skin, sharp focus, realistic DSLR photo quality.",
             `CLOTHING: Person A (left): ${describeClothing(payload.leftClothing, payload.leftClothingColor)}. Person B (right): ${describeClothing(payload.rightClothing, payload.rightClothingColor)}.`,
-            "STRICTLY FORBIDDEN: extra people, text, letters, logos, watermarks, frames, borders, dividing lines, props, jewelry or accessories that are not in the original photos, changed hair or hijab/head covering, changed face, changed skin tone, cartoon or painted or AI-art look, and any stylization.",
-            "BEFORE ANSWERING, silently verify: (1) exactly one image with both people in the same frame; (2) Person A is left and Person B is right; (3) both faces are identical to their own photos; (4) both sit upright facing the camera at the same size and height; (5) one uniform backdrop fills the whole canvas with no strip or seam; (6) clothing matches the instructions. Fix anything that fails before you answer.",
+            "STRICTLY FORBIDDEN: extra people, text, letters, logos, watermarks, frames, borders, dividing lines, props, jewelry or accessories that are not in the original photos, changed hijab/head covering, changed hair, eyebrows or facial hair (unless such an edit is requested below), changed face structure, a different ethnicity or unnaturally pale/gray/orange skin, cartoon or painted or AI-art look, and any stylization.",
+            "BEFORE ANSWERING, silently verify: (1) exactly one image with both people in the same frame; (2) Person A is left and Person B is right; (3) both faces have the same structure as their own photos, with clean, bright, even, spot-free skin; (4) both sit upright facing the camera at the same size and height; (5) one uniform backdrop fills the whole canvas with no strip or seam; (6) clothing matches the instructions. Fix anything that fails before you answer.",
         ];
         const sections = [rules.join("\n\n")];
         if (plan.edits.length > 0) {
@@ -1074,16 +1099,14 @@ export default function PhotoEditorPage() {
                 : hasSelectedPhotoSize
                     ? "Edit the provided portrait photo for a professional ID/passport-style result."
                     : "Edit the provided image naturally, preserving its original composition and aspect ratio unless the requested edits require a change.",
-            flags.colorChange || flags.restoration
-                ? "Preserve the person's facial identity, facial proportions, hair, and natural features as faithfully as possible. Keep skin tones natural and believable for the person; only the color adjustments requested below may change the overall tint."
-                : "Preserve the person's facial identity, facial proportions, skin tone, hair, and natural features as faithfully as possible.",
+            `${SKIN_IDENTITY_RULE} ${SKIN_RETOUCH_RULE}`,
             flags.restoration
                 ? "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks. Keep every person who is already in the photo."
                 : "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
             hasSelectedPhotoSize && !(flags.restoration && !flags.posePreset)
                 ? "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle."
                 : "Preserve the original framing, subject placement, pose, and camera angle unless the requested edit explicitly requires a change.",
-            "Make only the requested edits and avoid unnecessary changes to the person's face.",
+            "Apart from the professional skin retouch above and the requested edits, avoid any other changes to the person's face.",
         ];
         const clothingIndex = typeof payload.clothing === "number" ? payload.clothing : -1;
         if (clothingIndex >= 0 && CLOTHING_NAMES[clothingIndex]) {
@@ -1094,7 +1117,7 @@ export default function PhotoEditorPage() {
                 : "";
             const colorName = CLOTHING_COLOR_NAMES[colorHex] ||
                 (colorHex ? `the selected color (${colorHex})` : "a natural color");
-            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. Keep the face, hair, ears, neck, body proportions, and pose natural. Make the clothing edges realistic and properly fitted to the body.`);
+            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. Keep the face, ears, neck, body proportions, and pose natural, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body.`);
         }
         if (keepOriginalBackground) {
             if (flags.alteringBackground) {
@@ -1582,6 +1605,61 @@ export default function PhotoEditorPage() {
             setIsDeleting(false);
         }
     };
+    const closeSetupWizard = (dontShowAgain: boolean) => {
+        setShowSetupWizard(false);
+        if (dontShowAgain) {
+            setWizardDisabled(true);
+            try {
+                window.localStorage.setItem(WIZARD_DISABLED_KEY, "1");
+            }
+            catch {
+                /* ignore blocked storage */
+            }
+        }
+    };
+    const applySetupWizard = (result: WizardResult, options: { generate: boolean }) => {
+        setShowSetupWizard(false);
+        setErrorMessage(null);
+        if (result.size === "Dual") {
+            // Dual needs two photos: switch to the normal dual screen and let the user add the second photo.
+            enableDualMode();
+            return;
+        }
+        if (isDualMode) {
+            exitDualMode(result.size);
+        }
+        else {
+            setSelectedSize(result.size);
+        }
+        setShowVisaPopup(false);
+        setShowColorPicker(false);
+        if (result.size === "Visa" && result.visaSize) {
+            setSelectedVisaSize(result.visaSize);
+        }
+        setSelectedBg(result.bg);
+        if (/^#[0-9A-F]{6}$/i.test(result.customBg)) {
+            setCustomBgColor(result.customBg.toUpperCase());
+        }
+        setSelectedClothing(result.clothing);
+        setSelectedClothingColor(result.clothingColor);
+        // Keep any custom instruction the user already typed; the wizard only manages preset guides.
+        const mergedGuides = [
+            ...result.guides,
+            ...editingGuides.filter((g) => g.startsWith("Custom Instruction:")),
+        ];
+        setEditingGuides(mergedGuides);
+        setApplyGuidesSignal({ id: Date.now(), guides: mergedGuides });
+        if (options.generate) {
+            setAutoGenerateToken((n) => n + 1);
+        }
+    };
+    // Start generating only after React has committed all of the wizard's choices.
+    useEffect(() => {
+        if (!autoGenerateToken)
+            return;
+        const timer = window.setTimeout(() => generatePhotoRef.current(), 250);
+        return () => window.clearTimeout(timer);
+    }, [autoGenerateToken]);
     const handleResetSettings = () => {
         setResultItem(null);
         setPrintSession(null);
@@ -1697,6 +1775,7 @@ export default function PhotoEditorPage() {
     if (!firstLoadDone) {
         return (<div aria-busy="true" className="min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]"/>);
     }
+    generatePhotoRef.current = handleGeneratePhoto;
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -1832,13 +1911,16 @@ export default function PhotoEditorPage() {
       <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
         <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0">
               {/* Photo preview (kept mounted, hidden while the print section is open) */}
-              <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
+              <div className="relative flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
+                {wizardDisabled && uploadedImage && !isDualMode && !isGenerating && (<button type="button" onClick={() => setShowSetupWizard(true)} className="absolute right-2 top-2 z-20 !flex-none flex items-center gap-1.5 rounded-full border border-[#DC2626]/40 bg-[#FBF6E8] px-3 py-1.5 text-xs font-bold text-[#DC2626] shadow hover:bg-[#F6D9A8] cursor-pointer">
+                    <SlidersHorizontal size={13}/>গাইডেড সেটআপ
+                  </button>)}
                 <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
               </div>
               {/* Options appear right beside the generated photo */}
@@ -1858,6 +1940,15 @@ export default function PhotoEditorPage() {
 
                 <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession}/>
       </div>
+      <PhotoSetupWizard open={showSetupWizard} image={uploadedImage} initial={{
+        size: isDualMode ? "" : selectedSize,
+        visaSize: selectedVisaSize,
+        bg: selectedBg,
+        customBg: customBgColor,
+        clothing: selectedClothing,
+        clothingColor: selectedClothingColor,
+        guides: editingGuides.filter((g) => !g.startsWith("Custom Instruction:")),
+    }} photoSizes={photoSizes} visaSizesList={visaSizesList} backgroundColors={backgroundColors} onApply={applySetupWizard} onClose={closeSetupWizard}/>
       <ConfirmDeleteModal open={!!deleteTarget} imageUrl={deleteTarget?.url} onCancel={() => setDeleteTarget(null)} onConfirm={() => performDeleteImage(deleteTarget)}/>
       </div>);
 }

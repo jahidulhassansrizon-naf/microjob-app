@@ -66,36 +66,71 @@ export interface GenerationSettingsProps {
   isGenerating?: boolean;
   onEditingGuidesChange?: (guides: string[]) => void;
   clearCustomInstructionSignal?: number;
+  /** Lets another part of the page (the setup wizard) replace the selected editing guides. */
+  applyGuidesSignal?: { id: number; guides: string[] } | null;
   onResetSettings?: () => void;
 }
+// Quick tiles follow the same order as the full library: top of the head -> chin,
+// then whole-face and whole-photo essentials. (Change the order here freely.)
 const QUICK_EDITING_GUIDES = [
-  // Essentials for passport / visa / ID photos come first.
-  "Restore Old Photo",
+  // Hair
+  "Neat Short Haircut",
+  "Side Part Hair",
+  "Slick Back Hair",
+  "Tame Stray Hair",
+  "Black Hair Color",
+  "Dark Brown Hair Color",
+  "Cover Gray Hair",
+  // Forehead & hairline
+  "Clean Hairline",
+  // Eyebrows
+  "Enhance Eyebrows",
+  "Thick Eyebrows",
+  "Fill Sparse Eyebrows",
+  "Black Eyebrow Color",
+  // Eyes
+  "Brighten Eyes",
+  "Reduce Dark Circles",
+  "Reduce Glasses Glare",
+  "Align Eye Line",
+  // Lips & teeth
+  "Lipstick",
+  "Whiten Teeth Naturally",
+  // Beard & mustache
+  "Clean Shave",
+  "Light Stubble",
+  "Short Beard",
+  "Full Beard",
+  "Goatee",
+  "Tidy Facial Hair",
+  // Beard color
+  "Black Beard Color",
+  "Cover Gray Beard",
+  // Skin
+  "Fair & Bright Skin",
+  "Glow & Makeup",
+  "Smooth Skin",
+  "Remove Blemishes",
+  "Even Skin Tone",
+  "Keep Marks",
+  // Head & pose
   "Straighten Tilted Photo",
   "Straighten Head",
+  // Lighting & photo quality
   "Brighten Image",
-  "Smooth Skin",
   "Studio Lighting",
-  "Glow & Makeup",
-  "Keep Marks",
-  "Lipstick",
   "Even Face Lighting",
   "Fix Underexposure",
   "Reduce Harsh Shadows",
-  "Clean ID Photo Background",
-  "Passport Photo Polish",
   "Deblur Image",
   "Sharpen Details",
-  "Reduce Glasses Glare",
-  "Tame Stray Hair",
-  "Align Eye Line",
+  // Restoration, background, ID
+  "Restore Old Photo",
+  "Clean ID Photo Background",
   "Refine Photo Framing",
-  "Correct Perspective",
-  "Remove Blemishes",
-  "Even Skin Tone",
-  "Reduce Dark Circles",
+  "Passport Photo Polish",
 ];
-const CLOTHING_COLORS = [
+export const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
   { name: "Black", hex: "#1E1E1E" },
   { name: "Red", hex: "#EF4444" },
@@ -389,7 +424,7 @@ async function getRecoloredSvgUrl(clothingIndex: number, targetColor: string) {
   recoloredSvgCache.set(cacheKey, objectUrl);
   return objectUrl;
 }
-function RawSvgClothingPreview({
+export function RawSvgClothingPreview({
   index,
   selected,
   color,
@@ -476,6 +511,7 @@ export default function GenerationSettings({
   isGenerating = false,
   onEditingGuidesChange,
   clearCustomInstructionSignal = 0,
+  applyGuidesSignal = null,
   onResetSettings,
 }: GenerationSettingsProps) {
   const { t } = useAiEditorText();
@@ -529,6 +565,20 @@ export default function GenerationSettings({
       return matchesCategory && (!query || searchableText.includes(query));
     });
   }, [guideSearch, guideCategory, t]);
+  // Library results grouped by face part, in head-to-chin order, so every part's options sit together.
+  const groupedEditingGuides = useMemo(() => {
+    const groups: { id: string; label: string; guides: typeof EDITING_GUIDES }[] = [];
+    for (const guide of filteredEditingGuides) {
+      const last = groups[groups.length - 1];
+      if (last && last.id === guide.category) {
+        last.guides.push(guide);
+        continue;
+      }
+      const category = EDITING_GUIDE_CATEGORIES.find((entry) => entry.id === guide.category);
+      groups.push({ id: guide.category, label: category?.label ?? guide.category, guides: [guide] });
+    }
+    return groups;
+  }, [filteredEditingGuides]);
   const [showCustomInstructionModal, setShowCustomInstructionModal] =
     useState(false);
   const [customInstructionDraft, setCustomInstructionDraft] = useState("");
@@ -638,6 +688,13 @@ export default function GenerationSettings({
   useEffect(() => {
     onEditingGuidesChange?.(activeGuides);
   }, [activeGuides, onEditingGuidesChange]);
+  // Setup wizard: apply the guides the user picked there, exactly once per signal.
+  const lastApplyGuidesIdRef = useRef(applyGuidesSignal?.id ?? 0);
+  useEffect(() => {
+    if (!applyGuidesSignal || applyGuidesSignal.id === lastApplyGuidesIdRef.current) return;
+    lastApplyGuidesIdRef.current = applyGuidesSignal.id;
+    setActiveGuides(applyGuidesSignal.guides);
+  }, [applyGuidesSignal]);
   const handleClothingClick = (
     idx: number,
     tile?: HTMLElement | null,
@@ -1659,49 +1716,54 @@ export default function GenerationSettings({
                   </span>
                 </div>
                 {filteredEditingGuides.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                    {filteredEditingGuides.map((guide) => {
-                      const active = activeGuides.includes(guide.label);
-                      const category = EDITING_GUIDE_CATEGORIES.find(
-                        (entry) => entry.id === guide.category,
-                      );
-                      return (
-                        <button
-                          key={guide.label}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => toggleGuide(guide.label)}
-                          title={t(guide.label)}
-                          className={`flex min-h-[76px] flex-col items-start justify-between rounded-xl border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 ${
-                            active
-                              ? "border-red-600 bg-red-50 ring-1 ring-red-100"
-                              : "border-stone-200 bg-[#FBF6E8] hover:border-red-200 hover:bg-[#EFE3C8]"
-                          }`}
-                        >
-                          <span className="flex w-full items-start justify-between gap-2">
-                            <span className="flex min-w-0 items-start gap-2">
-                              <span
-                                aria-hidden="true"
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors`}
-                              >
-                                <GuideIcon label={guide.label} size={36} />
-                              </span>
-                              <span className={`min-w-0 text-sm sm:text-base font-medium leading-5 ${active ? "text-red-700" : "text-stone-800"}`}>
-                                {t(guide.label)}
-                              </span>
-                            </span>
-                            <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-red-600 bg-red-600 text-white" : "border-stone-300 text-transparent"}`}>
-                              <Check size={10} strokeWidth={3} aria-hidden="true" />
-                            </span>
+                  <div className="space-y-5">
+                    {groupedEditingGuides.map((group) => (
+                      <section key={group.id} aria-label={t(group.label)}>
+                        <h3 className="sticky top-0 z-[1] -mx-1 mb-2 flex items-center gap-2 bg-[#FBF6E8]/95 px-1 py-1.5 text-sm sm:text-base font-bold text-[#3B2F1E] backdrop-blur">
+                          <span className="h-4 w-1 rounded-full bg-red-600" aria-hidden="true" />
+                          <span>{t(group.label)}</span>
+                          <span className="rounded-full bg-[#E3D6B8] px-2 py-0.5 text-[12px] font-semibold tabular-nums text-[#3B2F1E]">
+                            {group.guides.length}
                           </span>
-                          {category && (
-                            <span className="mt-2 text-[12px] leading-4 text-stone-500">
-                              {t(category.label)}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                          {group.guides.map((guide) => {
+                            const active = activeGuides.includes(guide.label);
+                            return (
+                              <button
+                                key={guide.label}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() => toggleGuide(guide.label)}
+                                title={t(guide.label)}
+                                className={`flex min-h-[64px] items-start rounded-xl border p-3 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 ${
+                                  active
+                                    ? "border-red-600 bg-red-50 ring-1 ring-red-100"
+                                    : "border-stone-200 bg-[#FBF6E8] hover:border-red-200 hover:bg-[#EFE3C8]"
+                                }`}
+                              >
+                                <span className="flex w-full items-start justify-between gap-2">
+                                  <span className="flex min-w-0 items-start gap-2">
+                                    <span
+                                      aria-hidden="true"
+                                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+                                    >
+                                      <GuideIcon label={guide.label} size={36} />
+                                    </span>
+                                    <span className={`min-w-0 text-sm sm:text-base font-medium leading-5 ${active ? "text-red-700" : "text-stone-800"}`}>
+                                      {t(guide.label)}
+                                    </span>
+                                  </span>
+                                  <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-red-600 bg-red-600 text-white" : "border-stone-300 text-transparent"}`}>
+                                    <Check size={10} strokeWidth={3} aria-hidden="true" />
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-stone-300 px-4 py-12 text-center text-base text-stone-500">

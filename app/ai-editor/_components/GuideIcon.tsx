@@ -9,6 +9,222 @@ const D = (id: string, a: string, b: string, vertical = true) => (
 );
 
 const ART: Record<string, () => React.ReactElement> = {
+  "Neat Short Haircut": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.5 18.5 Q14.5 8 24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6 Q17 12.8 15.5 18.5Z"/></g></svg>
+  ),
+  "Side Part Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.5 19 Q13.8 8 24 7 Q34.2 8 32.5 19 Q31.5 13.5 26 12 Q21.5 11.8 18.8 14.6 Q17.2 16 15.5 19Z"/></g><path d="M20 8.2 Q20.8 11.6 18.4 14.2" stroke="#8a6a50" strokeWidth=".9" fill="none" strokeLinecap="round"/></svg>
+  ),
+  "Slick Back Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M16 17 Q14.6 7 24 6.8 Q33.4 7 32 17 Q31 12 24 10.6 Q17 12 16 17Z"/></g><path d="M18.5 10.8 Q24 8.2 29.5 10.8 M20 9.4 Q24 8 28 9.4" stroke="#8a6a50" strokeWidth=".7" fill="none" strokeLinecap="round" opacity=".8"/></svg>
+  ),
+  "Crew Cut": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M16 17.5 L15.6 9.6 Q24 6.2 32.4 9.6 L32 17.5 Q30.6 14 24 13.8 Q17.4 14 16 17.5Z"/></g></svg>
+  ),
+  "Buzz Cut": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#6b5a4c" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#6b5a4c" stroke="none"><path d="M16 17.5 Q15 9 24 8.6 Q33 9 32 17.5 Q30.6 14 24 13.8 Q17.4 14 16 17.5Z"/></g></svg>
+  ),
+  "Textured Quiff": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.5 18.5 Q12.8 8.5 19.5 6.2 Q21 2.8 27 3.8 Q35 5.6 32.5 18.5 Q31 12.4 24 11.6 Q17.5 12.2 15.5 18.5Z"/></g></svg>
+  ),
+  "Taper Fade": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M17 15.4 Q16.4 8.2 24 7.6 Q31.6 8.2 31 15.4 Q29 11.4 24 11.4 Q19 11.4 17 15.4Z"/><path d="M15.7 19.5 Q15 13.6 17 15.4 L17 20.5Z M32.3 19.5 Q33 13.6 31 15.4 L31 20.5Z" fill="#7a6858"/></g></svg>
+  ),
+  "Long Straight Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M14 19 Q12.6 5.6 24 5.6 Q35.4 5.6 34 19 L35.4 40 L12.6 40Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.6 18 Q16 9.4 24 8.8 Q32 9.4 32.4 18 Q29 12.8 24 12.8 Q19 12.8 15.6 18Z"/></g></svg>
+  ),
+  "Long Wavy Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M14 19 Q11.6 6 24 5.6 Q36.4 6 34 19 Q37.2 24 34.2 29 Q37.4 34.4 35 41 L13 41 Q10.6 34.4 13.8 29 Q10.8 24 14 19Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.6 18.4 Q15.8 9 24 8.6 Q32.2 9 32.4 18.4 Q30.2 13.4 26.6 12.6 Q24.4 13.6 21.4 12.6 Q17.6 13.6 15.6 18.4Z"/></g></svg>
+  ),
+  "Shoulder-Length Bob": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M14 19 Q12.8 5.8 24 5.6 Q35.2 5.8 34 19 L35.6 31.4 Q35.6 33 33.8 33 L14.2 33 Q12.4 33 12.4 31.4Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.6 18.4 Q15.4 9 24 8.4 Q32.6 9 32.4 18.4 Q30.4 13.6 26 12.2 Q21 12.4 18.6 15 Q16.8 16.4 15.6 18.4Z"/></g></svg>
+  ),
+  "Pixie Cut": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.4 18.6 Q12.6 8.6 21.6 6.4 Q29.6 5.2 32.2 10.4 Q34.4 14.6 32.6 18.6 Q30.2 13.6 25 13 Q20 13 17.6 16 Q16.6 17.2 15.4 18.6Z"/></g></svg>
+  ),
+  "Low Bun": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><circle cx="24" cy="33.6" r="4.4"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.6 18.4 Q14.8 8 24 7.6 Q33.2 8 32.4 18.4 Q30.2 12.2 24 11.8 Q17.8 12.2 15.6 18.4Z"/></g><path d="M24 8 L24 11.8" stroke="#8a6a50" strokeWidth=".8"/></svg>
+  ),
+  "High Ponytail": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M29.6 8 Q41 2.6 42.6 14 Q44 24 38.2 31.4 Q38.8 22.6 36.2 16.6 Q34 11 29.6 8Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.8 18 Q15 8.2 24 7.4 Q33 8.2 32.2 18 Q30.4 12 24 11.6 Q17.6 12 15.8 18Z"/><circle cx="31" cy="8.6" r="1.6" fill="#dc2626"/></g></svg>
+  ),
+  "Side Braid": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M31.6 14 Q38.6 18.4 36.2 27 L38.4 41 Q35.8 43 33.6 41 L33.2 29 Q34 21 29.6 16.4Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15.5 19 Q14 8 24 7 Q34 8 32.5 19 Q31.6 13.6 26 12 Q21.6 11.8 18.8 14.6 Q17.2 16 15.5 19Z"/></g><path d="M33 30 L37 32.4 M33.2 34 L37.4 36.4 M33.4 38 L37.6 40" stroke="#8a6a50" strokeWidth=".8" strokeLinecap="round"/></svg>
+  ),
+  "Curtain Bangs": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><path d="M14 19 Q12.6 5.6 24 5.6 Q35.4 5.6 34 19 L35.4 39 L12.6 39Z"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><path d="M15 21 Q13.6 7.6 24 7 Q34.4 7.6 33 21 Q29.6 17.4 25.6 11.8 Q24 11 22.4 11.8 Q18.4 17.4 15 21Z"/></g></svg>
+  ),
+  "Curly Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#2b1b12" stroke="none"><circle cx="13.6" cy="24" r="4"/><circle cx="34.4" cy="24" r="4"/><circle cx="14.6" cy="30" r="3.4"/><circle cx="33.4" cy="30" r="3.4"/></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#2b1b12" stroke="none"><circle cx="16.4" cy="12.6" r="4.4"/><circle cx="22" cy="8.8" r="4.6"/><circle cx="28.4" cy="8.8" r="4.6"/><circle cx="33" cy="13" r="4.2"/><circle cx="14.4" cy="18.6" r="3.6"/><circle cx="34.2" cy="18.4" r="3.6"/><circle cx="24" cy="11" r="4"/></g></svg>
+  ),
+  "Black Hair Color": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#0d0d12" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#0d0d12" stroke="none"><path d="M15.5 18.5 Q14.5 8 24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6 Q17 12.8 15.5 18.5Z"/></g><path d="M39 4 Q43.6 10 39 13.4 Q34.4 10 39 4Z" fill="#0d0d12" stroke="#fff" strokeWidth="1"/></svg>
+  ),
+  "Cover Gray Hair": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18"/>
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569"/>
+      <g fill="#d3d8de" stroke="none"></g>
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a"/>
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3"/><circle cx="32.4" cy="21" r="2" fill="#f3c9a3"/>
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill="#f3c9a3"/>
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b"/>
+      <path d="M21.5 25.6 Q24 27.4 26.5 25.6" stroke="#a5563f" strokeWidth="1" fill="none" strokeLinecap="round"/>
+      <g fill="#d3d8de" stroke="none"><path d="M15.5 18.5 Q14.5 8 24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6 Q17 12.8 15.5 18.5Z"/><path d="M24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6Z" fill="#1a1a20"/></g><circle cx="39" cy="9" r="5" fill="#16a34a"/><path d="M36.4 9.2 L38.4 11.2 L41.8 7" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+  ),
   "Straighten Tilted Photo": () => (
     <svg viewBox="0 0 48 48" width="100%" height="100%">
       <defs>
@@ -339,7 +555,174 @@ const P: Record<string, () => React.ReactElement> = {
   photoStain: () => Photo({ tone: "sepia", stain: true }),
 };
 
-const SPEC: Record<string, [string, string?]> = {"Even Skin Tone": ["swatches", "faceBlush"], "Remove Blemishes": ["faceSpots", "eraser"], "Reduce Dark Circles": ["eye", "moon"], "Reduce Facial Shine": ["faceShine", "cotton"], "Preserve Skin Texture": ["fingerprint", "shield"], "Reduce Temporary Redness": ["faceRed", "droplet"], "Soften Fine Lines": ["faceLines", "wand"], "Refine Makeup": ["faceBlush", "brush"], "Remove Makeup": ["cotton", "droplet"], "Brighten Eyes": ["eye", "sparkle"], "Sharpen Eye Details": ["eye", "magnifier"], "Reduce Red Eyes": ["eyeRed", "check"], "Whiten Teeth Naturally": ["teeth", "sparkle"], "Enhance Eyebrows": ["brow", "brush"], "Tidy Facial Hair": ["faceBeard", "scissors"], "Define Beard & Mustache": ["faceBeard", "comb"], "Tame Stray Hair": ["hair", "scissors"], "Restore Facial Details": ["face", "magnifier"], "Preserve Natural Expression": ["faceSmile", "shield"], "Fix Underexposure": ["photoDark", "sun"], "Recover Highlights": ["photoBright", "sparkle"], "Correct White Balance": ["kelvin", "sun"], "Natural Color Correction": ["palette", "check"], "Improve Contrast": ["contrast", "sparkle"], "Remove Color Cast": ["photoCast", "eraser"], "Reduce Harsh Shadows": ["faceShadow", "bulb"], "Brighten Face Shadows": ["faceShadow", "sun"], "Correct Backlighting": ["silhouette", "sun"], "Reduce Flash Glare": ["camera", "flare"], "Sharpen Details": ["magnifier", "sparkle"], "Reduce Image Noise": ["grain", "eraser"], "Deblur Image": ["blur", "crosshair"], "Upscale Image Detail": ["photo", "expand"], "Reduce Pixelation": ["pixels", "wand"], "Fix Compression Artifacts": ["jpg", "wand"], "Improve Low-Light Photo": ["moon", "camera"], "Recover Fine Details": ["photo", "magnifier"], "Remove Lens Haze": ["lens", "cloud"], "Correct Soft Focus": ["focusbox", "face"], "Improve Print Clarity": ["printer", "sparkle"], "Balance HDR Highlights": ["hdr", "sun"], "Repair Scratches": ["photoScratch", "bandage"], "Repair Tears & Creases": ["photoTorn", "tape"], "Remove Dust & Spots": ["photoSepia", "brush"], "Restore Faded Photo": ["photoFade", "sparkle"], "Colorize Black & White Photo": ["photoBW", "palette"], "Improve Black & White Contrast": ["photoBW", "contrast"], "Repair Water Damage": ["photoStain", "droplet"], "Rebuild Damaged Edges": ["photoTorn", "wand"], "Recover Faded Faces": ["faceFade", "sparkle"], "Remove Yellowing": ["photoYellow", "eraser"], "Restore Vintage Portrait": ["cameo", "sparkle"], "Clean Background": ["frameScene", "brush"], "Remove Background Distractions": ["frameScene", "eraser"], "Smooth Background": ["frameBlur", "wand"], "Remove Edge Halos": ["silhouette", "halo"], "Refine Hair Edges": ["silhouette", "comb"], "Separate Subject from Background": ["silhouette", "layers"], "Center Subject": ["frameScene", "crosshair"], "Balance Headroom": ["silhouette", "ruler"], "Correct Perspective": ["perspective", "ruler"], "Refine Photo Framing": ["frameScene", "crop"], "Extend Image Edges": ["frameScene", "expand"], "Clean ID Photo Background": ["idphoto", "brush"], "Formal Portrait Finish": ["suit", "sparkle"], "Passport Photo Polish": ["passport", "sparkle"], "Neutral Background Cleanup": ["idphoto", "eraser"], "Even Face Lighting": ["face", "bulb"], "Align Eye Line": ["eye", "ruler"], "Keep Original Glasses": ["glasses", "shield"], "Reduce Glasses Glare": ["faceGlasses", "flare"], "Natural Professional Retouch": ["suit", "brush"], "Clean Clothing Edges": ["suit", "scissors"], "Refine Collar & Tie": ["tie", "sparkle"], "Improve ID Photo Clarity": ["idphoto", "magnifier"], "Consistent Dual Portraits": ["twoFaces", "check"], "Soft Vintage Film Look": ["filmstrip", "sparkle"], "Black & White Portrait": ["faceBW", "contrast"], "Cinematic Color Grade": ["clapper", "palette"], "Warm Classic Portrait": ["faceWarm", "sun"], "Cool Modern Portrait": ["faceCool", "snow"], "Matte Finish": ["photoMatte", "check"], "Subtle Film Grain": ["filmstrip", "grain"], "High-Key Studio Look": ["faceHigh", "bulb"], "Low-Key Studio Look": ["faceLow", "moon"], "Soft Glow Finish": ["faceGlow", "sparkle"], "Rich Natural Colors": ["palette", "leaf"], "Minimalist Portrait Finish": ["frameScene", "faceSmile"]};
+// ---------------------------------------------------------------------------
+// Face-part icons (hair colors, eyebrows, beards, ears, nose, lips).
+// Generated from small building blocks so every icon shares the same look.
+// ---------------------------------------------------------------------------
+const SKIN_TONE = "#f3c9a3";
+const HAIR_SHORT = "M15.5 18.5 Q14.5 8 24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6 Q17 12.8 15.5 18.5Z";
+const MOUSTACHE = "M19.8 24.4 Q21.8 22.6 24 23.8 Q26.2 22.6 28.2 24.4 Q26 25.4 24 24.6 Q22 25.4 19.8 24.4Z";
+const BEARD_SHAPES: Record<string, (c: string) => React.ReactNode> = {
+  stubble: (c) => <path d="M15.9 21.5 Q16 29 24 29.6 Q32 29 32.1 21.5 Q29 26.2 24 26.2 Q19 26.2 15.9 21.5Z" fill={c} opacity=".42" />,
+  short: (c) => <><path d="M15.9 21.5 Q16 29.4 24 30 Q32 29.4 32.1 21.5 Q29 26.2 24 26.2 Q19 26.2 15.9 21.5Z" fill={c} /><path d={MOUSTACHE} fill={c} /></>,
+  medium: (c) => <><path d="M15.4 21 Q15.2 31 24 32.4 Q32.8 31 32.6 21 Q29 26.4 24 26.4 Q19 26.4 15.4 21Z" fill={c} /><path d={MOUSTACHE} fill={c} /></>,
+  full: (c) => <><path d="M14.9 20.5 Q14.2 34.5 24 35.6 Q33.8 34.5 33.1 20.5 Q29.5 26.2 24 26.2 Q18.5 26.2 14.9 20.5Z" fill={c} /><path d={MOUSTACHE} fill={c} /></>,
+  long: (c) => <><path d="M14.9 20.5 Q13.6 37 24 45 Q34.4 37 33.1 20.5 Q29.5 26.2 24 26.2 Q18.5 26.2 14.9 20.5Z" fill={c} /><path d={MOUSTACHE} fill={c} /></>,
+  goatee: (c) => <><path d={MOUSTACHE} fill={c} /><path d="M21.2 27.6 Q24 26.4 26.8 27.6 Q26.8 32 24 32.4 Q21.2 32 21.2 27.6Z" fill={c} /></>,
+  strap: (c) => <path d="M15.8 20 L17.4 20 Q17.9 28 24 28.7 Q30.1 28 30.6 20 L32.2 20 Q32.5 29.8 24 30.6 Q15.5 29.8 15.8 20Z" fill={c} />,
+  circle: (c) => <><path d={MOUSTACHE} fill={c} /><ellipse cx="24" cy="26.9" rx="4.8" ry="3.5" fill="none" stroke={c} strokeWidth="1.8" /></>,
+  vandyke: (c) => <><path d={MOUSTACHE} fill={c} /><path d="M21.6 27.4 Q24 26.5 26.4 27.4 Q25.4 32 24 34.2 Q22.6 32 21.6 27.4Z" fill={c} /></>,
+  mustache: (c) => <path d="M18.6 24.8 Q21.2 21.8 24 23.6 Q26.8 21.8 29.4 24.8 Q26.6 26 24 24.8 Q21.4 26 18.6 24.8Z" fill={c} />,
+};
+const swatch = (color: string, ring = "#fff") => <circle cx="39" cy="9" r="5.2" fill={color} stroke={ring} strokeWidth="1.3" />;
+const checkBadge = <><circle cx="39" cy="9" r="5" fill="#16a34a" /><path d="M36.4 9.2 L38.4 11.2 L41.8 7" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" /></>;
+const sparkBadge = <path transform="translate(39 9)" d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="#ffd84a" stroke="#fff" strokeWidth=".6" />;
+
+function person(o: { hair?: string; hairBack?: string; beard?: string; beardColor?: string; brow?: string; badge?: React.ReactNode; hairTwoTone?: string }) {
+  const hair = o.hair ?? "#2b1b12";
+  const beardColor = o.beardColor ?? "#2b1b12";
+  const browColor = o.brow ?? hair;
+  return (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="14" ry="1.8" fill="#000" opacity=".18" />
+      <path d="M7 47 Q9 36 24 35 Q39 36 41 47Z" fill="#475569" />
+      <rect x="20.5" y="27" width="7" height="9" rx="2.5" fill="#e6b08a" />
+      <circle cx="15.6" cy="21" r="2" fill="#f3c9a3" /><circle cx="32.4" cy="21" r="2" fill="#f3c9a3" />
+      <ellipse cx="24" cy="20" rx="8.2" ry="9.6" fill={SKIN_TONE} />
+      <ellipse cx="20.6" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b" /><ellipse cx="27.4" cy="20.5" rx=".9" ry="1.1" fill="#2b2b2b" />
+      <path d="M18.4 17.8 Q20.4 16.6 22.6 17.6 M25.4 17.6 Q27.6 16.6 29.6 17.8" stroke={browColor} strokeWidth="1.1" fill="none" strokeLinecap="round" />
+      {o.beard && BEARD_SHAPES[o.beard]?.(beardColor)}
+      <path d="M21.7 25.9 Q24 27.4 26.3 25.9" stroke={o.beard ? "#e58c7e" : "#a5563f"} strokeWidth="1" fill="none" strokeLinecap="round" />
+      <path d={HAIR_SHORT} fill={hair} />
+      {o.hairTwoTone && <path d="M24 7.5 Q33.5 8 32.5 18.5 Q31 12.8 24 12.6Z" fill={o.hairTwoTone} />}
+      {o.badge}
+    </svg>
+  );
+}
+
+function browFace(o: { left: string; right: string; color?: string; width?: number; dash?: string; badge?: React.ReactNode; extra?: React.ReactNode }) {
+  const c = o.color ?? "#2b1b12";
+  return (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      <ellipse cx="24" cy="45.5" rx="15" ry="1.8" fill="#000" opacity=".16" />
+      <path d="M4 46 V26 Q4 7 24 7 Q44 7 44 26 V46Z" fill="url(#p-skin)" />
+      <path d="M4 19 Q3 6 24 5.5 Q45 6 44 19 Q38 11.5 24 11.5 Q10 11.5 4 19Z" fill="#2b1b12" />
+      <ellipse cx="15" cy="30.5" rx="5.6" ry="3.2" fill="#fff" stroke="#c99672" strokeWidth=".8" /><circle cx="15" cy="30.5" r="2.4" fill="#4a3426" /><circle cx="14.2" cy="29.7" r=".8" fill="#fff" />
+      <ellipse cx="33" cy="30.5" rx="5.6" ry="3.2" fill="#fff" stroke="#c99672" strokeWidth=".8" /><circle cx="33" cy="30.5" r="2.4" fill="#4a3426" /><circle cx="32.2" cy="29.7" r=".8" fill="#fff" />
+      <path d="M22 40 Q24 43 26 40" stroke="#c99672" strokeWidth="1" fill="none" strokeLinecap="round" />
+      {o.extra}
+      <path d={o.left} stroke={c} strokeWidth={o.width ?? 2.6} fill="none" strokeLinecap="round" strokeDasharray={o.dash} />
+      <path d={o.right} stroke={c} strokeWidth={o.width ?? 2.6} fill="none" strokeLinecap="round" strokeDasharray={o.dash} />
+      {o.badge}
+    </svg>
+  );
+}
+const BROW_L = "M8 24 Q15 18.5 22 23";
+const BROW_R = "M40 24 Q33 18.5 26 23";
+
+const earFace = (o: { tint?: string; badge?: React.ReactNode; fuzz?: boolean }) => (
+  <svg viewBox="0 0 48 48" width="100%" height="100%">
+    <ellipse cx="24" cy="45.5" rx="12" ry="1.8" fill="#000" opacity=".16" />
+    <path d="M10 8 Q8 24 14 38 L22 44 L22 6Z" fill="#2b1b12" />
+    <ellipse cx="25" cy="23" rx="10.5" ry="15.5" fill="#f3c9a3" stroke="#d79a73" strokeWidth="1.2" />
+    <path d="M21 13 Q30 9 30 21 Q30 29 25.5 32" stroke="#c98b64" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+    <path d="M22.5 18 Q26.5 16.5 26.5 22 Q26.5 25 24.6 27" stroke="#d9a07b" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    <ellipse cx="24" cy="36" rx="4.2" ry="4.4" fill="#f0bf98" />
+    {o.tint && <ellipse cx="25" cy="23" rx="10.5" ry="15.5" fill={o.tint} opacity=".35" />}
+    {o.fuzz && <g stroke="#6b4a36" strokeWidth=".7" strokeLinecap="round" opacity=".8"><path d="M33 20 l3 -1" /><path d="M34 24 l3 0" /><path d="M33 28 l3 1" /><path d="M32 16 l2.6 -1.6" /></g>}
+    {o.badge}
+  </svg>
+);
+
+const noseFace = (o: { tint?: string; shine?: boolean; badge?: React.ReactNode }) => (
+  <svg viewBox="0 0 48 48" width="100%" height="100%">
+    <ellipse cx="24" cy="45.5" rx="15" ry="1.8" fill="#000" opacity=".16" />
+    <path d="M6 46 V20 Q6 6 24 6 Q42 6 42 20 V46Z" fill="url(#p-skin)" />
+    <path d="M23.4 14 Q22 26 17 32.5 Q16 35.5 20.5 36.6 Q24 38 27.5 36.6 Q32 35.5 31 32.5 Q26 26 24.6 14Z" fill="#efbb94" stroke="#cf9168" strokeWidth="1" />
+    <ellipse cx="20.6" cy="35.2" rx="1.6" ry="1" fill="#a3603f" /><ellipse cx="27.4" cy="35.2" rx="1.6" ry="1" fill="#a3603f" />
+    {o.tint && <ellipse cx="24" cy="33.5" rx="7.5" ry="5" fill={o.tint} opacity=".42" />}
+    {o.shine && <ellipse cx="22.4" cy="31" rx="2.4" ry="3.4" fill="#fff" opacity=".85" transform="rotate(-12 22.4 31)" />}
+    {o.badge}
+  </svg>
+);
+
+const lipsArt = () => (
+  <svg viewBox="0 0 48 48" width="100%" height="100%">
+    <ellipse cx="24" cy="45" rx="14" ry="1.8" fill="#000" opacity=".16" />
+    <path d="M4 25 Q12 13 24 20 Q36 13 44 25 Q36 40 24 40 Q12 40 4 25Z" fill="#e8847f" stroke="#c35d63" strokeWidth="1.2" />
+    <path d="M4 25 Q24 31 44 25" stroke="#a63f4d" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <ellipse cx="17" cy="33.5" rx="5.5" ry="2" fill="#fff" opacity=".35" />
+    {sparkBadge}
+  </svg>
+);
+
+const FACE_PART_ART: Record<string, () => React.ReactElement> = {
+  // Hair colors
+  "Dark Brown Hair Color": () => person({ hair: "#3b2417", badge: swatch("#3b2417") }),
+  "Brown Hair Color": () => person({ hair: "#7a4a2a", badge: swatch("#7a4a2a") }),
+  "Auburn Hair Color": () => person({ hair: "#8e3b21", badge: swatch("#8e3b21") }),
+  "Dark Blonde Hair Color": () => person({ hair: "#b98a47", badge: swatch("#b98a47") }),
+  "Silver Gray Hair Color": () => person({ hair: "#aeb4bd", badge: swatch("#aeb4bd") }),
+  "White Hair Color": () => person({ hair: "#f1f3f5", badge: swatch("#f1f3f5", "#94a3b8") }),
+  "Cover Gray Hair Brown": () => person({ hair: "#d3d8de", hairTwoTone: "#3b2417", badge: checkBadge }),
+  "Even Hair Color": () => person({ hair: "#6b4a36", hairTwoTone: "#8a6a50", badge: checkBadge }),
+  // Forehead
+  "Clean Hairline": () => <Composite main="hair" sub="comb" />,
+  "Remove Forehead Wrinkles": () => <Composite main="faceLines" sub="eraser" />,
+  "Reduce Forehead Shine": () => <Composite main="faceShine" sub="crosshair" />,
+  // Eyebrows
+  "Enhance Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, badge: sparkBadge }),
+  "Thick Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, width: 5 }),
+  "Thin Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, width: 1.2 }),
+  "Arched Eyebrows": () => browFace({ left: "M8 24.5 Q14 14.5 22 21.5", right: "M40 24.5 Q34 14.5 26 21.5", width: 2.6 }),
+  "Straight Eyebrows": () => browFace({ left: "M8 21 L22 21", right: "M40 21 L26 21", width: 3 }),
+  "Soft Curved Eyebrows": () => browFace({ left: "M8 23.5 Q15 19.5 22 23.5", right: "M40 23.5 Q33 19.5 26 23.5", width: 3 }),
+  "Fill Sparse Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, width: 2.4, dash: "1.7 1.7", badge: sparkBadge }),
+  "Even Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, width: 3, extra: <path d="M2 21 H46" stroke="#2563eb" strokeWidth=".9" strokeDasharray="2 2" opacity=".8" />, badge: checkBadge }),
+  "Trim Bushy Eyebrows": () => <Composite main="brow" sub="scissors" />,
+  "Black Eyebrow Color": () => browFace({ left: BROW_L, right: BROW_R, color: "#0d0d12", width: 3.4, badge: swatch("#0d0d12") }),
+  "Dark Brown Eyebrow Color": () => browFace({ left: BROW_L, right: BROW_R, color: "#3b2417", width: 3.4, badge: swatch("#3b2417") }),
+  "Cover Gray Eyebrows": () => browFace({ left: BROW_L, right: BROW_R, color: "#0d0d12", width: 3.4, extra: <><path d="M8 24 Q12 21 15 21" stroke="#c9ced6" strokeWidth="3.4" fill="none" strokeLinecap="round" /><path d="M40 24 Q36 21 33 21" stroke="#c9ced6" strokeWidth="3.4" fill="none" strokeLinecap="round" /></>, badge: checkBadge }),
+  "Match Eyebrows to Hair": () => <Composite main="brow" sub="hair" />,
+  // Eyes
+  "Soften Eye Bags": () => <Composite main="eye" sub="cotton" />,
+  // Ears
+  "Match Ear Skin Tone": () => earFace({ badge: swatch("#f3c9a3", "#c98b64") }),
+  "Reduce Ear Redness": () => earFace({ tint: "#ef4444", badge: <path d="M39 3 Q44 10 39 13.6 Q34 10 39 3Z" fill="#60a5fa" stroke="#fff" strokeWidth="1" /> }),
+  "Tidy Ear Hair": () => earFace({ fuzz: true }),
+  // Nose
+  "Reduce Nose Shine": () => noseFace({ shine: true, badge: sparkBadge }),
+  "Reduce Nose Redness": () => noseFace({ tint: "#ef4444", badge: <path d="M39 3 Q44 10 39 13.6 Q34 10 39 3Z" fill="#60a5fa" stroke="#fff" strokeWidth="1" /> }),
+  // Cheeks
+  "Natural Cheek Blush": () => <Composite main="faceBlush" sub="sparkle" />,
+  "Reduce Cheek Redness": () => <Composite main="faceRed" sub="eraser" />,
+  // Lips
+  "Natural Lip Color": () => lipsArt(),
+  // Beard styles & sizes
+  "Clean Shave": () => person({ badge: sparkBadge }),
+  "Light Stubble": () => person({ beard: "stubble" }),
+  "Short Beard": () => person({ beard: "short" }),
+  "Medium Beard": () => person({ beard: "medium" }),
+  "Full Beard": () => person({ beard: "full" }),
+  "Long Beard": () => person({ beard: "long" }),
+  "Goatee": () => person({ beard: "goatee" }),
+  "Chin Strap Beard": () => person({ beard: "strap" }),
+  "Circle Beard": () => person({ beard: "circle" }),
+  "Van Dyke Beard": () => person({ beard: "vandyke" }),
+  "Mustache Only": () => person({ beard: "mustache" }),
+  // Beard colors
+  "Black Beard Color": () => person({ beard: "full", beardColor: "#0d0d12", badge: swatch("#0d0d12") }),
+  "Dark Brown Beard Color": () => person({ beard: "full", beardColor: "#3b2417", badge: swatch("#3b2417") }),
+  "Brown Beard Color": () => person({ beard: "full", beardColor: "#7a4a2a", badge: swatch("#7a4a2a") }),
+  "Cover Gray Beard": () => person({ beard: "full", beardColor: "#d3d8de", badge: checkBadge }),
+  "Silver Gray Beard Color": () => person({ beard: "full", beardColor: "#aeb4bd", badge: swatch("#aeb4bd") }),
+  "White Beard Color": () => person({ beard: "full", beardColor: "#f1f3f5", badge: swatch("#f1f3f5", "#94a3b8") }),
+  "Match Beard to Hair Color": () => person({ beard: "full", hair: "#6b4a36", beardColor: "#6b4a36", badge: checkBadge }),
+  "Even Beard Color": () => person({ beard: "full", beardColor: "#6b4a36", badge: checkBadge }),
+};
+Object.assign(ART, FACE_PART_ART);
+
+const SPEC: Record<string, [string, string?]> = {"Fair & Bright Skin": ["faceGlow", "sun"], "Even Skin Tone": ["swatches", "faceBlush"], "Remove Blemishes": ["faceSpots", "eraser"], "Reduce Dark Circles": ["eye", "moon"], "Reduce Facial Shine": ["faceShine", "cotton"], "Preserve Skin Texture": ["fingerprint", "shield"], "Reduce Temporary Redness": ["faceRed", "droplet"], "Soften Fine Lines": ["faceLines", "wand"], "Refine Makeup": ["faceBlush", "brush"], "Remove Makeup": ["cotton", "droplet"], "Brighten Eyes": ["eye", "sparkle"], "Sharpen Eye Details": ["eye", "magnifier"], "Reduce Red Eyes": ["eyeRed", "check"], "Whiten Teeth Naturally": ["teeth", "sparkle"], "Enhance Eyebrows": ["brow", "brush"], "Tidy Facial Hair": ["faceBeard", "scissors"], "Define Beard & Mustache": ["faceBeard", "comb"], "Tame Stray Hair": ["hair", "scissors"], "Restore Facial Details": ["face", "magnifier"], "Preserve Natural Expression": ["faceSmile", "shield"], "Fix Underexposure": ["photoDark", "sun"], "Recover Highlights": ["photoBright", "sparkle"], "Correct White Balance": ["kelvin", "sun"], "Natural Color Correction": ["palette", "check"], "Improve Contrast": ["contrast", "sparkle"], "Remove Color Cast": ["photoCast", "eraser"], "Reduce Harsh Shadows": ["faceShadow", "bulb"], "Brighten Face Shadows": ["faceShadow", "sun"], "Correct Backlighting": ["silhouette", "sun"], "Reduce Flash Glare": ["camera", "flare"], "Sharpen Details": ["magnifier", "sparkle"], "Reduce Image Noise": ["grain", "eraser"], "Deblur Image": ["blur", "crosshair"], "Upscale Image Detail": ["photo", "expand"], "Reduce Pixelation": ["pixels", "wand"], "Fix Compression Artifacts": ["jpg", "wand"], "Improve Low-Light Photo": ["moon", "camera"], "Recover Fine Details": ["photo", "magnifier"], "Remove Lens Haze": ["lens", "cloud"], "Correct Soft Focus": ["focusbox", "face"], "Improve Print Clarity": ["printer", "sparkle"], "Balance HDR Highlights": ["hdr", "sun"], "Repair Scratches": ["photoScratch", "bandage"], "Repair Tears & Creases": ["photoTorn", "tape"], "Remove Dust & Spots": ["photoSepia", "brush"], "Restore Faded Photo": ["photoFade", "sparkle"], "Colorize Black & White Photo": ["photoBW", "palette"], "Improve Black & White Contrast": ["photoBW", "contrast"], "Repair Water Damage": ["photoStain", "droplet"], "Rebuild Damaged Edges": ["photoTorn", "wand"], "Recover Faded Faces": ["faceFade", "sparkle"], "Remove Yellowing": ["photoYellow", "eraser"], "Restore Vintage Portrait": ["cameo", "sparkle"], "Clean Background": ["frameScene", "brush"], "Remove Background Distractions": ["frameScene", "eraser"], "Smooth Background": ["frameBlur", "wand"], "Remove Edge Halos": ["silhouette", "halo"], "Refine Hair Edges": ["silhouette", "comb"], "Separate Subject from Background": ["silhouette", "layers"], "Center Subject": ["frameScene", "crosshair"], "Balance Headroom": ["silhouette", "ruler"], "Correct Perspective": ["perspective", "ruler"], "Refine Photo Framing": ["frameScene", "crop"], "Extend Image Edges": ["frameScene", "expand"], "Clean ID Photo Background": ["idphoto", "brush"], "Formal Portrait Finish": ["suit", "sparkle"], "Passport Photo Polish": ["passport", "sparkle"], "Neutral Background Cleanup": ["idphoto", "eraser"], "Even Face Lighting": ["face", "bulb"], "Align Eye Line": ["eye", "ruler"], "Keep Original Glasses": ["glasses", "shield"], "Reduce Glasses Glare": ["faceGlasses", "flare"], "Natural Professional Retouch": ["suit", "brush"], "Clean Clothing Edges": ["suit", "scissors"], "Refine Collar & Tie": ["tie", "sparkle"], "Improve ID Photo Clarity": ["idphoto", "magnifier"], "Consistent Dual Portraits": ["twoFaces", "check"], "Soft Vintage Film Look": ["filmstrip", "sparkle"], "Black & White Portrait": ["faceBW", "contrast"], "Cinematic Color Grade": ["clapper", "palette"], "Warm Classic Portrait": ["faceWarm", "sun"], "Cool Modern Portrait": ["faceCool", "snow"], "Matte Finish": ["photoMatte", "check"], "Subtle Film Grain": ["filmstrip", "grain"], "High-Key Studio Look": ["faceHigh", "bulb"], "Low-Key Studio Look": ["faceLow", "moon"], "Soft Glow Finish": ["faceGlow", "sparkle"], "Rich Natural Colors": ["palette", "leaf"], "Minimalist Portrait Finish": ["frameScene", "faceSmile"]};
 
 
 function Composite({ main, sub }: { main: string; sub?: string }) {

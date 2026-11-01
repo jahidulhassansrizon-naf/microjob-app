@@ -91,10 +91,26 @@ export interface EditingGuideMeta {
   dualPrompt?: string;
 }
 
+/**
+ * Categories are listed in the order they appear on a person, from the top of
+ * the head down to the chin, then whole-face / whole-photo edits.
+ * (The library, the category filter and the quick grid all follow this order.)
+ */
 export const EDITING_GUIDE_CATEGORIES = [
   { id: "all", label: "All categories" },
-  { id: "portrait-skin", label: "Portrait & Skin" },
-  { id: "eyes-details", label: "Eyes & Facial Details" },
+  { id: "hair-style", label: "Hair Style" },
+  { id: "hair-color", label: "Hair Color" },
+  { id: "forehead", label: "Forehead & Hairline" },
+  { id: "eyebrows", label: "Eyebrows" },
+  { id: "eyes-details", label: "Eyes" },
+  { id: "ears", label: "Ears" },
+  { id: "nose", label: "Nose" },
+  { id: "cheeks", label: "Cheeks" },
+  { id: "lips-teeth", label: "Lips & Teeth" },
+  { id: "beard-style", label: "Beard & Mustache" },
+  { id: "beard-color", label: "Beard Color" },
+  { id: "portrait-skin", label: "Skin & Complexion" },
+  { id: "head-pose", label: "Head & Pose" },
   { id: "lighting-color", label: "Lighting & Color" },
   { id: "image-quality", label: "Image Quality" },
   { id: "old-photo", label: "Old Photo Restoration" },
@@ -109,6 +125,7 @@ export const EDITING_GUIDE_CATEGORIES = [
  */
 export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   // Portrait & Skin
+  "Fair & Bright Skin": Sun,
   "Glow & Makeup": WandSparkles,
   "Smooth Skin": Droplets,
   "Remove Blemishes": Eraser,
@@ -136,6 +153,26 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   "Tame Stray Hair": Scissors,
   "Restore Facial Details": ScanFace,
   "Preserve Natural Expression": Smile,
+
+  // Hair Style
+  "Neat Short Haircut": Scissors,
+  "Side Part Hair": Scissors,
+  "Slick Back Hair": Scissors,
+  "Crew Cut": Scissors,
+  "Buzz Cut": Scissors,
+  "Textured Quiff": Scissors,
+  "Taper Fade": Scissors,
+  "Long Straight Hair": Scissors,
+  "Long Wavy Hair": Scissors,
+  "Shoulder-Length Bob": Scissors,
+  "Pixie Cut": Scissors,
+  "Low Bun": Scissors,
+  "High Ponytail": Scissors,
+  "Side Braid": Scissors,
+  "Curtain Bangs": Scissors,
+  "Curly Hair": Scissors,
+  "Black Hair Color": Scissors,
+  "Cover Gray Hair": Scissors,
 
   // Lighting & Color
   "Brighten Image": Sun,
@@ -222,13 +259,31 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   "Minimalist Portrait Finish": CircleDot,
 };
 
-export const EDITING_GUIDES: EditingGuidePreset[] = [
-  // Portrait & Skin (12)
-  { label: "Glow & Makeup", category: "portrait-skin", prompt: "Add a subtle, polished grooming touch and a healthy natural glow: even-looking skin and soft, natural-looking makeup where it suits the person. Keep it realistic, age-appropriate, and consistent with the person's identity; do not change facial structure, eye shape, or skin color." },
-  { label: "Smooth Skin", category: "portrait-skin", prompt: "Reduce temporary blemishes and unevenness while preserving pores, natural skin texture, fine detail, and the person's real complexion. Avoid plastic or airbrushed skin." },
-  { label: "Remove Blemishes", category: "portrait-skin", prompt: "Remove temporary pimples and small transient blemishes only. Preserve freckles, moles, scars, birthmarks, and other stable identifying marks." },
-  { label: "Even Skin Tone", category: "portrait-skin", prompt: "Gently even out patchy skin tone without changing the person's natural complexion, ethnicity, undertones, or facial structure." },
-  { label: "Reduce Dark Circles", category: "portrait-skin", prompt: "Subtly reduce under-eye darkness and tired-looking shadows while keeping natural eye contours and realistic skin texture." },
+const HAIR_RULE = "Change only the visible hair on the head. Keep the face, forehead shape, eyebrows, ears, facial hair, skin and expression exactly unchanged, keep both eyes and eyebrows fully visible, and keep the hair photorealistic with natural individual strands, neat and studio-ready for an ID photo with no flyaway hairs. Keep the natural hair color and density unless a color is stated. If the person wears a hijab, headscarf, cap or turban, leave that head covering exactly as it is and ignore this hair edit.";
+
+// ---------------------------------------------------------------------------
+// Shared rules for the face-part presets (hair color, eyebrows, beard).
+// Each rule says exactly WHAT may change and WHAT must stay untouched, so the
+// AI never "leaks" an edit into a neighbouring part of the face.
+// ---------------------------------------------------------------------------
+const HAIR_COLOR_RULE = "Recolor ONLY the visible hair on the head. Recolor every strand evenly and completely from root to tip, including gray, white, faded or sun-bleached strands, the temples and the hairline, leaving no gray patches, no two-tone roots and no uneven spots. Keep the original hairstyle, hair shape, volume, parting and natural individual strands with realistic soft highlights and shadows (never flat, painted, plastic or wig-like). Keep the face, skin, ears, forehead, eyebrows, eyelashes, beard and mustache unchanged, with no color bleeding onto the skin, forehead, ears, neck or clothing. If a hair style edit is also requested, apply this color to that new hairstyle. If the person wears a hijab, headscarf, cap or turban, leave that head covering exactly as it is and ignore this edit. If the person is bald or has very little hair, color only the hair that exists and never add hair.";
+
+const BROW_RULE = "Change ONLY the eyebrows. Keep the eyes, eyelids, eyelashes, forehead, nose, hair, skin tone and face shape exactly unchanged. The eyebrows must be photorealistic, made of fine natural individual hairs (never drawn-on, tattooed, stenciled, blocky or cartoonish), sit in their natural position above the eyes, and be symmetrical in length, height, thickness and angle between left and right. Unless an eyebrow color edit is requested, keep the natural eyebrow color.";
+
+const BROW_COLOR_RULE = "Recolor ONLY the eyebrow hairs, evenly and completely including any gray or white hairs, keeping the original eyebrow shape, thickness, density and natural individual hairs with realistic depth (not flat or painted). Keep the eyes, eyelashes, eyelids, forehead, skin, hair on the head and any beard unchanged, with no color bleeding onto the skin or eyelids.";
+
+const BEARD_RULE = "Change ONLY the beard, mustache and beard-side sideburns. Keep the face shape, jawline, chin shape, lips, teeth, skin tone, the hair on the head, the eyebrows and the expression exactly unchanged, and keep the lips and mouth fully visible and undistorted. The facial hair must be photorealistic: natural individual hair strands, a natural density gradient (denser at the chin and mustache, lighter toward the cheeks), neat clean groomed edges and cheek line, symmetrical left and right, never pasted-on, painted, blurry or patchy. Unless a beard color edit is requested, use the person's existing facial-hair color; if the person has no facial hair, use the natural color of the hair on their head (matching any hair color edit requested), using a natural dark shade of the same family if that hair is gray or white. If the person wears a niqab or other face covering, ignore this edit.";
+
+const BEARD_COLOR_RULE = "Recolor ONLY the existing beard, mustache and beard-side sideburn hair. If no facial hair is visible, make no change and never add a beard. Recolor every strand evenly and completely from root to tip, including all gray and white strands and patches, keeping the original beard shape, length, density, edges and realistic strand texture with soft natural highlights and shadows (never flat or painted). Keep the skin underneath, lips, teeth, eyebrows and the hair on the head unchanged, with no color bleeding onto the skin, lips or clothing.";
+
+const RAW_GUIDES: EditingGuidePreset[] = [
+  // Portrait & Skin (13)
+  { label: "Fair & Bright Skin", category: "portrait-skin", prompt: "Make the skin visibly fairer, brighter and cleaner, like a high-quality professional Photoshop skin retouch. Clearly lift the skin brightness and luminosity of the face, neck and ears by a noticeable medium-to-strong amount (a clearly fairer, fresher, clearer complexion, but still natural). Remove dullness, dark or dusky tone, grayish or muddy cast, sun-tan patches, dark blotches, uneven pigmentation, dark marks, dirty-looking spots, stains, pimple marks, dark under-eye circles and oily shine, so the whole face has one smooth, even, radiant tone. Keep realistic skin texture and pores (no plastic or airbrushed look). Keep the person's natural undertone: never make the skin chalky, pale-white, gray, orange or pink. Face, neck and ears must match in color. Keep face structure, expression, moles, birthmarks and scars unchanged so it is clearly the same person." },
+  { label: "Glow & Makeup", category: "portrait-skin", prompt: "Add a subtle, polished grooming touch and a healthy natural glow: even-looking skin and soft, natural-looking makeup where it suits the person. Keep the skin clean, bright and even. Keep it realistic, age-appropriate, and consistent with the person's identity; do not change facial structure or eye shape." },
+  { label: "Smooth Skin", category: "portrait-skin", prompt: "Smooth out blemishes, dark spots, patchy dullness and unevenness so the skin looks clean, clear and bright, while preserving pores, natural skin texture, fine detail, and the person's natural undertone. Avoid plastic or airbrushed skin." },
+  { label: "Remove Blemishes", category: "portrait-skin", prompt: "Remove pimples, acne marks, dark spots, dirty-looking specks, stains and other small transient blemishes completely so the skin looks clean. Preserve moles, scars, birthmarks, and other stable identifying marks." },
+  { label: "Even Skin Tone", category: "portrait-skin", prompt: "Even out patchy, blotchy or dark-and-light skin tone across the forehead, cheeks, nose, chin, neck and ears into one smooth, consistent, clean tone. Keep the person's natural undertone, ethnicity and facial structure." },
+  { label: "Reduce Dark Circles", category: "portrait-skin", prompt: "Clearly reduce under-eye darkness, dark rings and tired-looking shadows so the eye area matches the rest of the face, while keeping natural eye contours and realistic skin texture." },
   { label: "Reduce Facial Shine", category: "portrait-skin", prompt: "Reduce distracting oily shine on the forehead, nose, and cheeks while retaining natural skin highlights and realistic texture." },
   { label: "Preserve Skin Texture", category: "portrait-skin", prompt: "Retain realistic pores, fine lines, and skin texture. Avoid excessive smoothing, waxy skin, or artificial beauty-filter effects." },
   { label: "Reduce Temporary Redness", category: "portrait-skin", prompt: "Gently reduce temporary irritation or blotchy redness while preserving natural lip color, undertones, and any meaningful skin marks." },
@@ -238,9 +293,9 @@ export const EDITING_GUIDES: EditingGuidePreset[] = [
   { label: "Lipstick", category: "portrait-skin", prompt: "Apply subtle, natural-looking lipstick in a flattering shade that suits the person's skin tone. Preserve the original lip shape, teeth, expression, facial identity, and realistic lip texture." },
 
   // Eyes & Facial Details (12)
-  { label: "Straighten Tilted Photo", category: "eyes-details", prompt: "The photo was taken at a tilt (crooked phone, leaning head or neck, slanted shoulders). Rotate and level the whole subject so the head, neck and shoulders sit naturally upright and symmetrical, facing the camera, with level shoulders and a vertical spine/neck line. Keep the person's identity, facial features, expression, skin tone, hair and clothing exactly the same; do not change face shape or proportions, and rebuild any edge areas revealed by the rotation naturally." },
+  { label: "Straighten Tilted Photo", category: "eyes-details", prompt: "The photo was taken at a tilt (crooked phone, leaning head or neck, slanted shoulders). Rotate and level the whole subject so the head, neck and shoulders sit naturally upright and symmetrical, facing the camera, with level shoulders and a vertical spine/neck line. Keep the person's identity, facial features, expression, hair and clothing exactly the same; do not change face shape or proportions, and rebuild any edge areas revealed by the rotation naturally." },
   { label: "Straighten Head", category: "eyes-details", prompt: "Correct the head angle so the face is naturally upright and looking toward the camera, preserving facial proportions and a realistic neck and shoulder position." },
-  { label: "Keep Marks", category: "eyes-details", prompt: "Preserve natural identifying marks such as freckles, moles, scars, birthmarks, and other stable facial details." },
+  { label: "Keep Marks", category: "eyes-details", prompt: "Preserve natural identifying marks such as moles, scars, birthmarks, freckles, and other stable facial details exactly where they are. Overall skin brightening, even tone and removal of temporary spots still apply, but never erase these permanent marks." },
   { label: "Brighten Eyes", category: "eyes-details", prompt: "Make the eyes appear a little clearer and more lively with subtle, realistic brightness. Preserve the original eye shape, iris color, gaze, and expression." },
   { label: "Sharpen Eye Details", category: "eyes-details", prompt: "Improve clarity around the eyes, eyelashes, and brows without enlarging, reshaping, recoloring, or artificially redrawing the eyes." },
   { label: "Reduce Red Eyes", category: "eyes-details", prompt: "Correct camera-flash red-eye artifacts only, preserving the natural iris color, pupil, eye shape, and gaze." },
@@ -251,6 +306,26 @@ export const EDITING_GUIDES: EditingGuidePreset[] = [
   { label: "Tame Stray Hair", category: "eyes-details", prompt: "Tidy a small number of distracting flyaway hairs while preserving the hairstyle, hairline, volume, texture, and natural hair strands." },
   { label: "Restore Facial Details", category: "eyes-details", prompt: "Carefully recover plausible facial detail obscured by mild fading or softness. Do not invent distinctive features or alter the person's identity." },
   { label: "Preserve Natural Expression", category: "eyes-details", prompt: "Keep the original expression and gaze natural. Do not force a smile, change the mouth, or make the expression unnaturally symmetrical." },
+
+  // Hair Style (18)
+  { label: "Neat Short Haircut", category: "hair-style", prompt: `Give the person a neat, short, well-groomed haircut with clean tapered sides, a tidy natural hairline and a smooth, even top. ${HAIR_RULE}` },
+  { label: "Side Part Hair", category: "hair-style", prompt: `Style the hair into a neat classic side part, combed smoothly to one side with natural volume on top and short, tidy sides. ${HAIR_RULE}` },
+  { label: "Slick Back Hair", category: "hair-style", prompt: `Style the hair combed neatly straight back from the forehead with a smooth, tidy finish that shows the full forehead, with short neat sides. ${HAIR_RULE}` },
+  { label: "Crew Cut", category: "hair-style", prompt: `Give the person a short, even crew cut, slightly longer on top than on the sides, with clean sharp edges. ${HAIR_RULE}` },
+  { label: "Buzz Cut", category: "hair-style", prompt: `Give the person a very short, uniform buzz cut across the whole head (close-cropped stubble length) with a clean, neat hairline. ${HAIR_RULE}` },
+  { label: "Textured Quiff", category: "hair-style", prompt: `Give the person short sides with a textured, slightly raised quiff on top swept up and back, neat and natural, with modest height so the top of the head stays inside the frame. ${HAIR_RULE}` },
+  { label: "Taper Fade", category: "hair-style", prompt: `Give the person a clean taper fade: sides and back fading gradually from short to very short, with slightly longer neat hair on top. ${HAIR_RULE}` },
+  { label: "Long Straight Hair", category: "hair-style", prompt: `Style the hair as long, straight, smooth and glossy, falling neatly past the shoulders and combed with no flyaways, keeping the whole face clearly visible. ${HAIR_RULE}` },
+  { label: "Long Wavy Hair", category: "hair-style", prompt: `Style the hair as long with soft, natural, even waves, falling neatly past the shoulders, tidy and glossy, keeping the whole face clearly visible. ${HAIR_RULE}` },
+  { label: "Shoulder-Length Bob", category: "hair-style", prompt: `Style the hair as a smooth, neat shoulder-length bob with tidy even ends and a clean parting, keeping the whole face clearly visible. ${HAIR_RULE}` },
+  { label: "Pixie Cut", category: "hair-style", prompt: `Give the person a short, neat pixie cut with soft tapered sides and a short, lightly textured top. ${HAIR_RULE}` },
+  { label: "Low Bun", category: "hair-style", prompt: `Style the hair pulled back smoothly into a neat low bun at the back of the neck, with a clean parting and no loose strands. ${HAIR_RULE}` },
+  { label: "High Ponytail", category: "hair-style", prompt: `Style the hair pulled up smoothly into a neat high ponytail with no loose strands; the ponytail may be partly visible behind the head. ${HAIR_RULE}` },
+  { label: "Side Braid", category: "hair-style", prompt: `Style the hair into a neat single braid resting over one shoulder, with a smooth, tidy top and no loose strands. ${HAIR_RULE}` },
+  { label: "Curtain Bangs", category: "hair-style", prompt: `Style long hair with soft center-parted curtain bangs sweeping to both sides, keeping the eyes and eyebrows fully visible. ${HAIR_RULE}` },
+  { label: "Curly Hair", category: "hair-style", prompt: `Style the hair as soft, defined, natural-looking curls with neat, controlled volume that stays inside the frame. ${HAIR_RULE}` },
+  { label: "Black Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a natural deep black with realistic shine and natural strand variation, keeping the original hairstyle, hair shape and hairline. Do not change the eyebrows or any beard or mustache. ${HAIR_RULE}` },
+  { label: "Cover Gray Hair", category: "hair-style", prompt: `Naturally cover gray and white hair on the head with a rich natural black (or very dark brown) color with realistic shine, keeping the original hairstyle, hair shape and hairline. Leave the eyebrows and any beard or mustache unchanged. ${HAIR_RULE}` },
 
   // Lighting & Color (12)
   { label: "Brighten Image", category: "lighting-color", prompt: "Correct exposure and brighten the portrait gently without washing out skin tones, losing highlights, or flattening facial depth." },
@@ -310,13 +385,13 @@ export const EDITING_GUIDES: EditingGuidePreset[] = [
 
   // ID & Studio Portrait (12)
   { label: "Formal Portrait Finish", category: "id-studio", prompt: "Give the portrait a polished, professional finish suitable for formal use while retaining a realistic appearance and the person's original identity." },
-  { label: "Passport Photo Polish", category: "id-studio", prompt: "Polish the portrait for passport-style presentation: natural facial detail, even exposure, centered framing, clear edges, and no beautification that changes identity." },
+  { label: "Passport Photo Polish", category: "id-studio", prompt: "Polish the portrait for passport-style presentation: clean bright even skin, natural facial detail, even exposure, centered framing, clear edges, and no change to face structure or identity." },
   { label: "Neutral Background Cleanup", category: "id-studio", prompt: "Make sure the background is a clean, evenly colored area ({background}) with no leftover scenery, fragments, or edge contamination around the subject." },
-  { label: "Even Face Lighting", category: "id-studio", prompt: "Balance illumination across the face for a clear formal portrait, keeping natural facial depth and avoiding an unnaturally flat or overlit appearance." },
+  { label: "Even Face Lighting", category: "id-studio", prompt: "Balance illumination across the face for a clear formal portrait, keeping natural facial depth, clean bright skin, and avoiding an unnaturally flat or overlit appearance." },
   { label: "Align Eye Line", category: "id-studio", prompt: "Gently align the eye line for a level, camera-facing portrait if the source angle permits, preserving the original eye shape and facial proportions." },
   { label: "Keep Original Glasses", category: "id-studio", prompt: "Preserve the person's existing glasses, including frame shape, color, placement, and lenses. Do not remove or replace them." },
   { label: "Reduce Glasses Glare", category: "id-studio", prompt: "Reduce reflections on eyeglass lenses where possible while preserving the original frames, lens transparency, eye shape, and gaze." },
-  { label: "Natural Professional Retouch", category: "id-studio", prompt: "Apply restrained professional retouching only: correct minor lighting and temporary distractions while preserving skin texture, age, expression, and identity." },
+  { label: "Natural Professional Retouch", category: "id-studio", prompt: "Apply professional retouching: correct lighting, clean and brighten the skin, remove temporary distractions and spots, while preserving skin texture, age, expression, and identity." },
   { label: "Clean Clothing Edges", category: "id-studio", prompt: "Neaten stray fibers and edge artifacts on the visible clothing without changing its selected style, color, fit, or fabric texture." },
   { label: "Refine Collar & Tie", category: "id-studio", prompt: "Neatly refine an existing shirt collar or tie so it looks tidy and realistic. Do not add a tie or change the selected clothing unless requested elsewhere." },
   { label: "Improve ID Photo Clarity", category: "id-studio", prompt: "Improve the clarity of the face, hair edges, and clothing for a formal identification-style portrait with realistic detail and balanced exposure. Keep the facial identity unchanged." },
@@ -327,14 +402,148 @@ export const EDITING_GUIDES: EditingGuidePreset[] = [
   { label: "Black & White Portrait", category: "creative-finish", prompt: "Convert the whole image to tasteful black and white with balanced tonal separation and detailed highlights and shadows. Keep the person recognizable and the facial details natural." },
   { label: "Cinematic Color Grade", category: "creative-finish", prompt: "Apply a restrained cinematic color grade with intentional tonal contrast while preserving believable skin tones and avoiding an artificial color cast." },
   { label: "Warm Classic Portrait", category: "creative-finish", prompt: "Apply a gentle warm color treatment reminiscent of a classic studio portrait while preserving natural complexion and realistic whites." },
-  { label: "Cool Modern Portrait", category: "creative-finish", prompt: "Apply a subtle cool, contemporary color balance without turning skin gray or blue and without changing facial identity." },
+  { label: "Cool Modern Portrait", category: "creative-finish", prompt: "Apply a subtle cool, contemporary color balance without turning skin gray, dark or blue, keeping the skin clean and bright, and without changing facial identity." },
   { label: "Matte Finish", category: "creative-finish", prompt: "Use a restrained matte tonal finish with slightly softened contrast, keeping details clear and avoiding washed-out skin or crushed shadows." },
   { label: "Subtle Film Grain", category: "creative-finish", prompt: "Add very fine, subtle film grain for a photographic finish. Keep it even and unobtrusive, with no coarse noise on the face." },
   { label: "High-Key Studio Look", category: "creative-finish", prompt: "Create a bright, high-key studio lighting look with soft shadows and clean highlights while preserving skin detail and natural facial contours." },
-  { label: "Low-Key Studio Look", category: "creative-finish", prompt: "Create a controlled low-key studio look with deeper but detailed shadows and gentle directional light, keeping the face clearly visible." },
+  { label: "Low-Key Studio Look", category: "creative-finish", prompt: "Create a controlled low-key studio look with deeper but detailed shadows and gentle directional light, keeping the face clearly visible and the skin clean, bright and even (do not let the face turn dark or muddy)." },
   { label: "Soft Glow Finish", category: "creative-finish", prompt: "Add a restrained soft glow to bright areas while preserving edge clarity, skin texture, natural contrast, and realistic facial details." },
   { label: "Rich Natural Colors", category: "creative-finish", prompt: "Give colors a little more richness and depth while keeping skin tones believable and avoiding neon saturation or color clipping." },
   { label: "Minimalist Portrait Finish", category: "creative-finish", prompt: "Use a clean, restrained, distraction-free portrait finish with simple tones and realistic detail, avoiding decorative effects or added objects." },
+
+  // ===== Hair Color (new) =====
+  { label: "Dark Brown Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a natural deep dark brown (espresso brown, clearly brown rather than black) with subtle warm highlights and natural strand variation. ${HAIR_COLOR_RULE}` },
+  { label: "Brown Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a natural medium chestnut brown with soft natural highlights and natural strand variation. ${HAIR_COLOR_RULE}` },
+  { label: "Auburn Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a natural reddish-brown auburn with soft warm highlights and natural strand variation. ${HAIR_COLOR_RULE}` },
+  { label: "Dark Blonde Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a natural dark blonde / golden brown with soft natural highlights and natural strand variation, subtle and realistic rather than bright or bleached. ${HAIR_COLOR_RULE}` },
+  { label: "Silver Gray Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to a clean, natural silver-gray with soft light-gray and white highlights and natural strand variation, looking like real mature gray hair. ${HAIR_COLOR_RULE}` },
+  { label: "White Hair Color", category: "hair-style", prompt: `Recolor the hair on the head to natural white with very soft light-gray shading so it keeps depth and strand detail, looking like real white hair and not a flat white shape. ${HAIR_COLOR_RULE}` },
+  { label: "Cover Gray Hair Brown", category: "hair-style", prompt: `Naturally cover all gray and white hair on the head with a rich natural dark brown color with realistic shine, so no gray strands remain visible. ${HAIR_COLOR_RULE}` },
+  { label: "Even Hair Color", category: "hair-style", prompt: `Make the hair color on the head even and consistent from root to tip by removing patchy, faded, sun-bleached, two-tone or uneven areas, while keeping the person's overall natural hair shade (do not change it to a different color). ${HAIR_COLOR_RULE}` },
+
+  // ===== Forehead & Hairline (new) =====
+  { label: "Remove Forehead Wrinkles", category: "portrait-skin", prompt: "Remove the forehead wrinkles: the horizontal creases across the forehead and the vertical frown lines between the eyebrows, so the forehead looks clean, smooth and relaxed. Keep realistic fine skin pores and natural skin texture (never airbrushed, waxy or plastic), the natural forehead shape, the original hairline and eyebrows, and the same skin tone. Keep moles, scars and birthmarks unchanged." },
+  { label: "Reduce Forehead Shine", category: "portrait-skin", prompt: "Reduce oily shine and hotspots on the forehead so it matches the rest of the face, while keeping natural skin highlights, texture and the original forehead shape and hairline." },
+  { label: "Clean Hairline", category: "portrait-skin", prompt: "Neaten the hairline along the forehead and temples by removing fuzz, stray and flyaway hairs while keeping the original hairline shape, position and density natural. Do not move the hairline or change the hairstyle." },
+
+  // ===== Eyebrows (new) =====
+  { label: "Thick Eyebrows", category: "eyes-details", prompt: `Make the eyebrows naturally fuller and thicker, with dense, well-groomed, neatly shaped hairs, keeping the person's natural brow position and a natural arch. ${BROW_RULE}` },
+  { label: "Thin Eyebrows", category: "eyes-details", prompt: `Make the eyebrows naturally slimmer and finer, neatly groomed with clean edges, keeping the person's natural brow position and a natural arch, and not over-thin or pencil-drawn. ${BROW_RULE}` },
+  { label: "Arched Eyebrows", category: "eyes-details", prompt: `Shape the eyebrows with a soft, elegant, natural arch, with the highest point about two-thirds along the brow and a gently tapering tail, at a medium thickness. ${BROW_RULE}` },
+  { label: "Straight Eyebrows", category: "eyes-details", prompt: `Shape the eyebrows as soft, flat, nearly straight brows with only a very slight natural angle, at a medium thickness with a gently tapered end. ${BROW_RULE}` },
+  { label: "Soft Curved Eyebrows", category: "eyes-details", prompt: `Shape the eyebrows as softly rounded, gently curved brows with no sharp corner or angle, at a medium thickness with a gently tapered end. ${BROW_RULE}` },
+  { label: "Fill Sparse Eyebrows", category: "eyes-details", prompt: `Fill in thin, sparse, patchy or faded eyebrow areas with fine, natural-looking individual hairs in the same color, so the brows look complete and even while keeping the person's own brow shape and position. ${BROW_RULE}` },
+  { label: "Even Eyebrows", category: "eyes-details", prompt: `Make the two eyebrows symmetrical and balanced: equal height, length, thickness and angle on the left and right, with tidy edges, while keeping the person's natural brow style and color. ${BROW_RULE}` },
+  { label: "Trim Bushy Eyebrows", category: "eyes-details", prompt: `Neatly trim and tidy bushy, overgrown or unruly eyebrows into a clean, well-groomed shape by removing stray hairs above and below the brow line, keeping the natural brow shape, thickness and color. ${BROW_RULE}` },
+  { label: "Black Eyebrow Color", category: "eyes-details", prompt: `Recolor the eyebrows to a natural deep black with fine natural hair detail. ${BROW_COLOR_RULE}` },
+  { label: "Dark Brown Eyebrow Color", category: "eyes-details", prompt: `Recolor the eyebrows to a natural deep dark brown with fine natural hair detail. ${BROW_COLOR_RULE}` },
+  { label: "Cover Gray Eyebrows", category: "eyes-details", prompt: `Naturally cover gray and white eyebrow hairs with a natural black or very dark brown color so the brows look uniformly dark. ${BROW_COLOR_RULE}` },
+  { label: "Match Eyebrows to Hair", category: "eyes-details", prompt: `Recolor the eyebrows to match the final color of the hair on the head (including any hair color edit requested), keeping a natural, slightly softer tone than the hair. ${BROW_COLOR_RULE}` },
+
+  // ===== Eyes (new) =====
+  { label: "Soften Eye Bags", category: "eyes-details", prompt: "Gently soften puffiness and bags under the eyes and the shadow they cast, so the eye area looks fresh and rested, while keeping natural eye contours, the eye shape, realistic skin texture and the person's apparent age." },
+
+  // ===== Ears (new) =====
+  { label: "Match Ear Skin Tone", category: "portrait-skin", prompt: "Make the skin color and brightness of both ears match the face and neck, removing dark, dull or uneven patches on the ears, while keeping the exact ear shape, size and position and realistic skin texture." },
+  { label: "Reduce Ear Redness", category: "portrait-skin", prompt: "Gently reduce temporary redness or irritation on the ears so they blend naturally with the face and neck, keeping the exact ear shape and size, natural skin texture and any piercings or marks unchanged." },
+  { label: "Tidy Ear Hair", category: "portrait-skin", prompt: "Neatly remove stray fuzz and fine hairs on and around the ears so they look clean, while keeping the ear shape and size, the hairstyle and the sideburns unchanged." },
+
+  // ===== Nose (new) =====
+  { label: "Reduce Nose Shine", category: "portrait-skin", prompt: "Reduce oily shine on the nose and nose tip while keeping natural skin highlights, texture and the exact nose shape and size." },
+  { label: "Reduce Nose Redness", category: "portrait-skin", prompt: "Gently reduce temporary redness or irritation around the nose and nostrils so it blends with the rest of the face, keeping the exact nose shape and size and natural skin texture." },
+
+  // ===== Cheeks (new) =====
+  { label: "Natural Cheek Blush", category: "portrait-skin", prompt: "Add a very subtle, healthy natural warmth to the cheeks that suits the person's skin tone, soft and evenly blended, without visible makeup, while keeping the cheek shape, face structure and realistic skin texture unchanged." },
+  { label: "Reduce Cheek Redness", category: "portrait-skin", prompt: "Gently reduce blotchy or excessive redness on the cheeks so the cheek color is even and healthy, while keeping the cheek shape, natural skin texture and any freckles, moles or marks unchanged." },
+
+  // ===== Lips (new) =====
+  { label: "Natural Lip Color", category: "portrait-skin", prompt: "Even out the lip color into a healthy, natural tone that suits the person's skin, removing dryness, dark patches and uneven pigmentation, while keeping the exact lip shape, teeth and expression unchanged. Do not add visible lipstick." },
+
+  // ===== Beard & Mustache style / size (new) =====
+  { label: "Clean Shave", category: "eyes-details", prompt: "Make the person clean-shaven: completely remove all beard, mustache, stubble and beard-side sideburn growth, leaving smooth, natural, evenly lit skin with realistic skin texture on the cheeks, jaw, chin and upper lip, and no gray stubble shadow. Keep the jawline, chin shape, lips, teeth, hair on the head, eyebrows and expression exactly unchanged. If the person wears a niqab or other face covering, ignore this edit." },
+  { label: "Light Stubble", category: "eyes-details", prompt: `Give the person a very short, even light stubble (about 1 to 2 mm long, a faint five-o'clock shadow) over the cheeks, jaw, chin and upper lip with a clean natural cheek line and neck line, and visible skin showing through. ${BEARD_RULE}` },
+  { label: "Short Beard", category: "eyes-details", prompt: `Give the person a short, neatly trimmed full beard about 5 mm long (close to the face), covering the cheeks, jaw, chin and upper lip evenly with a clean sharp cheek line and a clean neck line. ${BEARD_RULE}` },
+  { label: "Medium Beard", category: "eyes-details", prompt: `Give the person a medium-length, well-groomed full beard about 1.5 cm long, covering the cheeks, jaw, chin and upper lip, with soft natural volume, a defined cheek line and a clean neck line. ${BEARD_RULE}` },
+  { label: "Full Beard", category: "eyes-details", prompt: `Give the person a thick, full, well-groomed beard about 3 cm long with a full mustache joining the beard, dense and even over the cheeks, jaw and chin, with a neat defined cheek line and the beard ending at the jaw and chin area (not hanging onto the chest). ${BEARD_RULE}` },
+  { label: "Long Beard", category: "eyes-details", prompt: `Give the person a long, full, neatly combed beard extending clearly below the chin (about 8 to 10 cm), with a full mustache, natural soft strands and a tidy shape, keeping the mouth visible and the beard inside the frame. ${BEARD_RULE}` },
+  { label: "Goatee", category: "eyes-details", prompt: `Give the person a neat goatee: a mustache joined with a beard patch on the chin only, with clean-shaven cheeks and jaw. ${BEARD_RULE}` },
+  { label: "Chin Strap Beard", category: "eyes-details", prompt: `Give the person a thin, sharply lined chin-strap beard: a narrow, neat band of facial hair following the jawline from the sideburns to the chin, with clean-shaven cheeks and no mustache. ${BEARD_RULE}` },
+  { label: "Circle Beard", category: "eyes-details", prompt: `Give the person a neat circle beard: a mustache connected to a rounded chin beard forming a closed ring around the mouth, with clean-shaven cheeks and jaw. ${BEARD_RULE}` },
+  { label: "Van Dyke Beard", category: "eyes-details", prompt: `Give the person a Van Dyke beard: a groomed mustache that is separate from a pointed chin beard, with clean-shaven cheeks and jaw. ${BEARD_RULE}` },
+  { label: "Mustache Only", category: "eyes-details", prompt: `Give the person a neat, well-groomed mustache only (natural medium thickness, tidy ends, not covering the lips), with a completely clean-shaven chin, cheeks and jaw. ${BEARD_RULE}` },
+
+  // ===== Beard Color (new) =====
+  { label: "Black Beard Color", category: "eyes-details", prompt: `Recolor the beard and mustache to a natural deep black with realistic shine and natural strand variation. ${BEARD_COLOR_RULE}` },
+  { label: "Dark Brown Beard Color", category: "eyes-details", prompt: `Recolor the beard and mustache to a natural deep dark brown with realistic shine and natural strand variation. ${BEARD_COLOR_RULE}` },
+  { label: "Brown Beard Color", category: "eyes-details", prompt: `Recolor the beard and mustache to a natural medium chestnut brown with soft natural highlights and strand variation. ${BEARD_COLOR_RULE}` },
+  { label: "Cover Gray Beard", category: "eyes-details", prompt: `Naturally cover all gray and white hair in the beard and mustache with a rich natural black (or very dark brown) color with realistic shine, so no gray or white strands remain visible. ${BEARD_COLOR_RULE}` },
+  { label: "Silver Gray Beard Color", category: "eyes-details", prompt: `Recolor the beard and mustache to a clean, natural silver-gray with soft light-gray and white highlights, looking like real mature gray facial hair. ${BEARD_COLOR_RULE}` },
+  { label: "White Beard Color", category: "eyes-details", prompt: `Recolor the beard and mustache to natural white with very soft light-gray shading so it keeps depth and strand detail and does not look like a flat white shape. ${BEARD_COLOR_RULE}` },
+  { label: "Match Beard to Hair Color", category: "eyes-details", prompt: `Recolor the beard and mustache to match the final color of the hair on the head (including any hair color edit requested), with a natural, very slightly lighter or softer tone, so the head hair and the facial hair look consistent. ${BEARD_COLOR_RULE}` },
+  { label: "Even Beard Color", category: "eyes-details", prompt: `Make the beard and mustache color even and consistent by removing patchy gray, faded, two-tone or uneven areas, while keeping the person's overall natural facial-hair shade (do not change it to a different color). ${BEARD_COLOR_RULE}` },
+];
+
+/**
+ * Display order, top of the head -> chin. Edit these lists to re-order the UI.
+ * Anything not listed here (lighting, quality, restoration, background, ID,
+ * creative finish) keeps its original order and follows after these groups.
+ */
+const FACE_ORDER: Array<[string, string[]]> = [
+  ["hair-style", [
+    "Neat Short Haircut", "Side Part Hair", "Slick Back Hair", "Crew Cut", "Buzz Cut", "Textured Quiff", "Taper Fade",
+    "Long Straight Hair", "Long Wavy Hair", "Shoulder-Length Bob", "Pixie Cut", "Low Bun", "High Ponytail", "Side Braid",
+    "Curtain Bangs", "Curly Hair", "Tame Stray Hair",
+  ]],
+  ["hair-color", [
+    "Black Hair Color", "Dark Brown Hair Color", "Brown Hair Color", "Auburn Hair Color", "Dark Blonde Hair Color",
+    "Silver Gray Hair Color", "White Hair Color", "Cover Gray Hair", "Cover Gray Hair Brown", "Even Hair Color",
+  ]],
+  ["forehead", ["Clean Hairline", "Remove Forehead Wrinkles", "Reduce Forehead Shine"]],
+  ["eyebrows", [
+    "Enhance Eyebrows", "Thick Eyebrows", "Thin Eyebrows", "Arched Eyebrows", "Straight Eyebrows", "Soft Curved Eyebrows",
+    "Fill Sparse Eyebrows", "Even Eyebrows", "Trim Bushy Eyebrows", "Black Eyebrow Color", "Dark Brown Eyebrow Color",
+    "Cover Gray Eyebrows", "Match Eyebrows to Hair",
+  ]],
+  ["eyes-details", [
+    "Brighten Eyes", "Sharpen Eye Details", "Reduce Red Eyes", "Reduce Dark Circles", "Soften Eye Bags", "Align Eye Line",
+    "Keep Original Glasses", "Reduce Glasses Glare",
+  ]],
+  ["ears", ["Match Ear Skin Tone", "Reduce Ear Redness", "Tidy Ear Hair"]],
+  ["nose", ["Reduce Nose Shine", "Reduce Nose Redness"]],
+  ["cheeks", ["Natural Cheek Blush", "Reduce Cheek Redness"]],
+  ["lips-teeth", ["Lipstick", "Natural Lip Color", "Whiten Teeth Naturally", "Preserve Natural Expression"]],
+  ["beard-style", [
+    "Clean Shave", "Light Stubble", "Short Beard", "Medium Beard", "Full Beard", "Long Beard", "Goatee", "Chin Strap Beard",
+    "Circle Beard", "Van Dyke Beard", "Mustache Only", "Tidy Facial Hair", "Define Beard & Mustache",
+  ]],
+  ["beard-color", [
+    "Black Beard Color", "Dark Brown Beard Color", "Brown Beard Color", "Cover Gray Beard", "Silver Gray Beard Color",
+    "White Beard Color", "Match Beard to Hair Color", "Even Beard Color",
+  ]],
+  ["portrait-skin", [
+    "Fair & Bright Skin", "Glow & Makeup", "Smooth Skin", "Remove Blemishes", "Even Skin Tone", "Reduce Facial Shine",
+    "Reduce Temporary Redness", "Soften Fine Lines", "Preserve Skin Texture", "Keep Marks", "Refine Makeup", "Remove Makeup",
+    "Restore Facial Details",
+  ]],
+  ["head-pose", ["Straighten Tilted Photo", "Straighten Head"]],
+];
+
+const RAW_BY_LABEL: Record<string, EditingGuidePreset> = Object.fromEntries(
+  RAW_GUIDES.map((guide) => [guide.label, guide]),
+);
+const PLACED_LABELS = new Set<string>();
+const FACE_GUIDES: EditingGuidePreset[] = FACE_ORDER.flatMap(([category, labels]) =>
+  labels.flatMap((label) => {
+    const guide = RAW_BY_LABEL[label];
+    if (!guide || PLACED_LABELS.has(label)) return [];
+    PLACED_LABELS.add(label);
+    return [{ ...guide, category }];
+  }),
+);
+
+export const EDITING_GUIDES: EditingGuidePreset[] = [
+  ...FACE_GUIDES,
+  ...RAW_GUIDES.filter((guide) => !PLACED_LABELS.has(guide.label)),
 ];
 
 export const EDITING_GUIDE_PROMPTS: Record<string, string> = Object.fromEntries(
@@ -407,6 +616,57 @@ export const EDITING_GUIDE_META: Record<string, EditingGuideMeta> = {
   "Reduce Image Noise": { conflictsWith: ["Subtle Film Grain"] },
 };
 
+/**
+ * Marks a group of presets as mutually exclusive: only one of them can be
+ * active at a time (the one selected LAST wins, see planEditingGuides).
+ */
+function exclusive(labels: string[]) {
+  for (const label of labels) {
+    const previous = EDITING_GUIDE_META[label]?.conflictsWith ?? [];
+    EDITING_GUIDE_META[label] = {
+      ...EDITING_GUIDE_META[label],
+      conflictsWith: Array.from(new Set([...previous, ...labels.filter((other) => other !== label)])),
+    };
+  }
+}
+/** Every label in `a` conflicts with every label in `b`. */
+function crossConflict(a: string[], b: string[]) {
+  for (const label of a) {
+    const previous = EDITING_GUIDE_META[label]?.conflictsWith ?? [];
+    EDITING_GUIDE_META[label] = {
+      ...EDITING_GUIDE_META[label],
+      conflictsWith: Array.from(new Set([...previous, ...b.filter((other) => other !== label)])),
+    };
+  }
+}
+
+// Hair styles: only one hair style at a time (the latest selection wins).
+const HAIR_STYLE_LABELS = ["Neat Short Haircut", "Side Part Hair", "Slick Back Hair", "Crew Cut", "Buzz Cut", "Textured Quiff", "Taper Fade", "Long Straight Hair", "Long Wavy Hair", "Shoulder-Length Bob", "Pixie Cut", "Low Bun", "High Ponytail", "Side Braid", "Curtain Bangs", "Curly Hair"];
+exclusive(HAIR_STYLE_LABELS);
+
+// Hair colors: only one hair color at a time; any hair color can combine with any hair style.
+const HAIR_COLOR_LABELS = ["Black Hair Color", "Dark Brown Hair Color", "Brown Hair Color", "Auburn Hair Color", "Dark Blonde Hair Color", "Silver Gray Hair Color", "White Hair Color", "Cover Gray Hair", "Cover Gray Hair Brown", "Even Hair Color"];
+exclusive(HAIR_COLOR_LABELS);
+
+// Eyebrows: one shape at a time, one color at a time; shape and color can combine.
+const BROW_SHAPE_LABELS = ["Enhance Eyebrows", "Thick Eyebrows", "Thin Eyebrows", "Arched Eyebrows", "Straight Eyebrows", "Soft Curved Eyebrows", "Fill Sparse Eyebrows", "Even Eyebrows", "Trim Bushy Eyebrows"];
+const BROW_COLOR_LABELS = ["Black Eyebrow Color", "Dark Brown Eyebrow Color", "Cover Gray Eyebrows", "Match Eyebrows to Hair"];
+exclusive(BROW_SHAPE_LABELS);
+exclusive(BROW_COLOR_LABELS);
+
+// Beard: one style/size at a time, one color at a time; style and color can combine.
+const BEARD_STYLE_LABELS = ["Clean Shave", "Light Stubble", "Short Beard", "Medium Beard", "Full Beard", "Long Beard", "Goatee", "Chin Strap Beard", "Circle Beard", "Van Dyke Beard", "Mustache Only"];
+const BEARD_COLOR_LABELS = ["Black Beard Color", "Dark Brown Beard Color", "Brown Beard Color", "Cover Gray Beard", "Silver Gray Beard Color", "White Beard Color", "Match Beard to Hair Color", "Even Beard Color"];
+const BEARD_TIDY_LABELS = ["Tidy Facial Hair", "Define Beard & Mustache"];
+exclusive(BEARD_STYLE_LABELS);
+exclusive(BEARD_COLOR_LABELS);
+// Tidying keeps the current style, so it cannot be combined with choosing a new style.
+crossConflict(BEARD_TIDY_LABELS, BEARD_STYLE_LABELS);
+crossConflict(BEARD_STYLE_LABELS, BEARD_TIDY_LABELS);
+// A clean shave leaves no beard to recolor or tidy.
+crossConflict(["Clean Shave"], [...BEARD_COLOR_LABELS, ...BEARD_TIDY_LABELS]);
+crossConflict([...BEARD_COLOR_LABELS, ...BEARD_TIDY_LABELS], ["Clean Shave"]);
+
 /** Applies to the whole image (not just the face), so "keep the background untouched" must be relaxed. */
 const GLOBAL_CATEGORIES = new Set(["lighting-color", "image-quality", "old-photo", "creative-finish"]);
 
@@ -416,13 +676,44 @@ const CATEGORY_ORDER: Record<string, number> = {
   "image-quality": 1,
   "lighting-color": 2,
   "portrait-skin": 3,
+  forehead: 3.1,
+  cheeks: 3.2,
+  nose: 3.3,
+  ears: 3.4,
+  "lips-teeth": 3.5,
   "eyes-details": 4,
+  eyebrows: 4.1,
+  "head-pose": 4.2,
+  // The beard shape is built first, then recolored.
+  "beard-style": 4.3,
+  "beard-color": 4.35,
+  // The hairstyle is built first, then recolored.
+  "hair-style": 4.5,
+  "hair-color": 4.6,
   "background-composition": 5,
   "id-studio": 6,
   "creative-finish": 7,
 };
 
 const CUSTOM_PREFIX = "Custom Instruction:";
+
+/**
+ * Optional colour for the "Lipstick" preset. It travels in the same selected-guides list as an entry
+ * like "Lipstick Color: Red"; it is never a tile of its own and is ignored unless "Lipstick" is selected.
+ */
+export const LIPSTICK_COLOR_PREFIX = "Lipstick Color:";
+export const LIPSTICK_COLORS: { name: string; bn: string; hex: string; prompt: string }[] = [
+  { name: "Natural Pink", bn: "হালকা গোলাপি", hex: "#E7A1A9", prompt: "soft natural pink" },
+  { name: "Nude", bn: "নিউড", hex: "#D4A08A", prompt: "natural nude beige-pink" },
+  { name: "Peach", bn: "পিচ", hex: "#F2A488", prompt: "soft peach" },
+  { name: "Coral", bn: "কোরাল", hex: "#F26B5B", prompt: "coral" },
+  { name: "Rose", bn: "রোজ", hex: "#D6567A", prompt: "rose pink" },
+  { name: "Red", bn: "লাল", hex: "#C8102E", prompt: "classic red" },
+  { name: "Dark Red", bn: "গাঢ় লাল", hex: "#8B1A2B", prompt: "deep dark red" },
+  { name: "Maroon", bn: "মেরুন", hex: "#6D1F2F", prompt: "maroon" },
+  { name: "Brown", bn: "বাদামি", hex: "#8B4A3A", prompt: "warm brown" },
+  { name: "Plum", bn: "প্লাম", hex: "#7E2F6B", prompt: "plum purple" },
+];
 const GUIDE_BY_LABEL: Record<string, EditingGuidePreset> = Object.fromEntries(
   EDITING_GUIDES.map((guide) => [guide.label, guide]),
 );
@@ -461,9 +752,14 @@ export function planEditingGuides(
   context: EditingGuidePlanContext,
 ): EditingGuidePlan {
   let customInstruction = "";
+  let lipstickColor = "";
   const presets: string[] = [];
   for (const entry of selected) {
     if (typeof entry !== "string") continue;
+    if (entry.startsWith(LIPSTICK_COLOR_PREFIX)) {
+      lipstickColor = entry.slice(LIPSTICK_COLOR_PREFIX.length).trim();
+      continue;
+    }
     if (entry.startsWith(CUSTOM_PREFIX)) {
       const text = entry.slice(CUSTOM_PREFIX.length).trim();
       if (text) customInstruction = text;
@@ -504,6 +800,12 @@ export function planEditingGuides(
     const preset = GUIDE_BY_LABEL[label];
     const meta = EDITING_GUIDE_META[label] ?? {};
     let text = isDual && meta.dualPrompt ? meta.dualPrompt : preset.prompt;
+    if (label === "Lipstick") {
+      const chosen = LIPSTICK_COLORS.find((c) => c.name === lipstickColor);
+      if (chosen) {
+        text = `Apply neat, natural-looking ${chosen.prompt} lipstick evenly and cleanly within the natural lip line, with a realistic soft finish. Preserve the original lip shape, teeth, expression, facial identity, and realistic lip texture.`;
+      }
+    }
     text = text.replace(/\{background\}/g, context.backgroundRef);
     (meta.constraint ? constraints : edits).push(`${label}: ${text}`);
   }
