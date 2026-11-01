@@ -237,6 +237,7 @@ const AI_EDITOR_BN: Record<string, string> = {
   Done: "সম্পন্ন",
   "Choose a few compatible edits for the best result.": "ভালো ফলের জন্য পরস্পরের সঙ্গে মানানসই কয়েকটি এডিট বেছে নিন।",
   "Remove Blemishes": "ত্বকের সাময়িক দাগ দূর করুন",
+  "Remove All Facial Marks": "মুখের সব দাগ ও তিল দূর করুন",
   "Even Skin Tone": "ত্বকের রং সমান করুন",
   "Reduce Dark Circles": "চোখের নিচের কালচে ভাব কমান",
   "Reduce Facial Shine": "মুখের অতিরিক্ত তেলতেলে উজ্জ্বলতা কমান",

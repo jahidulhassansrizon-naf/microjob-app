@@ -16,7 +16,7 @@ import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoEx
 import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { X, Check, Image as ImageIcon, RotateCw, Loader2, SlidersHorizontal } from "lucide-react";
+import { X, Check, Crop as CropIcon, Minus, Plus, Ruler, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
@@ -169,6 +169,7 @@ export default function PhotoEditorPage() {
     const [applyGuidesSignal, setApplyGuidesSignal] = useState<{ id: number; guides: string[] } | null>(null);
     const [autoGenerateToken, setAutoGenerateToken] = useState(0);
     const generatePhotoRef = useRef<() => void>(() => { });
+    const wizardAfterUploadRef = useRef(false);
     useEffect(() => {
         try {
             setWizardDisabled(window.localStorage.getItem(WIZARD_DISABLED_KEY) === "1");
@@ -788,7 +789,9 @@ export default function PhotoEditorPage() {
             setShowCropModal(false);
             setTempImageForCrop(null);
             // First-time friendly flow: guide the user through size, clothing and edits.
-            if (activeTarget !== "left" && activeTarget !== "right" && !isDualMode && !wizardDisabled) {
+            const wizardRequested = wizardAfterUploadRef.current;
+            wizardAfterUploadRef.current = false;
+            if (activeTarget !== "left" && activeTarget !== "right" && !isDualMode && (wizardRequested || !wizardDisabled)) {
                 setShowSetupWizard(true);
             }
         }
@@ -1775,6 +1778,24 @@ export default function PhotoEditorPage() {
     if (!firstLoadDone) {
         return (<div aria-busy="true" className="min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]"/>);
     }
+    const openSetupWizardFromButton = () => {
+        if (uploadedImage) {
+            setShowSetupWizard(true);
+            return;
+        }
+        // No photo yet: pick one first, the guide opens right after cropping.
+        wizardAfterUploadRef.current = true;
+        triggerUpload("single");
+    };
+    const closeCropModal = () => {
+        if (isCropping)
+            return;
+        wizardAfterUploadRef.current = false;
+        if (tempImageForCrop?.startsWith("blob:"))
+            URL.revokeObjectURL(tempImageForCrop);
+        setTempImageForCrop(null);
+        setShowCropModal(false);
+    };
     generatePhotoRef.current = handleGeneratePhoto;
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
@@ -1797,24 +1818,28 @@ export default function PhotoEditorPage() {
           <AiT>{errorMessage}</AiT>
         </div>)}
 
-      {showCropModal && (<div className="fixed inset-0 z-[999] bg-[#0c1017] flex flex-col justify-between overflow-hidden">
+      {showCropModal && (<div className="fixed inset-0 z-[999] flex flex-col overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] ai-editor-font">
           <style>{`
         .sebalagbe-crop-canvas .ReactCrop__crop-selection {
           border: 2px solid #ffffff !important;
-          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+          box-shadow: 0 0 0 9999em rgba(59, 47, 30, 0.58), 0 0 0 1px rgba(220, 38, 38, 0.55) !important;
           cursor: move;
           touch-action: none;
         }
         .sebalagbe-crop-canvas .ReactCrop__drag-handle {
           display: block !important;
           opacity: 1 !important;
-          width: 16px !important;
-          height: 16px !important;
+          width: 18px !important;
+          height: 18px !important;
           border: 2px solid #ffffff !important;
-          border-radius: 3px !important;
-          background: #2563eb !important;
-          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25) !important;
+          border-radius: 5px !important;
+          background: #DC2626 !important;
+          box-shadow: 0 2px 8px rgba(59, 47, 30, 0.45) !important;
           touch-action: none;
+        }
+        .sebalagbe-crop-canvas .ReactCrop__rule-of-thirds-vt::before,
+        .sebalagbe-crop-canvas .ReactCrop__rule-of-thirds-hz::before {
+          background-color: rgba(255, 255, 255, 0.45) !important;
         }
         /* Fixed aspect crops use custom side handles below so vertical/horizontal
            midpoint drags resize along the pointer axis instead of silently failing. */
@@ -1830,69 +1855,79 @@ export default function PhotoEditorPage() {
           -webkit-user-select: none;
           -webkit-user-drag: none;
         }
+        .sebalagbe-zoom-range { accent-color: #DC2626; }
       `}</style>
-          {isCropping && (<div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3">
-              <Loader2 className="w-10 h-10 animate-spin text-[#059669]"/>
-              <p className="text-base font-medium tracking-wide"><AiT>{"Saving..."}</AiT></p>
+          {isCropping && (<div className="absolute inset-0 z-50 bg-[#3B2F1E]/55 backdrop-blur-sm flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-10 py-7 shadow-2xl">
+                <Loader2 className="w-9 h-9 animate-spin text-[#DC2626]"/>
+                <p className="text-base font-semibold text-[#3B2F1E]"><AiT>{"Saving..."}</AiT></p>
+              </div>
             </div>)}
 
-          <div className="h-14 bg-[#FBF6E8] flex items-center justify-between pl-6 pr-0 shadow-md shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="bg-[#D42020] text-white p-1 rounded-lg">
-                <ImageIcon size={16}/>
-              </span>
-              <h2 className="text-base font-semibold text-[#3B2F1E]"><AiT>{"Crop & Rotate Image\n              "}</AiT></h2>
-            </div>
-            <button onClick={() => {
-                if (isCropping)
-                    return;
-                if (tempImageForCrop?.startsWith("blob:"))
-                    URL.revokeObjectURL(tempImageForCrop);
-                setTempImageForCrop(null);
-                setShowCropModal(false);
-            }} className="h-14 w-16 bg-[#D42020] text-white flex items-center justify-center cursor-pointer hover:bg-[#AE1717] transition">
-              <X size={18}/>
-            </button>
-          </div>
-
-          <div className="bg-[#151c28] text-[#D8C9A6] text-sm py-2 text-center border-b border-[#5A4A32] shrink-0 px-2">
-            <AiT>{selectedSize
+          {/* Header */}
+          <div className="shrink-0 border-b border-[#E3D6B8] bg-[#FBF6E8] shadow-sm">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D42020] text-white shadow">
+                  <CropIcon size={19}/>
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-bold leading-tight text-[#3B2F1E] sm:text-lg"><AiT>{"Crop & Rotate Image"}</AiT></h2>
+                  <p className="truncate text-[12px] leading-tight text-stone-500 sm:text-[13px]">
+                    <AiT>{selectedSize
                 ? "Adjust the crop area to frame the subject for your selected photo size."
                 : "Adjust the crop freely. No fixed photo size is selected."}</AiT>
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="hidden items-center gap-1.5 rounded-full border border-[#E3D6B8] bg-[#F3E9D2] px-3 py-1.5 text-xs font-bold text-[#3B2F1E] sm:flex">
+                  <Ruler size={13} className="text-[#DC2626]"/>
+                  {selectedSize ? `${t(selectedSize)} · ${getCurrentSizeLabel()}` : "ফ্রি ক্রপ"}
+                </span>
+                <button onClick={closeCropModal} disabled={isCropping} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#F3E9D2] text-[#5A4A32] transition hover:border-[#D42020] hover:bg-[#D42020] hover:text-white cursor-pointer disabled:opacity-50">
+                  <X size={18}/>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-auto relative bg-[#0c1017]">
-            <div className="w-full h-full flex items-center justify-center">
+          {/* Crop stage */}
+          <div className="flex min-h-0 flex-1 items-center justify-center p-3 sm:p-6">
+            <div className="flex h-full w-full max-w-[1100px] items-center justify-center overflow-auto rounded-2xl border border-[#E3D6B8] bg-[#F3E9D2]/70 p-3 shadow-inner sm:p-5">
               <CropStage crop={crop} aspect={isDualMode ? 45 / 55 : getSelectedTargetAspect()} imgRef={imgRef} src={tempImageForCrop || undefined} alt={t("Crop Preview")} zoom={zoom} rotate={rotate} onImageLoad={handleCropImageLoad} onCommit={setCompletedCrop}/>
             </div>
           </div>
 
-          <div className="h-16 bg-[#FBF6E8] border-t border-[#E3D6B8] flex items-center justify-between pl-4 sm:pl-6 pr-0 shrink-0 shadow-lg">
-            <div className="flex items-center gap-1">
-              <div className="flex items-center rounded-lg overflow-hidden shadow-sm">
-                <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-base font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"-\n                "}</AiT></button>
-                <div className="bg-[#FBF6E8] text-[#3B2F1E] font-semibold text-sm px-3 py-2">
-                  {zoom}<AiT>{"%\n                "}</AiT></div>
-                <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping} className="bg-[#059669] text-white px-3 py-2 text-base font-bold cursor-pointer hover:bg-[#047857] transition disabled:opacity-50"><AiT>{"+\n                "}</AiT></button>
+          {/* Toolbar */}
+          <div className="shrink-0 border-t border-[#E3D6B8] bg-[#FBF6E8] px-3 py-3 shadow-[0_-4px_16px_rgba(59,47,30,0.06)] sm:px-6">
+            <div className="mx-auto flex w-full max-w-[1100px] flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 rounded-xl border border-[#E3D6B8] bg-[#F3E9D2] p-1">
+                  <button onClick={() => setZoom((prev) => Math.max(prev - 10, 100))} disabled={isCropping || zoom <= 100} aria-label="Zoom out" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#3B2F1E] transition hover:bg-[#FBF6E8] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    <Minus size={16}/>
+                  </button>
+                  <input type="range" min={100} max={300} step={10} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} disabled={isCropping} aria-label="Zoom" className="sebalagbe-zoom-range hidden w-28 cursor-pointer sm:block"/>
+                  <span className="w-12 text-center text-sm font-bold tabular-nums text-[#3B2F1E]">{zoom}%</span>
+                  <button onClick={() => setZoom((prev) => Math.min(prev + 10, 300))} disabled={isCropping || zoom >= 300} aria-label="Zoom in" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#3B2F1E] transition hover:bg-[#FBF6E8] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    <Plus size={16}/>
+                  </button>
+                </div>
+                <button onClick={() => setRotate((prev) => (prev + 90) % 360)} disabled={isCropping} className="flex h-11 items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#F3E9D2] px-4 text-sm font-semibold text-[#3B2F1E] transition hover:border-[#DC2626] hover:text-[#DC2626] cursor-pointer disabled:opacity-50">
+                  <RotateCw size={15}/><AiT>{"Rotate"}</AiT>
+                </button>
               </div>
-              <button onClick={() => setRotate((prev) => (prev + 90) % 360)} disabled={isCropping} className="ml-2 bg-[#059669] text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 cursor-pointer hover:bg-[#047857] transition disabled:opacity-50">
-                <RotateCw size={14}/><AiT>{"Rotate\n              "}</AiT></button>
-            </div>
 
-            <div className="flex items-center gap-3 h-full">
-              <button onClick={() => {
-                if (isCropping)
-                    return;
-                if (tempImageForCrop?.startsWith("blob:"))
-                    URL.revokeObjectURL(tempImageForCrop);
-                setTempImageForCrop(null);
-                setShowCropModal(false);
-            }} disabled={isCropping} className="bg-[#F3E9D2] text-[#5A4A32] px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-[#E3D6B8] transition disabled:opacity-50"><AiT>{"Cancel\n              "}</AiT></button>
-              <button onClick={() => handleConfirmCrop(imgRef.current)} disabled={isCropping} className="h-16 bg-[#059669] text-white px-6 text-sm flex items-center gap-2 cursor-pointer hover:bg-[#047857] transition font-semibold disabled:opacity-50">
-                {isCropping ? (<>
-                    <Loader2 size={16} className="animate-spin"/><AiT>{"Saving...\n                  "}</AiT></>) : (<>
-                    <Check size={16}/><AiT>{"Crop\n                  "}</AiT></>)}
-              </button>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button onClick={closeCropModal} disabled={isCropping} className="h-11 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-5 text-sm font-semibold text-[#5A4A32] transition hover:bg-[#F3E9D2] cursor-pointer disabled:opacity-50">
+                  <AiT>{"Cancel"}</AiT>
+                </button>
+                <button onClick={() => handleConfirmCrop(imgRef.current)} disabled={isCropping} className="flex h-11 items-center gap-2 rounded-xl bg-[#D42020] px-7 text-sm font-bold text-white shadow-lg transition hover:bg-[#AE1717] cursor-pointer disabled:opacity-60">
+                  {isCropping ? (<>
+                      <Loader2 size={16} className="animate-spin"/><AiT>{"Saving..."}</AiT></>) : (<>
+                      <Check size={16}/><AiT>{"Crop"}</AiT></>)}
+                </button>
+              </div>
             </div>
           </div>
         </div>)}
@@ -1911,16 +1946,13 @@ export default function PhotoEditorPage() {
       <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
         <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
           <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0">
               {/* Photo preview (kept mounted, hidden while the print section is open) */}
-              <div className="relative flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
-                {wizardDisabled && uploadedImage && !isDualMode && !isGenerating && (<button type="button" onClick={() => setShowSetupWizard(true)} className="absolute right-2 top-2 z-20 !flex-none flex items-center gap-1.5 rounded-full border border-[#DC2626]/40 bg-[#FBF6E8] px-3 py-1.5 text-xs font-bold text-[#DC2626] shadow hover:bg-[#F6D9A8] cursor-pointer">
-                    <SlidersHorizontal size={13}/>গাইডেড সেটআপ
-                  </button>)}
+              <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
                 <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
               </div>
               {/* Options appear right beside the generated photo */}

@@ -129,6 +129,7 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   "Glow & Makeup": WandSparkles,
   "Smooth Skin": Droplets,
   "Remove Blemishes": Eraser,
+  "Remove All Facial Marks": Sparkles,
   "Even Skin Tone": Blend,
   "Reduce Dark Circles": Eye,
   "Reduce Facial Shine": Sparkles,
@@ -281,6 +282,7 @@ const RAW_GUIDES: EditingGuidePreset[] = [
   { label: "Fair & Bright Skin", category: "portrait-skin", prompt: "Make the skin visibly fairer, brighter and cleaner, like a high-quality professional Photoshop skin retouch. Clearly lift the skin brightness and luminosity of the face, neck and ears by a noticeable medium-to-strong amount (a clearly fairer, fresher, clearer complexion, but still natural). Remove dullness, dark or dusky tone, grayish or muddy cast, sun-tan patches, dark blotches, uneven pigmentation, dark marks, dirty-looking spots, stains, pimple marks, dark under-eye circles and oily shine, so the whole face has one smooth, even, radiant tone. Keep realistic skin texture and pores (no plastic or airbrushed look). Keep the person's natural undertone: never make the skin chalky, pale-white, gray, orange or pink. Face, neck and ears must match in color. Keep face structure, expression, moles, birthmarks and scars unchanged so it is clearly the same person." },
   { label: "Glow & Makeup", category: "portrait-skin", prompt: "Add a subtle, polished grooming touch and a healthy natural glow: even-looking skin and soft, natural-looking makeup where it suits the person. Keep the skin clean, bright and even. Keep it realistic, age-appropriate, and consistent with the person's identity; do not change facial structure or eye shape." },
   { label: "Smooth Skin", category: "portrait-skin", prompt: "Smooth out blemishes, dark spots, patchy dullness and unevenness so the skin looks clean, clear and bright, while preserving pores, natural skin texture, fine detail, and the person's natural undertone. Avoid plastic or airbrushed skin." },
+  { label: "Remove All Facial Marks", category: "portrait-skin", prompt: "Remove every small mark from the facial skin so it looks completely clean and clear: moles, dark spots, freckles, age spots, pigmentation patches, pimples, acne marks, scars and other small skin marks on the forehead, cheeks, nose, chin, jaw and neck. Rebuild the skin underneath naturally with realistic pores and fine skin texture, matching the surrounding skin tone (never blurry, smeared, waxy or plastic). Do not change the face shape, eyes, eyebrows, lips, teeth, hair, beard, expression or identity." },
   { label: "Remove Blemishes", category: "portrait-skin", prompt: "Remove pimples, acne marks, dark spots, dirty-looking specks, stains and other small transient blemishes completely so the skin looks clean. Preserve moles, scars, birthmarks, and other stable identifying marks." },
   { label: "Even Skin Tone", category: "portrait-skin", prompt: "Even out patchy, blotchy or dark-and-light skin tone across the forehead, cheeks, nose, chin, neck and ears into one smooth, consistent, clean tone. Keep the person's natural undertone, ethnicity and facial structure." },
   { label: "Reduce Dark Circles", category: "portrait-skin", prompt: "Clearly reduce under-eye darkness, dark rings and tired-looking shadows so the eye area matches the rest of the face, while keeping natural eye contours and realistic skin texture." },
@@ -521,7 +523,7 @@ const FACE_ORDER: Array<[string, string[]]> = [
     "White Beard Color", "Match Beard to Hair Color", "Even Beard Color",
   ]],
   ["portrait-skin", [
-    "Fair & Bright Skin", "Glow & Makeup", "Smooth Skin", "Remove Blemishes", "Even Skin Tone", "Reduce Facial Shine",
+    "Fair & Bright Skin", "Glow & Makeup", "Smooth Skin", "Remove Blemishes", "Remove All Facial Marks", "Even Skin Tone", "Reduce Facial Shine",
     "Reduce Temporary Redness", "Soften Fine Lines", "Preserve Skin Texture", "Keep Marks", "Refine Makeup", "Remove Makeup",
     "Restore Facial Details",
   ]],
@@ -562,7 +564,8 @@ const LOOK_GROUP = [
 
 export const EDITING_GUIDE_META: Record<string, EditingGuideMeta> = {
   // Rules to honour, not edits
-  "Keep Marks": { constraint: true },
+  "Keep Marks": { constraint: true, conflictsWith: ["Remove All Facial Marks"] },
+  "Remove All Facial Marks": { conflictsWith: ["Keep Marks", "Remove Blemishes"] },
   "Preserve Skin Texture": { constraint: true },
   "Preserve Natural Expression": { constraint: true },
   "Keep Original Glasses": { constraint: true },

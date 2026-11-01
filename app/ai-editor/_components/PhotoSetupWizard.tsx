@@ -6,7 +6,7 @@ import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
-import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX } from "./editingGuides";
+import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDE_META, EDITING_GUIDES, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX } from "./editingGuides";
 import { CLOTHING_COLORS, RawSvgClothingPreview } from "./GenerationSettings";
 
 /**
@@ -52,10 +52,176 @@ const BASE_STEPS = [
   { title: "ব্যাকগ্রাউন্ড", hint: "ছবির পেছনে কোন রং চান?", stage: 1 },
   { title: "পোশাক", hint: "কোন ধরনের পোশাক পরাতে চান?", stage: 2 },
 ];
-/** One wizard step per editing category (hair style, hair colour, eyebrows, ...), in head-to-chin order. */
+/**
+ * One wizard step per editing category, in head-to-chin order.
+ * Hair colour and beard colour are NOT separate steps: they appear as a small dropdown right under
+ * the hair style / beard style they belong to (see COLOR_PICKERS below).
+ */
+const COLOR_CATEGORY_IDS = new Set(["hair-color", "beard-color"]);
 const GUIDE_STEP_CATEGORIES = EDITING_GUIDE_CATEGORIES.filter(
-  (c) => c.id !== "all" && EDITING_GUIDES.some((g) => g.category === c.id),
+  (c) => c.id !== "all" && !COLOR_CATEGORY_IDS.has(c.id) && EDITING_GUIDES.some((g) => g.category === c.id),
 );
+const CAT_ORDER = new Map<string, number>(EDITING_GUIDE_CATEGORIES.map((c, i) => [c.id, i]));
+const CAT_OF = new Map<string, string>(EDITING_GUIDES.map((g) => [g.label, g.category]));
+const orderOf = (label: string) => CAT_ORDER.get(CAT_OF.get(label) ?? "") ?? 99;
+
+/** Steps whose title says what they really contain (colour lives inside them). */
+const STEP_TITLES: Record<string, string> = {
+  "hair-style": "চুলের স্টাইল ও রং",
+  "beard-style": "দাড়ি ও গোঁফ (স্টাইল ও রং)",
+};
+
+/** Clear, plain instructions for every step: when to use it and what happens if you skip. */
+const STEP_TEXT: Record<string, { hint: string; when: string }> = {
+  "hair-style": {
+    hint: "চুল গুছিয়ে নিতে বা নতুন স্টাইল ও রং চাইলে বাছুন (ঐচ্ছিক)",
+    when: "চুল এলোমেলো, অগোছালো হলে অথবা নতুন কাটিং বা রং চাইলে বাছুন। কোনো স্টাইল বাছলেই নিচে চুলের রং বেছে নেওয়ার অপশন আসবে, আলাদা ধাপ নেই।",
+  },
+  forehead: {
+    hint: "কপাল ও হেয়ারলাইন পরিষ্কার করতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "কপালে ভাঁজ বা তেলতেলে ভাব থাকলে, অথবা হেয়ারলাইনের পাশে ছোট ছোট এলোমেলো চুল থাকলে বাছুন।",
+  },
+  eyebrows: {
+    hint: "ভ্রুর আকার বা রং ঠিক করতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "ভ্রু পাতলা, অসমান বা বেশি ঘন হলে বাছুন। আকার আর রং একসাথে বাছা যায়।",
+  },
+  "eyes-details": {
+    hint: "চোখ ও চশমার সমস্যা থাকলে বাছুন (ঐচ্ছিক)",
+    when: "চোখ নিস্তেজ বা লালচে হলে, চোখের নিচে কালচে ভাব বা ফোলা থাকলে, অথবা চশমায় ঝলক পড়লে বাছুন। চশমা হুবহু যেমন আছে তেমন রাখতে চাইলে “মূল চশমা অপরিবর্তিত” বাছুন।",
+  },
+  ears: {
+    hint: "কানের রং মুখের সাথে মেলাতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "কান লালচে বা মুখের চেয়ে আলাদা রঙের দেখালে, অথবা কানে লোম থাকলে বাছুন।",
+  },
+  nose: {
+    hint: "নাকের তেলতেলে বা লালচে ভাব থাকলে বাছুন (ঐচ্ছিক)",
+    when: "নাকে আলো চকচক করলে বা লালচে দেখালে বাছুন।",
+  },
+  cheeks: {
+    hint: "গালের রং ঠিক করতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "গাল লালচে হলে কমাতে, অথবা ফ্যাকাশে লাগলে সামান্য স্বাভাবিক আভা দিতে বাছুন।",
+  },
+  "lips-teeth": {
+    hint: "ঠোঁট ও দাঁতে সামান্য পরিমার্জন চাইলে বাছুন (ঐচ্ছিক)",
+    when: "দাঁত হলদেটে লাগলে বা ঠোঁটের রং ফ্যাকাশে লাগলে বাছুন। লিপস্টিক বাছলে নিচে রং বেছে নেবেন। হাসি বা মুখের ভাব যেমন আছে তেমন রাখতে চাইলে “স্বাভাবিক অভিব্যক্তি বজায় রাখুন” বাছুন।",
+  },
+  "beard-style": {
+    hint: "দাড়ি-গোঁফ কামাতে, ছাঁটতে বা রং বদলাতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "দাড়ি-গোঁফ কামাতে বা নতুন ধাঁচ চাইলে বাছুন। দাড়ি যেমন আছে তেমন রেখে শুধু পরিপাটি বা রং বদলাতেও পারেন। দাড়ি না থাকলে এড়িয়ে যান।",
+  },
+  "portrait-skin": {
+    hint: "ত্বক ফর্সা, মসৃণ বা দাগমুক্ত করতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "ত্বকে দাগ, ব্রণ, তেলতেলে ভাব বা অসমান রং থাকলে বাছুন। ত্বক প্রাকৃতিক দেখাতে চাইলে “ত্বকের স্বাভাবিক গঠন বজায় রাখুন” সাথে বাছতে পারেন।",
+  },
+  "head-pose": {
+    hint: "ছবি বা মাথা কাত হলে সোজা করতে বাছুন (ঐচ্ছিক)",
+    when: "ফোন কাত করে ছবি তোলা হলে, অথবা মাথা বা কাঁধ বাঁকা থাকলে বাছুন। ছবি সোজা থাকলে এড়িয়ে যান।",
+  },
+  "lighting-color": {
+    hint: "আলো ও রঙের সমস্যা থাকলে বাছুন (ঐচ্ছিক)",
+    when: "ছবি অন্ধকার বা বেশি উজ্জ্বল হলে, মুখে ছায়া পড়লে, অথবা রঙে হলদে বা নীলচে আভা থাকলে বাছুন। আলো ঠিক থাকলে এড়িয়ে যান।",
+  },
+  "image-quality": {
+    hint: "ছবি ঝাপসা বা দানাদার হলে বাছুন (ঐচ্ছিক)",
+    when: "ছবি ঝাপসা, দানাদার বা ভাঙা ভাঙা দেখালে বাছুন। একই কাজের একটা বাছলে বাকিগুলো পরের ধাপে আর দেখানো হবে না।",
+  },
+  "old-photo": {
+    hint: "শুধু পুরোনো বা নষ্ট হয়ে যাওয়া ছবির জন্য (ঐচ্ছিক)",
+    when: "ছবি পুরোনো, ছেঁড়া, বিবর্ণ বা সাদা-কালো হলেই বাছুন। সাধারণ মোবাইলে তোলা ছবি হলে এড়িয়ে যান।",
+  },
+  "background-composition": {
+    hint: "ছবির ফ্রেমিং ও কিনারা ঠিক করতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "ব্যক্তি মাঝখানে না থাকলে, মাথার ওপরে বেশি বা কম ফাঁকা থাকলে, অথবা চুলের কিনারা এবড়োখেবড়ো হলে বাছুন।",
+  },
+  "id-studio": {
+    hint: "পাসপোর্ট, ভিসা বা আইডির মতো নিয়মের ছবির জন্য (ঐচ্ছিক)",
+    when: "সরকারি বা অফিসিয়াল কাজের ছবি হলে বাড়তি পরিমার্জনের জন্য বাছুন। সাধারণ ছবির জন্য এড়িয়ে যেতে পারেন।",
+  },
+  "creative-finish": {
+    hint: "ছবিকে বিশেষ লুক দিতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "সাদা-কালো, ভিনটেজ বা সিনেমাটিক লুক চাইলে বাছুন। পাসপোর্ট, ভিসা বা আইডি ছবিতে এগুলো দেবেন না, এড়িয়ে যান।",
+  },
+};
+const BG_STEP_WHEN_CHOSEN =
+  "আপনি ব্যাকগ্রাউন্ড আগেই বেছে নিয়েছেন, তাই ব্যাকগ্রাউন্ড পরিষ্কারের অপশন এখানে দেখানো হচ্ছে না। শুধু ফ্রেমিং আর চুলের কিনারার অপশন আছে।";
+const BG_STEP_WHEN_ORIGINAL =
+  "আপনি ব্যাকগ্রাউন্ড বদলাননি, তাই পেছনের ময়লা বা অপ্রয়োজনীয় জিনিস পরিষ্কার করতে চাইলে এখান থেকে বাছুন। ফ্রেমিংও ঠিক করতে পারেন।";
+
+/** Colour dropdowns shown under the style they belong to. */
+const COLOR_PICKERS: Record<
+  string,
+  { colorCategory: string; styleLabels: string[]; hideWhen?: string[]; withStyleTitle: string; aloneTitle: string; none: string }
+> = {
+  "hair-style": {
+    colorCategory: "hair-color",
+    styleLabels: [
+      "Neat Short Haircut", "Side Part Hair", "Slick Back Hair", "Crew Cut", "Buzz Cut", "Textured Quiff", "Taper Fade",
+      "Long Straight Hair", "Long Wavy Hair", "Shoulder-Length Bob", "Pixie Cut", "Low Bun", "High Ponytail", "Side Braid",
+      "Curtain Bangs", "Curly Hair",
+    ],
+    withStyleTitle: "এই স্টাইলে চুলের রং কেমন চান?",
+    aloneTitle: "স্টাইল না বদলে শুধু চুলের রং বদলাতে চান?",
+    none: "রং বদলাতে চাই না (আগের রং থাকবে)",
+  },
+  "beard-style": {
+    colorCategory: "beard-color",
+    styleLabels: [
+      "Light Stubble", "Short Beard", "Medium Beard", "Full Beard", "Long Beard", "Goatee", "Chin Strap Beard", "Circle Beard",
+      "Van Dyke Beard", "Mustache Only",
+    ],
+    hideWhen: ["Clean Shave"],
+    withStyleTitle: "এই দাড়ির রং কেমন চান?",
+    aloneTitle: "আগের দাড়ি-গোঁফ রেখে শুধু রং বদলাতে চান?",
+    none: "রং বদলাতে চাই না (আগের রং থাকবে)",
+  },
+};
+const COLOR_DOTS: Record<string, string> = {
+  "Black Hair Color": "#1A1A1A", "Cover Gray Hair": "#1A1A1A", "Dark Brown Hair Color": "#3B2416", "Cover Gray Hair Brown": "#3B2416",
+  "Brown Hair Color": "#6B4226", "Auburn Hair Color": "#8B3A1F", "Dark Blonde Hair Color": "#B08D57", "Silver Gray Hair Color": "#B8BCC2",
+  "White Hair Color": "#F5F5F5",
+  "Black Beard Color": "#1A1A1A", "Cover Gray Beard": "#1A1A1A", "Dark Brown Beard Color": "#3B2416", "Brown Beard Color": "#6B4226",
+  "Silver Gray Beard Color": "#B8BCC2", "White Beard Color": "#F5F5F5",
+};
+
+/** Head coverings: hair edits would be ignored anyway, so that step is skipped. */
+const HEAD_COVERED_CLOTHING = new Set(["Hijab", "Burqa", "Niqab", "Khimar"]);
+const FACE_COVERED_CLOTHING = new Set(["Niqab"]);
+
+/** Options that make no sense once the user already chose a new background / new clothing. */
+const BG_CLEANING = ["Clean Background", "Remove Background Distractions", "Smooth Background", "Clean ID Photo Background", "Neutral Background Cleanup"];
+const HIDDEN_AFTER_BACKGROUND = [...BG_CLEANING, "Separate Subject from Background"];
+const HIDDEN_AFTER_CLOTHING = ["Clean Clothing Edges", "Refine Collar & Tie"];
+/** Groups doing (almost) the same job: once one is chosen in an earlier step, later steps do not offer the others. */
+const EQUIVALENT_GROUPS: string[][] = [
+  BG_CLEANING,
+  ["Straighten Head", "Align Eye Line"],
+  ["Brighten Face Shadows", "Reduce Harsh Shadows", "Even Face Lighting"],
+  ["Brighten Image", "Fix Underexposure", "Improve Low-Light Photo"],
+  ["Sharpen Details", "Deblur Image", "Correct Soft Focus", "Improve Print Clarity", "Improve ID Photo Clarity"],
+  ["Smooth Skin", "Natural Professional Retouch"],
+  ["Improve Contrast", "Improve Black & White Contrast"],
+];
+
+/** Labels that must not be offered (and must not stay selected) given the user's earlier choices. */
+function getHiddenLabels(d: { bg: number; clothing: number; guides: string[] }): Set<string> {
+  const hidden = new Set<string>();
+  if (d.bg >= 0) HIDDEN_AFTER_BACKGROUND.forEach((l) => hidden.add(l));
+  if (d.clothing >= 0) HIDDEN_AFTER_CLOTHING.forEach((l) => hidden.add(l));
+  for (const group of EQUIVALENT_GROUPS) {
+    const picked = group.filter((l) => d.guides.includes(l));
+    if (!picked.length) continue;
+    const earliest = Math.min(...picked.map(orderOf));
+    for (const l of group) if (orderOf(l) > earliest) hidden.add(l);
+  }
+  return hidden;
+}
+/** Drops selected guides that became pointless because of an earlier choice. */
+function normalizeDraft(d: WizardResult): WizardResult {
+  const hidden = getHiddenLabels(d);
+  const guides = d.guides.filter((g) => !hidden.has(g));
+  return guides.length === d.guides.length ? d : { ...d, guides };
+}
+
 const STAGES = ["ছবির ধরন", "ব্যাকগ্রাউন্ড", "পোশাক", "চেহারার পরিবর্তন", "নিশ্চিত করুন"];
 
 const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -111,11 +277,23 @@ export default function PhotoSetupWizard({
   }, [open, onClose, dontShowAgain]);
 
   const guideStart = BASE_STEPS.length;
-  const guideEnd = guideStart + GUIDE_STEP_CATEGORIES.length; // index of the confirm step
-  const currentCat = step >= guideStart && step < guideEnd ? GUIDE_STEP_CATEGORIES[step - guideStart] : null;
+  const hiddenLabels = useMemo(() => getHiddenLabels(draft), [draft]);
+  const clothingName = draft.clothing >= 0 ? CLOTHING_NAMES[draft.clothing] : "";
+  // Only the steps that still make sense for this person (skips steps whose every option is redundant).
+  const guideCats = useMemo(
+    () =>
+      GUIDE_STEP_CATEGORIES.filter((c) => {
+        if (c.id === "hair-style" && HEAD_COVERED_CLOTHING.has(clothingName)) return false;
+        if (c.id === "beard-style" && FACE_COVERED_CLOTHING.has(clothingName)) return false;
+        return EDITING_GUIDES.some((g) => g.category === c.id && !hiddenLabels.has(g.label));
+      }),
+    [hiddenLabels, clothingName],
+  );
+  const guideEnd = guideStart + guideCats.length; // index of the confirm step
+  const currentCat = step >= guideStart && step < guideEnd ? guideCats[step - guideStart] : null;
   const categoryGuides = useMemo(
-    () => (currentCat ? EDITING_GUIDES.filter((g) => g.category === currentCat.id) : []),
-    [currentCat],
+    () => (currentCat ? EDITING_GUIDES.filter((g) => g.category === currentCat.id && !hiddenLabels.has(g.label)) : []),
+    [currentCat, hiddenLabels],
   );
 
   if (!open || !mounted) return null;
@@ -128,8 +306,8 @@ export default function PhotoSetupWizard({
   const stage = stageOf(step);
   const currentStepInfo = currentCat
     ? {
-        title: t(currentCat.label),
-        hint: "এই অংশে কিছু বদলাতে চাইলে বাছাই করুন, না চাইলে \"এড়িয়ে যান\" চাপুন।",
+        title: STEP_TITLES[currentCat.id] ?? t(currentCat.label),
+        hint: STEP_TEXT[currentCat.id]?.hint ?? "এই অংশে কিছু বদলাতে চাইলে বাছাই করুন, না চাইলে \"এড়িয়ে যান\" চাপুন।",
       }
     : step === lastStep
       ? { title: "নিশ্চিত করুন", hint: "সব ঠিক থাকলে ছবি তৈরি শুরু করুন।" }
@@ -137,13 +315,24 @@ export default function PhotoSetupWizard({
   const selectedInCat = (catId: string) =>
     draft.guides.filter((g) => EDITING_GUIDES.find((e) => e.label === g)?.category === catId).length;
 
-  const update = (patch: Partial<WizardResult>) => setDraft((d) => ({ ...d, ...patch }));
+  const update = (patch: Partial<WizardResult>) => setDraft((d) => normalizeDraft({ ...d, ...patch }));
   const toggleGuide = (label: string) =>
     setDraft((d) => {
-      if (!d.guides.includes(label)) return { ...d, guides: [...d.guides, label] };
+      if (!d.guides.includes(label)) {
+        // Choosing one preset removes the ones that cannot live with it (the newest choice wins).
+        const clashes = (other: string) =>
+          EDITING_GUIDE_META[label]?.conflictsWith?.includes(other) || EDITING_GUIDE_META[other]?.conflictsWith?.includes(label);
+        return normalizeDraft({ ...d, guides: [...d.guides.filter((g) => !clashes(g)), label] });
+      }
       const removed = d.guides.filter((g) => g !== label);
       // A lipstick colour means nothing without the lipstick itself.
-      return { ...d, guides: label === "Lipstick" ? removed.filter((g) => !g.startsWith(LIPSTICK_COLOR_PREFIX)) : removed };
+      return normalizeDraft({ ...d, guides: label === "Lipstick" ? removed.filter((g) => !g.startsWith(LIPSTICK_COLOR_PREFIX)) : removed });
+    });
+  /** Dropdown choice for a colour category (hair colour / beard colour). Empty = no colour change. */
+  const setColorChoice = (colorCategory: string, label: string) =>
+    setDraft((d) => {
+      const rest = d.guides.filter((g) => CAT_OF.get(g) !== colorCategory);
+      return normalizeDraft({ ...d, guides: label ? [...rest, label] : rest });
     });
   const lipstickColorName = draft.guides.find((g) => g.startsWith(LIPSTICK_COLOR_PREFIX))?.slice(LIPSTICK_COLOR_PREFIX.length).trim() ?? "";
   const setLipstickColor = (name: string) =>
@@ -407,35 +596,90 @@ export default function PhotoSetupWizard({
     }
 
     if (currentCat) {
+      const whenText =
+        currentCat.id === "background-composition"
+          ? draft.bg >= 0
+            ? BG_STEP_WHEN_CHOSEN
+            : BG_STEP_WHEN_ORIGINAL
+          : STEP_TEXT[currentCat.id]?.when;
+      const picker = COLOR_PICKERS[currentCat.id];
+      const pickerStyleChosen = picker ? picker.styleLabels.some((l) => draft.guides.includes(l)) : false;
+      const pickerHidden = picker ? (picker.hideWhen ?? []).some((l) => draft.guides.includes(l)) : false;
+      const pickerOptions = picker ? EDITING_GUIDES.filter((g) => g.category === picker.colorCategory) : [];
+      const pickerValue = picker ? pickerOptions.find((g) => draft.guides.includes(g.label))?.label ?? "" : "";
+      const pickerNode =
+        picker && !pickerHidden ? (
+          <div className="rounded-xl border-2 border-[#DC2626]/50 bg-[#F0DDB5] p-3 shadow">
+                <p className="text-sm font-semibold mb-0.5">{pickerStyleChosen ? picker.withStyleTitle : picker.aloneTitle}</p>
+                <p className="text-[12px] text-stone-600 mb-2">ঐচ্ছিক। রং না বদলাতে চাইলে প্রথম অপশনটাই রেখে দিন।</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-7 w-7 shrink-0 rounded-full border border-black/15"
+                    style={{ backgroundColor: COLOR_DOTS[pickerValue] ?? "transparent" }}
+                    aria-hidden
+                  />
+                  <select
+                    value={pickerValue}
+                    onChange={(e) => setColorChoice(picker.colorCategory, e.target.value)}
+                    className="w-full cursor-pointer rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 text-sm font-semibold text-[#3B2F1E] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                  >
+                    <option value="">{picker.none}</option>
+                    {pickerOptions.map((g) => (
+                      <option key={g.label} value={g.label}>
+                        {t(g.label)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+        ) : null;
+      // The colour dropdown opens right under the style the user just picked (end of that row on wide screens).
+      const selectedStyleIndex = picker ? categoryGuides.findIndex((g) => picker.styleLabels.includes(g.label) && draft.guides.includes(g.label)) : -1;
+      const pairEndIndex = selectedStyleIndex >= 0 ? Math.min(selectedStyleIndex - (selectedStyleIndex % 2) + 1, categoryGuides.length - 1) : -1;
       return (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-stone-500">
-              {bn(step - guideStart + 1)}/{bn(GUIDE_STEP_CATEGORIES.length)} · {t(currentCat.label)}
+              {bn(step - guideStart + 1)}/{bn(guideCats.length)} · {STEP_TITLES[currentCat.id] ?? t(currentCat.label)}
             </span>
             <span className="rounded-full bg-[#DC2626] px-3 py-1 text-xs font-bold text-white whitespace-nowrap">
               মোট {bn(guideCount)}টি বাছাই করা হয়েছে
             </span>
           </div>
+          {whenText && (
+            <div className="rounded-xl border border-[#E3D6B8] bg-white/70 px-3 py-2 text-[12.5px] leading-snug text-[#5A4A32]">
+              <p>
+                <span className="font-bold text-[#3B2F1E]">কখন লাগবে: </span>
+                {whenText}
+              </p>
+              <p className="mt-1 text-stone-500">
+                প্রয়োজন না হলে কিছু না বেছেই নিচের “এড়িয়ে যান” বা “পরবর্তী” চাপুন, কিছুই বদলাবে না।
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {categoryGuides.map((g) => {
+            {categoryGuides.map((g, i) => {
               const on = draft.guides.includes(g.label);
               return (
-                <button
-                  key={g.label}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggleGuide(g.label)}
-                  className={`${optionBase} ${on ? optionOn : optionOff} flex items-center gap-3 px-3 py-3 text-left`}
-                >
-                  {on && <CheckBadge />}
-                  <span className="shrink-0 text-[#DC2626]">
-                    <GuideIcon label={g.label} size={30} />
-                  </span>
-                  <span className="text-[14px] font-semibold leading-tight pr-4">{t(g.label)}</span>
-                </button>
+                <React.Fragment key={g.label}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleGuide(g.label)}
+                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center gap-3 px-3 py-3 text-left`}
+                  >
+                    {on && <CheckBadge />}
+                    <span className="shrink-0 text-[#DC2626]">
+                      <GuideIcon label={g.label} size={30} />
+                    </span>
+                    <span className="text-[14px] font-semibold leading-tight pr-4">{t(g.label)}</span>
+                  </button>
+                  {pickerNode && i === selectedStyleIndex && <div className="col-span-full sm:hidden">{pickerNode}</div>}
+                  {pickerNode && i === pairEndIndex && <div className="col-span-full hidden sm:block">{pickerNode}</div>}
+                </React.Fragment>
               );
             })}
+            {pickerNode && selectedStyleIndex < 0 && <div className="col-span-full">{pickerNode}</div>}
           </div>
 
           {currentCat.id === "lips-teeth" && draft.guides.includes("Lipstick") && (

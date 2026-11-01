@@ -11,6 +11,7 @@ import {
   Loader2,
   Ban,
   Search,
+  ListChecks,
 } from "lucide-react";
 import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES } from "./editingGuides";
 import GuideIcon from "./GuideIcon";
@@ -63,6 +64,8 @@ export interface GenerationSettingsProps {
   colorPickerRef?: React.RefObject<HTMLDivElement | null>;
   visaPopupRef?: React.RefObject<HTMLDivElement | null>;
   onGenerate?: () => void;
+  /** Opens the step-by-step setup guide (shown above the Generate button). */
+  onOpenSetupWizard?: () => void;
   isGenerating?: boolean;
   onEditingGuidesChange?: (guides: string[]) => void;
   clearCustomInstructionSignal?: number;
@@ -73,62 +76,23 @@ export interface GenerationSettingsProps {
 // Quick tiles follow the same order as the full library: top of the head -> chin,
 // then whole-face and whole-photo essentials. (Change the order here freely.)
 const QUICK_EDITING_GUIDES = [
-  // Hair
+  // Only the everyday essentials live here (15 tiles = 3 clean rows of 5).
+  // Everything else is one tap away in "See all editing guides" and in the step-by-step guide.
   "Neat Short Haircut",
-  "Side Part Hair",
-  "Slick Back Hair",
   "Tame Stray Hair",
   "Black Hair Color",
-  "Dark Brown Hair Color",
-  "Cover Gray Hair",
-  // Forehead & hairline
-  "Clean Hairline",
-  // Eyebrows
-  "Enhance Eyebrows",
-  "Thick Eyebrows",
-  "Fill Sparse Eyebrows",
-  "Black Eyebrow Color",
-  // Eyes
-  "Brighten Eyes",
-  "Reduce Dark Circles",
-  "Reduce Glasses Glare",
-  "Align Eye Line",
-  // Lips & teeth
-  "Lipstick",
-  "Whiten Teeth Naturally",
-  // Beard & mustache
   "Clean Shave",
-  "Light Stubble",
-  "Short Beard",
-  "Full Beard",
-  "Goatee",
   "Tidy Facial Hair",
-  // Beard color
-  "Black Beard Color",
-  "Cover Gray Beard",
-  // Skin
   "Fair & Bright Skin",
-  "Glow & Makeup",
   "Smooth Skin",
   "Remove Blemishes",
-  "Even Skin Tone",
-  "Keep Marks",
-  // Head & pose
+  "Reduce Facial Shine",
+  "Brighten Eyes",
+  "Reduce Dark Circles",
+  "Whiten Teeth Naturally",
   "Straighten Tilted Photo",
   "Straighten Head",
-  // Lighting & photo quality
   "Brighten Image",
-  "Studio Lighting",
-  "Even Face Lighting",
-  "Fix Underexposure",
-  "Reduce Harsh Shadows",
-  "Deblur Image",
-  "Sharpen Details",
-  // Restoration, background, ID
-  "Restore Old Photo",
-  "Clean ID Photo Background",
-  "Refine Photo Framing",
-  "Passport Photo Polish",
 ];
 export const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
@@ -508,6 +472,7 @@ export default function GenerationSettings({
   colorPickerRef,
   visaPopupRef,
   onGenerate = () => {},
+  onOpenSetupWizard,
   isGenerating = false,
   onEditingGuidesChange,
   clearCustomInstructionSignal = 0,
@@ -1514,7 +1479,7 @@ export default function GenerationSettings({
           </div>
 
           <div className="rounded-2xl p-0.5">
-            <div data-guide-scroller data-scroller data-grab className="gs-noscroll ai-scroll cursor-grab rounded-xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[300px]">
+            <div data-guide-scroller data-scroller data-grab className="gs-noscroll rounded-xl p-0.5">
             <div className="gs-guide-grid grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-5 gap-2 xl:gap-2">
               {QUICK_EDITING_GUIDES.map((item) => {
                 const active = activeGuides.includes(item);
@@ -1604,6 +1569,22 @@ export default function GenerationSettings({
       </div>
 
       <div className="pt-2 mt-auto">
+        {onOpenSetupWizard && (
+          <button
+            type="button"
+            onClick={onOpenSetupWizard}
+            disabled={isGenerating}
+            className="mb-2 w-full rounded-xl border-2 border-[#DC2626]/70 bg-[#FBF6E8] px-3 py-2 xl:py-[clamp(5px,0.9vh,9px)] flex items-center justify-center gap-3 text-left transition-all hover:bg-[#F6D9A8] hover:shadow-md cursor-pointer active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#DC2626] text-white">
+              <ListChecks size={18} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] xl:text-[length:calc(16px/var(--tz,1))] font-bold leading-tight text-[#3B2F1E]">ধাপে ধাপে গাইড নিন</span>
+              <span className="block text-[12px] xl:text-[length:calc(12px/var(--tz,1))] leading-tight text-stone-600">কী সিলেক্ট করবেন বুঝতে না পারলে ক্লিক করুন, আমি সাজিয়ে দিচ্ছি</span>
+            </span>
+          </button>
+        )}
         <button
           type="button"
           onClick={onGenerate}

@@ -44,13 +44,13 @@ const clampValue = (value: number, min: number, max: number) => {
 };
 const HANDLE_STYLE: React.CSSProperties = {
     position: "absolute",
-    width: 16,
-    height: 16,
+    width: 18,
+    height: 18,
     padding: 0,
     border: "2px solid #ffffff",
-    borderRadius: 3,
-    background: "#2563eb",
-    boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25)",
+    borderRadius: 5,
+    background: "#DC2626",
+    boxShadow: "0 2px 8px rgba(59, 47, 30, 0.45)",
     zIndex: 20,
     pointerEvents: "auto",
     touchAction: "none",
@@ -187,7 +187,7 @@ function CropStage({ crop, aspect, imgRef, src, alt, zoom, rotate, onImageLoad, 
             sessionRef.current = null;
         };
     }, [updateLive]);
-    return (<ReactCrop crop={liveCrop} aspect={aspect} onChange={(_: any, percentCrop: any) => updateLive(percentCrop)} onComplete={(pixelCrop: any) => onCommit(pixelCrop)} renderSelectionAddon={() => (<div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+    return (<ReactCrop crop={liveCrop} aspect={aspect} ruleOfThirds onChange={(_: any, percentCrop: any) => updateLive(percentCrop)} onComplete={(pixelCrop: any) => onCommit(pixelCrop)} renderSelectionAddon={() => (<div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
           {(["n", "e", "s", "w"] as const).map((direction) => (<button key={direction} type="button" aria-label={`Resize crop from ${HANDLE_LABEL[direction]} edge`} onPointerDown={startMidpointResize(direction)} style={{ ...HANDLE_STYLE, ...HANDLE_POSITION[direction] }}/>))}
         </div>)} className="sebalagbe-crop-canvas max-h-[70vh]">
       <img ref={imgRef} src={src} alt={alt} onLoad={onImageLoad} style={{
