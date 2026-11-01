@@ -33,3 +33,9 @@ Thumbs.db
 
 # TypeScript generated build files
 *.tsbuildinfo
+
+# Gemini bot: login cookies and browser profiles (never commit)
+gemini-session*.json
+session-limits.json
+chrome-profile-*/
+**/chrome-profile-*/

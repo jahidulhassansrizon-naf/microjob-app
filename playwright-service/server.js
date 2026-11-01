@@ -365,11 +365,111 @@ function requireApiKey(req, res, next) {
   next();
 }
 
-function findSessionFile() {
-  return [
-    "/etc/secrets/gemini-session.json",
-    path.join(__dirname, "gemini-session.json"),
-  ].find((p) => existsSync(p));
+// --------------------------------------------------
+// Multiple Gemini sessions (up to 3 Google accounts)
+//
+// Files: gemini-session-1.json, gemini-session-2.json, gemini-session-3.json
+// (the old single gemini-session.json still works as slot 1).
+// Jobs use session 1 first. When Gemini says "limit resets at ...",
+// that session is parked until the reset time and the SAME job is
+// retried on the next session. The parked state is saved to
+// session-limits.json so a server restart does not forget it.
+// --------------------------------------------------
+
+const SESSION_SLOTS = [1, 2, 3];
+const LIMIT_STATE_FILE = path.join(__dirname, "session-limits.json");
+const DEFAULT_LIMIT_PARK_MS = 60 * 60 * 1000; // used if reset time can't be read
+const LIMIT_TEXT_REGEX =
+  /limit resets|your limit resets|reached your (daily |usage )?limit|can create more images as soon as/i;
+
+class GeminiLimitError extends Error {
+  constructor(message, resetAt) {
+    super(message);
+    this.name = "GeminiLimitError";
+    this.resetAt = resetAt || 0;
+  }
+}
+
+// { "1": <epoch ms when usable again>, ... }
+let limitState = {};
+
+try {
+  limitState = JSON.parse(require("node:fs").readFileSync(LIMIT_STATE_FILE, "utf8"));
+} catch {
+  limitState = {};
+}
+
+function saveLimitState() {
+  fs.writeFile(LIMIT_STATE_FILE, JSON.stringify(limitState, null, 2)).catch(
+    () => {},
+  );
+}
+
+function sessionFileForSlot(slot) {
+  const candidates = [
+    `/etc/secrets/gemini-session-${slot}.json`,
+    path.join(__dirname, `gemini-session-${slot}.json`),
+  ];
+
+  if (slot === 1) {
+    candidates.push(
+      "/etc/secrets/gemini-session.json",
+      path.join(__dirname, "gemini-session.json"),
+    );
+  }
+
+  return candidates.find((p) => existsSync(p));
+}
+
+// All sessions that have a file on disk, in order 1, 2, 3.
+function listSessions() {
+  return SESSION_SLOTS.map((slot) => ({
+    slot,
+    file: sessionFileForSlot(slot),
+    usableAt: Number(limitState[slot]) || 0,
+  })).filter((s) => s.file);
+}
+
+function isSessionUsable(session) {
+  return Date.now() >= session.usableAt;
+}
+
+function markSessionLimited(slot, resetAt) {
+  const until = resetAt && resetAt > Date.now() ? resetAt : Date.now() + DEFAULT_LIMIT_PARK_MS;
+  limitState[slot] = until;
+  saveLimitState();
+  console.log(
+    `Session ${slot}: limit reached, parked until ${new Date(until).toLocaleString()}.`,
+  );
+}
+
+// Reads "Your limit resets at 11:05 PM" and returns epoch ms (0 if not found).
+function parseResetTime(text) {
+  const m = /resets?\s+(?:at|on)?\s*(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec(
+    String(text || ""),
+  );
+
+  if (!m) {
+    return 0;
+  }
+
+  let hour = Number(m[1]);
+  const minute = Number(m[2]);
+  const ampm = (m[3] || "").toUpperCase();
+
+  if (ampm === "PM" && hour < 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  const target = new Date();
+  target.setHours(hour, minute, 0, 0);
+
+  // Time already passed today means it is tomorrow.
+  if (target.getTime() <= Date.now()) {
+    target.setDate(target.getDate() + 1);
+  }
+
+  // Small safety margin so we don't retry a minute too early.
+  return target.getTime() + 60 * 1000;
 }
 
 function getMimeType(extension) {
@@ -766,7 +866,9 @@ async function recycleBrowserIfIdle() {
 // Gemini generation (shared by all three endpoints)
 // --------------------------------------------------
 
-async function runGeminiGeneration({
+async function runGeminiWithSession({
+  sessionFile,
+  slot,
   imagePaths,
   prompt,
   outputDir,
@@ -774,13 +876,13 @@ async function runGeminiGeneration({
   defaultFilename,
   signal,
 }) {
-  const sessionFile = findSessionFile();
-
-  if (!sessionFile) {
-    throw new Error("Session file not found on server.");
-  }
-
   throwIfAborted(signal);
+
+  const startedAt = Date.now();
+  const step = (message) =>
+    console.log(
+      `[session ${slot}] +${Math.round((Date.now() - startedAt) / 1000)}s ${message}`,
+    );
 
   let context = null;
   let page = null;
@@ -824,6 +926,8 @@ async function runGeminiGeneration({
       timeout: 60000,
     });
 
+    step("Gemini page opened");
+
     // 2. Type the prompt
     const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
 
@@ -831,6 +935,9 @@ async function runGeminiGeneration({
       state: "visible",
       timeout: 45000,
     });
+
+    // Limit banner already visible before we even start? Stop right away.
+    await throwIfLimitShown(page);
 
     const promptParagraph = promptWrapper.getByRole("paragraph").first();
 
@@ -842,18 +949,14 @@ async function runGeminiGeneration({
     await promptParagraph.click();
 
     await page.keyboard.insertText(String(prompt).trim());
+    step("prompt typed");
 
-    // 3. Open Upload & tools
-    const uploadToolsButton = page.getByRole("button", {
-      name: "Upload & tools",
-    });
-
-    await uploadToolsButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
+    // 3. Open Upload & tools (Gemini sometimes renames this button,
+    //    so a few known names are tried)
+    const uploadToolsButton = await findUploadToolsButton(page);
 
     await uploadToolsButton.click();
+    step("upload menu opened");
 
     // 4. Click the local uploader and attach the image(s).
     //    With two images the order is kept: first file, then second file.
@@ -893,6 +996,7 @@ async function runGeminiGeneration({
 
     // Give Gemini a moment to attach the image(s)
     await page.waitForTimeout(settleMs);
+    step("image attached");
 
     // 5. Send
     const sendButton = page.getByRole("button", {
@@ -906,17 +1010,50 @@ async function runGeminiGeneration({
 
     await sendButton.click();
 
-    // 6. Wait for the generated image
-    const downloadButton = page
-      .getByRole("button", {
-        name: "Download full size image",
-      })
-      .last();
+    // 6. Wait for the generated image (or a limit message)
+    step("message sent, waiting for the generated image");
 
-    await downloadButton.waitFor({
-      state: "visible",
-      timeout: 180000,
-    });
+    const waitDeadline = Date.now() + 180000;
+    let downloadButton = null;
+    let printedButtons = false;
+    const waitStartedAt = Date.now();
+
+    while (true) {
+      throwIfAborted(signal);
+
+      downloadButton = await findDownloadButton(page);
+
+      if (downloadButton) {
+        break;
+      }
+
+      await throwIfLimitShown(page);
+
+      // After 45s without a download button, print what buttons exist so
+      // we can see if Gemini renamed it.
+      if (!printedButtons && Date.now() - waitStartedAt > 45000) {
+        printedButtons = true;
+
+        const names = await page
+          .evaluate(() =>
+            Array.from(document.querySelectorAll("button"))
+              .map((b) => (b.getAttribute("aria-label") || b.innerText || "").trim())
+              .filter(Boolean)
+              .slice(0, 60),
+          )
+          .catch(() => []);
+
+        step(`still no download button. Buttons on page: ${JSON.stringify(names)}`);
+      }
+
+      if (Date.now() > waitDeadline) {
+        throw new Error("Timed out waiting for the generated image.");
+      }
+
+      await page.waitForTimeout(1500);
+    }
+
+    step("image ready, downloading");
 
     // 7. Download it
     const downloadPromise = page.waitForEvent("download", {
@@ -934,6 +1071,7 @@ async function runGeminiGeneration({
     const outputPath = path.join(outputDir, `generated${extension}`);
 
     await download.saveAs(outputPath);
+    step("image downloaded");
 
     const buffer = await fs.readFile(outputPath);
 
@@ -951,6 +1089,11 @@ async function runGeminiGeneration({
       throw abortReason(signal);
     }
 
+    // Limit reached: pass it up unchanged so the next session can be tried.
+    if (error instanceof GeminiLimitError) {
+      throw error;
+    }
+
     const message = error instanceof Error ? error.message : String(error);
 
     let pageInfo = "";
@@ -961,7 +1104,16 @@ async function runGeminiGeneration({
           timeout: 3000,
         });
 
-        pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
+        const buttonNames = await page
+          .evaluate(() =>
+            Array.from(document.querySelectorAll("button"))
+              .map((b) => (b.getAttribute("aria-label") || b.innerText || "").trim())
+              .filter(Boolean)
+              .slice(0, 40),
+          )
+          .catch(() => []);
+
+        pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)} | buttons: ${JSON.stringify(buttonNames)}]`;
       } catch {
         pageInfo = ` [page: ${page.url()}]`;
       }
@@ -977,6 +1129,130 @@ async function runGeminiGeneration({
       await context.close().catch(() => {});
     }
   }
+}
+
+// Finds an enabled "download image" button (Gemini may rename it).
+async function findDownloadButton(page) {
+  const candidates = [
+    page.getByRole("button", { name: "Download full size image" }),
+    page.getByRole("button", { name: /download.*image|download full/i }),
+    page.locator('button[aria-label*="download" i]'),
+  ];
+
+  for (const candidate of candidates) {
+    const last = candidate.last();
+
+    if (
+      (await last.isVisible().catch(() => false)) &&
+      (await last.isEnabled().catch(() => false))
+    ) {
+      return last;
+    }
+  }
+
+  return null;
+}
+
+// Finds the "+" / "Upload & tools" button in the Gemini prompt box.
+async function findUploadToolsButton(page) {
+  const candidates = [
+    page.getByRole("button", { name: "Upload & tools" }),
+    page.getByRole("button", { name: /upload|add files|attach|open upload/i }),
+    page.locator('button[aria-label*="upload" i]'),
+    page.locator('button[aria-label*="add" i]:has(mat-icon)'),
+    page.locator('button:has(mat-icon[fonticon="add_2"])'),
+    page.locator('button:has(mat-icon[fonticon="add"])'),
+  ];
+
+  const deadline = Date.now() + 20000;
+
+  while (Date.now() < deadline) {
+    for (const candidate of candidates) {
+      const first = candidate.first();
+
+      if (await first.isVisible().catch(() => false)) {
+        return first;
+      }
+    }
+
+    await sleep(500);
+  }
+
+  throw new Error("Could not find the Upload & tools button.");
+}
+
+// Looks at the page text. If Gemini shows its limit message, throws.
+async function throwIfLimitShown(page) {
+  const bodyText = await page
+    .locator("body")
+    .innerText({ timeout: 3000 })
+    .catch(() => "");
+
+  if (LIMIT_TEXT_REGEX.test(bodyText)) {
+    throw new GeminiLimitError(
+      "Gemini limit reached.",
+      parseResetTime(bodyText),
+    );
+  }
+}
+
+// Tries session 1, then 2, then 3. The user only sees an error
+// if every session is out of limit (or missing).
+async function runGeminiGeneration(options) {
+  const sessions = listSessions();
+
+  if (sessions.length === 0) {
+    throw new Error("Session file not found on server.");
+  }
+
+  let lastResetAt = 0;
+  let triedAny = false;
+
+  for (const session of sessions) {
+    if (!isSessionUsable(session)) {
+      lastResetAt = Math.min(lastResetAt || Infinity, session.usableAt);
+      continue;
+    }
+
+    triedAny = true;
+    console.log(`Using Gemini session ${session.slot}.`);
+
+    try {
+      return await runGeminiWithSession({
+        ...options,
+        sessionFile: session.file,
+        slot: session.slot,
+      });
+    } catch (error) {
+      if (error instanceof GeminiLimitError) {
+        markSessionLimited(session.slot, error.resetAt);
+        lastResetAt = Math.min(
+          lastResetAt || Infinity,
+          Number(limitState[session.slot]) || 0,
+        );
+        console.log(`Session ${session.slot} is out of limit, trying the next one...`);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  // Every session is parked or just hit its limit.
+  const waitSeconds =
+    lastResetAt && lastResetAt !== Infinity
+      ? Math.max(60, Math.ceil((lastResetAt - Date.now()) / 1000))
+      : 900;
+
+  console.log(
+    `All Gemini sessions are out of limit (${triedAny ? "just checked" : "already parked"}).`,
+  );
+
+  throw new HttpError(
+    "Image generation is busy right now. Please try again later.",
+    503,
+    { retryAfter: waitSeconds },
+  );
 }
 
 // --------------------------------------------------
@@ -1029,6 +1305,11 @@ app.get("/health", (req, res) => {
       maxConcurrent: MAX_CONCURRENT_GENERATIONS,
       maxQueue: MAX_QUEUE_LENGTH,
     },
+    sessions: listSessions().map((x) => ({
+      slot: x.slot,
+      usable: isSessionUsable(x),
+      usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
+    })),
   });
 });
 
@@ -1088,10 +1369,12 @@ app.get("/session-test", async (req, res) => {
   let browser = null;
 
   try {
-    const sessionFile = [
-      "/etc/secrets/gemini-session.json",
-      path.join(__dirname, "gemini-session.json"),
-    ].find((p) => existsSync(p));
+    // Tests the first usable session (add ?slot=2 or ?slot=3 to test another).
+    const wantedSlot = Number(req.query.slot) || 0;
+    const picked = listSessions().find((s) =>
+      wantedSlot ? s.slot === wantedSlot : true,
+    );
+    const sessionFile = picked && picked.file;
 
     if (!sessionFile) {
       return res.status(404).json({
@@ -1136,6 +1419,7 @@ app.get("/session-test", async (req, res) => {
     return res.json({
       success: true,
       sessionFileFound: true,
+      slot: picked.slot,
       url: page.url(),
       title: await page.title(),
       hasSignIn,

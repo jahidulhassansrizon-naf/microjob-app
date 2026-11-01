@@ -22,6 +22,8 @@ jobs:
       SKIP_DESKTOP: "1"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON: ${{ secrets.GEMINI_SESSION_JSON }}
+      GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
+      GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
 
     defaults:
       run:
@@ -50,15 +52,24 @@ jobs:
         run: |
           node ./node_modules/playwright/cli.js install --with-deps chromium
 
-      - name: Restore Gemini session
+      - name: Restore Gemini sessions
         shell: bash
         run: |
           test -n "$GEMINI_SESSION_JSON" || {
             echo "GEMINI_SESSION_JSON secret is missing."
             exit 1
           }
-          printf '%s' "$GEMINI_SESSION_JSON" > gemini-session.json
-          chmod 600 gemini-session.json
+          printf '%s' "$GEMINI_SESSION_JSON" > gemini-session-1.json
+          chmod 600 gemini-session-1.json
+          if [ -n "$GEMINI_SESSION_JSON_2" ]; then
+            printf '%s' "$GEMINI_SESSION_JSON_2" > gemini-session-2.json
+            chmod 600 gemini-session-2.json
+          fi
+          if [ -n "$GEMINI_SESSION_JSON_3" ]; then
+            printf '%s' "$GEMINI_SESSION_JSON_3" > gemini-session-3.json
+            chmod 600 gemini-session-3.json
+          fi
+          ls gemini-session-*.json
 
       - name: Start bot server
         shell: bash
@@ -82,13 +93,17 @@ jobs:
       - name: Download cloudflared
         shell: bash
         run: |
-          curl -L --fail --silent --show-error             -o cloudflared             https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          curl -L --fail --silent --show-error \
+            -o cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
           chmod +x cloudflared
 
       - name: Start temporary public tunnel
         shell: bash
         run: |
-          nohup ./cloudflared tunnel --no-autoupdate             --url "http://127.0.0.1:${BOT_PORT}"             > cloudflared.log 2>&1 &
+          nohup ./cloudflared tunnel --no-autoupdate \
+            --url "http://127.0.0.1:${BOT_PORT}" \
+            > cloudflared.log 2>&1 &
           echo $! > cloudflared.pid
 
       - name: Wait for public URL
