@@ -11,10 +11,7 @@ const TAU_SECONDS = 1.6;
 // A client-side page change opens the next page directly, exactly as before. The loader
 // only appears if the page is really slow, i.e. still not ready after this long.
 const SHOW_DELAY_MS = 350;
-// Heavy pages (big editors) are known to need a moment: their loader starts almost at once.
-// "/login" is included so a signed-in user who clicks Login sees the loader at once (not the form).
-const HEAVY_PATHS = ["/ai-editor", "/login"];
-const HEAVY_SHOW_DELAY_MS = 90;
+// A click on an internal link starts the loader at once (0 ms), together with the URL change.
 // A page that is held while it prepares: its loader starts after this long unless it asks for sooner.
 const HOLD_SHOW_DELAY_MS = SHOW_DELAY_MS;
 // Once visible, the loader stays at least this long so 0% -> 100% is always seen.
@@ -350,10 +347,8 @@ export default function NavigationProgressBar({
       // Same page (hash or query-only change): the page does not reload.
       if (destination.pathname === window.location.pathname) return;
 
-      const heavy = HEAVY_PATHS.some(
-        (path) => destination.pathname === path || destination.pathname.startsWith(`${path}/`),
-      );
-      startProgress(false, heavy ? HEAVY_SHOW_DELAY_MS : SHOW_DELAY_MS);
+      // Show the loader immediately on click (no waiting), for every page.
+      startProgress(true);
     };
 
     const handleProgressStart = () => startProgress(false);

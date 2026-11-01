@@ -19,7 +19,7 @@ import { X, Check, Image as ImageIcon, RotateCw, Loader2 } from "lucide-react";
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
-import AiEditorSkeleton from "./_components/AiEditorSkeleton";
+import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
 import { AiEditorFetchError, getCachedAiEditorGenerations, isAiEditorStaticWarm, refreshAiEditorGenerations, setCachedAiEditorGenerations, waitForAiEditorFirstFold } from "./_components/aiEditorData";
 // Heavy parts (print studio + PDF, photo preview editor, crop tool) load in the background, so the
 // AI Editor page itself opens much faster after a click.
@@ -87,6 +87,7 @@ export default function PhotoEditorPage() {
     // the loader is told to finish. So the heavy drawing work never happens while the loader is
     // running its last steps: the loader finishes smoothly and the finished page is revealed.
     const [pageSettled, setPageSettled] = useState(firstLoadDone);
+    usePageLoaderHold(!pageSettled, 8000, 120);
     // Data is in: wait only very briefly for the small clothing icons. Photos that are not ready
     // simply fade in afterwards, in the background.
     useEffect(() => {
@@ -1692,9 +1693,9 @@ export default function PhotoEditorPage() {
         return { image: payload.dataUrl, preset: payload.preset };
     };
 
-    // Not ready yet: show the page layout as a skeleton at once (never a blank screen).
+    // Not ready yet: draw nothing but the plain site background; the page loader handles the wait.
     if (!firstLoadDone) {
-        return <AiEditorSkeleton />;
+        return (<div aria-busy="true" className="min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE]"/>);
     }
     return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
