@@ -95,7 +95,15 @@ export async function PATCH(request: Request, context: RouteContext) {
         : now;
     const expiresAt = addCalendarMonths(baseDate, months);
 
+    const isExtension = baseDate !== now;
     user.manualAccessEnabled = true;
+    user.manualAccessMonths = months;
+    user.manualAccessTotalMonths = isExtension
+      ? Math.max(0, Number(user.manualAccessTotalMonths || 0)) + months
+      : months;
+    if (!isExtension || !user.manualAccessStartedAt) {
+      user.manualAccessStartedAt = now;
+    }
     user.manualAccessExpiresAt = expiresAt;
     user.manualAccessGrantedAt = now;
     user.manualAccessGrantedBy = authorization.admin?.email || "Administrator";

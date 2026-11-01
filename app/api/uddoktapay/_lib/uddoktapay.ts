@@ -294,7 +294,12 @@ export async function verifyAndActivateUddoktaPaySubscription(
   if (subscription.paymentStatus === "COMPLETED" && subscription.accessStatus === "ACTIVE" && String(subscription.invoiceId) === normalizedInvoiceId) {
     return { ok: true, httpStatus: 200, alreadyCompleted: true, message: "This UddoktaPay payment has already been verified and subscription access is active.", payment, subscription: asSubscription(subscription) };
   }
-  if (subscription.paymentStatus !== "PENDING" || subscription.accessStatus !== "PENDING") {
+  // A verified COMPLETED payment must always unlock access. The order may have been
+  // flagged CANCELLED (cancel callback fired) or ERROR earlier, so those are allowed too.
+  // Only an order an admin explicitly REJECTED, or an already-completed one, is refused.
+  const activatablePayment = ["PENDING", "CANCELLED", "ERROR"].includes(String(subscription.paymentStatus));
+  const activatableAccess = ["PENDING", "CANCELLED"].includes(String(subscription.accessStatus));
+  if (!activatablePayment || !activatableAccess) {
     return { ok: false, httpStatus: 409, message: "This subscription payment is no longer pending.", payment };
   }
 
@@ -318,7 +323,7 @@ export async function verifyAndActivateUddoktaPaySubscription(
   const paymentMethod = String(payment.payment_method || "UddoktaPay").trim();
   const senderNumber = String(payment.sender_number || "").trim();
   const activated = await Subscription.findOneAndUpdate(
-    { _id: subscription._id, paymentProvider: "UddoktaPay", paymentStatus: "PENDING", accessStatus: "PENDING", $or: [{ invoiceId: "" }, { invoiceId: normalizedInvoiceId }] },
+    { _id: subscription._id, paymentProvider: "UddoktaPay", paymentStatus: { $in: ["PENDING", "CANCELLED", "ERROR"] }, accessStatus: { $in: ["PENDING", "CANCELLED"] }, $or: [{ invoiceId: "" }, { invoiceId: normalizedInvoiceId }, { invoiceId: { $exists: false } }] },
     { $set: {
       invoiceId: normalizedInvoiceId,
       transactionId,

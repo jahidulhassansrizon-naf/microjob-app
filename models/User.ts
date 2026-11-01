@@ -239,6 +239,26 @@ const UserSchema = new Schema(
       trim: true,
     },
 
+    // Most recent admin grant length (months), shown on the user's subscription page.
+    manualAccessMonths: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Start of the current admin-granted window (kept across extensions).
+    manualAccessStartedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Total months granted by admin in the current window.
+    manualAccessTotalMonths: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     password: {
       type: String,
       required: [true, "Password is required"],

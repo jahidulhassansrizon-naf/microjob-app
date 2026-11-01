@@ -14,6 +14,7 @@ type SubscriptionData = {
     accessStatus?: string;
     startedAt?: string | null;
     expiresAt?: string | null;
+    source?: string;
 };
 const MINUTE = 60000;
 const HOUR = 60 * MINUTE;
@@ -248,9 +249,10 @@ export default function SubscriptionCard() {
 
         <div className="px-6 py-4">
           <dt className="flex items-center gap-1.5 text-sm text-[#6B5A40]">
-            <Wallet size={14}/><T>{"Amount paid\n          "}</T></dt>
+            <Wallet size={14}/>{subscription.source === "admin" ? <T>{"Access type"}</T> : <T>{"Amount paid\n          "}</T>}</dt>
           <dd className="mt-1 text-base font-medium text-[#3B2F1E]">
-            {hasAmount
+            {subscription.source === "admin"
+        ? <T>{"Granted by admin"}</T> : hasAmount
         ? <T>{`৳${Number(subscription.amount).toLocaleString()}`}</T> : <T>{"—"}</T>}
           </dd>
         </div>

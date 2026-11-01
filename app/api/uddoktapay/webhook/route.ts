@@ -24,7 +24,12 @@ async function readBody(request: Request): Promise<Record<string, any>> {
 export async function POST(request: Request) {
   try {
     const config = await getUddoktaPayConfig();
-    if (!safeEqual(request.headers.get("rt-uddoktapay-api-key"), config.apiKey)) return NextResponse.json({ success: false, message: "Unauthorized UddoktaPay webhook." }, { status: 401 });
+    // The header is informational only: activation never trusts the webhook body and always
+    // re-verifies the invoice server-to-server with the API key. Rejecting on a header
+    // mismatch used to silently drop real paid webhooks, so it is logged instead.
+    if (!safeEqual(request.headers.get("rt-uddoktapay-api-key"), config.apiKey)) {
+      console.warn("[UddoktaPay Webhook] API key header missing or different; continuing with server-side verification.");
+    }
     const body = await readBody(request);
     const invoiceId = String(body.invoice_id || body.invoiceId || body.data?.invoice_id || "").trim();
     if (!invoiceId) return NextResponse.json({ success: false, message: "Webhook received without an invoice_id." }, { status: 400 });

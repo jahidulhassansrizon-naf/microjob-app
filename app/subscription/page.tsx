@@ -88,6 +88,8 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   ". you can choose any plan whenever you want.":
     " পর্যন্ত। চাইলে যেকোনো প্ল্যান নিয়ে আবার নবায়ন করতে পারবেন।",
   "amount paid": "পরিশোধিত অর্থ",
+  "access type": "অ্যাক্সেসের ধরন",
+  "granted by admin": "অ্যাডমিন প্রদত্ত",
   started: "শুরুর তারিখ",
   ended: "মেয়াদ শেষ",
   expires: "মেয়াদ শেষ হবে",
@@ -636,6 +638,7 @@ export default function SubscriptionPage() {
     accessStatus: string;
     startedAt: string | null;
     expiresAt: string | null;
+    source?: string;
   };
   type PendingSubscriptionStatus = {
     id: string;
@@ -981,10 +984,18 @@ export default function SubscriptionPage() {
                           </span>
                           <div>
                             <dt className="text-sm text-[#6B5A40]">
-                              <T>{"Amount paid"}</T>
+                              {currentSubscription.source === "admin" ? (
+                                <T>{"Access type"}</T>
+                              ) : (
+                                <T>{"Amount paid"}</T>
+                              )}
                             </dt>
                             <dd className="text-base font-semibold text-[#2B2116]">
-                              {formatPrice(currentSubscription.amount)}
+                              {currentSubscription.source === "admin" ? (
+                                <T>{"Granted by admin"}</T>
+                              ) : (
+                                formatPrice(currentSubscription.amount)
+                              )}
                             </dd>
                           </div>
                         </div>

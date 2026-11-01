@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const subscriptionId = String(url.searchParams.get("subscription_id") || "").trim();
+  const subscriptionId = String(url.searchParams.get("subscription_id") || "").match(/[a-f0-9]{24}/i)?.[0] || "";
   if (mongoose.isValidObjectId(subscriptionId)) {
     try {
       await connectDB();

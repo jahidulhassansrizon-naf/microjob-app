@@ -29,6 +29,8 @@ const PROFILE_BN: Record<string, string> = {
   "started": "শুরু হয়েছে",
   "expires": "মেয়াদ শেষ হবে",
   "amount paid": "পরিশোধিত অর্থ",
+  "access type": "অ্যাক্সেসের ধরন",
+  "granted by admin": "অ্যাডমিন প্রদত্ত",
   "renew before": "নবায়ন করুন",
   "no active subscription": "কোনো সক্রিয় সাবস্ক্রিপশন নেই",
   "profile complete": "প্রোফাইল সম্পূর্ণ",

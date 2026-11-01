@@ -20,8 +20,16 @@ async function handle(request: Request) {
   const url = new URL(request.url);
   const payload = request.method === "GET" ? Object.fromEntries(url.searchParams.entries()) : await readPayload(request);
   const first = (...values: unknown[]) => String(values.find((v) => typeof v === "string" && v.trim()) || "").trim();
-  const subscriptionId = first(url.searchParams.get("subscription_id"), payload.subscription_id, payload.subscriptionId);
-  const invoiceId = first(payload.invoice_id, payload.invoiceId, url.searchParams.get("invoice_id"), url.searchParams.get("invoiceId"));
+  // UddoktaPay may append "?invoice_id=..." to a redirect_url that already has a query string,
+  // producing "?subscription_id=<id>?invoice_id=<invoice>". Parse both values tolerantly.
+  const rawQuery = url.search;
+  const rawSubscription = first(url.searchParams.get("subscription_id"), payload.subscription_id, payload.subscriptionId);
+  const subscriptionId = (rawSubscription.match(/[a-f0-9]{24}/i)?.[0]) || (rawQuery.match(/subscription_id=([a-f0-9]{24})/i)?.[1]) || "";
+  let invoiceId = first(payload.invoice_id, payload.invoiceId, url.searchParams.get("invoice_id"), url.searchParams.get("invoiceId"));
+  if (!invoiceId) {
+    const embedded = rawSubscription.match(/invoice_id=([^&?#]+)/i)?.[1] || rawQuery.match(/invoice_id=([^&?#]+)/i)?.[1] || "";
+    try { invoiceId = decodeURIComponent(embedded).trim(); } catch { invoiceId = embedded.trim(); }
+  }
   const site = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "").trim();
   let origin = url.origin;
   try { const parsed = new URL(site); if (parsed.protocol === "https:") origin = parsed.origin; } catch { /* Use request origin. */ }
