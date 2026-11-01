@@ -1885,8 +1885,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         </button>
       </header>
 
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        <aside className="w-[340px] shrink-0 bg-[#FBF6E8] border-r border-[#E3D6B8] flex flex-col min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+        <aside className="w-full md:w-[300px] lg:w-[340px] max-h-[42dvh] md:max-h-none shrink-0 bg-[#FBF6E8] border-b md:border-b-0 md:border-r border-[#E3D6B8] flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto">
             {/* ───────── Recent photos ───────── */}
             {!!recentImages?.length && !!onResolveRecent && (<Section title={t("Recent Photos")} icon={<ImageIcon size={13}/>} open={openSections.recent} onToggle={() => toggleSection("recent")}>
@@ -2252,8 +2252,8 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#F2E8D2]">
-          <div className="h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-4 flex items-center justify-between">
+        <main className="flex-1 min-w-0 min-h-[260px] md:min-h-0 flex flex-col bg-[#F2E8D2]">
+          <div className="min-h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-3 sm:px-4 py-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div className="text-[11px] font-bold text-[#3B2F1E]/70">
               {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{pageHeightMm.toFixed(1)} মিমি{sheetCount > 1 ? ` • ${sheetCount} পেজ` : ""}
             </div>
@@ -2363,7 +2363,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
           </div>
         </main>
 
-        {toast && (<div className="fixed right-5 top-[74px] z-[10030] w-[300px] rounded-xl border border-[#10B981]/30 bg-[#FBF6E8] shadow-xl p-3">
+        {toast && (<div className="fixed right-3 sm:right-5 top-[74px] z-[10030] w-[300px] max-w-[calc(100vw-1.5rem)] rounded-xl border border-[#10B981]/30 bg-[#FBF6E8] shadow-xl p-3">
             <p className="text-[12px] font-extrabold text-[#3B2F1E]">{t(toast.title)}</p>
             <p className="text-[11px] text-[#3B2F1E]/70 mt-0.5 leading-relaxed">{t(toast.message)}</p>
           </div>)}

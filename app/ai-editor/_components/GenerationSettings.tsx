@@ -867,7 +867,7 @@ export default function GenerationSettings({
     };
   }, []);
   return (
-    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100vh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
+    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100dvh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
       <style>{`
         .ai-scroll [data-grab], .ai-scroll [data-grab] * { cursor: grab; }
         .ai-scroll input, .ai-scroll textarea { cursor: text; }

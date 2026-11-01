@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle } from "lucide-react";
 import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
@@ -48,6 +48,9 @@ interface PhotoSetupWizardProps {
   onApply: (result: WizardResult, options: { generate: boolean }) => void;
   onClose: (dontShowAgain: boolean) => void;
 }
+
+/** Optional tutorial video for the "নিজে বেছে নিতে চাই" path. Leave empty to hide the video button. */
+const GUIDE_VIDEO_URL = "";
 
 const BASE_STEPS = [
   { title: "ছবিটা কোন কাজে লাগবে?", hint: "নিচের যেকোনো একটাতে চাপ দিন।", stage: 0 },
@@ -865,7 +868,7 @@ export default function PhotoSetupWizard({
     }
     let text: string;
     if (intro) {
-      text = "কীভাবে শুরু করবেন? প্রথম অপশন, সব ঠিক করে দিন। এক চাপেই ছবি তৈরি হবে। দ্বিতীয় অপশন, আমি নিজে বেছে নিতে চাই। ধাপে ধাপে নিজে ঠিক করবেন।";
+      text = "কীভাবে শুরু করবেন? ছবি প্রায় ঠিকঠাক থাকলে এবং দ্রুত কাজ সারতে চাইলে এক নম্বর অপশন, সব ঠিক করে দিন, ব্যবহার করুন। আর চুল, ভ্রু, ঠোঁট, দাড়ি, ত্বক সহ সবকিছু নিজের ইচ্ছামতো ঠিক করতে চাইলে দুই নম্বর অপশন, আমি নিজে বেছে নিতে চাই, ব্যবহার করুন। সেখানে বাড়তি গাইডিংও আছে।";
     } else {
       text = `${currentStepInfo.title}। ${currentStepInfo.hint}`;
       if (currentCat) {
@@ -884,6 +887,40 @@ export default function PhotoSetupWizard({
     synth.speak(utterance);
   };
 
+  const renderIntroBanner = () => (
+    <div className="mt-3 mb-3 rounded-2xl border-2 border-[#F59E0B] bg-[#FFF7E0] p-3 sm:p-4 shadow-sm">
+      <p className="mb-2 flex items-center gap-2 text-[16px] sm:text-[19px] font-extrabold leading-snug text-[#92400E]">
+        <Lightbulb size={22} className="shrink-0" /> কোনটা বেছে নেবেন? এক নজরে বুঝে নিন
+      </p>
+      <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+        <div className="flex items-start gap-2.5 rounded-xl bg-[#ECFDF5] border border-[#059669]/40 px-3 py-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#059669] text-[17px] font-extrabold text-white">১</span>
+          <p className="text-[14px] sm:text-[16px] leading-snug text-[#3B2F1E]">
+            <b className="text-[#065F46]">ছবি প্রায় ঠিকঠাক আছে, শর্টকাটে কাজ সারতে চান?</b> তাহলে <b>১ নম্বর “সব ঠিক করে দিন”</b> ব্যবহার করুন। মাত্র ৩ ধাপ।
+          </p>
+        </div>
+        <div className="flex items-start gap-2.5 rounded-xl bg-[#FEF2F2] border border-[#DC2626]/40 px-3 py-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[17px] font-extrabold text-white">২</span>
+          <div className="min-w-0 text-[14px] sm:text-[16px] leading-snug text-[#3B2F1E]">
+            <p>
+              <b className="text-[#B91C1C]">নিজের ইচ্ছামতো সবকিছু ঠিক করতে চান?</b> তাহলে <b>২ নম্বর “আমি নিজে বেছে নিতে চাই”</b> ব্যবহার করুন। চুল, ভ্রু, ঠোঁট, দাড়ি, ত্বক, চেহারা সহ সবকিছু নিজে ঠিক করা যাবে, সাথে বাড়তি গাইডিংও আছে।
+            </p>
+            {GUIDE_VIDEO_URL && (
+              <a
+                href={GUIDE_VIDEO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 py-1.5 text-[14px] font-extrabold text-white hover:bg-[#B91C1C]"
+              >
+                <PlayCircle size={18} /> ভিডিওতে দেখে নিন
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderIntro = () => (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <button
@@ -892,8 +929,9 @@ export default function PhotoSetupWizard({
           setQuick(true);
           setIntro(false);
         }}
-        className="flex flex-col items-center gap-3 rounded-2xl border-4 border-[#059669] bg-[#ECFDF5] p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer"
+        className="relative flex flex-col items-center gap-3 rounded-2xl border-4 border-[#059669] bg-[#ECFDF5] p-4 sm:p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer"
       >
+        <span className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#059669] text-[17px] font-extrabold text-white">১</span>
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#059669] text-white">
           <Sparkles size={34} />
         </span>
@@ -907,8 +945,9 @@ export default function PhotoSetupWizard({
       <button
         type="button"
         onClick={() => setIntro(false)}
-        className="flex flex-col items-center gap-3 rounded-2xl border-4 border-[#E3D6B8] bg-[#FBF6E8] p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:border-[#DC2626] hover:shadow-xl cursor-pointer"
+        className="relative flex flex-col items-center gap-3 rounded-2xl border-4 border-[#E3D6B8] bg-[#FBF6E8] p-4 sm:p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:border-[#DC2626] hover:shadow-xl cursor-pointer"
       >
+        <span className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#DC2626] text-[17px] font-extrabold text-white">২</span>
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DC2626] text-white">
           <Hand size={34} />
         </span>
@@ -934,8 +973,8 @@ export default function PhotoSetupWizard({
       <div className={`flex max-h-[96dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none`}>
         {/* Header + progress */}
         <div className="shrink-0 border-b border-[#E3D6B8] px-4 pt-3 sm:px-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
               <span className="mt-0.5 rounded-xl bg-[#D42020] p-2 text-white">
                 <Camera size={20} />
               </span>
@@ -996,7 +1035,7 @@ export default function PhotoSetupWizard({
                         type="button"
                         disabled={!done}
                         onClick={() => setStep(i < 3 ? i : guideStart)}
-                        className={`flex w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
+                        className={`flex w-[64px] min-[420px]:w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
                       >
                         <span
                           className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-extrabold shadow-sm transition ${
@@ -1093,7 +1132,7 @@ export default function PhotoSetupWizard({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{intro ? renderIntro() : renderStep()}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{intro ? (<>{renderIntroBanner()}{renderIntro()}</>) : renderStep()}</div>
         </div>
 
         {/* Footer */}
