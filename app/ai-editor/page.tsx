@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import SubscriptionLock from "./_components/SubscriptionLock";
 import GenerationSettings from "./_components/GenerationSettings";
-import { planEditingGuides } from "./_components/editingGuides";
+import { buildSkinToneRule, buildStandardFinishRule, KEEP_SKIN_COLOR_RETOUCH_RULE, planEditingGuides, TIE_COLORS, TIE_STYLES } from "./_components/editingGuides";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import PhotoSetupWizard, { type WizardResult } from "./_components/PhotoSetupWizard";
@@ -307,7 +307,12 @@ export default function PhotoEditorPage() {
         { label: "38×48 mm", aspect: "38/48" },
         { label: "50×60 mm", aspect: "50/60" },
     ];
-    const EXPORT_DPI = 300;
+    // Master resolution: 600 DPI for passport-size photos so zooming in stays sharp.
+    // Large sizes are capped (longest side <= ~3600 px) so the browser canvas never runs out of memory.
+    const EXPORT_DPI = 600;
+    const MIN_EXPORT_DPI = 300;
+    const MAX_EXPORT_LONG_SIDE_PX = 3600;
+    const JPEG_QUALITY = 0.98;
     type PhysicalSize = {
         width: number;
         height: number;
@@ -339,18 +344,47 @@ export default function PhotoEditorPage() {
     };
     const getExactExportDimensions = (sizeLabel: string) => {
         const physical = parsePhysicalSize(sizeLabel);
-        const widthPx = physical.unit === "in"
-            ? Math.max(1, Math.round(physical.width * EXPORT_DPI))
-            : Math.max(1, Math.round((physical.width / 25.4) * EXPORT_DPI));
-        const heightPx = physical.unit === "in"
-            ? Math.max(1, Math.round(physical.height * EXPORT_DPI))
-            : Math.max(1, Math.round((physical.height / 25.4) * EXPORT_DPI));
+        const widthInches = physical.unit === "in" ? physical.width : physical.width / 25.4;
+        const heightInches = physical.unit === "in" ? physical.height : physical.height / 25.4;
+        const longSideInches = Math.max(widthInches, heightInches, 0.01);
+        const dpi = Math.max(MIN_EXPORT_DPI, Math.min(EXPORT_DPI, Math.floor(MAX_EXPORT_LONG_SIDE_PX / longSideInches)));
+        const widthPx = Math.max(1, Math.round(widthInches * dpi));
+        const heightPx = Math.max(1, Math.round(heightInches * dpi));
         return {
             ...physical,
             widthPx,
             heightPx,
-            dpi: EXPORT_DPI,
+            dpi,
         };
+    };
+    // Gentle unsharp-mask so an upscaled photo keeps crisp hair, eyes, beard and fabric detail.
+    // Only RGB is touched (alpha stays as is), so transparent PNG edges are not damaged.
+    const sharpenCanvasDetail = (context: CanvasRenderingContext2D, width: number, height: number, amount = 0.45) => {
+        try {
+            const imageData = context.getImageData(0, 0, width, height);
+            const src = imageData.data;
+            const copy = new Uint8ClampedArray(src);
+            const stride = width * 4;
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const i = y * stride + x * 4;
+                    if (copy[i + 3] === 0) continue;
+                    for (let c = 0; c < 3; c++) {
+                        const center = copy[i + c];
+                        const blur = (copy[i + c - 4] + copy[i + c + 4] + copy[i + c - stride] + copy[i + c + stride]) / 4;
+                        const diff = center - blur;
+                        // Ignore tiny differences (flat backdrop / skin) so noise is not boosted.
+                        if (diff > 2 || diff < -2) {
+                            src[i + c] = center + diff * amount;
+                        }
+                    }
+                }
+            }
+            context.putImageData(imageData, 0, 0);
+        }
+        catch {
+            // If pixel access is blocked, keep the unsharpened image.
+        }
     };
     const normalizeImageToExactPhysicalSize = async (imageSrc: string, sizeLabel: string, transparentBackground = false, dualGroupPhoto = false): Promise<{
         dataUrl: string;
@@ -435,10 +469,14 @@ export default function PhotoEditorPage() {
         else {
             context.drawImage(image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
         }
+        // The AI image is often smaller than the 600 DPI master size: restore fine detail after upscaling.
+        if (scale > 1.05 || dualGroupPhoto) {
+            sharpenCanvasDetail(context, target.widthPx, target.heightPx, scale > 1.6 ? 0.6 : 0.45);
+        }
         // Keep only the serialized image data; release the large canvas bitmap now.
         const dataUrl = transparentBackground
             ? canvas.toDataURL("image/png")
-            : canvas.toDataURL("image/jpeg", 0.95);
+            : canvas.toDataURL("image/jpeg", JPEG_QUALITY);
         canvas.width = 0;
         canvas.height = 0;
         return {
@@ -743,10 +781,10 @@ export default function PhotoEditorPage() {
                     rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
                     rotatedCtx.rotate((rotate * Math.PI) / 180);
                     rotatedCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
-                    croppedImageUrl = rotatedCanvas.toDataURL("image/jpeg", 0.95);
+                    croppedImageUrl = rotatedCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
                 }
                 else {
-                    croppedImageUrl = sourceCanvas.toDataURL("image/jpeg", 0.95);
+                    croppedImageUrl = sourceCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
                 }
             }
             const uploadedOriginalUrl = await uploadToCloudinary(croppedImageUrl);
@@ -1017,6 +1055,7 @@ export default function PhotoEditorPage() {
                 ? "one plain, clean, uniform white or very light neutral studio background"
                 : `a solid ${bgColorName} background (${bgColor})`;
         const plan = planEditingGuides(rawGuides, { backgroundRef, side: "" });
+        const skinRule = plan.skinTone ? buildSkinToneRule(plan.skinTone) : plan.appliedLabels.includes("Fair & Bright Skin") ? SKIN_RETOUCH_RULE : KEEP_SKIN_COLOR_RETOUCH_RULE;
         const describeClothing = (value: unknown, colorValue: unknown) => {
             const index = typeof value === "number" ? value : -1;
             if (index < 0 || !CLOTHING_NAMES[index]) {
@@ -1038,7 +1077,8 @@ export default function PhotoEditorPage() {
             "OUTPUT: Return exactly ONE image. It is a single photograph of both people sitting side by side in the same frame, as if one camera took one shot of them posing together. It is NOT a collage, NOT a split screen, NOT two separate photos placed next to each other, and has no divider, gap, border, frame, or line between them. Never return the attached photos unchanged.",
             "CANVAS: landscape, aspect ratio exactly 90:55 (about 1.64 : 1). The backdrop must fill the ENTIRE canvas edge to edge. No white, black, or colored bars, margins, strips, or letterboxing at the top, bottom, or sides.",
             "IDENTITY LOCK (highest priority for face structure): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyes and eye shape, nose, lips, teeth, ears, moles, scars, birthmarks and apparent age. Also keep the eyebrows, facial hair, hairline and hairstyle (unless an eyebrow, beard/facial-hair, hair style or hair color edit is requested below; if one is requested, apply it fully to the person it is meant for). Do NOT slim, enlarge, age, reshape, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and a different face, choose the identical face structure. Both faces must be clearly recognizable as the people in their own photos. (Skin cleanliness and brightness are improved separately, see SKIN RETOUCH.)",
-            `${SKIN_RETOUCH_RULE} Apply this to BOTH people, with the same level of brightness and cleanliness, so the two people look consistent side by side.`,
+            `${skinRule} Apply this to BOTH people, keeping each person's own natural skin color exactly (never copy one person's skin color onto the other), with the same level of cleanliness, so the two people look consistent side by side.`,
+            `${buildStandardFinishRule(plan, { sized: true })} Apply this to BOTH people.`,
             "POSE AND CAMERA: classic passport-studio pose for BOTH people. Sitting upright with straight backs, shoulders square to the camera and level, necks long and relaxed, heads perfectly straight with no tilt, turn, or lean, chin level, eyes open and looking directly into the lens, natural neutral expression with the mouth closed (a very slight natural smile at most). If a person's original photo is tilted, turned, or leaning, re-pose only the head and body to face the camera straight while keeping the face identical. The camera is at eye level, shot with a long portrait lens (about 85mm equivalent), no wide-angle distortion.",
             "FRAMING: Person A is centered in the left half and Person B is centered in the right half, sitting close together so their shoulders almost touch (a very slight overlap of shoulders is fine) with no faces overlapping or hidden. Both people are at exactly the same scale, with their eyes on the same horizontal line and the tops of their heads at the same height, with a small even headroom above. Show each person from the top of the head down to the upper chest. Both are fully inside the frame with nothing cut off.",
             backgroundRule,
@@ -1047,6 +1087,12 @@ export default function PhotoEditorPage() {
             "STRICTLY FORBIDDEN: extra people, text, letters, logos, watermarks, frames, borders, dividing lines, props, jewelry or accessories that are not in the original photos, changed hijab/head covering, changed hair, eyebrows or facial hair (unless such an edit is requested below), changed face structure, a different ethnicity or unnaturally pale/gray/orange skin, cartoon or painted or AI-art look, and any stylization.",
             "BEFORE ANSWERING, silently verify: (1) exactly one image with both people in the same frame; (2) Person A is left and Person B is right; (3) both faces have the same structure as their own photos, with clean, bright, even, spot-free skin; (4) both sit upright facing the camera at the same size and height; (5) one uniform backdrop fills the whole canvas with no strip or seam; (6) clothing matches the instructions. Fix anything that fails before you answer.",
         ];
+        if (!plan.appliedLabels.includes("Keep Marks")) {
+            const lockIndex = rules.findIndex((rule) => rule.startsWith("IDENTITY LOCK"));
+            if (lockIndex >= 0) {
+                rules[lockIndex] = rules[lockIndex].replace("ears, moles, scars, birthmarks and apparent age", "ears and apparent age");
+            }
+        }
         const sections = [rules.join("\n\n")];
         if (plan.edits.length > 0) {
             sections.push([
@@ -1068,6 +1114,9 @@ export default function PhotoEditorPage() {
         sections.push("The application handles the exact pixel dimensions after generation, so do not add any text or size labels.");
         return sections.join("\n\n");
     };
+    // Always added to EVERY prompt (single, dual, regenerate): the photo must come out ultra sharp and perfectly clean.
+    const QUALITY_PREFIX = "TOP PRIORITY FOR EVERY IMAGE: the output must be ULTRA HIGH RESOLUTION, sharp, and perfectly CLEAN, with the face exactly as clean as in the original photo and the same skin color.";
+    const QUALITY_SUFFIX = "FINAL QUALITY REQUIREMENTS (apply to every photo, always): (1) RESOLUTION: output at the highest resolution and sharpness you can produce, like a 50-megapixel studio camera shot, so hair strands, eyebrows, eyelashes, eyes, beard, clothing fabric, collar edges, stitching, buttons and tie pattern stay crisp and clear even when zoomed in. (2) CLEAN FACE (very important): the face, forehead, cheeks, nose, chin, neck and ears must be completely clean and spotless, exactly like the person's own clean skin in the original photo. NEVER add any dark spots, dots, moles, freckles, birthmarks, patches, blotches, stains, scars, warts or marks of any kind that are not clearly in the original photo; if the original has any, remove them. Keep the exact same skin color as the original photo. (3) CLEAN IMAGE: no blur, no noise or grain, no compression artifacts, no pixelation, no halos or jagged edges around the hair and shoulders, no dust, no watermark, no text, and a perfectly clean uniform backdrop. (4) NATURAL: a believable real photograph, never plastic, waxy, painted or over-smoothed. (5) IDENTITY: the person's face, identity and anatomy stay exactly the same.";
     const buildAiEditingPrompt = (payload: Record<string, unknown>) => {
         if (payload.dualMode === true) {
             return buildDualPrompt(payload);
@@ -1093,6 +1142,7 @@ export default function PhotoEditorPage() {
                 : `a solid ${bgColorName} background (${bgColor})`;
         const plan = planEditingGuides(rawGuides, { backgroundRef, side });
         const { flags } = plan;
+        const skinRule = plan.skinTone ? buildSkinToneRule(plan.skinTone) : plan.appliedLabels.includes("Fair & Bright Skin") ? SKIN_RETOUCH_RULE : KEEP_SKIN_COLOR_RETOUCH_RULE;
 
         const instructions = [
             flags.restoration
@@ -1102,7 +1152,8 @@ export default function PhotoEditorPage() {
                 : hasSelectedPhotoSize
                     ? "Edit the provided portrait photo for a professional ID/passport-style result."
                     : "Edit the provided image naturally, preserving its original composition and aspect ratio unless the requested edits require a change.",
-            `${SKIN_IDENTITY_RULE} ${SKIN_RETOUCH_RULE}`,
+            `${plan.appliedLabels.includes("Keep Marks") ? SKIN_IDENTITY_RULE : SKIN_IDENTITY_RULE.replace("apparent age and permanent marks (moles, birthmarks, scars) unchanged", "and apparent age unchanged")} ${skinRule}`,
+            buildStandardFinishRule(plan, { sized: hasSelectedPhotoSize }),
             flags.restoration
                 ? "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks. Keep every person who is already in the photo."
                 : "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
@@ -1121,6 +1172,14 @@ export default function PhotoEditorPage() {
             const colorName = CLOTHING_COLOR_NAMES[colorHex] ||
                 (colorHex ? `the selected color (${colorHex})` : "a natural color");
             instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. Keep the face, ears, neck, body proportions, and pose natural, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body.`);
+            if (plan.tie && TIE_STYLES.includes(clothingName)) {
+                const tieColor = TIE_COLORS.find((c) => c.name === plan.tie);
+                instructions.push(
+                    plan.tie === "None"
+                        ? "Do NOT add any necktie or bow tie: the shirt collar is neatly buttoned or open with no tie at all."
+                        : `The clothing includes a plain, neatly knotted necktie in ${tieColor ? `${tieColor.name.toLowerCase()} (${tieColor.hex})` : plan.tie}, centered, symmetrical, tucked under the shirt collar, with a correct knot and realistic fabric.`,
+                );
+            }
         }
         if (keepOriginalBackground) {
             if (flags.alteringBackground) {
@@ -1212,7 +1271,7 @@ export default function PhotoEditorPage() {
         drawHalf(rightImg, single.widthPx);
         const dataUrl = transparentBackground
             ? canvas.toDataURL("image/png")
-            : canvas.toDataURL("image/jpeg", 0.95);
+            : canvas.toDataURL("image/jpeg", JPEG_QUALITY);
         const result = { dataUrl, widthPx: canvas.width, heightPx: canvas.height, dpi: single.dpi };
         canvas.width = 0;
         canvas.height = 0;
@@ -1256,7 +1315,7 @@ export default function PhotoEditorPage() {
         const timeoutId = window.setTimeout(() => controller.abort(), 180000);
 
         try {
-            prompt = buildAiEditingPrompt(payload);
+            prompt = `${QUALITY_PREFIX}\n\n${buildAiEditingPrompt(payload)}\n\n${QUALITY_SUFFIX}`;
             if (/^https?:\/\//i.test(image)) {
                 formData.append("imageUrl", image);
             }
@@ -1603,6 +1662,45 @@ export default function PhotoEditorPage() {
             setErrorMessage(error instanceof Error
                 ? error.message
                 : "Failed to delete the image. Please try again.");
+        }
+        finally {
+            setIsDeleting(false);
+        }
+    };
+    // Delete several generated photos at once (used by the bulk "ছবি মুছুন" action and the per-photo trash icon).
+    const performDeleteMany = async (items: any[]) => {
+        const targets = items.filter((item) => item && item.id);
+        if (!targets.length)
+            return;
+        setIsDeleting(true);
+        setErrorMessage(null);
+        const deletedIds = new Set<string>();
+        let failed = 0;
+        try {
+            await Promise.all(targets.map(async (item) => {
+                try {
+                    const res = await fetch(`/api/ai-generations?id=${encodeURIComponent(String(item.id))}`, {
+                        method: "DELETE",
+                        headers: { ...getAuthHeaders() },
+                        credentials: "include",
+                    });
+                    const result = await res.json().catch(() => null);
+                    if (!res.ok || !result?.success)
+                        throw new Error(result?.error || "Failed to delete");
+                    deletedIds.add(String(item.id));
+                }
+                catch (error) {
+                    console.error("Error deleting image:", error);
+                    failed += 1;
+                }
+            }));
+            if (deletedIds.size) {
+                setRecentList((prevList) => prevList.filter((item) => !deletedIds.has(String(item.id))));
+                setResultItem((current) => current && deletedIds.has(String(current.id)) ? null : current);
+                setPrintSession(null);
+            }
+            if (failed)
+                setErrorMessage(`${failed}টি ছবি মুছতে পারা যায়নি। আবার চেষ্টা করুন।`);
         }
         finally {
             setIsDeleting(false);
@@ -1970,7 +2068,7 @@ export default function PhotoEditorPage() {
           </div>
         </div>
 
-                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession}/>
+                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession} onDeleteMany={performDeleteMany}/>
       </div>
       <PhotoSetupWizard open={showSetupWizard} image={uploadedImage} initial={{
         size: isDualMode ? "" : selectedSize,

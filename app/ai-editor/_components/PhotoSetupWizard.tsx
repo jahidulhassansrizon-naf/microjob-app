@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, X } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X } from "lucide-react";
 import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
-import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDE_META, EDITING_GUIDES, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX } from "./editingGuides";
+import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDE_META, AUTO_APPLIED_GUIDES, EDITING_GUIDES, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX, isOptionEntry } from "./editingGuides";
+import TiePicker, { canHaveTie, getTieFromGuides, withTie } from "./TiePicker";
+import SkinTonePicker, { getSkinToneFromGuides, withSkinTone } from "./SkinTonePicker";
 import { CLOTHING_COLORS, RawSvgClothingPreview } from "./GenerationSettings";
 
 /**
@@ -48,10 +50,39 @@ interface PhotoSetupWizardProps {
 }
 
 const BASE_STEPS = [
-  { title: "ছবির ধরন", hint: "এই ছবিটি কোন কাজের জন্য বানাতে চান?", stage: 0 },
-  { title: "ব্যাকগ্রাউন্ড", hint: "ছবির পেছনে কোন রং চান?", stage: 1 },
-  { title: "পোশাক", hint: "কোন ধরনের পোশাক পরাতে চান?", stage: 2 },
+  { title: "ছবিটা কোন কাজে লাগবে?", hint: "নিচের যেকোনো একটাতে চাপ দিন।", stage: 0 },
+  { title: "ছবির পেছনের রং কী চান?", hint: "পছন্দের রঙে একবার চাপ দিন।", stage: 1 },
+  { title: "কোন পোশাক পরাতে চান?", hint: "পোশাকে চাপ দিন, তারপর নিচে রং বেছে নিন।", stage: 2 },
 ];
+
+/** The four big stages the user sees (the many small face questions all live inside the last one). */
+const STAGES4 = [
+  { label: "ছবির ধরন", Icon: Ruler },
+  { label: "ব্যাকগ্রাউন্ড", Icon: Palette },
+  { label: "পোশাক", Icon: Shirt },
+  { label: "চেহারা", Icon: SlidersHorizontal },
+];
+
+/** One plain yes/no style question per face step, so nobody has to read a paragraph. */
+const STEP_QUESTIONS: Record<string, string> = {
+  "hair-style": "চুল গুছিয়ে নিতে বা নতুন স্টাইল চান?",
+  forehead: "কপালে ভাঁজ বা এলোমেলো চুল আছে?",
+  eyebrows: "ভ্রু ঠিক করতে চান?",
+  "eyes-details": "চোখ বা চশমায় কোনো সমস্যা আছে?",
+  ears: "কানের রং মুখের সাথে মেলাতে চান?",
+  nose: "নাক তেলতেলে বা লালচে দেখাচ্ছে?",
+  cheeks: "গালে লালচে ভাব আছে?",
+  "lips-teeth": "ঠোঁট বা দাঁতে কিছু ঠিক করতে চান?",
+  "beard-style": "দাড়ি-গোঁফ কামাতে বা ঠিক করতে চান?",
+  "portrait-skin": "ত্বক আরও ফর্সা করতে বা গায়ের রং বদলাতে চান?",
+  "head-pose": "মাথা বা ছবি কাত হয়ে আছে?",
+  "lighting-color": "ছবির আলো বা রঙে সমস্যা আছে?",
+  "image-quality": "ছবি ঝাপসা বা দানাদার?",
+  "old-photo": "ছবিটা কি পুরোনো বা নষ্ট হয়ে গেছে?",
+  "background-composition": "ছবির ফ্রেমিং বা কিনারা ঠিক করতে চান?",
+  "id-studio": "এটা কি সরকারি বা আইডির মতো নিয়মের ছবি?",
+  "creative-finish": "ছবিতে কোনো বিশেষ লুক চান?",
+};
 /**
  * One wizard step per editing category, in head-to-chin order.
  * Hair colour and beard colour are NOT separate steps: they appear as a small dropdown right under
@@ -110,8 +141,8 @@ const STEP_TEXT: Record<string, { hint: string; when: string }> = {
     when: "দাড়ি-গোঁফ কামাতে বা নতুন ধাঁচ চাইলে বাছুন। দাড়ি যেমন আছে তেমন রেখে শুধু পরিপাটি বা রং বদলাতেও পারেন। দাড়ি না থাকলে এড়িয়ে যান।",
   },
   "portrait-skin": {
-    hint: "ত্বক ফর্সা, মসৃণ বা দাগমুক্ত করতে চাইলে বাছুন (ঐচ্ছিক)",
-    when: "ত্বকে দাগ, ব্রণ, তেলতেলে ভাব বা অসমান রং থাকলে বাছুন। ত্বক প্রাকৃতিক দেখাতে চাইলে “ত্বকের স্বাভাবিক গঠন বজায় রাখুন” সাথে বাছতে পারেন।",
+    hint: "ত্বক আরও ফর্সা করতে, গায়ের রং বদলাতে বা স্বাভাবিক তিল-দাগ রাখতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "মুখ ক্লিন করা এবং দাগ, তিল, ব্রণ ও তেলতেলে ভাব দূর করা সবসময় নিজে থেকেই হয়, গায়ের রং একই থাকে। তাই এখানে শুধু ত্বক আরও ফর্সা করতে চাইলে, নির্দিষ্ট গায়ের রং চাইলে, অথবা তিল-দাগ রেখে দিতে চাইলে বাছুন।",
   },
   "head-pose": {
     hint: "ছবি বা মাথা কাত হলে সোজা করতে বাছুন (ঐচ্ছিক)",
@@ -204,7 +235,8 @@ const EQUIVALENT_GROUPS: string[][] = [
 
 /** Labels that must not be offered (and must not stay selected) given the user's earlier choices. */
 function getHiddenLabels(d: { bg: number; clothing: number; guides: string[] }): Set<string> {
-  const hidden = new Set<string>();
+  // Already applied to every photo by the backend, so never asked.
+  const hidden = new Set<string>(AUTO_APPLIED_GUIDES);
   if (d.bg >= 0) HIDDEN_AFTER_BACKGROUND.forEach((l) => hidden.add(l));
   if (d.clothing >= 0) HIDDEN_AFTER_CLOTHING.forEach((l) => hidden.add(l));
   for (const group of EQUIVALENT_GROUPS) {
@@ -222,7 +254,6 @@ function normalizeDraft(d: WizardResult): WizardResult {
   return guides.length === d.guides.length ? d : { ...d, guides };
 }
 
-const STAGES = ["ছবির ধরন", "ব্যাকগ্রাউন্ড", "পোশাক", "চেহারার পরিবর্তন", "নিশ্চিত করুন"];
 
 const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
 const bn = (n: number) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
@@ -250,6 +281,10 @@ export default function PhotoSetupWizard({
   const [draft, setDraft] = useState<WizardResult>(initial);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // First screen: "fix everything for me" or "let me choose".
+  const [intro, setIntro] = useState(true);
+  // Quick mode: only size, background and clothing are asked; everything else is automatic.
+  const [quick, setQuick] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -258,6 +293,8 @@ export default function PhotoSetupWizard({
     if (open) {
       setStep(0);
       setDraft(initial);
+      setIntro(true);
+      setQuick(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -290,27 +327,47 @@ export default function PhotoSetupWizard({
     [hiddenLabels, clothingName],
   );
   const guideEnd = guideStart + guideCats.length; // index of the confirm step
+  // "Choose myself": ONE question (category) per step, the next one comes only after this one is done.
   const currentCat = step >= guideStart && step < guideEnd ? guideCats[step - guideStart] : null;
-  const categoryGuides = useMemo(
-    () => (currentCat ? EDITING_GUIDES.filter((g) => g.category === currentCat.id && !hiddenLabels.has(g.label)) : []),
-    [currentCat, hiddenLabels],
-  );
+
+  // Read-aloud (free, uses the browser's own Bengali voice). Hidden when the device has none.
+  const [hasBnVoice, setHasBnVoice] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const check = () => setHasBnVoice(window.speechSynthesis.getVoices().some((v) => v.lang.toLowerCase().startsWith("bn")));
+    check();
+    window.speechSynthesis.addEventListener("voiceschanged", check);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", check);
+  }, []);
+  // Stop talking whenever the screen changes or the popup closes.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
+    return () => window.speechSynthesis.cancel();
+  }, [step, intro, open]);
 
   if (!open || !mounted) return null;
 
   const isDual = draft.size === "Dual";
-  const lastStep = guideEnd;
-  const totalSteps = lastStep + 1;
-  const progress = ((step + 1) / totalSteps) * 100;
-  const stageOf = (i: number) => (i < guideStart ? i : i < guideEnd ? 3 : 4);
+  const lastStep = quick ? BASE_STEPS.length - 1 : guideEnd;
+  const stageList = quick ? STAGES4.slice(0, 3) : STAGES4;
+  const stageOf = (i: number) => (i < guideStart ? i : 3);
   const stage = stageOf(step);
+  // Bar fills by the 4 big stages; inside the last stage it fills with every small question.
+  const progress = quick
+    ? ((stage + 0.5) / 3) * 100
+    : stage < 3
+      ? ((stage + 0.5) / 4) * 100
+      : ((3 + (step - guideStart + 1) / (guideCats.length + 1)) / 4) * 100;
   const currentStepInfo = currentCat
     ? {
-        title: STEP_TITLES[currentCat.id] ?? t(currentCat.label),
-        hint: STEP_TEXT[currentCat.id]?.hint ?? "এই অংশে কিছু বদলাতে চাইলে বাছাই করুন, না চাইলে \"এড়িয়ে যান\" চাপুন।",
+        title: STEP_QUESTIONS[currentCat.id] ?? STEP_TITLES[currentCat.id] ?? t(currentCat.label),
+        hint: "যা লাগবে তাতে চাপ দিন। কিছু না লাগলে নিচে “না, দরকার নেই” চাপুন।",
       }
-    : step === lastStep
-      ? { title: "নিশ্চিত করুন", hint: "সব ঠিক থাকলে ছবি তৈরি শুরু করুন।" }
+    : step === lastStep && !quick
+      ? { title: "সব ঠিক আছে তো?", hint: "নিচে আপনার পছন্দ দেখে নিন, তারপর “ছবি তৈরি করুন” চাপুন।" }
       : BASE_STEPS[step];
   const selectedInCat = (catId: string) =>
     draft.guides.filter((g) => EDITING_GUIDES.find((e) => e.label === g)?.category === catId).length;
@@ -340,7 +397,8 @@ export default function PhotoSetupWizard({
       ...d,
       guides: [...d.guides.filter((g) => !g.startsWith(LIPSTICK_COLOR_PREFIX)), ...(name ? [`${LIPSTICK_COLOR_PREFIX} ${name}`] : [])],
     }));
-  const guideCount = draft.guides.filter((g) => !g.startsWith(LIPSTICK_COLOR_PREFIX)).length;
+  const skinToneName = getSkinToneFromGuides(draft.guides);
+  const guideCount = draft.guides.filter((g) => !isOptionEntry(g)).length;
 
   const goNext = () => {
     // Dual needs two people, so hand control back to the normal Dual screen.
@@ -379,8 +437,8 @@ export default function PhotoSetupWizard({
   const optionOff = "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#EFE3C8]";
 
   const CheckBadge = () => (
-    <span className="absolute top-1.5 right-1.5 bg-[#DC2626] text-white rounded-full p-0.5 shadow z-10">
-      <Check size={11} strokeWidth={3} />
+    <span className="absolute top-1.5 right-1.5 bg-[#059669] text-white rounded-full p-1 shadow-md z-10">
+      <Check size={15} strokeWidth={3.5} />
     </span>
   );
 
@@ -558,6 +616,16 @@ export default function PhotoSetupWizard({
             })}
           </div>
 
+          {draft.clothing >= 0 && canHaveTie(CLOTHING_NAMES[draft.clothing]) && (
+            <TiePicker value={getTieFromGuides(draft.guides)} onChange={(name) => setDraft((d) => ({ ...d, guides: withTie(d.guides, name) }))} />
+          )}
+
+          {quick && (
+            <p className="rounded-xl border border-[#059669]/40 bg-[#ECFDF5] px-3 py-2 text-[14px] font-semibold text-[#065F46]">
+              ✓ পোশাক বাছা হলে নিচের “ছবি তৈরি করুন” চাপুন। মুখ ক্লিন, চোখ, চুল ও আলো নিজে থেকেই ঠিক হয়ে যাবে।
+            </p>
+          )}
+
           {draft.clothing >= 0 && (
             <div className="sticky bottom-0 rounded-xl border-2 border-[#DC2626]/60 bg-[#F0DDB5] p-3 shadow-lg">
               <p className="text-sm font-semibold mb-2">
@@ -595,14 +663,15 @@ export default function PhotoSetupWizard({
       );
     }
 
-    if (currentCat) {
+    const renderCategory = (cat: (typeof guideCats)[number], combined: boolean) => {
+      const catGuides = EDITING_GUIDES.filter((g) => g.category === cat.id && !hiddenLabels.has(g.label));
       const whenText =
-        currentCat.id === "background-composition"
+        cat.id === "background-composition"
           ? draft.bg >= 0
             ? BG_STEP_WHEN_CHOSEN
             : BG_STEP_WHEN_ORIGINAL
-          : STEP_TEXT[currentCat.id]?.when;
-      const picker = COLOR_PICKERS[currentCat.id];
+          : STEP_TEXT[cat.id]?.when;
+      const picker = COLOR_PICKERS[cat.id];
       const pickerStyleChosen = picker ? picker.styleLabels.some((l) => draft.guides.includes(l)) : false;
       const pickerHidden = picker ? (picker.hideWhen ?? []).some((l) => draft.guides.includes(l)) : false;
       const pickerOptions = picker ? EDITING_GUIDES.filter((g) => g.category === picker.colorCategory) : [];
@@ -634,31 +703,40 @@ export default function PhotoSetupWizard({
               </div>
         ) : null;
       // The colour dropdown opens right under the style the user just picked (end of that row on wide screens).
-      const selectedStyleIndex = picker ? categoryGuides.findIndex((g) => picker.styleLabels.includes(g.label) && draft.guides.includes(g.label)) : -1;
-      const pairEndIndex = selectedStyleIndex >= 0 ? Math.min(selectedStyleIndex - (selectedStyleIndex % 2) + 1, categoryGuides.length - 1) : -1;
+      const selectedStyleIndex = picker ? catGuides.findIndex((g) => picker.styleLabels.includes(g.label) && draft.guides.includes(g.label)) : -1;
+      const pairEndIndex = selectedStyleIndex >= 0 ? Math.min(selectedStyleIndex - (selectedStyleIndex % 2) + 1, catGuides.length - 1) : -1;
       return (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-stone-500">
-              {bn(step - guideStart + 1)}/{bn(guideCats.length)} · {STEP_TITLES[currentCat.id] ?? t(currentCat.label)}
-            </span>
-            <span className="rounded-full bg-[#DC2626] px-3 py-1 text-xs font-bold text-white whitespace-nowrap">
-              মোট {bn(guideCount)}টি বাছাই করা হয়েছে
-            </span>
-          </div>
-          {whenText && (
-            <div className="rounded-xl border border-[#E3D6B8] bg-white/70 px-3 py-2 text-[12.5px] leading-snug text-[#5A4A32]">
-              <p>
-                <span className="font-bold text-[#3B2F1E]">কখন লাগবে: </span>
-                {whenText}
-              </p>
-              <p className="mt-1 text-stone-500">
-                প্রয়োজন না হলে কিছু না বেছেই নিচের “এড়িয়ে যান” বা “পরবর্তী” চাপুন, কিছুই বদলাবে না।
-              </p>
+        <div className={combined ? "break-inside-avoid mb-3 space-y-2 rounded-2xl border-2 border-[#E3D6B8] bg-white/60 p-3" : "space-y-3"}>
+          {combined && (
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-[15px] font-extrabold leading-snug text-[#3B2F1E]">{STEP_TITLES[cat.id] ?? t(cat.label)}</h3>
+              {selectedInCat(cat.id) > 0 && (
+                <span className="shrink-0 rounded-full bg-[#059669] px-2 py-0.5 text-[12px] font-bold text-white">✓ {bn(selectedInCat(cat.id))}</span>
+              )}
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {categoryGuides.map((g, i) => {
+          {!combined && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[13px] font-semibold text-stone-500">
+              প্রশ্ন {bn(step - guideStart + 1)} / {bn(guideCats.length)}
+            </span>
+            <span
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold whitespace-nowrap ${
+                guideCount > 0 ? "bg-[#059669] text-white" : "bg-[#E3D6B8] text-stone-600"
+              }`}
+            >
+              {guideCount > 0 ? `✓ ${bn(guideCount)}টি বাছাই হয়েছে` : "এখনও কিছু বাছা হয়নি"}
+            </span>
+          </div>
+          )}
+          {!combined && whenText && (
+            <details className="rounded-xl border border-[#E3D6B8] bg-white/70 px-3 py-2 text-[14px] leading-snug text-[#5A4A32]">
+              <summary className="cursor-pointer font-bold text-[#3B2F1E]">কখন এটা লাগে? (বিস্তারিত দেখুন)</summary>
+              <p className="mt-1.5">{whenText}</p>
+            </details>
+          )}
+          <div className={combined ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-1 sm:grid-cols-2 gap-2"}>
+            {catGuides.map((g, i) => {
               const on = draft.guides.includes(g.label);
               return (
                 <React.Fragment key={g.label}>
@@ -666,13 +744,13 @@ export default function PhotoSetupWizard({
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggleGuide(g.label)}
-                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center gap-3 px-3 py-3 text-left`}
+                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center ${combined ? "gap-2 px-2.5 py-2" : "gap-3 px-3.5 py-4"} text-left`}
                   >
                     {on && <CheckBadge />}
                     <span className="shrink-0 text-[#DC2626]">
-                      <GuideIcon label={g.label} size={30} />
+                      <GuideIcon label={g.label} size={combined ? 30 : 38} />
                     </span>
-                    <span className="text-[14px] font-semibold leading-tight pr-4">{t(g.label)}</span>
+                    <span className={`${combined ? "text-[14.5px]" : "text-[16px]"} font-bold leading-tight pr-7`}>{t(g.label)}</span>
                   </button>
                   {pickerNode && i === selectedStyleIndex && <div className="col-span-full sm:hidden">{pickerNode}</div>}
                   {pickerNode && i === pairEndIndex && <div className="col-span-full hidden sm:block">{pickerNode}</div>}
@@ -682,7 +760,17 @@ export default function PhotoSetupWizard({
             {pickerNode && selectedStyleIndex < 0 && <div className="col-span-full">{pickerNode}</div>}
           </div>
 
-          {currentCat.id === "lips-teeth" && draft.guides.includes("Lipstick") && (
+          {!combined && <p className="text-[13px] text-stone-500">ভুল চাপলে আবার চাপুন, বাছাই বাতিল হয়ে যাবে।</p>}
+
+          {cat.id === "portrait-skin" && (
+            <SkinTonePicker
+              compact={combined}
+              value={skinToneName}
+              onChange={(name) => setDraft((d) => ({ ...d, guides: withSkinTone(d.guides, name) }))}
+            />
+          )}
+
+          {cat.id === "lips-teeth" && draft.guides.includes("Lipstick") && (
             <div className="rounded-xl border-2 border-[#DC2626]/60 bg-[#F0DDB5] p-3 shadow">
               <p className="text-sm font-semibold mb-2">লিপস্টিক — কোন রঙের চান?</p>
               <div className="flex flex-wrap gap-2">
@@ -718,7 +806,9 @@ export default function PhotoSetupWizard({
           )}
         </div>
       );
-    }
+    };
+
+    if (currentCat) return renderCategory(currentCat, false);
 
     // Summary
     const rows: { label: string; value: string; goTo: number }[] = [
@@ -750,7 +840,7 @@ export default function PhotoSetupWizard({
         ))}
         {guideCount > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {draft.guides.filter((g) => !g.startsWith(LIPSTICK_COLOR_PREFIX)).map((g) => (
+            {draft.guides.filter((g) => !isOptionEntry(g)).map((g) => (
               <span key={g} className="inline-flex items-center gap-1 rounded-full bg-[#F6D9A8] px-2.5 py-1 text-xs font-semibold text-[#3B2F1E]">
                 {t(g.startsWith("Custom Instruction:") ? "Custom added" : g)}
                 {g === "Lipstick" && lipstickColorName ? ` · ${LIPSTICK_COLORS.find((c) => c.name === lipstickColorName)?.bn ?? lipstickColorName}` : ""}
@@ -765,6 +855,72 @@ export default function PhotoSetupWizard({
     );
   };
 
+  const speakScreen = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+      setSpeaking(false);
+      return;
+    }
+    let text: string;
+    if (intro) {
+      text = "কীভাবে শুরু করবেন? প্রথম অপশন, সব ঠিক করে দিন। এক চাপেই ছবি তৈরি হবে। দ্বিতীয় অপশন, আমি নিজে বেছে নিতে চাই। ধাপে ধাপে নিজে ঠিক করবেন।";
+    } else {
+      text = `${currentStepInfo.title}। ${currentStepInfo.hint}`;
+      if (currentCat) {
+        const names = EDITING_GUIDES.filter((g) => g.category === currentCat.id && !hiddenLabels.has(g.label)).slice(0, 8).map((g) => t(g.label)).join("। ");
+        if (names) text += ` অপশনগুলো হলো: ${names}।`;
+      }
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "bn-BD";
+    const voice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith("bn"));
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.9;
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    synth.speak(utterance);
+  };
+
+  const renderIntro = () => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <button
+        type="button"
+        onClick={() => {
+          setQuick(true);
+          setIntro(false);
+        }}
+        className="flex flex-col items-center gap-3 rounded-2xl border-4 border-[#059669] bg-[#ECFDF5] p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer"
+      >
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#059669] text-white">
+          <Sparkles size={34} />
+        </span>
+        <span className="text-[22px] font-extrabold leading-tight text-[#065F46]">সব ঠিক করে দিন</span>
+        <span className="text-[15px] leading-snug text-[#3B2F1E]">
+          শুধু ছবির মাপ, ব্যাকগ্রাউন্ড আর পোশাক বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে। গায়ের রং একই থাকবে।
+        </span>
+        <span className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-semibold text-[#065F46]">মাত্র ৩টা ধাপ</span>
+        <span className="rounded-xl bg-[#059669] px-6 py-2.5 text-base font-extrabold text-white">এটাই করুন</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setIntro(false)}
+        className="flex flex-col items-center gap-3 rounded-2xl border-4 border-[#E3D6B8] bg-[#FBF6E8] p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:border-[#DC2626] hover:shadow-xl cursor-pointer"
+      >
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DC2626] text-white">
+          <Hand size={34} />
+        </span>
+        <span className="text-[22px] font-extrabold leading-tight text-[#3B2F1E]">আমি নিজে বেছে নিতে চাই</span>
+        <span className="text-[15px] leading-snug text-[#3B2F1E]">
+          মাপ, ব্যাকগ্রাউন্ড, পোশাক আর চুল, দাড়ি, ত্বকের মতো বাড়তি পরিবর্তনও আমি নিজে ঠিক করব। ৪টা ধাপ।
+        </span>
+        <span className="rounded-xl bg-[#DC2626] px-6 py-2.5 text-base font-extrabold text-white">ধাপে ধাপে করব</span>
+      </button>
+    </div>
+  );
+
   const modal = (
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 p-2 sm:p-4 backdrop-blur-sm"
@@ -775,63 +931,99 @@ export default function PhotoSetupWizard({
         if (e.target === e.currentTarget) onClose(dontShowAgain);
       }}
     >
-      <div className="flex max-h-[96dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none">
+      <div className={`flex max-h-[96dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none`}>
         {/* Header + progress */}
         <div className="shrink-0 border-b border-[#E3D6B8] px-4 pt-3 sm:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="rounded-lg bg-[#D42020] p-1.5 text-white">
-                <Camera size={16} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="mt-0.5 rounded-xl bg-[#D42020] p-2 text-white">
+                <Camera size={20} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-bold text-[#3B2F1E] leading-tight truncate">
-                  {currentStepInfo.title}
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#3B2F1E] leading-snug">
+                  {intro ? "কীভাবে শুরু করবেন?" : currentStepInfo.title}
                 </h2>
-                <p className="text-[12px] sm:text-[13px] text-stone-500 leading-tight">{currentStepInfo.hint}</p>
+                <p className="text-[14px] sm:text-[15px] text-stone-600 leading-snug">
+                  {intro ? "আপনার সুবিধামতো একটা বেছে নিন।" : currentStepInfo.hint}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <span className="text-xs font-bold text-[#DC2626] tabular-nums">
-                ধাপ {bn(step + 1)}/{bn(totalSteps)}
-              </span>
+            <div className="flex items-center gap-2 shrink-0">
+              {hasBnVoice && (
+                <button
+                  type="button"
+                  onClick={speakScreen}
+                  aria-label={speaking ? "পড়া বন্ধ করুন" : "বাংলায় পড়ে শোনান"}
+                  className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-[13px] sm:text-sm font-extrabold cursor-pointer transition ${
+                    speaking ? "border-[#DC2626] bg-[#DC2626] text-white" : "border-[#059669] bg-[#ECFDF5] text-[#065F46] hover:bg-[#D1FAE5]"
+                  }`}
+                >
+                  {speaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  {speaking ? "থামান" : "শুনুন"}
+                </button>
+              )}
+              {!intro && (
+                <span className="rounded-full bg-[#DC2626] px-3 py-1.5 text-[13px] sm:text-sm font-extrabold text-white tabular-nums whitespace-nowrap">
+                  ধাপ {bn(stage + 1)} / {bn(stageList.length)}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => onClose(dontShowAgain)}
                 className="rounded-lg p-1.5 text-stone-500 hover:bg-[#EFE3C8] cursor-pointer"
                 aria-label="বন্ধ করুন"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
           </div>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#E3D6B8]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#DC2626] to-[#F97316] transition-[width] duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex gap-1 pb-2 pt-2">
-            {STAGES.map((label, i) => {
-              const done = i < stage;
-              const active = i === stage;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    if (!done) return;
-                    setStep(i < 3 ? i : i === 3 ? guideStart : lastStep);
-                  }}
-                  className={`flex-1 truncate text-center text-[10.5px] sm:text-[11.5px] font-semibold transition ${
-                    active ? "text-[#DC2626]" : done ? "text-[#059669] cursor-pointer" : "text-stone-400"
-                  }`}
-                >
-                  {done ? "✓ " : ""}
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+          {!intro && (
+            <>
+              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[#E3D6B8]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#059669] to-[#34D399] transition-[width] duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="flex items-start pb-3 pt-3">
+                {stageList.map(({ label, Icon }, i) => {
+                  const done = i < stage;
+                  const active = i === stage;
+                  return (
+                    <React.Fragment key={label}>
+                      {i > 0 && <span className={`mt-[19px] h-1 flex-1 rounded-full ${i <= stage ? "bg-[#059669]" : "bg-[#E3D6B8]"}`} />}
+                      <button
+                        type="button"
+                        disabled={!done}
+                        onClick={() => setStep(i < 3 ? i : guideStart)}
+                        className={`flex w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
+                      >
+                        <span
+                          className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-extrabold shadow-sm transition ${
+                            done
+                              ? "bg-[#059669] text-white"
+                              : active
+                                ? "bg-[#DC2626] text-white ring-4 ring-[#DC2626]/25"
+                                : "bg-[#E3D6B8] text-stone-500"
+                          }`}
+                        >
+                          {done ? <Check size={20} strokeWidth={3.5} /> : <Icon size={18} />}
+                        </span>
+                        <span
+                          className={`text-center text-[12px] sm:text-[14px] font-bold leading-tight ${
+                            active ? "text-[#DC2626]" : done ? "text-[#059669]" : "text-stone-400"
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          {intro && <div className="pb-3" />}
         </div>
 
         {/* Body */}
@@ -901,7 +1093,7 @@ export default function PhotoSetupWizard({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{renderStep()}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{intro ? renderIntro() : renderStep()}</div>
         </div>
 
         {/* Footer */}
@@ -916,12 +1108,24 @@ export default function PhotoSetupWizard({
             এই গাইড আর দেখাবেন না (আমি নিজে সিলেক্ট করব)
           </label>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className={`flex flex-wrap items-center justify-end gap-2 ${intro ? "hidden" : ""}`}>
+            {step === 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIntro(true);
+                  setQuick(false);
+                }}
+                className="flex items-center gap-1 rounded-xl bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
+              >
+                <ChevronLeft size={16} /> শুরুতে ফিরুন
+              </button>
+            )}
             {step > 0 && (
               <button
                 type="button"
                 onClick={goBack}
-                className="flex items-center gap-1 rounded-lg bg-[#F3E9D2] px-4 py-2.5 text-sm font-semibold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
+                className="flex items-center gap-1 rounded-xl bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
               >
                 <ChevronLeft size={16} /> পেছনে
               </button>
@@ -932,13 +1136,13 @@ export default function PhotoSetupWizard({
                 {currentCat && (
                   <button
                     type="button"
-                    onClick={() => setStep(lastStep)}
-                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 hover:text-[#DC2626] cursor-pointer"
+                    onClick={() => onApply(draft, { generate: true })}
+                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 underline-offset-2 hover:text-[#DC2626] hover:underline cursor-pointer"
                   >
-                    বাকিগুলো এড়িয়ে শেষ করুন
+                    বাকি সব বাদ দিয়ে এখনই ছবি তৈরি করুন
                   </button>
                 )}
-                {step > 0 && !isDual && (
+                {(step === 1 || step === 2) && !isDual && (
                   <button
                     type="button"
                     onClick={() => {
@@ -946,34 +1150,41 @@ export default function PhotoSetupWizard({
                       if (step === 2) update({ clothing: -1 });
                       goNext();
                     }}
-                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 hover:text-[#DC2626] cursor-pointer"
+                    className="rounded-lg bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
                   >
-                    এড়িয়ে যান
+                    {step === 1 ? "আমার ব্যাকগ্রাউন্ডই থাক" : "আমার পোশাকই থাক"}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={goNext}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#059669] px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-[#047857] cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl bg-[#059669] px-8 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#047857] cursor-pointer"
                 >
-                  {step === 0 && isDual ? "ঠিক আছে" : "পরবর্তী"} <ChevronRight size={16} />
+                  {step === 0 && isDual
+                    ? "ঠিক আছে"
+                    : currentCat && guideCount === 0 && !skinToneName
+                      ? "না, দরকার নেই"
+                      : "পরবর্তী"}{" "}
+                  <ChevronRight size={20} />
                 </button>
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => onApply(draft, { generate: false })}
-                  className="rounded-lg border border-[#059669] px-4 py-2.5 text-sm font-semibold text-[#059669] hover:bg-[#059669]/10 cursor-pointer"
-                >
-                  শুধু সেটিংস প্রয়োগ করুন
-                </button>
+                {!quick && (
+                  <button
+                    type="button"
+                    onClick={() => onApply(draft, { generate: false })}
+                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 underline-offset-2 hover:text-[#059669] hover:underline cursor-pointer"
+                  >
+                    শুধু সেটিংস প্রয়োগ করুন
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onApply(draft, { generate: true })}
-                  className="flex items-center gap-2 rounded-lg bg-[#D42020] px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-[#AE1717] cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl bg-[#D42020] px-8 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#AE1717] cursor-pointer"
                 >
-                  <ImageIcon size={16} /> ছবি তৈরি শুরু করুন
+                  <ImageIcon size={20} /> ছবি তৈরি করুন
                 </button>
               </>
             )}

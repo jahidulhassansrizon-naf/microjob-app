@@ -13,7 +13,8 @@ import {
   Search,
   ListChecks,
 } from "lucide-react";
-import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES } from "./editingGuides";
+import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES, isOptionEntry } from "./editingGuides";
+import TiePicker, { canHaveTie, getTieFromGuides, withTie } from "./TiePicker";
 import GuideIcon from "./GuideIcon";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
@@ -76,23 +77,19 @@ export interface GenerationSettingsProps {
 // Quick tiles follow the same order as the full library: top of the head -> chin,
 // then whole-face and whole-photo essentials. (Change the order here freely.)
 const QUICK_EDITING_GUIDES = [
-  // Only the everyday essentials live here (15 tiles = 3 clean rows of 5).
-  // Everything else is one tap away in "See all editing guides" and in the step-by-step guide.
+  // Only situational choices live here. The edits that suit ~90% of photos (clean face in the person's own
+  // skin color, bright eyes, stray hair, exposure, head straightening...) are always applied by the backend
+  // prompt (see AUTO_APPLIED_GUIDES), so the user never has to tick them. Everything is still in "Browse all".
   "Neat Short Haircut",
-  "Tame Stray Hair",
   "Black Hair Color",
+  "Cover Gray Hair",
   "Clean Shave",
   "Tidy Facial Hair",
+  "Enhance Eyebrows",
   "Fair & Bright Skin",
-  "Smooth Skin",
-  "Remove Blemishes",
-  "Reduce Facial Shine",
-  "Brighten Eyes",
-  "Reduce Dark Circles",
-  "Whiten Teeth Naturally",
-  "Straighten Tilted Photo",
-  "Straighten Head",
-  "Brighten Image",
+  "Keep Marks",
+  "Glow & Makeup",
+  "Reduce Glasses Glare",
 ];
 export const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
@@ -1460,6 +1457,14 @@ export default function GenerationSettings({
                   );
                 })}
               </div>
+              {!isDualMode && canHaveTie(CLOTHING_NAMES[activeClothingIndex]) && (
+                <TiePicker
+                  compact
+                  className="mt-3"
+                  value={getTieFromGuides(activeGuides)}
+                  onChange={(name) => setActiveGuides((prev) => withTie(prev, name))}
+                />
+              )}
             </div>
           )}
         </div>
@@ -1474,7 +1479,7 @@ export default function GenerationSettings({
               className="text-[12px] xl:text-[length:calc(14px/var(--tz,1))] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-semibold tabular-nums"
               title={t("Editing presets plus custom instruction")}
             >
-              {activeGuides.length}/{EDITING_GUIDES.length + 1}
+              {activeGuides.filter((g) => !isOptionEntry(g)).length}/{EDITING_GUIDES.length + 1}
             </span>
           </div>
 
@@ -1693,7 +1698,7 @@ export default function GenerationSettings({
                     {filteredEditingGuides.length} <AiT>{"presets shown"}</AiT>
                   </span>
                   <span className="tabular-nums">
-                    {activeGuides.length} <AiT>{"selected"}</AiT>
+                    {activeGuides.filter((g) => !isOptionEntry(g)).length} <AiT>{"selected"}</AiT>
                   </span>
                 </div>
                 {filteredEditingGuides.length > 0 ? (

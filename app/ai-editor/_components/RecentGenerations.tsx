@@ -18,6 +18,7 @@ import {
 import { downloadPhotosArchive, downloadPhotosPdf } from "./photoExport";
 import type { PrintSessionMeta } from "./printSessionStore";
 import { getAiEditorThumbnailUrl } from "./aiEditorData";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 export interface GenerationItem {
     id?: string | number;
@@ -32,7 +33,7 @@ export interface GenerationItem {
     dpi?: number;
     [key: string]: unknown;
 }
-type BulkAction = "print" | "png" | "jpg" | "pdf";
+type BulkAction = "print" | "png" | "jpg" | "pdf" | "delete";
 export interface RecentGenerationsProps {
     generations?: GenerationItem[];
     onImageClick?: (item: GenerationItem) => void;
@@ -42,6 +43,8 @@ export interface RecentGenerationsProps {
     savedSessions?: PrintSessionMeta[];
     onOpenSaved?: (id: string) => void | Promise<void>;
     onDeleteSaved?: (id: string) => void | Promise<void>;
+    /** Permanently delete one or more generated photos. */
+    onDeleteMany?: (items: GenerationItem[]) => void | Promise<void>;
 }
 const TRANSPARENT_THUMBNAIL_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
@@ -80,7 +83,7 @@ function RecentLoadingAnimation() {
 
 export default function RecentGenerations({
     generations = [], onImageClick = () => { }, onBulkPrint, isLoading = false,
-    savedSessions = [], onOpenSaved, onDeleteSaved,
+    savedSessions = [], onOpenSaved, onDeleteSaved, onDeleteMany,
 }: RecentGenerationsProps) {
     const { t } = useAiEditorText();
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -92,6 +95,8 @@ export default function RecentGenerations({
     const [bulkMessage, setBulkMessage] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [openingId, setOpeningId] = useState<string | null>(null);
+    // Photos waiting for delete confirmation (one from the trash icon, many from bulk delete).
+    const [pendingDelete, setPendingDelete] = useState<GenerationItem[] | null>(null);
     const savedCount = savedSessions.length;
     const openSaved = async (id: string) => {
         if (!onOpenSaved || openingId)
@@ -135,6 +140,11 @@ export default function RecentGenerations({
         setIsProcessing(true);
         setBulkMessage(null);
         try {
+            if (bulkAction === "delete") {
+                // Deleting is permanent, so ask first.
+                setPendingDelete(selectedItems);
+                return;
+            }
             if (bulkAction === "print") {
                 if (!onBulkPrint) throw new Error(t("Print Studio is not available."));
                 await onBulkPrint(selectedItems);
@@ -156,20 +166,38 @@ export default function RecentGenerations({
             setIsProcessing(false);
         }
     };
-    const actionLabel = bulkAction === "print" ? "প্রিন্ট" : bulkAction === "png" ? "PNG ZIP" : bulkAction === "jpg" ? "JPG ZIP" : "এক PDF";
+    const confirmDelete = async () => {
+        const items = pendingDelete;
+        setPendingDelete(null);
+        if (!items?.length || !onDeleteMany) return;
+        setIsProcessing(true);
+        try {
+            await onDeleteMany(items);
+        }
+        finally {
+            setIsProcessing(false);
+            cancelSelection();
+        }
+    };
+    const actionLabel = bulkAction === "delete" ? "মুছে ফেলা" : bulkAction === "print" ? "প্রিন্ট" : bulkAction === "png" ? "PNG ZIP" : bulkAction === "jpg" ? "JPG ZIP" : "এক PDF";
 
     const renderImageCard = (item: GenerationItem, index: number, compact = false) => {
         const selected = selectedKeys.has(imageKey(item, index));
         return (
-            <button
-                type="button"
+            <div
+                role="button"
+                tabIndex={0}
                 key={imageKey(item, index)}
                 aria-pressed={isSelecting ? selected : undefined}
                 onClick={() => isSelecting ? toggleSelected(item, index) : onImageClick(item)}
+                onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (isSelecting) toggleSelected(item, index); else onImageClick(item); } }}
                 className={`${compact ? `group relative ${item.side === "dual" ? "col-span-2 aspect-[90/55]" : "aspect-[4/5]"} ` : `group relative flex h-36 ${item.side === "dual" ? "w-56 xl:w-[calc(clamp(72px,10.5vh,112px)*1.56)]" : "w-28 xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)]"} xl:h-[clamp(72px,10.5vh,112px)] shrink-0 flex-col `}overflow-hidden rounded-xl border bg-[#F2E8D2] text-left transition ${isSelecting && selected ? "border-[#DC2626] ring-2 ring-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]"} cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#DC2626]`}
                 style={item.bgColor === "transparent" ? TRANSPARENT_THUMBNAIL_STYLE : undefined}
             >
                 <img src={compact ? item.url : getAiEditorThumbnailUrl(item.url)} alt={t("Generated photo")} loading={!compact && index < 8 ? "eager" : "lazy"} decoding="async" ref={(el) => { if (el && el.complete) el.style.opacity = "1"; }} onLoad={(e) => { e.currentTarget.style.opacity = "1"; }} onError={(e) => { e.currentTarget.style.opacity = "1"; }} style={{ opacity: 0, transition: "opacity 450ms ease" }} className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`} />
+                {!isSelecting && onDeleteMany && (
+                    <button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete([item]); }} aria-label="ছবি মুছুন" title="ছবি মুছুন" className="absolute right-1 top-1 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-[#DC2626] opacity-100 shadow transition hover:bg-[#DC2626] hover:text-white sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"><Trash2 size={13}/></button>
+                )}
                 {isSelecting ? (
                     <span className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 shadow ${selected ? "border-[#DC2626] bg-[#DC2626] text-white" : "border-white bg-black/35 text-transparent"}`}>
                         <Check size={15} strokeWidth={3} />
@@ -188,7 +216,7 @@ export default function RecentGenerations({
                         <AiT>{item.size || "Photo"}</AiT>
                     </span>
                 )}
-            </button>
+            </div>
         );
     };
 
@@ -232,20 +260,21 @@ export default function RecentGenerations({
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("png")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40"><FileImage size={14}/>PNG ডাউনলোড</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("jpg")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#3B2F1E] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#59452A] disabled:cursor-not-allowed disabled:opacity-40"><FileArchive size={14}/>JPG ডাউনলোড</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("pdf")} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DC2626]/40 bg-white px-3 py-2 text-xs font-bold text-[#DC2626] transition hover:bg-[#DC2626]/5 disabled:cursor-not-allowed disabled:opacity-40"><FileText size={14}/>এক PDF ডাউনলোড</button>
+            {onDeleteMany && <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("delete")} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DC2626] bg-[#DC2626]/10 px-3 py-2 text-xs font-bold text-[#B91C1C] transition hover:bg-[#DC2626] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"><Trash2 size={14}/>ছবি মুছুন</button>}
           </div>
           </div>
           {isSelecting && (
             <div className="mt-3 rounded-lg border border-[#DC2626]/25 bg-white/70 p-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-bold text-[#3B2F1E]">{actionLabel} এর জন্য ছবি নির্বাচন করুন — {selectedItems.length}টি নির্বাচিত</p>
+                <p className="text-sm font-bold text-[#3B2F1E]">{bulkAction === "delete" ? "মুছে ফেলার জন্য ছবি নির্বাচন করুন" : `${actionLabel} এর জন্য ছবি নির্বাচন করুন`} — {selectedItems.length}টি নির্বাচিত</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => setSelectedKeys(new Set(generations.map(imageKey)))} className="rounded-md border border-[#E3D6B8] px-2.5 py-1 text-xs font-semibold hover:bg-[#F2E8D2]">সব নির্বাচন</button>
                   <button type="button" onClick={() => setSelectedKeys(new Set())} className="rounded-md border border-[#E3D6B8] px-2.5 py-1 text-xs font-semibold hover:bg-[#F2E8D2]">নির্বাচন মুছুন</button>
                   <button type="button" onClick={cancelSelection} className="rounded-md border border-[#E3D6B8] px-2.5 py-1 text-xs font-semibold hover:bg-[#F2E8D2]">বাতিল</button>
                 </div>
               </div>
-              <button type="button" onClick={runBulkAction} disabled={!selectedItems.length || isProcessing} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#DC2626] px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40">
-                {isProcessing ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>প্রসেস হচ্ছে...</> : <><Download size={15}/>নির্বাচিত {selectedItems.length}টি ছবি {actionLabel === "প্রিন্ট" ? "প্রিন্ট স্টুডিওতে পাঠান" : `${actionLabel} হিসেবে ডাউনলোড করুন`}</>}
+              <button type="button" onClick={runBulkAction} disabled={!selectedItems.length || isProcessing} className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#DC2626] px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40">
+                {isProcessing ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>প্রসেস হচ্ছে...</> : <>{bulkAction === "delete" ? <Trash2 size={15}/> : <Download size={15}/>}নির্বাচিত {selectedItems.length}টি ছবি {bulkAction === "delete" ? "মুছে ফেলুন" : actionLabel === "প্রিন্ট" ? "প্রিন্ট স্টুডিওতে পাঠান" : `${actionLabel} হিসেবে ডাউনলোড করুন`}</>}
               </button>
               {bulkAction === "png" || bulkAction === "jpg" ? <p className="mt-1.5 text-[11px] text-[#3B2F1E]/60">একাধিক ফাইল একসাথে রাখার জন্য একটি ZIP ফাইল ডাউনলোড হবে।</p> : null}
               {bulkAction === "pdf" ? <p className="mt-1.5 text-[11px] text-[#3B2F1E]/60">প্রতিটি নির্বাচিত ছবি PDF-এর আলাদা পৃষ্ঠায় থাকবে।</p> : null}
@@ -289,6 +318,7 @@ export default function RecentGenerations({
         </div>
       </section>
 
+      <ConfirmDeleteModal open={!!pendingDelete} imageUrl={pendingDelete?.[0]?.url} count={pendingDelete?.length} onCancel={() => setPendingDelete(null)} onConfirm={() => { void confirmDelete(); }}/>
       {showAll && <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onMouseDown={(event) => event.currentTarget === event.target && setShowAll(false)}>
           <div className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[#F2E8D2] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#E3D6B8] p-4">

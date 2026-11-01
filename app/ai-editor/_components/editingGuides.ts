@@ -277,6 +277,55 @@ const BEARD_RULE = "Change ONLY the beard, mustache and beard-side sideburns. Ke
 
 const BEARD_COLOR_RULE = "Recolor ONLY the existing beard, mustache and beard-side sideburn hair. If no facial hair is visible, make no change and never add a beard. Recolor every strand evenly and completely from root to tip, including all gray and white strands and patches, keeping the original beard shape, length, density, edges and realistic strand texture with soft natural highlights and shadows (never flat or painted). Keep the skin underneath, lips, teeth, eyebrows and the hair on the head unchanged, with no color bleeding onto the skin, lips or clothing.";
 
+/** DEFAULT skin retouch for every photo: very clean face, but the person's own skin color stays exactly the same. */
+export const KEEP_SKIN_COLOR_RETOUCH_RULE = "PROFESSIONAL CLEAN-SKIN RETOUCH (always apply, exactly like a skilled human retoucher preparing a clean studio ID photo): the whole face, neck and ears must look completely clean, clear, even and healthy, like a real DSLR photograph and NOT like an AI image. (1) SKIN COLOR LOCK (highest priority for skin): keep the person's skin color exactly as it is in the original photo, with the same shade, depth and undertone. Do NOT lighten, whiten, brighten, darken, tan, tint, or change the complexion in any way; a dusky, wheatish, brown or dark complexion stays exactly that. (2) CLEANLINESS: remove dark patches, blotchy or uneven pigmentation, stains, dust specks, pimples, acne marks, dirty-looking spots, oily shine and muddy shadows so the forehead, cheeks, nose, chin, eye area, mouth area, neck and ears all share one smooth, consistent, clean tone of that same skin color. (3) NATURAL FINISH: keep realistic fine skin texture and pores exactly like the original photo, with NO glow, NO shine, NO gloss and no added highlights, and no plastic, waxy, airbrushed or over-smoothed look and no beauty-filter or AI look. (4) LIMITS: never change face structure, expression or identity. If the final photo is black and white, apply the same evenness and spot removal as tones only.";
+
+/**
+ * Optional skin color chosen by the user. It travels in the same selected-guides list as an entry like
+ * "Skin Tone: Brown"; it is never a tile of its own. "Original" (no entry) keeps the photo's own color.
+ */
+export const SKIN_TONE_PREFIX = "Skin Tone:";
+export const SKIN_TONES: { name: string; bn: string; hex: string; prompt: string }[] = [
+  { name: "Very Fair", bn: "খুব ফর্সা", hex: "#F7DDC9", prompt: "a very fair, light ivory-beige" },
+  { name: "Fair", bn: "ফর্সা", hex: "#EFC8A6", prompt: "a fair, light warm-beige" },
+  { name: "Rosy Fair", bn: "গোলাপি আভার ফর্সা", hex: "#EDBBA6", prompt: "a fair skin with a soft natural rosy-pink undertone" },
+  { name: "Light Wheatish", bn: "হালকা শ্যামলা", hex: "#DDAE84", prompt: "a light wheatish, golden-beige" },
+  { name: "Wheatish", bn: "উজ্জ্বল শ্যামলা", hex: "#C99468", prompt: "a medium wheatish, warm golden-brown" },
+  { name: "Olive", bn: "জলপাই রং", hex: "#B58A5C", prompt: "a medium olive, slightly greenish-golden" },
+  { name: "Tan", bn: "তামাটে", hex: "#A06F47", prompt: "a tan, warm bronze-brown" },
+  { name: "Brown", bn: "শ্যামলা বাদামি", hex: "#8A5A3A", prompt: "a medium-deep natural brown" },
+  { name: "Dark Brown", bn: "গাঢ় শ্যামলা", hex: "#6B4129", prompt: "a deep dark brown" },
+  { name: "Deep Dark", bn: "ঘন কালো-বাদামি", hex: "#4A2C1C", prompt: "a very deep, dark espresso-brown" },
+];
+
+/**
+ * Optional necktie for suit-like clothing. It travels in the same selected-guides list as an entry like
+ * "Tie: Red" or "Tie: None"; it is never a tile of its own and only applies when the clothing can carry a tie.
+ */
+export const TIE_PREFIX = "Tie:";
+export const TIE_STYLES = ["Shirt", "Suit", "Blazer", "Shirt & Tie", "Three-Piece Suit", "Waistcoat", "Overcoat"];
+export const TIE_COLORS: { name: string; bn: string; hex: string }[] = [
+  { name: "Black", bn: "কালো", hex: "#1E1E1E" },
+  { name: "Navy", bn: "নেভি নীল", hex: "#1E3A8A" },
+  { name: "Blue", bn: "নীল", hex: "#2563EB" },
+  { name: "Red", bn: "লাল", hex: "#DC2626" },
+  { name: "Maroon", bn: "মেরুন", hex: "#7F1D1D" },
+  { name: "Gray", bn: "ধূসর", hex: "#6B7280" },
+  { name: "Green", bn: "সবুজ", hex: "#166534" },
+  { name: "Gold", bn: "সোনালি", hex: "#CA8A04" },
+  { name: "Purple", bn: "বেগুনি", hex: "#6D28D9" },
+];
+/** True for every "option" entry that is not a tile of its own (lipstick colour, skin tone, tie). */
+export const isOptionEntry = (entry: string) =>
+  entry.startsWith("Lipstick Color:") || entry.startsWith(SKIN_TONE_PREFIX) || entry.startsWith(TIE_PREFIX);
+
+/** Prompt rule used instead of the default skin retouch when the user picks a specific skin color. */
+export function buildSkinToneRule(toneName: string): string {
+  const tone = SKIN_TONES.find((item) => item.name === toneName);
+  if (!tone) return KEEP_SKIN_COLOR_RETOUCH_RULE;
+  return `PROFESSIONAL CLEAN-SKIN RETOUCH WITH A CHOSEN SKIN COLOR (always apply, exactly like a skilled human retoucher): give the person ${tone.prompt} skin color (about ${tone.hex}) over the whole face, neck, ears and any visible skin, as a natural real-photo complexion. The chosen skin color applies to the SKIN ONLY: never recolor the eyes, teeth, lips, hair, eyebrows, beard, clothing or background, and keep the white of the eyes and the teeth naturally white. The skin must match on the face, neck and ears and look like real lit skin of that complexion, with natural shading, and it must stay clearly believable for the same person (same face structure, undertone family and identity; no gray, orange, plastic or painted look). Make the whole face completely clean and even: remove dark patches, blotches, uneven pigmentation, stains, dust specks, pimples, acne marks, oily shine and muddy shadows so the face looks perfectly clean at first glance, while keeping realistic fine skin texture and pores (no waxy, airbrushed, glossy or AI look). If the final photo is black and white, apply the same evenness, cleanliness and tonal depth as tones only.`;
+}
+
 const RAW_GUIDES: EditingGuidePreset[] = [
   // Portrait & Skin (13)
   { label: "Fair & Bright Skin", category: "portrait-skin", prompt: "Make the skin visibly fairer, brighter and cleaner, like a high-quality professional Photoshop skin retouch. Clearly lift the skin brightness and luminosity of the face, neck and ears by a noticeable medium-to-strong amount (a clearly fairer, fresher, clearer complexion, but still natural). Remove dullness, dark or dusky tone, grayish or muddy cast, sun-tan patches, dark blotches, uneven pigmentation, dark marks, dirty-looking spots, stains, pimple marks, dark under-eye circles and oily shine, so the whole face has one smooth, even, radiant tone. Keep realistic skin texture and pores (no plastic or airbrushed look). Keep the person's natural undertone: never make the skin chalky, pale-white, gray, orange or pink. Face, neck and ears must match in color. Keep face structure, expression, moles, birthmarks and scars unchanged so it is clearly the same person." },
@@ -698,6 +747,43 @@ const CATEGORY_ORDER: Record<string, number> = {
   "creative-finish": 7,
 };
 
+/**
+ * Edits that are already applied to EVERY photo by the backend prompt (see buildStandardFinishRule), because
+ * they are right for ~90% of portraits. They are not offered as tiles / wizard options any more; the full
+ * library still lists them. Only situational edits (hair, beard, fairer skin, marks...) stay as choices.
+ */
+export const AUTO_APPLIED_GUIDES: string[] = [
+  "Smooth Skin", "Remove Blemishes", "Even Skin Tone", "Reduce Dark Circles", "Reduce Facial Shine",
+  "Natural Professional Retouch", "Brighten Eyes", "Tame Stray Hair", "Whiten Teeth Naturally",
+  "Straighten Tilted Photo", "Straighten Head", "Brighten Image", "Remove All Facial Marks",
+];
+
+/**
+ * The standard finish added to every request. `skip*` flags stop it fighting a look the user picked on purpose.
+ */
+export function buildStandardFinishRule(plan: EditingGuidePlan, opts: { sized: boolean }): string {
+  const labels = new Set(plan.appliedLabels);
+  const marksRule = labels.has("Keep Marks")
+    ? ""
+    : " The face must be completely free of marks: remove moles, dark spots, freckles, age spots, pigmentation patches, scars and any rough or uneven patches from the forehead, cheeks, nose, chin, jaw, neck and ears, rebuilding the skin underneath with realistic pores and the same skin color, so there is not a single visible mark and the face looks perfectly clean at first glance (the face structure, beard and eyebrows themselves never change).";
+  const parts = [
+    `STANDARD FINISH (always applied, no need to be asked): (a) the whole face, neck and ears are completely clean, clear and even (no dirt-looking patches, spots, acne marks, oily shine or dark circles under the eyes), in the person's own skin color;${marksRule}`+" (b) the eyes are clear, bright and sharp with natural whites, and the eye color is unchanged; (c) stray, flyaway and fuzzy hairs around the head are neatly tidied without changing the hairstyle; (d) teeth, if visible, look natural and clean, never artificially white; (e) the face is evenly lit and sharp with natural, realistic detail.",
+  ];
+  const customSkin = Boolean(plan.skinTone) || labels.has("Fair & Bright Skin");
+  parts.push(
+    customSkin
+      ? "SKIN (important): apply the requested skin color or brightness edit below exactly as described, with no greasy shine, no gloss and no plastic or AI look; keep real pores and natural skin texture."
+      : "SKIN AND FACE LOCK (important): keep the skin color, skin tone, brightness and the whole face EXACTLY the same as in the original photo. Do NOT lighten, brighten, whiten, darken, tan or tint the skin, and add NO glow, NO shine, NO gloss, NO glossy highlights and NO beauty-filter look. The skin must look natural and real, exactly like the original photo, only cleaner (spotless and even). Never make it fairer, glossy, airbrushed, waxy, plastic or AI-like.",
+  );
+  if (!labels.has("Low-Key Studio Look") && !plan.flags.monochrome) {
+    parts.push("Exposure: correct dull or underexposed lighting so the face is clearly and evenly lit, without making it flat or overexposed, and without changing the skin color.");
+  }
+  if (opts.sized && !plan.flags.posePreset) {
+    parts.push("Pose: if the head or photo is tilted, straighten it so the head is upright and the eyes are level, keeping the face identical.");
+  }
+  return parts.join(" ");
+}
+
 const CUSTOM_PREFIX = "Custom Instruction:";
 
 /**
@@ -732,6 +818,10 @@ export interface EditingGuidePlan {
   edits: string[];
   constraints: string[];
   customInstruction: string;
+  /** Skin color picked by the user ("" = keep the photo's own color). */
+  skinTone: string;
+  /** Necktie choice: "" = style default, "None" = no tie, otherwise a TIE_COLORS name. */
+  tie: string;
   /** Presets that survived conflict resolution, in application order. */
   appliedLabels: string[];
   flags: {
@@ -756,11 +846,23 @@ export function planEditingGuides(
 ): EditingGuidePlan {
   let customInstruction = "";
   let lipstickColor = "";
+  let skinTone = "";
+  let tie = "";
   const presets: string[] = [];
   for (const entry of selected) {
     if (typeof entry !== "string") continue;
     if (entry.startsWith(LIPSTICK_COLOR_PREFIX)) {
       lipstickColor = entry.slice(LIPSTICK_COLOR_PREFIX.length).trim();
+      continue;
+    }
+    if (entry.startsWith(TIE_PREFIX)) {
+      const name = entry.slice(TIE_PREFIX.length).trim();
+      tie = name === "None" || TIE_COLORS.some((c) => c.name === name) ? name : "";
+      continue;
+    }
+    if (entry.startsWith(SKIN_TONE_PREFIX)) {
+      const name = entry.slice(SKIN_TONE_PREFIX.length).trim();
+      skinTone = SKIN_TONES.some((tone) => tone.name === name) ? name : "";
       continue;
     }
     if (entry.startsWith(CUSTOM_PREFIX)) {
@@ -785,6 +887,11 @@ export function planEditingGuides(
       );
     });
     if (!clashes) kept.unshift(label);
+  }
+  // A chosen skin color decides the complexion, so the generic "make fairer" preset cannot also apply.
+  if (skinTone) {
+    const index = kept.indexOf("Fair & Bright Skin");
+    if (index !== -1) kept.splice(index, 1);
   }
 
   const ordered = kept
@@ -820,6 +927,8 @@ export function planEditingGuides(
     edits,
     constraints,
     customInstruction,
+    skinTone,
+    tie,
     appliedLabels: ordered,
     flags: {
       restoration: has((_, preset) => preset.category === "old-photo"),

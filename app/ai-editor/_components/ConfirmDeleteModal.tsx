@@ -7,6 +7,8 @@ import { AiT } from "./aiEditorI18n";
 type ConfirmDeleteModalProps = {
   open: boolean;
   imageUrl?: string;
+  /** Number of photos being deleted; more than 1 switches to the bulk wording. */
+  count?: number;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -14,6 +16,7 @@ type ConfirmDeleteModalProps = {
 export default function ConfirmDeleteModal({
   open,
   imageUrl,
+  count = 1,
   onCancel,
   onConfirm,
 }: ConfirmDeleteModalProps) {
@@ -73,14 +76,16 @@ export default function ConfirmDeleteModal({
             id="delete-photo-title"
             className="text-xl font-bold tracking-tight text-stone-900"
           >
-            <AiT>{"Delete this photo?"}</AiT>
+            {count > 1 ? `${count}টি ছবি মুছে ফেলবেন?` : <AiT>{"Delete this photo?"}</AiT>}
           </h3>
           <p className="mx-auto mt-2 max-w-[300px] text-base leading-relaxed text-stone-500">
-            <AiT>
-              {
-                "This photo will be permanently removed from your recent photos. This cannot be undone."
-              }
-            </AiT>
+            {count > 1 ? `নির্বাচিত ${count}টি ছবি সাম্প্রতিক ছবি থেকে চিরতরে মুছে যাবে। এটি আর ফেরানো যাবে না।` : (
+              <AiT>
+                {
+                  "This photo will be permanently removed from your recent photos. This cannot be undone."
+                }
+              </AiT>
+            )}
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
@@ -90,14 +95,14 @@ export default function ConfirmDeleteModal({
               onClick={onCancel}
               className="rounded-xl border border-stone-200 bg-[#FBF6E8] py-2.5 text-base font-semibold text-stone-700 transition hover:bg-[#F6EEDB] active:scale-[0.98] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300"
             >
-              <AiT>{"Keep photo"}</AiT>
+              {count > 1 ? "ছবিগুলো রাখুন" : <AiT>{"Keep photo"}</AiT>}
             </button>
             <button
               type="button"
               onClick={onConfirm}
               className="rounded-xl bg-gradient-to-b from-red-500 to-red-600 py-2.5 text-base font-semibold text-white shadow-md shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 active:scale-[0.98] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
             >
-              <AiT>{"Yes, delete"}</AiT>
+              {count > 1 ? `হ্যাঁ, ${count}টি মুছুন` : <AiT>{"Yes, delete"}</AiT>}
             </button>
           </div>
         </div>
