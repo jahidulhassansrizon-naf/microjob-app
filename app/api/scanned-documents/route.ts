@@ -9,6 +9,32 @@ export const runtime = "nodejs";
 
 const CLOUDINARY_FOLDER = "sohozkaj-ai-photos";
 
+/**
+ * Configure the Cloudinary SDK with server-side credentials.
+ * This mirrors the configuration used by the other Cloudinary API routes.
+ */
+function getCloudinaryConfig() {
+  const cloudName =
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    "";
+  const apiKey = process.env.CLOUDINARY_API_KEY || "";
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error(
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on the server.",
+    );
+  }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+}
+
 type Adjustments = {
   blackness: number;
   contrast: number;
