@@ -1,7 +1,13 @@
 "use client";
 
 import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -58,9 +64,12 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
   "choose 1 month, 6 months, or 1 year of access to all paid tools. pay once; renew only when you want.":
     "সব পেইড টুলের জন্য ১ মাস, ৬ মাস অথবা ১ বছরের প্ল্যান বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
-  "full access to all paid tools for 1 month": "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
-  "full access to all paid tools for 6 months": "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
-  "full access to all paid tools for 1 year": "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 1 month":
+    "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 6 months":
+    "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
+  "full access to all paid tools for 1 year":
+    "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "regular price": "নিয়মিত মূল্য",
   "monthly plan": "মাসিক প্ল্যান",
   "most popular": "সবচেয়ে জনপ্রিয়",
@@ -186,7 +195,10 @@ function translateSubscriptionText(
       "6 months": "৬ মাস",
       "1 year": "১ বছর",
     };
-    const price = match[2].replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+    const price = match[2].replace(
+      /\d/g,
+      (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)],
+    );
     return `${periods[match[1].toLowerCase()]}-এর অ্যাক্সেস ${price}-তে নিন`;
   }
 
@@ -343,8 +355,79 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
  * NEXT_PUBLIC_DEMO_ACTIVITY="true". For production, feed it real subscription records instead.
  */
 const DEMO_ACTIVITY_ENABLED = process.env.NEXT_PUBLIC_DEMO_ACTIVITY === "true";
-const DEMO_TOTAL_BUYERS = 43;
-const DEMO_BOUGHT_TODAY = 7;
+const DEMO_TOTAL_BUYERS = 750;
+// Demo sales history. Every period gets a random-looking but FIXED count (seeded by today's date)
+// and all periods together add up to DEMO_TOTAL_BUYERS. Longest period is 2 months.
+type DemoUnit = "today" | "minute" | "hour" | "day" | "week" | "month";
+type DemoBucket = { unit: DemoUnit; n: number; min: number; max: number };
+
+const DEMO_BUCKETS: DemoBucket[] = [
+  { unit: "today", n: 0, min: 12, max: 30 },
+  { unit: "minute", n: 1, min: 1, max: 2 },
+  { unit: "minute", n: 5, min: 1, max: 3 },
+  { unit: "minute", n: 15, min: 1, max: 4 },
+  { unit: "minute", n: 30, min: 1, max: 5 },
+  { unit: "hour", n: 1, min: 1, max: 6 },
+  { unit: "hour", n: 3, min: 1, max: 6 },
+  { unit: "hour", n: 6, min: 2, max: 8 },
+  { unit: "hour", n: 12, min: 3, max: 10 },
+  { unit: "day", n: 1, min: 12, max: 30 },
+  { unit: "day", n: 2, min: 12, max: 30 },
+  { unit: "day", n: 3, min: 12, max: 30 },
+  { unit: "week", n: 1, min: 90, max: 130 },
+  { unit: "week", n: 2, min: 110, max: 150 },
+  { unit: "month", n: 1, min: 180, max: 240 },
+  { unit: "month", n: 2, min: 0, max: 0 }, // gets whatever is left so the total is exact
+];
+
+function demoHash(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) % 100000;
+}
+/** One count per DEMO_BUCKETS entry; the sum is always DEMO_TOTAL_BUYERS. */
+function buildDemoCounts(): number[] {
+  const d = new Date();
+  const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  let left = DEMO_TOTAL_BUYERS;
+  return DEMO_BUCKETS.map((b, i) => {
+    const isLast = i === DEMO_BUCKETS.length - 1;
+    const c = isLast
+      ? left
+      : b.min + (demoHash(`${dayKey}-${i}`) % (b.max - b.min + 1));
+    left -= c;
+    return c;
+  });
+}
+function demoBucketLabel(
+  b: DemoBucket,
+  isBn: boolean,
+  numberLocale: string,
+  todayText: string,
+) {
+  if (b.unit === "today") return todayText;
+  const n = b.n.toLocaleString(numberLocale);
+  const bn = {
+    minute: "মিনিট",
+    hour: "ঘণ্টা",
+    day: "দিন",
+    week: "সপ্তাহ",
+    month: "মাস",
+  } as const;
+  const en = {
+    minute: "minute",
+    hour: "hour",
+    day: "day",
+    week: "week",
+    month: "month",
+  } as const;
+  return isBn
+    ? `${n} ${bn[b.unit]} আগে কিনেছেন`
+    : `Bought ${b.n} ${en[b.unit]}${b.n === 1 ? "" : "s"} ago`;
+}
 const DEMO_TOAST_INTERVAL_MS = 1500;
 const DEMO_TOAST_VISIBLE_MS = 60000;
 // Close korar por toast ta koto por abar ashbe (ekhane 5 minute).
@@ -469,6 +552,7 @@ function RecentSubscriptionActivity() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastDismissed, setToastDismissed] = useState(false);
+  const [dayCounts, setDayCounts] = useState<number[] | null>(null);
   const dismissedUntilRef = useRef(0);
   const isBn = Boolean(locale?.toLowerCase().startsWith("bn"));
   const numberLocale = isBn ? "bn-BD" : "en-US";
@@ -498,11 +582,25 @@ function RecentSubscriptionActivity() {
     };
   }, []);
 
+  // Built on the client only (uses today's date), so server and browser markup never differ.
+  useEffect(() => {
+    setDayCounts(buildDemoCounts());
+  }, []);
+
   if (!DEMO_ACTIVITY_ENABLED) return null;
 
   const activePurchase = DEMO_PURCHASES[activeIndex % DEMO_PURCHASES.length];
   const activePlan = plans[activeIndex % plans.length];
   const tone = AVATAR_TONES[activeIndex % AVATAR_TONES.length];
+  // The second card changes together with every new purchase: today -> 1 minute ago -> ... -> 1 hour ago -> ... -> 2 months ago.
+  const statIndex = activeIndex % DEMO_BUCKETS.length;
+  const statLabel = demoBucketLabel(
+    DEMO_BUCKETS[statIndex],
+    isBn,
+    numberLocale,
+    t("Bought today"),
+  );
+  const statValue = dayCounts?.[statIndex];
   const timeLabel = (p: DemoPurchase) =>
     p.minutes === 0
       ? t("Bought just now")
@@ -541,11 +639,11 @@ function RecentSubscriptionActivity() {
             </p>
           </div>
           <div className="rounded-lg bg-[#FCFAF5] px-3 py-2 ring-1 ring-inset ring-[#EEE6D3]">
-            <p className="text-sm font-medium text-[#6B5A40]">
-              {t("Bought today")}
-            </p>
+            <p className="text-sm font-medium text-[#6B5A40]">{statLabel}</p>
             <p className="mt-0.5 text-2xl font-extrabold leading-none tabular-nums text-[#DC2626]">
-              {DEMO_BOUGHT_TODAY.toLocaleString(numberLocale)}
+              {statValue === undefined
+                ? "–"
+                : statValue.toLocaleString(numberLocale)}
             </p>
           </div>
         </div>
@@ -576,7 +674,9 @@ function RecentSubscriptionActivity() {
           </li>
         </ul>
         <p className="mt-1 text-right text-[10px] font-semibold uppercase tracking-wider text-[#9A8A6C]">
-          Data
+          {isBn
+            ? "লাইভ সাবস্ক্রিপশন কার্যক্রম"
+            : "Live Subscription Activities"}
         </p>
       </section>
 
@@ -715,10 +815,12 @@ export default function SubscriptionPage() {
     })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data?.success) setIsPipraPayEnabled(data.enabled === true);
+        if (response.ok && data?.success)
+          setIsPipraPayEnabled(data.enabled === true);
       })
       .catch((error) => {
-        if (!controller.signal.aborted) console.error("Failed to load PipraPay checkout status:", error);
+        if (!controller.signal.aborted)
+          console.error("Failed to load PipraPay checkout status:", error);
       });
     void fetch("/api/uddoktapay/status", {
       method: "GET",
@@ -728,10 +830,12 @@ export default function SubscriptionPage() {
     })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data?.success) setIsUddoktaPayEnabled(data.enabled === true);
+        if (response.ok && data?.success)
+          setIsUddoktaPayEnabled(data.enabled === true);
       })
       .catch((error) => {
-        if (!controller.signal.aborted) console.error("Failed to load UddoktaPay checkout status:", error);
+        if (!controller.signal.aborted)
+          console.error("Failed to load UddoktaPay checkout status:", error);
       });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -743,7 +847,13 @@ export default function SubscriptionPage() {
   };
 
   const handlePipraPayCheckout = async () => {
-    if (isPipraPayProcessing || isUddoktaPayProcessing || isProcessing || !isPipraPayEnabled) return;
+    if (
+      isPipraPayProcessing ||
+      isUddoktaPayProcessing ||
+      isProcessing ||
+      !isPipraPayEnabled
+    )
+      return;
     setIsPipraPayProcessing(true);
     setPaymentError("");
     try {
@@ -755,22 +865,41 @@ export default function SubscriptionPage() {
         body: JSON.stringify({ planId: selected.id }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || data?.success !== true || typeof data?.payment_url !== "string") {
-        throw new Error(data?.message || "PipraPay payment could not be started. Please try again.");
+      if (
+        !response.ok ||
+        data?.success !== true ||
+        typeof data?.payment_url !== "string"
+      ) {
+        throw new Error(
+          data?.message ||
+            "PipraPay payment could not be started. Please try again.",
+        );
       }
       const checkoutUrl = new URL(data.payment_url);
       if (checkoutUrl.protocol !== "https:") {
-        throw new Error("PipraPay returned an unsafe checkout URL. Please contact support.");
+        throw new Error(
+          "PipraPay returned an unsafe checkout URL. Please contact support.",
+        );
       }
       window.location.assign(checkoutUrl.toString());
     } catch (error) {
-      setPaymentError(error instanceof Error ? error.message : "PipraPay payment could not be started. Please try again.");
+      setPaymentError(
+        error instanceof Error
+          ? error.message
+          : "PipraPay payment could not be started. Please try again.",
+      );
       setIsPipraPayProcessing(false);
     }
   };
 
   const handleUddoktaPayCheckout = async () => {
-    if (isUddoktaPayProcessing || isPipraPayProcessing || isProcessing || !isUddoktaPayEnabled) return;
+    if (
+      isUddoktaPayProcessing ||
+      isPipraPayProcessing ||
+      isProcessing ||
+      !isUddoktaPayEnabled
+    )
+      return;
     setIsUddoktaPayProcessing(true);
     setPaymentError("");
     try {
@@ -782,14 +911,28 @@ export default function SubscriptionPage() {
         body: JSON.stringify({ planId: selected.id }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || data?.success !== true || typeof data?.payment_url !== "string") {
-        throw new Error(data?.message || "UddoktaPay payment could not be started. Please try again.");
+      if (
+        !response.ok ||
+        data?.success !== true ||
+        typeof data?.payment_url !== "string"
+      ) {
+        throw new Error(
+          data?.message ||
+            "UddoktaPay payment could not be started. Please try again.",
+        );
       }
       const checkoutUrl = new URL(data.payment_url);
-      if (checkoutUrl.protocol !== "https:") throw new Error("UddoktaPay returned an unsafe checkout URL. Please contact support.");
+      if (checkoutUrl.protocol !== "https:")
+        throw new Error(
+          "UddoktaPay returned an unsafe checkout URL. Please contact support.",
+        );
       window.location.assign(checkoutUrl.toString());
     } catch (error) {
-      setPaymentError(error instanceof Error ? error.message : "UddoktaPay payment could not be started. Please try again.");
+      setPaymentError(
+        error instanceof Error
+          ? error.message
+          : "UddoktaPay payment could not be started. Please try again.",
+      );
       setIsUddoktaPayProcessing(false);
     }
   };
@@ -969,7 +1112,9 @@ export default function SubscriptionPage() {
                                   {formatDate(currentSubscription.expiresAt)}
                                 </strong>
                                 <T>
-                                  {". You can choose any plan whenever you want."}
+                                  {
+                                    ". You can choose any plan whenever you want."
+                                  }
                                 </T>
                               </>
                             )}
@@ -1103,7 +1248,10 @@ export default function SubscriptionPage() {
                     )}
                   </dl>
                   <p className="mt-4 flex items-start gap-2 rounded-xl border border-[#E8DFCC] bg-[#FCFAF5] px-3.5 py-3 text-[15px] font-medium leading-6 text-[#3B2F1E]">
-                    <ShieldCheck size={19} className="mt-0.5 shrink-0 text-[#DC2626]" />
+                    <ShieldCheck
+                      size={19}
+                      className="mt-0.5 shrink-0 text-[#DC2626]"
+                    />
                     অ্যাডমিন পেমেন্টের তথ্য যাচাই করে Approve করলেই আপনার পেইড
                     অ্যাক্সেস চালু হবে।
                   </p>
@@ -1287,7 +1435,9 @@ export default function SubscriptionPage() {
                     type="button"
                     onClick={handleContinue}
                     disabled={
-                      isProcessing || isPipraPayProcessing || isUddoktaPayProcessing
+                      isProcessing ||
+                      isPipraPayProcessing ||
+                      isUddoktaPayProcessing
                     }
                     className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 py-2.5 text-center text-[15px] font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 ${isPipraPayEnabled || isUddoktaPayEnabled ? "border border-[#E8DFCC] bg-white text-[#B91C1C] hover:border-[#DC2626]/40 hover:bg-[#FEF2F2]" : "bg-[#DC2626] text-white hover:bg-[#B91C1C]"}`}
                   >
@@ -1302,8 +1452,8 @@ export default function SubscriptionPage() {
 
                   {!isPipraPayEnabled && !isUddoktaPayEnabled && (
                     <p className="text-sm font-medium text-[#7A6A50]">
-                      অনলাইন পেমেন্ট বর্তমানে চালু নেই। আপাতত Manual bKash / Nagad
-                      Payment ব্যবহার করতে পারবেন।
+                      অনলাইন পেমেন্ট বর্তমানে চালু নেই। আপাতত Manual bKash /
+                      Nagad Payment ব্যবহার করতে পারবেন।
                     </p>
                   )}
                   {paymentError && (
@@ -1317,7 +1467,9 @@ export default function SubscriptionPage() {
                   <p className="flex items-center justify-center gap-1.5 text-center text-xs text-[#7A6A50]">
                     <Lock size={13} className="shrink-0" />
                     <T>
-                      {"Payment is verified before subscription access is activated"}
+                      {
+                        "Payment is verified before subscription access is activated"
+                      }
                     </T>
                   </p>
                 </div>

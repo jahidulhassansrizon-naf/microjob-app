@@ -580,7 +580,7 @@ export default function PhotoSetupWizard({
     if (step === 2) {
       return (
         <div className="space-y-4">
-          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-3 min-[480px]:grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5">
             <button
               type="button"
               aria-pressed={draft.clothing < 0}
@@ -613,7 +613,7 @@ export default function PhotoSetupWizard({
                       alt={t(name)}
                     />
                   </span>
-                  <span className="text-[11px] font-semibold leading-tight text-center line-clamp-1 w-full">{t(name)}</span>
+                  <span className="text-[11px] font-semibold leading-tight text-center line-clamp-2 sm:line-clamp-1 w-full">{t(name)}</span>
                 </button>
               );
             })}
@@ -645,7 +645,7 @@ export default function PhotoSetupWizard({
                       aria-pressed={on}
                       onClick={() => update({ clothingColor: c.hex })}
                       style={{ backgroundColor: c.hex }}
-                      className={`w-8 h-8 rounded-full border border-stone-400/40 shadow-sm flex items-center justify-center cursor-pointer transition-transform hover:scale-110 ${
+                      className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-stone-400/40 shadow-sm flex items-center justify-center cursor-pointer transition-transform hover:scale-110 ${
                         on ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#F0DDB5]" : ""
                       }`}
                     >
@@ -747,13 +747,13 @@ export default function PhotoSetupWizard({
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggleGuide(g.label)}
-                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center ${combined ? "gap-2 px-2.5 py-2" : "gap-3 px-3.5 py-4"} text-left`}
+                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center ${combined ? "gap-2 px-2.5 py-2" : "gap-3 px-3 py-3 sm:px-3.5 sm:py-4"} text-left`}
                   >
                     {on && <CheckBadge />}
                     <span className="shrink-0 text-[#DC2626]">
                       <GuideIcon label={g.label} size={combined ? 30 : 38} />
                     </span>
-                    <span className={`${combined ? "text-[14.5px]" : "text-[16px]"} font-bold leading-tight pr-7`}>{t(g.label)}</span>
+                    <span className={`${combined ? "text-[14.5px]" : "text-[15px] sm:text-[16px]"} font-bold leading-tight pr-7`}>{t(g.label)}</span>
                   </button>
                   {pickerNode && i === selectedStyleIndex && <div className="col-span-full sm:hidden">{pickerNode}</div>}
                   {pickerNode && i === pairEndIndex && <div className="col-span-full hidden sm:block">{pickerNode}</div>}
@@ -932,10 +932,10 @@ export default function PhotoSetupWizard({
         className="relative flex flex-col items-center gap-3 rounded-2xl border-4 border-[#059669] bg-[#ECFDF5] p-4 sm:p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer"
       >
         <span className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#059669] text-[17px] font-extrabold text-white">১</span>
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#059669] text-white">
-          <Sparkles size={34} />
+        <span className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#059669] text-white">
+          <Sparkles size={30} />
         </span>
-        <span className="text-[22px] font-extrabold leading-tight text-[#065F46]">সব ঠিক করে দিন</span>
+        <span className="text-[19px] sm:text-[22px] font-extrabold leading-tight text-[#065F46]">সব ঠিক করে দিন</span>
         <span className="text-[15px] leading-snug text-[#3B2F1E]">
           শুধু ছবির মাপ, ব্যাকগ্রাউন্ড আর পোশাক বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে। গায়ের রং একই থাকবে।
         </span>
@@ -948,10 +948,10 @@ export default function PhotoSetupWizard({
         className="relative flex flex-col items-center gap-3 rounded-2xl border-4 border-[#E3D6B8] bg-[#FBF6E8] p-4 sm:p-6 text-center shadow-md transition hover:-translate-y-0.5 hover:border-[#DC2626] hover:shadow-xl cursor-pointer"
       >
         <span className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#DC2626] text-[17px] font-extrabold text-white">২</span>
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DC2626] text-white">
-          <Hand size={34} />
+        <span className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#DC2626] text-white">
+          <Hand size={30} />
         </span>
-        <span className="text-[22px] font-extrabold leading-tight text-[#3B2F1E]">আমি নিজে বেছে নিতে চাই</span>
+        <span className="text-[19px] sm:text-[22px] font-extrabold leading-tight text-[#3B2F1E]">আমি নিজে বেছে নিতে চাই</span>
         <span className="text-[15px] leading-snug text-[#3B2F1E]">
           মাপ, ব্যাকগ্রাউন্ড, পোশাক আর চুল, দাড়ি, ত্বকের মতো বাড়তি পরিবর্তনও আমি নিজে ঠিক করব। ৪টা ধাপ।
         </span>
@@ -962,7 +962,7 @@ export default function PhotoSetupWizard({
 
   const modal = (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 p-2 sm:p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="ছবি সেটআপ গাইড"
@@ -970,24 +970,24 @@ export default function PhotoSetupWizard({
         if (e.target === e.currentTarget) onClose(dontShowAgain);
       }}
     >
-      <div className={`flex max-h-[96dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none`}>
+      <div className={`flex h-[100dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-t-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none sm:h-auto sm:max-h-[96dvh] sm:rounded-2xl`}>
         {/* Header + progress */}
-        <div className="shrink-0 border-b border-[#E3D6B8] px-4 pt-3 sm:px-6">
-          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <span className="mt-0.5 rounded-xl bg-[#D42020] p-2 text-white">
+        <div className="shrink-0 border-b border-[#E3D6B8] px-3 pt-2 sm:px-6 sm:pt-3">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 sm:gap-y-2">
+            <div className="order-2 flex w-full min-w-0 items-start gap-3 sm:order-none sm:w-auto sm:flex-1">
+              <span className="mt-0.5 hidden rounded-xl bg-[#D42020] p-2 text-white sm:block">
                 <Camera size={20} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#3B2F1E] leading-snug">
+                <h2 className="text-lg sm:text-2xl font-extrabold text-[#3B2F1E] leading-snug">
                   {intro ? "কীভাবে শুরু করবেন?" : currentStepInfo.title}
                 </h2>
-                <p className="text-[14px] sm:text-[15px] text-stone-600 leading-snug">
+                <p className="text-[13px] sm:text-[15px] text-stone-600 leading-snug">
                   {intro ? "আপনার সুবিধামতো একটা বেছে নিন।" : currentStepInfo.hint}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="order-1 flex w-full items-center justify-end gap-2 sm:order-none sm:w-auto sm:shrink-0">
               {hasBnVoice && (
                 <button
                   type="button"
@@ -1002,14 +1002,14 @@ export default function PhotoSetupWizard({
                 </button>
               )}
               {!intro && (
-                <span className="rounded-full bg-[#DC2626] px-3 py-1.5 text-[13px] sm:text-sm font-extrabold text-white tabular-nums whitespace-nowrap">
+                <span className="order-first mr-auto rounded-full bg-[#DC2626] px-3 py-1.5 text-[13px] sm:order-none sm:mr-0 sm:text-sm font-extrabold text-white tabular-nums whitespace-nowrap">
                   ধাপ {bn(stage + 1)} / {bn(stageList.length)}
                 </span>
               )}
               <button
                 type="button"
                 onClick={() => onClose(dontShowAgain)}
-                className="rounded-lg p-1.5 text-stone-500 hover:bg-[#EFE3C8] cursor-pointer"
+                className="rounded-lg p-2 text-stone-500 hover:bg-[#EFE3C8] cursor-pointer"
                 aria-label="বন্ধ করুন"
               >
                 <X size={20} />
@@ -1018,27 +1018,27 @@ export default function PhotoSetupWizard({
           </div>
           {!intro && (
             <>
-              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[#E3D6B8]">
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E3D6B8] sm:mt-3 sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#059669] to-[#34D399] transition-[width] duration-500 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <div className="flex items-start pb-3 pt-3">
+              <div className="flex items-start pb-2 pt-2 sm:pb-3 sm:pt-3">
                 {stageList.map(({ label, Icon }, i) => {
                   const done = i < stage;
                   const active = i === stage;
                   return (
                     <React.Fragment key={label}>
-                      {i > 0 && <span className={`mt-[19px] h-1 flex-1 rounded-full ${i <= stage ? "bg-[#059669]" : "bg-[#E3D6B8]"}`} />}
+                      {i > 0 && <span className={`mt-[15px] sm:mt-[19px] h-1 flex-1 rounded-full ${i <= stage ? "bg-[#059669]" : "bg-[#E3D6B8]"}`} />}
                       <button
                         type="button"
                         disabled={!done}
                         onClick={() => setStep(i < 3 ? i : guideStart)}
-                        className={`flex w-[64px] min-[420px]:w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
+                        className={`flex w-[60px] min-[420px]:w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-0.5 sm:gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
                       >
                         <span
-                          className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-extrabold shadow-sm transition ${
+                          className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-base font-extrabold shadow-sm transition ${
                             done
                               ? "bg-[#059669] text-white"
                               : active
@@ -1062,22 +1062,23 @@ export default function PhotoSetupWizard({
               </div>
             </>
           )}
-          {intro && <div className="pb-3" />}
+          {intro && <div className="pb-2 sm:pb-3" />}
         </div>
 
         {/* Body */}
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           {/* Photo preview: always visible so the user sees which photo they are editing */}
-          <div className="shrink-0 border-b md:border-b-0 md:border-r border-[#E3D6B8] bg-[#F3E9D2] p-3 md:w-[250px] md:p-4 flex md:flex-col items-center gap-3">
-            <div className="h-24 w-[76px] md:h-auto md:w-full md:aspect-[45/55] shrink-0 overflow-hidden rounded-xl border-2 border-white shadow-md bg-white">
+          <div className={`${intro ? "hidden md:flex" : "flex"} shrink-0 border-b md:border-b-0 md:border-r border-[#E3D6B8] bg-[#F3E9D2] px-3 py-2 md:w-[250px] md:p-4 md:flex-col items-center gap-2.5 md:gap-3`}>
+            <div className="h-14 w-11 md:h-auto md:w-full md:aspect-[45/55] shrink-0 overflow-hidden rounded-lg md:rounded-xl border-2 border-white shadow-md bg-white">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="আপনার ছবি" draggable={false} className="h-full w-full object-cover" />
               ) : null}
             </div>
             <div className="min-w-0 flex-1 md:flex-none md:w-full">
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-500">আপনার নির্বাচন</p>
-              <div className="space-y-1.5">
+              <p className="mb-1.5 hidden text-[11px] font-bold uppercase tracking-wide text-stone-500 md:block">আপনার নির্বাচন</p>
+              {/* Phones: one swipeable row of chips. Desktop: vertical list. */}
+              <div className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 md:block md:space-y-1.5 md:overflow-visible md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {[
                   { Icon: Ruler, label: "ছবির ধরন", value: sizeLabel, set: draft.size !== "", swatch: null as React.ReactNode },
                   {
@@ -1115,7 +1116,7 @@ export default function PhotoSetupWizard({
                     swatch: null as React.ReactNode,
                   },
                 ].map(({ Icon, label, value, set, swatch }) => (
-                  <div key={label} className="flex items-center gap-2.5 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2.5 py-1.5">
+                  <div key={label} className="flex w-[148px] shrink-0 items-center gap-2 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-1 md:w-auto md:shrink md:gap-2.5 md:px-2.5 md:py-1.5">
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${set ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-stone-500"}`}>
                       <Icon size={14} />
                     </span>
@@ -1132,12 +1133,12 @@ export default function PhotoSetupWizard({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{intro ? (<>{renderIntroBanner()}{renderIntro()}</>) : renderStep()}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">{intro ? (<>{renderIntroBanner()}{renderIntro()}</>) : renderStep()}</div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex flex-col gap-2 border-t border-[#E3D6B8] bg-[#F7EFD9] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer">
+        <div className="shrink-0 flex flex-col gap-2 border-t border-[#E3D6B8] bg-[#F7EFD9] px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
+          <label className="flex items-center gap-2 text-[11px] leading-tight sm:text-xs text-stone-600 cursor-pointer">
             <input
               type="checkbox"
               checked={dontShowAgain}
@@ -1155,7 +1156,7 @@ export default function PhotoSetupWizard({
                   setIntro(true);
                   setQuick(false);
                 }}
-                className="flex items-center gap-1 rounded-xl bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
+                className="flex shrink-0 items-center gap-1 rounded-xl bg-[#F3E9D2] px-3 py-3 text-[14px] sm:px-4 sm:text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
               >
                 <ChevronLeft size={16} /> শুরুতে ফিরুন
               </button>
@@ -1164,7 +1165,7 @@ export default function PhotoSetupWizard({
               <button
                 type="button"
                 onClick={goBack}
-                className="flex items-center gap-1 rounded-xl bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
+                className="flex shrink-0 items-center gap-1 rounded-xl bg-[#F3E9D2] px-3 py-3 text-[14px] sm:px-4 sm:text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
               >
                 <ChevronLeft size={16} /> পেছনে
               </button>
@@ -1176,7 +1177,7 @@ export default function PhotoSetupWizard({
                   <button
                     type="button"
                     onClick={() => onApply(draft, { generate: true })}
-                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 underline-offset-2 hover:text-[#DC2626] hover:underline cursor-pointer"
+                    className="rounded-lg px-3 py-2 text-center text-[13px] sm:py-2.5 sm:text-sm font-semibold text-stone-500 underline underline-offset-2 hover:text-[#DC2626] cursor-pointer max-sm:order-first max-sm:w-full"
                   >
                     বাকি সব বাদ দিয়ে এখনই ছবি তৈরি করুন
                   </button>
@@ -1189,7 +1190,7 @@ export default function PhotoSetupWizard({
                       if (step === 2) update({ clothing: -1 });
                       goNext();
                     }}
-                    className="rounded-lg bg-[#F3E9D2] px-4 py-3 text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer"
+                    className="rounded-xl bg-[#F3E9D2] px-4 py-3 text-center text-[14px] sm:text-[15px] font-bold text-[#5A4A32] hover:bg-[#E3D6B8] cursor-pointer max-sm:order-first max-sm:w-full"
                   >
                     {step === 1 ? "আমার ব্যাকগ্রাউন্ডই থাক" : "আমার পোশাকই থাক"}
                   </button>
@@ -1197,7 +1198,7 @@ export default function PhotoSetupWizard({
                 <button
                   type="button"
                   onClick={goNext}
-                  className="flex items-center gap-2 rounded-xl bg-[#059669] px-8 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#047857] cursor-pointer"
+                  className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#059669] px-4 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#047857] cursor-pointer sm:flex-none sm:px-8"
                 >
                   {step === 0 && isDual
                     ? "ঠিক আছে"
@@ -1213,7 +1214,7 @@ export default function PhotoSetupWizard({
                   <button
                     type="button"
                     onClick={() => onApply(draft, { generate: false })}
-                    className="rounded-lg px-3 py-2.5 text-sm font-semibold text-stone-500 underline-offset-2 hover:text-[#059669] hover:underline cursor-pointer"
+                    className="rounded-lg px-3 py-2 text-center text-[13px] sm:py-2.5 sm:text-sm font-semibold text-stone-500 underline underline-offset-2 hover:text-[#059669] cursor-pointer max-sm:order-first max-sm:w-full"
                   >
                     শুধু সেটিংস প্রয়োগ করুন
                   </button>
@@ -1221,7 +1222,7 @@ export default function PhotoSetupWizard({
                 <button
                   type="button"
                   onClick={() => onApply(draft, { generate: true })}
-                  className="flex items-center gap-2 rounded-xl bg-[#D42020] px-8 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#AE1717] cursor-pointer"
+                  className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#D42020] px-4 py-3 text-base font-extrabold text-white shadow-lg hover:bg-[#AE1717] cursor-pointer sm:flex-none sm:px-8"
                 >
                   <ImageIcon size={20} /> ছবি তৈরি করুন
                 </button>

@@ -53,6 +53,12 @@ export default function OfferVideoFrame({
     try {
       await video.play();
     } catch {
+      if (hideControls) {
+        // Keep the paywall video unmuted; without native controls the user
+        // would otherwise have no way to restore its sound.
+        setShowOverlay(true);
+        return;
+      }
       video.muted = true;
       try {
         await video.play();
@@ -68,7 +74,9 @@ export default function OfferVideoFrame({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      void video.play();
+      video.muted = false;
+      video.volume = 1;
+      void video.play().catch(() => setShowOverlay(true));
     } else {
       video.pause();
     }

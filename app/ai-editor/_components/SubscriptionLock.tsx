@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { LockKeyhole, X, ArrowRight } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
+import PremiumLockIcon from "@/app/_components/PremiumLockIcon";
 import Link from "next/link";
 import OfferVideoFrame from "../../_components/OfferVideoFrame";
 import { useAiEditorText } from "./aiEditorI18n";
@@ -84,8 +85,8 @@ export default function SubscriptionLock() {
         onClick={openDialog}
         aria-label={t("Subscription required")}
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-stone-900 via-amber-900 to-stone-800 text-amber-300 shadow-sm">
-          <LockKeyhole size={14} strokeWidth={2.4} />
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_25%,#FFFFFF_0%,#FFF6D6_55%,#F6D77A_100%)] ring-[1.5px] ring-amber-500/80 shadow-[0_2px_5px_rgba(88,50,0,0.3)]">
+          <PremiumLockIcon size={18} />
         </span>
         <span>{status === "checking" ? t("Checking access...") : t("Locked")}</span>
         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.12)]" />
@@ -117,7 +118,7 @@ export default function SubscriptionLock() {
             </button>
 
             <div className="relative px-5 pb-5 pt-7 sm:px-6 sm:pb-6 sm:pt-8">
-              <OfferVideoFrame src="/intro/subscriptionredirectvideo.mp4" compact playLabel={t("Watch video")} replayLabel={t("Replay video")} />
+              <OfferVideoFrame src="/intro/subscriptionredirectvideo.mp4" compact hideControls playLabel={t("Watch video")} replayLabel={t("Replay video")} />
 
               <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <Link

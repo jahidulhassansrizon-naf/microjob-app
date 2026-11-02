@@ -1,21 +1,13 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import ScannedDocument from "@/models/ScannedDocument";
-import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { requireActiveSubscription } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
-
 const CLOUDINARY_FOLDER = "sohozkaj-ai-photos";
-
-type JwtPayload = {
-  userId?: string;
-  [key: string]: unknown;
-};
 
 type Adjustments = {
   blackness: number;
@@ -23,59 +15,6 @@ type Adjustments = {
   brightness: number;
   rotation: number;
 };
-
-function getCloudinaryConfig() {
-  const cloudName =
-    process.env.CLOUDINARY_CLOUD_NAME ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
-    "";
-  const apiKey = process.env.CLOUDINARY_API_KEY || "";
-  const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
-
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error(
-      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on the server.",
-    );
-  }
-
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-    secure: true,
-  });
-}
-
-function getTokenFromRequest(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
-
-  if (authorization?.startsWith("Bearer ")) {
-    const token = authorization.slice(7).trim();
-    if (token) return token;
-  }
-
-  const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
-
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function getUserIdFromRequest(request: Request): string {
-  const token = getTokenFromRequest(request);
-
-  if (!token) {
-    throw new Error("AUTH_REQUIRED");
-  }
-
-  const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-  const userId = typeof decoded.userId === "string" ? decoded.userId : "";
-
-  if (!userId || !mongoose.isValidObjectId(userId)) {
-    throw new Error("INVALID_USER_ID");
-  }
-
-  return userId;
-}
 
 function clamp(value: unknown, min: number, max: number, fallback = 0) {
   const numberValue = Number(value);
@@ -135,9 +74,9 @@ function serializeDocument(item: any) {
 
 export async function GET(request: Request) {
   try {
-    const toolAccess = await requireToolAccess(request);
-    if (!toolAccess.ok) return toolAccess.response;
-    const userId = getUserIdFromRequest(request);
+    const access = await requireActiveSubscription(request);
+    if (!access.ok) return access.response;
+    const userId = access.userId;
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
 
@@ -195,29 +134,6 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-      return NextResponse.json(
-        { success: false, error: "Authentication required." },
-        { status: 401 },
-      );
-    }
-
-    if (
-      error instanceof jwt.TokenExpiredError ||
-      error instanceof jwt.JsonWebTokenError
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired token." },
-        { status: 401 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "INVALID_USER_ID") {
-      return NextResponse.json(
-        { success: false, error: "Invalid user session." },
-        { status: 401 },
-      );
-    }
 
     console.error("Scanned documents GET error:", error);
 
@@ -232,7 +148,9 @@ export async function POST(request: Request) {
   let uploadedPublicId = "";
 
   try {
-    const userId = getUserIdFromRequest(request);
+    const access = await requireActiveSubscription(request);
+    if (!access.ok) return access.response;
+    const userId = access.userId;
 
     const body = await request.json();
 
@@ -306,29 +224,6 @@ export async function POST(request: Request) {
       }
     }
 
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-      return NextResponse.json(
-        { success: false, error: "Authentication required." },
-        { status: 401 },
-      );
-    }
-
-    if (
-      error instanceof jwt.TokenExpiredError ||
-      error instanceof jwt.JsonWebTokenError
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired token." },
-        { status: 401 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "INVALID_USER_ID") {
-      return NextResponse.json(
-        { success: false, error: "Invalid user session." },
-        { status: 401 },
-      );
-    }
 
     console.error("Scanned documents POST error:", error);
 
@@ -341,9 +236,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const toolAccess = await requireToolAccess(request);
-    if (!toolAccess.ok) return toolAccess.response;
-    const userId = getUserIdFromRequest(request);
+    const access = await requireActiveSubscription(request);
+    if (!access.ok) return access.response;
+    const userId = access.userId;
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
 
@@ -460,29 +355,6 @@ export async function PUT(request: Request) {
       { status: 200 },
     );
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-      return NextResponse.json(
-        { success: false, error: "Authentication required." },
-        { status: 401 },
-      );
-    }
-
-    if (
-      error instanceof jwt.TokenExpiredError ||
-      error instanceof jwt.JsonWebTokenError
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired token." },
-        { status: 401 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "INVALID_USER_ID") {
-      return NextResponse.json(
-        { success: false, error: "Invalid user session." },
-        { status: 401 },
-      );
-    }
 
     console.error("Scanned documents PUT error:", error);
 
@@ -498,9 +370,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const toolAccess = await requireToolAccess(request);
-    if (!toolAccess.ok) return toolAccess.response;
-    const userId = getUserIdFromRequest(request);
+    const access = await requireActiveSubscription(request);
+    if (!access.ok) return access.response;
+    const userId = access.userId;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim() || "";
@@ -567,29 +439,6 @@ export async function DELETE(request: Request) {
       cloudinary: cloudinaryStatus,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-      return NextResponse.json(
-        { success: false, error: "Authentication required." },
-        { status: 401 },
-      );
-    }
-
-    if (
-      error instanceof jwt.TokenExpiredError ||
-      error instanceof jwt.JsonWebTokenError
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired token." },
-        { status: 401 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "INVALID_USER_ID") {
-      return NextResponse.json(
-        { success: false, error: "Invalid user session." },
-        { status: 401 },
-      );
-    }
 
     console.error("Scanned documents DELETE error:", error);
 

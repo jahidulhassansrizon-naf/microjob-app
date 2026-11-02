@@ -1,9 +1,15 @@
 import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { getUserIdFromToken } from "../../api/_lib/requireActiveSubscription";
+import {
+  hasActiveSubscription,
+  requireToolAccess,
+} from "../../api/_lib/requireActiveSubscription";
+import { isPaidToolSlug } from "../../_lib/paidToolSlugs";
+import PaidToolLocked from "../../_components/PaidToolLocked";
 import nextDynamic from "next/dynamic";
 import DashboardNavbar from "../../dashboard/_components/DashboardNavbar";
+import PaidToolGate from "../../_components/PaidToolGate";
 
 export const dynamic = "force-dynamic";
 
@@ -65,13 +71,55 @@ export default async function DynamicToolPage({
     notFound();
   }
 
-  // Every tool page requires a verified login, but these 30 utility tools do not require a paid subscription.
+  // Every tool page requires a verified login.
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value ?? null;
-  const userId = getUserIdFromToken(token);
 
-  if (!userId) {
+  if (!token) {
     redirect(`/login?callbackUrl=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
+  }
+
+  // Verify the signed session, latest session version, account status and ban state.
+  // This helper also recognizes the configured root-admin token, which is not a
+  // MongoDB ObjectId and therefore must not be pre-validated as a normal user ID.
+  const accessRequest = new Request("http://internal.local/", {
+    headers: { cookie: `token=${encodeURIComponent(token)}` },
+  });
+  const access = await requireToolAccess(accessRequest);
+
+  if (!access.ok) {
+    const status = access.response.status;
+    const body = await access.response.json().catch(() => ({} as { code?: string }));
+    if (status === 401) {
+      redirect(`/login?callbackUrl=${encodeURIComponent(`/sohoj-tools/${toolSlug}`)}`);
+    }
+    const banned = body?.code === "USER_BANNED";
+    return (
+      <div className="min-h-screen w-full bg-[#FFF4D7] text-[#0F172A] flex flex-col font-sans">
+        <DashboardNavbar />
+        <main className="flex w-full flex-1 items-center justify-center px-4 py-8">
+          <PaidToolLocked variant={banned ? "banned" : "subscription"} />
+        </main>
+      </div>
+    );
+  }
+
+  // Authoritative server-side subscription check. A paid tool page now OPENS for everyone with a
+  // valid login (so visitors can see the tool), but for an account without active access the tool
+  // is rendered locked: PaidToolGate makes it inert and every attempt to use it opens the
+  // subscription video. The decision is made here on the server, per request, from the live
+  // subscription record -- never from anything the browser sends.
+  // Admins are granted access by the shared tool-session check above.
+  // If the lookup itself fails, fail CLOSED (locked).
+  let paidLocked = false;
+  if (isPaidToolSlug(toolSlug) && access.role !== "admin") {
+    let subscriptionActive = false;
+    try {
+      subscriptionActive = await hasActiveSubscription(access.userId);
+    } catch (error) {
+      console.error("[sohoj-tools] subscription access check failed:", error);
+    }
+    paidLocked = !subscriptionActive;
   }
 
   const isNidCorrection = toolSlug === "nid-information-correction-form";
@@ -83,7 +131,9 @@ export default async function DynamicToolPage({
       <div className="min-h-screen w-full bg-[#FFF4D7] text-[#0F172A] flex flex-col font-sans">
         <DashboardNavbar />
         <main className="w-full flex-1">
-          <SelectedToolComponent />
+          <PaidToolGate slug={toolSlug} locked={paidLocked}>
+            <SelectedToolComponent />
+          </PaidToolGate>
         </main>
       </div>
     );
@@ -102,7 +152,9 @@ export default async function DynamicToolPage({
     >
       <DashboardNavbar />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
-        <SelectedToolComponent />
+        <PaidToolGate slug={toolSlug} locked={paidLocked}>
+          <SelectedToolComponent />
+        </PaidToolGate>
       </main>
     </div>
   );

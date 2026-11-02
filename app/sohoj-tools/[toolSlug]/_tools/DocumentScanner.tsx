@@ -4079,7 +4079,21 @@ export default function DocumentScanner() {
         credentials: "include",
         signal,
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
+      // Accounts without an active subscription (or not signed in / restricted) simply have no
+      // saved documents to show. The server correctly refuses the request (401/403), so this is
+      // an expected state, NOT an error: show an empty list quietly -- no console error, no banner.
+      if (
+        response.status === 401 ||
+        response.status === 403 ||
+        result?.code === "SUBSCRIPTION_REQUIRED" ||
+        result?.code === "USER_BANNED" ||
+        result?.code === "AUTH_REQUIRED"
+      ) {
+        savedDocumentCounterRef.current = 0;
+        setSavedDocuments([]);
+        return;
+      }
       if (!response.ok || !result?.success) {
         throw new Error(result?.error || "Failed to fetch saved documents.");
       }
