@@ -187,24 +187,26 @@ jobs:
             exit 1
           fi
           PUBLIC_URL="$(cat public-url.txt)"
-          # "upsert" is tried first; if the store rejects it, fall back to "create"
-          # (first time, item does not exist yet) and then "update" (item already exists).
-          for i in 1 2 3 4 5; do
-            for OP in upsert create update; do
-              BODY="$(jq -n --arg op "$OP" --arg v "$PUBLIC_URL" '{items:[{operation:$op,key:"botUrl",value:$v}]}')"
-              CODE="$(curl -sS -o vercel-response.json -w '%{http_code}' -X PATCH \
-                "https://api.vercel.com/v1/global-config/${EDGE_CONFIG_ID}/items" \
-                -H "Authorization: Bearer ${VERCEL_API_TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d "$BODY" || true)"
-              echo "Vercel API attempt $i ($OP): HTTP $CODE"
-              if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 300 ]; then
-                echo "Published botUrl = $PUBLIC_URL"
-                echo "- Published to Vercel Global Config: \`botUrl\`" >> "$GITHUB_STEP_SUMMARY"
-                exit 0
-              fi
-              cat vercel-response.json || true
-              echo
+          # Tries the plain account URL first, then the same URL with the team slug.
+          # For each, "upsert" is tried, then "update" (item exists) and "create" (item missing).
+          for i in 1 2 3; do
+            for SUFFIX in "" "?slug=devprobd"; do
+              for OP in upsert update create; do
+                BODY="$(jq -n --arg op "$OP" --arg v "$PUBLIC_URL" '{items:[{operation:$op,key:"botUrl",value:$v}]}')"
+                CODE="$(curl -sS -o vercel-response.json -w '%{http_code}' -X PATCH \
+                  "https://api.vercel.com/v1/global-config/${EDGE_CONFIG_ID}/items${SUFFIX}" \
+                  -H "Authorization: Bearer ${VERCEL_API_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d "$BODY" || true)"
+                echo "Vercel API round $i [${SUFFIX:-no slug}] ($OP): HTTP $CODE"
+                if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 300 ]; then
+                  echo "Published botUrl = $PUBLIC_URL"
+                  echo "- Published to Vercel Global Config: \`botUrl\`" >> "$GITHUB_STEP_SUMMARY"
+                  exit 0
+                fi
+                cat vercel-response.json || true
+                echo
+              done
             done
             sleep 5
           done
