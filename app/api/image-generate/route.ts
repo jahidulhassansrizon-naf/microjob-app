@@ -5,6 +5,7 @@ import AIGeneration from "@/models/AIGeneration";
 import { connectDB } from "@/lib/db";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { getBotUrl } from "@/app/api/_lib/botUrl";
 
 export const runtime = "nodejs";
 
@@ -12,9 +13,9 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 // Set these in .env.local (and in Vercel -> Settings -> Environment Variables):
-//   GEMINI_RENDER_URL=<public URL of the Gemini image server (playwright-service)>
+//   GEMINI_RENDER_URL=<fallback public URL of the Gemini image server (playwright-service)>
+//   (the live URL is normally read from Vercel Global Config key "botUrl", see lib/botUrl.ts)
 //   GEMINI_RENDER_KEY=<same value as ASK_KEY on that server>   (only if you set ASK_KEY there)
-const RENDER_URL = (process.env.GEMINI_RENDER_URL || "").replace(/\/+$/, "");
 const RENDER_KEY = process.env.GEMINI_RENDER_KEY || "";
 
 // Kept a little below maxDuration so we can answer with a clean error
@@ -213,8 +214,9 @@ async function callRenderService(
   secondImage?: { blob: Blob; filename: string } | null,
   clientSignal?: AbortSignal,
 ): Promise<string> {
+  const RENDER_URL = await getBotUrl();
   if (!RENDER_URL) {
-    throw new Error("GEMINI_RENDER_URL is not set on the website server.");
+    throw new Error("The Gemini bot URL is not set (Global Config botUrl / GEMINI_RENDER_URL).");
   }
 
   const body = new FormData();

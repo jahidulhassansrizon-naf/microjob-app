@@ -50,8 +50,8 @@ type Controller = {
 /**
  * Full-screen page loader for the whole website.
  *
- * A branded screen (same cream background as the site) with a big percentage and a
- * striped progress bar at the bottom that fills from 0% to 100%, left to right.
+ * A branded screen (same cream background as the site) with a premium circle loader in
+ * the center: a glowing progress ring that fills from 0% to 100% around a big percentage.
  *   - page load / reload: visible from the very first paint (server-rendered),
  *   - click on an internal link: the next page opens directly; the loader only appears
  *     if the page is still not ready after SHOW_DELAY_MS (a slow page),
@@ -76,16 +76,12 @@ export default function NavigationProgressBar({
   );
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const fillRef = useRef<HTMLDivElement | null>(null);
-  const rowRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<Controller | null>(null);
   const previousPathRef = useRef(pathname);
 
   useEffect(() => {
     const root = rootRef.current;
-    const fill = fillRef.current;
-    const row = rowRef.current;
-    if (!root || !fill || !row) return;
+    if (!root) return;
 
     initialLoadHandled = true;
 
@@ -123,9 +119,8 @@ export default function NavigationProgressBar({
     };
 
     const paint = () => {
-      const width = `${shown.toFixed(2)}%`;
-      fill.style.width = width;
-      row.style.width = width;
+      // --lp drives the smooth ring + glowing tip; --lpi is the whole-number percentage text.
+      root.style.setProperty("--lp", shown.toFixed(2));
       const rounded = Math.round(shown);
       if (rounded !== lastInt) {
         lastInt = rounded;
@@ -287,8 +282,8 @@ export default function NavigationProgressBar({
 
     // ---- Page load / reload: continue from the server-rendered CSS animation ----
     if (initialPhase) {
-      const rootWidth = root.getBoundingClientRect().width || window.innerWidth || 1;
-      const current = (fill.getBoundingClientRect().width / rootWidth) * 100;
+      // Continue from wherever the server-rendered CSS animation has reached.
+      const current = parseFloat(getComputedStyle(root).getPropertyValue("--lp"));
       shown = Math.min(96, Math.max(0, Number.isFinite(current) ? current : 0));
       phase = "running";
       visible = true;
@@ -425,13 +420,32 @@ export default function NavigationProgressBar({
       aria-valuemax={100}
       aria-valuenow={0}
     >
-      <div className="nav-loader__meta">
-        <div ref={rowRef} className="nav-loader__row">
-          <span className="nav-loader__pct" aria-hidden="true" />
+      <div className="nav-loader__stage">
+        <div className="nav-loader__halo" />
+        <svg className="nav-loader__svg" viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <linearGradient id="nav-loader-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#B91C1C" />
+              <stop offset="55%" stopColor="#DC2626" />
+              <stop offset="100%" stopColor="#F87171" />
+            </linearGradient>
+          </defs>
+          <circle className="nav-loader__orbit" cx="100" cy="100" r="96" />
+          <circle className="nav-loader__track" cx="100" cy="100" r="80" />
+          <circle
+            className="nav-loader__arc"
+            cx="100"
+            cy="100"
+            r="80"
+            pathLength={100}
+            transform="translate(200 0) scale(-1 1) rotate(-90 100 100)"
+          />
+        </svg>
+        <div className="nav-loader__tip" />
+        <div className="nav-loader__center" aria-hidden="true">
+          <span className="nav-loader__pct" />
+          <span className="nav-loader__brand">SebaLagbe.com</span>
         </div>
-      </div>
-      <div className="nav-loader__track">
-        <div ref={fillRef} className="nav-loader__fill" />
       </div>
     </div>
   );

@@ -3,13 +3,13 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { getBotUrl } from "@/app/api/_lib/botUrl";
 
 export const runtime = "nodejs";
 
 // Gemini / Playwright generation can take some time.
 export const maxDuration = 300;
 
-const RENDER_URL = (process.env.GEMINI_RENDER_URL || "").replace(/\/+$/, "");
 const RENDER_KEY = process.env.GEMINI_RENDER_KEY || "";
 
 const REQUEST_TIMEOUT_MS = 330_000;
@@ -120,8 +120,9 @@ async function callRenderService(
   templateFilename: string,
   prompt: string,
 ): Promise<string> {
+  const RENDER_URL = await getBotUrl();
   if (!RENDER_URL) {
-    throw new Error("GEMINI_RENDER_URL is not set on the website server.");
+    throw new Error("The Gemini bot URL is not set (Global Config botUrl / GEMINI_RENDER_URL).");
   }
 
   const body = new FormData();

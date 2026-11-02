@@ -4,16 +4,47 @@ on:
   workflow_dispatch:
     inputs:
       keep_minutes:
-        description: "Keep the bot online for up to 6 hours (subject to the job limit)"
+        description: "Keep the bot online for up to 6 hours (360 = run forever, auto-restarting)"
         required: false
         default: "360"
         type: string
+  # Safety net: if the bot is ever not running, start it again (checked every 30 minutes).
+  schedule:
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: read
+  actions: write # lets the job start its own replacement run
 
 jobs:
+  # Skips scheduled runs when a bot run is already active, so only one bot runs at a time.
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check for an active bot run
+        id: check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OTHERS="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow gemini-playwright-bot.yml --limit 50 --json databaseId,status \
+            | jq --argjson me "$GITHUB_RUN_ID" '[.[] | select(.databaseId != $me and (.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending"))] | length')"
+          echo "Other active bot runs: $OTHERS"
+          if [ "$OTHERS" -gt 0 ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   bot:
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -24,6 +55,8 @@ jobs:
       GEMINI_SESSION_JSON: ${{ secrets.GEMINI_SESSION_JSON }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
       GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
+      VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+      EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
 
     defaults:
       run:
@@ -116,11 +149,9 @@ jobs:
               {
                 echo "## Gemini Bot is online"
                 echo
-                echo "**Temporary backend URL:**"
+                echo "**Backend URL (published to Vercel automatically):**"
                 echo
                 echo "$PUBLIC_URL"
-                echo
-                echo "Use this temporarily as Vercel's GEMINI_RENDER_URL."
               } >> "$GITHUB_STEP_SUMMARY"
               echo "$PUBLIC_URL"
               exit 0
@@ -130,10 +161,57 @@ jobs:
           cat cloudflared.log || true
           exit 1
 
+      # A fresh trycloudflare.com address can take a few seconds before it answers.
+      - name: Wait until public URL responds
+        shell: bash
+        run: |
+          PUBLIC_URL="$(cat public-url.txt)"
+          for i in {1..45}; do
+            if curl -fsS -m 10 "${PUBLIC_URL}/health" > /dev/null; then
+              echo "Public URL is reachable."
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "::error::Public URL did not become reachable."
+          cat cloudflared.log || true
+          exit 1
+
+      # Writes the new URL into the Vercel Global Config store (key: botUrl).
+      # The website reads it on every request, so no redeploy is needed.
+      - name: Publish public URL to Vercel Global Config
+        shell: bash
+        run: |
+          if [ -z "$VERCEL_API_TOKEN" ] || [ -z "$EDGE_CONFIG_ID" ]; then
+            echo "::error::VERCEL_API_TOKEN or EDGE_CONFIG_ID secret is missing."
+            exit 1
+          fi
+          PUBLIC_URL="$(cat public-url.txt)"
+          BODY="$(jq -n --arg v "$PUBLIC_URL" '{items:[{operation:"upsert",key:"botUrl",value:$v}]}')"
+          for i in 1 2 3 4 5; do
+            CODE="$(curl -sS -o vercel-response.json -w '%{http_code}' -X PATCH \
+              "https://api.vercel.com/v1/global-config/${EDGE_CONFIG_ID}/items" \
+              -H "Authorization: Bearer ${VERCEL_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$BODY" || true)"
+            echo "Vercel API attempt $i: HTTP $CODE"
+            if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 300 ]; then
+              echo "Published botUrl = $PUBLIC_URL"
+              echo "- Published to Vercel Global Config: \`botUrl\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            cat vercel-response.json || true
+            echo
+            sleep 5
+          done
+          echo "::error::Could not publish the public URL to Vercel."
+          exit 1
+
       - name: Keep bot online
         shell: bash
         env:
           KEEP_MINUTES: ${{ inputs.keep_minutes }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           MINUTES="${KEEP_MINUTES:-360}"
           case "$MINUTES" in
@@ -165,7 +243,6 @@ jobs:
           ACTUAL_MINUTES=$((SLEEP_SECONDS / 60))
           echo "Requested bot uptime: ${MINUTES} minutes."
           echo "Available safe uptime: approximately ${ACTUAL_MINUTES} minutes."
-          echo "The job will finish before GitHub's 6-hour hard limit."
 
           {
             echo "## Bot runtime"
@@ -175,7 +252,24 @@ jobs:
             echo "- Five-minute job-time safety margin reserved for logs and cleanup"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          sleep "$SLEEP_SECONDS"
+          # Full-length run: start the replacement run 35 minutes before this one ends,
+          # so the new bot is already online (and has published its URL) before this one stops.
+          if [ "$MINUTES" -eq 360 ]; then
+            HANDOFF_AT=$((JOB_START + 320 * 60))
+            WAIT_SECONDS=$((HANDOFF_AT - $(date +%s)))
+            if [ "$WAIT_SECONDS" -gt 0 ] && [ "$WAIT_SECONDS" -lt "$SLEEP_SECONDS" ]; then
+              echo "Sleeping ${WAIT_SECONDS}s before starting the replacement run."
+              sleep "$WAIT_SECONDS"
+              SLEEP_SECONDS=$((JOB_DEADLINE - $(date +%s)))
+              echo "Starting the replacement run now."
+              gh workflow run gemini-playwright-bot.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
+                || echo "::warning::Could not start the replacement run; the 30-minute schedule will start it."
+            fi
+          fi
+
+          if [ "$SLEEP_SECONDS" -gt 0 ]; then
+            sleep "$SLEEP_SECONDS"
+          fi
 
       - name: Show logs
         if: always()
