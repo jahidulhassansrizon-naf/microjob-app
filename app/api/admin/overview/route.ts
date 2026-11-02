@@ -34,53 +34,45 @@ export async function GET(request: Request) {
     };
     const startOfToday = new Date(`${dayKey(now)}T00:00:00+06:00`);
     const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(`${dayKey(now).slice(0, 7)}-01T00:00:00+06:00`);
+    const previousWeekStart = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000);
+    const nextSevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const realPaymentMatch = {
+      paymentStatus: "COMPLETED",
+      invoiceId: { $not: /^MOCK-/i },
+      paymentMethod: { $not: /MOCK/i },
+    };
 
     const [
       totalUsers,
       activeNow,
       loginsToday,
-      activeSubscriptions,
       activeSubscriberIds,
+      activeSubscriptions,
       totalSubscriptions,
       pendingPayments,
       revenueRows,
-      recentUsersRaw,
-      recentLoginsRaw,
-      recentSubscriptionsRaw,
       registrationRows,
+      newToday,
+      newThisMonth,
+      newPreviousWeek,
+      neverLoggedIn,
+      bannedUsers,
+      districtRows,
+      revenueThisMonthRows,
+      expiringSoon,
     ] = await Promise.all([
       User.countDocuments(databaseUserFilter),
       User.countDocuments({ ...databaseUserFilter, lastSeenAt: { $gte: activeCutoff } }),
       User.countDocuments({ ...databaseUserFilter, lastLoginAt: { $gte: startOfToday } }),
-      Subscription.countDocuments(activeSubscriptionFilter),
       Subscription.distinct("userId", activeSubscriptionFilter),
+      Subscription.countDocuments(activeSubscriptionFilter),
       Subscription.countDocuments({}),
       Subscription.countDocuments({ paymentStatus: "PENDING" }),
       Subscription.aggregate([
-        {
-          $match: {
-            paymentStatus: "COMPLETED",
-            invoiceId: { $not: /^MOCK-/i },
-            paymentMethod: { $not: /MOCK/i },
-          },
-        },
+        { $match: realPaymentMatch },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
-      User.find(databaseUserFilter)
-        .select("fullName email phoneNumber role isBanned country district createdAt lastLoginAt lastSeenAt loginCount")
-        .sort({ createdAt: -1 })
-        .limit(7)
-        .lean(),
-      User.find({ ...databaseUserFilter, lastLoginAt: { $ne: null, $exists: true } })
-        .select("fullName email phoneNumber role isBanned lastLoginAt lastSeenAt loginCount")
-        .sort({ lastLoginAt: -1 })
-        .limit(7)
-        .lean(),
-      Subscription.find({})
-        .sort({ createdAt: -1 })
-        .limit(7)
-        .populate({ path: "userId", select: "fullName email phoneNumber" })
-        .lean(),
       User.aggregate([
         { $match: { ...databaseUserFilter, createdAt: { $gte: sevenDaysAgo } } },
         {
@@ -96,6 +88,32 @@ export async function GET(request: Request) {
           },
         },
       ]),
+      User.countDocuments({ ...databaseUserFilter, createdAt: { $gte: startOfToday } }),
+      User.countDocuments({ ...databaseUserFilter, createdAt: { $gte: startOfMonth } }),
+      User.countDocuments({
+        ...databaseUserFilter,
+        createdAt: { $gte: previousWeekStart, $lt: sevenDaysAgo },
+      }),
+      User.countDocuments({
+        ...databaseUserFilter,
+        $or: [{ lastLoginAt: null }, { lastLoginAt: { $exists: false } }],
+      }),
+      User.countDocuments({ ...databaseUserFilter, isBanned: true }),
+      User.aggregate([
+        { $match: { ...databaseUserFilter, district: { $type: "string", $ne: "" } } },
+        { $group: { _id: "$district", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
+      ]),
+      Subscription.aggregate([
+        { $match: { ...realPaymentMatch, createdAt: { $gte: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      Subscription.countDocuments({
+        paymentStatus: "COMPLETED",
+        accessStatus: "ACTIVE",
+        expiresAt: { $gt: now, $lte: nextSevenDays },
+      }),
     ]);
 
     const registrationsByDate = new Map<string, number>(
@@ -114,60 +132,16 @@ export async function GET(request: Request) {
       };
     });
 
-    const recentUserIds = recentUsersRaw.map((user: any) => user._id);
-    const recentUserSubscriptions = await Subscription.find({
-      userId: { $in: recentUserIds },
-      ...activeSubscriptionFilter,
-    })
-      .sort({ expiresAt: -1 })
-      .select("userId planId planName amount expiresAt")
-      .lean();
-    const recentSubscriptionByUser = new Map<string, any>();
-    for (const subscription of recentUserSubscriptions as any[]) {
-      const id = String(subscription.userId);
-      if (!recentSubscriptionByUser.has(id)) recentSubscriptionByUser.set(id, subscription);
-    }
-
-    const recentUsers = recentUsersRaw.map((user: any) => {
-      const activeSubscription = recentSubscriptionByUser.get(String(user._id));
-      return {
-        ...user,
-        id: String(user._id),
-        role: user.role === "admin" ? "admin" : "user",
-        isBanned: user.isBanned === true,
-        isOnline: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeCutoff.getTime()),
-        subscription: activeSubscription
-          ? {
-              planId: activeSubscription.planId,
-              planName: activeSubscription.planName,
-              amount: activeSubscription.amount,
-              expiresAt: activeSubscription.expiresAt,
-            }
-          : null,
-      };
-    });
-    const recentLogins = recentLoginsRaw.map((user: any) => ({
-      ...user,
-      id: String(user._id),
-      role: user.role === "admin" ? "admin" : "user",
-      isBanned: user.isBanned === true,
-      isOnline: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeCutoff.getTime()),
-    }));
-    const recentSubscriptions = recentSubscriptionsRaw.map((subscription: any) => ({
-      ...subscription,
-      id: String(subscription._id),
-      user: subscription.userId && typeof subscription.userId === "object"
-        ? {
-            id: String(subscription.userId._id),
-            fullName: subscription.userId.fullName || "Unknown user",
-            email: subscription.userId.email || "",
-            phoneNumber: subscription.userId.phoneNumber || "",
-          }
-        : null,
-      userId: subscription.userId && typeof subscription.userId === "object"
-        ? String(subscription.userId._id)
-        : String(subscription.userId || ""),
-    }));
+    const weeklyTotal = weeklyRegistrations.reduce((sum, day) => sum + day.count, 0);
+    const weeklyGrowthPercent = newPreviousWeek > 0
+      ? Math.round(((weeklyTotal - newPreviousWeek) / newPreviousWeek) * 100)
+      : null;
+    const paidConversionPercent = totalUsers > 0
+      ? Math.round((activeSubscriberIds.length / totalUsers) * 1000) / 10
+      : 0;
+    const topDistrict = districtRows[0]
+      ? { name: String(districtRows[0]._id), users: Number(districtRows[0].count || 0) }
+      : null;
 
     return NextResponse.json(
       {
@@ -182,11 +156,19 @@ export async function GET(request: Request) {
           totalSubscriptions,
           pendingPayments,
           totalRevenue: Number(revenueRows[0]?.total || 0),
+          newToday,
+          newThisMonth,
+          weeklyRegistrations: weeklyTotal,
+          previousWeekRegistrations: newPreviousWeek,
+          weeklyGrowthPercent,
+          neverLoggedIn,
+          bannedUsers,
+          paidConversionPercent,
+          revenueThisMonth: Number(revenueThisMonthRows[0]?.total || 0),
+          expiringSoon,
+          topDistrict,
         },
         weeklyRegistrations,
-        recentUsers,
-        recentLogins,
-        recentSubscriptions,
         generatedAt: now.toISOString(),
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },

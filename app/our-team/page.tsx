@@ -8,6 +8,10 @@ import { replaceSiteNameInText } from "@/lib/siteSettings";
 
 const FOUNDER_IMAGE_URL = "/adminpic/srizonFbPic.jpg";
 
+// Fixed start date (not relative). Change these two strings to update the text everywhere on this page.
+const startedDateEn = "2 September 2026";
+const startedDateBn = "২ সেপ্টেম্বর ২০২৬";
+
 type Opportunity = {
   title: string;
   description: string;
@@ -104,6 +108,7 @@ export default function OurTeamPage() {
   const isBn = locale === "bn";
   const displayText = (value: string) => replaceSiteNameInText(value, settings.branding.siteName);
   const [photoFailed, setPhotoFailed] = useState(false);
+  const startedDate = isBn ? startedDateBn : startedDateEn;
 
   return (
     <>
@@ -124,6 +129,7 @@ export default function OurTeamPage() {
           </section>
 
           <section className="founder-card" aria-labelledby="founder-heading">
+            <div className="founder-photo-wrap">
             <div className="founder-photo-frame">
               {!photoFailed ? (
                 <img
@@ -139,13 +145,18 @@ export default function OurTeamPage() {
               )}
               <span className="founder-online-dot" aria-hidden="true" />
             </div>
+            </div>
 
             <div className="founder-label"><T>Founder profile</T></div>
             <h2 id="founder-heading"><T>Founder & Website Administrator</T></h2>
             <p className="founder-subtitle"><T>Solo Full-Stack Developer</T></p>
             <p className="founder-bio">
-              {displayText(isBn ? "আমি প্রায় দুই মাস আগে নিজের উদ্যোগে সেবা লাগবে তৈরি করা শুরু করেছি। নিজেই হাতে-কলমে কাজ করছি, শিখছি এবং ব্যবহারিক পণ্য ও ভালো সহযোগিতায় আগ্রহী মানুষের সঙ্গে প্ল্যাটফর্মটিকে এগিয়ে নিতে চাই।" : "I started building Seba Lagbe independently around two months ago. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.")}
+              {displayText(isBn ? `আমি ${startedDate} থেকে নিজের উদ্যোগে সেবা লাগবে তৈরি করা শুরু করেছি। নিজেই হাতে-কলমে কাজ করছি, শিখছি এবং ব্যবহারিক পণ্য ও ভালো সহযোগিতায় আগ্রহী মানুষের সঙ্গে প্ল্যাটফর্মটিকে এগিয়ে নিতে চাই।` : `I started building Seba Lagbe independently on ${startedDate}. I handle the work hands-on, keep learning as I go, and want to grow the platform with people who care about useful products and thoughtful teamwork.`)}
             </p>
+            <div className="founder-since">
+              <span className="founder-since-dot" aria-hidden="true" />
+              <span>{isBn ? `শুরু: ${startedDate}` : `Building since ${startedDate}`}</span>
+            </div>
             <div className="founder-tags">
               <span><T>Built independently</T></span>
               <span><T>Early-stage project</T></span>
@@ -219,23 +230,29 @@ export default function OurTeamPage() {
         .eyebrow { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #554fe0; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
         .team-intro h1 { margin: 14px 0 12px; color: #15192b; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; letter-spacing: -.045em; font-weight: 850; }
         .intro-copy { max-width: 650px; margin: 0 auto; color: #697086; font-size: 15px; line-height: 1.8; }
-        .founder-card { position: relative; width: min(760px, 100%); margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 34px clamp(20px, 5vw, 56px) 36px; overflow: hidden; border: 1px solid rgba(137, 130, 190, .23); border-radius: 28px; background: rgba(255,255,255,.84); box-shadow: 0 24px 70px rgba(47, 42, 106, .10), 0 3px 12px rgba(45, 48, 84, .04); }
-        .founder-card::before { position: absolute; content: ''; width: 280px; height: 280px; top: -175px; left: calc(50% - 140px); border-radius: 50%; background: rgba(99, 102, 241, .15); filter: blur(22px); pointer-events: none; }
-        .founder-photo-frame { position: relative; z-index: 1; width: 168px; height: 206px; padding: 5px; border: 1px solid rgba(99, 102, 241, .25); border-radius: 24px; background: linear-gradient(140deg, #4f46e5, #a855f7 55%, #fde68a); box-shadow: 0 12px 30px rgba(76, 61, 190, .18); }
-        .founder-photo { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 33%; border-radius: 19px; background: #eeecff; }
-        .founder-photo-fallback { width: 100%; height: 100%; display: grid; place-items: center; border-radius: 19px; color: #fff; font-size: 38px; font-weight: 850; letter-spacing: -.06em; background: linear-gradient(135deg, #4338ca, #9333ea); }
-        .founder-online-dot { position: absolute; right: -5px; bottom: 13px; width: 18px; height: 18px; border: 4px solid #fff; border-radius: 50%; background: #22c55e; }
-        .founder-label { margin-top: 21px; padding: 7px 12px; border: 1px solid #e4e0ff; border-radius: 999px; color: #625bdc; background: #f6f4ff; font-size: 10px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
-        .founder-card h2 { margin: 13px 0 0; color: #191d31; font-size: clamp(22px, 2.5vw, 29px); line-height: 1.2; font-weight: 850; letter-spacing: -.03em; }
-        .founder-subtitle { margin: 8px 0 0; color: #5e5bd2; font-size: 13px; font-weight: 800; }
-        .founder-bio { max-width: 600px; margin: 16px 0 0; color: #687086; font-size: 14px; line-height: 1.85; }
-        .founder-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
-        .founder-tags span { padding: 8px 11px; border: 1px solid #ebe8f7; border-radius: 999px; color: #525a70; background: #fbfaff; font-size: 11px; font-weight: 700; }
+        .founder-card { position: relative; width: min(880px, 100%); margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px clamp(22px, 6vw, 72px) 46px; overflow: hidden; border: 1px solid rgba(137, 130, 190, .28); border-radius: 34px; background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(252,250,255,.9)); box-shadow: 0 40px 90px rgba(47, 42, 106, .14), 0 6px 18px rgba(45, 48, 84, .05), inset 0 1px 0 rgba(255,255,255,.9); }
+        .founder-card::before { position: absolute; content: ''; width: 560px; height: 380px; top: -190px; left: calc(50% - 280px); border-radius: 50%; background: radial-gradient(closest-side, rgba(124, 92, 255, .22), transparent); pointer-events: none; }
+        .founder-card::after { position: absolute; content: ''; inset: 0; border-radius: inherit; background: radial-gradient(circle at 100% 100%, rgba(253, 230, 138, .22), transparent 38%); pointer-events: none; }
+        .founder-card > * { position: relative; z-index: 1; }
+        .founder-photo-wrap { position: relative; z-index: 1; padding: 14px; border-radius: 42px; background: conic-gradient(from 210deg, rgba(79,70,229,.0), rgba(168,85,247,.28), rgba(253,230,138,.38), rgba(79,70,229,.0)); }
+        .founder-photo-wrap::before { content: ''; position: absolute; inset: 24px -6px -14px; z-index: -1; border-radius: 40px; background: rgba(99, 70, 220, .28); filter: blur(34px); }
+        .founder-photo-frame { position: relative; z-index: 1; width: 288px; height: 356px; padding: 6px; border: 1px solid rgba(255,255,255,.55); border-radius: 34px; background: linear-gradient(140deg, #4f46e5, #a855f7 55%, #fde68a); box-shadow: 0 22px 48px rgba(76, 61, 190, .30), 0 0 0 1px rgba(99,102,241,.18); }
+        .founder-photo { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; border-radius: 28px; background: #eeecff; }
+        .founder-photo-fallback { width: 100%; height: 100%; display: grid; place-items: center; border-radius: 28px; color: #fff; font-size: 64px; font-weight: 850; letter-spacing: -.06em; background: linear-gradient(135deg, #4338ca, #9333ea); }
+        .founder-online-dot { position: absolute; right: -6px; bottom: 24px; width: 24px; height: 24px; border: 5px solid #fff; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 5px rgba(34,197,94,.18); }
+        .founder-label { margin-top: 28px; padding: 8px 15px; border: 1px solid #e4e0ff; border-radius: 999px; color: #625bdc; background: #f6f4ff; font-size: 10.5px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+        .founder-card h2 { margin: 16px 0 0; color: #14172b; font-size: clamp(26px, 3.2vw, 38px); line-height: 1.15; font-weight: 850; letter-spacing: -.04em; background: linear-gradient(100deg, #14172b 30%, #3b2fb8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .founder-subtitle { margin: 10px 0 0; color: #5e5bd2; font-size: 14.5px; font-weight: 800; letter-spacing: .01em; }
+        .founder-bio { max-width: 650px; margin: 20px 0 0; color: #5f6680; font-size: 15px; line-height: 1.9; }
+        .founder-since { display: inline-flex; align-items: center; gap: 9px; margin-top: 22px; padding: 9px 16px; border: 1px solid #ece7ff; border-radius: 999px; color: #3f3a9e; background: linear-gradient(100deg, #f6f4ff, #fffaea); font-size: 12px; font-weight: 800; }
+        .founder-since-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.18); }
+        .founder-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+        .founder-tags span { padding: 9px 14px; border: 1px solid #ebe8f7; border-radius: 999px; color: #525a70; background: #fff; box-shadow: 0 2px 6px rgba(47,42,106,.04); font-size: 12px; font-weight: 700; }
         .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 18px; border-radius: 13px; text-decoration: none; font-size: 12px; font-weight: 800; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
         .button:hover { transform: translateY(-2px); }
         .button-primary { color: #fff; background: linear-gradient(100deg, #4058e8, #8a2be2); box-shadow: 0 10px 22px rgba(85, 66, 218, .22); }
         .button-primary:hover { box-shadow: 0 14px 28px rgba(85, 66, 218, .29); }
-        .founder-cta { margin-top: 23px; }
+        .founder-cta { margin-top: 30px; min-height: 50px; padding: 0 26px; font-size: 13.5px; border-radius: 15px; }
         .opportunities-section { padding-top: 76px; }
         .section-heading { max-width: 760px; margin: 0 auto 28px; text-align: center; }
         .section-heading h2 { margin: 12px 0 10px; color: #181c2f; font-size: clamp(27px, 3.5vw, 38px); font-weight: 850; letter-spacing: -.04em; line-height: 1.16; }
@@ -270,9 +287,11 @@ export default function OurTeamPage() {
           .team-intro { margin-bottom: 23px; }
           .team-intro h1 { font-size: 32px; }
           .intro-copy { font-size: 13px; }
-          .founder-card { padding: 26px 18px 28px; border-radius: 22px; }
-          .founder-photo-frame { width: 150px; height: 186px; }
-          .founder-bio { font-size: 13px; }
+          .founder-card { padding: 32px 18px 32px; border-radius: 26px; }
+          .founder-photo-frame { width: 224px; height: 278px; border-radius: 28px; }
+          .founder-photo { border-radius: 23px; }
+          .founder-photo-wrap { padding: 10px; border-radius: 34px; }
+          .founder-bio { font-size: 13.5px; }
           .opportunities-section { padding-top: 54px; }
           .section-heading h2 { font-size: 28px; }
           .section-heading p { font-size: 13px; }

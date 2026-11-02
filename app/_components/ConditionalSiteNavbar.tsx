@@ -29,5 +29,7 @@ export default function ConditionalSiteNavbar({ children }: { children: ReactNod
     return null;
   }
 
-  return <>{children}</>;
+  // `display: contents` keeps the wrapper box-less so the navbar's own sticky/fixed layout is unchanged.
+  // The 404 page hides this slot with a style rule (see NotFoundView).
+  return <div className="site-navbar-slot" style={{ display: "contents" }}>{children}</div>;
 }

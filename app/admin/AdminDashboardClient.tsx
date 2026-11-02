@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  CalendarClock,
   CircleDollarSign,
   Copy,
   Clock3,
@@ -25,9 +26,11 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  MapPin,
   Mail,
   Menu,
   MessageCircle,
+  Percent,
   Phone,
   ReceiptText,
   RefreshCw,
@@ -36,9 +39,13 @@ import {
   ShieldCheck,
   Settings2,
   Trash2,
+  TrendingUp,
   Unlock,
   UserCog,
+  UserPlus,
   Users,
+  UserX,
+  Wallet,
   X,
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
@@ -136,11 +143,19 @@ type Overview = {
     totalSubscriptions: number;
     pendingPayments: number;
     totalRevenue: number;
+    newToday: number;
+    newThisMonth: number;
+    weeklyRegistrations: number;
+    previousWeekRegistrations: number;
+    weeklyGrowthPercent: number | null;
+    neverLoggedIn: number;
+    bannedUsers: number;
+    paidConversionPercent: number;
+    revenueThisMonth: number;
+    expiringSoon: number;
+    topDistrict: { name: string; users: number } | null;
   };
   weeklyRegistrations: { date: string; label: string; count: number }[];
-  recentUsers: UserRow[];
-  recentLogins: UserRow[];
-  recentSubscriptions: SubscriptionRow[];
   generatedAt?: string;
 };
 
@@ -1588,13 +1603,6 @@ export default function AdminDashboardClient() {
   const ticks = [4, 3, 2, 1, 0].map((i) => i * step);
   const weeklyTotal = weekly.reduce((sum, d) => sum + d.count, 0);
 
-  const totalSubs = stats?.totalSubscriptions || 0;
-  const activeSubs = stats?.activeSubscriptions || 0;
-  const pendingSubs = stats?.pendingPayments || 0;
-  const otherSubs = Math.max(0, totalSubs - activeSubs - pendingSubs);
-  const pct = (n: number) =>
-    `${totalSubs ? Math.min(100, (n / totalSubs) * 100) : 0}%`;
-
   const filterForm = (opts: {
     value: string;
     setValue: (v: string) => void;
@@ -1655,6 +1663,56 @@ export default function AdminDashboardClient() {
       </div>
     </div>
   );
+
+  const growthDetail =
+    stats?.weeklyGrowthPercent == null
+      ? `Last 7 days: ${(stats?.weeklyRegistrations || 0).toLocaleString("en-BD")}`
+      : `Last 7 days: ${(stats?.weeklyRegistrations || 0).toLocaleString("en-BD")} (${stats.weeklyGrowthPercent >= 0 ? "+" : ""}${stats.weeklyGrowthPercent}% vs previous week)`;
+
+  const metricGroups: {
+    title: string;
+    cards: {
+      title: string;
+      value: string;
+      detail: string;
+      icon: typeof Users;
+      tint: string;
+    }[];
+  }[] = [
+    {
+      title: "Users",
+      cards: [
+        { title: "Total registered users", value: num(stats?.totalUsers), detail: "All accounts on the platform", icon: Users, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
+        { title: "Users active now", value: num(stats?.activeNow), detail: "Active on the site in the last 3 minutes", icon: Activity, tint: "bg-emerald-50 text-emerald-700" },
+        { title: "Logged in today", value: num(stats?.loginsToday), detail: "Bangladesh time", icon: LogIn, tint: "bg-[#FDF1D0] text-[#8A5A00]" },
+        { title: "New sign-ups today", value: num(stats?.newToday), detail: "Accounts created since midnight", icon: UserPlus, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
+      ],
+    },
+    {
+      title: "Growth & account health",
+      cards: [
+        { title: "Sign-ups this month", value: num(stats?.newThisMonth), detail: overviewLoading ? "—" : growthDetail, icon: TrendingUp, tint: "bg-emerald-50 text-emerald-700" },
+        { title: "Never logged in", value: num(stats?.neverLoggedIn), detail: "Registered but no login recorded", icon: UserX, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
+        { title: "Banned accounts", value: num(stats?.bannedUsers), detail: "Currently blocked from the platform", icon: Ban, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
+        {
+          title: "Top district",
+          value: overviewLoading ? "—" : stats?.topDistrict?.name || "—",
+          detail: stats?.topDistrict ? `${stats.topDistrict.users.toLocaleString("en-BD")} registered users` : "No location data yet",
+          icon: MapPin,
+          tint: "bg-[#FDF1D0] text-[#8A5A00]",
+        },
+      ],
+    },
+    {
+      title: "Subscriptions & revenue",
+      cards: [
+        { title: "Subscription records", value: num(stats?.totalSubscriptions), detail: "All recorded purchases", icon: ReceiptText, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
+        { title: "Paid conversion", value: overviewLoading ? "—" : `${stats?.paidConversionPercent ?? 0}%`, detail: "Users with an active subscription", icon: Percent, tint: "bg-emerald-50 text-emerald-700" },
+        { title: "Revenue this month", value: overviewLoading ? "—" : money(stats?.revenueThisMonth), detail: "Completed payments since the 1st", icon: Wallet, tint: "bg-[#FDF1D0] text-[#8A5A00]" },
+        { title: "Expiring in 7 days", value: num(stats?.expiringSoon), detail: "Active plans ending this week", icon: CalendarClock, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
+      ],
+    },
+  ];
 
   const summaryRows = [
     {
@@ -1927,40 +1985,20 @@ export default function AdminDashboardClient() {
                 </div>
               </section>
 
-              <section aria-label="Key metrics">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <StatCard
-                    title="Total registered users"
-                    value={num(stats?.totalUsers)}
-                    detail="All accounts on the platform"
-                    icon={Users}
-                    tint="bg-[#F2E8D2] text-[#5A4A32]"
-                  />
-                  <StatCard
-                    title="Users active now"
-                    value={num(stats?.activeNow)}
-                    detail="Active on the site in the last 3 minutes"
-                    icon={Activity}
-                    tint="bg-emerald-50 text-emerald-700"
-                  />
-                  <StatCard
-                    title="Logged in today"
-                    value={num(stats?.loginsToday)}
-                    detail="Bangladesh time"
-                    icon={LogIn}
-                    tint="bg-[#FDF1D0] text-[#8A5A00]"
-                  />
-                  <StatCard
-                    title="Subscription records"
-                    value={num(stats?.totalSubscriptions)}
-                    detail="All recorded purchases"
-                    icon={ReceiptText}
-                    tint="bg-[#FEE9E9] text-[#B91C1C]"
-                  />
-                </div>
-              </section>
+              {metricGroups.map((group) => (
+                <section key={group.title} aria-label={group.title}>
+                  <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-[#7A6A50]">
+                    {group.title}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {group.cards.map((card) => (
+                      <StatCard key={card.title} {...card} />
+                    ))}
+                  </div>
+                </section>
+              ))}
 
-              <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1fr]">
+              <section className="grid grid-cols-1 gap-4">
                 <article className={`${CARD} p-5 sm:p-6`}>
                   <PanelHeading
                     title="Registration activity"
@@ -2063,181 +2101,6 @@ export default function AdminDashboardClient() {
                   )}
                 </article>
 
-                <article className={`${CARD} p-5 sm:p-6`}>
-                  <PanelHeading
-                    title="Subscription status"
-                    description="How recorded subscriptions are split today."
-                  />
-                  {totalSubs === 0 ? (
-                    <EmptyState
-                      icon={CreditCard}
-                      title="No subscriptions yet"
-                      hint="Status breakdown appears after the first purchase."
-                    />
-                  ) : (
-                    <div className="mt-5 space-y-5">
-                      <div
-                        className="flex h-2.5 overflow-hidden rounded-full bg-slate-100"
-                        role="img"
-                        aria-label={`${activeSubs} active, ${pendingSubs} pending, ${otherSubs} other of ${totalSubs}`}
-                      >
-                        <div
-                          className="h-full bg-emerald-500 transition-all"
-                          style={{ width: pct(activeSubs) }}
-                        />
-                        <div
-                          className="h-full bg-[#F2B93B] transition-all"
-                          style={{ width: pct(pendingSubs) }}
-                        />
-                        <div
-                          className="h-full bg-slate-300 transition-all"
-                          style={{ width: pct(otherSubs) }}
-                        />
-                      </div>
-                      <ul className="divide-y divide-slate-100 text-sm">
-                        {[
-                          {
-                            label: "Active",
-                            n: activeSubs,
-                            dot: "bg-emerald-500",
-                          },
-                          {
-                            label: "Pending payment",
-                            n: pendingSubs,
-                            dot: "bg-[#F2B93B]",
-                          },
-                          {
-                            label: "Other statuses",
-                            n: otherSubs,
-                            dot: "bg-slate-300",
-                          },
-                        ].map((row) => (
-                          <li
-                            key={row.label}
-                            className="flex items-center justify-between py-2.5"
-                          >
-                            <span className="flex items-center gap-2.5 text-slate-600">
-                              <span
-                                className={`h-2.5 w-2.5 rounded-sm ${row.dot}`}
-                              />
-                              {row.label}
-                            </span>
-                            <span className="flex items-baseline gap-2">
-                              <span className="font-semibold text-slate-900 tabular-nums">
-                                {row.n.toLocaleString("en-BD")}
-                              </span>
-                              <span className="w-10 text-right text-xs text-slate-500 tabular-nums">
-                                {Math.round((row.n / totalSubs) * 100)}%
-                              </span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                      <button
-                        onClick={() => selectTab("subscriptions")}
-                        className={`flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-700 ${FOCUS}`}
-                      >
-                        Review subscriptions <ChevronRight size={15} />
-                      </button>
-                    </div>
-                  )}
-                </article>
-              </section>
-
-              <section className={`${CARD} overflow-hidden`}>
-                <div className="p-5 pb-4 sm:px-6 sm:pt-6">
-                  <PanelHeading
-                    title="Recently registered users"
-                    description="Newest accounts, with contact details and latest activity."
-                    action={
-                      <button
-                        onClick={() => selectTab("users")}
-                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-[#DC2626] hover:text-[#B91C1C] ${FOCUS}`}
-                      >
-                        View all users <ChevronRight size={15} />
-                      </button>
-                    }
-                  />
-                </div>
-                {overviewLoading && !overview ? (
-                  <LoadingRows />
-                ) : overview?.recentUsers?.length ? (
-                  userRows(overview.recentUsers)
-                ) : (
-                  <EmptyState
-                    icon={Users}
-                    title="No users have registered yet"
-                    hint="New accounts will show up here."
-                  />
-                )}
-              </section>
-
-              <section className={`${CARD} overflow-hidden`}>
-                <div className="p-5 pb-4 sm:px-6 sm:pt-6">
-                  <PanelHeading
-                    title="Latest subscriptions"
-                    description="Recent purchases with payment and access status."
-                    action={
-                      <button
-                        onClick={() => selectTab("subscriptions")}
-                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-[#DC2626] hover:text-[#B91C1C] ${FOCUS}`}
-                      >
-                        View all <ChevronRight size={15} />
-                      </button>
-                    }
-                  />
-                </div>
-                {overviewLoading && !overview ? (
-                  <LoadingRows />
-                ) : overview?.recentSubscriptions?.length ? (
-                  subscriptionRows(overview.recentSubscriptions)
-                ) : (
-                  <EmptyState
-                    icon={CreditCard}
-                    title="No subscriptions recorded yet"
-                    hint="Purchases will show up here."
-                  />
-                )}
-              </section>
-
-              <section className={`${CARD} p-5 sm:p-6`}>
-                <PanelHeading
-                  title="Recent login activity"
-                  description="Latest successful login for each account."
-                />
-                {overview?.recentLogins?.length ? (
-                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {overview.recentLogins.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50"
-                      >
-                        <Avatar name={user.fullName} />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-slate-900">
-                            {user.fullName || "Unnamed user"}
-                          </div>
-                          <div className="truncate text-xs text-slate-500">
-                            {user.email}
-                          </div>
-                          <div className="mt-0.5 text-xs text-slate-400">
-                            {formatDate(user.lastLoginAt, true)}
-                          </div>
-                        </div>
-                        <span
-                          className={`h-2 w-2 shrink-0 rounded-full ${user.isOnline ? "bg-emerald-500" : "bg-slate-300"}`}
-                          title={user.isOnline ? "Online" : "Offline"}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={LogIn}
-                    title="No logins recorded yet"
-                    hint="Successful logins will appear here after users sign in."
-                  />
-                )}
               </section>
             </div>
           )}
