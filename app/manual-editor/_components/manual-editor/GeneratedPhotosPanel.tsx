@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Download, Eye, Image as ImageIcon, Printer, Trash2, X, } from "lucide-react";
 import { useManualEditor, type GeneratedPhoto } from "./EditorProvider";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, onUseInEditor, }: {
     photo: GeneratedPhoto;
     onClose: () => void;
@@ -138,6 +139,8 @@ export default function GeneratedPhotosPanel() {
         </div>
         <span className="text-[12px] text-[#6B5A40]"><T>{"Recent Output History\r\n        "}</T></span>
       </div>
+
+      <RetentionNotice variant="compact" />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 lg:flex lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden lg:pb-1">
         {generatedPhotos.length

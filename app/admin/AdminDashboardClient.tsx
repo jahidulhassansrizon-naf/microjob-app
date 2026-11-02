@@ -16,6 +16,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  Check,
   CircleDollarSign,
   Copy,
   Clock3,
@@ -24,8 +25,10 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  Mail,
   Menu,
   MessageCircle,
+  Phone,
   ReceiptText,
   RefreshCw,
   Search,
@@ -40,13 +43,13 @@ import {
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
-import AdminLivePanel from "./_components/AdminLivePanel";
 import SiteSettingsPanel from "./_components/SiteSettingsPanel";
 import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPanel";
 import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "live" | "settings" | "payment-gateway";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "settings" | "payment-gateway";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -177,43 +180,92 @@ function initials(name?: string) {
 }
 
 const CARD =
-  "rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
+  "rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_10px_28px_-20px_rgba(59,47,30,0.45)]";
 const FOCUS =
-  "cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40";
-const INPUT = `h-10 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10`;
-const TH = "px-5 py-3 text-xs font-medium text-slate-500";
+  "cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[#FBF6E8]";
+const INPUT = `h-10 rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] text-sm text-[#3B2F1E] outline-none transition placeholder:text-[#A8987A] hover:border-[#B8A57C] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10`;
+const TH = "px-5 py-3 text-[12px] font-semibold text-[#7A6A50]";
 
 const PILL: Record<Tone, { box: string; dot: string }> = {
   green: {
-    box: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
+    box: "bg-emerald-50 text-emerald-800 ring-emerald-600/25",
     dot: "bg-emerald-500",
   },
   amber: {
-    box: "bg-amber-50 text-amber-700 ring-amber-600/20",
-    dot: "bg-amber-500",
+    box: "bg-[#FDF1D0] text-[#8A5A00] ring-[#F2B93B]/60",
+    dot: "bg-[#E8A317]",
   },
-  red: { box: "bg-rose-50 text-rose-700 ring-rose-600/15", dot: "bg-rose-500" },
+  red: {
+    box: "bg-[#FEE9E9] text-[#B91C1C] ring-[#DC2626]/25",
+    dot: "bg-[#DC2626]",
+  },
+  // "indigo" is kept as the key for informational / brand pills (now espresso + gold).
   indigo: {
-    box: "bg-indigo-50 text-indigo-700 ring-indigo-600/15",
-    dot: "bg-indigo-500",
+    box: "bg-[#F2E8D2] text-[#3B2F1E] ring-[#D8C9A6]",
+    dot: "bg-[#F2B93B]",
   },
   slate: {
-    box: "bg-slate-100 text-slate-600 ring-slate-500/15",
-    dot: "bg-slate-400",
+    box: "bg-[#EFE5CE] text-[#5A4A32] ring-[#D8C9A6]",
+    dot: "bg-[#A8987A]",
   },
+};
+
+// Left status stripe on table rows: colour = how the record is doing.
+const STRIPE: Record<Tone, string> = {
+  green: "shadow-[inset_4px_0_0_0_#10B981]",
+  amber: "shadow-[inset_4px_0_0_0_#F2B93B]",
+  red: "shadow-[inset_4px_0_0_0_#DC2626]",
+  indigo: "shadow-[inset_4px_0_0_0_#5A4A32]",
+  slate: "shadow-[inset_4px_0_0_0_#D8C9A6]",
 };
 
 function StatusPill({ label, tone = "slate" }: { label: string; tone?: Tone }) {
   const t = PILL[tone];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${t.box}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${t.box}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${t.dot}`} />
       {label}
     </span>
   );
 }
+
+function titleCase(value?: string) {
+  const v = (value || "").trim().replace(/_/g, " ");
+  if (!v) return "Unknown";
+  return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+}
+
+// Human description of how long an access period has left (or how long ago it ended).
+function expiryInfo(expiresAt?: string | null): {
+  text: string;
+  tone: "ok" | "soon" | "gone" | "none";
+} {
+  if (!expiresAt) return { text: "", tone: "none" };
+  const end = new Date(expiresAt).getTime();
+  if (Number.isNaN(end)) return { text: "", tone: "none" };
+  const diff = end - Date.now();
+  if (diff > 0) {
+    const days = Math.ceil(diff / 86_400_000);
+    return {
+      text: days === 1 ? "1 day left" : `${days} days left`,
+      tone: days <= 3 ? "soon" : "ok",
+    };
+  }
+  const days = Math.floor(-diff / 86_400_000);
+  return {
+    text: days < 1 ? "Expired today" : `Expired ${days} day${days === 1 ? "" : "s"} ago`,
+    tone: "gone",
+  };
+}
+
+const EXPIRY_TEXT: Record<"ok" | "soon" | "gone" | "none", string> = {
+  ok: "text-emerald-700",
+  soon: "text-[#B45309]",
+  gone: "text-[#B91C1C]",
+  none: "text-[#7A6A50]",
+};
 
 function PanelHeading({
   title,
@@ -226,26 +278,89 @@ function PanelHeading({
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
-        <h2 className="text-base font-semibold tracking-tight text-slate-900">
-          {title}
-        </h2>
-        {description && (
-          <p className="mt-1 text-sm leading-5 text-slate-500">{description}</p>
-        )}
+      <div className="flex min-w-0 items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="mt-0.5 h-9 w-1 shrink-0 rounded-full bg-[#DC2626]"
+        />
+        <div className="min-w-0">
+          <h2 className="text-[17px] font-semibold tracking-tight text-[#3B2F1E]">
+            {title}
+          </h2>
+          {description && (
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-[#7A6A50]">
+              {description}
+            </p>
+          )}
+        </div>
       </div>
       {action}
     </div>
   );
 }
 
+const AVATAR_TONES = [
+  "bg-[#3B2F1E] text-[#F2B93B] ring-[#5A4A32]",
+  "bg-[#FEE9E9] text-[#B91C1C] ring-[#FBB6B6]",
+  "bg-[#FDF1D0] text-[#8A5A00] ring-[#F2B93B]/50",
+  "bg-emerald-50 text-emerald-800 ring-emerald-600/25",
+  "bg-[#F2E8D2] text-[#5A4A32] ring-[#D8C9A6]",
+];
+
 function Avatar({ name, size = "md" }: { name?: string; size?: "sm" | "md" }) {
+  let hash = 0;
+  for (const ch of name || "U") hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-indigo-50 font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100 ${size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-xs"}`}
+      className={`flex shrink-0 items-center justify-center rounded-full font-semibold ring-1 ring-inset ${AVATAR_TONES[hash % AVATAR_TONES.length]} ${size === "sm" ? "h-8 w-8 text-xs" : "h-10 w-10 text-[13px]"}`}
     >
       {initials(name)}
     </span>
+  );
+}
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={`Copy ${label}`}
+      title={copied ? "Copied" : `Copy ${label}`}
+      onClick={() => {
+        if (!navigator.clipboard?.writeText) return;
+        void navigator.clipboard
+          .writeText(value)
+          .then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1600);
+          })
+          .catch(() => undefined);
+      }}
+      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#A8987A] transition hover:bg-[#EFE5CE] hover:text-[#3B2F1E] ${FOCUS}`}
+    >
+      {copied ? (
+        <Check size={12} className="text-emerald-600" />
+      ) : (
+        <Copy size={12} />
+      )}
+    </button>
+  );
+}
+
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[56px_minmax(0,1fr)] items-baseline gap-2">
+      <dt className="text-[11px] font-medium text-[#7A6A50]">{label}</dt>
+      <dd className="flex min-w-0 items-center gap-1 text-[12.5px] font-medium text-[#3B2F1E]">
+        {children}
+      </dd>
+    </div>
   );
 }
 
@@ -260,11 +375,11 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#E3D6B8] bg-[#F2E8D2] text-[#A8987A]">
         <Icon size={20} strokeWidth={1.7} />
       </span>
-      <p className="mt-3 text-sm font-medium text-slate-700">{title}</p>
-      {hint && <p className="mt-1 max-w-sm text-sm text-slate-500">{hint}</p>}
+      <p className="mt-3 text-sm font-semibold text-[#3B2F1E]">{title}</p>
+      {hint && <p className="mt-1 max-w-sm text-sm text-[#7A6A50]">{hint}</p>}
     </div>
   );
 }
@@ -272,16 +387,16 @@ function EmptyState({
 function LoadingRows() {
   return (
     <div
-      className="divide-y divide-slate-100"
+      className="divide-y divide-[#EFE5CE]"
       aria-busy="true"
       aria-label="Loading"
     >
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="flex items-center gap-4 px-5 py-4">
-          <span className="h-9 w-9 animate-pulse rounded-full bg-slate-100" />
+          <span className="h-10 w-10 animate-pulse rounded-full bg-[#EFE5CE]" />
           <div className="flex-1 space-y-2">
-            <span className="block h-3 w-1/3 animate-pulse rounded bg-slate-100" />
-            <span className="block h-3 w-1/2 animate-pulse rounded bg-slate-100/70" />
+            <span className="block h-3 w-1/3 animate-pulse rounded bg-[#EFE5CE]" />
+            <span className="block h-3 w-1/2 animate-pulse rounded bg-[#EFE5CE]/70" />
           </div>
         </div>
       ))}
@@ -300,16 +415,16 @@ function Pager({
 }) {
   const from = p.total ? (p.page - 1) * p.limit + 1 : 0;
   const to = Math.min(p.page * p.limit, p.total);
-  const btn = `flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 ${FOCUS}`;
+  const btn = `flex h-8 w-8 items-center justify-center rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] text-[#5A4A32] transition hover:border-[#3B2F1E] hover:bg-[#F2E8D2] disabled:opacity-40 disabled:hover:border-[#D8C9A6] disabled:hover:bg-[#FFFDF6] ${FOCUS}`;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-3.5 text-sm text-slate-500">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E3D6B8] bg-[#F6EEDB] px-5 py-3.5 text-sm text-[#7A6A50]">
       <span>
         Showing{" "}
-        <span className="font-medium text-slate-700">
+        <span className="font-semibold text-[#3B2F1E]">
           {from}–{to}
         </span>{" "}
         of{" "}
-        <span className="font-medium text-slate-700">
+        <span className="font-semibold text-[#3B2F1E]">
           {p.total.toLocaleString("en-BD")}
         </span>
       </span>
@@ -322,7 +437,7 @@ function Pager({
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="min-w-[56px] text-center text-sm font-medium text-slate-700">
+        <span className="min-w-[56px] text-center text-sm font-semibold text-[#3B2F1E]">
           {p.page} / {p.pages}
         </span>
         <button
@@ -379,7 +494,6 @@ export default function AdminDashboardClient() {
   const [hoverBar, setHoverBar] = useState<number | null>(null);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [chatRefreshKey, setChatRefreshKey] = useState(0);
-  const [liveRefreshKey, setLiveRefreshKey] = useState(0);
 
   const [userSearch, setUserSearch] = useState("");
   const [appliedUserSearch, setAppliedUserSearch] = useState("");
@@ -797,29 +911,30 @@ export default function AdminDashboardClient() {
     const deactivateBusy = subscriptionActionBusyId === item.id;
     const deleteBusy = subscriptionDeleteBusyId === item.id;
     const busy = Boolean(reviewingSubscriptionId) || Boolean(subscriptionActionBusyId) || Boolean(subscriptionDeleteBusyId);
+    const base = `inline-flex h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`;
     return (
-      <div className="flex min-w-[136px] flex-col items-start gap-1.5">
+      <div className="flex w-full min-w-[150px] flex-col items-stretch gap-1.5">
         {canReview && (
           <>
             <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "approve")}
-              className="inline-flex max-w-full items-center justify-center rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
-              {reviewBusy ? "Please wait…" : "Approve"}
+              className={`${base} bg-emerald-600 text-white shadow-sm hover:bg-emerald-700`}>
+              <Check size={13} /> {reviewBusy ? "Please wait…" : "Approve payment"}
             </button>
             <button type="button" disabled={busy} onClick={() => void reviewSubscription(item, "reject")}
-              className="inline-flex max-w-full items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
-              Reject
+              className={`${base} border border-[#F3C6C6] bg-[#FFFDF6] text-[#B91C1C] hover:bg-[#FEE9E9]`}>
+              <X size={13} /> Reject
             </button>
           </>
         )}
         {active && (
           <button type="button" disabled={busy} onClick={() => void deactivateSubscription(item)}
-            className="inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50">
-            <Trash2 size={13} /> {deactivateBusy ? "Deactivating…" : "Deactivate access"}
+            className={`${base} border border-[#F2B93B]/70 bg-[#FFFDF6] text-[#8A5A00] hover:bg-[#FDF1D0]`}>
+            <Ban size={13} /> {deactivateBusy ? "Deactivating…" : "Deactivate access"}
           </button>
         )}
         <button type="button" disabled={busy} onClick={() => void deleteSubscriptionRecord(item)}
           title="Permanently delete this subscription record"
-          className="inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
+          className={`${base} border border-[#F3C6C6] bg-[#FFFDF6] text-[#B91C1C] hover:bg-[#FEE9E9]`}>
           <Trash2 size={13} /> {deleteBusy ? "Deleting…" : "Delete record"}
         </button>
       </div>
@@ -937,12 +1052,6 @@ export default function AdminDashboardClient() {
         badgeCount: chatUnreadCount,
       },
       {
-        key: "live" as const,
-        label: "Live",
-        icon: Activity,
-        badgeCount: 0,
-      },
-      {
         key: "settings" as const,
         label: "Site Settings",
         icon: Settings2,
@@ -966,11 +1075,9 @@ export default function AdminDashboardClient() {
           ? "Subscription management"
           : tab === "chats"
             ? "User chats"
-            : tab === "live"
-              ? "Live user activity"
-              : tab === "payment-gateway"
-                ? "Payment gateway configuration"
-                : "Website settings";
+            : tab === "payment-gateway"
+              ? "Payment gateway configuration"
+              : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -983,7 +1090,6 @@ export default function AdminDashboardClient() {
     else if (tab === "subscriptions")
       await loadSubscriptions(subscriptionPagination.page);
     else if (tab === "chats") setChatRefreshKey((current) => current + 1);
-    else if (tab === "live") setLiveRefreshKey((current) => current + 1);
     else if (tab === "settings") router.refresh();
     else await loadOverview();
     setRefreshing(false);
@@ -996,10 +1102,10 @@ export default function AdminDashboardClient() {
 
   if (booting || !authorized) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <main className="admin-theme flex min-h-screen items-center justify-center bg-[#EFE5CE] px-4">
         <div className={`${CARD} flex items-center gap-3 px-5 py-4`}>
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-          <span className="text-sm font-medium text-slate-600">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#DC2626] border-t-transparent" />
+          <span className="text-sm font-medium text-[#5A4A32]">
             Verifying administrator access…
           </span>
         </div>
@@ -1025,145 +1131,180 @@ export default function AdminDashboardClient() {
     tint: string;
   }) => (
     <article className={`${CARD} p-5`}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-500">{title}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium text-[#7A6A50]">{title}</p>
+          <p className="mt-2.5 text-[30px] font-semibold leading-none tracking-tight text-[#3B2F1E] tabular-nums">
+            {value}
+          </p>
+        </div>
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tint}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tint}`}
         >
-          <Icon size={18} strokeWidth={1.8} />
+          <Icon size={19} strokeWidth={1.8} />
         </span>
       </div>
-      <p className="mt-3 text-[28px] font-semibold leading-none tracking-tight text-slate-900 tabular-nums">
-        {value}
-      </p>
-      {detail && <p className="mt-2.5 text-xs text-slate-500">{detail}</p>}
+      {detail && (
+        <p className="mt-4 border-t border-[#EFE5CE] pt-3 text-xs text-[#7A6A50]">
+          {detail}
+        </p>
+      )}
     </article>
   );
+
+  const openManage = (user: UserRow) => {
+    setAccessModalUser(user);
+    setAccessDurationMonths("6");
+    setAccessError("");
+    setUsersNotice("");
+    setUserActionError("");
+    setTemporaryPassword("");
+    setTemporaryPasswordCopied(false);
+    setConfirmingUserDelete(false);
+    setDeleteUserConfirmationText("");
+    setDeleteUserError("");
+  };
+
+  const manageButtonClass = `inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#3B2F1E] px-3 py-2 text-xs font-semibold text-[#FBF6E8] shadow-sm transition hover:bg-[#5A4A32] ${FOCUS}`;
 
   const userRows = (rows: UserRow[]) => (
     <>
       {/* Desktop table */}
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[900px] border-collapse text-left">
+        <table className="w-full min-w-[960px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-slate-100 bg-slate-50/70">
+            <tr className="border-y border-[#E3D6B8] bg-[#F2E8D2]">
               <th className={TH}>User</th>
               <th className={TH}>Contact</th>
               <th className={TH}>Status</th>
               <th className={TH}>Subscription</th>
-              <th className={TH}>Last login</th>
+              <th className={TH}>Activity</th>
               {tab === "users" && <th className={TH}>Access control</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((user) => (
-              <tr
-                key={user.id}
-                className="transition-colors hover:bg-slate-50/70"
-              >
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <Avatar name={user.fullName} />
-                    <div className="min-w-0">
-                      <div className="max-w-[200px] truncate text-sm font-medium text-slate-900">
-                        {user.fullName || "Unnamed user"}
-                      </div>
-                      <div className="mt-0.5 text-xs text-slate-500">
-                        {user.role === "admin" ? "Administrator" : "User"}
+          <tbody className="divide-y divide-[#EFE5CE]">
+            {rows.map((user) => {
+              const stripe: Tone = user.isBanned
+                ? "red"
+                : user.isOnline
+                  ? "green"
+                  : "slate";
+              const subExpiry = expiryInfo(user.subscription?.expiresAt);
+              return (
+                <tr
+                  key={user.id}
+                  className="align-top transition-colors hover:bg-[#F6EEDB]"
+                >
+                  <td className={`px-5 py-4 ${STRIPE[stripe]}`}>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={user.fullName} />
+                      <div className="min-w-0">
+                        <div className="max-w-[200px] truncate text-sm font-semibold text-[#3B2F1E]">
+                          {user.fullName || "Unnamed user"}
+                        </div>
+                        <div className="mt-1">
+                          {user.role === "admin" ? (
+                            <StatusPill label="Administrator" tone="indigo" />
+                          ) : (
+                            <span className="text-xs text-[#7A6A50]">Regular user</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="max-w-[240px] truncate text-sm text-slate-700">
-                    {user.email || "—"}
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-500 tabular-nums">
-                    {user.phoneNumber || "No phone"}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex flex-col items-start gap-1.5">
-                    {user.isBanned && <StatusPill label="Tools blocked" tone="red" />}
-                    {user.isOnline ? (
-                      <StatusPill label="Online now" tone="green" />
-                    ) : (
-                      <StatusPill label="Offline" />
-                    )}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="space-y-2">
-                    {user.subscription ? (
-                      <div>
-                        <StatusPill label="Paid plan active" tone="indigo" />
-                        <p className="mt-1 text-xs text-slate-500">
-                          {user.subscription.planName}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-400">
-                        {user.manualAccess?.isActive ? "No paid plan" : "No active plan"}
-                      </span>
-                    )}
-                    {user.manualAccess?.isActive && (
-                      <div>
-                        <StatusPill label="Admin access active" tone="green" />
-                        <p className="mt-1 text-xs text-slate-500">
-                          Until {formatDate(user.manualAccess.expiresAt)}
-                        </p>
-                      </div>
-                    )}
-                    {user.manualAccess?.enabled && !user.manualAccess.isActive && (
-                      <StatusPill label="Manual access expired" tone="amber" />
-                    )}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="text-sm text-slate-700">
-                    {formatDate(user.lastLoginAt, true)}
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-500">
-                    {user.loginCount}{" "}
-                    {user.loginCount === 1 ? "login" : "logins"}
-                  </div>
-                </td>
-                {tab === "users" && (
-                  <td className="px-5 py-3.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAccessModalUser(user);
-                        setAccessDurationMonths("6");
-                        setAccessError("");
-                        setUsersNotice("");
-                        setUserActionError("");
-                        setTemporaryPassword("");
-                        setTemporaryPasswordCopied(false);
-                        setConfirmingUserDelete(false);
-                        setDeleteUserConfirmationText("");
-                        setDeleteUserError("");
-                      }}
-                      className="inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
-                    >
-                      Manage access
-                    </button>
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-1.5 text-sm text-[#3B2F1E]">
+                      <Mail size={13} className="shrink-0 text-[#A8987A]" />
+                      <span className="max-w-[230px] truncate">{user.email || "—"}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-[#7A6A50] tabular-nums">
+                      <Phone size={12} className="shrink-0 text-[#A8987A]" />
+                      {user.phoneNumber || "No phone"}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex flex-col items-start gap-1.5">
+                      {user.isBanned && <StatusPill label="Tools blocked" tone="red" />}
+                      {user.isOnline ? (
+                        <StatusPill label="Online now" tone="green" />
+                      ) : (
+                        <StatusPill label="Offline" />
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="space-y-2.5">
+                      {user.subscription ? (
+                        <div>
+                          <StatusPill label="Paid plan active" tone="green" />
+                          <p className="mt-1.5 text-xs font-semibold text-[#3B2F1E]">
+                            {user.subscription.planName}
+                          </p>
+                          <p className="text-xs text-[#7A6A50]">
+                            Until {formatDate(user.subscription.expiresAt)}
+                            {subExpiry.text && (
+                              <span className={`ml-1 font-semibold ${EXPIRY_TEXT[subExpiry.tone]}`}>
+                                · {subExpiry.text}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-[#A8987A]">
+                          {user.manualAccess?.isActive ? "No paid plan" : "No active plan"}
+                        </span>
+                      )}
+                      {user.manualAccess?.isActive && (
+                        <div>
+                          <StatusPill label="Admin access active" tone="indigo" />
+                          <p className="mt-1 text-xs text-[#7A6A50]">
+                            Until {formatDate(user.manualAccess.expiresAt)}
+                          </p>
+                        </div>
+                      )}
+                      {user.manualAccess?.enabled && !user.manualAccess.isActive && (
+                        <StatusPill label="Manual access expired" tone="amber" />
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="text-sm text-[#3B2F1E]">
+                      {formatDate(user.lastLoginAt, true)}
+                    </div>
+                    <div className="mt-0.5 text-xs text-[#7A6A50]">
+                      Last login · {user.loginCount}{" "}
+                      {user.loginCount === 1 ? "login" : "logins"}
+                    </div>
+                    <div className="mt-1 text-xs text-[#A8987A]">
+                      Joined {formatDate(user.createdAt)}
+                    </div>
+                  </td>
+                  {tab === "users" && (
+                    <td className="px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={() => openManage(user)}
+                        className={manageButtonClass}
+                      >
+                        <UserCog size={14} /> Manage access
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       {/* Mobile cards */}
-      <ul className="divide-y divide-slate-100 border-t border-slate-100 md:hidden">
+      <ul className="divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:hidden">
         {rows.map((user) => (
           <li key={user.id} className="px-4 py-4">
             <div className="flex items-start gap-3">
               <Avatar name={user.fullName} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-slate-900">
+                  <span className="truncate text-sm font-semibold text-[#3B2F1E]">
                     {user.fullName || "Unnamed user"}
                   </span>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -1175,13 +1316,13 @@ export default function AdminDashboardClient() {
                     )}
                   </div>
                 </div>
-                <div className="mt-1 truncate text-sm text-slate-600">
+                <div className="mt-1 truncate text-sm text-[#5A4A32]">
                   {user.email || "—"}
                 </div>
-                <div className="text-xs text-slate-500 tabular-nums">
+                <div className="text-xs text-[#7A6A50] tabular-nums">
                   {user.phoneNumber || "No phone"}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#7A6A50]">
                   <span>
                     {user.subscription
                       ? `Plan: ${user.subscription.planName}`
@@ -1191,8 +1332,8 @@ export default function AdminDashboardClient() {
                 </div>
                 {user.manualAccess?.isActive && (
                   <div className="mt-2">
-                    <StatusPill label="Admin access active" tone="green" />
-                    <p className="mt-1 text-xs text-slate-500">
+                    <StatusPill label="Admin access active" tone="indigo" />
+                    <p className="mt-1 text-xs text-[#7A6A50]">
                       Until {formatDate(user.manualAccess.expiresAt)}
                     </p>
                   </div>
@@ -1200,21 +1341,10 @@ export default function AdminDashboardClient() {
                 {tab === "users" && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setAccessModalUser(user);
-                      setAccessDurationMonths("6");
-                      setAccessError("");
-                      setUsersNotice("");
-                      setUserActionError("");
-                      setTemporaryPassword("");
-                      setTemporaryPasswordCopied(false);
-                      setConfirmingUserDelete(false);
-                      setDeleteUserConfirmationText("");
-                      setDeleteUserError("");
-                    }}
-                    className="mt-3 inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+                    onClick={() => openManage(user)}
+                    className={`mt-3 ${manageButtonClass}`}
                   >
-                    Manage access
+                    <UserCog size={14} /> Manage access
                   </button>
                 )}
               </div>
@@ -1228,135 +1358,221 @@ export default function AdminDashboardClient() {
   const subscriptionRows = (rows: SubscriptionRow[]) => (
     <>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[1040px] border-collapse text-left">
+        <table className="w-full min-w-[1180px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-slate-100 bg-slate-50/70">
+            <tr className="border-y border-[#E3D6B8] bg-[#F2E8D2]">
               <th className={TH}>Customer</th>
               <th className={TH}>Plan</th>
               <th className={`${TH} text-right`}>Amount</th>
               <th className={TH}>Payment</th>
               <th className={TH}>Access</th>
-              <th className={TH}>Expires</th>
-              <th className={`${TH} min-w-[150px]`}>Actions</th>
+              <th className={TH}>Validity</th>
+              <th className={`${TH} min-w-[170px]`}>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#EFE5CE]">
             {rows.map((item) => {
               const { active, paymentTone, accessTone } =
                 subscriptionTones(item);
+              const duration = subscriptionDurationLabel(item.planId, item.months);
+              const sameAsPlan =
+                duration.toLowerCase().replace(/\s/g, "") ===
+                (item.planName || "").toLowerCase().replace(/\s/g, "");
+              const exp = expiryInfo(item.expiresAt);
+              const invoice = item.invoiceId || "";
+              const methodDiffers =
+                item.paymentMethod &&
+                item.paymentMethod.toLowerCase() !==
+                  (item.paymentProvider || "").toLowerCase();
               return (
                 <tr
                   key={item.id}
-                  className="transition-colors hover:bg-slate-50/70"
+                  className="align-top transition-colors hover:bg-[#F6EEDB]"
                 >
-                  <td className="px-5 py-3.5">
-                    <div className="text-sm font-medium text-slate-900">
-                      {item.user?.fullName || "Unknown user"}
+                  <td className={`px-5 py-4 ${STRIPE[active ? "green" : item.paymentStatus === "COMPLETED" ? "slate" : paymentTone]}`}>
+                    <div className="flex items-start gap-3">
+                      <Avatar name={item.user?.fullName} />
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-[#3B2F1E]">
+                          {item.user?.fullName || "Unknown user"}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-[#5A4A32]">
+                          <Mail size={12} className="shrink-0 text-[#A8987A]" />
+                          <span className="max-w-[200px] truncate">
+                            {item.user?.email || "Account unavailable"}
+                          </span>
+                        </div>
+                        {item.user?.phoneNumber && (
+                          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[#7A6A50] tabular-nums">
+                            <Phone size={12} className="shrink-0 text-[#A8987A]" />
+                            {item.user.phoneNumber}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500">
-                      {item.user?.email || "Account unavailable"}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="text-sm font-semibold text-[#3B2F1E]">
+                      {item.planName || item.planId}
                     </div>
-                    {item.user?.phoneNumber && (
-                      <div className="text-xs text-slate-500 tabular-nums">
-                        {item.user.phoneNumber}
+                    {!sameAsPlan && (
+                      <div className="mt-0.5 text-xs text-[#7A6A50]">{duration}</div>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <div className="text-[15px] font-semibold text-[#3B2F1E] tabular-nums">
+                      {money(item.amount)}
+                    </div>
+                    <div className="mt-1 flex items-center justify-end gap-1 text-xs text-[#7A6A50]">
+                      {invoice ? (
+                        <>
+                          <span className="adm-trx max-w-[110px] truncate" title={invoice}>
+                            {invoice}
+                          </span>
+                          <CopyButton value={invoice} label="invoice ID" />
+                        </>
+                      ) : (
+                        "No invoice"
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <StatusPill
+                      label={titleCase(item.paymentStatus)}
+                      tone={paymentTone}
+                    />
+                    {(item.paymentProvider || methodDiffers || item.transactionId || item.senderNumber) && (
+                      <dl className="mt-2.5 w-[240px] space-y-1.5 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2.5">
+                        {item.paymentProvider && (
+                          <DetailRow label="Gateway">{item.paymentProvider}</DetailRow>
+                        )}
+                        {methodDiffers && (
+                          <DetailRow label="Method">{item.paymentMethod}</DetailRow>
+                        )}
+                        {item.transactionId && (
+                          <DetailRow label="TrxID">
+                            <span className="adm-trx break-all">{item.transactionId}</span>
+                            <CopyButton value={item.transactionId} label="transaction ID" />
+                          </DetailRow>
+                        )}
+                        {item.senderNumber && (
+                          <DetailRow label="Sender">
+                            <span className="tabular-nums">{item.senderNumber}</span>
+                          </DetailRow>
+                        )}
+                      </dl>
+                    )}
+                    {item.reviewNote && (
+                      <div className="mt-2 w-[240px] rounded-lg border border-[#F3C6C6] bg-[#FEE9E9] px-3 py-2 text-xs leading-5 text-[#B91C1C]">
+                        {item.reviewNote}
                       </div>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="text-sm font-medium text-slate-800">
-                      {item.planName || item.planId}
-                    </div>
-                    <div className="mt-0.5 text-xs text-slate-500">
-                      {subscriptionDurationLabel(item.planId, item.months)}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="text-sm font-semibold text-slate-900 tabular-nums">
-                      {money(item.amount)}
-                    </div>
-                    <div className="ml-auto mt-0.5 max-w-[140px] truncate text-xs text-slate-500">
-                      {item.invoiceId || item.transactionId || "No invoice"}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-5 py-4">
                     <StatusPill
-                      label={item.paymentStatus || "Unknown"}
-                      tone={paymentTone}
-                    />
-                    {item.paymentProvider && <div className="mt-1 text-xs font-semibold text-slate-500">Provider: {item.paymentProvider}</div>}
-                    {item.paymentMethod && <div className="mt-1 text-xs font-semibold text-slate-700">{item.paymentMethod}</div>}
-                    {item.transactionId && <div className="mt-1 max-w-[190px] break-all text-xs text-slate-500">TrxID: {item.transactionId}</div>}
-                    {item.senderNumber && <div className="mt-1 text-xs text-slate-500">From: {item.senderNumber}</div>}
-                    {item.reviewNote && <div className="mt-1 max-w-[200px] text-xs text-rose-700">Note: {item.reviewNote}</div>}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <StatusPill
-                      label={active ? "Active" : item.accessStatus || "Unknown"}
+                      label={active ? "Active" : titleCase(item.accessStatus)}
                       tone={accessTone}
                     />
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="text-sm text-slate-700">
-                      {formatDate(item.expiresAt)}
-                    </div>
-                    <div className="mt-0.5 text-xs text-slate-500">
-                      Started {formatDate(item.startedAt)}
+                  <td className="px-5 py-4">
+                    {item.expiresAt ? (
+                      <>
+                        <div className="text-sm font-semibold text-[#3B2F1E]">
+                          {formatDate(item.expiresAt)}
+                        </div>
+                        {exp.text && (
+                          <div className={`mt-0.5 text-xs font-semibold ${EXPIRY_TEXT[exp.tone]}`}>
+                            {exp.text}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-sm text-[#A8987A]">No access period</div>
+                    )}
+                    <div className="mt-1 text-xs text-[#7A6A50]">
+                      {item.startedAt
+                        ? `Started ${formatDate(item.startedAt)}`
+                        : "Not activated"}
                     </div>
                   </td>
-                  <td className="px-3 py-3 align-top">{subscriptionReviewActions(item)}</td>
+                  <td className="px-4 py-4">{subscriptionReviewActions(item)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      <ul className="divide-y divide-slate-100 border-t border-slate-100 md:hidden">
+      <ul className="divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:hidden">
         {rows.map((item) => {
           const { active, paymentTone, accessTone } = subscriptionTones(item);
+          const exp = expiryInfo(item.expiresAt);
           return (
             <li key={item.id} className="px-4 py-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-slate-900">
-                    {item.user?.fullName || "Unknown user"}
-                  </div>
-                  <div className="truncate text-xs text-slate-500">
-                    {item.user?.email || "Account unavailable"}
+                <div className="flex min-w-0 items-start gap-3">
+                  <Avatar name={item.user?.fullName} size="sm" />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-[#3B2F1E]">
+                      {item.user?.fullName || "Unknown user"}
+                    </div>
+                    <div className="truncate text-xs text-[#7A6A50]">
+                      {item.user?.email || "Account unavailable"}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-slate-900 tabular-nums">
+                  <div className="text-sm font-semibold text-[#3B2F1E] tabular-nums">
                     {money(item.amount)}
                   </div>
-                  <div className="text-xs text-slate-500">
-                    {item.planName || item.planId} · {subscriptionDurationLabel(item.planId, item.months)}
+                  <div className="text-xs text-[#7A6A50]">
+                    {item.planName || item.planId}
                   </div>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <StatusPill
-                  label={item.paymentStatus || "Unknown"}
+                  label={`Payment: ${titleCase(item.paymentStatus)}`}
                   tone={paymentTone}
                 />
                 <StatusPill
-                  label={active ? "Active" : item.accessStatus || "Unknown"}
+                  label={`Access: ${active ? "Active" : titleCase(item.accessStatus)}`}
                   tone={accessTone}
                 />
               </div>
-              <div className="mt-2 text-xs text-slate-500">
-                Expires {formatDate(item.expiresAt)} · Started{" "}
-                {formatDate(item.startedAt)}
+              <div className="mt-2 text-xs text-[#7A6A50]">
+                {item.expiresAt ? (
+                  <>
+                    Expires {formatDate(item.expiresAt)}
+                    {exp.text && (
+                      <span className={`ml-1 font-semibold ${EXPIRY_TEXT[exp.tone]}`}>
+                        · {exp.text}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  "No access period"
+                )}
+                {item.startedAt ? ` · Started ${formatDate(item.startedAt)}` : ""}
               </div>
-              {(item.paymentMethod || item.transactionId || item.senderNumber) && (
-                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-                  {item.paymentProvider && <div>Provider: <strong>{item.paymentProvider}</strong></div>}
-                  {item.paymentMethod && <div>Method: <strong>{item.paymentMethod}</strong></div>}
-                  {item.transactionId && <div className="mt-1 break-all">TrxID: <strong>{item.transactionId}</strong></div>}
-                  {item.senderNumber && <div className="mt-1">Sender: <strong>{item.senderNumber}</strong></div>}
-                  {item.reviewNote && <div className="mt-1 text-rose-700">Note: {item.reviewNote}</div>}
+              {(item.paymentProvider || item.paymentMethod || item.transactionId || item.senderNumber) && (
+                <dl className="mt-2.5 space-y-1.5 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2.5">
+                  {item.paymentProvider && <DetailRow label="Gateway">{item.paymentProvider}</DetailRow>}
+                  {item.paymentMethod && <DetailRow label="Method">{item.paymentMethod}</DetailRow>}
+                  {item.transactionId && (
+                    <DetailRow label="TrxID">
+                      <span className="adm-trx break-all">{item.transactionId}</span>
+                      <CopyButton value={item.transactionId} label="transaction ID" />
+                    </DetailRow>
+                  )}
+                  {item.senderNumber && <DetailRow label="Sender">{item.senderNumber}</DetailRow>}
+                </dl>
+              )}
+              {item.reviewNote && (
+                <div className="mt-2 rounded-lg border border-[#F3C6C6] bg-[#FEE9E9] px-3 py-2 text-xs text-[#B91C1C]">
+                  {item.reviewNote}
                 </div>
               )}
-              {subscriptionReviewActions(item) && <div className="mt-3">{subscriptionReviewActions(item)}</div>}
+              <div className="mt-3">{subscriptionReviewActions(item)}</div>
             </li>
           );
         })}
@@ -1389,73 +1605,110 @@ export default function AdminDashboardClient() {
     options: [string, string][];
     label: string;
   }) => (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        opts.apply();
-      }}
-      className="flex flex-col gap-2 px-5 py-4 sm:flex-row"
-    >
-      <div className="relative min-w-0 flex-1">
-        <Search
-          size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-        />
-        <input
-          value={opts.value}
-          onChange={(e) => opts.setValue(e.target.value)}
-          placeholder={opts.placeholder}
-          aria-label={opts.placeholder}
-          className={`${INPUT} w-full pl-9 pr-3`}
-        />
+    <div className="space-y-3 px-5 py-4 sm:px-6">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          opts.apply();
+        }}
+        className="flex flex-col gap-2 sm:flex-row"
+      >
+        <div className="relative min-w-0 flex-1">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8987A]"
+          />
+          <input
+            value={opts.value}
+            onChange={(e) => opts.setValue(e.target.value)}
+            placeholder={opts.placeholder}
+            aria-label={opts.placeholder}
+            className={`${INPUT} w-full pl-9 pr-3`}
+          />
+        </div>
+        <button
+          type="submit"
+          className={`h-10 rounded-lg bg-[#DC2626] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C] active:scale-[0.98] ${FOCUS}`}
+        >
+          {opts.label}
+        </button>
+      </form>
+      <div
+        role="group"
+        aria-label="Filter by status"
+        className="flex flex-wrap gap-1.5"
+      >
+        {opts.options.map(([v, l]) => {
+          const on = opts.status === v;
+          return (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={on}
+              onClick={() => opts.setStatus(v)}
+              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${FOCUS} ${on ? "border-[#3B2F1E] bg-[#3B2F1E] text-[#FBF6E8] shadow-sm" : "border-[#D8C9A6] bg-[#FFFDF6] text-[#5A4A32] hover:border-[#3B2F1E] hover:text-[#3B2F1E]"}`}
+            >
+              {l}
+            </button>
+          );
+        })}
       </div>
-      <select
-        value={opts.status}
-        onChange={(e) => opts.setStatus(e.target.value)}
-        aria-label="Filter"
-        className={`${INPUT} cursor-pointer px-3 font-medium`}
-      >
-        {opts.options.map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-      <button
-        type="submit"
-        className={`h-10 rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 ${FOCUS}`}
-      >
-        {opts.label}
-      </button>
-    </form>
+    </div>
   );
 
+  const summaryRows = [
+    {
+      icon: CircleDollarSign,
+      tint: "bg-[#FEE9E9] text-[#B91C1C]",
+      label: "Recorded revenue",
+      detail: "Total of recorded subscription amounts",
+      value: overviewLoading ? "—" : money(stats?.totalRevenue),
+    },
+    {
+      icon: BadgeCheck,
+      tint: "bg-emerald-50 text-emerald-700",
+      label: "Active subscribers",
+      detail: `${(stats?.activeSubscriptions || 0).toLocaleString("en-BD")} active subscription records`,
+      value: num(stats?.activeSubscribers),
+    },
+    {
+      icon: Clock3,
+      tint: "bg-[#FDF1D0] text-[#8A5A00]",
+      label: "Pending payments",
+      detail: "Awaiting payment confirmation",
+      value: num(stats?.pendingPayments),
+    },
+  ];
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <main className="admin-theme min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] antialiased">
       {mobileNavOpen && (
         <button
           aria-label="Close navigation"
           onClick={() => setMobileNavOpen(false)}
-          className="fixed inset-0 z-40 cursor-pointer bg-slate-900/20 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 z-40 cursor-pointer bg-[#2A2118]/50 backdrop-blur-[2px] md:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 md:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"}`}
+        className={`adm-sidebar fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col bg-gradient-to-b from-[#3B2F1E] to-[#2A2118] text-[#FBF6E8] transition-transform duration-200 md:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
       >
-        <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#DC2626] text-white shadow-[0_6px_14px_-6px_rgba(220,38,38,0.9)]">
             <ShieldCheck size={19} strokeWidth={1.9} />
           </div>
-          <div className="leading-tight">
-            <div className="text-[15px] font-semibold tracking-tight text-slate-900">
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-[15px] font-semibold tracking-tight text-white">
               {siteSettings.branding.siteName || "Website"}
             </div>
-            <div className="text-xs text-slate-500">Admin workspace</div>
+            <div className="flex items-center gap-1.5 text-xs text-[#F2B93B]">
+              <span aria-hidden="true" className="h-[2px] w-3 bg-[#F2B93B]" />
+              Admin workspace
+            </div>
           </div>
           <button
             onClick={() => setMobileNavOpen(false)}
-            className={`ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 md:hidden ${FOCUS}`}
+            className={`ml-auto rounded-lg p-1.5 text-[#E3D6B8] hover:bg-white/10 md:hidden ${FOCUS}`}
             aria-label="Close menu"
           >
             <X size={18} />
@@ -1466,10 +1719,10 @@ export default function AdminDashboardClient() {
           className="flex-1 overflow-y-auto px-3 pt-5"
           aria-label="Admin navigation"
         >
-          <div className="px-3 pb-2 text-xs font-medium text-slate-400">
+          <div className="px-3 pb-2 text-xs font-medium text-[#E3D6B8]/60">
             Workspace
           </div>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {navItems.map(({ key, label, icon: Icon, badgeCount }) => {
               const on = tab === key;
               return (
@@ -1477,19 +1730,19 @@ export default function AdminDashboardClient() {
                   key={key}
                   onClick={() => selectTab(key)}
                   aria-current={on ? "page" : undefined}
-                  className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${FOCUS} ${on ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                  className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${FOCUS} focus-visible:ring-offset-[#2A2118] ${on ? "bg-[#FBF6E8]/12 text-white" : "text-[#E3D6B8] hover:bg-white/8 hover:text-white"}`}
                 >
                   {on && (
-                    <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-indigo-600" />
+                    <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-[#F2B93B]" />
                   )}
                   <Icon
                     size={18}
                     strokeWidth={1.8}
-                    className={on ? "text-indigo-600" : "text-slate-400"}
+                    className={on ? "text-[#F2B93B]" : "text-[#E3D6B8]/60"}
                   />
                   <span className="min-w-0 flex-1">{label}</span>
                   {badgeCount > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#DC2626] px-1.5 text-[10px] font-bold text-white">
                       {badgeCount > 99 ? "99+" : badgeCount}
                     </span>
                   )}
@@ -1499,32 +1752,32 @@ export default function AdminDashboardClient() {
           </div>
         </nav>
 
-        <div className="space-y-3 border-t border-slate-100 p-4">
-          <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
-            <span className="flex items-center gap-2 text-slate-600">
+        <div className="space-y-3 border-t border-white/10 p-4">
+          <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm">
+            <span className="flex items-center gap-2 text-[#E3D6B8]">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
               Online now
             </span>
-            <span className="font-semibold text-slate-900 tabular-nums">
+            <span className="font-semibold text-white tabular-nums">
               {activeCount}
             </span>
           </div>
-          <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2.5">
+          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-2.5">
             <Avatar name={displayName} />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-slate-900">
+              <div className="truncate text-sm font-semibold text-white">
                 {displayName}
               </div>
-              <div className="truncate text-xs text-slate-500">
+              <div className="truncate text-xs text-[#E3D6B8]/70">
                 {admin?.email || "Administrator"}
               </div>
             </div>
             <button
               onClick={() => void logOut()}
-              className={`rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 ${FOCUS}`}
+              className={`rounded-lg p-2 text-[#E3D6B8]/70 transition hover:bg-[#DC2626]/20 hover:text-white focus-visible:ring-offset-[#2A2118] ${FOCUS}`}
               aria-label="Sign out"
               title="Sign out"
             >
@@ -1534,33 +1787,33 @@ export default function AdminDashboardClient() {
         </div>
       </aside>
 
-      <div className="min-h-screen md:pl-[256px]">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8">
+      <div className="min-h-screen md:pl-[264px]">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#E3D6B8] bg-[#FBF6E8]/90 px-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className={`rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 md:hidden ${FOCUS}`}
+              className={`rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] p-2 text-[#5A4A32] hover:bg-[#F2E8D2] md:hidden ${FOCUS}`}
               aria-label="Open menu"
             >
               <Menu size={18} />
             </button>
             <div className="min-w-0">
-              <div className="truncate text-xs text-slate-500">
+              <div className="truncate text-xs text-[#7A6A50]">
                 Administration / {navItems.find((i) => i.key === tab)?.label}
               </div>
-              <h1 className="truncate text-base font-semibold tracking-tight text-slate-900">
+              <h1 className="truncate text-base font-semibold tracking-tight text-[#3B2F1E]">
                 {pageTitle}
               </h1>
             </div>
           </div>
           <div className="ml-3 flex shrink-0 items-center gap-3">
-            <span className="hidden max-w-[220px] truncate text-sm text-slate-500 lg:inline">
+            <span className="hidden max-w-[240px] truncate rounded-full border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-1.5 text-xs font-medium text-[#5A4A32] lg:inline">
               {admin?.email}
             </span>
             <button
               onClick={() => void refreshCurrent()}
               disabled={refreshing}
-              className={`inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-indigo-700 disabled:opacity-60 ${FOCUS}`}
+              className={`inline-flex h-9 items-center gap-2 rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] px-3 text-sm font-semibold text-[#5A4A32] shadow-sm transition hover:border-[#3B2F1E] hover:text-[#3B2F1E] disabled:opacity-60 ${FOCUS}`}
             >
               <RefreshCw
                 size={15}
@@ -1575,13 +1828,13 @@ export default function AdminDashboardClient() {
           {globalError && (
             <div
               role="alert"
-              className="mb-5 flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              className="mb-5 flex items-start gap-3 rounded-xl border border-[#F3C6C6] bg-[#FEE9E9] px-4 py-3 text-sm text-[#B91C1C]"
             >
               <Activity size={17} className="mt-0.5 shrink-0" />
               <div className="flex-1">{globalError}</div>
               <button
                 onClick={() => void loadOverview()}
-                className="cursor-pointer text-sm font-medium underline underline-offset-2"
+                className="cursor-pointer text-sm font-semibold underline underline-offset-2"
               >
                 Retry
               </button>
@@ -1590,75 +1843,119 @@ export default function AdminDashboardClient() {
 
           {tab === "overview" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-end justify-between gap-2">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-                    Welcome back, {displayName.split(" ")[0]}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Users, activity and subscription performance at a glance.
-                  </p>
-                </div>
-                {overview?.generatedAt && (
-                  <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Clock3 size={13} />
-                    Updated {formatDate(overview.generatedAt, true)}
-                  </p>
-                )}
-              </div>
+              <section
+                aria-label="Welcome"
+                className="relative overflow-hidden rounded-2xl border border-[#5A4A32] bg-[#3B2F1E] text-white shadow-[0_14px_36px_-16px_rgba(59,47,30,0.65)]"
+              >
+                <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.05fr_1fr]">
+                  <div className="flex flex-col justify-center">
+                    <div className="flex items-center gap-3">
+                      <span aria-hidden="true" className="h-[2px] w-8 bg-[#F2B93B]" />
+                      <span className="text-sm font-medium text-[#F2B93B]">
+                        Admin overview
+                      </span>
+                    </div>
+                    <h2 className="mt-4 text-[28px] font-bold leading-tight tracking-tight sm:text-[34px]">
+                      Welcome back, {displayName.split(" ")[0]}
+                    </h2>
+                    <p className="mt-2 max-w-md text-[15px] leading-6 text-[#E3D6B8]">
+                      Payments, subscriptions and users — everything you need to
+                      check, in one place.
+                    </p>
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setSubscriptionStatus("pending");
+                          selectTab("subscriptions");
+                        }}
+                        className={`inline-flex items-center gap-2 rounded-md bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#B91C1C] active:scale-[0.98] focus-visible:ring-offset-[#3B2F1E] ${FOCUS}`}
+                      >
+                        View pending payments
+                        <ChevronRight size={15} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSubscriptionStatus("all");
+                          selectTab("subscriptions");
+                        }}
+                        className={`inline-flex items-center rounded-md border border-[#FBF6E8]/35 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#FBF6E8]/10 focus-visible:ring-offset-[#3B2F1E] ${FOCUS}`}
+                      >
+                        All subscriptions
+                      </button>
+                    </div>
+                    {overview?.generatedAt && (
+                      <p className="mt-5 flex items-center gap-1.5 text-xs text-[#E3D6B8]/70">
+                        <Clock3 size={13} />
+                        Updated {formatDate(overview.generatedAt, true)}
+                      </p>
+                    )}
+                  </div>
 
-              <section aria-label="Key metrics" className="space-y-4">
+                  <div className="rounded-xl bg-[#FBF6E8] p-5 text-[#3B2F1E] shadow-[0_8px_24px_-10px_rgba(0,0,0,0.55)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-[15px] font-semibold">
+                        Subscription summary
+                      </h3>
+                      <span className="rounded-md bg-[#F2B93B] px-1.5 py-[2px] text-[11px] font-bold leading-none text-[#3B2F1E]">
+                        All time
+                      </span>
+                    </div>
+                    <dl className="mt-2 divide-y divide-[#E3D6B8]">
+                      {summaryRows.map((row) => (
+                        <div
+                          key={row.label}
+                          className="flex items-center gap-3 py-3.5"
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${row.tint}`}
+                          >
+                            <row.icon size={19} strokeWidth={1.8} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <dt className="text-sm font-semibold">{row.label}</dt>
+                            <dd className="mt-0.5 text-xs text-[#7A6A50]">
+                              {row.detail}
+                            </dd>
+                          </div>
+                          <span className="text-[22px] font-semibold leading-none tracking-tight tabular-nums">
+                            {row.value}
+                          </span>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              </section>
+
+              <section aria-label="Key metrics">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <StatCard
                     title="Total registered users"
                     value={num(stats?.totalUsers)}
                     detail="All accounts on the platform"
                     icon={Users}
-                    tint="bg-indigo-50 text-indigo-600"
+                    tint="bg-[#F2E8D2] text-[#5A4A32]"
                   />
                   <StatCard
                     title="Users active now"
                     value={num(stats?.activeNow)}
-                    detail="Live connection status"
+                    detail="Active on the site in the last 3 minutes"
                     icon={Activity}
-                    tint="bg-emerald-50 text-emerald-600"
+                    tint="bg-emerald-50 text-emerald-700"
                   />
                   <StatCard
                     title="Logged in today"
                     value={num(stats?.loginsToday)}
                     detail="Bangladesh time"
                     icon={LogIn}
-                    tint="bg-sky-50 text-sky-600"
+                    tint="bg-[#FDF1D0] text-[#8A5A00]"
                   />
-                  <StatCard
-                    title="Active subscribers"
-                    value={num(stats?.activeSubscribers)}
-                    detail={`${(stats?.activeSubscriptions || 0).toLocaleString("en-BD")} active subscription records`}
-                    icon={BadgeCheck}
-                    tint="bg-violet-50 text-violet-600"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <StatCard
                     title="Subscription records"
                     value={num(stats?.totalSubscriptions)}
                     detail="All recorded purchases"
                     icon={ReceiptText}
-                    tint="bg-slate-100 text-slate-600"
-                  />
-                  <StatCard
-                    title="Recorded revenue"
-                    value={overviewLoading ? "—" : money(stats?.totalRevenue)}
-                    detail="Total of recorded subscription amounts"
-                    icon={CircleDollarSign}
-                    tint="bg-indigo-50 text-indigo-600"
-                  />
-                  <StatCard
-                    title="Pending payments"
-                    value={num(stats?.pendingPayments)}
-                    detail="Awaiting payment confirmation"
-                    icon={Clock3}
-                    tint="bg-amber-50 text-amber-600"
+                    tint="bg-[#FEE9E9] text-[#B91C1C]"
                   />
                 </div>
               </section>
@@ -1741,7 +2038,7 @@ export default function AdminDashboardClient() {
                                   onFocus={() => setHoverBar(i)}
                                   onBlur={() => setHoverBar(null)}
                                   aria-label={`${day.label}: ${day.count} registrations`}
-                                  className={`w-full max-w-[36px] rounded-t-md transition-colors ${FOCUS} ${hoverBar === i ? "bg-indigo-600" : "bg-indigo-500"}`}
+                                  className={`w-full max-w-[36px] rounded-t-md transition-colors ${FOCUS} ${hoverBar === i ? "bg-[#DC2626]" : "bg-[#5A4A32]"}`}
                                   style={{
                                     height: `${(day.count / top) * 100}%`,
                                     minHeight: day.count ? 4 : 0,
@@ -1789,7 +2086,7 @@ export default function AdminDashboardClient() {
                           style={{ width: pct(activeSubs) }}
                         />
                         <div
-                          className="h-full bg-amber-400 transition-all"
+                          className="h-full bg-[#F2B93B] transition-all"
                           style={{ width: pct(pendingSubs) }}
                         />
                         <div
@@ -1807,7 +2104,7 @@ export default function AdminDashboardClient() {
                           {
                             label: "Pending payment",
                             n: pendingSubs,
-                            dot: "bg-amber-400",
+                            dot: "bg-[#F2B93B]",
                           },
                           {
                             label: "Other statuses",
@@ -1855,7 +2152,7 @@ export default function AdminDashboardClient() {
                     action={
                       <button
                         onClick={() => selectTab("users")}
-                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-indigo-600 hover:text-indigo-700 ${FOCUS}`}
+                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-[#DC2626] hover:text-[#B91C1C] ${FOCUS}`}
                       >
                         View all users <ChevronRight size={15} />
                       </button>
@@ -1883,7 +2180,7 @@ export default function AdminDashboardClient() {
                     action={
                       <button
                         onClick={() => selectTab("subscriptions")}
-                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-indigo-600 hover:text-indigo-700 ${FOCUS}`}
+                        className={`inline-flex items-center gap-1 rounded-md text-sm font-medium text-[#DC2626] hover:text-[#B91C1C] ${FOCUS}`}
                       >
                         View all <ChevronRight size={15} />
                       </button>
@@ -1950,7 +2247,7 @@ export default function AdminDashboardClient() {
               <div className="p-5 pb-0 sm:px-6 sm:pt-6">
                 <PanelHeading
                   title="All users"
-                  description="Live online status updates automatically. A lost connection is marked offline when its heartbeat expires."
+                  description="A user shows as online while active on the site (click, touch, typing or scrolling). They go offline after about 3 minutes without any activity."
                   action={
                     <StatusPill
                       label={`${userPagination.total.toLocaleString("en-BD")} accounts`}
@@ -2069,13 +2366,12 @@ export default function AdminDashboardClient() {
           )}
 
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
-          {tab === "live" && <AdminLivePanel refreshKey={liveRefreshKey} />}
           {tab === "settings" && <SiteSettingsPanel />}
           {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
 
           {accessModalUser && (
             <div
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2A2118]/60 px-4 py-6 backdrop-blur-sm"
               onClick={() => {
                 if (!accessSaving && !userDeleting && !userActionBusy) setAccessModalUser(null);
               }}
@@ -2084,7 +2380,7 @@ export default function AdminDashboardClient() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="manual-access-title"
-                className="relative max-h-[calc(100dvh-3rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
+                className="relative max-h-[calc(100dvh-3rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-5 shadow-2xl sm:p-6"
                 onClick={(event) => event.stopPropagation()}
               >
                 <button

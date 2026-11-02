@@ -132,6 +132,29 @@ const BULK_PHOTO_BN: Record<string, string> = {
   "finish the current crop before adding more photos.": "আরও ছবি যোগ করার আগে বর্তমান ছবির ক্রপ সম্পন্ন করুন।",
   "photo crop cancelled. no new photos were added.": "ছবি ক্রপ বাতিল করা হয়েছে। নতুন কোনো ছবি যোগ করা হয়নি।",
 
+  // Redesigned layout (steps, upload, results).
+  "choose ai tools": "এআই টুল বাছুন",
+  "start & download": "শুরু করুন ও ডাউনলোড",
+  "at least 2 photos": "কমপক্ষে ২টি ছবি",
+  "pick what to apply": "কী কী প্রয়োগ হবে বেছে নিন",
+  "get your results": "ফলাফল পেয়ে যান",
+  "click to add photos or drag them here": "ছবি যোগ করতে ক্লিক করুন অথবা এখানে টেনে আনুন",
+  "drop photos here": "ছবি এখানে ছেড়ে দিন",
+  "jpg, png, webp · up to 15 mb each": "JPG, PNG, WEBP · প্রতিটি সর্বোচ্চ ১৫ এমবি",
+  "download all": "সব ডাউনলোড করুন",
+  "original": "আসল ছবি",
+  "show original": "আসল ছবি দেখুন",
+  "show ai result": "এআই ফলাফল দেখুন",
+  "select all": "সব নির্বাচন করুন",
+  "at least 2 photos added": "কমপক্ষে ২টি ছবি যোগ করা হয়েছে",
+  "at least 1 ai tool selected": "কমপক্ষে ১টি এআই টুল নির্বাচন করা হয়েছে",
+  "upload your photos": "ছবি আপলোড করুন",
+  "add 2 to 20 photos in one go.": "একসঙ্গে ২ থেকে ২০টি ছবি যোগ করুন।",
+  "select ai tools": "এআই টুল নির্বাচন করুন",
+  "choose exactly what you want to change.": "ঠিক কী কী বদলাতে চান তা বেছে নিন।",
+  "download results": "ফলাফল ডাউনলোড করুন",
+  "each photo is edited separately and saved to my files.": "প্রতিটি ছবি আলাদাভাবে সম্পাদিত হয় এবং আমার ফাইলে সেভ হয়।",
+
   // Catalog: preset names and descriptions.
   "face enhance": "মুখের উন্নতিসাধন",
   "ai retouching for face, skin and facial details.": "মুখ, ত্বক ও মুখের সূক্ষ্ম বিবরণ উন্নত করার জন্য এআই সম্পাদনা।",
@@ -241,6 +264,16 @@ const BULK_PHOTO_BN: Record<string, string> = {
   "simulate soft, flattering studio light.": "নরম ও আকর্ষণীয় স্টুডিও আলোর প্রভাব তৈরি করুন।",
   "studio retouch": "স্টুডিও রিটাচ",
   "apply a final clean professional portrait finish.": "পরিষ্কার ও পেশাদার প্রতিকৃতির জন্য চূড়ান্ত রিটাচ প্রয়োগ করুন।",
+  "Your photo is generating, please wait.": "আপনার ছবি তৈরি হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন।",
+  "Measuring your photo": "আপনার ছবির মাপ নেওয়া হচ্ছে",
+  "Detecting face and landmarks": "মুখ ও ল্যান্ডমার্ক শনাক্ত করা হচ্ছে",
+  "Aligning to the selected size": "নির্বাচিত মাপে সাজানো হচ্ছে",
+  "Preparing the background": "ব্যাকগ্রাউন্ড প্রস্তুত করা হচ্ছে",
+  "Fitting the clothing": "কাপড় পরানো হচ্ছে",
+  "Refining the details": "ছোট ছোট ডিটেইল ঠিক করা হচ্ছে",
+  "Applying selected AI tools": "নির্বাচিত এআই টুল প্রয়োগ করা হচ্ছে",
+  "Matching the template style": "টেমপ্লেটের স্টাইল মেলানো হচ্ছে",
+  "Keeping your own identity": "আপনার চেহারা অক্ষুণ্ণ রাখা হচ্ছে",
 };
 
 function normalizeBulkText(value: string) {

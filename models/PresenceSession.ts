@@ -32,16 +32,6 @@ const PresenceSessionSchema = new Schema(
       type: Date,
       required: true,
     },
-    screenShareStatus: {
-      type: String,
-      enum: ["idle", "requested", "sharing", "declined", "stopped"],
-      default: "idle",
-      index: true,
-    },
-    screenShareRequestId: { type: String, default: "", maxlength: 120 },
-    screenShareAdminViewerId: { type: String, default: "", maxlength: 120 },
-    screenShareRequestedAt: { type: Date, default: null },
-    screenShareLastViewerPingAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
@@ -51,11 +41,8 @@ PresenceSessionSchema.index({ userId: 1, lastHeartbeatAt: -1, expiresAt: 1 });
 
 // Next.js development hot reload can retain a compiled model from an earlier schema.
 const cachedPresenceSession = models.PresenceSession;
-const hasLiveScreenFields = Boolean(
-  cachedPresenceSession?.schema.path("screenShareStatus") &&
-  cachedPresenceSession?.schema.path("screenShareRequestId") &&
-  cachedPresenceSession?.schema.path("screenShareAdminViewerId") &&
-  cachedPresenceSession?.schema.path("screenShareLastViewerPingAt") &&
+const hasCurrentSchema = Boolean(
+  !cachedPresenceSession?.schema.path("screenShareStatus") &&
   !cachedPresenceSession?.schema.path("consentStatus") &&
   !cachedPresenceSession?.schema.path("currentPath") &&
   !cachedPresenceSession?.schema.path("currentPage") &&
@@ -63,7 +50,7 @@ const hasLiveScreenFields = Boolean(
   !cachedPresenceSession?.schema.path("activityUpdatedAt"),
 );
 
-if (cachedPresenceSession && !hasLiveScreenFields) {
+if (cachedPresenceSession && !hasCurrentSchema) {
   delete models.PresenceSession;
 }
 

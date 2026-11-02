@@ -141,6 +141,16 @@ const UI_BN: Record<string, string> = {
   "Color: ": "রং: ",
   "Move tool": "টুল সরান",
   "Play tool": "টুল চালান",
+  "Your photo is generating, please wait.": "আপনার ছবি তৈরি হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন।",
+  "Measuring your photo": "আপনার ছবির মাপ নেওয়া হচ্ছে",
+  "Detecting face and landmarks": "মুখ ও ল্যান্ডমার্ক শনাক্ত করা হচ্ছে",
+  "Aligning to the selected size": "নির্বাচিত মাপে সাজানো হচ্ছে",
+  "Preparing the background": "ব্যাকগ্রাউন্ড প্রস্তুত করা হচ্ছে",
+  "Fitting the clothing": "কাপড় পরানো হচ্ছে",
+  "Refining the details": "ছোট ছোট ডিটেইল ঠিক করা হচ্ছে",
+  "Applying selected AI tools": "নির্বাচিত এআই টুল প্রয়োগ করা হচ্ছে",
+  "Matching the template style": "টেমপ্লেটের স্টাইল মেলানো হচ্ছে",
+  "Keeping your own identity": "আপনার চেহারা অক্ষুণ্ণ রাখা হচ্ছে",
 };
 
 const TAG_BN: Record<string, string> = {

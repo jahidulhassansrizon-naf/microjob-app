@@ -6,7 +6,7 @@ import {
 import PresenceSession from "@/models/PresenceSession";
 import User from "@/models/User";
 
-export { PRESENCE_HEARTBEAT_INTERVAL_MS, PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
+export { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 
 type PresenceInput = { userId: string; sessionId: string };
 

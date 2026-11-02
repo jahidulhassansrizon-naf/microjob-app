@@ -10,6 +10,8 @@ import {
 } from "react";
 import { ChevronUp, LoaderCircle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import { CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { announceChatOpen } from "@/app/_lib/chatPresence";
 import AdminAvatarImage from "@/app/_components/AdminAvatarImage";
 import {
   ChatDropOverlay,
@@ -542,23 +544,19 @@ export default function UserAdminChat() {
     [],
   );
 
+  // Load once when the dashboard opens. No background polling: the user only counts
+  // as "online" when they actually use the chat (focus / send), at most once a minute.
+  const lastPresenceAtRef = useRef(0);
+  const announcePresence = useCallback(() => {
+    const now = Date.now();
+    if (now - lastPresenceAtRef.current < CHAT_PRESENCE_REFRESH_MS) return;
+    lastPresenceAtRef.current = now;
+    announceChatOpen();
+  }, []);
+
   useEffect(() => {
     void loadMessages();
     void loadSummary();
-
-    // Keep the inline conversation fresh so an admin reply appears without a page reload.
-    const messageInterval = window.setInterval(
-      () => void loadMessages({ silent: true }),
-      5_000,
-    );
-    const summaryInterval = window.setInterval(
-      () => void loadSummary(),
-      15_000,
-    );
-    return () => {
-      window.clearInterval(messageInterval);
-      window.clearInterval(summaryInterval);
-    };
   }, [loadMessages, loadSummary]);
 
   useEffect(() => {
@@ -629,6 +627,9 @@ export default function UserAdminChat() {
       }
       setDraft("");
       setUnreadCount(0);
+      announcePresence();
+      // One refresh per sent message, so any admin reply that arrived meanwhile shows up.
+      void loadMessages({ silent: true });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -851,6 +852,7 @@ export default function UserAdminChat() {
               onFocus={() => {
                 setChatTouched(true);
                 setInputFocused(true);
+                announcePresence();
               }}
               onBlur={() => setInputFocused(false)}
               maxLength={2000}
@@ -889,6 +891,9 @@ export default function UserAdminChat() {
             <span>Enter = পাঠান · ছবি ড্রপ/পেস্ট করুন (২ মিনিট থাকবে)</span>
             <span>{draft.length}/2000</span>
           </div>
+          <p className="mt-1 px-1 text-[11px] leading-4 text-[#7A6A50]">
+            আপনার মেসেজ সরাসরি অ্যাডমিন দেখবেন। শেষ মেসেজের ৩ দিন পর চ্যাট স্বয়ংক্রিয়ভাবে মুছে যায়।
+          </p>
         </form>
         <ChatDropOverlay show={dragging} />
       </section>

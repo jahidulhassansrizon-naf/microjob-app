@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
 import ActivityTracker from "@/app/_components/ActivityTracker";
-import LiveScreenShareController from "@/app/_components/LiveScreenShareController";
 import NavigationProgressBar from "./_components/NavigationProgressBar";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
@@ -17,7 +16,6 @@ import { DEFAULT_SITE_SETTINGS, buildSiteTitle } from "@/lib/siteSettings";
 import { getServerSiteSettings } from "@/lib/serverSiteSettings";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { LOCALE_COOKIE, type Locale } from "@/lib/i18n";
-import "@rrweb/replay/dist/style.css";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -103,7 +101,6 @@ export default async function RootLayout({
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
         <I18nProvider initialLocale={initialLocale}>
           <ActivityTracker />
-          <LiveScreenShareController />
           <ConditionalSiteChrome>
             <PageBackgroundInitializer />
           </ConditionalSiteChrome>

@@ -10,7 +10,6 @@ import ChatConversation from "@/models/ChatConversation";
 import ChatMessage from "@/models/ChatMessage";
 import AIGeneration from "@/models/AIGeneration";
 import PresenceSession from "@/models/PresenceSession";
-import LiveScreenSignal from "@/models/LiveScreenSignal";
 import QrUploadSession from "@/models/QrUploadSession";
 import QuestionPaper from "@/models/QuestionPaper";
 import SavedForm from "@/models/SavedForm";
@@ -354,8 +353,6 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     // Remove dependent records first. The account is removed last so a failed
     // cleanup does not intentionally leave a deleted login with private records.
-    const presenceRows = await PresenceSession.find({ userId: id }).select("sessionId").lean();
-    const sessionIds = presenceRows.map((row: any) => row.sessionId).filter(Boolean);
     const conversations = await ChatConversation.find({ userId: id }).select("_id").lean();
     const conversationIds = conversations.map((row: any) => row._id);
 
@@ -375,12 +372,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     // my-files stores user-owned library metadata in an inline model collection.
     await mongoose.connection.collection("userfiles").deleteMany({ userId: id });
     await PresenceSession.deleteMany({ userId: id });
-    await LiveScreenSignal.deleteMany({
-      $or: [
-        { viewerId: idString },
-        ...(sessionIds.length ? [{ presenceSessionId: { $in: sessionIds } }] : []),
-      ],
-    });
     await Otp.deleteMany({
       identifier: {
         $in: [String(user.email || "").trim().toLowerCase(), String(user.phoneNumber || "").trim()].filter(Boolean),

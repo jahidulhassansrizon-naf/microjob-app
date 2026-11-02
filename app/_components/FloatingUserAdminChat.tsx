@@ -5,7 +5,9 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -19,6 +21,8 @@ import {
   X,
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import { CHAT_IDLE_CLOSE_MS, CHAT_OPEN_POLL_MS, CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { announceChatOpen } from "@/app/_lib/chatPresence";
 import AdminAvatarImage from "./AdminAvatarImage";
 import BrandName from "@/app/_components/BrandName";
 import {
@@ -83,6 +87,47 @@ function isRestrictedPath(pathname: string | null) {
   );
 }
 
+const CHAT_POSITION_KEY = "sebalagbe:admin-chat-launcher-position";
+const CHAT_EDGE_GAP = 8;
+const CHAT_DRAG_THRESHOLD = 5;
+
+type LauncherPosition = { x: number; y: number };
+type LauncherRect = { left: number; top: number; right: number; bottom: number };
+
+const clampNumber = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), Math.max(min, max));
+
+// ---- Bouncy magic-ball launcher ----
+const BALL_SIZE = 68;
+const BALL_RADIUS = BALL_SIZE / 2;
+const BALL_MAX_SPEED = 6000; // px per second
+const BALL_STOP_SPEED = 30; // below this the ball is at rest
+const BALL_FRICTION = 0.8; // travel distance is about throw speed / this, so a harder throw goes farther
+const BALL_THROW_MIN_SPEED = 260; // slower releases just drop the ball where it is
+const WALL_BOUNCE = 0.9;
+const CONTENT_BOUNCE = 0.92;
+// The thrown ball bounces off page content too (set to false to only bounce off the screen edges).
+const BALL_HITS_CONTENT = true;
+// While flying the ball hops up and down like a real bouncy ball.
+const BALL_HOP_LENGTH = 150; // px travelled per hop
+const BALL_HOP_MAX = 36; // px, highest hop (fast throws)
+// Things on the page the ball can bump into while it rolls.
+const BALL_SOLID_SELECTOR =
+  "a[href],button,input,select,textarea,img,video,canvas,h1,h2,h3,h4,p,label,summary,[role='button'],[data-ball-solid]";
+
+type BallSolid = { el: Element; left: number; top: number; right: number; bottom: number };
+
+// The visible area WITHOUT the scrollbar. window.innerWidth includes the scrollbar, which is
+// what let the old button slide underneath it and get squeezed/broken at the right edge.
+function getViewportSize() {
+  const doc = document.documentElement;
+  return {
+    w: doc.clientWidth || window.innerWidth,
+    h: Math.min(doc.clientHeight || window.innerHeight, window.innerHeight),
+  };
+}
+
+
 export default function FloatingUserAdminChat() {
   const pathname = usePathname();
   const [eligible, setEligible] = useState(false);
@@ -102,6 +147,8 @@ export default function FloatingUserAdminChat() {
   const [noticeText, setNoticeText] = useState("অ্যাডমিনের নতুন মেসেজ এসেছে");
 
   const isOpenRef = useRef(false);
+  const lastActivityRef = useRef(0);
+  const lastPresenceRef = useRef(0);
   const messagesRef = useRef<ChatMessage[]>([]);
   const knownMessageIdsRef = useRef<Set<string>>(new Set());
   const messageHistoryInitializedRef = useRef(false);
@@ -114,6 +161,477 @@ export default function FloatingUserAdminChat() {
   const playDingRef = useRef<() => void>(() => undefined);
 
   isOpenRef.current = isOpen;
+
+  // ---- Movable launcher: the user can drag the button anywhere on the page (it can't be removed). ----
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    moved: boolean;
+    caught: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
+  const [launcherPos, setLauncherPos] = useState<LauncherPosition | null>(null);
+  const [viewport, setViewport] = useState({ w: 0, h: 0 });
+  const [anchor, setAnchor] = useState<LauncherRect | null>(null);
+  const [draggingLauncher, setDraggingLauncher] = useState(false);
+  const squashRef = useRef<HTMLSpanElement | null>(null);
+  const hopRef = useRef<HTMLSpanElement | null>(null);
+  const spinRef = useRef<HTMLSpanElement | null>(null);
+  const motionRef = useRef({ x: 0, y: 0, vx: 0, vy: 0, angle: 0 });
+  const rafRef = useRef<number | null>(null);
+  const samplesRef = useRef<{ t: number; x: number; y: number }[]>([]);
+  const anchorTickRef = useRef(0);
+  const lastSquashRef = useRef(0);
+  const anchorNeededRef = useRef(false);
+  anchorNeededRef.current = isOpen || showNotice;
+
+  const clampLauncher = useCallback((x: number, y: number): LauncherPosition => {
+    const { w, h } = getViewportSize();
+    return {
+      x: clampNumber(x, CHAT_EDGE_GAP, w - BALL_SIZE - CHAT_EDGE_GAP),
+      y: clampNumber(y, CHAT_EDGE_GAP, h - BALL_SIZE - CHAT_EDGE_GAP),
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncViewport = () => setViewport(getViewportSize());
+    syncViewport();
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(CHAT_POSITION_KEY) || "null");
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+        setLauncherPos({ x: saved.x, y: saved.y });
+      }
+    } catch {
+      // Saved position is only a convenience.
+    }
+    const onResize = () => {
+      syncViewport();
+      setLauncherPos((current) => (current ? clampLauncher(current.x, current.y) : current));
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [clampLauncher]);
+
+  // Keep the saved position inside the screen once the button has been measured.
+  useEffect(() => {
+    if (!eligible || !launcherPos || !launcherRef.current) return;
+    const next = clampLauncher(launcherPos.x, launcherPos.y);
+    if (next.x !== launcherPos.x || next.y !== launcherPos.y) setLauncherPos(next);
+  }, [eligible, launcherPos, clampLauncher]);
+
+  // The chat panel and the new-message notice are placed next to wherever the button is.
+  useEffect(() => {
+    if (!eligible || !launcherPos || !launcherRef.current) {
+      setAnchor(null);
+      return;
+    }
+    const rect = launcherRef.current.getBoundingClientRect();
+    setAnchor({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+  }, [eligible, launcherPos, viewport, isOpen, unreadCount]);
+
+  // Moves the ball by writing straight to the DOM (no React re-render per frame).
+  const placeBall = useCallback((x: number, y: number) => {
+    const motion = motionRef.current;
+    motion.x = x;
+    motion.y = y;
+    const el = launcherRef.current;
+    if (el) {
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+    // The chat panel / notice follow the ball, a few times per second is plenty.
+    if (anchorNeededRef.current) {
+      const now = performance.now();
+      if (now - anchorTickRef.current > 70) {
+        anchorTickRef.current = now;
+        setAnchor({ left: x, top: y, right: x + BALL_SIZE, bottom: y + BALL_SIZE });
+      }
+    }
+  }, []);
+
+  // The ball turns as it moves, like it is really rolling.
+  const spinBall = useCallback((dx: number, dy: number) => {
+    const motion = motionRef.current;
+    motion.angle += ((dx + dy * 0.3) / BALL_RADIUS) * (180 / Math.PI);
+    if (spinRef.current) spinRef.current.style.transform = `rotate(${motion.angle}deg)`;
+  }, []);
+
+  // A little squash when the ball hits something.
+  const squashBall = useCallback((speed: number, nx: number, ny: number) => {
+    const el = squashRef.current;
+    const now = performance.now();
+    if (!el || speed < 90 || now - lastSquashRef.current < 140) return;
+    lastSquashRef.current = now;
+    const k = Math.min(0.32, 0.08 + speed / 4000);
+    el.style.transition = "transform 60ms ease-out";
+    el.style.transform =
+      Math.abs(nx) > Math.abs(ny)
+        ? `scale(${1 - k}, ${1 + k * 0.6})`
+        : `scale(${1 + k * 0.6}, ${1 - k})`;
+    window.setTimeout(() => {
+      el.style.transition = "transform 260ms cubic-bezier(0.34, 1.7, 0.5, 1)";
+      el.style.transform = "scale(1, 1)";
+    }, 60);
+  }, []);
+
+  // Saves where the ball ended up (React state + localStorage).
+  const commitLauncher = useCallback(() => {
+    const next = clampLauncher(motionRef.current.x, motionRef.current.y);
+    placeBall(next.x, next.y);
+    setLauncherPos(next);
+    try {
+      window.localStorage.setItem(CHAT_POSITION_KEY, JSON.stringify(next));
+    } catch {
+      // Saving is optional.
+    }
+  }, [clampLauncher, placeBall]);
+
+  const collectSolids = useCallback((): BallSolid[] => {
+    const { w, h } = getViewportSize();
+    const nodes = document.querySelectorAll(BALL_SOLID_SELECTOR);
+    const out: BallSolid[] = [];
+    for (let i = 0; i < nodes.length && out.length < 400; i += 1) {
+      const el = nodes[i];
+      if (el.closest("[data-admin-chat-ui]")) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) continue;
+      if (r.right <= 0 || r.bottom <= 0 || r.left >= w || r.top >= h) continue;
+      if (r.width > w * 0.85 && r.height > h * 0.6) continue;
+      const cs = window.getComputedStyle(el);
+      if (
+        cs.visibility === "hidden" ||
+        cs.display === "none" ||
+        cs.pointerEvents === "none" ||
+        Number(cs.opacity) < 0.05
+      ) {
+        continue;
+      }
+      out.push({ el, left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+    }
+    return out;
+  }, []);
+
+  const resetHop = useCallback(() => {
+    const el = hopRef.current;
+    if (el) {
+      el.style.transform = "";
+      el.style.animation = "";
+    }
+  }, []);
+
+  // The ball keeps rolling after a throw: slows down, bounces off the screen edges and off content.
+  const startGlide = useCallback(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    const motion = motionRef.current;
+    let solids = BALL_HITS_CONTENT ? collectSolids() : [];
+    let solidsAt = performance.now();
+    // Content the ball is already sitting on top of is ignored until it moves clear of it.
+    const ignored = new Set<Element>();
+    for (const solid of solids) {
+      const cx = motion.x + BALL_RADIUS;
+      const cy = motion.y + BALL_RADIUS;
+      const nx = clampNumber(cx, solid.left, solid.right);
+      const ny = clampNumber(cy, solid.top, solid.bottom);
+      if ((cx - nx) ** 2 + (cy - ny) ** 2 < BALL_RADIUS ** 2) ignored.add(solid.el);
+    }
+    let last = performance.now();
+    let travelled = 0;
+    if (hopRef.current) hopRef.current.style.animation = "none";
+
+    const tick = (now: number) => {
+      if (!launcherRef.current) {
+        rafRef.current = null;
+        return;
+      }
+      const frame = Math.max(0, Math.min((now - last) / 1000, 0.034));
+      last = now;
+      if (BALL_HITS_CONTENT && now - solidsAt > 140) {
+        solids = collectSolids();
+        solidsAt = now;
+      }
+      const { w, h } = getViewportSize();
+      const minX = CHAT_EDGE_GAP;
+      const maxX = w - BALL_SIZE - CHAT_EDGE_GAP;
+      const minY = CHAT_EDGE_GAP;
+      const maxY = h - BALL_SIZE - CHAT_EDGE_GAP;
+
+      const speed = Math.hypot(motion.vx, motion.vy);
+      const steps = Math.max(1, Math.ceil((speed * frame) / 10));
+      const dt = frame / steps;
+      let hitSpeed = 0;
+      let hitNx = 0;
+      let hitNy = 0;
+      const startX = motion.x;
+      const startY = motion.y;
+
+      for (let i = 0; i < steps; i += 1) {
+        let x = motion.x + motion.vx * dt;
+        let y = motion.y + motion.vy * dt;
+
+        // Screen edges (the scrollbar side included).
+        if (x < minX) {
+          x = minX;
+          if (motion.vx < 0) {
+            if (-motion.vx > hitSpeed) {
+              hitSpeed = -motion.vx;
+              hitNx = 1;
+              hitNy = 0;
+            }
+            motion.vx = -motion.vx * WALL_BOUNCE;
+          }
+        } else if (x > maxX) {
+          x = maxX;
+          if (motion.vx > 0) {
+            if (motion.vx > hitSpeed) {
+              hitSpeed = motion.vx;
+              hitNx = -1;
+              hitNy = 0;
+            }
+            motion.vx = -motion.vx * WALL_BOUNCE;
+          }
+        }
+        if (y < minY) {
+          y = minY;
+          if (motion.vy < 0) {
+            if (-motion.vy > hitSpeed) {
+              hitSpeed = -motion.vy;
+              hitNx = 0;
+              hitNy = 1;
+            }
+            motion.vy = -motion.vy * WALL_BOUNCE;
+          }
+        } else if (y > maxY) {
+          y = maxY;
+          if (motion.vy > 0) {
+            if (motion.vy > hitSpeed) {
+              hitSpeed = motion.vy;
+              hitNx = 0;
+              hitNy = -1;
+            }
+            motion.vy = -motion.vy * WALL_BOUNCE;
+          }
+        }
+
+        // Page content.
+        const cx = x + BALL_RADIUS;
+        const cy = y + BALL_RADIUS;
+        let pushX = 0;
+        let pushY = 0;
+        for (const solid of solids) {
+          const nearX = clampNumber(cx, solid.left, solid.right);
+          const nearY = clampNumber(cy, solid.top, solid.bottom);
+          const dx = cx + pushX - nearX;
+          const dy = cy + pushY - nearY;
+          const d2 = dx * dx + dy * dy;
+          if (d2 >= BALL_RADIUS * BALL_RADIUS) {
+            ignored.delete(solid.el);
+            continue;
+          }
+          if (ignored.has(solid.el)) continue;
+          if (d2 === 0) {
+            ignored.add(solid.el);
+            continue;
+          }
+          const d = Math.sqrt(d2);
+          const nx = dx / d;
+          const ny = dy / d;
+          pushX += nx * (BALL_RADIUS - d);
+          pushY += ny * (BALL_RADIUS - d);
+          const vn = motion.vx * nx + motion.vy * ny;
+          if (vn < 0) {
+            motion.vx -= (1 + CONTENT_BOUNCE) * vn * nx;
+            motion.vy -= (1 + CONTENT_BOUNCE) * vn * ny;
+            if (-vn > hitSpeed) {
+              hitSpeed = -vn;
+              hitNx = nx;
+              hitNy = ny;
+            }
+          }
+        }
+        motion.x = clampNumber(x + pushX, minX, maxX);
+        motion.y = clampNumber(y + pushY, minY, maxY);
+      }
+
+      spinBall(motion.x - startX, motion.y - startY);
+      placeBall(motion.x, motion.y);
+      if (hitSpeed > 0) squashBall(hitSpeed, hitNx, hitNy);
+
+      travelled += Math.hypot(motion.x - startX, motion.y - startY);
+      const hopHeight =
+        Math.abs(Math.sin((travelled / BALL_HOP_LENGTH) * Math.PI)) *
+        Math.min(BALL_HOP_MAX, Math.hypot(motion.vx, motion.vy) * 0.03);
+      if (hopRef.current) hopRef.current.style.transform = `translateY(${-hopHeight}px)`;
+
+      const friction = Math.exp(-BALL_FRICTION * frame);
+      motion.vx *= friction;
+      motion.vy *= friction;
+
+      if (Math.hypot(motion.vx, motion.vy) < BALL_STOP_SPEED) {
+        rafRef.current = null;
+        resetHop();
+        commitLauncher();
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  }, [collectSolids, commitLauncher, placeBall, resetHop, spinBall, squashBall]);
+
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
+
+  const handleLauncherPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    // Grabbing a rolling ball stops it (and shouldn't count as a click that opens the chat).
+    const caught = rafRef.current !== null;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    resetHop();
+    const motion = motionRef.current;
+    motion.x = rect.left;
+    motion.y = rect.top;
+    motion.vx = 0;
+    motion.vy = 0;
+    // From now on the ball is positioned with left/top (not the default bottom/right).
+    setLauncherPos((current) => current ?? { x: rect.left, y: rect.top });
+
+    samplesRef.current = [{ t: performance.now(), x: rect.left, y: rect.top }];
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+      moved: false,
+      caught,
+    };
+  };
+
+  const handleLauncherPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < CHAT_DRAG_THRESHOLD) return;
+      drag.moved = true;
+      setDraggingLauncher(true);
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Capture is best effort.
+      }
+    }
+    const next = clampLauncher(drag.originX + dx, drag.originY + dy);
+    const motion = motionRef.current;
+    spinBall(next.x - motion.x, next.y - motion.y);
+    placeBall(next.x, next.y);
+
+    const now = performance.now();
+    const samples = samplesRef.current;
+    samples.push({ t: now, x: next.x, y: next.y });
+    while (samples.length > 2 && now - samples[0].t > 120) samples.shift();
+  };
+
+  const finishLauncherDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    if (!drag.moved) {
+      if (drag.caught) {
+        suppressClickRef.current = true;
+        window.setTimeout(() => {
+          suppressClickRef.current = false;
+        }, 0);
+        commitLauncher();
+      }
+      return;
+    }
+    // A drag must not also count as a click (that would open/close the chat).
+    suppressClickRef.current = true;
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+    setDraggingLauncher(false);
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Already released.
+    }
+
+    // How fast was the ball moving when it was let go? Fast = it gets kicked and rolls away.
+    const now = performance.now();
+    const recent = samplesRef.current.filter((sample) => now - sample.t <= 100);
+    let vx = 0;
+    let vy = 0;
+    if (recent.length >= 2) {
+      const first = recent[0];
+      const lastSample = recent[recent.length - 1];
+      const seconds = (lastSample.t - first.t) / 1000;
+      if (seconds > 0.008 && now - lastSample.t < 70) {
+        vx = (lastSample.x - first.x) / seconds;
+        vy = (lastSample.y - first.y) / seconds;
+      }
+    }
+    const speed = Math.hypot(vx, vy);
+    const reduceMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion || speed < BALL_THROW_MIN_SPEED) {
+      commitLauncher();
+      return;
+    }
+    const scale = speed > BALL_MAX_SPEED ? BALL_MAX_SPEED / speed : 1;
+    motionRef.current.vx = vx * scale;
+    motionRef.current.vy = vy * scale;
+    startGlide();
+  };
+
+  const handleLauncherClick = () => {
+    if (suppressClickRef.current) return;
+    if (isOpen) closeChat();
+    else openChat();
+  };
+
+  // Where the panel / notice sit once the user has moved the button.
+  const anchored = Boolean(launcherPos && anchor && viewport.w > 0);
+  const opensDownward = anchored && anchor ? (anchor.top + anchor.bottom) / 2 < viewport.h / 2 : false;
+  const panelWidth = Math.min(380, viewport.w - 24);
+  const anchoredPanelStyle: CSSProperties | undefined =
+    anchored && anchor
+      ? opensDownward
+        ? {
+            left: clampNumber(anchor.right - panelWidth, 12, viewport.w - panelWidth - 12),
+            top: anchor.bottom + 12,
+            width: panelWidth,
+            height: Math.max(260, Math.min(560, viewport.h - anchor.bottom - 24)),
+          }
+        : {
+            left: clampNumber(anchor.right - panelWidth, 12, viewport.w - panelWidth - 12),
+            bottom: viewport.h - anchor.top + 12,
+            width: panelWidth,
+            height: Math.max(260, Math.min(560, anchor.top - 24)),
+          }
+      : undefined;
+  const anchoredNoticeStyle: CSSProperties | undefined =
+    anchored && anchor
+      ? opensDownward
+        ? { right: Math.max(12, viewport.w - anchor.right), top: anchor.bottom + 12 }
+        : { right: Math.max(12, viewport.w - anchor.right), bottom: viewport.h - anchor.top + 12 }
+      : undefined;
 
   const playDing = useCallback(() => {
     const context = audioContextRef.current;
@@ -355,21 +873,47 @@ export default function FloatingUserAdminChat() {
     [notifyIncoming],
   );
 
-  // Summary polling while minimized enables unread badges and alerts. While open,
-  // poll the conversation itself so replies appear without refreshing the page.
+  // No background polling. While the chat is closed we check the unread badge once
+  // (when the page/chat becomes available). While it is open we make no requests
+  // unless CHAT_OPEN_POLL_MS is set above 0.
   useEffect(() => {
-    if (!eligible) return;
-    if (!isOpen) {
-      void loadSummary();
-      const summaryTimer = window.setInterval(() => void loadSummary(), 5000);
-      return () => window.clearInterval(summaryTimer);
-    }
+    if (!eligible || isOpen) return;
+    void loadSummary();
+  }, [eligible, isOpen, loadSummary]);
+
+  useEffect(() => {
+    if (!eligible || !isOpen || CHAT_OPEN_POLL_MS <= 0) return;
     const messageTimer = window.setInterval(
       () => void loadMessages({ silent: true }),
-      4000,
+      CHAT_OPEN_POLL_MS,
     );
     return () => window.clearInterval(messageTimer);
-  }, [eligible, isOpen, loadMessages, loadSummary]);
+  }, [eligible, isOpen, loadMessages]);
+
+  // Opening / using the chat counts as activity (user shows online). Re-announce at most
+  // once a minute while in use. The chat closes itself after CHAT_IDLE_CLOSE_MS idle.
+  useEffect(() => {
+    if (!isOpen) return;
+    const now = Date.now();
+    lastActivityRef.current = now;
+    lastPresenceRef.current = now;
+    announceChatOpen();
+    const idleTimer = window.setInterval(() => {
+      if (Date.now() - lastActivityRef.current >= CHAT_IDLE_CLOSE_MS) {
+        setIsOpen(false);
+      }
+    }, 5000);
+    return () => window.clearInterval(idleTimer);
+  }, [isOpen]);
+
+  const markChatActivity = useCallback(() => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    if (now - lastPresenceRef.current >= CHAT_PRESENCE_REFRESH_MS) {
+      lastPresenceRef.current = now;
+      announceChatOpen();
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -521,6 +1065,9 @@ export default function FloatingUserAdminChat() {
       setDraft("");
       setUnreadCount(0);
       lastUnreadCountRef.current = 0;
+      markChatActivity();
+      // One refresh per sent message, so any admin reply that arrived meanwhile shows up.
+      void loadMessages({ silent: true });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -540,7 +1087,9 @@ export default function FloatingUserAdminChat() {
         <button
           type="button"
           onClick={openChat}
-          className="fixed bottom-[88px] right-4 z-[121] flex max-w-[min(340px,calc(100vw-32px))] items-center gap-3 rounded-2xl border border-rose-200 bg-white px-3.5 py-3 text-left shadow-[0_12px_36px_-10px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5"
+          data-admin-chat-ui
+          style={anchoredNoticeStyle}
+          className={`fixed ${anchoredNoticeStyle ? "" : "bottom-[88px] right-4"} z-[121] flex max-w-[min(340px,calc(100vw-32px))] items-center gap-3 rounded-2xl border border-rose-200 bg-white px-3.5 py-3 text-left shadow-[0_12px_36px_-10px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5`}
           aria-label="অ্যাডমিনের নতুন মেসেজ দেখুন"
         >
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600">
@@ -564,12 +1113,17 @@ export default function FloatingUserAdminChat() {
           role="dialog"
           aria-label="অ্যাডমিন সাপোর্ট চ্যাট"
           aria-modal="false"
+          data-admin-chat-ui
+          onPointerDownCapture={markChatActivity}
+          onKeyDownCapture={markChatActivity}
           {...dropBind}
-          className="fixed bottom-[88px] right-3 z-[120] flex max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_58px_-14px_rgba(15,23,42,0.48)] sm:right-5"
-          style={{
-            width: "min(380px, calc(100vw - 24px))",
-            height: "min(560px, calc(100dvh - 112px))",
-          }}
+          className={`fixed ${anchoredPanelStyle ? "" : "bottom-[88px] right-3 sm:right-5"} z-[120] flex max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_58px_-14px_rgba(15,23,42,0.48)]`}
+          style={
+            anchoredPanelStyle ?? {
+              width: "min(380px, calc(100vw - 24px))",
+              height: "min(560px, calc(100dvh - 112px))",
+            }
+          }
         >
           <header className="flex shrink-0 items-center gap-3 bg-gradient-to-r from-rose-600 to-red-500 px-4 py-3.5 text-white">
             <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-white/70 bg-white/15">
@@ -769,39 +1323,114 @@ export default function FloatingUserAdminChat() {
               <span>Enter = পাঠান · ছবি ড্রপ/পেস্ট করুন (২ মিনিট থাকবে)</span>
               <span>{draft.length}/2000</span>
             </div>
+            <p className="mt-1 px-1 text-[11px] leading-4 text-[#7A6A50]">
+              আপনার মেসেজ সরাসরি অ্যাডমিন দেখবেন। শেষ মেসেজের ৩ দিন পর চ্যাট স্বয়ংক্রিয়ভাবে মুছে যায়।
+            </p>
           </form>
           <ChatDropOverlay show={dragging} rounded="rounded-2xl" />
         </section>
       )}
 
+      <style>{`
+        @keyframes adminBallHop {
+          0%, 82%, 100% { transform: translateY(0); }
+          88% { transform: translateY(-9px); }
+          94% { transform: translateY(0); }
+          97% { transform: translateY(-3px); }
+        }
+        @keyframes adminBallHint {
+          0% { opacity: 0; transform: translateY(4px); }
+          8%, 88% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(4px); }
+        }
+        .admin-ball-hop { animation: adminBallHop 5.5s ease-in-out infinite; }
+        .admin-ball-hint { animation: adminBallHint 7s ease 1.5s 1; }
+        @media (prefers-reduced-motion: reduce) {
+          .admin-ball-hop, .admin-ball-hint { animation: none; }
+        }
+      `}</style>
       <button
         type="button"
-        onClick={isOpen ? closeChat : openChat}
-        aria-label={isOpen ? "চ্যাট মিনিমাইজ করুন" : "অ্যাডমিনের সাথে চ্যাট করুন"}
+        ref={launcherRef}
+        data-admin-chat-ui
+        onClick={handleLauncherClick}
+        onPointerDown={handleLauncherPointerDown}
+        onPointerMove={handleLauncherPointerMove}
+        onPointerUp={finishLauncherDrag}
+        onPointerCancel={finishLauncherDrag}
+        aria-label={isOpen ? "চ্যাট মিনিমাইজ করুন" : "অ্যাডমিন সাপোর্ট - অ্যাডমিনের সাথে চ্যাট করুন"}
         aria-expanded={isOpen}
-        className={`fixed bottom-4 right-4 z-[122] flex items-center gap-2.5 rounded-full px-4 py-3 text-white shadow-[0_10px_30px_-7px_rgba(190,18,60,0.65)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-8px_rgba(190,18,60,0.72)] focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300 ${isOpen ? "bg-slate-800 hover:bg-slate-900" : "bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600"}`}
+        style={{
+          width: BALL_SIZE,
+          height: BALL_SIZE,
+          touchAction: "none",
+          ...(launcherPos ? { left: launcherPos.x, top: launcherPos.y } : {}),
+        }}
+        className={`${launcherPos ? "" : "bottom-4 right-4"} ${draggingLauncher ? "cursor-grabbing" : "cursor-grab"} group fixed z-[122] block shrink-0 select-none rounded-full p-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300`}
       >
-        <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15">
-          {isOpen ? <Minus size={20} /> : <MessageCircle size={21} />}
-          {!isOpen && unreadCount > 0 && (
-            <span className="absolute -right-2 -top-2 flex h-[21px] min-w-[21px] items-center justify-center rounded-full border-2 border-rose-600 bg-white px-1 text-[10px] font-extrabold text-rose-600">
-              {unreadCount > 99 ? "99+" : unreadCount}
+        <span
+          ref={hopRef}
+          className={`${!isOpen && !draggingLauncher ? "admin-ball-hop" : ""} block h-full w-full`}
+        >
+          <span
+            ref={squashRef}
+            className="relative block h-full w-full rounded-full shadow-[0_12px_26px_-8px_rgba(15,23,42,0.6)]"
+          >
+            <span ref={spinRef} className="absolute inset-0 block overflow-hidden rounded-full">
+              <svg viewBox="0 0 100 100" className="block h-full w-full" aria-hidden="true">
+                <defs>
+                  <clipPath id="adminBallClip">
+                    <circle cx="50" cy="50" r="50" />
+                  </clipPath>
+                </defs>
+                <circle cx="50" cy="50" r="50" fill="#6366f1" />
+                <g clipPath="url(#adminBallClip)" fill="none" strokeLinecap="round">
+                  <path d="M-10 22 C 25 -4, 55 52, 110 18" stroke="#f472b6" strokeWidth="15" />
+                  <path d="M-10 48 C 30 22, 60 78, 110 44" stroke="#fde047" strokeWidth="13" />
+                  <path d="M-10 74 C 28 48, 62 104, 110 70" stroke="#22d3ee" strokeWidth="15" />
+                  <path d="M-10 98 C 30 72, 64 126, 110 96" stroke="#a3e635" strokeWidth="13" />
+                  <path d="M20 -10 C 0 30, 40 60, 22 110" stroke="#fb923c" strokeWidth="9" />
+                  <path d="M78 -10 C 58 30, 98 60, 80 110" stroke="#c084fc" strokeWidth="9" />
+                </g>
+              </svg>
             </span>
-          )}
-          {!isOpen && unreadCount === 0 && (
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-rose-600 bg-emerald-300" />
-          )}
-        </span>
-        <span className="pr-0.5 text-left">
-          <span className="block text-sm font-bold leading-tight">
-            {isOpen ? "চ্যাট মিনিমাইজ" : "অ্যাডমিন সাপোর্ট"}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 32% 26%, rgba(255,255,255,0.6), rgba(255,255,255,0) 38%, rgba(15,23,42,0.24) 100%)",
+              }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span
+                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full text-white ring-2 ring-white ${isOpen ? "bg-slate-800" : "bg-rose-600"}`}
+              >
+                {isOpen ? <Minus size={18} /> : <MessageCircle size={17} />}
+              </span>
+            </span>
+            {!isOpen && unreadCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-[21px] min-w-[21px] items-center justify-center rounded-full border-2 border-rose-600 bg-white px-1 text-[10px] font-extrabold text-rose-600">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+            {!isOpen && unreadCount === 0 && (
+              <span className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+            )}
           </span>
-          {!isOpen && (
-            <span className="mt-0.5 block text-[10px] leading-tight text-rose-50">
-              মেসেজ করতে ক্লিক করুন
-            </span>
-          )}
         </span>
+        {!isOpen && (
+          <span
+            className={`pointer-events-none absolute top-0 flex h-full items-center ${launcherPos && viewport.w > 0 && launcherPos.x < viewport.w / 2 ? "left-full pl-3" : "right-full pr-3"}`}
+          >
+            <span className="admin-ball-hint whitespace-nowrap rounded-xl bg-rose-600 px-3 py-1.5 text-left text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+              <span className="block text-xs font-bold leading-tight">অ্যাডমিন সাপোর্ট</span>
+              <span className="mt-0.5 block text-[10px] leading-tight text-rose-50">
+                মেসেজ করতে ক্লিক করুন
+              </span>
+            </span>
+          </span>
+        )}
       </button>
     </>
   );

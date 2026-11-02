@@ -21,34 +21,33 @@ export default function PresetCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex w-full cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F2E8D2] ${
-        expanded || selectedCount > 0
-          ? "border-[#DC2626] bg-[#F6D9A8] ring-2 ring-[#DC2626]/40 shadow-sm"
-          : "border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#EFE3C8]"
+      aria-expanded={expanded}
+      className={`flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#DC2626]/40 ${
+        expanded ? "bg-[#F6D9A8]/60" : "hover:bg-[#EFE3C8]/70"
       }`}
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F6EEDB]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E3D6B8] bg-[#F6EEDB]">
         {preset.icon}
       </div>
 
       <span className="min-w-0 flex-1">
-        <span className="block text-[17px] font-semibold leading-[1.3] text-[#3B2F1E]">
+        <span className="block truncate text-[15.5px] font-bold leading-[1.3] text-[#3B2F1E]">
           <BulkT>{preset.name}</BulkT>
         </span>
-        <span className="mt-1 block text-[13px] leading-[1.45] text-[#6B5A40]">
+        <span className="mt-0.5 block truncate text-[12.5px] leading-[1.4] text-[#6B5A40]">
           <BulkT>{preset.description}</BulkT>
         </span>
       </span>
 
-      <span className="flex shrink-0 flex-col items-end gap-1">
+      <span className="flex shrink-0 items-center gap-2">
         {selectedCount > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-[#DC2626] px-2 py-0.5 text-[12px] font-bold text-white">
-            <Check size={11} /> {selectedCount}
+            <Check size={11} strokeWidth={3} /> {selectedCount}
           </span>
         )}
         <ChevronDown
-          size={14}
-          className={`text-[#6B5A40] transition-transform ${expanded ? "rotate-180 text-[#DC2626]" : ""}`}
+          size={16}
+          className={`text-[#6B5A40] transition-transform duration-200 ${expanded ? "rotate-180 text-[#DC2626]" : ""}`}
         />
       </span>
     </button>

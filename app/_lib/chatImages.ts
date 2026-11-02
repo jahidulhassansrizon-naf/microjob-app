@@ -15,6 +15,8 @@ import ChatMessage from "@/models/ChatMessage";
  */
 
 export const CHAT_IMAGE_TTL_MS = 2 * 60 * 1000;
+/** A finished conversation (no new message for this long) is deleted completely. */
+export const CHAT_RETENTION_MS = 72 * 60 * 60 * 1000; // 3 days
 export const CHAT_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
 export const CHAT_IMAGE_MAX_ACTIVE_PER_USER = 6;
 export const CHAT_IMAGE_PREVIEW_TEXT = "📷 ছবি / Photo";
@@ -270,4 +272,42 @@ export async function createChatImageMessage(options: {
       image: { id: String(image._id), mime, remainingMs: CHAT_IMAGE_TTL_MS },
     },
   };
+}
+
+let lastConversationPurgeAt = 0;
+const CONVERSATION_PURGE_INTERVAL_MS = 5 * 60 * 1000;
+
+/**
+ * Deletes the messages of every conversation whose LAST message is older than CHAT_RETENTION_MS
+ * (3 days). The whole conversation goes at once, so a chat is never cut in the middle.
+ * Conversations that still contain messages the admin has not opened yet (unreadForAdmin > 0)
+ * are never deleted, so a support request cannot disappear before an admin has seen it.
+ * Runs lazily on chat requests (at most once every 5 minutes per server instance).
+ */
+export async function purgeExpiredChatConversations(force = false) {
+  const now = Date.now();
+  if (!force && now - lastConversationPurgeAt < CONVERSATION_PURGE_INTERVAL_MS) return 0;
+  lastConversationPurgeAt = now;
+  try {
+    const cutoff = new Date(now - CHAT_RETENTION_MS);
+    const stale: any[] = await ChatConversation.find({
+      lastMessageAt: { $ne: null, $lt: cutoff },
+      unreadForAdmin: { $not: { $gt: 0 } },
+    })
+      .select("_id userId")
+      .limit(200)
+      .lean();
+    if (!stale.length) return 0;
+
+    const conversationIds = stale.map((item) => item._id);
+    const userIds = stale.map((item) => item.userId).filter(Boolean);
+    // Safety net: never remove a message newer than the cutoff.
+    await ChatMessage.deleteMany({ conversationId: { $in: conversationIds }, createdAt: { $lt: cutoff } });
+    if (userIds.length) await ChatImage.deleteMany({ userId: { $in: userIds }, expiresAt: { $lt: cutoff } });
+    await Promise.all(Array.from(new Map(stale.map((item) => [String(item.userId), item.userId])).values()).map((userId) => refreshConversationSummary(userId)));
+    return stale.length;
+  } catch (error) {
+    console.error("Chat retention purge error:", error);
+    return 0;
+  }
 }

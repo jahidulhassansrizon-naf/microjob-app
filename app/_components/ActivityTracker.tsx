@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { PRESENCE_HEARTBEAT_INTERVAL_MS } from "@/lib/presenceConstants";
+import { PRESENCE_ACTIVITY_REFRESH_MS } from "@/lib/presenceConstants";
 
 /**
- * Maintains only a short-lived online browser presence for the admin's
- * user-selection list. It does not request activity consent, inspect clicks,
- * report page paths, or collect screen/input content.
+ * Reports "online" when the user actually interacts with the site (click, touch, key,
+ * scroll), at most once per PRESENCE_ACTIVITY_REFRESH_MS. There is no background
+ * heartbeat, so an idle user generates no requests. It does not report page paths,
+ * click targets, or any screen/input content - only "this user is active".
  */
 const SESSION_KEY = "sohojhub:presence-session-id";
 const SESSION_ID_PATTERN = /^[a-zA-Z0-9._:-]{16,120}$/;
@@ -51,7 +52,6 @@ export default function ActivityTracker() {
   useEffect(() => {
     let disposed = false;
     let busy = false;
-    let timer: number | null = null;
     let sessionId = getOrCreateSessionId();
 
     const sendPresence = async (leave = false) => {
@@ -79,36 +79,41 @@ export default function ActivityTracker() {
       }
     };
 
-    const startSession = (newSession: boolean) => {
-      if (newSession) {
-        sessionId = createSessionId();
-        setSessionId(sessionId);
-      } else {
-        sessionId = getOrCreateSessionId();
-      }
-      if (timer !== null) window.clearInterval(timer);
-      timer = null;
-      if (!getClientCredentials()) return;
+    let lastSentAt = 0;
+    const reportActivity = () => {
+      const now = Date.now();
+      if (now - lastSentAt < PRESENCE_ACTIVITY_REFRESH_MS) return;
+      lastSentAt = now;
       void sendPresence();
-      timer = window.setInterval(() => { void sendPresence(); }, PRESENCE_HEARTBEAT_INTERVAL_MS);
     };
-
-    const stopSession = () => {
-      if (timer !== null) window.clearInterval(timer);
-      timer = null;
+    const onChatOpen = () => {
+      lastSentAt = Date.now();
+      void sendPresence();
+    };
+    const onLeave = () => {
+      lastSentAt = 0;
       void sendPresence(true);
     };
+    const onAuthChanged = () => {
+      sessionId = createSessionId();
+      setSessionId(sessionId);
+      lastSentAt = 0;
+    };
 
-    startSession(false);
-    window.addEventListener("sohojhub:presence-stop", stopSession);
-    const onAuthChanged = () => startSession(true);
+    const activityEvents = ["pointerdown", "keydown", "touchstart"] as const;
+    for (const name of activityEvents) window.addEventListener(name, reportActivity, { passive: true });
+    window.addEventListener("scroll", reportActivity, { passive: true, capture: true });
+    window.addEventListener("sohojhub:chat-presence", onChatOpen);
+    window.addEventListener("sohojhub:presence-stop", onLeave);
     window.addEventListener("sohojhub:auth-changed", onAuthChanged);
 
     return () => {
       disposed = true;
-      window.removeEventListener("sohojhub:presence-stop", stopSession);
+      for (const name of activityEvents) window.removeEventListener(name, reportActivity);
+      window.removeEventListener("scroll", reportActivity, true);
+      window.removeEventListener("sohojhub:chat-presence", onChatOpen);
+      window.removeEventListener("sohojhub:presence-stop", onLeave);
       window.removeEventListener("sohojhub:auth-changed", onAuthChanged);
-      if (timer !== null) window.clearInterval(timer);
     };
   }, []);
 

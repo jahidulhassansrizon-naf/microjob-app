@@ -1,0 +1,104 @@
+/*
+ * Admin workspace theme — SebaLagbe.com brand palette.
+ *
+ * Everything here is scoped to `.admin-theme`, so no other page on the site is affected.
+ * Tailwind v4 reads its colours from CSS variables, so re-declaring the variables inside this
+ * scope re-skins every existing `slate-*`, `indigo-*` and `violet-*` utility used by the admin
+ * panels (chats, site settings, payment gateway, live view …) without editing each class.
+ *
+ * Brand tokens (taken from the public dashboard):
+ *   #3B2F1E  espresso   – hero / sidebar / primary text
+ *   #5A4A32  umber      – secondary text, hover
+ *   #7A6A50  taupe      – muted text
+ *   #E3D6B8  sand       – borders
+ *   #FBF6E8  cream      – cards
+ *   #F2B93B  gold       – accent on dark surfaces
+ *   #DC2626  brand red  – brand accent / primary calls to action
+ */
+.admin-theme {
+  /* Surfaces: cards, inputs and modals that use `bg-white` become warm cream. */
+  --color-white: #fbf6e8;
+
+  /* Neutral scale (was cool slate) → warm parchment / espresso. */
+  --color-slate-50: #f6eedb;
+  --color-slate-100: #efe5ce;
+  --color-slate-200: #e3d6b8;
+  --color-slate-300: #d8c9a6;
+  --color-slate-400: #a8987a;
+  --color-slate-500: #7a6a50;
+  --color-slate-600: #5a4a32;
+  --color-slate-700: #4a3c27;
+  --color-slate-800: #3b2f1e;
+  --color-slate-900: #2f2518;
+  --color-slate-950: #2a2118;
+
+  /* "Primary" scale (was indigo) → espresso brown with a red focus accent. */
+  --color-indigo-50: #f2e8d2;
+  --color-indigo-100: #e9ddc3;
+  --color-indigo-200: #d8c9a6;
+  --color-indigo-300: #b8a57c;
+  --color-indigo-400: #dc2626;
+  --color-indigo-500: #5a4a32;
+  --color-indigo-600: #3b2f1e;
+  --color-indigo-700: #2a2118;
+  --color-indigo-800: #2a2118;
+
+  /* Secondary accent (was violet) → same espresso family. */
+  --color-violet-50: #f2e8d2;
+  --color-violet-100: #e9ddc3;
+  --color-violet-200: #d8c9a6;
+  --color-violet-300: #b8a57c;
+  --color-violet-400: #dc2626;
+  --color-violet-500: #5a4a32;
+  --color-violet-600: #3b2f1e;
+  --color-violet-700: #2a2118;
+
+  color: #3b2f1e;
+  color-scheme: light;
+}
+
+/* Warm, unobtrusive scrollbars and selection. */
+.admin-theme ::selection {
+  background: #f2b93b66;
+  color: #2a2118;
+}
+.admin-theme * {
+  scrollbar-color: #d8c9a6 transparent;
+}
+.admin-theme ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.admin-theme ::-webkit-scrollbar-thumb {
+  background: #d8c9a6;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.admin-theme ::-webkit-scrollbar-thumb:hover {
+  background: #b8a57c;
+  background-clip: content-box;
+}
+
+/* Sidebar uses a darker, thinner scrollbar. */
+.admin-theme .adm-sidebar * {
+  scrollbar-color: #5a4a32 transparent;
+}
+
+/* Native <select> dropdown rendering. */
+.admin-theme select {
+  color-scheme: light;
+}
+
+/* Table rows: keep long TrxIDs / emails from breaking the layout. */
+.admin-theme .adm-trx {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

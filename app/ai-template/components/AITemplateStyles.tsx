@@ -1583,6 +1583,74 @@ export default function AITemplateStyles() {
           }
         }
 
+        /* ---- Responsive refinements (phones, tablets, short laptop screens) ---- */
+        .modal-backdrop { overflow-y: auto; }
+        .template-modal {
+          grid-template-rows: minmax(0, 1fr);
+          max-height: 92vh;
+          max-height: 92dvh;
+        }
+        .modal-image {
+          min-height: min(560px, 70vh);
+          max-height: 92vh;
+          max-height: 92dvh;
+        }
+        .modal-image img { max-height: 92vh; max-height: 92dvh; }
+
+        .sidebar-heading .sidebar-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0;
+          background: none;
+          border: 0;
+          color: #3B2F1E;
+          font-size: 17px;
+          font-weight: 600;
+          cursor: default;
+          pointer-events: none;
+        }
+        .sidebar-heading .sidebar-toggle .sidebar-chevron { display: none; }
+
+        @media (max-width: 820px) {
+          .template-modal {
+            grid-template-rows: none;
+            max-height: 94vh;
+            max-height: 94dvh;
+          }
+          .modal-image {
+            min-height: min(390px, 50vh);
+            max-height: 56vh;
+            max-height: 56dvh;
+          }
+          .modal-image img { max-height: 56vh; max-height: 56dvh; }
+
+          /* Filters become a collapsible panel so the templates are reachable on phones. */
+          .sidebar-heading .sidebar-toggle { cursor: pointer; pointer-events: auto; min-height: 36px; }
+          .sidebar-heading .sidebar-toggle .sidebar-chevron { display: inline-block; transition: transform 0.2s ease; }
+          .sidebar.is-open .sidebar-heading .sidebar-toggle .sidebar-chevron { transform: rotate(180deg); }
+          .sidebar:not(.is-open) > :not(.sidebar-heading) { display: none; }
+          .sidebar:not(.is-open) { padding-bottom: 8px; }
+          .sidebar.is-open { max-height: 70vh; max-height: 70dvh; overflow: auto; }
+        }
+
+        @media (max-width: 620px) {
+          .modal-backdrop { padding: 8px; align-items: flex-start; }
+          .template-modal { width: 100%; border-radius: 14px; }
+          .modal-details { padding: 22px 16px 20px; }
+          .modal-details h2 { font-size: 22px; }
+          .modal-lead { font-size: 14px; line-height: 1.6; }
+          .template-upload-card { padding: 12px; margin-top: 14px; }
+          .template-upload-actions { grid-template-columns: minmax(0, 1fr); }
+          .template-user-preview { height: 120px; }
+          .template-qr-upload-panel { padding: 8px; overflow-x: auto; }
+        }
+
+        @media (max-width: 820px) and (orientation: landscape) and (max-height: 520px) {
+          .modal-image { min-height: 0; height: 70vh; height: 70dvh; max-height: none; }
+          .modal-image img { max-height: 70vh; max-height: 70dvh; }
+        }
+
         /* ---- Warm Sand + Red: font, focus, hover, scrollbars ---- */
         .page-font.page-font,
         .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {

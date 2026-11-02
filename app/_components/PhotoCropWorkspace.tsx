@@ -313,7 +313,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1200] flex flex-col overflow-hidden bg-black text-white"
+      className="fixed inset-0 z-[1200] flex flex-col overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]"
       role="dialog"
       aria-modal="true"
       aria-label={t("Crop & Rotate Image")}
@@ -321,19 +321,19 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
       <style>{`
         .sebalagbe-crop-canvas .ReactCrop__crop-selection {
           border: 2px solid #ffffff !important;
-          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+          box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
           cursor: move;
           touch-action: none;
         }
         .sebalagbe-crop-canvas .ReactCrop__drag-handle {
           display: block !important;
           opacity: 1 !important;
-          width: 16px !important;
-          height: 16px !important;
+          width: 18px !important;
+          height: 18px !important;
           border: 2px solid #ffffff !important;
-          border-radius: 3px !important;
-          background: #2563eb !important;
-          box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.45), 0 2px 7px rgba(0, 0, 0, 0.25) !important;
+          border-radius: 5px !important;
+          background: #DC2626 !important;
+          box-shadow: 0 2px 8px rgba(59, 47, 30, 0.45) !important;
           touch-action: none;
         }
         .sebalagbe-crop-canvas .ReactCrop__child-wrapper,
@@ -344,24 +344,26 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
         }
       `}</style>
       {isCropping && (
-        <div className="absolute inset-0 z-[1300] flex flex-col items-center justify-center gap-3 bg-black/70 text-white backdrop-blur-sm">
-          <LoaderCircle className="h-10 w-10 animate-spin text-emerald-400" />
-          <p className="text-sm font-medium tracking-wide">{t("Preparing...")}</p>
+        <div className="absolute inset-0 z-[1300] flex flex-col items-center justify-center gap-3 bg-[#3B2F1E]/55 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-10 py-7 shadow-2xl">
+            <LoaderCircle className="h-9 w-9 animate-spin text-[#DC2626]" />
+            <p className="text-base font-semibold text-[#3B2F1E]">{t("Preparing...")}</p>
+          </div>
         </div>
       )}
 
-      <header className="flex h-[50px] shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 text-slate-900">
+      <header className="flex h-[50px] shrink-0 items-center justify-between border-b border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] shadow-sm">
         <div className="flex h-full min-w-0 items-center gap-3 px-3 sm:px-5">
           <SiteBrandLogo width={140} height={45} className="h-[30px] w-auto shrink-0" />
-          <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
-          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl bg-slate-200 text-blue-600">
+          <div className="mx-1 hidden h-7 w-px bg-[#E3D6B8] sm:block" />
+          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl bg-[#D42020] text-white shadow">
             <CropIcon size={16} strokeWidth={2.3} />
           </div>
           <div className="flex min-w-0 flex-col">
-            <div className="truncate text-[12px] font-black tracking-tight text-slate-900 sm:text-[14px]">
+            <div className="truncate text-[12px] font-black tracking-tight text-[#3B2F1E] sm:text-[14px]">
               {t("Crop & Rotate Image")}
             </div>
-            <div className="hidden text-[8px] font-bold text-slate-500 sm:block">
+            <div className="hidden text-[8px] font-bold text-stone-500 sm:block">
               {t("Independent photo crop • canvas fit after crop")}
             </div>
           </div>
@@ -371,13 +373,13 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
           aria-label={t("Close crop editor")}
           onClick={handleCancel}
           disabled={isCropping}
-          className="flex h-[50px] w-[50px] shrink-0 cursor-pointer items-center justify-center bg-red-500 text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[54px]"
+          className="flex h-[50px] w-[50px] shrink-0 cursor-pointer items-center justify-center bg-[#D42020] text-white transition-colors hover:bg-[#AE1717] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[54px]"
         >
           <X size={22} strokeWidth={2.2} />
         </button>
       </header>
 
-      <main className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black px-2 py-3 sm:px-4">
+      <main className="mx-3 my-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#F3E9D2]/70 px-2 py-3 shadow-inner sm:mx-6 sm:my-5 sm:px-4">
         <div
           className="flex origin-center items-center justify-center"
           style={{
@@ -394,7 +396,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
               onCropAvailabilityChange={handleCropAvailabilityChange}
             />
           ) : (
-            <div className="text-sm text-white/60">{t("Preparing image…")}</div>
+            <div className="text-sm text-[#6B5A40]">{t("Preparing image…")}</div>
           )}
         </div>
       </main>
@@ -408,18 +410,18 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
         </p>
       )}
 
-      <footer className="flex shrink-0 flex-col justify-between border-t border-slate-200 bg-slate-50 text-slate-900 shadow-lg sm:h-[50px] sm:flex-row sm:items-stretch">
+      <footer className="flex shrink-0 flex-col justify-between border-t border-[#E3D6B8] bg-[#FBF6E8] text-[#3B2F1E] shadow-[0_-4px_16px_rgba(59,47,30,0.06)] sm:h-[50px] sm:flex-row sm:items-stretch">
         <div className="flex h-[48px] shrink-0 items-stretch gap-0.5 overflow-x-auto sm:h-full sm:gap-0">
           <button
             type="button"
             aria-label={t("Zoom out")}
             onClick={() => setZoom((value) => clamp(value - 10, 100, 300))}
             disabled={isCropping}
-            className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]"
+            className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-[#F3E9D2] text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8] hover:text-[#DC2626] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]"
           >
             <Minus size={17} strokeWidth={2.2} />
           </button>
-          <div className="flex w-[42px] shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-[11px] font-black tabular-nums sm:w-[48px] sm:text-[12px]">
+          <div className="flex w-[42px] shrink-0 items-center justify-center border-x border-[#E3D6B8] bg-[#FBF6E8] text-[11px] font-black tabular-nums sm:w-[48px] sm:text-[12px]">
             {zoom}%
           </div>
           <button
@@ -427,7 +429,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
             aria-label={t("Zoom in")}
             onClick={() => setZoom((value) => clamp(value + 10, 100, 300))}
             disabled={isCropping}
-            className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]"
+            className="flex w-[42px] shrink-0 cursor-pointer items-center justify-center bg-[#F3E9D2] text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8] hover:text-[#DC2626] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[48px]"
           >
             <Plus size={17} strokeWidth={2.2} />
           </button>
@@ -436,7 +438,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
             aria-label={t("Rotate image")}
             onClick={() => setRotation((value) => (value + 90) % 360)}
             disabled={isCropping}
-            className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-blue-600 px-2 text-[11px] font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]"
+            className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 border-l border-[#E3D6B8] bg-[#F3E9D2] px-2 text-[11px] font-black text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8] hover:text-[#DC2626] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]"
           >
             <RotateCcw size={15} strokeWidth={2} />
             <span>{t("Rotate")}</span>
@@ -446,7 +448,7 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
             aria-label={t("Mirror image")}
             onClick={() => setFlipX((value) => !value)}
             disabled={isCropping}
-            className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 bg-blue-600 px-2 text-[11px] font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]"
+            className="flex min-w-[78px] shrink-0 cursor-pointer items-center justify-center gap-1.5 border-l border-[#E3D6B8] bg-[#F3E9D2] px-2 text-[11px] font-black text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8] hover:text-[#DC2626] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[96px] sm:text-[12px]"
           >
             <FlipHorizontal2 size={15} strokeWidth={2} />
             <span>{t("Mirror")}</span>
@@ -458,16 +460,16 @@ export const PhotoCropWorkspace = React.memo(function PhotoCropWorkspace({
             type="button"
             onClick={() => !isCropping && onUseOriginal(originalFile)}
             disabled={isCropping || !processedSrc}
-            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-200 px-2 text-[10px] font-black text-slate-900 transition-colors hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[150px] sm:flex-none sm:rounded-none sm:text-[11px]"
+            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 text-[10px] font-black text-[#5A4A32] transition-colors hover:bg-[#F3E9D2] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[150px] sm:flex-none sm:rounded-none sm:text-[11px]"
           >
-            <ScanLine size={15} strokeWidth={2} className="shrink-0 text-slate-700" />
+            <ScanLine size={15} strokeWidth={2} className="shrink-0 text-[#6B5A40]" />
             <span>{t("No Crop Needed")}</span>
           </button>
           <button
             type="button"
             onClick={() => void handleApplyCrop()}
             disabled={isCropping || !processedSrc || !hasCompletedCrop}
-            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-[11px] font-black text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-[125px] sm:flex-none sm:rounded-none sm:text-[12px]"
+            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#D42020] px-3 text-[11px] font-black text-white transition-colors hover:bg-[#AE1717] disabled:cursor-not-allowed disabled:opacity-50 sm:w-[125px] sm:flex-none sm:rounded-none sm:text-[12px]"
           >
             <Check size={15} strokeWidth={2.4} />
             <span>{isCropping ? t("Cropping…") : t("Crop")}</span>

@@ -1,3 +1,4 @@
+import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
@@ -11,6 +12,7 @@ import {
   deleteChatImagesForUser,
   previewText,
   purgeExpiredChatImages,
+  purgeExpiredChatConversations,
   serializeChatMessages,
 } from "@/app/_lib/chatImages";
 
@@ -47,6 +49,8 @@ export async function GET(request: Request) {
     await connectDB();
     // Photos older than 2 minutes are deleted (with their chat messages) before anything is returned.
     await purgeExpiredChatImages();
+    // Finished conversations (no message for 3 days, all read by admin) are deleted.
+    await purgeExpiredChatConversations();
     const url = new URL(request.url);
     if (url.searchParams.get("summary") === "1") {
       const summary = await ChatConversation.aggregate([
@@ -87,7 +91,7 @@ export async function GET(request: Request) {
             email: user.email || "",
             phoneNumber: user.phoneNumber || "",
             profileImageUrl: user.profileImageUrl || "",
-            isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 90_000),
+            isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < PRESENCE_STALE_AFTER_MS),
           },
           unreadCount: 0,
           hasConversation: fetched.length > 0,
@@ -130,7 +134,7 @@ export async function GET(request: Request) {
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
         profileImageUrl: user.profileImageUrl || "",
-        isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 90_000),
+        isOnline: Boolean(user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < PRESENCE_STALE_AFTER_MS),
         lastMessage: previewText(conversation?.lastMessage || ""),
         lastMessageAt: conversation?.lastMessageAt || null,
         lastSenderRole: conversation?.lastSenderRole || null,

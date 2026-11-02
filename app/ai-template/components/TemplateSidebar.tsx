@@ -1,7 +1,7 @@
 "use client";
 import { useAiTemplateText } from "./aiTemplateI18n";
 import React from "react";
-import { RotateCcw, UserRound, VenusAndMars, Baby, Package, } from "lucide-react";
+import { ChevronDown, RotateCcw, UserRound, VenusAndMars, Baby, Package, } from "lucide-react";
 import { CATEGORY_COUNTS, CATEGORY_OPTIONS, COLOR_OPTIONS, IMAGE_COUNT_OPTIONS, SIDE_SORT_OPTIONS, } from "./templateData";
 import type { Gender, ImageCountFilter, OrientationFilter, ColorFilter, SortType } from "./templateData";
 type Props = {
@@ -22,9 +22,14 @@ type Props = {
 export function TemplateSidebar(props: Props) {
     const { category, setCategory, gender, setGender, imageCount, setImageCount, orientation, setOrientation, selectedColor, setSelectedColor, sortType, setSortType, resetFilters, } = props;
     const { t } = useAiTemplateText();
-    return (<aside className="sidebar scroll">
+    // Only matters on phones/tablets (<= 820px): the filter panel collapses there.
+    const [open, setOpen] = React.useState(false);
+    return (<aside className={`sidebar scroll ${open ? "is-open" : ""}`}>
       <div className="sidebar-heading">
-        <span>{t("Filter")}</span>
+        <button type="button" className="sidebar-toggle" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+          <span>{t("Filter")}</span>
+          <ChevronDown size={16} className="sidebar-chevron"/>
+        </button>
         <button type="button" onClick={resetFilters}>
           <RotateCcw size={13}/>{t("Reset")}</button>
       </div>

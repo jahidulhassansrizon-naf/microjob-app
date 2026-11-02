@@ -492,6 +492,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
                   <button type="submit" disabled={!draft.trim() || sending || clearingChat} className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{sending ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={15} />}<span className="hidden sm:inline">Send</span></button>
                 </div>
                 <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-slate-400"><span>Enter to send · drop or paste a photo (auto-deleted after 2 min)</span><span>{draft.length}/2000</span></div>
+                <p className="mt-1 px-1 text-[11px] leading-4 text-slate-400">Chats are deleted automatically 3 days after the last message. Conversations with messages you have not opened yet are kept until you read them.</p>
               </form>
               <ChatDropOverlay show={dragging} rounded="rounded-none" />
             </>

@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/db";
 import AIGeneration from "@/models/AIGeneration";
+import { getRetentionCutoff } from "@/app/_lib/retentionConfig";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
@@ -334,7 +335,11 @@ export async function GET(request: Request) {
     await dbReady;
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
-    const query: Record<string, unknown> = { userId: userObjectId };
+    // Never list photos past the 30-day retention period (cleanup job deletes them daily).
+    const query: Record<string, unknown> = {
+      userId: userObjectId,
+      createdAt: { $gte: getRetentionCutoff() },
+    };
 
     if (sourceParam === "manual-editor") {
       query.source = "manual-editor";

@@ -8,6 +8,7 @@ import ScannedDocument from "@/models/ScannedDocument";
 import SavedForm from "@/models/SavedForm";
 import QuestionPaper from "@/models/QuestionPaper";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { getRetentionCutoff } from "@/app/_lib/retentionConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -196,18 +197,22 @@ export async function GET(request: Request) {
     const userId = getUserId(request);
     await connectDB();
     const objectId = new mongoose.Types.ObjectId(userId);
+    // Files older than the retention period (30 days) are never shown, even in the
+    // short window before the daily cleanup job physically deletes them.
+    const retentionCutoff = getRetentionCutoff();
+    const notExpired = { $gte: retentionCutoff };
     const [generations, scannedDocuments, savedForms, questionPapers, userFiles] = await Promise.all([
       // Fetch only fields displayed by My Files. Image payloads and other
       // generation metadata are not needed to render the listing.
-      AIGeneration.find({ userId: objectId })
+      AIGeneration.find({ userId: objectId, createdAt: notExpired })
         .select("_id source createdAt url")
         .sort({ createdAt: -1 })
         .lean(),
-      ScannedDocument.find({ userId: objectId })
+      ScannedDocument.find({ userId: objectId, createdAt: notExpired })
         .select("_id title createdAt imageUrl")
         .sort({ createdAt: -1 })
         .lean(),
-      SavedForm.find({ userId })
+      SavedForm.find({ userId, createdAt: notExpired })
         .select("_id createdAt formData.toolName formData.tool formData.source formData.fileName formData.title formData.name formData.url formData.imageUrl formData.fileUrl")
         .sort({ createdAt: -1 })
         .lean(),
@@ -216,7 +221,7 @@ export async function GET(request: Request) {
         .sort({ updatedAt: -1 })
         .limit(50)
         .lean(),
-      UserFile.find({ userId: objectId })
+      UserFile.find({ userId: objectId, createdAt: notExpired })
         .select("_id name category toolName group workspace url createdAt")
         .sort({ createdAt: -1 })
         .limit(100)

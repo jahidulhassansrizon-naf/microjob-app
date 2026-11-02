@@ -3,6 +3,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { translateText } from "@/lib/i18n";
 import { useState, useEffect, useMemo } from "react";
 import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 import Link from "next/link";
 import {
   ImageIcon,
@@ -990,13 +991,6 @@ export default function MyFilesPage() {
                 }
               </T>
             </p>
-            <p className="mt-0.5 text-[15px] leading-6 text-[#7A6A50] sm:text-base">
-              <T>
-                {
-                  "Files are deleted automatically after 30 days, so download what\n              you need before then.\n            "
-                }
-              </T>
-            </p>
           </div>
 
           <button
@@ -1022,6 +1016,8 @@ export default function MyFilesPage() {
             <PanelRightOpen size={15} className="text-[#426D98] lg:hidden" />
           </button>
         </header>
+
+        <RetentionNotice className="mb-4 shrink-0" />
 
         <div
           className={`grid items-start gap-4 sm:gap-6 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)] lg:items-stretch ${sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`}

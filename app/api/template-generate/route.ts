@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { getBotUrl } from "@/app/api/_lib/botUrl";
+import { acquireGenerationLock, generationBusyResponse } from "@/app/api/_lib/generationLock";
 
 export const runtime = "nodejs";
 
@@ -222,7 +223,7 @@ async function requireActiveSubscription(request: Request) {
       );
     }
 
-    return null;
+    return decoded.userId;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
@@ -237,7 +238,12 @@ async function requireActiveSubscription(request: Request) {
 
 export async function POST(req: Request) {
   const subscriptionGuard = await requireActiveSubscription(req);
-  if (subscriptionGuard) return subscriptionGuard;
+  if (subscriptionGuard && typeof subscriptionGuard !== "string") return subscriptionGuard;
+  const userId = subscriptionGuard as string;
+
+  // One image at a time per account (covers several tabs/devices).
+  const releaseLock = await acquireGenerationLock(userId);
+  if (!releaseLock) return generationBusyResponse();
 
   try {
     const formData = await req.formData();
@@ -281,5 +287,7 @@ export async function POST(req: Request) {
       },
       { status: 500 },
     );
+  } finally {
+    await releaseLock();
   }
 }

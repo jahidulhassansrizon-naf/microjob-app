@@ -1,10 +1,18 @@
 "use client";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 import { useAiTemplateText } from "./aiTemplateI18n";
 import React from "react";
 import { X, ChevronLeft, ChevronRight, Download, Upload, Heart, Image as ImageIcon, Sparkles, QrCode } from "lucide-react";
 import QrCodeSidebar from "@/app/ai-editor/_components/QrCodeSidebar";
-import { ScanOverlay } from "./ScanOverlay";
+import { GateOverlay } from "../../_components/GateOverlay";
 import type { Template } from "./templateData";
+const TEMPLATE_GATE_STAGES = [
+    "Measuring your photo",
+    "Detecting face and landmarks",
+    "Matching the template style",
+    "Keeping your own identity",
+    "Refining the details",
+];
 type Props = {
     selectedTemplate: Template;
     generatedImage: string | null;
@@ -24,6 +32,14 @@ type Props = {
 export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGenerating, userPhoto, userPhotoPreview, generationError, fileInputRef, isSelectedFavorite, onClose, onMove, onUserPhotoChange, onUserPhotoFile, onGeneratePhoto, onToggleFavorite, }: Props) {
     const { t } = useAiTemplateText();
     const [showPhoneQr, setShowPhoneQr] = React.useState(false);
+    const imageBoxRef = React.useRef<HTMLDivElement | null>(null);
+
+    React.useEffect(() => {
+      // On phones the photo sits above the form, so keep it in view while the generating animation plays.
+      if (!isGenerating || typeof window === "undefined") return;
+      if (!window.matchMedia("(max-width: 820px)").matches) return;
+      imageBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [isGenerating]);
 
     React.useEffect(() => {
       // A QR opened for one template must not remain attached after navigating to another template.
@@ -41,10 +57,11 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
         <button type="button" className="modal-nav modal-prev" onClick={() => onMove(-1)} aria-label={t("Previous template")}><ChevronLeft size={20}/></button>
         <button type="button" className="modal-nav modal-next" onClick={() => onMove(1)} aria-label={t("Next template")}><ChevronRight size={20}/></button>
 
-        <div className={`modal-image ${generatedImage ? "has-generated-image" : ""}`}>
+        <div ref={imageBoxRef} className={`modal-image ${generatedImage ? "has-generated-image" : ""}`}>
           <img src={generatedImage || selectedTemplate.image} alt={generatedImage ? t(`Generated result for ${selectedTemplate.title}`) : t(selectedTemplate.title)} decoding="async" fetchPriority="high"/>
 
-          {isGenerating && !generatedImage && (<ScanOverlay key="active-scan" active={isGenerating && !generatedImage}/>)}
+          {/* Same generating animation as the AI Editor. The photo on screen falls in, the new result rises out. */}
+          <GateOverlay active={isGenerating} image={generatedImage || selectedTemplate.image} background="#E3D6B8" t={t} stages={TEMPLATE_GATE_STAGES}/>
 
           {generatedImage && (<div className="generated-image-overlay">
               <span className="generated-image-badge">{t("Generated")}</span>
@@ -55,6 +72,7 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
         </div>
 
         <div className="modal-details scroll">
+          {generatedImage && <RetentionNotice variant="compact" className="mb-3" />}
           <span className="modal-category">{t(selectedTemplate.category)}</span>
           <h2>{t(selectedTemplate.title)}</h2>
           <p className="modal-lead">{t("Upload your photo and recreate this template while keeping your own identity.")}</p>

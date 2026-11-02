@@ -27,6 +27,7 @@ import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useAiTemplateText } from "./components/aiTemplateI18n";
 import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 
 async function persistGeneratedFile(
   image: string,
@@ -470,6 +471,7 @@ export default function AITemplatePage() {
       <DashboardNavbar />
       <SubscriptionLock />
       <main className="main-content">
+        <RetentionNotice variant="compact" className="mb-3" />
         <TemplateToolbar
           search={search}
           setSearch={setSearch}

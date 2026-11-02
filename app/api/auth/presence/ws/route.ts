@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   return new Response(
-    "WebSocket presence is retired. Use /api/auth/presence/update and /api/admin/live.",
+    "WebSocket presence is retired. Use /api/auth/presence/update.",
     {
       status: 410,
       headers: {

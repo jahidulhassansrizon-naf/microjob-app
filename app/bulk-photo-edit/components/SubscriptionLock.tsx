@@ -109,7 +109,7 @@ export default function SubscriptionLock() {
             </button>
 
             <div className="relative px-5 pb-5 pt-7 sm:px-6 sm:pb-6 sm:pt-8">
-              <OfferVideoFrame src="/offervideo/offerwoman.mp4" compact playLabel={t("Watch video")} replayLabel={t("Replay video")} />
+              <OfferVideoFrame src="/intro/subscriptionredirectvideo.mp4" compact playLabel={t("Watch video")} replayLabel={t("Replay video")} />
 
               <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                 <Link

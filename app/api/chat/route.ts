@@ -9,6 +9,7 @@ import {
   containsImageMarker,
   deleteChatImagesForUser,
   purgeExpiredChatImages,
+  purgeExpiredChatConversations,
   serializeChatMessages,
 } from "@/app/_lib/chatImages";
 
@@ -48,6 +49,8 @@ export async function GET(request: Request) {
     await connectDB();
     // Photos older than 2 minutes are deleted (with their chat messages) before anything is returned.
     await purgeExpiredChatImages();
+    // Finished conversations (no message for 3 days, all read by admin) are deleted.
+    await purgeExpiredChatConversations();
     const user = await User.findById(auth.session.userId).select("_id role").lean();
     if (!user) return NextResponse.json({ success: false, message: "User account was not found." }, { status: 404 });
     if (user.role === "admin") return NextResponse.json({ success: false, message: "Admin accounts cannot use the user chat endpoint." }, { status: 403 });

@@ -19,6 +19,7 @@ import { downloadPhotosArchive, downloadPhotosPdf } from "./photoExport";
 import type { PrintSessionMeta } from "./printSessionStore";
 import { getAiEditorThumbnailUrl } from "./aiEditorData";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 
 export interface GenerationItem {
     id?: string | number;
@@ -311,6 +312,8 @@ export default function RecentGenerations({
           </div>
         </div>
 
+        <RetentionNotice variant="compact" className="mb-2" />
+
         <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1">
           {isLoading ? <RecentLoadingAnimation />
           : generations.length === 0 ? <div className="flex min-h-[150px] w-full items-center justify-center xl:min-h-[clamp(72px,10.5vh,112px)]"><p className="text-sm italic text-[#3B2F1E]/60"><AiT>No recent generations yet. Click “Generate Photo” to add images here.</AiT></p></div>
@@ -325,6 +328,7 @@ export default function RecentGenerations({
               <div><h2 className="text-base font-semibold text-[#3B2F1E]"><AiT>All generated images</AiT></h2><p className="text-sm text-[#3B2F1E]/60">{generations.length} <AiT>image(s)</AiT>{isSelecting ? ` • ${selectedItems.length} selected` : ""}</p></div>
               <button type="button" onClick={() => setShowAll(false)} className="cursor-pointer rounded-lg p-2 text-[#3B2F1E] transition hover:bg-[#E3D6B8]" aria-label={t("Close gallery")}><X size={18}/></button>
             </div>
+            <RetentionNotice variant="compact" className="mx-4 mt-3" />
             <div className="grid overflow-y-auto p-4 grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6">
               {generations.map((item, index) => renderImageCard(item, index, true))}
             </div>

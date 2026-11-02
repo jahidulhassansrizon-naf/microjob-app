@@ -6,6 +6,7 @@ import { connectDB } from "@/lib/db";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { getBotUrl } from "@/app/api/_lib/botUrl";
+import { acquireGenerationLock, generationBusyResponse } from "@/app/api/_lib/generationLock";
 
 export const runtime = "nodejs";
 
@@ -371,6 +372,10 @@ export async function POST(req: Request) {
 
   const userId = subscriptionGuard;
 
+  // One image at a time per account (covers several tabs/devices).
+  const releaseLock = await acquireGenerationLock(userId);
+  if (!releaseLock) return generationBusyResponse();
+
   try {
     const formData = await req.formData();
 
@@ -437,5 +442,7 @@ export async function POST(req: Request) {
       },
       { status, headers },
     );
+  } finally {
+    await releaseLock();
   }
 }

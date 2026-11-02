@@ -2,13 +2,16 @@
 import { BulkT, useBulkPhotoText } from "./components/bulkPhotoI18n";
 import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Crown, Info, Layers, X } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
 import SubscriptionLock from "./components/SubscriptionLock";
 import BulkPhotoStage from "./components/BulkPhotoStage";
 import PhotoUploader from "./components/PhotoUploader";
 import PresetPanel from "./components/PresetPanel";
+import BulkStepper from "./components/BulkStepper";
 import { TOOL_PRESETS } from "./components/toolCatalog";
+import RetentionNotice from "@/app/_components/RetentionNotice";
 import type { PhotoItem, PhotoProcessingStatus, SelectedTools, } from "./components/types";
 const PAGE_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -138,6 +141,15 @@ export default function BulkPhotoEditPage() {
         };
     }, []);
     const photosRef = useRef<PhotoItem[]>([]);
+    const resultsRef = useRef<HTMLElement | null>(null);
+    // On phones and small tablets the results sit below the tool panel, so bring them into view when processing starts.
+    useEffect(() => {
+        if (!isProcessing || typeof window === "undefined")
+            return;
+        if (window.matchMedia("(min-width: 1280px)").matches)
+            return;
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [isProcessing]);
     useEffect(() => {
         photosRef.current = photos;
     }, [photos]);
@@ -462,6 +474,12 @@ export default function BulkPhotoEditPage() {
         anchor.click();
         anchor.remove();
     }, []);
+    const downloadAllResults = useCallback(() => {
+        const ready = photosRef.current.filter((photo) => photo.status === "success" && photo.resultUrl);
+        ready.forEach((photo, index) => {
+            window.setTimeout(() => downloadResult(photo), index * 350);
+        });
+    }, [downloadResult]);
     const retryFailedPhoto = useCallback(async (photoId: string) => {
         if (isProcessing || selectedTotal === 0)
             return;
@@ -539,7 +557,7 @@ export default function BulkPhotoEditPage() {
         );
     }
     return (<div
-      className="page-font flex min-h-screen select-none flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]"
+      className="page-font flex min-h-screen select-none flex-col bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden"
       aria-hidden={Boolean(cropSession)}
       style={{ display: cropSession ? "none" : undefined }}
     >
@@ -547,53 +565,73 @@ export default function BulkPhotoEditPage() {
       <DashboardNavbar />
       <SubscriptionLock />
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-        <PhotoUploader photos={photos} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} onClearPhotos={clearPhotos} disabled={isProcessing}/>
-
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="border-b border-[#E3D6B8] bg-[#F2E8D2] px-4 py-3 sm:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-bold tracking-[-0.01em] text-[#3B2F1E]"><BulkT>{"Bulk Photo Edit\n                "}</BulkT></h1>
-                <p className="mt-1 max-w-2xl text-[14px] leading-[1.7] text-[#6B5A40]"><BulkT>{"Select 2 or more photos, choose exact AI operations, and apply\n                  the same selected operation set to each photo individually.\n                "}</BulkT></p>
+      <div className="flex flex-1 flex-col gap-3 p-2 sm:p-4 xl:min-h-0 xl:px-4 xl:py-3">
+        <header className="shrink-0 rounded-2xl bg-[#F2E8D2] px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D42020] text-white shadow">
+                <Layers size={22}/>
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-[#3B2F1E]"><BulkT>{"Bulk Photo Edit"}</BulkT></h1>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#F7C948] to-[#D9A116] px-2 py-0.5 text-[11px] font-extrabold tracking-wide text-[#4A3300] shadow-sm">
+                    <Crown size={11}/>PRO
+                  </span>
+                </div>
+                <p className="mt-0.5 max-w-2xl text-[13px] leading-[1.55] text-[#6B5A40]"><BulkT>{"Select 2 or more photos, choose exact AI operations, and apply the same selected operation set to each photo individually."}</BulkT></p>
               </div>
+            </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className={`rounded-full border px-3 py-1 text-[13px] font-bold ${photos.length >= 2
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <BulkStepper photosCount={photos.length} selectedTotal={selectedTotal} completedCount={completedCount} isProcessing={isProcessing}/>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded-full border px-2.5 py-1 text-[12.5px] font-bold ${photos.length >= 2
             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
             : "border-amber-200 bg-amber-50 text-amber-700"}`}>
                   <BulkT>{`${photos.length} photos`}</BulkT></span>
 
-                <span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-1 text-[13px] font-bold text-[#B91C1C]">
+                <span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-2.5 py-1 text-[12.5px] font-bold text-[#B91C1C]">
                   <BulkT>{`${selectedTotal} AI tools`}</BulkT></span>
 
-                {isProcessing && (<span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-3 py-1 text-[13px] font-bold text-[#B91C1C]">
+                {isProcessing && (<span className="rounded-full border border-[#FBB6B6] bg-[#FEE9E9] px-2.5 py-1 text-[12.5px] font-bold text-[#B91C1C]">
                     <BulkT>{`${processedCount}/${photos.length} processed`}</BulkT></span>)}
 
-                {!isProcessing && completedCount > 0 && (<span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[13px] font-bold text-emerald-700">
+                {!isProcessing && completedCount > 0 && (<span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12.5px] font-bold text-emerald-700">
                     <BulkT>{`${completedCount} ready`}</BulkT></span>)}
 
-                {!isProcessing && failedCount > 0 && (<span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[13px] font-bold text-red-700">
+                {!isProcessing && failedCount > 0 && (<span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[12.5px] font-bold text-red-700">
                     <BulkT>{`${failedCount} failed`}</BulkT></span>)}
 
-                {processingCount > 0 && !isProcessing && (<span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[13px] font-bold text-amber-700">
+                {processingCount > 0 && !isProcessing && (<span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[12.5px] font-bold text-amber-700">
                     <BulkT>{`${processingCount} processing`}</BulkT></span>)}
               </div>
             </div>
           </div>
+        </header>
 
-          <div className="scroll flex min-h-0 flex-1 flex-col overflow-auto">
-            <BulkPhotoStage photos={photos} onAddPhotos={addPhotos} onDownloadResult={downloadResult} onRetryPhoto={retryFailedPhoto} isProcessing={isProcessing}/>
+        <RetentionNotice variant="compact" className="shrink-0" />
 
-            {message && (<div className="px-4 pb-4 sm:px-8">
-                <div className="mx-auto w-full max-w-5xl rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] px-4 py-3 text-[14px] font-medium leading-[1.6] text-[#B91C1C]">
-                  <BulkT>{message}</BulkT>
+        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap xl:min-h-0 xl:flex-1 xl:flex-nowrap">
+          <PhotoUploader photos={photos} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} onClearPhotos={clearPhotos} disabled={isProcessing} maxPhotos={MAX_PHOTOS}/>
+
+          <main ref={resultsRef} className="relative order-3 flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-[#F2E8D2] shadow-sm lg:w-full lg:flex-none xl:order-2 xl:w-auto xl:min-h-0 xl:flex-1 scroll-mt-16">
+            <BulkPhotoStage photos={photos} onAddPhotos={addPhotos} onDownloadResult={downloadResult} onDownloadAll={downloadAllResults} onRetryPhoto={retryFailedPhoto} isProcessing={isProcessing} processedCount={processedCount}/>
+
+            {message && (<div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex justify-center">
+                <div role="status" className="pointer-events-auto flex w-full max-w-3xl items-start gap-2.5 rounded-xl border border-[#FBB6B6] bg-[#FEF1F1] px-4 py-2.5 text-[13.5px] font-medium leading-[1.55] text-[#B91C1C] shadow-lg">
+                  <Info size={16} className="mt-0.5 shrink-0"/>
+                  <span className="min-w-0 flex-1"><BulkT>{message}</BulkT></span>
+                  <button type="button" onClick={() => setMessage("")} aria-label="Close" className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition hover:bg-[#DC2626] hover:text-white">
+                    <X size={13}/>
+                  </button>
                 </div>
               </div>)}
-          </div>
-        </main>
+          </main>
 
-        <PresetPanel selectedTools={selectedTools} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
+          <PresetPanel selectedTools={selectedTools} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
+        </div>
       </div>
       {cropSession && (
         <PhotoCropWorkspace
