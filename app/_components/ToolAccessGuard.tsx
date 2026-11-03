@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ShieldOff, ArrowLeft } from "lucide-react";
+import { ShieldOff } from "lucide-react";
 
 type GateState = {
   pathname: string;
@@ -166,16 +166,10 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
             </div>
           )}
           <a
-            href="/contact"
+            href="/dashboard"
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
           >
             Contact admin / অ্যাডমিনের সাথে যোগাযোগ
-          </a>
-          <a
-            href="/dashboard"
-            className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            <ArrowLeft size={16} /> Back to dashboard
           </a>
         </section>
       </main>
