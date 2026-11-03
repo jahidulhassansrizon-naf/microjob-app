@@ -1230,31 +1230,8 @@ export default function UsefulDocumentTemplatesPage() {
             animation: faqFadeIn 0.18s ease-out;
           }
 
-          .documents-page .whatsapp {
-            position: fixed;
-            right: 22px;
-            bottom: 22px;
-            width: 53px;
-            height: 53px;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            background: #10B981;
-            color: #ffffff;
-            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.35);
-            z-index: 20;
-            text-decoration: none;
-            transition: transform 0.15s ease;
-          }
 
-          .documents-page .whatsapp:hover {
-            transform: scale(1.06);
-          }
 
-          .documents-page .whatsapp svg {
-            width: 27px;
-            height: 27px;
-          }
 
           @media (max-width: 1060px) {
             .documents-page .grid-shell {
@@ -1289,12 +1266,6 @@ export default function UsefulDocumentTemplatesPage() {
               grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .documents-page .whatsapp {
-              right: 16px;
-              bottom: 16px;
-              width: 49px;
-              height: 49px;
-            }
 
             .documents-page .faq-answer {
               padding-left: 20px;
@@ -1448,14 +1419,6 @@ export default function UsefulDocumentTemplatesPage() {
             </div>
           </div>
         </section>
-
-        <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="whatsapp" aria-label="Contact us on WhatsApp">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="8.7" stroke="currentColor" strokeWidth="1.8"/>
-            <path d="M8.4 18.6 7.4 21l2.4-1.1A8.7 8.7 0 1 0 8.4 18.6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-            <path d="M9.1 9.2c.15-.34.32-.35.6-.35h.45c.2 0 .34.1.42.32l.62 1.45c.08.2.04.38-.08.54l-.4.5c-.11.13-.12.25-.04.4.33.6 1.2 1.54 2.36 1.98.19.08.3.05.41-.07l.55-.67c.13-.16.3-.2.49-.1l1.39.65c.2.1.27.23.24.45-.05.39-.33 1.04-.91 1.34-.48.25-1.24.22-2.1-.13-.73-.3-1.61-.88-2.54-1.75-.77-.73-1.56-1.77-1.91-2.48-.32-.64-.38-1.2-.18-1.64Z" fill="currentColor"/>
-          </svg>
-        </a>
       </main>
       <Footer />
     </>);

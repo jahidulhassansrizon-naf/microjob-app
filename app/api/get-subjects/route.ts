@@ -1,12 +1,11 @@
 import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
+import { generateJsonText } from "../_lib/gemini";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MODEL_NAME = "gemini-3.5-flash-lite";
 
 const ALLOWED_CLASSES = new Set([
   "HSC",
@@ -21,21 +20,13 @@ const ALLOWED_CLASSES = new Set([
   "Class 3",
 ]);
 
-const SUBJECT_SCHEMA: Schema = {
-  type: SchemaType.ARRAY,
-  minItems: 1,
-  maxItems: 40,
+const SUBJECT_SCHEMA = {
+  type: "ARRAY",
   items: {
-    type: SchemaType.OBJECT,
+    type: "OBJECT",
     properties: {
-      label: {
-        type: SchemaType.STRING,
-        description: "The human-readable subject or paper name.",
-      },
-      value: {
-        type: SchemaType.STRING,
-        description: "A short stable identifier for the subject.",
-      },
+      label: { type: "STRING", description: "The human-readable subject or paper name." },
+      value: { type: "STRING", description: "A short stable identifier for the subject." },
     },
     required: ["label", "value"],
   },
@@ -152,22 +143,12 @@ async function generateSubjects(
   apiKey: string,
   prompt: string,
 ): Promise<unknown[]> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      maxOutputTokens: 3000,
-      responseMimeType: "application/json",
-      responseSchema: SUBJECT_SCHEMA,
-    },
+  const responseText = await generateJsonText({
+    apiKey,
+    prompt,
+    maxOutputTokens: 3000,
+    responseSchema: SUBJECT_SCHEMA,
   });
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
-
-  if (!responseText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
 
   return parseJsonArray(responseText);
 }
@@ -250,7 +231,7 @@ Examples of valid output shape:
     } catch (error) {
       console.error("[get-subjects] Gemini generation failed:", error);
       return errorResponse(
-        "Gemini could not load subjects right now. Please try again.",
+        "Could not load subjects right now. Please try again.",
         502,
       );
     }
@@ -260,7 +241,7 @@ Examples of valid output shape:
     if (!subjects.length) {
       console.error("[get-subjects] Gemini returned no usable subjects.");
       return errorResponse(
-        "Gemini returned no usable subjects for this class. Please try again.",
+        "No usable subjects were found for this class. Please try again.",
         502,
       );
     }

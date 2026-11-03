@@ -62,7 +62,7 @@ function getErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Gemini image generation failed.";
+  return "Image generation failed.";
 }
 
 function extractCloudinaryPublicId(imageUrl: string): string | null {

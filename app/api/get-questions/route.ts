@@ -1,12 +1,11 @@
 import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateJsonText } from "../_lib/gemini";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MODEL_NAME = "gemini-3.5-flash-lite";
 
 const QUESTION_TYPES = [
   "All question types",
@@ -378,24 +377,11 @@ async function generateQuestions(
   apiKey: string,
   prompt: string,
 ): Promise<unknown[]> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      temperature: 0.35,
-      topP: 0.9,
-      maxOutputTokens: 14000,
-      responseMimeType: "application/json",
-    },
+  const responseText = await generateJsonText({
+    apiKey,
+    prompt,
+    maxOutputTokens: 14000,
   });
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
-
-  if (!responseText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
 
   return parseJsonArray(responseText);
 }
@@ -605,7 +591,7 @@ For Short/Descriptive questions, options and answer may be omitted.
       );
 
       return errorResponse(
-        "Gemini could not generate questions right now. Please try again.",
+        "Could not generate questions right now. Please try again.",
         502,
       );
     }
@@ -641,8 +627,8 @@ For Short/Descriptive questions, options and answer may be omitted.
 
       return errorResponse(
         isCreative
-          ? "Gemini returned too few usable creative questions. Please try again with the same filter."
-          : "Gemini returned too few usable questions. Please try again with the same filter.",
+          ? "Too few usable creative questions were generated. Please try again with the same filter."
+          : "Too few usable questions were generated. Please try again with the same filter.",
         502,
       );
     }

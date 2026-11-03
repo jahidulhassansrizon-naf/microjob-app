@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction,
 import PrintDuplexLayout from "../PrintDuplexLayout";
 import type { PaperAnnotation, PaperRenderRequest, Question, } from "../../types/question";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
+import { FileText } from "lucide-react";
 import CanvasSidebar from "./CanvasSidebar";
+import FetchedQuestionList from "./FetchedQuestionList";
+import SelectedQuestionsPanel from "./SelectedQuestionsPanel";
 import PaperToolbar from "./PaperToolbar";
 import PaperSheet from "./PaperSheet";
 import { parseRegionTargetId, readEditableText, } from "./RegionSelectionOverlay";
@@ -608,6 +611,10 @@ export default function InteractiveQuestionCanvas({ manager, }: {
         };
         return demoJointQuestionsByPage.map((questionsForPage) => makeGroups(questionsForPage));
     }, [demoJointQuestionsByPage]);
+    const exitDemo = useCallback(() => {
+        setDemoMode(false);
+        setRegionSelectMode(false);
+    }, [setRegionSelectMode]);
     const loadDemo = () => {
         const freshDemoQuestions = DEMO_QUESTIONS.map((question) => ({
             ...question,
@@ -626,7 +633,7 @@ export default function InteractiveQuestionCanvas({ manager, }: {
             "paper:full-marks": "১০০",
         });
         setDemoAnnotations([]);
-        manager.clearAllAnnotations();
+        // Keep the user's real-paper annotations intact while showing an isolated demo preview.
         manager.setActiveAnnotationId(null);
         setDemoMode(true);
         setSelectedTab("browse");
@@ -912,26 +919,65 @@ export default function InteractiveQuestionCanvas({ manager, }: {
         setRegionSelectMode,
     ]);
     return (<>
-      <main className="page-font flex flex-col gap-4 p-4 lg:flex-row lg:gap-4 xl:p-6">
-        <CanvasSidebar manager={manager} demoMode={demoMode} onExitDemo={() => {
-            setDemoMode(false);
-            setRegionSelectMode(false);
-        }} displaySelectedQuestions={displaySelectedQuestions}/>
-
-        <section className="min-w-0 flex-1">
-          <div className="flex flex-col gap-3">
-            <PaperToolbar manager={manager} demoMode={demoMode} loadDemo={loadDemo}/>
-
-            <div className="relative">
-              <PrintDuplexLayout key={demoMode ? "demo-question-paper" : "live-question-paper"} manager={displayManager} renderPaper={renderPaper}/>
-
-              {!demoMode && regionSelectMode ? (<div className="ui-font pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#3B2F1E] px-5 py-2.5 text-[14px] font-bold text-[#FBF6E8] shadow-xl"><T>{"Select an area on the question paper\n                "}</T></div>) : null}
-            </div>
+      <main className="page-font mx-auto w-full max-w-[1900px] px-3 py-2 sm:px-4 xl:px-5 xl:py-2.5">
+        <div className="question-workspace-grid grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(220px,0.78fr)_minmax(0,1.22fr)] xl:grid-cols-[minmax(260px,300px)_minmax(420px,1fr)_minmax(310px,360px)] 2xl:grid-cols-[minmax(280px,330px)_minmax(500px,1fr)_minmax(340px,420px)] xl:gap-3">
+          {/* Left: question filters with the available question list directly underneath. */}
+          <div className="question-workspace-column question-filters-column flex min-w-0 flex-col gap-3">
+            <CanvasSidebar manager={manager} demoMode={demoMode} onExitDemo={exitDemo}/>
+            {selectedTab === "browse" ? (
+              <FetchedQuestionList manager={manager} onExitDemo={exitDemo}/>
+            ) : null}
           </div>
-        </section>
+
+          {/* Center: the selected question paper and its live preview. */}
+          <section className="question-workspace-column question-paper-column flex min-w-0 flex-col gap-3" aria-label="Your question paper">
+            <SelectedQuestionsPanel manager={manager} displaySelectedQuestions={displaySelectedQuestions}/>
+            <div className="relative min-w-0">
+              <PrintDuplexLayout key={demoMode ? "demo-question-paper" : "live-question-paper"} manager={displayManager} renderPaper={renderPaper}/>
+              {!demoMode && regionSelectMode ? (<div className="ui-font pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#342B1E] px-5 py-2.5 text-[13px] font-bold text-[#FCF8EF] shadow-xl"><T>{"Select an area on the question paper\n                "}</T></div>) : null}
+            </div>
+          </section>
+
+          {/* Right: all paper customization controls. */}
+          <aside className="question-workspace-column question-editor-column min-w-0 lg:col-span-2 xl:col-span-1">
+            <PaperToolbar manager={manager} demoMode={demoMode} loadDemo={loadDemo} onExitDemo={exitDemo}/>
+          </aside>
+        </div>
       </main>
 
       <style jsx global>{`
+        @media (min-width: 1280px) {
+          .question-filters-column,
+          .question-paper-column,
+          .question-editor-column {
+            min-height: 0;
+            max-height: calc(100vh - 158px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #E5A0A0 transparent;
+          }
+
+          .question-paper-column .paper-stage {
+            padding: 10px !important;
+          }
+        }
+
+        @media (min-width: 1024px) and (max-width: 1279px) {
+          .question-editor-column {
+            grid-column: 1 / -1;
+          }
+        }
+
+        @media (max-width: 1279px) {
+          .question-filters-column,
+          .question-paper-column,
+          .question-editor-column {
+            max-height: none;
+            overflow: visible;
+          }
+        }
+
         /* Joint 2 defensive cleanup for legacy center/spine overlays. */
         .duplex-spread .joint-hide-center-before::before {
           content: none !important;

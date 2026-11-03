@@ -1,28 +1,19 @@
 import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
+import { generateJsonText } from "../_lib/gemini";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MODEL_NAME = "gemini-3.5-flash-lite";
 
-const CHAPTER_SCHEMA: Schema = {
-  type: SchemaType.ARRAY,
-  minItems: 1,
-  maxItems: 100,
+const CHAPTER_SCHEMA = {
+  type: "ARRAY",
   items: {
-    type: SchemaType.OBJECT,
+    type: "OBJECT",
     properties: {
-      label: {
-        type: SchemaType.STRING,
-        description: "The textbook chapter or unit name.",
-      },
-      value: {
-        type: SchemaType.STRING,
-        description: "A short stable identifier for the chapter.",
-      },
+      label: { type: "STRING", description: "The textbook chapter or unit name." },
+      value: { type: "STRING", description: "A short stable identifier for the chapter." },
     },
     required: ["label", "value"],
   },
@@ -139,24 +130,12 @@ async function generateChapters(
   apiKey: string,
   prompt: string,
 ): Promise<unknown[]> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      temperature: 0.1,
-      topP: 0.85,
-      maxOutputTokens: 5000,
-      responseMimeType: "application/json",
-      responseSchema: CHAPTER_SCHEMA,
-    },
+  const responseText = await generateJsonText({
+    apiKey,
+    prompt,
+    maxOutputTokens: 5000,
+    responseSchema: CHAPTER_SCHEMA,
   });
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
-
-  if (!responseText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
 
   return parseJsonArray(responseText);
 }
@@ -244,7 +223,7 @@ Use those values exactly as the requested context.
     } catch (error) {
       console.error("[get-chapters] Gemini generation failed:", error);
       return errorResponse(
-        "Gemini could not load chapters right now. Please try again.",
+        "Could not load chapters right now. Please try again.",
         502,
       );
     }
@@ -254,7 +233,7 @@ Use those values exactly as the requested context.
     if (!chapters.length) {
       console.error("[get-chapters] Gemini returned no usable chapters.");
       return errorResponse(
-        "Gemini returned no usable chapters for this subject. Please try again.",
+        "No usable chapters were found for this subject. Please try again.",
         502,
       );
     }

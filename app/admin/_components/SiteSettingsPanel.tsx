@@ -1,11 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } from "react";
-import { ImagePlus, RefreshCw, Save, Globe, Phone, MapPin, Share2, CheckCircle2, AlertCircle, UploadCloud, Code2, Lightbulb, Plus, Trash2 } from "lucide-react";
+import { ImagePlus, RefreshCw, Save, Globe, Phone, MapPin, Share2, CheckCircle2, AlertCircle, UploadCloud, Plus, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 import { DEFAULT_SITE_SETTINGS, type SiteSettings } from "@/lib/siteSettings";
 import { getContactList, mergeSiteSettingsWithContactLists, type ContactListKey } from "@/app/_components/contactSettings";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
+
+// Cleans a WhatsApp group link: unwraps Facebook redirect links and strips tracking params.
+// Returns "" when the value is not a usable http(s) link.
+function normalizeGroupLink(raw: string): string {
+  let value = raw.trim();
+  if (!value) return "";
+  try {
+    const u = new URL(value);
+    const inner = u.hostname.endsWith("facebook.com") ? u.searchParams.get("u") : null;
+    if (inner) value = inner;
+  } catch { /* not a URL */ }
+  const match = value.match(/chat\.whatsapp\.com\/([A-Za-z0-9]+)/i);
+  if (match) return `https://chat.whatsapp.com/${match[1]}`;
+  return /^https?:\/\//i.test(value) ? value : "";
+}
 
 const FIELD = "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
 const LABEL = "block text-sm font-medium text-slate-700";
@@ -35,18 +50,9 @@ const GROUPS: { key: GroupKey; label: string; title: string; description: string
     { key: "availabilityLabel", label: "Availability label" }, { key: "availabilityText", label: "Availability description", type: "textarea" },
     { key: "mapLabel", label: "Map button label" },
   ] },
-  { key: "footer", label: "Footer", title: "Footer content", description: "Update the footer description and the copyright line without changing its layout.", icon: ImagePlus, fields: [
+  { key: "footer", label: "Footer", title: "Footer content", description: "Update the footer description, copyright line, the office address / phone / email shown in the footer, and the WhatsApp support-group link used by the floating button.", icon: ImagePlus, fields: [
     { key: "description", label: "Footer description", type: "textarea" }, { key: "copyrightText", label: "Copyright text" },
-  ] },
-  { key: "developer", label: "Developer info", title: "Designer & developer details", description: "Shown in the first footer dropdown. These details are independent from Contact information; blank fields stay blank.", icon: Code2, fields: [
-    { key: "title", label: "Dropdown title", hint: "For example: Designed & developed by" }, { key: "name", label: "Name" },
-    { key: "email", label: "Email", type: "email" }, { key: "phone", label: "Phone", type: "tel" },
-    { key: "address", label: "Address", type: "textarea" },
-  ] },
-  { key: "partner", label: "Executive Profile", title: "Concept & operations partner details", description: "Shown in the second footer dropdown. The dropdown stays hidden on the live site until a name is saved.", icon: Lightbulb, fields: [
-    { key: "title", label: "Dropdown title", hint: "For example: Concept & operations by" }, { key: "name", label: "Name" },
-    { key: "email", label: "Email", type: "email" }, { key: "phone", label: "Phone", type: "tel" },
-    { key: "address", label: "Address", type: "textarea" },
+    { key: "whatsappGroupUrl", label: "WhatsApp support group link", type: "url", hint: "Paste the group invite link (https://chat.whatsapp.com/...). Extra tracking text such as fbclid is removed automatically when you save. It opens from the floating WhatsApp button at the bottom-left of the site." },
   ] },
   { key: "aboutPage", label: "About page", title: "About page office blocks", description: "Edit the location labels and business identifiers shown in the About page office cards. The primary address and phone still use the shared Contact information section.", icon: MapPin, fields: [
     { key: "primaryOfficeLabel", label: "Primary office label" }, { key: "primaryOfficeLicense", label: "Primary office license number" },
@@ -200,14 +206,19 @@ export default function SiteSettingsPanel() {
   const save = async () => {
     setSaving(true); setError(""); setNotice("");
     try {
-      const response = await fetch("/api/admin/site-settings", { method: "PUT", credentials: "include", headers: { ...getClientAuthHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ settings: draft }) });
+      const footerDraft = getGroup(draft, "footer");
+      const rawGroupLink = String(footerDraft.whatsappGroupUrl ?? "").trim();
+      const groupLink = normalizeGroupLink(rawGroupLink);
+      if (rawGroupLink && !groupLink) throw new Error("WhatsApp support group link must be a valid link starting with https://");
+      const payload = { ...draft, footer: { ...footerDraft, whatsappGroupUrl: groupLink } } as SiteSettings;
+      const response = await fetch("/api/admin/site-settings", { method: "PUT", credentials: "include", headers: { ...getClientAuthHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ settings: payload }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.success || !data.settings) throw new Error(data?.message || "Could not save changes.");
       const value = mergeSiteSettingsWithContactLists<SiteSettings>(data.settings);
       setDraft(value);
       applySettings(value);
       await refreshSettings();
-      setNotice("Changes saved. Shared contact lists and the separate developer and executive details have been updated.");
+      setNotice("Changes saved. Footer, contact details and the support-group link have been updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save changes.");
     } finally { setSaving(false); }
@@ -239,10 +250,11 @@ export default function SiteSettingsPanel() {
             <div className="grid gap-4 md:grid-cols-2">
               {group.fields.filter((field) => group.key !== "contact" || !["email", "phone", "address"].includes(field.key)).map((field) => <div key={`${group.key}-${field.key}`} className={field.type === "textarea" ? "md:col-span-2" : ""}><Field field={field} value={String(getGroup(draft, group.key)[field.key] ?? "")} onChange={(value) => updateField(group.key, field.key, value)} /></div>)}
             </div>
-            {group.key === "contact" && <div className="mt-6 grid gap-4 xl:grid-cols-3">
+            {group.key === "footer" && <p className="mt-6 rounded-lg border border-indigo-100 bg-indigo-50/70 px-3 py-2.5 text-xs leading-5 text-indigo-800">Office address, phone numbers and emails below are shown in the website footer. They are the same shared contact details used in the “Contact information” section, so editing them in either place updates both.</p>}
+            {(group.key === "contact" || group.key === "footer") && <div className="mt-4 grid gap-4 xl:grid-cols-3">
               <ContactListEditor title="Contact emails" description="Every email is shown on contact-related site sections. The first email remains the default EmailJS recipient." inputType="email" values={getEditableContactList("emails")} onChange={(values) => updateContactList("emails", values)} />
               <ContactListEditor title="Contact phone numbers" description="Add as many public phone numbers as you need; each one appears as a clickable phone link." inputType="tel" values={getEditableContactList("phones")} onChange={(values) => updateContactList("phones", values)} />
-              <ContactListEditor title="Contact locations" description="Add one or more public location/address entries. These are separate from the Executive Profile and Developer Info." inputType="text" values={getEditableContactList("locations")} onChange={(values) => updateContactList("locations", values)} />
+              <ContactListEditor title="Contact locations" description="Add one or more public office address entries." inputType="text" values={getEditableContactList("locations")} onChange={(values) => updateContactList("locations", values)} />
             </div>}
           </>}
         </Card>

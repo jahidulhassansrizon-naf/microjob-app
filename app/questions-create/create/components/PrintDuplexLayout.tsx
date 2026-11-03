@@ -2,7 +2,7 @@
 import { T } from "../i18n";
 import type { PaperRenderRequest, PrintPageVariant } from "../types/question";
 import type { QuestionManager } from "../hooks/useQuestionManager";
-import { FileText, GripVertical, Move, SquareDashedMousePointer, } from "lucide-react";
+import { ArrowLeft, FileText, GripVertical, Move, SquareDashedMousePointer, } from "lucide-react";
 import type { ReactNode } from "react";
 type PrintDuplexLayoutProps = {
     manager: QuestionManager;
@@ -386,25 +386,25 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
         : [];
     const totalSheets = pageSize === "Joint" ? Math.ceil(visibleJointPageIndices.length / 2) : 1;
     return (<>
-      <div className="paper-stage page-font relative rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] p-3 shadow-sm">
-        <div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 shadow-sm">
+      <div className="paper-stage page-font relative rounded-2xl border border-[#E7DCC7] bg-[#F7F2E8] p-3 shadow-[0_3px_14px_rgba(76,57,28,0.05)] sm:p-4">
+        <div className="screen-only mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#E7DCC7] bg-white px-3 py-2.5 shadow-sm">
           <div className="flex min-w-0 items-center gap-2">
             <SquareDashedMousePointer size={16} className={regionSelectMode ? "text-[#DC2626]" : "text-[#6B5A40]"}/>
 
             <span className="truncate text-[14px] font-semibold text-[#3B2F1E]">
               {regionSelectMode
-        ? <T>{"Drag anywhere on the paper to mark a custom text region"}</T> : <T>{"Select an area to place custom inline text"}</T>}
+        ? <T>{"Drag anywhere on the paper to mark a custom text region"}</T> : <T>{"Add a custom text area to your question paper (optional)"}</T>}
             </span>
           </div>
 
-          <button type="button" onClick={() => setRegionSelectMode(!regionSelectMode)} className={`shrink-0 rounded-lg border px-3 py-1.5 text-[13px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${regionSelectMode
-            ? "border-[#DC2626] bg-[#F6D9A8] text-[#DC2626]"
-            : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}>
+          <button type="button" onClick={() => setRegionSelectMode(!regionSelectMode)} className={`shrink-0 rounded-lg border px-3 py-1.5 text-[12px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.98] ${regionSelectMode
+            ? "border-[#D42020] bg-[#FFF1EF] text-[#B91C1C]"
+            : "border-[#E7DCC7] bg-[#FCF8EF] text-[#51442F] hover:bg-[#F8F0E1]"}`}>
             {regionSelectMode ? <T>{"Cancel area"}</T> : <T>{"Select area"}</T>}
           </button>
         </div>
 
-        {pageSize === "Joint" ? (<div className="screen-only mb-2 flex items-center justify-between gap-2 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 shadow-sm">
+        {pageSize === "Joint" ? (<div className="screen-only mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#E7DCC7] bg-white px-3 py-2.5 shadow-sm">
             <div className="flex items-center gap-2">
               <Move size={16} className="text-[#DC2626]"/>
 
@@ -434,16 +434,45 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
             ? <T>{"Drag across any page area to create a custom inline text box"}</T> : <T>{"Drag questions to reorder them within a section or move them between pages"}</T>}
           </div>) : null}
 
-        <div className="scroll paper-print-root overflow-auto bg-[#F6EEDB] py-1">
-          {selectedQuestions.length === 0 ? (<div className="flex min-h-[590px] items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-[#FBB6B6] bg-[#FEE9E9] text-[#DC2626] shadow-sm">
-                  <FileText size={22}/>
+        <div className="scroll paper-print-root overflow-auto rounded-xl border border-[#EAE1D2] bg-[#F1ECE2] p-2 sm:p-3">
+          {selectedQuestions.length === 0 ? (<div className="flex min-h-[500px] items-center justify-center px-3 py-8 sm:min-h-[570px] sm:px-6">
+              <div className="w-full max-w-[650px] text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#F0D5D1] bg-[#FFF1EF] text-[#D42020] shadow-sm">
+                  <FileText size={25}/>
                 </div>
 
-                <p className="text-[17px] font-semibold text-[#3B2F1E]"><T>{"No questions selected yet\n                "}</T></p>
+                <span className="inline-flex items-center rounded-full border border-[#E7DCC7] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8A795F]">
+                  <T>{"Paper preview"}</T>
+                </span>
+                <h3 className="mt-3 text-[20px] font-extrabold tracking-tight text-[#342B1E] sm:text-[22px]">
+                  <T>{"Your question paper starts here"}</T>
+                </h3>
+                <p className="mx-auto mt-2 max-w-[430px] text-[12px] leading-6 text-[#81725A] sm:text-[13px]">
+                  <T>{"Choose questions from the list in the middle. Each question you add will appear here in your paper layout."}</T>
+                </p>
 
-                <p className="mt-1 max-w-xs text-[14px] italic leading-[1.6] text-[#6B5A40]"><T>{"Filter and pick questions from the left \u2014 they will appear\n                  here as a paper.\n                "}</T></p>
+                <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-3">
+                  <div className="rounded-xl border border-[#E7DCC7] bg-white px-3 py-3 shadow-sm">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FCE9E6] text-[11px] font-extrabold text-[#B91C1C]">01</span>
+                    <p className="mt-2 text-[11px] font-extrabold text-[#51442F]"><T>{"Choose your class"}</T></p>
+                    <p className="mt-1 text-[10px] leading-4 text-[#8A795F]"><T>{"Select class, subject and chapter."}</T></p>
+                  </div>
+                  <div className="rounded-xl border border-[#E7DCC7] bg-white px-3 py-3 shadow-sm">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FCE9E6] text-[11px] font-extrabold text-[#B91C1C]">02</span>
+                    <p className="mt-2 text-[11px] font-extrabold text-[#51442F]"><T>{"Apply the filter"}</T></p>
+                    <p className="mt-1 text-[10px] leading-4 text-[#8A795F]"><T>{"Load the matching questions."}</T></p>
+                  </div>
+                  <div className="rounded-xl border border-[#E7DCC7] bg-white px-3 py-3 shadow-sm">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8F4EA] text-[11px] font-extrabold text-[#258047]">03</span>
+                    <p className="mt-2 text-[11px] font-extrabold text-[#51442F]"><T>{"Add questions"}</T></p>
+                    <p className="mt-1 text-[10px] leading-4 text-[#8A795F]"><T>{"Click each question you want to include."}</T></p>
+                  </div>
+                </div>
+
+                <div className="mx-auto mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-[#F0D5D1] bg-[#FFF7F5] px-4 py-2 text-[11px] font-bold text-[#A83B33]">
+                  <ArrowLeft size={14} className="shrink-0"/>
+                  <T>{"Choose questions from the middle list"}</T>
+                </div>
               </div>
             </div>) : pageSize === "Joint" ? (<div className="flex w-full min-w-[1050px] flex-col gap-10 pt-2">
               <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">

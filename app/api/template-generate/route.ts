@@ -21,7 +21,7 @@ function getErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return "Gemini template generation failed.";
+  return "Template generation failed.";
 }
 
 async function getUserImage(

@@ -7,9 +7,11 @@ import ActivityTracker from "@/app/_components/ActivityTracker";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
+import FloatingSupportGroup from "./_components/FloatingSupportGroup";
 import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
 import ImpersonationBanner from "./_components/ImpersonationBanner";
 import MyFilesSavedPopup from "./_components/MyFilesSavedPopup";
+import PaidAccessWelcomePopup from "./_components/PaidAccessWelcomePopup";
 import PrePaintScript from "./_components/PrePaintScript";
 import ToolAccessGuard from "./_components/ToolAccessGuard";
 import { SiteSettingsProvider } from "./_components/SiteSettingsProvider";
@@ -110,8 +112,10 @@ export default async function RootLayout({
             <Navbar />
           </ConditionalSiteNavbar>
           <ToolAccessGuard>{children}</ToolAccessGuard>
+          <FloatingSupportGroup />
           <FloatingUserAdminChat />
           <MyFilesSavedPopup />
+          <PaidAccessWelcomePopup />
           <LoginSuccessOverlay
             initialVisible={showLoginSuccess}
             initialName={showLoginSuccess ? loginFirstName : ""}

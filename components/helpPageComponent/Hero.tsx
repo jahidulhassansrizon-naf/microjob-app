@@ -1,5 +1,5 @@
 "use client";
-import { T, useI18n } from "@/components/i18n/I18nProvider";
+import { T } from "@/components/i18n/I18nProvider";
 import React from "react";
 import { Play, Mail, Phone } from "lucide-react";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
@@ -157,7 +157,6 @@ function TutorialCard({ tutorial }: {
     </article>);
 }
 export default function Hero() {
-    const { t } = useI18n();
     const { settings } = useSiteSettings();
     const contactEmails = getContactList(settings.contact, "emails");
     const contactPhones = getContactList(settings.contact, "phones");
@@ -219,10 +218,5 @@ export default function Hero() {
           </div>
         </div>
       </section>
-
-      {/* Floating WhatsApp button */}
-      <a href={settings.contact.whatsapp ? `https://wa.me/${settings.contact.whatsapp.replace(/\D/g, "")}` : `tel:${contactPhones[0] || settings.contact.phone}`} target="_blank" rel="noreferrer" aria-label={t("Contact us on WhatsApp")} className="fixed bottom-[22px] right-[22px] z-50 grid h-[56px] w-[56px] place-items-center rounded-full bg-[#10B981] text-white shadow-[0_10px_28px_rgba(16,185,129,0.30)] transition hover:scale-105">
-        <span className="text-[28px] leading-none"><T>{"\u25D4"}</T></span>
-      </a>
     </main>);
 }

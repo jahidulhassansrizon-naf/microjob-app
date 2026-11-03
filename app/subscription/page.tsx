@@ -355,28 +355,28 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
  * NEXT_PUBLIC_DEMO_ACTIVITY="true". For production, feed it real subscription records instead.
  */
 const DEMO_ACTIVITY_ENABLED = process.env.NEXT_PUBLIC_DEMO_ACTIVITY === "true";
-const DEMO_TOTAL_BUYERS = 750;
+const DEMO_TOTAL_BUYERS = 850;
 // Demo sales history. Every period gets a random-looking but FIXED count (seeded by today's date)
 // and all periods together add up to DEMO_TOTAL_BUYERS. Longest period is 2 months.
 type DemoUnit = "today" | "minute" | "hour" | "day" | "week" | "month";
 type DemoBucket = { unit: DemoUnit; n: number; min: number; max: number };
 
 const DEMO_BUCKETS: DemoBucket[] = [
-  { unit: "today", n: 0, min: 12, max: 30 },
+  { unit: "today", n: 0, min: 14, max: 34 },
   { unit: "minute", n: 1, min: 1, max: 2 },
   { unit: "minute", n: 5, min: 1, max: 3 },
-  { unit: "minute", n: 15, min: 1, max: 4 },
-  { unit: "minute", n: 30, min: 1, max: 5 },
-  { unit: "hour", n: 1, min: 1, max: 6 },
-  { unit: "hour", n: 3, min: 1, max: 6 },
-  { unit: "hour", n: 6, min: 2, max: 8 },
-  { unit: "hour", n: 12, min: 3, max: 10 },
-  { unit: "day", n: 1, min: 12, max: 30 },
-  { unit: "day", n: 2, min: 12, max: 30 },
-  { unit: "day", n: 3, min: 12, max: 30 },
-  { unit: "week", n: 1, min: 90, max: 130 },
-  { unit: "week", n: 2, min: 110, max: 150 },
-  { unit: "month", n: 1, min: 180, max: 240 },
+  { unit: "minute", n: 15, min: 1, max: 5 },
+  { unit: "minute", n: 30, min: 1, max: 6 },
+  { unit: "hour", n: 1, min: 1, max: 7 },
+  { unit: "hour", n: 3, min: 1, max: 7 },
+  { unit: "hour", n: 6, min: 2, max: 9 },
+  { unit: "hour", n: 12, min: 3, max: 11 },
+  { unit: "day", n: 1, min: 14, max: 34 },
+  { unit: "day", n: 2, min: 14, max: 34 },
+  { unit: "day", n: 3, min: 14, max: 34 },
+  { unit: "week", n: 1, min: 102, max: 147 },
+  { unit: "week", n: 2, min: 125, max: 170 },
+  { unit: "month", n: 1, min: 204, max: 272 },
   { unit: "month", n: 2, min: 0, max: 0 }, // gets whatever is left so the total is exact
 ];
 
