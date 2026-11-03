@@ -1,4 +1,5 @@
 import { TEMPLATE_IMAGE_URLS } from "../templateImageUrls";
+import { OWN_TEMPLATE_METADATA } from "./ownTemplateMetadata";
 
 export type Gender = "All" | "Male" | "Female" | "Children" | "Product";
 /** 3 means "3 or more images". */
@@ -109,7 +110,7 @@ type TemplateMetadataOverride = Partial<
 >;
 
 const TEMPLATE_METADATA_OVERRIDES: Record<string, TemplateMetadataOverride> =
-  {};
+  OWN_TEMPLATE_METADATA;
 
 const DEFAULT_CATEGORY = "Creative Shots";
 
