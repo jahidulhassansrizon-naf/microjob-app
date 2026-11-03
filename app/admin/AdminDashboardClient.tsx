@@ -56,10 +56,12 @@ import OverviewInsights, { type OverviewInsightsData } from "./_components/Overv
 import SiteSettingsPanel from "./_components/SiteSettingsPanel";
 import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPanel";
 import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
+import SmtpSettingsPanel from "./_components/SmtpSettingsPanel";
+import MailCampaignPanel from "./_components/MailCampaignPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -1121,6 +1123,12 @@ export default function AdminDashboardClient() {
         icon: KeyRound,
         badgeCount: 0,
       },
+      {
+        key: "smtp" as const,
+        label: "Email & SMTP",
+        icon: Mail,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -1137,7 +1145,9 @@ export default function AdminDashboardClient() {
               ? "Image generation activity"
               : tab === "payment-gateway"
               ? "Payment gateway configuration"
-              : "Website settings";
+              : tab === "smtp"
+                ? "Email & SMTP"
+                : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -2272,6 +2282,7 @@ export default function AdminDashboardClient() {
           {tab === "generations" && <AdminGenerationPanel />}
           {tab === "settings" && <SiteSettingsPanel />}
           {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
+          {tab === "smtp" && <div className="space-y-6"><SmtpSettingsPanel /><MailCampaignPanel /></div>}
 
           {accessModalUser && (
             <div

@@ -151,18 +151,29 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
             <ShieldOff size={27} strokeWidth={1.8} />
           </span>
-          <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">Tool access is disabled</h1>
+          <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">Unusual activity detected</h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            You can still sign in and browse the website, but an administrator has temporarily disabled tool access for this account.
+            We noticed unusual activity on your account, so an administrator has temporarily turned off your access to the tools.
+            If you want to know more, please contact the admin.
           </p>
-          {gate.reason && (
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            আপনার অ্যাকাউন্টে কিছু অস্বাভাবিক অ্যাক্টিভিটি থাকার কারণে অ্যাডমিন সাময়িক সময়ের জন্য আপনার টুলসের অ্যাক্সেস বন্ধ করে দিয়েছে।
+            বিস্তারিত জানতে চাইলে অ্যাডমিনের সাথে যোগাযোগ করুন।
+          </p>
+          {gate.reason && gate.reason !== "Unusual image generation activity" && (
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600">
-              <span className="font-medium text-slate-800">Reason:</span> {gate.reason}
+              <span className="font-medium text-slate-800">Note from admin:</span> {gate.reason}
             </div>
           )}
           <a
+            href="/contact"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
+          >
+            Contact admin / অ্যাডমিনের সাথে যোগাযোগ
+          </a>
+          <a
             href="/dashboard"
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             <ArrowLeft size={16} /> Back to dashboard
           </a>

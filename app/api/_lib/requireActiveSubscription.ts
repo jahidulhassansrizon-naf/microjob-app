@@ -261,7 +261,7 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
       return {
         ok: false,
         response: NextResponse.json(
-          { success: false, code: "USER_BANNED", message: "Tool access for this account has been disabled by an administrator." },
+          { success: false, code: "USER_BANNED", message: "We noticed unusual activity on your account, so an administrator has temporarily turned off your tools access. Please contact the admin to know more." },
           { status: 403 },
         ),
       };

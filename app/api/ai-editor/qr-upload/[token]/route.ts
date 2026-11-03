@@ -19,7 +19,7 @@ async function checkSessionOwnerAccess(tokenHash: string) {
   const owner = await User.findById(session.userId).select("role isBanned").lean();
   if (!owner || (owner.role !== "admin" && owner.isBanned === true)) {
     return NextResponse.json(
-      { success: false, code: "USER_BANNED", message: "Tool access for this account has been disabled." },
+      { success: false, code: "USER_BANNED", message: "We noticed unusual activity on your account, so an administrator has temporarily turned off your tools access. Please contact the admin to know more." },
       { status: 403, headers: noStoreHeaders() },
     );
   }

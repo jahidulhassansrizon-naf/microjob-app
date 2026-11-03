@@ -1,3 +1,5 @@
+import { getSmtpSettingsRuntime, sendViaSmtp, friendlySmtpError } from "./smtpMailer";
+
 type TransactionalEmail = {
   to: string;
   subject: string;
@@ -5,7 +7,7 @@ type TransactionalEmail = {
   text: string;
 };
 
-type ProviderResult = { provider: "resend" | "google-apps-script"; messageId?: string };
+type ProviderResult = { provider: "smtp" | "resend" | "google-apps-script"; messageId?: string };
 
 const EMAIL_TIMEOUT_MS = 12_000;
 
@@ -121,14 +123,33 @@ export async function sendTransactionalEmail(email: TransactionalEmail): Promise
     throw new Error("Invalid transactional email subject.");
   }
 
+  // Admin-configured SMTP (Admin -> Email & SMTP) is the first choice when it is switched on.
+  let smtp: Awaited<ReturnType<typeof getSmtpSettingsRuntime>> = null;
+  try {
+    smtp = await getSmtpSettingsRuntime();
+  } catch (error) {
+    console.error("SMTP settings could not be loaded:", error instanceof Error ? error.message : "Unknown error");
+  }
+
   const hasResend = Boolean(process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim());
   const hasGoogleScript = Boolean(process.env.GOOGLE_SCRIPT_URL?.trim());
   const providers: Array<() => Promise<ProviderResult>> = [];
+  if (smtp?.enabled) {
+    const smtpSettings = smtp;
+    providers.push(async () => {
+      try {
+        const result = await sendViaSmtp(smtpSettings, { ...email, to });
+        return { provider: "smtp", messageId: result.messageId };
+      } catch (error) {
+        throw new Error(`SMTP: ${friendlySmtpError(error)}`);
+      }
+    });
+  }
   if (hasResend) providers.push(() => sendWithResend({ ...email, to }));
   if (hasGoogleScript) providers.push(() => sendWithGoogleAppsScript({ ...email, to }));
 
   if (providers.length === 0) {
-    throw new Error("Email delivery is not configured. Set GOOGLE_SCRIPT_URL or RESEND_API_KEY plus EMAIL_FROM.");
+    throw new Error("Email delivery is not configured. Set up SMTP in Admin -> Email & SMTP (or set GOOGLE_SCRIPT_URL / RESEND_API_KEY plus EMAIL_FROM).");
   }
 
   const errors: string[] = [];
