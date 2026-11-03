@@ -1240,7 +1240,7 @@ export default function AdminDashboardClient() {
   const userRows = (rows: UserRow[]) => (
     <>
       {/* Desktop table */}
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto min-[1340px]:block">
         <table className="w-full min-w-[960px] border-collapse text-left">
           <thead>
             <tr className="border-y border-[#E3D6B8] bg-[#F2E8D2]">
@@ -1366,10 +1366,10 @@ export default function AdminDashboardClient() {
           </tbody>
         </table>
       </div>
-      {/* Mobile cards */}
-      <ul className="divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:hidden">
+      {/* Card list: phones, tablets and small laptops */}
+      <ul className="grid grid-cols-1 divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:grid-cols-2 md:gap-3 md:divide-y-0 md:p-4 min-[1340px]:hidden">
         {rows.map((user) => (
-          <li key={user.id} className="px-4 py-4">
+          <li key={user.id} className="min-w-0 px-4 py-4 md:rounded-xl md:border md:border-[#E3D6B8] md:bg-[#FBF6E8]">
             <div className="flex items-start gap-3">
               <Avatar name={user.fullName} />
               <div className="min-w-0 flex-1">
@@ -1427,7 +1427,7 @@ export default function AdminDashboardClient() {
 
   const subscriptionRows = (rows: SubscriptionRow[]) => (
     <>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto min-[1520px]:block">
         <table className="w-full min-w-[1180px] border-collapse text-left">
           <thead>
             <tr className="border-y border-[#E3D6B8] bg-[#F2E8D2]">
@@ -1572,12 +1572,12 @@ export default function AdminDashboardClient() {
           </tbody>
         </table>
       </div>
-      <ul className="divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:hidden">
+      <ul className="grid grid-cols-1 divide-y divide-[#EFE5CE] border-t border-[#E3D6B8] md:grid-cols-2 md:gap-3 md:divide-y-0 md:p-4 min-[1520px]:hidden">
         {rows.map((item) => {
           const { active, paymentTone, accessTone } = subscriptionTones(item);
           const exp = expiryInfo(item.expiresAt);
           return (
-            <li key={item.id} className="px-4 py-4">
+            <li key={item.id} className="min-w-0 px-4 py-4 md:rounded-xl md:border md:border-[#E3D6B8] md:bg-[#FBF6E8]">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                   <Avatar name={item.user?.fullName} size="sm" />
@@ -1777,17 +1777,17 @@ export default function AdminDashboardClient() {
   ];
 
   return (
-    <main className="admin-theme min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] antialiased">
+    <main className="admin-theme min-h-dvh overflow-x-clip bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E] antialiased">
       {mobileNavOpen && (
         <button
           aria-label="Close navigation"
           onClick={() => setMobileNavOpen(false)}
-          className="fixed inset-0 z-40 cursor-pointer bg-[#2A2118]/50 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 z-40 cursor-pointer bg-[#2A2118]/50 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
       <aside
-        className={`adm-sidebar fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col bg-gradient-to-b from-[#3B2F1E] to-[#2A2118] text-[#FBF6E8] transition-transform duration-200 md:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
+        className={`adm-sidebar fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col bg-gradient-to-b from-[#3B2F1E] to-[#2A2118] text-[#FBF6E8] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
       >
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#DC2626] text-white shadow-[0_6px_14px_-6px_rgba(220,38,38,0.9)]">
@@ -1804,7 +1804,7 @@ export default function AdminDashboardClient() {
           </div>
           <button
             onClick={() => setMobileNavOpen(false)}
-            className={`ml-auto rounded-lg p-1.5 text-[#E3D6B8] hover:bg-white/10 md:hidden ${FOCUS}`}
+            className={`ml-auto rounded-lg p-1.5 text-[#E3D6B8] hover:bg-white/10 lg:hidden ${FOCUS}`}
             aria-label="Close menu"
           >
             <X size={18} />
@@ -1883,12 +1883,12 @@ export default function AdminDashboardClient() {
         </div>
       </aside>
 
-      <div className="min-h-screen md:pl-[264px]">
+      <div className="min-h-screen min-w-0 lg:pl-[264px]">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#E3D6B8] bg-[#FBF6E8]/90 px-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className={`rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] p-2 text-[#5A4A32] hover:bg-[#F2E8D2] md:hidden ${FOCUS}`}
+              className={`rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] p-2 text-[#5A4A32] hover:bg-[#F2E8D2] lg:hidden ${FOCUS}`}
               aria-label="Open menu"
             >
               <Menu size={18} />

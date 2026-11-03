@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Bengali } from "next/font/google";
 import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
@@ -31,6 +31,11 @@ const banglaSans = Noto_Sans_Bengali({
 
 // The public site identity is stored in the existing MongoDB database. Keep this
 // segment dynamic so the browser title and description reflect Admin changes immediately.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

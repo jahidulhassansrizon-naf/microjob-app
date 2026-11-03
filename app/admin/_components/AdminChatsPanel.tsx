@@ -370,7 +370,7 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   );
 
   return (
-    <section className="flex h-[calc(100vh-190px)] min-h-[520px] max-h-[850px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <section className="flex h-[calc(100dvh-190px)] min-h-[520px] max-h-[850px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><MessageCircle size={20} /></span>
