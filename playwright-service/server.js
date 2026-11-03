@@ -308,6 +308,12 @@ function parseTemplateUpload(req, res, next) {
       name: "templateImage",
       maxCount: 1,
     },
+    // Couple templates: the second person's photo (optional).
+    //   image  = person 1, image2 = person 2
+    {
+      name: "image2",
+      maxCount: 1,
+    },
   ])(req, res, (error) => {
     if (error) {
       return res.status(400).json({
@@ -376,7 +382,9 @@ function requireApiKey(req, res, next) {
 // session-limits.json so a server restart does not forget it.
 // --------------------------------------------------
 
-const SESSION_SLOTS = [1, 2, 3];
+// Up to 10 sessions. Only the slots that have a gemini-session-N.json file are used,
+// so adding a 4th (or 5th...) session only needs its file, no code change.
+const SESSION_SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
 const LIMIT_STATE_FILE = path.join(__dirname, "session-limits.json");
 const DEFAULT_LIMIT_PARK_MS = 60 * 60 * 1000; // used if reset time can't be read
 const LIMIT_TEXT_REGEX =
@@ -1234,6 +1242,9 @@ async function runGeminiGeneration(options) {
         continue;
       }
 
+      console.log(
+        `Session ${session.slot} failed (not a limit message): ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -1280,12 +1291,18 @@ function generateTemplateWithGemini(
   prompt,
   outputDir,
   signal,
+  secondUserImagePath = null,
 ) {
+  // Order: template first, then person 1, then (couple templates only) person 2.
+  const imagePaths = secondUserImagePath
+    ? [templateImagePath, userImagePath, secondUserImagePath]
+    : [templateImagePath, userImagePath];
+
   return runGeminiGeneration({
-    imagePaths: [templateImagePath, userImagePath],
+    imagePaths,
     prompt,
     outputDir,
-    settleMs: 4000,
+    settleMs: secondUserImagePath ? 6000 : 4000,
     defaultFilename: "gemini-template-generated-image.png",
     signal,
   });
@@ -1527,6 +1544,9 @@ app.post(
 
     const templateFile = templateFiles[0];
 
+    // Couple templates send the second person's photo as "image2" (optional).
+    const secondUserFile = Array.isArray(files.image2) ? files.image2[0] : null;
+
     if (!userFile || !userFile.buffer || !userFile.buffer.length) {
       return res.status(400).json({
         success: false,
@@ -1563,6 +1583,21 @@ app.post(
       });
     }
 
+    if (secondUserFile) {
+      if (
+        !secondUserFile.buffer ||
+        !secondUserFile.buffer.length ||
+        !String(secondUserFile.mimetype || "")
+          .toLowerCase()
+          .startsWith("image/")
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "Uploaded second person photo is not an image.",
+        });
+      }
+    }
+
     try {
       const result = await runGenerationJob(res, (signal) =>
         withTempDir("gemini-template-edit-", async (tempDir) => {
@@ -1580,12 +1615,24 @@ app.post(
 
           await fs.writeFile(userPath, userFile.buffer);
 
+          let secondUserPath = null;
+
+          if (secondUserFile) {
+            secondUserPath = path.join(
+              tempDir,
+              `user-2${getExtension(secondUserFile.mimetype)}`,
+            );
+
+            await fs.writeFile(secondUserPath, secondUserFile.buffer);
+          }
+
           return generateTemplateWithGemini(
             templatePath,
             userPath,
             prompt,
             tempDir,
             signal,
+            secondUserPath,
           );
         }),
       );

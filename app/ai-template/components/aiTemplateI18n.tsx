@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n, translateSohozText } from "@/app/sohoj-tools/_i18n";
 
 const UI_BN: Record<string, string> = {
   "Watch video": "ভিডিও দেখুন",
@@ -85,6 +85,12 @@ const UI_BN: Record<string, string> = {
   "Photo selected": "ছবি নির্বাচন করা হয়েছে",
   "Add the photo you want to use for this template.": "এই টেমপ্লেটে ব্যবহার করতে চান এমন ছবিটি যোগ করুন।",
   "Change Photo": "ছবি পরিবর্তন করুন",
+  "Upload a photo of each person and recreate this couple template while keeping both identities.": "দুজনের ছবি আপলোড করুন—দুজনের পরিচয় অক্ষুণ্ণ রেখে এই জুটি টেমপ্লেটের মতো ছবি তৈরি হবে।",
+  "Person 1 photo": "প্রথম জনের ছবি",
+  "Person 2 photo": "দ্বিতীয় জনের ছবি",
+  "Add a clear photo of person 1.": "প্রথম জনের একটি পরিষ্কার ছবি যোগ করুন।",
+  "Add a clear photo of person 2.": "দ্বিতীয় জনের একটি পরিষ্কার ছবি যোগ করুন।",
+  "Please upload both photos first.": "দয়া করে প্রথমে দুজনের ছবিই আপলোড করুন।",
   "Choose Photo": "ছবি নির্বাচন করুন",
   "Upload from phone": "ফোন থেকে ছবি আপলোড করুন",
   "Hide phone upload": "ফোন আপলোড বন্ধ করুন",
@@ -260,8 +266,17 @@ export function translateAiTemplateText(value: string, locale: string | undefine
   return value;
 }
 
+/** The AI Template page is always shown in Bangla (same as the AI Editor). Set to false to follow the site language toggle again. */
+const FORCE_BANGLA = true;
+
 export function useAiTemplateText() {
-  const { locale, L: baseL } = useSebaLagbeToolsI18n();
+  const { locale: siteLocale, t: siteT, L: siteL } = useSebaLagbeToolsI18n();
+  const locale = FORCE_BANGLA ? "bn" : siteLocale;
+  // When forced, the site-wide dictionary must translate to Bangla even if the site toggle is on English.
+  const baseL = useCallback(
+    (value: string) => (FORCE_BANGLA ? translateSohozText(value, "bn", siteT) : siteL(value)),
+    [siteT, siteL],
+  );
   const t = useCallback((value: string) => translateAiTemplateText(value, locale, baseL), [locale, baseL]);
   return { t, locale };
 }

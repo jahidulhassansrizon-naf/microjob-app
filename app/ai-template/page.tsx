@@ -88,6 +88,12 @@ export default function AITemplatePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cropImageUrlRef = useRef<string | null>(null);
   const userPhotoPreviewUrlRef = useRef<string | null>(null);
+  // Couple templates (2 images): the second person's photo.
+  const fileInputRef2 = useRef<HTMLInputElement | null>(null);
+  const userPhotoPreviewUrlRef2 = useRef<string | null>(null);
+  const cropSlotRef = useRef<1 | 2>(1);
+  const [userPhoto2, setUserPhoto2] = useState<File | null>(null);
+  const [userPhotoPreview2, setUserPhotoPreview2] = useState<string | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -242,6 +248,12 @@ export default function AITemplatePage() {
     cropImageUrlRef.current = null;
     if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
     userPhotoPreviewUrlRef.current = null;
+    if (userPhotoPreviewUrlRef2.current) URL.revokeObjectURL(userPhotoPreviewUrlRef2.current);
+    userPhotoPreviewUrlRef2.current = null;
+    cropSlotRef.current = 1;
+    setUserPhoto2(null);
+    setUserPhotoPreview2(null);
+    if (fileInputRef2.current) fileInputRef2.current.value = "";
     setIsCropOpen(false);
     setUserPhotoPreview(null);
     setCropImage(null);
@@ -252,6 +264,7 @@ export default function AITemplatePage() {
   useEffect(() => () => {
     if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
     if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+    if (userPhotoPreviewUrlRef2.current) URL.revokeObjectURL(userPhotoPreviewUrlRef2.current);
   }, []);
 
   const openTemplate = useCallback(
@@ -260,7 +273,7 @@ export default function AITemplatePage() {
   );
   const closeModal = useCallback(() => setSelectedId(null), []);
 
-  const handleUserPhotoFile = useCallback((file: File) => {
+  const handleUserPhotoFile = useCallback((file: File, slot: 1 | 2 = 1) => {
     if (!file.type.toLowerCase().startsWith("image/")) {
       setGenerationError("Please choose an image file.");
       return;
@@ -271,6 +284,7 @@ export default function AITemplatePage() {
     }
     setGenerationError("");
     setGeneratedImage(null);
+    cropSlotRef.current = slot;
     if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
     const imageUrl = URL.createObjectURL(file);
     cropImageUrlRef.current = imageUrl;
@@ -280,10 +294,10 @@ export default function AITemplatePage() {
   }, []);
 
   const handleUserPhotoChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>, slot: 1 | 2 = 1) => {
       const file = event.target.files?.[0];
       event.target.value = "";
-      if (file) handleUserPhotoFile(file);
+      if (file) handleUserPhotoFile(file, slot);
     },
     [handleUserPhotoFile],
   );
@@ -296,41 +310,49 @@ export default function AITemplatePage() {
     setCropOriginalFile(null);
   }, []);
 
+  // Stores the chosen (cropped or original) photo in the slot that opened the crop screen.
+  const storeUserPhoto = useCallback((file: File, previewUrl: string) => {
+    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
+    cropImageUrlRef.current = null;
+    if (cropSlotRef.current === 2) {
+      if (userPhotoPreviewUrlRef2.current) URL.revokeObjectURL(userPhotoPreviewUrlRef2.current);
+      userPhotoPreviewUrlRef2.current = previewUrl;
+      setUserPhoto2(file);
+      setUserPhotoPreview2(previewUrl);
+    } else {
+      if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
+      userPhotoPreviewUrlRef.current = previewUrl;
+      setUserPhoto(file);
+      setUserPhotoPreview(previewUrl);
+    }
+    setGenerationError("");
+    setIsCropOpen(false);
+    setCropImage(null);
+    setCropOriginalFile(null);
+  }, []);
+
   const handleCropApplied = useCallback((blob: Blob) => {
     const croppedFile = new File([blob], "sebalagbe-cropped-photo.jpg", {
       type: "image/jpeg",
     });
-    const previewUrl = URL.createObjectURL(blob);
-    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
-    cropImageUrlRef.current = null;
-    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
-    userPhotoPreviewUrlRef.current = previewUrl;
-    setUserPhoto(croppedFile);
-    setUserPhotoPreview(previewUrl);
-    setGenerationError("");
-    setIsCropOpen(false);
-    setCropImage(null);
-    setCropOriginalFile(null);
-  }, []);
+    storeUserPhoto(croppedFile, URL.createObjectURL(blob));
+  }, [storeUserPhoto]);
 
   const handleUseOriginalPhoto = useCallback((file: File) => {
-    const previewUrl = URL.createObjectURL(file);
-    if (cropImageUrlRef.current) URL.revokeObjectURL(cropImageUrlRef.current);
-    cropImageUrlRef.current = null;
-    if (userPhotoPreviewUrlRef.current) URL.revokeObjectURL(userPhotoPreviewUrlRef.current);
-    userPhotoPreviewUrlRef.current = previewUrl;
-    setUserPhoto(file);
-    setUserPhotoPreview(previewUrl);
-    setGenerationError("");
-    setIsCropOpen(false);
-    setCropImage(null);
-    setCropOriginalFile(null);
-  }, []);
+    storeUserPhoto(file, URL.createObjectURL(file));
+  }, [storeUserPhoto]);
 
   const handleGeneratePhoto = useCallback(async () => {
     if (!selectedTemplate) return;
+    const isCouple = selectedTemplate.imageCount === 2;
     if (!userPhoto) {
-      setGenerationError("Please upload your photo first.");
+      setGenerationError(
+        isCouple ? "Please upload both photos first." : "Please upload your photo first.",
+      );
+      return;
+    }
+    if (isCouple && !userPhoto2) {
+      setGenerationError("Please upload both photos first.");
       return;
     }
 
@@ -350,11 +372,45 @@ export default function AITemplatePage() {
     try {
       const formData = new FormData();
       formData.append("image", userPhoto, userPhoto.name);
+      if (isCouple && userPhoto2) {
+        // Couple template: the second person's photo travels separately (image = person 1, image2 = person 2).
+        formData.append("image2", userPhoto2, userPhoto2.name);
+      }
       const templateImageForApi = selectedTemplate.image.startsWith("/")
         ? new URL(selectedTemplate.image, window.location.origin).toString()
         : selectedTemplate.image;
       formData.append("templateImage", templateImageForApi);
-      const templatePrompt = [
+      const couplePrompt = [
+        "Create a new image using the three attached images.",
+        "",
+        "IMAGE 1 is the AI template/reference image. It shows two people together.",
+        "IMAGE 2 is PERSON A: the first real person's own photo (identity source).",
+        "IMAGE 3 is PERSON B: the second real person's own photo (identity source).",
+        "They are two different real people and they are the ONLY identity sources.",
+        "",
+        "Recreate IMAGE 1 with BOTH real people (IMAGE 2 and IMAGE 3) together in the same frame.",
+        "This is a face and identity replacement for BOTH template people, with equal care for each:",
+        "- Replace the face of every person in the template with the face of a real person from IMAGE 2 or IMAGE 3.",
+        "- PERSON A and PERSON B must each look exactly like their own photo: same face shape, eyes, nose, mouth, eyebrows, skin tone, hairline and facial hair.",
+        "- Do NOT keep, reuse or blend the face of either template person. If a template person looks similar to a real person, still use the real person's face.",
+        "- Check the likeness of BOTH people before answering; PERSON B must be as recognizable as PERSON A.",
+        "Assign the real people to the template positions by matching apparent gender and age",
+        "(the man replaces the man, the woman replaces the woman, the child replaces the child).",
+        "If that does not decide it, PERSON A takes the left position and PERSON B takes the right position.",
+        "The clothing, scarf/veil, jewelry, poses, closeness, hand placement, interaction, camera angle, framing,",
+        "background, lighting, shadows, color treatment, mood, depth and overall visual style come from the template.",
+        "Both people must be clearly visible, natural, well proportioned and sharp, with exactly two people in the result.",
+        "Do not add extra people, random objects, logos, watermarks, or unrelated elements.",
+        "Keep the result natural, photorealistic when the template is photorealistic,",
+        "and faithful to the reference template's intended appearance.",
+        "",
+        `Template title: ${selectedTemplate.title}`,
+        `Template category: ${selectedTemplate.category}`,
+        `Template orientation: ${selectedTemplate.orientation}`,
+        "",
+        "Return only the finished generated image.",
+      ].join("\n");
+      const templatePrompt = isCouple ? couplePrompt : [
         "Create a new image using the two attached images.",
         "",
         "IMAGE 1 is the AI template/reference image.",
@@ -418,7 +474,7 @@ export default function AITemplatePage() {
         setIsGenerating(false);
       }
     }
-  }, [selectedTemplate, userPhoto]);
+  }, [selectedTemplate, userPhoto, userPhoto2]);
 
   const moveSelected = useCallback(
     (direction: 1 | -1) => {
@@ -472,7 +528,7 @@ export default function AITemplatePage() {
       <DashboardNavbar />
       <SubscriptionLock />
       <main className="main-content">
-        <RetentionNotice variant="compact" className="mb-3" />
+        <RetentionNotice variant="compact" className="mb-3" locale="bn" />
         <TemplateToolbar
           search={search}
           setSearch={setSearch}
@@ -523,6 +579,9 @@ export default function AITemplatePage() {
           isGenerating={isGenerating}
           userPhoto={userPhoto}
           userPhotoPreview={userPhotoPreview}
+          userPhoto2={userPhoto2}
+          userPhotoPreview2={userPhotoPreview2}
+          fileInputRef2={fileInputRef2}
           generationError={generationError}
           fileInputRef={fileInputRef}
           isSelectedFavorite={isSelectedFavorite}

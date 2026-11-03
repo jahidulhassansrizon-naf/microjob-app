@@ -24,11 +24,14 @@ function getErrorMessage(error: unknown): string {
   return "Gemini template generation failed.";
 }
 
-async function getUserImage(formData: FormData): Promise<{
+async function getUserImage(
+  formData: FormData,
+  key = "image",
+): Promise<{
   blob: Blob;
   filename: string;
 }> {
-  const uploadedImage = formData.get("image");
+  const uploadedImage = formData.get(key);
 
   if (
     uploadedImage &&
@@ -121,6 +124,7 @@ async function callRenderService(
   templateImage: Blob,
   templateFilename: string,
   prompt: string,
+  secondUserImage?: { blob: Blob; filename: string } | null,
 ): Promise<string> {
   const RENDER_URL = await getBotUrl();
   if (!RENDER_URL) {
@@ -134,6 +138,11 @@ async function callRenderService(
 
   // Selected AI template/reference image
   body.append("templateImage", templateImage, templateFilename);
+
+  // Couple templates: the second person's own photo, sent separately (person 1 = image, person 2 = image2).
+  if (secondUserImage) {
+    body.append("image2", secondUserImage.blob, secondUserImage.filename);
+  }
 
   body.append("prompt", prompt);
 
@@ -270,6 +279,9 @@ export async function POST(req: Request) {
 
     const userImage = await getUserImage(formData);
     const templateImage = await getTemplateImage(formData);
+    const secondUserImage = formData.has("image2")
+      ? await getUserImage(formData, "image2")
+      : null;
 
     const image = await callRenderService(
       userImage.blob,
@@ -277,6 +289,7 @@ export async function POST(req: Request) {
       templateImage.blob,
       templateImage.filename,
       prompt,
+      secondUserImage,
     );
 
     await markGenerationResult(generationLogId, true);

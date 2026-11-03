@@ -55,6 +55,13 @@ jobs:
       GEMINI_SESSION_JSON: ${{ secrets.GEMINI_SESSION_JSON }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
       GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
+      GEMINI_SESSION_JSON_4: ${{ secrets.GEMINI_SESSION_JSON_4 }}
+      GEMINI_SESSION_JSON_5: ${{ secrets.GEMINI_SESSION_JSON_5 }}
+      GEMINI_SESSION_JSON_6: ${{ secrets.GEMINI_SESSION_JSON_6 }}
+      GEMINI_SESSION_JSON_7: ${{ secrets.GEMINI_SESSION_JSON_7 }}
+      GEMINI_SESSION_JSON_8: ${{ secrets.GEMINI_SESSION_JSON_8 }}
+      GEMINI_SESSION_JSON_9: ${{ secrets.GEMINI_SESSION_JSON_9 }}
+      GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
 
@@ -94,14 +101,15 @@ jobs:
           }
           printf '%s' "$GEMINI_SESSION_JSON" > gemini-session-1.json
           chmod 600 gemini-session-1.json
-          if [ -n "$GEMINI_SESSION_JSON_2" ]; then
-            printf '%s' "$GEMINI_SESSION_JSON_2" > gemini-session-2.json
-            chmod 600 gemini-session-2.json
-          fi
-          if [ -n "$GEMINI_SESSION_JSON_3" ]; then
-            printf '%s' "$GEMINI_SESSION_JSON_3" > gemini-session-3.json
-            chmod 600 gemini-session-3.json
-          fi
+          # Sessions 2 to 10 are optional: a slot is used only if its secret exists.
+          for N in 2 3 4 5 6 7 8 9 10; do
+            VAR="GEMINI_SESSION_JSON_${N}"
+            VALUE="${!VAR}"
+            if [ -n "$VALUE" ]; then
+              printf '%s' "$VALUE" > "gemini-session-${N}.json"
+              chmod 600 "gemini-session-${N}.json"
+            fi
+          done
           ls gemini-session-*.json
 
       - name: Start bot server

@@ -20,19 +20,34 @@ type Props = {
     isGenerating: boolean;
     userPhoto: File | null;
     userPhotoPreview: string | null;
+    /** Couple templates (2 images): the second person's photo. */
+    userPhoto2: File | null;
+    userPhotoPreview2: string | null;
+    fileInputRef2: React.RefObject<HTMLInputElement | null>;
     generationError: string;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     isSelectedFavorite: boolean;
     onClose: () => void;
     onMove: (direction: 1 | -1) => void;
-    onUserPhotoChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    onUserPhotoFile: (file: File) => void;
+    onUserPhotoChange: (event: React.ChangeEvent<HTMLInputElement>, slot?: 1 | 2) => void;
+    onUserPhotoFile: (file: File, slot?: 1 | 2) => void;
     onGeneratePhoto: () => void;
     onToggleFavorite: (id: number) => void;
 };
-export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGenerating, userPhoto, userPhotoPreview, generationError, fileInputRef, isSelectedFavorite, onClose, onMove, onUserPhotoChange, onUserPhotoFile, onGeneratePhoto, onToggleFavorite, }: Props) {
+export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGenerating, userPhoto, userPhotoPreview, userPhoto2, userPhotoPreview2, fileInputRef2, generationError, fileInputRef, isSelectedFavorite, onClose, onMove, onUserPhotoChange, onUserPhotoFile, onGeneratePhoto, onToggleFavorite, }: Props) {
     const { t } = useAiTemplateText();
-    const [showPhoneQr, setShowPhoneQr] = React.useState(false);
+    // Which photo box (1 or 2) currently has its phone-upload QR open.
+    const [phoneQrSlot, setPhoneQrSlot] = React.useState<1 | 2 | null>(null);
+    const phoneQrSlotRef = React.useRef<1 | 2 | null>(null);
+    phoneQrSlotRef.current = phoneQrSlot;
+    const isCouple = selectedTemplate.imageCount === 2;
+    const photoSlots = isCouple
+      ? ([
+          { slot: 1 as const, photo: userPhoto, preview: userPhotoPreview, inputRef: fileInputRef },
+          { slot: 2 as const, photo: userPhoto2, preview: userPhotoPreview2, inputRef: fileInputRef2 },
+        ])
+      : ([{ slot: 1 as const, photo: userPhoto, preview: userPhotoPreview, inputRef: fileInputRef }]);
+    const canGenerate = !!userPhoto && (!isCouple || !!userPhoto2);
     const imageBoxRef = React.useRef<HTMLDivElement | null>(null);
 
     React.useEffect(() => {
@@ -44,13 +59,13 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
 
     React.useEffect(() => {
       // A QR opened for one template must not remain attached after navigating to another template.
-      setShowPhoneQr(false);
+      setPhoneQrSlot(null);
     }, [selectedTemplate.id]);
 
     const handleQrPhotoReceived = React.useCallback((file: File) => {
-      onUserPhotoFile(file);
+      onUserPhotoFile(file, phoneQrSlotRef.current ?? 1);
       // Once a photo is accepted for this template, collapse the QR panel while it is cropped.
-      setShowPhoneQr(false);
+      setPhoneQrSlot(null);
     }, [onUserPhotoFile]);
     return (<div className="modal-backdrop" onClick={onClose}>
       <div className="template-modal" role="dialog" aria-modal="true" aria-label={t(selectedTemplate.title)} onClick={(e) => e.stopPropagation()}>
@@ -73,46 +88,48 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
         </div>
 
         <div className="modal-details scroll">
-          {generatedImage && <RetentionNotice variant="compact" className="mb-3" />}
+          {generatedImage && <RetentionNotice variant="compact" className="mb-3" locale="bn" />}
           <span className="modal-category">{t(selectedTemplate.category)}</span>
           <h2>{t(selectedTemplate.title)}</h2>
-          <p className="modal-lead">{t("Upload your photo and recreate this template while keeping your own identity.")}</p>
+          <p className="modal-lead">{isCouple ? t("Upload a photo of each person and recreate this couple template while keeping both identities.") : t("Upload your photo and recreate this template while keeping your own identity.")}</p>
 
-          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onUserPhotoChange} className="template-file-input" aria-label={t("Upload your photo")}/>
+          {photoSlots.map(({ slot, photo, preview, inputRef }) => (<React.Fragment key={slot}>
+            <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => onUserPhotoChange(event, slot)} className="template-file-input" aria-label={isCouple ? t(`Person ${slot} photo`) : t("Upload your photo")}/>
 
-          <div className={`template-upload-card ${userPhoto ? "has-photo" : ""}`}>
-            <div className="template-upload-icon"><Upload size={18}/></div>
-            <div className="template-upload-copy">
-              <strong>{userPhoto ? t("Photo selected") : t("Upload your photo")}</strong>
-              <span>{userPhoto ? userPhoto.name : t("Add the photo you want to use for this template.")}</span>
+            <div className={`template-upload-card ${photo ? "has-photo" : ""}`} style={slot === 2 ? { marginTop: 12 } : undefined}>
+              <div className="template-upload-icon"><Upload size={18}/></div>
+              <div className="template-upload-copy">
+                <strong>{isCouple ? `${t(`Person ${slot} photo`)}${photo ? " ✓" : ""}` : photo ? t("Photo selected") : t("Upload your photo")}</strong>
+                <span>{photo ? photo.name : isCouple ? t(`Add a clear photo of person ${slot}.`) : t("Add the photo you want to use for this template.")}</span>
+              </div>
+
+              {preview && (<div className="template-user-preview"><img src={preview} alt={t("Your uploaded photo")}/></div>)}
+
+              <div className="template-upload-actions">
+                <button type="button" className="template-upload-btn" onClick={() => inputRef.current?.click()} disabled={isGenerating}>
+                  {photo ? t("Change Photo") : t("Choose Photo")}
+                </button>
+                <button
+                  type="button"
+                  className={`template-upload-qr-btn ${phoneQrSlot === slot ? "active" : ""}`}
+                  onClick={() => setPhoneQrSlot((current) => (current === slot ? null : slot))}
+                  disabled={isGenerating}
+                  aria-expanded={phoneQrSlot === slot}
+                >
+                  <QrCode size={14} />
+                  <span>{phoneQrSlot === slot ? t("Hide phone upload") : t("Upload from phone")}</span>
+                </button>
+              </div>
+              <small>{t("JPG, PNG or WEBP • Max 15 MB")}</small>
             </div>
 
-            {userPhotoPreview && (<div className="template-user-preview"><img src={userPhotoPreview} alt={t("Your uploaded photo")}/></div>)}
-
-            <div className="template-upload-actions">
-              <button type="button" className="template-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={isGenerating}>
-                {userPhoto ? t("Change Photo") : t("Choose Photo")}
-              </button>
-              <button
-                type="button"
-                className={`template-upload-qr-btn ${showPhoneQr ? "active" : ""}`}
-                onClick={() => setShowPhoneQr((current) => !current)}
-                disabled={isGenerating}
-                aria-expanded={showPhoneQr}
-              >
-                <QrCode size={14} />
-                <span>{showPhoneQr ? t("Hide phone upload") : t("Upload from phone")}</span>
-              </button>
-            </div>
-            <small>{t("JPG, PNG or WEBP • Max 15 MB")}</small>
-          </div>
-
-          {showPhoneQr && (
-            <div className="template-qr-upload-panel">
-              <p>{t("Scan the QR code to send a photo for this template.")}</p>
-              <QrCodeSidebar onPhotoReceived={handleQrPhotoReceived} />
-            </div>
-          )}
+            {phoneQrSlot === slot && (
+              <div className="template-qr-upload-panel">
+                <p>{t("Scan the QR code to send a photo for this template.")}</p>
+                <QrCodeSidebar onPhotoReceived={handleQrPhotoReceived} />
+              </div>
+            )}
+          </React.Fragment>))}
 
           {generationError && <div className="template-generation-error" role="alert">{t(generationError)}</div>}
 
@@ -122,8 +139,8 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
             <div className="template-how-step"><span>2</span><p>{t("Generate your image")}</p></div>
           </div>
 
-          <GenerationQuotaNotice />
-          <button type="button" className="template-generate-btn" aria-label={t("Generate photo from this template")} onClick={onGeneratePhoto} disabled={!userPhoto || isGenerating}>
+          <GenerationQuotaNotice locale="bn" />
+          <button type="button" className="template-generate-btn" aria-label={t("Generate photo from this template")} onClick={onGeneratePhoto} disabled={!canGenerate || isGenerating}>
             <Sparkles size={17}/> {isGenerating ? t("Generating...") : t("Generate Photo")}
           </button>
 

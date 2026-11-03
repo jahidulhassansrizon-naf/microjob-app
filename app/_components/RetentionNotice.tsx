@@ -24,13 +24,17 @@ type RetentionNoticeProps = {
   /** "banner" = full box with title + explanation, "compact" = one-line pill */
   variant?: "banner" | "compact";
   className?: string;
+  /** Force a language (e.g. pages that are always Bangla). Default follows the site language. */
+  locale?: "bn" | "en";
 };
 
 export default function RetentionNotice({
   variant = "banner",
   className = "",
+  locale: forcedLocale,
 }: RetentionNoticeProps) {
-  const { locale } = useI18n();
+  const { locale: siteLocale } = useI18n();
+  const locale = forcedLocale ?? siteLocale;
   const copy = locale === "bn" ? COPY.bn : COPY.en;
 
   if (variant === "compact") {
