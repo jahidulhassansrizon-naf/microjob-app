@@ -1,3 +1,4 @@
+import { bumpEnvAdminSession } from "@/lib/adminSession";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
@@ -70,6 +71,8 @@ export async function POST(req: Request) {
         return fail("The phone/email or password is incorrect. Please try again.", 401, id, "INVALID_CREDENTIALS");
       }
 
+      // One device at a time: this login signs out the Main Admin on every other device.
+      const adminSessionVersion = await bumpEnvAdminSession();
       const token = jwt.sign(
         {
           userId: ENV_ADMIN_USER_ID,
@@ -77,6 +80,7 @@ export async function POST(req: Request) {
           role: "admin",
           admin: true,
           adminCredentialVersion: getAdminCredentialVersion(configuredAdmin.email, configuredAdmin.password),
+          adminSessionVersion,
         },
         JWT_SECRET,
         { expiresIn: "7d" },
@@ -134,17 +138,21 @@ export async function POST(req: Request) {
     const user = outcome.user as Record<string, any>;
     const role = user.role === "admin" ? "admin" as const : "user" as const;
     const loginAt = new Date();
-    await User.updateOne(
-      { _id: user._id, sessionVersion: Number(user.sessionVersion || 0) },
-      { $set: { lastLoginAt: loginAt, lastSeenAt: loginAt }, $inc: { loginCount: 1 } },
-    );
+    // One device at a time: bumping sessionVersion signs this account out everywhere else,
+    // because every protected route compares the token's sessionVersion with the database.
+    const bumped = await User.findOneAndUpdate(
+      { _id: user._id },
+      { $set: { lastLoginAt: loginAt, lastSeenAt: loginAt }, $inc: { loginCount: 1, sessionVersion: 1 } },
+      { new: true },
+    ).select("sessionVersion").lean<{ sessionVersion?: number }>();
+    const newSessionVersion = Number(bumped?.sessionVersion ?? Number(user.sessionVersion || 0) + 1);
 
     const token = jwt.sign(
       {
         userId: String(user._id),
         phoneNumber: user.phoneNumber,
         role,
-        sessionVersion: Number(user.sessionVersion || 0),
+        sessionVersion: newSessionVersion,
       },
       JWT_SECRET,
       { expiresIn: "7d" },

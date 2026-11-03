@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { ENV_ADMIN_USER_ID, isCurrentAdminToken, type AdminTokenClaims } from "@/lib/adminCredentials";
@@ -37,6 +38,7 @@ export async function getVerifiedRequestSession(request: Request): Promise<Verif
   const isEnvAdmin = claims.admin === true || claims.userId === ENV_ADMIN_USER_ID;
   if (isEnvAdmin) {
     if (!isCurrentAdminToken(claims)) return null;
+    if (!(await isEnvAdminSessionCurrent(claims))) return null;
     return { userId: ENV_ADMIN_USER_ID, role: "admin", isBanned: false, isRootAdmin: true, claims };
   }
 

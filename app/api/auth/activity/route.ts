@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
     if (isEnvAdmin) {
       if (!isCurrentAdminToken(decoded)) return NextResponse.json({ success: false, message: "Main Admin session is no longer valid." }, { status: 401, headers: HEADERS });
+      if (!(await isEnvAdminSessionCurrent(decoded))) return NextResponse.json({ success: false, message: "Signed in on another device." }, { status: 401, headers: HEADERS });
       return NextResponse.json({ success: true }, { headers: HEADERS });
     }
     if (typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) return NextResponse.json({ success: false, message: "Invalid login session." }, { status: 401, headers: HEADERS });

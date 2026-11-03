@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { cookies } from "next/headers";
@@ -22,6 +23,7 @@ export default async function AdminPage() {
   const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
   if (isEnvAdmin) {
     if (!isCurrentAdminToken(decoded)) redirect("/login?redirect=%2Fadmin");
+    if (!(await isEnvAdminSessionCurrent(decoded))) redirect("/login?redirect=%2Fadmin");
     return <AdminDashboardClient />;
   }
 

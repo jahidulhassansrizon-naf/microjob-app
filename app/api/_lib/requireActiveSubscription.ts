@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
@@ -15,6 +16,7 @@ type JwtPayload = {
   admin?: boolean;
   exp?: number;
   sessionVersion?: number;
+  adminSessionVersion?: number;
 };
 
 type AuthSuccess = {
@@ -213,6 +215,9 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
   if (decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID) {
     if (!isCurrentAdminToken(decoded)) {
       return { ok: false, response: NextResponse.json({ success: false, code: "INVALID_SESSION", message: "Your Main Admin session is invalid or expired." }, { status: 401 }) };
+    }
+    if (!(await isEnvAdminSessionCurrent(decoded))) {
+      return { ok: false, response: NextResponse.json({ success: false, code: "INVALID_SESSION", message: "You were signed out because this account logged in on another device." }, { status: 401 }) };
     }
     return { ok: true, userId: ENV_ADMIN_USER_ID, role: "admin", isRootAdmin: true };
   }

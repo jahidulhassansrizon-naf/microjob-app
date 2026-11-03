@@ -8,6 +8,7 @@ export type AdminTokenClaims = {
   admin?: boolean;
   email?: string;
   adminCredentialVersion?: string;
+  adminSessionVersion?: number;
   sessionVersion?: number;
   exp?: number;
   iat?: number;

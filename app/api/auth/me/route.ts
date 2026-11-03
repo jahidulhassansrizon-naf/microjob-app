@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -25,13 +26,19 @@ export async function GET(req: Request) {
     if (!JWT_SECRET.trim()) return NextResponse.json({ message: "Secure authentication is not configured on the server." }, { status: 503, headers: NO_STORE });
     const token = getToken(req);
     if (!token) return NextResponse.json({ message: "No token provided!" }, { status: 401, headers: NO_STORE });
-    let decoded: AdminTokenClaims & { userId?: string; sessionVersion?: number };
+    let decoded: AdminTokenClaims & {
+      userId?: string;
+      sessionVersion?: number;
+      impersonation?: boolean;
+      impersonatedByEmail?: string;
+    };
     try { decoded = jwt.verify(token, JWT_SECRET) as typeof decoded; }
     catch { return NextResponse.json({ message: "Invalid or expired token!" }, { status: 401, headers: NO_STORE }); }
 
     const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
     if (isEnvAdmin) {
       if (!isCurrentAdminToken(decoded)) return NextResponse.json({ message: "The configured Main Admin credentials changed. Please sign in again." }, { status: 401, headers: NO_STORE });
+      if (!(await isEnvAdminSessionCurrent(decoded))) return NextResponse.json({ message: "Signed in on another device. Please log in again." }, { status: 401, headers: NO_STORE });
       const admin = getAdminCredentials();
       return NextResponse.json({ user: {
         id: ENV_ADMIN_USER_ID,
@@ -62,6 +69,11 @@ export async function GET(req: Request) {
       isBanned: user.isBanned === true,
       isRootAdmin: false,
       isPrimaryAdmin: false,
+      // Lets the UI show "You are viewing this account as an administrator"
+      // and a one-click way back, instead of this being an invisible session.
+      impersonation: decoded.impersonation === true
+        ? { active: true, adminEmail: decoded.impersonatedByEmail || "" }
+        : null,
     } }, { status: 200, headers: NO_STORE });
   } catch (error: unknown) {
     console.error("Authentication check failed:", error instanceof Error ? error.message : "Unknown error");

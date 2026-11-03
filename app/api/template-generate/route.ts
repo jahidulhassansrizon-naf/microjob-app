@@ -5,6 +5,7 @@ import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/req
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { getBotUrl } from "@/app/api/_lib/botUrl";
 import { acquireGenerationLock, generationBusyResponse } from "@/app/api/_lib/generationLock";
+import { enforceGenerationLimit, markGenerationResult } from "@/app/api/_lib/generationGuard";
 
 export const runtime = "nodejs";
 
@@ -245,7 +246,13 @@ export async function POST(req: Request) {
   const releaseLock = await acquireGenerationLock(userId);
   if (!releaseLock) return generationBusyResponse();
 
+  let generationLogId: string | null = null;
   try {
+    // Per-account hourly/daily limit + IP/device log (applies to paid users too).
+    const guard = await enforceGenerationLimit(req, userId, "template-generate");
+    if (guard.response) return guard.response;
+    generationLogId = guard.logId;
+
     const formData = await req.formData();
 
     const promptValue = formData.get("prompt");
@@ -272,6 +279,8 @@ export async function POST(req: Request) {
       prompt,
     );
 
+    await markGenerationResult(generationLogId, true);
+
     return NextResponse.json({
       success: true,
       provider: "gemini-playwright-template",
@@ -279,6 +288,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Gemini template-generation route error:", error);
+    await markGenerationResult(generationLogId, false);
 
     return NextResponse.json(
       {

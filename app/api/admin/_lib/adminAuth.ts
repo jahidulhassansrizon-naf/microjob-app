@@ -1,3 +1,4 @@
+import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
@@ -34,6 +35,7 @@ export async function requireAdmin(request: Request): Promise<{ admin: AdminIden
   const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
   if (isEnvAdmin) {
     if (!isCurrentAdminToken(decoded)) return { admin: null, response: NextResponse.json({ success: false, message: "The configured Main Admin credentials changed. Please sign in again." }, { status: 401 }) };
+    if (!(await isEnvAdminSessionCurrent(decoded))) return { admin: null, response: NextResponse.json({ success: false, message: "You were signed out because this account logged in on another device. Please sign in again." }, { status: 401 }) };
     const credentials = getAdminCredentials();
     return {
       admin: { id: ENV_ADMIN_USER_ID, fullName: credentials.fullName, email: credentials.email, phoneNumber: "", isRootAdmin: true },

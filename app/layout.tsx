@@ -9,6 +9,7 @@ import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
 import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
+import ImpersonationBanner from "./_components/ImpersonationBanner";
 import PrePaintScript from "./_components/PrePaintScript";
 import ToolAccessGuard from "./_components/ToolAccessGuard";
 import { SiteSettingsProvider } from "./_components/SiteSettingsProvider";
@@ -101,6 +102,7 @@ export default async function RootLayout({
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
         <I18nProvider initialLocale={initialLocale}>
           <ActivityTracker />
+          <ImpersonationBanner />
           <ConditionalSiteChrome>
             <PageBackgroundInitializer />
           </ConditionalSiteChrome>

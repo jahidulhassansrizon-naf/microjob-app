@@ -36,6 +36,7 @@ import {
   RefreshCw,
   Search,
   Shield,
+  ShieldAlert,
   ShieldCheck,
   Settings2,
   Trash2,
@@ -50,13 +51,15 @@ import {
 } from "lucide-react";
 import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
+import AdminGenerationPanel from "./_components/AdminGenerationPanel";
+import OverviewInsights, { type OverviewInsightsData } from "./_components/OverviewInsights";
 import SiteSettingsPanel from "./_components/SiteSettingsPanel";
 import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPanel";
 import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "settings" | "payment-gateway";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -156,6 +159,7 @@ type Overview = {
     topDistrict: { name: string; users: number } | null;
   };
   weeklyRegistrations: { date: string; label: string; count: number }[];
+  insights?: OverviewInsightsData | null;
   generatedAt?: string;
 };
 
@@ -740,6 +744,39 @@ export default function AdminDashboardClient() {
     }
   };
 
+  const loginAsUser = async () => {
+    const target = accessModalUser;
+    if (!target || userActionBusy) return;
+    if (
+      !window.confirm(
+        `Log in as ${target.fullName || target.email}? You will see their account exactly as they do. This is logged, stays open while you're actively using it, and ends automatically if left idle or after 12 hours.`,
+      )
+    ) {
+      return;
+    }
+
+    setUserActionBusy(true);
+    setUserActionError("");
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(target.id)}/impersonate`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        headers: authHeaders(),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not start a session as this user.");
+      }
+      // The response already swapped the session cookie to the user's account;
+      // leave the admin workspace so the next page load reflects that session.
+      window.location.href = "/";
+    } catch (error) {
+      setUserActionError(error instanceof Error ? error.message : "Could not start a session as this user.");
+      setUserActionBusy(false);
+    }
+  };
+
   const deleteUserAccount = async () => {
     const target = accessModalUser;
     if (!target || userDeleting) return;
@@ -1067,6 +1104,12 @@ export default function AdminDashboardClient() {
         badgeCount: chatUnreadCount,
       },
       {
+        key: "generations" as const,
+        label: "Generation Activity",
+        icon: ShieldAlert,
+        badgeCount: 0,
+      },
+      {
         key: "settings" as const,
         label: "Site Settings",
         icon: Settings2,
@@ -1090,7 +1133,9 @@ export default function AdminDashboardClient() {
           ? "Subscription management"
           : tab === "chats"
             ? "User chats"
-            : tab === "payment-gateway"
+            : tab === "generations"
+              ? "Image generation activity"
+              : tab === "payment-gateway"
               ? "Payment gateway configuration"
               : "Website settings";
 
@@ -1680,18 +1725,10 @@ export default function AdminDashboardClient() {
     }[];
   }[] = [
     {
-      title: "Users",
+      title: "Account details",
       cards: [
-        { title: "Total registered users", value: num(stats?.totalUsers), detail: "All accounts on the platform", icon: Users, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
-        { title: "Users active now", value: num(stats?.activeNow), detail: "Active on the site in the last 3 minutes", icon: Activity, tint: "bg-emerald-50 text-emerald-700" },
         { title: "Logged in today", value: num(stats?.loginsToday), detail: "Bangladesh time", icon: LogIn, tint: "bg-[#FDF1D0] text-[#8A5A00]" },
-        { title: "New sign-ups today", value: num(stats?.newToday), detail: "Accounts created since midnight", icon: UserPlus, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
-      ],
-    },
-    {
-      title: "Growth & account health",
-      cards: [
-        { title: "Sign-ups this month", value: num(stats?.newThisMonth), detail: overviewLoading ? "—" : growthDetail, icon: TrendingUp, tint: "bg-emerald-50 text-emerald-700" },
+        { title: "Total registered users", value: num(stats?.totalUsers), detail: "All accounts on the platform", icon: Users, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
         { title: "Never logged in", value: num(stats?.neverLoggedIn), detail: "Registered but no login recorded", icon: UserX, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
         { title: "Banned accounts", value: num(stats?.bannedUsers), detail: "Currently blocked from the platform", icon: Ban, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
         {
@@ -1701,15 +1738,6 @@ export default function AdminDashboardClient() {
           icon: MapPin,
           tint: "bg-[#FDF1D0] text-[#8A5A00]",
         },
-      ],
-    },
-    {
-      title: "Subscriptions & revenue",
-      cards: [
-        { title: "Subscription records", value: num(stats?.totalSubscriptions), detail: "All recorded purchases", icon: ReceiptText, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
-        { title: "Paid conversion", value: overviewLoading ? "—" : `${stats?.paidConversionPercent ?? 0}%`, detail: "Users with an active subscription", icon: Percent, tint: "bg-emerald-50 text-emerald-700" },
-        { title: "Revenue this month", value: overviewLoading ? "—" : money(stats?.revenueThisMonth), detail: "Completed payments since the 1st", icon: Wallet, tint: "bg-[#FDF1D0] text-[#8A5A00]" },
-        { title: "Expiring in 7 days", value: num(stats?.expiringSoon), detail: "Active plans ending this week", icon: CalendarClock, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
       ],
     },
   ];
@@ -1985,6 +2013,18 @@ export default function AdminDashboardClient() {
                 </div>
               </section>
 
+              <OverviewInsights
+                stats={stats}
+                insights={overview?.insights}
+                loading={overviewLoading}
+                onNavigate={(target) => {
+                  if (target === "pending") { setSubscriptionStatus("pending"); selectTab("subscriptions"); }
+                  else if (target === "failed" || target === "expiring") { setSubscriptionStatus("all"); selectTab("subscriptions"); }
+                  else if (target === "chats") selectTab("chats");
+                  else selectTab("generations");
+                }}
+              />
+
               {metricGroups.map((group) => (
                 <section key={group.title} aria-label={group.title}>
                   <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-[#7A6A50]">
@@ -2229,6 +2269,7 @@ export default function AdminDashboardClient() {
           )}
 
           {tab === "chats" && <AdminChatsPanel refreshKey={chatRefreshKey} />}
+          {tab === "generations" && <AdminGenerationPanel />}
           {tab === "settings" && <SiteSettingsPanel />}
           {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
 
@@ -2304,6 +2345,16 @@ export default function AdminDashboardClient() {
                       <KeyRound size={15} /> Reset password
                     </button>
 
+                    <button
+                      type="button"
+                      disabled={userActionBusy || userDeleting || confirmingUserDelete || accessModalUser.isPrimaryAdmin === true || accessModalUser.id === admin?.id || (accessModalUser.role === "admin" && !admin?.isRootAdmin)}
+                      onClick={() => void loginAsUser()}
+                      title="Opens this account's own session. Stays open while you're active, up to a 12-hour hard limit. Does not change or reveal their password. Logged for audit."
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <LogIn size={15} /> Login as this user
+                    </button>
+
                     {admin?.isRootAdmin && accessModalUser.id !== admin.id && accessModalUser.isPrimaryAdmin !== true && (
                       <button
                         type="button"
@@ -2320,6 +2371,9 @@ export default function AdminDashboardClient() {
                   {accessModalUser.role === "admin" && !admin?.isRootAdmin && (
                     <p className="mt-3 text-xs leading-5 text-slate-500">Only the primary administrator can modify another administrator account or reset its password.</p>
                   )}
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    "Login as this user" opens their account as they see it, without touching their password. It stays open while you're actively using it and ends automatically if left idle or after 12 hours. Every session is recorded (admin, account, start/end time) for audit.
+                  </p>
 
                   {temporaryPassword && (
                     <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5">

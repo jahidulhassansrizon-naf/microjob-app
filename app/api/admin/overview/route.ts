@@ -5,6 +5,7 @@ import Subscription from "@/models/Subscription";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { getAdminCredentials } from "@/lib/adminCredentials";
 import { requireAdmin } from "../_lib/adminAuth";
+import { buildInsights } from "./_insights";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +144,13 @@ export async function GET(request: Request) {
       ? { name: String(districtRows[0]._id), users: Number(districtRows[0].count || 0) }
       : null;
 
+    let insights = null;
+    try {
+      insights = await buildInsights({ now, startOfToday, startOfMonth, databaseUserFilter, realPaymentMatch, activeSubscriptionFilter, activeSubscriberIds });
+    } catch (insightError) {
+      console.error("Admin overview insights error:", insightError);
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -169,6 +177,7 @@ export async function GET(request: Request) {
           topDistrict,
         },
         weeklyRegistrations,
+        insights,
         generatedAt: now.toISOString(),
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
