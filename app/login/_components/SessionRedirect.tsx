@@ -13,19 +13,7 @@ export default function SessionRedirect({ to }: { to: string }) {
   const router = useRouter();
 
   useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("navigation-progress:hold", { detail: { showAfterMs: 0 } }),
-    );
-    // Safety net: never keep the loader forever if the navigation fails.
-    const safety = window.setTimeout(
-      () => window.dispatchEvent(new Event("navigation-progress:release")),
-      15000,
-    );
     router.replace(to);
-    return () => {
-      window.clearTimeout(safety);
-      window.dispatchEvent(new Event("navigation-progress:release"));
-    };
   }, [router, to]);
 
   return (

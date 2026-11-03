@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
 import ActivityTracker from "@/app/_components/ActivityTracker";
-import NavigationProgressBar from "./_components/NavigationProgressBar";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
@@ -71,7 +70,6 @@ export default async function RootLayout({
   const initialLocale: Locale = cookieLocale === "bn" ? "bn" : "en";
   const showLoginSuccess =
     cookieStore.get("sohoj_login_success")?.value === "1";
-  const hasSessionCookie = Boolean(cookieStore.get("token")?.value);
   const rawLoginName = cookieStore.get("sohoj_login_name")?.value ?? "";
   let loginFirstName = rawLoginName;
   try {
@@ -95,10 +93,6 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`}
         suppressHydrationWarning
       >
-        {/* First element in <body>: the full-screen loader is part of the very first paint. */}
-        <ConditionalSiteChrome showOnLoginWhenSignedIn={hasSessionCookie}>
-          <NavigationProgressBar suppressInitial={showLoginSuccess} />
-        </ConditionalSiteChrome>
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
         <I18nProvider initialLocale={initialLocale}>
           <ActivityTracker />

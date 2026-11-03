@@ -83,11 +83,11 @@ export default function PhotoEditorPage() {
     // drawn at all (no half-built page "floating" for a moment). The full-screen loader covers the
     // wait only if it is really needed, and the finished page then appears in one go.
     // This flag only ever goes false -> true, so later refreshes never blank an open page.
-    const [firstLoadDone, setFirstLoadDone] = useState(() => openedWithCache && isAiEditorStaticWarm());
+    const [firstLoadDone, setFirstLoadDone] = useState(true);
     // The page is drawn first (hidden under the loader), and only AFTER it has really been painted
     // the loader is told to finish. So the heavy drawing work never happens while the loader is
     // running its last steps: the loader finishes smoothly and the finished page is revealed.
-    const [pageSettled, setPageSettled] = useState(firstLoadDone);
+    const [pageSettled, setPageSettled] = useState(true);
     usePageLoaderHold(!pageSettled, 8000, 120);
     // Data is in: wait only very briefly for the small clothing icons. Photos that are not ready
     // simply fade in afterwards, in the background.

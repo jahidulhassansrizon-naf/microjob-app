@@ -126,11 +126,6 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
               data.user.role,
               requestedTarget,
             );
-            window.dispatchEvent(
-              new CustomEvent("navigation-progress:start", {
-                detail: { targetPath: verifiedTarget },
-              }),
-            );
             router.replace(verifiedTarget);
             return;
           }

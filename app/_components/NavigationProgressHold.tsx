@@ -1,20 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-
 /**
- * Put this inside any loading screen (skeleton, spinner page, loading.tsx).
- * While it is on screen, the full-screen page loader stays up; when the loading
- * screen disappears, the loader completes to 100%.
+ * The full-screen page loader has been removed, so this is now a harmless no-op.
+ * (Kept so existing loading.tsx files that import it keep working.)
  */
 export default function NavigationProgressHold() {
-  useEffect(() => {
-    window.dispatchEvent(new Event("navigation-progress:hold"));
-
-    return () => {
-      window.dispatchEvent(new Event("navigation-progress:release"));
-    };
-  }, []);
-
   return null;
 }

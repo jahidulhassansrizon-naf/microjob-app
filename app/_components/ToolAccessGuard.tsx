@@ -64,18 +64,9 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
 
     let active = true;
     let firstCheck = true;
-    const optimistic = isRecentlyVerified();
-    setGate({ pathname, status: optimistic ? "allowed" : "checking" });
-
-    // Only a cold check keeps the full-screen page loader up (it covers the waiting).
-    // A quiet background re-check must never put a loader over an already open page.
-    let holdReleased = optimistic;
-    const releaseProgressHold = () => {
-      if (holdReleased) return;
-      holdReleased = true;
-      window.dispatchEvent(new Event("navigation-progress:release"));
-    };
-    if (!optimistic) window.dispatchEvent(new Event("navigation-progress:hold"));
+    // The page always opens at once; the access check runs quietly in the background
+    // (a ban is still applied within moments, and the protected APIs enforce access on the server).
+    setGate({ pathname, status: "allowed" });
 
     const checkAccess = async () => {
       try {
@@ -104,7 +95,6 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
         if (active) setGate({ pathname, status: "allowed" });
       } finally {
         firstCheck = false;
-        releaseProgressHold();
       }
     };
 
@@ -117,16 +107,13 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
     return () => {
       active = false;
       window.clearInterval(interval);
-      releaseProgressHold();
     };
   }, [pathname, toolPath]);
 
   const status = !toolPath
     ? "allowed"
     : gate.pathname !== pathname
-      ? isRecentlyVerified()
-        ? "allowed"
-        : "checking"
+      ? "allowed"
       : gate.status;
   const lastAllowedContentRef = useRef<{
     pathname: string;
