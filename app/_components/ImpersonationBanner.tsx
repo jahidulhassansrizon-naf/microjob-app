@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /**
  * Makes an active "login as this user" session visible, instead of it being
@@ -10,9 +10,13 @@ import { useRouter } from "next/navigation";
  */
 export default function ImpersonationBanner() {
   const router = useRouter();
+  const pathname = usePathname();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [returning, setReturning] = useState(false);
 
+  // This component lives in the root layout, so it is NOT remounted on in-app navigation.
+  // Re-check the session on every route change, otherwise the banner keeps showing after
+  // "Return to admin" (until a manual reload).
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
@@ -28,7 +32,7 @@ export default function ImpersonationBanner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname]);
 
   // Keeps the session alive while this tab is actually open and in the
   // foreground. Stop working / close the tab, and the existing cookie
@@ -60,6 +64,8 @@ export default function ImpersonationBanner() {
         cache: "no-store",
       });
       if (response.ok) {
+        // The session has ended: hide the banner right away, don't wait for a reload.
+        setAdminEmail(null);
         router.push("/admin");
         router.refresh();
       }

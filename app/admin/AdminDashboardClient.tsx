@@ -1738,7 +1738,6 @@ export default function AdminDashboardClient() {
       title: "Account details",
       cards: [
         { title: "Logged in today", value: num(stats?.loginsToday), detail: "Bangladesh time", icon: LogIn, tint: "bg-[#FDF1D0] text-[#8A5A00]" },
-        { title: "Total registered users", value: num(stats?.totalUsers), detail: "All accounts on the platform", icon: Users, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
         { title: "Never logged in", value: num(stats?.neverLoggedIn), detail: "Registered but no login recorded", icon: UserX, tint: "bg-[#F2E8D2] text-[#5A4A32]" },
         { title: "Banned accounts", value: num(stats?.bannedUsers), detail: "Currently blocked from the platform", icon: Ban, tint: "bg-[#FEE9E9] text-[#B91C1C]" },
         {
@@ -1749,6 +1748,37 @@ export default function AdminDashboardClient() {
           tint: "bg-[#FDF1D0] text-[#8A5A00]",
         },
       ],
+    },
+  ];
+
+  const mainCards = [
+    {
+      title: "Total registered users",
+      value: num(stats?.totalUsers),
+      detail: `${num(stats?.newToday)} new today`,
+      icon: Users,
+      tint: "bg-[#F2E8D2] text-[#5A4A32]",
+    },
+    {
+      title: "Total subscriptions",
+      value: num(stats?.totalSubscriptions),
+      detail: `${num(stats?.activeSubscriptions)} active now`,
+      icon: ReceiptText,
+      tint: "bg-[#FEE9E9] text-[#B91C1C]",
+    },
+    {
+      title: "Total revenue",
+      value: overviewLoading ? "—" : money(stats?.totalRevenue),
+      detail: "All time, completed payments",
+      icon: CircleDollarSign,
+      tint: "bg-[#FDF1D0] text-[#8A5A00]",
+    },
+    {
+      title: "Online now",
+      value: num(stats?.activeNow),
+      detail: "Active on the site in the last 3 minutes",
+      icon: Activity,
+      tint: "bg-emerald-50 text-emerald-700",
     },
   ];
 
@@ -1939,6 +1969,39 @@ export default function AdminDashboardClient() {
 
           {tab === "overview" && (
             <div className="space-y-6">
+              <section aria-label="Main numbers">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {mainCards.map((card, index) => (
+                    <article
+                      key={card.title}
+                      className={`${CARD} p-5 sm:p-6`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3B2F1E] text-xs font-bold text-[#FBF6E8]">
+                            {index + 1}
+                          </span>
+                          <p className="truncate text-sm font-semibold text-[#5A4A32]">
+                            {card.title}
+                          </p>
+                        </div>
+                        <span
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.tint}`}
+                        >
+                          <card.icon size={21} strokeWidth={1.8} />
+                        </span>
+                      </div>
+                      <p className="mt-4 text-[34px] font-bold leading-none tracking-tight text-[#3B2F1E] tabular-nums">
+                        {card.value}
+                      </p>
+                      <p className="mt-4 border-t border-[#EFE5CE] pt-3 text-xs text-[#7A6A50]">
+                        {card.detail}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
               <section
                 aria-label="Welcome"
                 className="relative overflow-hidden rounded-2xl border border-[#5A4A32] bg-[#3B2F1E] text-white shadow-[0_14px_36px_-16px_rgba(59,47,30,0.65)]"

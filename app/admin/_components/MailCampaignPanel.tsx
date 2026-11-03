@@ -10,8 +10,28 @@ const INPUT =
 const LABEL = "block text-[12px] font-semibold uppercase tracking-wide text-[#6B5A40]";
 
 type Audience = "all" | "subscribed" | "not_subscribed";
+type Format = "text" | "html";
+const TEXT_MAX = 8000;
+const HTML_MAX = 90000;
 type Counts = Record<Audience, number>;
 const BATCH = 20;
+
+/** Simple checks for things that commonly push a mail into spam. Advice only, never blocks sending. */
+function spamHints(subject: string, message: string, format: Format): string[] {
+  const hints: string[] = [];
+  const letters = subject.replace(/[^A-Za-z]/g, "");
+  if (letters.length >= 6 && subject === subject.toUpperCase()) hints.push("Subject is all CAPITAL letters. Use normal sentence case.");
+  if ((subject.match(/[!?]/g) || []).length > 1) hints.push("Too many ! or ? in the subject. Use at most one.");
+  if (/\b(free|100%|guaranteed|winner|act now|urgent|click here|cash)\b/i.test(subject)) hints.push("Subject has a typical spam word (free, 100%, urgent, click here...). Try rewording.");
+  if (format === "html") {
+    const images = (message.match(/<img\b/gi) || []).length;
+    const text = message.replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (images > 0 && text.length < 200) hints.push("The mail is mostly images. Add more real text, image-only mails go to spam.");
+    if (/<img\b[^>]*src=["']http:\/\//i.test(message)) hints.push("An image uses http://. Use https:// links only.");
+    if (message.length > 80000) hints.push("The HTML is very large. Gmail cuts mails over ~100 KB.");
+  }
+  return hints;
+}
 
 const AUDIENCES: Array<{ key: Audience; label: string }> = [
   { key: "all", label: "All users" },
@@ -25,6 +45,7 @@ export default function MailCampaignPanel() {
   const [audience, setAudience] = useState<Audience>("all");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [format, setFormat] = useState<Format>("text");
   const [ctaText, setCtaText] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
   const [previewTo, setPreviewTo] = useState("");
@@ -51,7 +72,9 @@ export default function MailCampaignPanel() {
     void loadCounts();
   }, [loadCounts]);
 
-  const payload = { subject: subject.trim(), message: message.trim(), ctaText: ctaText.trim(), ctaUrl: ctaUrl.trim() };
+  const payload = { subject: subject.trim(), message: message.trim(), format, ctaText: format === "html" ? "" : ctaText.trim(), ctaUrl: format === "html" ? "" : ctaUrl.trim() };
+  const hints = spamHints(subject, message, format);
+  const previewHtml = message.replace(/\{\{\s*name\s*\}\}/gi, "Rahim");
 
   const post = async (body: Record<string, unknown>) => {
     const response = await fetch("/api/admin/mail-campaign", {
@@ -167,17 +190,58 @@ export default function MailCampaignPanel() {
           <input className={INPUT} value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={180} placeholder="🎉 Special offer just for you, {{name}}!" />
         </div>
         <div>
-          <label className={LABEL}>Message</label>
-          <textarea className={`${INPUT} min-h-[160px] resize-y`} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={8000} placeholder={"Hi {{name}},\n\nThis week only: 30% off all plans..."} />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className={LABEL}>Message</label>
+            <div className="inline-flex rounded-full border border-[#E3D6B8] bg-white p-0.5 text-xs font-semibold">
+              {(["text", "html"] as Format[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFormat(key)}
+                  className={`rounded-full px-3 py-1 transition ${format === key ? "bg-[#3B2F1E] text-[#F5E9C8]" : "text-[#5A4A32] hover:bg-[#F6EEDB]"}`}
+                >
+                  {key === "text" ? "Plain text" : "HTML design"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <textarea
+            className={`${INPUT} min-h-[160px] resize-y ${format === "html" ? "font-mono text-xs" : ""}`}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            maxLength={format === "html" ? HTML_MAX : TEXT_MAX}
+            placeholder={format === "html" ? "<h1>Hi {{name}},</h1>\n<p>Paste your full HTML design here...</p>" : "Hi {{name}},\n\nThis week only: 30% off all plans..."}
+          />
+          {format === "html" && (
+            <p className="mt-1.5 text-xs text-[#6B5A40]">
+              Paste the full HTML. It is sent exactly as designed (scripts are removed). Use inline styles and https image links. A plain-text version and an unsubscribe link are added automatically. The button fields below are not used in HTML mode.
+            </p>
+          )}
         </div>
+        {format === "html" && message.trim() && (
+          <div>
+            <label className={LABEL}>Preview ({"{{name}}"} shown as Rahim)</label>
+            <iframe title="Email preview" sandbox="" srcDoc={previewHtml} className="mt-1.5 h-[360px] w-full rounded-lg border border-[#E3D6B8] bg-white" />
+          </div>
+        )}
+        {hints.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            <p className="font-semibold">Spam filter tips</p>
+            <ul className="mt-1 list-disc pl-5 text-xs leading-5">
+              {hints.map((hint) => (
+                <li key={hint}>{hint}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={LABEL}>Button text (optional)</label>
-            <input className={INPUT} value={ctaText} onChange={(e) => setCtaText(e.target.value)} maxLength={60} placeholder="Get the offer" />
+            <input className={INPUT} value={ctaText} onChange={(e) => setCtaText(e.target.value)} maxLength={60} placeholder="Get the offer" disabled={format === "html"} />
           </div>
           <div>
             <label className={LABEL}>Button link (optional)</label>
-            <input className={INPUT} value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://www.sebalagbe.com/subscription" />
+            <input className={INPUT} value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://www.sebalagbe.com/subscription" disabled={format === "html"} />
           </div>
         </div>
       </div>

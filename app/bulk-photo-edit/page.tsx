@@ -12,6 +12,7 @@ import PresetPanel from "./components/PresetPanel";
 import BulkStepper from "./components/BulkStepper";
 import { TOOL_PRESETS } from "./components/toolCatalog";
 import RetentionNotice from "@/app/_components/RetentionNotice";
+import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import type { PhotoItem, PhotoProcessingStatus, SelectedTools, } from "./components/types";
 const PAGE_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -395,6 +396,7 @@ export default function BulkPhotoEditPage() {
                     body: formData,
                 });
                 const raw = await response.text();
+                window.dispatchEvent(new Event("sohozkaj:generation-finished"));
                 let data: {
                     success?: boolean;
                     image?: string;
@@ -499,6 +501,7 @@ export default function BulkPhotoEditPage() {
                 body: formData,
             });
             const raw = await response.text();
+                window.dispatchEvent(new Event("sohozkaj:generation-finished"));
             let data: {
                 success?: boolean;
                 image?: string;
@@ -630,6 +633,7 @@ export default function BulkPhotoEditPage() {
               </div>)}
           </main>
 
+          <div className="px-3 pt-3 lg:px-0"><GenerationQuotaNotice /></div>
           <PresetPanel selectedTools={selectedTools} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
         </div>
       </div>

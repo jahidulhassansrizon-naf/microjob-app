@@ -19,6 +19,9 @@ type Item = {
   lastAt: string | null;
   suspicious: boolean;
   reasons: string[];
+  limitedNow: boolean;
+  limitKind: "hourly" | "daily" | "both" | null;
+  unlockAt: string | null;
 };
 
 type SharedIp = { ip: string; count: number; users: Pick<Item, "id" | "fullName" | "email" | "phoneNumber">[] };
@@ -51,6 +54,17 @@ function fmt(value: string | null) {
   });
 }
 
+// "23 min" / "2h 10m" until the account can generate again; null once the time has passed.
+function remaining(unlockAt: string, nowMs: number) {
+  const ms = new Date(unlockAt).getTime() - nowMs;
+  if (ms <= 0) return null;
+  const mins = Math.ceil(ms / 60000);
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 export default function AdminGenerationPanel({ refreshKey = 0 }: { refreshKey?: number }) {
   const [hours, setHours] = useState<24 | 168>(24);
   const [data, setData] = useState<Data | null>(null);
@@ -60,6 +74,13 @@ export default function AdminGenerationPanel({ refreshKey = 0 }: { refreshKey?: 
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  // Keep the "opens in" countdown fresh without reloading the list.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -174,13 +195,14 @@ export default function AdminGenerationPanel({ refreshKey = 0 }: { refreshKey?: 
           <ShieldAlert size={16} className="text-[#DC2626]" /> Accounts by generation count
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left">
+          <table className="w-full min-w-[1080px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[#E3D6B8]">
                 <th className={TH}>User</th>
                 <th className={TH}>Last hour</th>
                 <th className={TH}>Total</th>
                 <th className={TH}>Blocked</th>
+                <th className={TH}>Limit status</th>
                 <th className={TH}>IPs</th>
                 <th className={TH}>Logins</th>
                 <th className={TH}>Last generated</th>
@@ -189,9 +211,9 @@ export default function AdminGenerationPanel({ refreshKey = 0 }: { refreshKey?: 
             </thead>
             <tbody>
               {loading && !data ? (
-                <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-[#7A6A50]"><LoaderCircle className="mx-auto animate-spin" size={18} /></td></tr>
+                <tr><td colSpan={9} className="px-5 py-10 text-center text-sm text-[#7A6A50]"><LoaderCircle className="mx-auto animate-spin" size={18} /></td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-[#7A6A50]">No generations recorded in this period yet.</td></tr>
+                <tr><td colSpan={9} className="px-5 py-10 text-center text-sm text-[#7A6A50]">No generations recorded in this period yet.</td></tr>
               ) : (
                 items.map((item) => (
                   <tr key={item.id} className={`border-b border-[#EFE4C8] ${item.suspicious ? "bg-rose-50/60" : ""}`}>
@@ -206,6 +228,28 @@ export default function AdminGenerationPanel({ refreshKey = 0 }: { refreshKey?: 
                     <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#3B2F1E]">{item.lastHour}</td>
                     <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#3B2F1E]">{item.allowed}</td>
                     <td className="px-4 py-3 text-sm tabular-nums text-[#3B2F1E]">{item.blocked}</td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const left = item.limitedNow && item.unlockAt ? remaining(item.unlockAt, nowMs) : null;
+                        if (left && item.unlockAt) {
+                          return (
+                            <div>
+                              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700">Locked</span>
+                              <div className="mt-1 text-xs font-semibold text-[#3B2F1E]">Opens in {left}</div>
+                              <div className="text-[11px] text-[#7A6A50]">
+                                at {fmt(item.unlockAt)} · {item.limitKind === "daily" ? "daily" : item.limitKind === "both" ? "hourly + daily" : "hourly"} limit
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div>
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Open</span>
+                            <div className="mt-1 text-[11px] text-[#7A6A50]">{item.lastHour}/{data?.limits.hourly ?? 0} this hour</div>
+                          </div>
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3 text-sm tabular-nums text-[#3B2F1E]">{item.ipCount}</td>
                     <td className="px-4 py-3 text-sm text-[#3B2F1E]">
                       <div className="tabular-nums">{item.loginCount} times</div>

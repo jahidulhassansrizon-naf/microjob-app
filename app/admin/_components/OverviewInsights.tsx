@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  Activity,
 } from "lucide-react";
 
 export type OverviewInsightsData = {
@@ -227,8 +226,7 @@ export default function OverviewInsights({
       )}
 
       <Section title="Key numbers">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <Card title="Users active now" value={n(stats?.activeNow)} detail="Active on the site in the last 3 minutes" icon={Activity} tint="bg-emerald-50 text-emerald-700" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card title="DAU / MAU" value={`${n(kpi.dau)} / ${n(kpi.mau)}`} detail={`Seen today / in the last 30 days · stickiness ${pct(kpi.dau, kpi.mau)}`} icon={Users} tint="bg-[#F2E8D2] text-[#5A4A32]" />
           <Card title="Revenue this month" value={money(revenueThisMonth)} detail={`MRR (active plans per month): ${money(kpi.mrr)}`} icon={Wallet} tint="bg-[#FDF1D0] text-[#8A5A00]" />
           <Card title="Active subscribers" value={n(stats?.activeSubscribers)} detail="Paying users right now" icon={CreditCard} tint="bg-[#FEE9E9] text-[#B91C1C]" />

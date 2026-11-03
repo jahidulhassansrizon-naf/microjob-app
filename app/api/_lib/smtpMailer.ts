@@ -36,9 +36,11 @@ export type SmtpSettingsRuntime = {
 
 export type OutgoingMail = {
   to: string;
+  toName?: string;
   subject: string;
   html: string;
   text: string;
+  headers?: Record<string, string>;
 };
 
 const schema = new Schema(
@@ -252,9 +254,11 @@ export async function openSmtpSender(settings: SmtpSettingsRuntime) {
         fromName: settings.fromName,
         replyTo: settings.replyTo || undefined,
         to: mail.to,
+        toName: mail.toName,
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
+        headers: mail.headers,
       });
     },
     async verify() {

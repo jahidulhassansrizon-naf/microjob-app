@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import GenerationLog from "@/models/GenerationLog";
 import User from "@/models/User";
-import { GENERATION_DAILY_LIMIT, GENERATION_HOURLY_LIMIT } from "@/app/api/_lib/generationGuard";
+import { GENERATION_DAILY_LIMIT, GENERATION_HOURLY_LIMIT, computeLimitStatus } from "@/app/api/_lib/generationGuard";
 import { requireAdmin } from "../_lib/adminAuth";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
           _id: "$userId",
           allowed: { $sum: { $cond: [{ $eq: ["$outcome", "allowed"] }, 1, 0] } },
           blocked: { $sum: { $cond: [{ $eq: ["$outcome", "blocked"] }, 1, 0] } },
-          lastHour: { $sum: { $cond: [{ $and: [{ $eq: ["$outcome", "allowed"] }, { $gte: ["$createdAt", hourAgo] }] }, 1, 0] } },
+          lastHour: { $sum: { $cond: [{ $and: [{ $eq: ["$outcome", "allowed"] }, { $ne: ["$success", false] }, { $gte: ["$createdAt", hourAgo] }] }, 1, 0] } },
           ips: { $addToSet: "$ip" },
           lastAt: { $max: "$createdAt" },
         },
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     rows.forEach((r: any) => userIds.add(String(r._id)));
     sharedIpRows.forEach((r: any) => r.users.forEach((u: any) => userIds.add(String(u))));
     const users = await User.find({ _id: { $in: Array.from(userIds) } })
-      .select("fullName email phoneNumber loginCount lastLoginAt isBanned")
+      .select("fullName email phoneNumber loginCount lastLoginAt isBanned role")
       .lean();
     const userMap = new Map<string, any>(users.map((u: any) => [String(u._id), u]));
 
@@ -102,6 +102,28 @@ export async function GET(request: Request) {
       };
     };
 
+    // Who is locked right now, and when do they open again? (rolling hourly / daily windows)
+    const candidateIds = rows
+      .filter((r: any) => r.blocked > 0 || r.lastHour >= GENERATION_HOURLY_LIMIT || r.allowed >= GENERATION_DAILY_LIMIT)
+      .map((r: any) => r._id);
+    const timesByUser = new Map<string, number[]>();
+    if (candidateIds.length > 0) {
+      const logs = await GenerationLog.find({
+        userId: { $in: candidateIds },
+        outcome: "allowed",
+        success: { $ne: false }, // failed generations do not use up the limit
+        createdAt: { $gte: new Date(now - 24 * HOUR_MS) },
+      })
+        .select("userId createdAt")
+        .lean<{ userId: any; createdAt: Date }[]>();
+      logs.forEach((l) => {
+        const key = String(l.userId);
+        const list = timesByUser.get(key) || [];
+        list.push(new Date(l.createdAt).getTime());
+        timesByUser.set(key, list);
+      });
+    }
+
     const items = rows.map((r: any) => {
       const reasons: string[] = [];
       if (r.blocked > 0) reasons.push("Hit the limit");
@@ -109,8 +131,15 @@ export async function GET(request: Request) {
       if (r.allowed >= Math.ceil(GENERATION_DAILY_LIMIT * 0.7)) reasons.push("Very high volume");
       const realIps = (r.ips as string[]).filter((ip) => ip !== "unknown");
       if (realIps.length >= 3) reasons.push(`${realIps.length} different IPs`);
+      const id = String(r._id);
+      const isAdminUser = userMap.get(id)?.role === "admin"; // admins are exempt from the limit
+      const status = !isAdminUser && timesByUser.has(id) ? computeLimitStatus(timesByUser.get(id) || [], now) : null;
+      const limitedNow = Boolean(status && status.unlockAt !== null);
       return {
-        ...describe(String(r._id)),
+        ...describe(id),
+        limitedNow,
+        limitKind: !status || !limitedNow ? null : status.hourHit && status.dayHit ? "both" : status.hourHit ? "hourly" : "daily",
+        unlockAt: limitedNow && status?.unlockAt ? new Date(status.unlockAt).toISOString() : null,
         allowed: r.allowed,
         blocked: r.blocked,
         lastHour: r.lastHour,

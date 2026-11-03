@@ -1381,6 +1381,7 @@ export default function PhotoEditorPage() {
         finally {
             window.clearTimeout(timeoutId);
             controller.abort();
+            window.dispatchEvent(new Event("sohozkaj:generation-finished"));
             // FormData may hold a File backed by the temporary source image.
             formData.delete("image");
             formData.delete("imageUrl");

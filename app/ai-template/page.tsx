@@ -386,6 +386,7 @@ export default function AITemplatePage() {
         signal: controller.signal,
       });
       const data = await response.json().catch(() => null);
+      window.dispatchEvent(new Event("sohozkaj:generation-finished"));
       if (response.status === 403 && data?.code === "SUBSCRIPTION_REQUIRED") {
         window.dispatchEvent(new Event("sohozkaj:subscription-required"));
       }

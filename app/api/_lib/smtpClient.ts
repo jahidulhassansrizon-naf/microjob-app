@@ -22,9 +22,12 @@ export type SmtpMessage = {
   fromName?: string;
   replyTo?: string;
   to: string;
+  toName?: string;
   subject: string;
   text: string;
   html: string;
+  /** Extra headers such as List-Unsubscribe. Names/values are sanitised before use. */
+  headers?: Record<string, string>;
 };
 
 type Reply = { code: number; lines: string[] };
@@ -55,6 +58,13 @@ function formatAddress(email: string, name?: string): string {
   return `${display} ${address}`;
 }
 
+function extraHeaders(headers?: Record<string, string>): string[] {
+  if (!headers) return [];
+  return Object.entries(headers)
+    .filter(([name, value]) => /^[A-Za-z][A-Za-z0-9-]*$/.test(name) && String(value || "").trim())
+    .map(([name, value]) => `${name}: ${noBreaks(String(value))}`);
+}
+
 function base64Lines(value: string): string {
   const b64 = Buffer.from(value, "utf8").toString("base64");
   return (b64.match(/.{1,76}/g) || [""]).join("\r\n");
@@ -65,11 +75,12 @@ export function buildMimeMessage(message: SmtpMessage): string {
   const domain = (message.fromEmail.split("@")[1] || CLIENT_NAME).replace(/[^a-zA-Z0-9.-]/g, "");
   const headers = [
     `From: ${formatAddress(message.fromEmail, message.fromName)}`,
-    `To: <${noBreaks(message.to)}>`,
+    `To: ${formatAddress(message.to, message.toName)}`,
     ...(message.replyTo ? [`Reply-To: <${noBreaks(message.replyTo)}>`] : []),
     `Subject: ${encodeHeader(message.subject)}`,
     `Date: ${new Date().toUTCString().replace("GMT", "+0000")}`,
     `Message-ID: <${crypto.randomBytes(16).toString("hex")}@${domain}>`,
+    ...extraHeaders(message.headers),
     "MIME-Version: 1.0",
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];

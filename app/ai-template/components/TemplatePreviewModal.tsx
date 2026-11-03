@@ -3,6 +3,7 @@ import RetentionNotice from "@/app/_components/RetentionNotice";
 import { useAiTemplateText } from "./aiTemplateI18n";
 import React from "react";
 import { X, ChevronLeft, ChevronRight, Download, Upload, Heart, Image as ImageIcon, Sparkles, QrCode } from "lucide-react";
+import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import QrCodeSidebar from "@/app/ai-editor/_components/QrCodeSidebar";
 import { GateOverlay } from "../../_components/GateOverlay";
 import type { Template } from "./templateData";
@@ -121,6 +122,7 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
             <div className="template-how-step"><span>2</span><p>{t("Generate your image")}</p></div>
           </div>
 
+          <GenerationQuotaNotice />
           <button type="button" className="template-generate-btn" aria-label={t("Generate photo from this template")} onClick={onGeneratePhoto} disabled={!userPhoto || isGenerating}>
             <Sparkles size={17}/> {isGenerating ? t("Generating...") : t("Generate Photo")}
           </button>
