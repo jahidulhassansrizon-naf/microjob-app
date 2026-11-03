@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import mongoose, { Schema } from "mongoose";
 import { connectDB } from "@/lib/db";
+import { SmtpSession } from "./smtpClient";
 
 /**
  * SMTP mail settings (managed from Admin -> Email & SMTP).
@@ -228,45 +229,39 @@ export function friendlySmtpError(error: unknown): string {
   return raw.slice(0, 240);
 }
 
-async function createTransport(settings: SmtpSettingsRuntime) {
-  // @ts-ignore - nodemailer is installed with `npm i nodemailer` (types are optional)
-  const mod: any = await import("nodemailer");
-  const nodemailer: any = mod.default ?? mod;
-  return nodemailer.createTransport({
+function toClientOptions(settings: SmtpSettingsRuntime) {
+  return {
     host: settings.host,
     port: settings.port,
     secure: settings.secure,
-    auth: { user: settings.username, pass: settings.password },
-    connectionTimeout: SMTP_TIMEOUT_MS,
-    greetingTimeout: SMTP_TIMEOUT_MS,
-    socketTimeout: SMTP_TIMEOUT_MS * 2,
-  });
+    username: settings.username,
+    password: settings.password,
+    timeoutMs: SMTP_TIMEOUT_MS,
+  };
 }
 
 /** Opens one connection and sends many mails through it (used for campaigns). */
 export async function openSmtpSender(settings: SmtpSettingsRuntime) {
-  const transport = await createTransport(settings);
+  let session = await SmtpSession.connect(toClientOptions(settings));
   return {
     async send(mail: OutgoingMail) {
-      const info = await transport.sendMail({
-        from: formatFrom(settings),
+      // If the server dropped an idle connection, reconnect once.
+      if (!session.alive) session = await SmtpSession.connect(toClientOptions(settings));
+      return session.send({
+        fromEmail: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: settings.replyTo || undefined,
         to: mail.to,
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
-        ...(settings.replyTo ? { replyTo: settings.replyTo } : {}),
       });
-      return { messageId: typeof info?.messageId === "string" ? info.messageId : undefined };
     },
     async verify() {
-      await transport.verify();
+      // Connecting already logs in, so reaching this point means the login worked.
     },
     close() {
-      try {
-        transport.close();
-      } catch {
-        // ignore
-      }
+      void session.close();
     },
   };
 }
