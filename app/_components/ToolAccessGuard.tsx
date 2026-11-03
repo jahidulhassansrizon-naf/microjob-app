@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ShieldOff } from "lucide-react";
+import { MessageCircle, ShieldOff } from "lucide-react";
 
 type GateState = {
   pathname: string;
@@ -146,31 +146,74 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
 
   if (status === "blocked") {
     return (
-      <main className="flex min-h-[65vh] items-center justify-center px-5 py-12">
-        <section className="w-full max-w-lg rounded-2xl border border-rose-200 bg-white p-7 text-center shadow-sm sm:p-9">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-            <ShieldOff size={27} strokeWidth={1.8} />
-          </span>
-          <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">Unusual activity detected</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            We noticed unusual activity on your account, so an administrator has temporarily turned off your access to the tools.
-            If you want to know more, please contact the admin.
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            আপনার অ্যাকাউন্টে কিছু অস্বাভাবিক অ্যাক্টিভিটি থাকার কারণে অ্যাডমিন সাময়িক সময়ের জন্য আপনার টুলসের অ্যাক্সেস বন্ধ করে দিয়েছে।
-            বিস্তারিত জানতে চাইলে অ্যাডমিনের সাথে যোগাযোগ করুন।
-          </p>
-          {gate.reason && gate.reason !== "Unusual image generation activity" && (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600">
-              <span className="font-medium text-slate-800">Note from admin:</span> {gate.reason}
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] px-4 py-12">
+        {/* soft red glow behind the card */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(220,38,38,0.12)_0%,rgba(220,38,38,0)_65%)]"
+        />
+
+        <section className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_30px_80px_-30px_rgba(59,47,30,0.5)]">
+          {/* dark header */}
+          <div className="relative bg-[#3B2F1E] px-8 pb-9 pt-9 text-center">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(248,113,113,0.22)_0%,rgba(248,113,113,0)_70%)]"
+            />
+            <div className="relative mx-auto flex h-[68px] w-[68px] items-center justify-center rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] shadow-[0_0_0_6px_rgba(220,38,38,0.22),0_10px_30px_-6px_rgba(220,38,38,0.7)]">
+              <ShieldOff size={30} strokeWidth={1.8} className="text-white" />
             </div>
-          )}
-          <a
-            href="/dashboard"
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
-          >
-            Contact admin / অ্যাডমিনের সাথে যোগাযোগ
-          </a>
+            <p className="relative mt-5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#E3D6B8]/70">
+              SebaLagbe.com · Account security
+            </p>
+            <h1 className="relative mt-2 text-[26px] font-extrabold leading-tight tracking-tight text-[#FBF6E8]">
+              Unusual activity detected
+            </h1>
+            <p className="relative mt-1 text-base font-semibold text-[#F2B93B]">
+              অস্বাভাবিক অ্যাক্টিভিটি শনাক্ত হয়েছে
+            </p>
+          </div>
+
+          {/* body */}
+          <div className="px-7 pb-8 pt-6 sm:px-9">
+            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-[#E3D6B8] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5A4A32]">
+              <span className="h-2 w-2 rounded-full bg-[#DC2626] shadow-[0_0_0_3px_rgba(220,38,38,0.18)]" />
+              Tools access temporarily paused · টুলস সাময়িকভাবে বন্ধ
+            </div>
+
+            <p className="mt-5 text-center text-[15px] leading-7 text-[#3B2F1E]">
+              We noticed unusual activity on your account, so an administrator has temporarily turned off your access to the tools.
+              If you want to know more, please contact the admin.
+            </p>
+
+            <div className="my-5 flex items-center gap-3 text-[#C9B791]" aria-hidden="true">
+              <span className="h-px flex-1 bg-[#E3D6B8]" />
+              <span className="h-1.5 w-1.5 rotate-45 bg-[#DC2626]" />
+              <span className="h-px flex-1 bg-[#E3D6B8]" />
+            </div>
+
+            <p className="text-center text-[15px] leading-7 text-[#3B2F1E]">
+              আপনার অ্যাকাউন্টে কিছু অস্বাভাবিক অ্যাক্টিভিটি থাকার কারণে অ্যাডমিন সাময়িক সময়ের জন্য আপনার টুলসের অ্যাক্সেস বন্ধ করে দিয়েছে।
+              বিস্তারিত জানতে চাইলে অ্যাডমিনের সাথে যোগাযোগ করুন।
+            </p>
+
+            {gate.reason && gate.reason !== "Unusual image generation activity" && (
+              <div className="mt-5 rounded-xl border border-[#E3D6B8] bg-white px-4 py-3 text-left text-sm text-[#5A4A32]">
+                <span className="font-semibold text-[#3B2F1E]">Note from admin:</span> {gate.reason}
+              </div>
+            )}
+
+            <a
+              href="/dashboard"
+              className="mt-7 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-b from-[#E23B3B] to-[#C81E1E] px-5 py-3.5 text-[15px] font-bold text-white shadow-[0_12px_24px_-10px_rgba(220,38,38,0.8)] transition hover:brightness-110 active:scale-[0.99]"
+            >
+              <MessageCircle size={18} strokeWidth={2.2} />
+              Contact admin · অ্যাডমিনের সাথে যোগাযোগ
+            </a>
+            <p className="mt-3 text-center text-xs text-[#7A6A4F]">
+              Chat with the admin from your dashboard · ড্যাশবোর্ড থেকে অ্যাডমিনকে মেসেজ করুন
+            </p>
+          </div>
         </section>
       </main>
     );
