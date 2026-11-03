@@ -1,5 +1,6 @@
 "use client";
 import { BulkT, useBulkPhotoText } from "./components/bulkPhotoI18n";
+import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
 import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Crown, Info, Layers, X } from "lucide-react";
@@ -74,7 +75,7 @@ const getDataUrlExtension = (dataUrl: string) => {
     return raw === "webp" ? "webp" : "png";
 };
 const getBaseName = (fileName: string) => fileName.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-") || "photo";
-async function persistBulkResult(image: string, name: string) {
+async function persistBulkResult(image: string, name: string): Promise<void> {
     try {
         let url = image;
         let publicId = "";
@@ -91,7 +92,7 @@ async function persistBulkResult(image: string, name: string) {
             url = upload.url;
             publicId = upload.publicId || "";
         }
-        await fetch("/api/my-files", {
+        const saveResponse = await fetch("/api/my-files", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -105,6 +106,9 @@ async function persistBulkResult(image: string, name: string) {
                 publicId,
             }),
         });
+        // Tell the user where the image went, but only once it is really saved.
+        if (saveResponse.ok)
+            notifyMyFilesSaved();
     }
     catch (error) {
         console.error("Failed to save Bulk Photo Edit result to My Files:", error);

@@ -24,16 +24,18 @@ import { TemplateToolbar } from "./components/TemplateToolbar";
 import { TemplateGrid } from "./components/TemplateGrid";
 import { TemplatePreviewModal } from "./components/TemplatePreviewModal";
 import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
+import { buildCoupleTemplatePrompt, buildSingleTemplatePrompt } from "./templatePrompt";
 import { useAiTemplateText } from "./components/aiTemplateI18n";
 import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
 import RetentionNotice from "@/app/_components/RetentionNotice";
+import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
 
 async function persistGeneratedFile(
   image: string,
   name: string,
   category: "ai-template-generated",
-) {
+): Promise<boolean> {
   try {
     let url = image;
     let publicId = "";
@@ -46,12 +48,12 @@ async function persistGeneratedFile(
         body: JSON.stringify({ image }),
       });
       const upload = await uploadResponse.json().catch(() => null);
-      if (!uploadResponse.ok || !upload?.success || !upload?.url) return;
+      if (!uploadResponse.ok || !upload?.success || !upload?.url) return false;
       url = upload.url;
       publicId = upload.publicId || "";
     }
 
-    await fetch("/api/my-files", {
+    const saveResponse = await fetch("/api/my-files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -65,8 +67,10 @@ async function persistGeneratedFile(
         publicId,
       }),
     });
+    return saveResponse.ok;
   } catch (error) {
     console.error("Failed to save AI Template result to My Files:", error);
+    return false;
   }
 }
 
@@ -363,7 +367,7 @@ export default function AITemplatePage() {
     const timeoutId = window.setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, 180_000);
+    }, 300_000);
 
     setIsGenerating(true);
     setGenerationError("");
@@ -380,60 +384,9 @@ export default function AITemplatePage() {
         ? new URL(selectedTemplate.image, window.location.origin).toString()
         : selectedTemplate.image;
       formData.append("templateImage", templateImageForApi);
-      const couplePrompt = [
-        "Create a new image using the three attached images.",
-        "",
-        "IMAGE 1 is the AI template/reference image. It shows two people together.",
-        "IMAGE 2 is PERSON A: the first real person's own photo (identity source).",
-        "IMAGE 3 is PERSON B: the second real person's own photo (identity source).",
-        "They are two different real people and they are the ONLY identity sources.",
-        "",
-        "Recreate IMAGE 1 with BOTH real people (IMAGE 2 and IMAGE 3) together in the same frame.",
-        "This is a face and identity replacement for BOTH template people, with equal care for each:",
-        "- Replace the face of every person in the template with the face of a real person from IMAGE 2 or IMAGE 3.",
-        "- PERSON A and PERSON B must each look exactly like their own photo: same face shape, eyes, nose, mouth, eyebrows, skin tone, hairline and facial hair.",
-        "- Do NOT keep, reuse or blend the face of either template person. If a template person looks similar to a real person, still use the real person's face.",
-        "- Check the likeness of BOTH people before answering; PERSON B must be as recognizable as PERSON A.",
-        "Assign the real people to the template positions by matching apparent gender and age",
-        "(the man replaces the man, the woman replaces the woman, the child replaces the child).",
-        "If that does not decide it, PERSON A takes the left position and PERSON B takes the right position.",
-        "The clothing, scarf/veil, jewelry, poses, closeness, hand placement, interaction, camera angle, framing,",
-        "background, lighting, shadows, color treatment, mood, depth and overall visual style come from the template.",
-        "Both people must be clearly visible, natural, well proportioned and sharp, with exactly two people in the result.",
-        "Do not add extra people, random objects, logos, watermarks, or unrelated elements.",
-        "Keep the result natural, photorealistic when the template is photorealistic,",
-        "and faithful to the reference template's intended appearance.",
-        "",
-        `Template title: ${selectedTemplate.title}`,
-        `Template category: ${selectedTemplate.category}`,
-        `Template orientation: ${selectedTemplate.orientation}`,
-        "",
-        "Return only the finished generated image.",
-      ].join("\n");
-      const templatePrompt = isCouple ? couplePrompt : [
-        "Create a new image using the two attached images.",
-        "",
-        "IMAGE 1 is the AI template/reference image.",
-        "IMAGE 2 is the user's own photo and is the identity source.",
-        "",
-        "Recreate the visual design of IMAGE 1 using the person from IMAGE 2.",
-        "Preserve the user's identity and recognizable facial features.",
-        "Do not copy or preserve the identity of the person shown in the template.",
-        "Match the template's composition, pose, camera angle, framing, clothing style,",
-        "background, lighting, shadows, color treatment, mood, depth, and overall visual style.",
-        "Keep important graphic layout and design elements from the template when appropriate.",
-        "Do not add extra people, random objects, logos, watermarks, or unrelated elements.",
-        "Keep the result natural, photorealistic when the template is photorealistic,",
-        "and faithful to the reference template's intended appearance.",
-        "",
-        `Template title: ${selectedTemplate.title}`,
-        `Template category: ${selectedTemplate.category}`,
-        `Template gender classification: ${selectedTemplate.gender}`,
-        `Template image count classification: ${selectedTemplate.imageCount === 1 ? "1 image" : selectedTemplate.imageCount === 2 ? "2 images" : "3+ images"}`,
-        `Template orientation: ${selectedTemplate.orientation}`,
-        "",
-        "Return only the finished generated image.",
-      ].join("\n");
+      const templatePrompt = isCouple
+        ? buildCoupleTemplatePrompt(selectedTemplate)
+        : buildSingleTemplatePrompt(selectedTemplate);
       formData.append("prompt", templatePrompt);
 
       const response = await fetch("/api/template-generate", {
@@ -454,7 +407,10 @@ export default function AITemplatePage() {
         data.image,
         `${selectedTemplate.title || "AI Template"} · ${new Date().toISOString().slice(0, 10)}`,
         "ai-template-generated",
-      );
+      ).then((saved) => {
+        // Tell the user where the image went, but only once it is really saved.
+        if (saved) notifyMyFilesSaved();
+      });
     } catch (error) {
       if (generationAbortRef.current !== controller) return;
       if (timedOut)

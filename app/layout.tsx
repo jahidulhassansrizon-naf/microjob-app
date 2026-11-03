@@ -9,6 +9,7 @@ import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
 import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
 import ImpersonationBanner from "./_components/ImpersonationBanner";
+import MyFilesSavedPopup from "./_components/MyFilesSavedPopup";
 import PrePaintScript from "./_components/PrePaintScript";
 import ToolAccessGuard from "./_components/ToolAccessGuard";
 import { SiteSettingsProvider } from "./_components/SiteSettingsProvider";
@@ -110,6 +111,7 @@ export default async function RootLayout({
           </ConditionalSiteNavbar>
           <ToolAccessGuard>{children}</ToolAccessGuard>
           <FloatingUserAdminChat />
+          <MyFilesSavedPopup />
           <LoginSuccessOverlay
             initialVisible={showLoginSuccess}
             initialName={showLoginSuccess ? loginFirstName : ""}

@@ -1,5 +1,6 @@
 "use client";
 import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
+import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -1617,6 +1618,8 @@ export default function PhotoEditorPage() {
         }
         finally {
             if (generationSucceeded) {
+                // The photo is saved (it appears in My Files): tell the user where to find it.
+                notifyMyFilesSaved();
                 // Custom instructions are one-shot: the completed generation has
                 // already used/saved its snapshot, so do not carry the text forward.
                 setEditingGuides((prev) => prev.filter((entry) => !entry.startsWith("Custom Instruction:")));
