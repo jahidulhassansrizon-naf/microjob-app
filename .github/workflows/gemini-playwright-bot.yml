@@ -52,7 +52,7 @@ jobs:
       BOT_PORT: "4000"
       SKIP_DESKTOP: "1"
       ASK_KEY: ${{ secrets.ASK_KEY }}
-      GEMINI_SESSION_JSON: ${{ secrets.GEMINI_SESSION_JSON }}
+      GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
       GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
       GEMINI_SESSION_JSON_4: ${{ secrets.GEMINI_SESSION_JSON_4 }}
@@ -95,14 +95,9 @@ jobs:
       - name: Restore Gemini sessions
         shell: bash
         run: |
-          test -n "$GEMINI_SESSION_JSON" || {
-            echo "GEMINI_SESSION_JSON secret is missing."
-            exit 1
-          }
-          printf '%s' "$GEMINI_SESSION_JSON" > gemini-session-1.json
-          chmod 600 gemini-session-1.json
-          # Sessions 2 to 10 are optional: a slot is used only if its secret exists.
-          for N in 2 3 4 5 6 7 8 9 10; do
+          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10.
+          # Slot 1 is required; slots 2 to 10 are used only if their secret exists.
+          for N in 1 2 3 4 5 6 7 8 9 10; do
             VAR="GEMINI_SESSION_JSON_${N}"
             VALUE="${!VAR}"
             if [ -n "$VALUE" ]; then
@@ -110,6 +105,10 @@ jobs:
               chmod 600 "gemini-session-${N}.json"
             fi
           done
+          test -f gemini-session-1.json || {
+            echo "GEMINI_SESSION_JSON_1 secret is missing."
+            exit 1
+          }
           ls gemini-session-*.json
 
       - name: Start bot server

@@ -1242,8 +1242,21 @@ async function runGeminiGeneration(options) {
         continue;
       }
 
+      const failMessage = error instanceof Error ? error.message : String(error);
+
+      // Logged-out / expired session: skip it for 6 hours and try the next one,
+      // so one dead account never blocks the others.
+      if (/signInVisible: true|accounts\.google\.com/i.test(failMessage)) {
+        limitState[session.slot] = Date.now() + 6 * 60 * 60 * 1000;
+        saveLimitState();
+        console.log(
+          `Session ${session.slot} looks logged out (re-save it with save-session.js). Skipping it, trying the next one...`,
+        );
+        continue;
+      }
+
       console.log(
-        `Session ${session.slot} failed (not a limit message): ${error instanceof Error ? error.message : String(error)}`,
+        `Session ${session.slot} failed (not a limit message): ${failMessage}`,
       );
       throw error;
     }
