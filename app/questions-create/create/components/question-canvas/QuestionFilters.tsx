@@ -150,9 +150,19 @@ export default function QuestionFilters({
             <span className="block text-[13px] font-extrabold text-[#3A3021]">
               <T>Question filters</T>
             </span>
-            <span className="mt-0.5 block text-[11px] text-[#83745C]">
-              <T>Choose class, subject and chapter.</T>
-            </span>
+            {!filtersOpen && selectedClass && selectedSubject && selectedChapter ? (
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#B91C1C]">
+                {[
+                  selectedClass,
+                  subjects.find((item) => item.value === selectedSubject)?.label ?? selectedSubject,
+                  chapters.find((item) => item.value === selectedChapter)?.label ?? selectedChapter,
+                ].join(" · ")}
+              </span>
+            ) : (
+              <span className="mt-0.5 block text-[11px] text-[#83745C]">
+                <T>Choose class, subject and chapter.</T>
+              </span>
+            )}
           </span>
         </span>
         {filtersOpen ? (

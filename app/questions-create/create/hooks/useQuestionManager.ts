@@ -208,6 +208,27 @@ function normalizeCreativeSubQuestions(value: unknown): CreativeSubQuestion[] {
     .slice(0, 5);
 }
 
+/** How many questions one fetch / "load more" request asks the server for. */
+const QUESTIONS_PER_FETCH = 50;
+
+/**
+ * Content based identity of a question. Used to avoid showing (or adding) the
+ * same question twice across several fetches, even if the server does not send
+ * stable ids.
+ */
+function getQuestionContentKey(question: Question): string {
+  const base =
+    question.type === "CQ"
+      ? question.stimulus || question.question
+      : question.question;
+
+  return `${question.type}::${String(base || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160)}`;
+}
+
 function normalizeQuestions(raw: unknown[]): Question[] {
   return raw
     .map((item, index) => {
@@ -512,6 +533,10 @@ export function useQuestionManager() {
 
   const [loadingQuestions, setLoadingQuestions] = useState(false);
 
+  const [loadingMoreQuestions, setLoadingMoreQuestions] = useState(false);
+
+  const [noMoreQuestions, setNoMoreQuestions] = useState(false);
+
   const [questionError, setQuestionError] = useState("");
 
   const [pageSize, setPageSize] = useState<"A4" | "A5" | "Joint">("A4");
@@ -577,6 +602,29 @@ export function useQuestionManager() {
   const [questionLayoutById, setQuestionLayoutById] = useState<
     Record<string, QuestionLayout>
   >({});
+
+  /*
+   * Per-text size (percent, 50-300) for any single piece of paper text,
+   * keyed by its data-region-edit-target id (e.g. "question:ID:option:2").
+   * Applied through a <style> element by PrintDuplexLayout.
+   */
+  const [textScaleByTarget, setTextScaleByTarget] = useState<
+    Record<string, number>
+  >({});
+
+  const setTextScale = (targetId: string, percent: number | null) => {
+    setTextScaleByTarget((current) => {
+      const next = { ...current };
+
+      if (percent == null || percent === 100) {
+        delete next[targetId];
+      } else {
+        next[targetId] = percent;
+      }
+
+      return next;
+    });
+  };
 
   const [annotations, setAnnotations] = useState<PaperAnnotation[]>([]);
 
@@ -680,6 +728,7 @@ export function useQuestionManager() {
       setAnnotations([]);
       setCanvasTextOverrides({});
       setQuestionLayoutById({});
+      setTextScaleByTarget({});
       setEditingQuestionId(null);
       setActiveQuestionId(null);
     };
@@ -1380,6 +1429,7 @@ export function useQuestionManager() {
     setEditingQuestionId(null);
     setActiveQuestionId(null);
     setQuestionLayoutById({});
+      setTextScaleByTarget({});
     setAnnotations([]);
     setCanvasTextOverrides({});
     setActiveAnnotationId(null);
@@ -1598,6 +1648,127 @@ export function useQuestionManager() {
     markCurrentDocumentDirty();
   };
 
+  /*
+   * Delete ANY Joint page (not only the last one) together with the
+   * questions on it. Pages after it shift up by one, so there is never a
+   * gap. Asks for confirmation first when the page still has questions.
+   */
+  const [pendingPageDelete, setPendingPageDelete] = useState<{
+    pageIndex: number;
+    questionCount: number;
+  } | null>(null);
+
+  /** Trash button on a page: asks for confirmation (custom modal) when the page has questions. */
+  const requestDeleteJointPage = (pageIndex: number) => {
+    if (pageSize !== "Joint" || jointPageCount <= 1) {
+      return;
+    }
+
+    const questionCount = (jointQuestionsByPage[pageIndex] || []).length;
+
+    if (questionCount === 0) {
+      deleteJointPage(pageIndex);
+
+      return;
+    }
+
+    setPendingPageDelete({ pageIndex, questionCount });
+  };
+
+  const cancelDeleteJointPage = () => setPendingPageDelete(null);
+
+  const confirmDeleteJointPage = () => {
+    if (!pendingPageDelete) {
+      return;
+    }
+
+    const { pageIndex } = pendingPageDelete;
+
+    setPendingPageDelete(null);
+
+    deleteJointPage(pageIndex);
+  };
+
+  const deleteJointPage = (pageIndex: number) => {
+    if (pageSize !== "Joint" || jointPageCount <= 1) {
+      return;
+    }
+
+    const removedQuestions = jointQuestionsByPage[pageIndex] || [];
+
+    const removedIds = new Set(removedQuestions.map((question) => question.id));
+
+    setSelectedQuestions((current) =>
+      current.filter((question) => !removedIds.has(question.id)),
+    );
+
+    setJointPageByQuestionId((current) => {
+      const next: Record<string, number> = {};
+
+      Object.entries(current).forEach(([id, page]) => {
+        if (removedIds.has(id)) {
+          return;
+        }
+
+        next[id] = page > pageIndex ? page - 1 : page;
+      });
+
+      return next;
+    });
+
+    const dropKeys = <T,>(record: Record<string, T>): Record<string, T> => {
+      const next = { ...record };
+
+      Object.keys(next).forEach((key) => {
+        const questionId = key.startsWith("question:")
+          ? key.split(":")[1]
+          : key;
+
+        if (removedIds.has(questionId)) {
+          delete next[key];
+        }
+      });
+
+      return next;
+    };
+
+    setAnswerSelections((current) => dropKeys(current));
+
+    setQuestionLayoutById((current) => dropKeys(current));
+
+    setCanvasTextOverrides((current) => dropKeys(current));
+
+    setTextScaleByTarget((current) => dropKeys(current));
+
+    setAnnotations((current) =>
+      current
+        .filter((annotation) => annotation.pageIndex !== pageIndex)
+        .map((annotation) =>
+          annotation.pageIndex > pageIndex
+            ? { ...annotation, pageIndex: annotation.pageIndex - 1 }
+            : annotation,
+        ),
+    );
+
+    setJointPageCount((current) => Math.max(1, current - 1));
+
+    setActiveJointPage((current) =>
+      Math.max(
+        0,
+        Math.min(
+          current > pageIndex ? current - 1 : current,
+          Math.max(0, jointPageCount - 2),
+        ),
+      ),
+    );
+
+    setQuestionError("");
+
+    setJointLayoutMode("manual");
+
+    markCurrentDocumentDirty();
+  };
+
   const moveQuestion = (dragId: string, targetId: string) => {
     if (dragId === targetId) {
       return;
@@ -1726,6 +1897,7 @@ export function useQuestionManager() {
     setRegionSelectMode(false);
 
     setQuestionLayoutById({});
+      setTextScaleByTarget({});
 
     setEditingQuestionId(null);
 
@@ -1752,6 +1924,8 @@ export function useQuestionManager() {
     setSubjects([]);
     setChapters([]);
     setQuestions([]);
+    setLoadingMoreQuestions(false);
+    setNoMoreQuestions(false);
 
     resetDocumentEditingState();
 
@@ -1837,6 +2011,8 @@ export function useQuestionManager() {
 
     setChapters([]);
     setQuestions([]);
+    setLoadingMoreQuestions(false);
+    setNoMoreQuestions(false);
 
     resetDocumentEditingState();
 
@@ -1927,7 +2103,10 @@ export function useQuestionManager() {
     setOpenFilter(null);
     setQuestions([]);
 
-    resetDocumentEditingState();
+    // The paper is kept on purpose: questions from several chapters can be combined.
+    setLoadingQuestions(false);
+    setLoadingMoreQuestions(false);
+    setNoMoreQuestions(false);
 
     setQuestionSearchQuery("");
 
@@ -1935,10 +2114,19 @@ export function useQuestionManager() {
     setQuestionError("");
   };
 
-  const handleFetchQuestions = async () => {
+  /**
+   * Fetches questions for the current class / subject / chapter / type.
+   *  - "replace": a fresh list (used by the Apply button).
+   *  - "append":  "Load more" - adds new questions to the current list.
+   * The questions already placed on the paper are never touched, so papers can
+   * be built from several fetches (different chapters / types) and combined.
+   */
+  const requestQuestions = async (mode: "replace" | "append") => {
     if (!selectedClass || !selectedSubject || !selectedChapter) {
       return;
     }
+
+    const append = mode === "append";
 
     questionsAbortRef.current?.abort();
 
@@ -1954,10 +2142,33 @@ export function useQuestionManager() {
       chapters.find((chapter) => chapter.value === selectedChapter)?.label ||
       selectedChapter;
 
-    setLoadingQuestions(true);
+    if (append) {
+      setLoadingMoreQuestions(true);
+    } else {
+      setLoadingQuestions(true);
+      setLoadingMoreQuestions(false);
+      setNoMoreQuestions(false);
+    }
 
     setQuestionError("");
     setOpenFilter(null);
+
+    const knownQuestions = append ? questions : [];
+
+    // The start of every question the user already has, so the server can write different ones.
+    const avoidQuestions = [...selectedQuestions, ...knownQuestions]
+      .map((question) =>
+        String(
+          (question.type === "CQ"
+            ? question.stimulus || question.question
+            : question.question) || "",
+        )
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 140),
+      )
+      .filter(Boolean)
+      .slice(-60);
 
     try {
       const data = await fetchJson<{
@@ -1975,6 +2186,8 @@ export function useQuestionManager() {
           chapterName,
           questionType: selectedQuestionType,
           searchQuery: searchQuery.trim().slice(0, 200),
+          limit: QUESTIONS_PER_FETCH,
+          avoidQuestions,
         }),
         signal: controller.signal,
       });
@@ -1988,18 +2201,64 @@ export function useQuestionManager() {
       const normalized = normalizeQuestions(data.questions);
 
       if (!normalized.length) {
+        if (append) {
+          setNoMoreQuestions(true);
+
+          return;
+        }
+
         throw new ApiRequestError("No usable questions were returned.");
       }
 
-      setQuestions(normalized);
+      // Skip anything already in the list or already on the paper.
+      const seenKeys = new Set<string>([
+        ...knownQuestions.map(getQuestionContentKey),
+        ...selectedQuestions.map(getQuestionContentKey),
+      ]);
 
-      if (pageSize !== "Joint") {
-        resetDocumentEditingState();
+      const batchTag = `${Date.now().toString(36)}${Math.random()
+        .toString(36)
+        .slice(2, 6)}`;
+
+      const freshQuestions = normalized
+        .filter((question) => {
+          const key = getQuestionContentKey(question);
+
+          if (seenKeys.has(key)) {
+            return false;
+          }
+
+          seenKeys.add(key);
+
+          return true;
+        })
+        // Ids must stay unique across several fetches that end up on one paper.
+        .map((question) => ({ ...question, id: `${question.id}-${batchTag}` }));
+
+      if (!freshQuestions.length) {
+        if (append) {
+          setNoMoreQuestions(true);
+
+          return;
+        }
+
+        throw new ApiRequestError(
+          "All questions found for this selection are already on your paper.",
+        );
       }
 
-      setQuestionSearchQuery("");
+      if (append) {
+        setQuestions((current) => [...current, ...freshQuestions]);
+      } else {
+        setQuestions(freshQuestions);
 
-      setResultTypeTab("all");
+        // Questions arrived: fold the filter card away so the question list gets the room.
+        setFiltersOpen(false);
+
+        setQuestionSearchQuery("");
+
+        setResultTypeTab("all");
+      }
     } catch (error) {
       if (controller.signal.aborted) {
         return;
@@ -2007,15 +2266,14 @@ export function useQuestionManager() {
 
       console.error("Error fetching questions:", error);
 
-      setQuestions([]);
+      // A failed "load more" keeps the list the user already has.
+      if (!append) {
+        setQuestions([]);
 
-      if (pageSize !== "Joint") {
-        resetDocumentEditingState();
+        setQuestionSearchQuery("");
+
+        setResultTypeTab("all");
       }
-
-      setQuestionSearchQuery("");
-
-      setResultTypeTab("all");
 
       setQuestionError(
         error instanceof ApiRequestError
@@ -2027,9 +2285,14 @@ export function useQuestionManager() {
         questionsAbortRef.current = null;
 
         setLoadingQuestions(false);
+        setLoadingMoreQuestions(false);
       }
     }
   };
+
+  const handleFetchQuestions = () => requestQuestions("replace");
+
+  const handleLoadMoreQuestions = () => requestQuestions("append");
 
   const handleAutoCreate = () => {
     if (!questions.length) {
@@ -2880,6 +3143,7 @@ export function useQuestionManager() {
     paperStyle,
     questionLayoutById,
     selectedQuestions,
+    textScaleByTarget,
   ]);
 
   const handleSave = async () => {
@@ -3084,6 +3348,7 @@ export function useQuestionManager() {
     setEditingQuestionId(null);
     setActiveQuestionId(null);
     setQuestionLayoutById({});
+      setTextScaleByTarget({});
     setRegionSelectMode(false);
     setAnnotations([]);
     setCanvasTextOverrides({});
@@ -3161,6 +3426,8 @@ export function useQuestionManager() {
     loadingSubjects,
     loadingChapters,
     loadingQuestions,
+    loadingMoreQuestions,
+    noMoreQuestions,
 
     questions,
     selectedQuestions,
@@ -3300,6 +3567,14 @@ export function useQuestionManager() {
     handleAutoBalanceJoint,
     addJointPage,
     removeLastJointPage,
+    deleteJointPage,
+    requestDeleteJointPage,
+    confirmDeleteJointPage,
+    cancelDeleteJointPage,
+    pendingPageDelete,
+
+    textScaleByTarget,
+    setTextScale,
 
     moveQuestionToPage,
     moveQuestion,
@@ -3311,6 +3586,7 @@ export function useQuestionManager() {
     handleSubjectChange,
     handleChapterChange,
     handleFetchQuestions,
+    handleLoadMoreQuestions,
 
     handleAutoCreate,
     handleLogoChange,

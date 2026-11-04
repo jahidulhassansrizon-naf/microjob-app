@@ -19,6 +19,7 @@ import type {
   QuestionLayout,
 } from "../../types/question";
 
+import { Trash2 } from "lucide-react";
 import { clampNumber } from "../../types/question";
 import QuestionGroup from "./QuestionGroup";
 import PaperHeader from "./PaperHeader";
@@ -98,6 +99,7 @@ export default function PaperSheet({
   pageCount,
   onDropOnPage,
   onMoveToPage,
+  onDeletePage,
   activeQuestionId,
   regionSelectMode = false,
   onSetRegionSelectMode,
@@ -162,6 +164,8 @@ export default function PaperSheet({
   pageCount?: number;
   onDropOnPage?: (event: DragEvent<HTMLDivElement>, pageIndex: number) => void;
   onMoveToPage?: (questionId: string, targetPage: number) => void;
+  /** Joint mode: delete this whole page (and its questions). */
+  onDeletePage?: () => void;
   activeQuestionId?: string | null;
   regionSelectMode?: boolean;
   onSetRegionSelectMode?: (value: boolean) => void;
@@ -923,6 +927,24 @@ export default function PaperSheet({
           </footer>
         ) : null}
       </div>
+
+      {onDeletePage && !isMeasurement && !regionSelectMode ? (
+        <button
+          type="button"
+          data-print-control="true"
+          title="Delete this page / এই পৃষ্ঠা মুছুন"
+          aria-label="Delete this page"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeletePage();
+          }}
+          onMouseDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          className="screen-only print:hidden absolute right-2 top-2 z-[60] flex h-8 w-8 items-center justify-center rounded-lg border border-[#F0D5D1] bg-white/90 text-red-500 opacity-70 shadow-sm transition duration-150 hover:bg-red-50 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-[0.95]"
+        >
+          <Trash2 size={15} />
+        </button>
+      ) : null}
 
       {pageIndex != null && !isMeasurement ? (
         <RegionSelectionOverlay

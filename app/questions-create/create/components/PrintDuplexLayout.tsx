@@ -2,11 +2,32 @@
 import { T } from "../i18n";
 import type { PaperRenderRequest, PrintPageVariant } from "../types/question";
 import type { QuestionManager } from "../hooks/useQuestionManager";
-import { ArrowLeft, FileText, GripVertical, Move, SquareDashedMousePointer, } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowLeft, FileText, GripVertical, Hand, Maximize2, Move, RotateCcw, SquareDashedMousePointer, X, ZoomIn, ZoomOut, } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+/** Natural width of two A5 sheets side by side (2 x 520px + gap), used to scale the Joint preview to fit. */
+const JOINT_NATURAL_WIDTH = 1050;
+const ZOOM_MIN = 0.4;
+const ZOOM_MAX = 2.5;
+const clampZoom = (value: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+const TEXT_SCALE_MIN = 50;
+const TEXT_SCALE_MAX = 300;
+const escapeAttr = (value: string) => value.replace(/["\\]/g, "\\$&");
+const isTypingTarget = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    if (!el || !el.tagName) {
+        return false;
+    }
+    return (el.tagName === "INPUT" ||
+        el.tagName === "TEXTAREA" ||
+        el.tagName === "SELECT" ||
+        el.isContentEditable);
+};
 type PrintDuplexLayoutProps = {
     manager: QuestionManager;
     renderPaper: (request: PaperRenderRequest) => ReactNode;
+    /** When true, the screen-only tool bars (region select, joint controls, drag hint) are rendered elsewhere. */
+    hideTools?: boolean;
 };
 function copyInputValuesToClone(source: HTMLElement, clone: HTMLElement) {
     const sourceFields = source.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
@@ -66,15 +87,46 @@ function waitForImages(documentElement: Document): Promise<void> {
         window.setTimeout(finish, 4000);
     }))).then(() => undefined);
 }
+function waitForStylesheets(documentElement: Document): Promise<void> {
+    const links = Array.from(documentElement.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+    const pending = links.filter((link) => !link.sheet);
+    if (!pending.length) {
+        return Promise.resolve();
+    }
+    return Promise.all(pending.map((link) => new Promise<void>((resolve) => {
+        let settled = false;
+        const finish = () => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            resolve();
+        };
+        link.addEventListener("load", finish, { once: true });
+        link.addEventListener("error", finish, { once: true });
+        window.setTimeout(finish, 6000);
+    }))).then(() => undefined);
+}
 export async function waitForPrintIframeReady(iframe: HTMLIFrameElement) {
     const printDocument = iframe.contentDocument;
     const printWindow = iframe.contentWindow;
     if (!printDocument || !printWindow) {
         throw new Error("Print frame is not available.");
     }
+    // 1) The cloned <link> stylesheets must be applied before layout, otherwise
+    //    the printout can come out unstyled.
+    await waitForStylesheets(printDocument);
+    // 2) Let the browser lay the content out once so it discovers which font
+    //    faces are really needed, then wait for those fonts to finish loading.
+    await new Promise<void>((resolve) => {
+        printWindow.requestAnimationFrame(() => resolve());
+    });
     try {
         if (printDocument.fonts?.ready) {
-            await printDocument.fonts.ready;
+            await Promise.race([
+                printDocument.fonts.ready,
+                new Promise<void>((resolve) => window.setTimeout(resolve, 6000)),
+            ]);
         }
     }
     catch {
@@ -121,6 +173,7 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
     printDocument.open();
     printDocument.write("<!doctype html><html><head><meta charset='utf-8'><title>Question Paper</title></head><body></body></html>");
     printDocument.close();
+    printDocument.title = document.title || "Question Paper";
     const head = printDocument.head;
     Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style')).forEach((styleNode) => head.appendChild(styleNode.cloneNode(true)));
     const printStyle = printDocument.createElement("style");
@@ -141,14 +194,19 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
       font-family: "Noto Sans Bengali", "Noto Serif Bengali", "SolaimanLipi", Arial, sans-serif !important;
     }
 
+    /*
+     * A4/A5 papers flow across as many pages as needed. The page margin is
+     * provided by @page (not by padding on the sheet) so that the 2nd, 3rd...
+     * page keep the same margin and no question is ever clipped.
+     */
     @page isolated-a4 {
       size: A4 portrait;
-      margin: 0;
+      margin: 10mm;
     }
 
     @page isolated-a5 {
       size: A5 portrait;
-      margin: 0;
+      margin: 8mm;
     }
 
     @page isolated-joint {
@@ -177,26 +235,83 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
 
     .print-frame-a4 .print-frame-sheet {
       box-sizing: border-box !important;
-      width: 210mm !important;
-      min-width: 210mm !important;
-      height: 297mm !important;
-      min-height: 297mm !important;
-      padding: 10mm !important;
-      overflow: hidden !important;
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
+      width: 190mm !important;
+      min-width: 190mm !important;
+      max-width: 190mm !important;
+      height: auto !important;
+      min-height: 276mm !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      break-inside: auto !important;
+      page-break-inside: auto !important;
     }
 
     .print-frame-a5 .print-frame-sheet {
       box-sizing: border-box !important;
-      width: 148mm !important;
-      min-width: 148mm !important;
-      height: 210mm !important;
-      min-height: 210mm !important;
-      padding: 8mm !important;
-      overflow: hidden !important;
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
+      width: 132mm !important;
+      min-width: 132mm !important;
+      max-width: 132mm !important;
+      height: auto !important;
+      min-height: 193mm !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
+
+    .print-frame-a4 .print-frame-sheet .paper-sheet-content {
+      height: auto !important;
+      min-height: 276mm !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    .print-frame-a5 .print-frame-sheet .paper-sheet-content {
+      height: auto !important;
+      min-height: 193mm !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    /* Never clip the question area in A4/A5 print: let it flow to the next page. */
+    .print-frame-a4 [data-paper-question-area],
+    .print-frame-a5 [data-paper-question-area] {
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    /* A section heading must never be left alone at the bottom of a page. */
+    .paper-question-section-heading {
+      break-after: avoid !important;
+      page-break-after: avoid !important;
+    }
+
+    /* Strip the on-screen preview frame (border/rounding/scroll box) from the print root. */
+    .print-frame-root .paper-print-root {
+      width: 100% !important;
+      height: auto !important;
+      max-height: none !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+    }
+
+    /* On-screen zoom wrappers must never leak into the printout. */
+    .print-frame-root .paper-zoom-outer,
+    .print-frame-root .paper-zoom-inner {
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      transform: none !important;
+    }
+
+    .print-frame-root .paper-center-wrap,
+    .print-frame-root [data-paper-fabric-wrapper] {
+      display: block !important;
+      width: 100% !important;
+      margin: 0 !important;
     }
 
     .print-frame-joint .print-frame-root {
@@ -211,9 +326,9 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
       flex-wrap: nowrap !important;
       width: 296mm !important;
       min-width: 296mm !important;
-      height: 210mm !important;
-      min-height: 210mm !important;
-      max-height: 210mm !important;
+      height: 209.5mm !important;
+      min-height: 209.5mm !important;
+      max-height: 209.5mm !important;
       margin: 0 !important;
       padding: 0 !important;
       gap: 0 !important;
@@ -241,9 +356,9 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
       flex: 0 0 148mm !important;
       width: 148mm !important;
       min-width: 148mm !important;
-      height: 210mm !important;
-      min-height: 210mm !important;
-      max-height: 210mm !important;
+      height: 209.5mm !important;
+      min-height: 209.5mm !important;
+      max-height: 209.5mm !important;
       padding: 8mm !important;
       overflow: hidden !important;
       break-inside: avoid !important;
@@ -373,11 +488,11 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
         }, 150);
     };
     iframe.contentWindow?.addEventListener("afterprint", cleanup, { once: true });
-    window.setTimeout(cleanup, 60000);
+    window.setTimeout(cleanup, 600000);
     iframe.contentWindow?.focus();
     iframe.contentWindow?.print();
 }
-export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplexLayoutProps) {
+export default function PrintDuplexLayout({ manager, renderPaper, hideTools = false, }: PrintDuplexLayoutProps) {
     const { pageSize, selectedQuestions, jointLayoutMode, regionSelectMode, setRegionSelectMode, overflowJointPages, handleAutoBalanceJoint, addJointPage, removeLastJointPage, jointPageCount, jointRenderPageCount, jointQuestionsByPage, jointPageIndices, activeJointPage, setActiveJointPage, sectionGroups, } = manager;
     const visibleJointPageIndices = pageSize === "Joint"
         ? Array.from({
@@ -385,8 +500,306 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
         }, (_, index) => index).filter((pageIndex) => (jointQuestionsByPage[pageIndex] || []).length > 0)
         : [];
     const totalSheets = pageSize === "Joint" ? Math.ceil(visibleJointPageIndices.length / 2) : 1;
+    const { textScaleByTarget, setTextScale } = manager;
+    /*
+     * PREVIEW ZOOM + GRAB-TO-SCROLL
+     * ---------------------------------------------------------------------
+     * - Zoom: buttons, "Fit", or Ctrl/Cmd + mouse wheel (also trackpad pinch).
+     *   Implemented as a CSS transform on a wrapper, so the paper itself, its
+     *   pagination and its print output are never touched.
+     * - Joint (2-in-1) is additionally auto-scaled to the column width so BOTH
+     *   pages are always visible; the user zoom multiplies on top of that.
+     * - Grab: toggle the hand tool (or hold Space) and drag to scroll the
+     *   preview in any direction; dragging the empty background also works.
+     */
+    const isJointMode = pageSize === "Joint";
+    const scrollBoxRef = useRef<HTMLDivElement | null>(null);
+    const measureRef = useRef<HTMLDivElement | null>(null);
+    const zoomInnerRef = useRef<HTMLDivElement | null>(null);
+    const stageHoverRef = useRef(false);
+    const panRef = useRef<{
+        x: number;
+        y: number;
+        left: number;
+        top: number;
+        box: HTMLElement;
+        scroller: HTMLElement;
+    } | null>(null);
+    const [zoom, setZoom] = useState(1);
+    const [handMode, setHandMode] = useState(false);
+    const [spaceHeld, setSpaceHeld] = useState(false);
+    const [panning, setPanning] = useState(false);
+    const [zoomBox, setZoomBox] = useState({ avail: 0, natW: 0, natH: 0 });
+    const handActive = handMode || spaceHeld;
+    const baseScale = isJointMode
+        ? Math.min(1, (zoomBox.avail || JOINT_NATURAL_WIDTH) / JOINT_NATURAL_WIDTH)
+        : 1;
+    const scale = baseScale * zoom;
+    const naturalWidth = isJointMode ? JOINT_NATURAL_WIDTH : zoomBox.natW;
+    const zoomOuterStyle = {
+        width: naturalWidth ? naturalWidth * scale : undefined,
+        height: zoomBox.natH ? zoomBox.natH * scale : undefined,
+        margin: "0 auto",
+    };
+    const zoomTransform = Math.abs(scale - 1) > 0.001 ? `scale(${scale})` : undefined;
+    useEffect(() => {
+        const container = measureRef.current;
+        const inner = zoomInnerRef.current;
+        if (!container || !inner) {
+            return;
+        }
+        const update = () => {
+            const avail = container.clientWidth;
+            if (avail <= 0) {
+                return;
+            }
+            const natW = isJointMode ? JOINT_NATURAL_WIDTH : inner.offsetWidth;
+            const natH = inner.offsetHeight;
+            setZoomBox((current) => current.avail === avail && current.natW === natW && current.natH === natH
+                ? current
+                : { avail, natW, natH });
+        };
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(container);
+        observer.observe(inner);
+        return () => observer.disconnect();
+    }, [isJointMode, selectedQuestions.length]);
+    // Ctrl/Cmd + wheel (and trackpad pinch) zooms the preview.
+    useEffect(() => {
+        const box = scrollBoxRef.current;
+        if (!box) {
+            return;
+        }
+        const onWheel = (event: WheelEvent) => {
+            if (!event.ctrlKey && !event.metaKey) {
+                return;
+            }
+            event.preventDefault();
+            setZoom((current) => clampZoom(current * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
+        };
+        box.addEventListener("wheel", onWheel, { passive: false });
+        return () => box.removeEventListener("wheel", onWheel);
+    }, []);
+    // Hold Space (while the pointer is over the preview) to grab-scroll.
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.code !== "Space" || isTypingTarget(event.target) || !stageHoverRef.current) {
+                return;
+            }
+            event.preventDefault();
+            setSpaceHeld(true);
+        };
+        const onKeyUp = (event: KeyboardEvent) => {
+            if (event.code === "Space") {
+                setSpaceHeld(false);
+            }
+        };
+        const onBlur = () => setSpaceHeld(false);
+        window.addEventListener("keydown", onKeyDown);
+        window.addEventListener("keyup", onKeyUp);
+        window.addEventListener("blur", onBlur);
+        return () => {
+            window.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("keyup", onKeyUp);
+            window.removeEventListener("blur", onBlur);
+        };
+    }, []);
+    const beginPan = (event: ReactPointerEvent<HTMLElement>) => {
+        if (event.button !== 0 && event.button !== 1) {
+            return;
+        }
+        const box = scrollBoxRef.current;
+        if (!box) {
+            return;
+        }
+        const column = box.closest<HTMLElement>(".question-paper-column");
+        const scroller = column && column.scrollHeight > column.clientHeight + 1
+            ? column
+            : ((document.scrollingElement as HTMLElement | null) ?? document.documentElement);
+        panRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+            left: box.scrollLeft,
+            top: scroller.scrollTop,
+            box,
+            scroller,
+        };
+        setPanning(true);
+        event.preventDefault();
+    };
+    useEffect(() => {
+        if (!panning) {
+            return;
+        }
+        const previousCursor = document.body.style.cursor;
+        const previousSelect = document.body.style.userSelect;
+        document.body.style.cursor = "grabbing";
+        document.body.style.userSelect = "none";
+        const onMove = (event: PointerEvent) => {
+            const state = panRef.current;
+            if (!state) {
+                return;
+            }
+            state.box.scrollLeft = state.left - (event.clientX - state.x);
+            state.scroller.scrollTop = state.top - (event.clientY - state.y);
+        };
+        const onUp = () => {
+            panRef.current = null;
+            setPanning(false);
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
+        return () => {
+            document.body.style.cursor = previousCursor;
+            document.body.style.userSelect = previousSelect;
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
+        };
+    }, [panning]);
+    const handleBackgroundPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (handActive || regionSelectMode) {
+            return;
+        }
+        const target = event.target as HTMLElement;
+        if (target.closest(".paper-screen-sheet, button, input, select, textarea, [contenteditable='true'], .screen-only")) {
+            return;
+        }
+        beginPan(event);
+    };
+    const fitZoom = () => {
+        if (isJointMode || !zoomBox.natW) {
+            setZoom(1);
+            return;
+        }
+        setZoom(clampZoom(zoomBox.avail / zoomBox.natW));
+    };
+    /*
+     * CLICK-A-TEXT-TO-RESIZE
+     * ---------------------------------------------------------------------
+     * Clicking any text on the paper (question, option, stimulus, part,
+     * header fields, ...) selects it and shows a small size pill with
+     * A- / slider / A+ / reset. The size is stored per text target in
+     * manager.textScaleByTarget and applied through a <style> element, so
+     * pagination (offscreen measure copy), screen and print all agree.
+     */
+    const [selectedText, setSelectedText] = useState<string | null>(null);
+    const pillRef = useRef<HTMLDivElement | null>(null);
+    const [pillPos, setPillPos] = useState<{
+        top: number;
+        left: number;
+    } | null>(null);
+    const handleStageClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+        if (regionSelectMode || handActive) {
+            return;
+        }
+        const target = event.target as HTMLElement;
+        const el = target.closest?.("[data-region-edit-target]") as HTMLElement | null;
+        const id = el?.getAttribute("data-region-edit-target") ?? null;
+        if (!el || !id || id.endsWith("-block") || id.endsWith(":block") || id === "paper:header") {
+            setSelectedText(null);
+            return;
+        }
+        setSelectedText(id);
+    };
+    useEffect(() => {
+        if (!selectedText) {
+            return;
+        }
+        const onPointerDown = (event: PointerEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest("[data-text-size-pill]") || scrollBoxRef.current?.contains(target as Node)) {
+                return;
+            }
+            setSelectedText(null);
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setSelectedText(null);
+            }
+        };
+        window.addEventListener("pointerdown", onPointerDown);
+        window.addEventListener("keydown", onKeyDown);
+        return () => {
+            window.removeEventListener("pointerdown", onPointerDown);
+            window.removeEventListener("keydown", onKeyDown);
+        };
+    }, [selectedText]);
+    useEffect(() => {
+        if (!selectedText) {
+            setPillPos(null);
+            return;
+        }
+        let frame = 0;
+        const update = () => {
+            const box = scrollBoxRef.current;
+            const el = box?.querySelector<HTMLElement>(`[data-region-edit-target="${escapeAttr(selectedText)}"]`);
+            if (!el) {
+                setPillPos(null);
+                return;
+            }
+            const rect = el.getBoundingClientRect();
+            const pill = pillRef.current;
+            const width = pill?.offsetWidth ?? 300;
+            const height = pill?.offsetHeight ?? 44;
+            let top = rect.bottom + 8;
+            if (top + height > window.innerHeight - 8) {
+                top = Math.max(8, rect.top - height - 8);
+            }
+            const left = Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8));
+            setPillPos((current) => current && current.top === top && current.left === left
+                ? current
+                : { top, left });
+        };
+        const schedule = () => {
+            window.cancelAnimationFrame(frame);
+            frame = window.requestAnimationFrame(update);
+        };
+        update();
+        window.addEventListener("scroll", schedule, true);
+        window.addEventListener("resize", schedule);
+        const observer = new MutationObserver(schedule);
+        if (scrollBoxRef.current) {
+            observer.observe(scrollBoxRef.current, { childList: true, subtree: true, characterData: true });
+        }
+        return () => {
+            window.cancelAnimationFrame(frame);
+            window.removeEventListener("scroll", schedule, true);
+            window.removeEventListener("resize", schedule);
+            observer.disconnect();
+        };
+    }, [selectedText, scale, textScaleByTarget]);
+    // The per-text sizes live in <head> so the print iframe (which copies head styles) gets them too.
+    useEffect(() => {
+        let styleEl = document.getElementById("paper-text-scales") as HTMLStyleElement | null;
+        if (!styleEl) {
+            styleEl = document.createElement("style");
+            styleEl.id = "paper-text-scales";
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = Object.entries(textScaleByTarget)
+            .map(([id, pct]) => {
+            const factor = pct / 100;
+            const base = `[data-region-edit-target="${escapeAttr(id)}"]{zoom:${factor};}`;
+            // Header inputs are w-full: shrink their box so the zoomed input still fits its row.
+            const input = `input[data-region-edit-target="${escapeAttr(id)}"]{width:calc(100% / ${factor}) !important;}`;
+            return base + input;
+        })
+            .join("\n");
+    }, [textScaleByTarget]);
+    const selectedPct = selectedText ? Math.round(textScaleByTarget[selectedText] ?? 100) : 100;
+    const setSelectedPct = (value: number) => {
+        if (!selectedText) {
+            return;
+        }
+        const next = Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, Math.round(value)));
+        setTextScale(selectedText, next === 100 ? null : next);
+    };
     return (<>
       <div className="paper-stage page-font relative rounded-2xl border border-[#E7DCC7] bg-[#F7F2E8] p-3 shadow-[0_3px_14px_rgba(76,57,28,0.05)] sm:p-4">
+        {hideTools ? null : (<>
         <div className="screen-only mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#E7DCC7] bg-white px-3 py-2.5 shadow-sm">
           <div className="flex min-w-0 items-center gap-2">
             <SquareDashedMousePointer size={16} className={regionSelectMode ? "text-[#DC2626]" : "text-[#6B5A40]"}/>
@@ -434,7 +847,37 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
             ? <T>{"Drag across any page area to create a custom inline text box"}</T> : <T>{"Drag questions to reorder them within a section or move them between pages"}</T>}
           </div>) : null}
 
-        <div className="scroll paper-print-root overflow-auto rounded-xl border border-[#EAE1D2] bg-[#F1ECE2] p-2 sm:p-3">
+        </>)}
+
+        <div className="relative" onPointerEnter={() => {
+            stageHoverRef.current = true;
+        }} onPointerLeave={() => {
+            stageHoverRef.current = false;
+        }}>
+        <div className="screen-only sticky top-0 z-30 mb-2 flex justify-center">
+          <div className="inline-flex items-center gap-0.5 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8]/95 p-1 shadow-[0_4px_14px_rgba(76,57,28,0.12)] backdrop-blur">
+            <button type="button" onClick={() => setHandMode((value) => !value)} aria-pressed={handMode} title="Grab & scroll (hold Space)" className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.97] ${handActive
+            ? "bg-[#D42020] text-white shadow-sm"
+            : "text-[#51442F] hover:bg-[#EFE3C8]"}`}>
+              <Hand size={14}/>
+              <T>Grab</T>
+            </button>
+            <span aria-hidden="true" className="mx-1 h-5 w-px bg-[#E3D6B8]"/>
+            <button type="button" onClick={() => setZoom((value) => clampZoom(value / 1.15))} disabled={zoom <= ZOOM_MIN + 0.001} title="Zoom out" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#51442F] transition hover:bg-[#EFE3C8] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.97]">
+              <ZoomOut size={15}/>
+            </button>
+            <button type="button" onClick={() => setZoom(1)} title="Reset zoom" className="h-8 min-w-[52px] rounded-lg px-1.5 text-[12px] font-extrabold tabular-nums text-[#342B1E] transition hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30">
+              {Math.round(scale * 100)}%
+            </button>
+            <button type="button" onClick={() => setZoom((value) => clampZoom(value * 1.15))} disabled={zoom >= ZOOM_MAX - 0.001} title="Zoom in" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#51442F] transition hover:bg-[#EFE3C8] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.97]">
+              <ZoomIn size={15}/>
+            </button>
+            <button type="button" onClick={fitZoom} title="Fit to width" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#51442F] transition hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.97]">
+              <Maximize2 size={14}/>
+            </button>
+          </div>
+        </div>
+        <div ref={scrollBoxRef} onClick={handleStageClick} onPointerDown={handleBackgroundPointerDown} className="scroll paper-print-root overflow-auto rounded-xl border border-[#EAE1D2] bg-[#F1ECE2] p-2 sm:p-3">
           {selectedQuestions.length === 0 ? (<div className="flex min-h-[500px] items-center justify-center px-3 py-8 sm:min-h-[570px] sm:px-6">
               <div className="w-full max-w-[650px] text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#F0D5D1] bg-[#FFF1EF] text-[#D42020] shadow-sm">
@@ -474,8 +917,8 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
                   <T>{"Choose questions from the middle list"}</T>
                 </div>
               </div>
-            </div>) : pageSize === "Joint" ? (<div className="flex w-full min-w-[1050px] flex-col gap-10 pt-2">
-              <div className="screen-only sticky top-0 z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">
+            </div>) : pageSize === "Joint" ? (<div className="flex w-full flex-col pt-2">
+              <div className="screen-only sticky top-0 z-20 mb-10 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-sm">
                 {jointPageIndices
                 .filter((pageIndex) => pageIndex < jointPageCount)
                 .map((pageIndex) => (<button key={`joint-page-tab-${pageIndex}`} type="button" onClick={() => setActiveJointPage(pageIndex)} className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-bold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98] ${activeJointPage === pageIndex
@@ -485,6 +928,13 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
                     </button>))}
               </div>
 
+              <div ref={measureRef} className="w-full">
+              <div className="paper-zoom-outer" style={zoomOuterStyle}>
+              <div ref={zoomInnerRef} className="paper-zoom-inner flex flex-col gap-10" style={{
+                width: JOINT_NATURAL_WIDTH,
+                transform: zoomTransform,
+                transformOrigin: "top left",
+            }}>
               {Array.from({
                 length: totalSheets,
             }, (_, spreadIndex) => {
@@ -511,13 +961,54 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
                     })}
                     </div>);
             })}
-            </div>) : (renderPaper({
+              </div>
+              </div>
+              </div>
+            </div>) : (<div ref={measureRef} className="w-full">
+              <div className="paper-zoom-outer" style={zoomOuterStyle}>
+                <div ref={zoomInnerRef} className="paper-center-wrap paper-zoom-inner" style={{
+                width: "max-content",
+                transform: zoomTransform,
+                transformOrigin: "top left",
+            }}>
+                  {renderPaper({
             pageIndex: 0,
             groups: sectionGroups,
             pagePart: "single",
-        }))}
+        })}
+                </div>
+              </div>
+            </div>)}
+        </div>
+
+        {handActive ? (<div className="screen-only absolute inset-x-0 bottom-0 top-[46px] z-[40] rounded-xl" style={{
+                cursor: panning ? "grabbing" : "grab",
+                touchAction: "none",
+            }} onPointerDown={beginPan}/>) : null}
         </div>
       </div>
+
+      {selectedText ? (<style>{`.paper-print-root [data-region-edit-target="${escapeAttr(selectedText)}"]{outline:1.5px dashed #DC2626;outline-offset:2px;border-radius:2px;}`}</style>) : null}
+
+      {selectedText && !regionSelectMode
+        ? createPortal(<div ref={pillRef} data-text-size-pill="true" data-print-control="true" className="ui-font screen-only print:hidden fixed z-[95] flex items-center gap-1 whitespace-nowrap rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-[0_8px_24px_rgba(45,35,20,0.22)]" style={{
+                top: pillPos?.top ?? 0,
+                left: pillPos?.left ?? 0,
+                visibility: pillPos ? "visible" : "hidden",
+            }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
+            <span className="px-2 text-[11px] font-extrabold uppercase tracking-wide text-[#8A795F]"><T>Text size</T></span>
+            <button type="button" onClick={() => setSelectedPct(selectedPct - 5)} title="Smaller" className="h-8 w-8 rounded-lg text-[13px] font-bold text-[#3B2F1E] transition hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.96]">A−</button>
+            <input type="range" min={TEXT_SCALE_MIN} max={TEXT_SCALE_MAX} step={5} value={selectedPct} onChange={(event) => setSelectedPct(Number(event.target.value))} aria-label="Text size" className="h-1.5 w-28 cursor-pointer accent-[#D42020]"/>
+            <button type="button" onClick={() => setSelectedPct(selectedPct + 5)} title="Larger" className="h-8 w-8 rounded-lg text-[15px] font-bold text-[#3B2F1E] transition hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.96]">A+</button>
+            <span className="w-11 text-center text-[12px] font-extrabold tabular-nums text-[#342B1E]">{selectedPct}%</span>
+            <button type="button" onClick={() => setSelectedPct(100)} disabled={selectedPct === 100} title="Reset size" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#51442F] transition hover:bg-[#EFE3C8] disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.96]">
+              <RotateCcw size={14}/>
+            </button>
+            <button type="button" onClick={() => setSelectedText(null)} title="Close" className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A795F] transition hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 active:scale-[0.96]">
+              <X size={14}/>
+            </button>
+          </div>, document.body)
+        : null}
 
       <div data-joint-measure-root="true" aria-hidden="true" className="pointer-events-none absolute left-[-100000px] top-0 z-[-1] h-0 w-0 overflow-hidden opacity-0">
         {renderPaper({
@@ -569,6 +1060,21 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
           font-weight: 700;
           letter-spacing: 0.06em;
           text-transform: uppercase;
+        }
+
+        /* Keep the single-page paper exactly in the middle of the center column (screen only). */
+        @media screen {
+          .paper-center-wrap {
+            display: block;
+            width: 100%;
+          }
+
+          .paper-center-wrap > [data-paper-fabric-wrapper] {
+            width: fit-content;
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+          }
         }
 
         .paper-a4 {
@@ -734,6 +1240,14 @@ export default function PrintDuplexLayout({ manager, renderPaper, }: PrintDuplex
             box-shadow: none !important;
             background: #ffffff !important;
             overflow: visible !important;
+          }
+
+          .paper-zoom-outer,
+          .paper-zoom-inner {
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            transform: none !important;
           }
 
           .paper-print-root {

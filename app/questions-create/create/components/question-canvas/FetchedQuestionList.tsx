@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { T, useQuestionText } from "../../i18n";
-import { Check, FileText, Loader2, Search } from "lucide-react";
+import { Check, FileText, Loader2, Plus, Search } from "lucide-react";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
 import { getQuestionTypeLabel } from "../../types/question";
 
@@ -25,11 +26,37 @@ export default function FetchedQuestionList({
     handleSelectAll,
     toggleSelectQuestion,
     loadingQuestions,
+    loadingMoreQuestions,
+    noMoreQuestions,
+    questionError,
+    handleLoadMoreQuestions,
   } = manager;
 
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const wasLoadingRef = useRef(false);
+
+  // When a fetch finishes, bring the list to the top of the (scrollable) left column
+  // so the user sees the questions straight away instead of hunting for them.
+  useEffect(() => {
+    if (wasLoadingRef.current && !loadingQuestions && questions.length > 0) {
+      const section = sectionRef.current;
+      const column = section?.closest(".question-filters-column") as HTMLElement | null;
+      if (section && column) {
+        const top = section.getBoundingClientRect().top - column.getBoundingClientRect().top + column.scrollTop;
+        column.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
+      }
+    }
+    wasLoadingRef.current = loadingQuestions;
+  }, [loadingQuestions, questions.length]);
+
   return (
-    <section className="flex min-h-[330px] flex-col overflow-hidden rounded-xl border border-[#E7DCC7] bg-white shadow-sm">
-      <div className="border-b border-[#EEE6D8] px-3.5 pb-3 pt-3.5">
+    <section
+      ref={sectionRef}
+      className="flex min-h-[330px] shrink-0 flex-col rounded-xl border border-[#E7DCC7] bg-white shadow-sm"
+    >
+      {/* On desktop the whole left column scrolls, so the header (type tabs + search + select all)
+          stays pinned while the questions scroll underneath it. */}
+      <div className="rounded-t-xl border-b border-[#EEE6D8] bg-white px-3.5 pb-3 pt-3.5 xl:sticky xl:top-0 xl:z-10">
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
@@ -108,7 +135,9 @@ export default function FetchedQuestionList({
         </div>
       </div>
 
-      <div className="scroll max-h-[460px] min-h-[190px] flex-1 overflow-y-auto bg-[#FFFEFB] p-2.5">
+      {/* Desktop: no inner scrollbar - the list uses the full column height (one scroll, not two).
+          Tablet/mobile: a tall inner scroll area (70% of the screen) instead of the old 460px box. */}
+      <div className="scroll max-h-[70vh] min-h-[190px] flex-1 overflow-y-auto rounded-b-xl bg-[#FFFEFB] p-2.5 xl:max-h-none xl:overflow-visible">
         {loadingQuestions ? (
           <div className="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center">
             <Loader2 size={24} className="animate-spin text-[#D42020]" />
@@ -167,6 +196,43 @@ export default function FetchedQuestionList({
                 </button>
               );
             })}
+
+            {/* Fetch another batch and add it to this list. Questions already placed on the paper stay there. */}
+            <div className="pt-1">
+              {questionError ? (
+                <p className="mb-2 rounded-lg border border-[#F0D5D1] bg-[#FFF7F5] px-3 py-2 text-[11px] font-semibold leading-5 text-[#A83B33]">
+                  <T>{questionError}</T>
+                </p>
+              ) : null}
+              {noMoreQuestions ? (
+                <p className="mb-2 rounded-lg bg-[#F6F0E5] px-3 py-2 text-center text-[11px] font-semibold leading-5 text-[#7A6A4F]">
+                  <T>No more new questions found for this selection.</T>
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  onExitDemo();
+                  handleLoadMoreQuestions();
+                }}
+                disabled={loadingMoreQuestions}
+                className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#D42020]/45 bg-[#FFF7F5] px-3 py-2 text-[12px] font-extrabold text-[#B91C1C] transition hover:bg-[#FFF0ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42020]/25 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loadingMoreQuestions ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Plus size={14} />
+                )}
+                {loadingMoreQuestions ? (
+                  <T>Fetching more questions...</T>
+                ) : (
+                  <T>Load more questions</T>
+                )}
+              </button>
+              <p className="mt-1.5 text-center text-[10px] leading-4 text-[#8A795F]">
+                <T>Questions already on your paper stay safe. New ones are added to this list.</T>
+              </p>
+            </div>
           </div>
         ) : (
           <div className="flex min-h-[220px] flex-col items-center justify-center px-4 text-center">

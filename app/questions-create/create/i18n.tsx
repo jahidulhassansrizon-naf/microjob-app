@@ -9,6 +9,28 @@ import { useCallback, type ReactNode } from "react";
  * to UI strings, never to user-authored question content.
  */
 const QUESTION_BN: Record<string, string> = {
+  "saved question papers": "সংরক্ষিত প্রশ্নপত্র",
+  "preview any paper, or delete the ones you no longer need.": "যেকোনো প্রশ্নপত্রের পূর্বরূপ দেখুন, অথবা যেগুলো আর লাগবে না সেগুলো মুছে দিন।",
+  "search saved papers...": "সংরক্ষিত প্রশ্নপত্র খুঁজুন...",
+  "clear search": "সার্চ মুছুন",
+  "refresh": "রিফ্রেশ",
+  "close": "বন্ধ করুন",
+  "could not load saved papers.": "সংরক্ষিত প্রশ্নপত্র লোড করা যায়নি।",
+  "try again": "আবার চেষ্টা করুন",
+  "no saved papers yet": "এখনো কোনো সংরক্ষিত প্রশ্নপত্র নেই",
+  "save a paper from the creator and it will appear here automatically.": "প্রশ্নপত্র তৈরির পেজ থেকে একটি প্রশ্নপত্র সংরক্ষণ করলে সেটি স্বয়ংক্রিয়ভাবে এখানে দেখা যাবে।",
+  "no papers match your search.": "আপনার সার্চের সাথে কোনো প্রশ্নপত্র মেলেনি।",
+  "untitled paper": "নামহীন প্রশ্নপত্র",
+  "open in editor": "এডিটরে খোলা আছে",
+  "preview": "পূর্বরূপ",
+  "delete this paper?": "এই প্রশ্নপত্রটি মুছে ফেলবেন?",
+  "this removes the saved copy permanently.": "সংরক্ষিত কপিটি স্থায়ীভাবে মুছে যাবে।",
+  "yes, delete": "হ্যাঁ, মুছুন",
+  "deleting...": "মুছে ফেলা হচ্ছে...",
+  "show answers": "উত্তর দেখান",
+  "hide answers": "উত্তর লুকান",
+  "answer": "উত্তর",
+  "could not delete this paper.": "প্রশ্নপত্রটি মুছে ফেলা যায়নি।",
   "go back": "পেছনে যান",
   "new question paper": "নতুন প্রশ্নপত্র",
   "questions · full marks": "প্রশ্ন · পূর্ণমান",
@@ -34,6 +56,13 @@ const QUESTION_BN: Record<string, string> = {
   "select an area to place custom inline text":
     "নিজস্ব ইনলাইন লেখা বসাতে একটি এলাকা নির্বাচন করুন",
   "cancel area": "এলাকা বাতিল",
+  "delete this page?": "এই পৃষ্ঠা মুছে ফেলবেন?",
+  grab: "ধরে সরান",
+  "text size": "লেখার সাইজ",
+  "the questions go back to the available list, so you can add them again anytime.": "প্রশ্নগুলো আবার \"Available questions\" তালিকায় ফিরে যাবে, চাইলে যেকোনো সময় আবার যোগ করতে পারবেন।",
+  "yes, delete page": "হ্যাঁ, পৃষ্ঠা মুছুন",
+  "press esc to cancel": "বাতিল করতে Esc চাপুন",
+  "delete this page / এই পৃষ্ঠা মুছুন": "এই পৃষ্ঠা মুছুন",
   "select area": "এলাকা নির্বাচন",
   "drag across any page area to create a custom inline text box":
     "নিজস্ব ইনলাইন লেখার বাক্স তৈরি করতে পৃষ্ঠার যেকোনো অংশে টেনে নির্বাচন করুন",
@@ -240,6 +269,11 @@ const QUESTION_BN: Record<string, string> = {
   "add questions": "প্রশ্ন যোগ করুন",
   "click each question you want to include.": "যে প্রশ্নগুলো রাখতে চান সেগুলোতে ক্লিক করুন।",
   "start with the question filters on the left": "বাম পাশের প্রশ্ন ফিল্টার থেকে শুরু করুন",
+  "load more questions": "আরও প্রশ্ন আনুন",
+  "fetching more questions...": "আরও প্রশ্ন আনা হচ্ছে...",
+  "no more new questions found for this selection.": "এই নির্বাচনের জন্য আর নতুন প্রশ্ন পাওয়া যায়নি।",
+  "questions already on your paper stay safe. new ones are added to this list.": "কাগজে থাকা প্রশ্নগুলো অক্ষত থাকবে। নতুন প্রশ্নগুলো এই তালিকায় যোগ হবে।",
+  "all questions found for this selection are already on your paper.": "এই নির্বাচনের সব প্রশ্ন ইতিমধ্যে আপনার কাগজে আছে।",
 };
 
 function normalizeQuestionText(value: string) {
@@ -280,6 +314,10 @@ function translateQuestionText(
 
   match = /^(\d+) questions? · full marks$/i.exec(key);
   if (match) return `${match[1]}টি প্রশ্ন · পূর্ণমান`;
+
+  match = /^page (\d+) and its (\d+) questions? will be removed from your paper\.$/i.exec(key);
+  if (match)
+    return `পৃষ্ঠা ${match[1]} এবং এর ${match[2]}টি প্রশ্ন আপনার প্রশ্নপত্র থেকে সরে যাবে।`;
 
   match = /^page\s+(\d+)$/i.exec(key);
   if (match) return `পৃষ্ঠা ${match[1]}`;

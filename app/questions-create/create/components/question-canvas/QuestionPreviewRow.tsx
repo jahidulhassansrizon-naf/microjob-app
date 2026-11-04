@@ -1,6 +1,6 @@
 "use client";
 import { T, useQuestionText } from "../../i18n";
-import { useEffect, useMemo, useRef, useState, type Dispatch, type DragEvent, type FocusEvent, type FormEvent, type PointerEvent as ReactPointerEvent, type SetStateAction, } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type DragEvent, type FocusEvent, type FormEvent, type PointerEvent as ReactPointerEvent, type SetStateAction, } from "react";
 import { createPortal } from "react-dom";
 import katex from "katex";
 import { Check, GripVertical, Move, Pencil, Trash2 } from "lucide-react";
@@ -302,6 +302,74 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
     useEffect(() => {
         setMounted(true);
     }, []);
+    /*
+     * Hover toolbar placement.
+     * The toolbar is portaled to <body> and positioned (fixed) just ABOVE the
+     * hovered question, so it never covers the question text and is never
+     * clipped by the paper's overflow:hidden page. If there is no room above
+     * (question at the very top of the screen) it drops just BELOW instead.
+     * It overlaps the question edge by a few px, so moving the mouse from the
+     * question to the toolbar never crosses a gap that would hide it.
+     */
+    const toolbarRef = useRef<HTMLDivElement | null>(null);
+    const hideTimerRef = useRef<number | null>(null);
+    const [toolbarPos, setToolbarPos] = useState<{
+        top: number;
+        left: number;
+    } | null>(null);
+    const showToolbarNow = () => {
+        if (hideTimerRef.current != null) {
+            window.clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+        }
+        setShowControls(true);
+    };
+    const hideToolbarSoon = () => {
+        if (hideTimerRef.current != null) {
+            window.clearTimeout(hideTimerRef.current);
+        }
+        hideTimerRef.current = window.setTimeout(() => {
+            hideTimerRef.current = null;
+            setShowControls(false);
+        }, 120);
+    };
+    useEffect(() => () => {
+        if (hideTimerRef.current != null) {
+            window.clearTimeout(hideTimerRef.current);
+        }
+    }, []);
+    useLayoutEffect(() => {
+        if (!showControls || isEditing || !mounted) {
+            setToolbarPos(null);
+            return;
+        }
+        const update = () => {
+            const row = rowRef.current;
+            if (!row) {
+                return;
+            }
+            const rect = row.getBoundingClientRect();
+            const bar = toolbarRef.current;
+            const width = bar?.offsetWidth ?? 320;
+            const height = bar?.offsetHeight ?? 40;
+            const overlap = 3;
+            let top = rect.top - height + overlap;
+            if (top < 8) {
+                top = rect.bottom - overlap;
+            }
+            const left = Math.max(8, Math.min(rect.right - width - 4, window.innerWidth - width - 8));
+            setToolbarPos((current) => current && current.top === top && current.left === left
+                ? current
+                : { top, left });
+        };
+        update();
+        window.addEventListener("scroll", update, true);
+        window.addEventListener("resize", update);
+        return () => {
+            window.removeEventListener("scroll", update, true);
+            window.removeEventListener("resize", update);
+        };
+    }, [showControls, isEditing, mounted, jointPage, pageCount, questionLayout]);
     // Clicking outside the question clears its active state. The resize handles
     // remain available on hover (or during an active drag), so simply selecting
     // or editing a question can never leave a stale box/handles behind.
@@ -551,7 +619,7 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
     const handleRowClick = () => {
         onSetActiveQuestion?.(question.id);
     };
-    return (<div ref={rowRef} data-joint-measure-question="true" data-question-id={question.id} data-region-edit-target={regionBlockId} contentEditable={regionBlockActive} suppressContentEditableWarning onInput={handleRegionRowInput} onBlur={handleRegionRowBlur} draggable={!isEditing} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd} onDoubleClick={beginEdit} onMouseEnter={() => setShowControls(true)} onMouseLeave={() => setShowControls(false)} onClick={handleRowClick} className={`paper-question-row group relative rounded-sm border border-transparent px-1.5 transition ${isDragOver
+    return (<div ref={rowRef} data-joint-measure-question="true" data-question-id={question.id} data-region-edit-target={regionBlockId} contentEditable={regionBlockActive} suppressContentEditableWarning onInput={handleRegionRowInput} onBlur={handleRegionRowBlur} draggable={!isEditing} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd} onDoubleClick={beginEdit} onMouseEnter={showToolbarNow} onMouseLeave={hideToolbarSoon} onClick={handleRowClick} className={`paper-question-row group relative rounded-sm border border-transparent px-1.5 transition ${isDragOver
             ? "border-dashed border-[#DC2626] bg-[#F6D9A8]/60"
             : "hover:bg-[#EFE3C8]"} ${isEditing ? "bg-[#F6D9A8]/60 ring-1 ring-[#DC2626]/30" : ""}`} style={{
             paddingTop: `${Math.max(0, 2 + extraSpacing / 2)}px`,
@@ -801,21 +869,33 @@ export default function QuestionPreviewRow({ question, questionNumber, fontSize,
          * it floats on top of the content instead of squeezing it -
          * hover never changes the row's width or height anymore.
          */}
-          {showControls && !isEditing ? (<div data-print-control="true" className="ui-font screen-only absolute right-1.5 top-0 z-40 flex max-w-[340px] flex-wrap items-center justify-end gap-1 rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-xl" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.preventDefault()}>
-              <button type="button" onClick={beginEdit} className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Edit question")}>
-                <Pencil size={13}/><T>{"Edit\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", -5)} className="h-8 rounded-lg px-2.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Decrease question font size")}><T>{"A\u2212\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", 5)} className="h-8 rounded-lg px-2.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Increase question font size")}><T>{"A+\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", -1)} className="h-8 rounded-lg px-2.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Reduce spacing")}><T>{"S\u2212\n              "}</T></button>
-              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", 1)} className="h-8 rounded-lg px-2.5 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#EFE3C8] transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Increase spacing")}><T>{"S+\n              "}</T></button>
-              {jointPage && onMoveToPage && pageCount ? (<select value={currentPageIndex ?? 0} onChange={(event) => onMoveToPage(question.id, Number(event.target.value))} className="h-8 max-w-[96px] rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-1.5 text-[13px] font-bold text-[#3B2F1E] outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20" title={t("Move question to page")}>
-                  {Array.from({ length: pageCount }, (_, index) => (<option key={index} value={index}><T>{"Page "}</T>{index + 1}
-                    </option>))}
-                </select>) : null}
-              <button type="button" onClick={onRemove} className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.98]" title={t("Remove question")}>
+          {showControls && !isEditing && mounted
+            ? createPortal(<div ref={toolbarRef} data-print-control="true" className="ui-font screen-only print:hidden fixed z-[90] flex flex-nowrap items-center gap-0.5 whitespace-nowrap rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] p-1 shadow-[0_8px_24px_rgba(45,35,20,0.22)]" style={{
+                    top: toolbarPos?.top ?? 0,
+                    left: toolbarPos?.left ?? 0,
+                    visibility: toolbarPos ? "visible" : "hidden",
+                }} onMouseEnter={showToolbarNow} onMouseLeave={hideToolbarSoon} onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.preventDefault()}>
+              <button type="button" onClick={beginEdit} className="flex h-8 items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 text-[13px] font-bold text-white transition duration-150 hover:bg-[#B91C1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Edit question")}>
+                <Pencil size={13}/><T>{"Edit"}</T></button>
+              <span aria-hidden="true" className="mx-1 h-5 w-px bg-[#E3D6B8]"/>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", -5)} className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] font-bold text-[#3B2F1E] transition duration-150 hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Decrease question font size")}><T>{"A\u2212"}</T></button>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "fontScale", 5)} className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] font-bold text-[#3B2F1E] transition duration-150 hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Increase question font size")}><T>{"A+"}</T></button>
+              <span aria-hidden="true" className="mx-1 h-5 w-px bg-[#E3D6B8]"/>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", -1)} className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] font-bold text-[#3B2F1E] transition duration-150 hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Reduce spacing")}><T>{"S\u2212"}</T></button>
+              <button type="button" onClick={() => onAdjustQuestionLayout?.(question.id, "spacing", 1)} className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] font-bold text-[#3B2F1E] transition duration-150 hover:bg-[#EFE3C8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Increase spacing")}><T>{"S+"}</T></button>
+              {jointPage && onMoveToPage && pageCount ? (<>
+                  <span aria-hidden="true" className="mx-1 h-5 w-px bg-[#E3D6B8]"/>
+                  <select value={currentPageIndex ?? 0} onChange={(event) => onMoveToPage(question.id, Number(event.target.value))} className="h-8 max-w-[96px] rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-1.5 text-[13px] font-bold text-[#3B2F1E] outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20" title={t("Move question to page")}>
+                    {Array.from({ length: pageCount }, (_, index) => (<option key={index} value={index}><T>{"Page "}</T>{index + 1}
+                      </option>))}
+                  </select>
+                </>) : null}
+              <span aria-hidden="true" className="mx-1 h-5 w-px bg-[#E3D6B8]"/>
+              <button type="button" onClick={onRemove} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition duration-150 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 active:scale-[0.97]" title={t("Remove question")}>
                 <Trash2 size={14}/>
               </button>
-            </div>) : null}
+            </div>, document.body)
+            : null}
         </div>
       </div>
     </div>);

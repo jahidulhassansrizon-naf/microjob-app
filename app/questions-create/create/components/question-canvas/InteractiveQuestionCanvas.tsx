@@ -1,14 +1,16 @@
 "use client";
 import { T, useQuestionText } from "../../i18n";
-import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction, } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type SetStateAction, } from "react";
 import PrintDuplexLayout from "../PrintDuplexLayout";
 import type { PaperAnnotation, PaperRenderRequest, Question, } from "../../types/question";
 import type { QuestionManager } from "../../hooks/useQuestionManager";
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
+import { createPortal } from "react-dom";
 import CanvasSidebar from "./CanvasSidebar";
 import FetchedQuestionList from "./FetchedQuestionList";
 import SelectedQuestionsPanel from "./SelectedQuestionsPanel";
 import PaperToolbar from "./PaperToolbar";
+import PaperSideTools from "./PaperSideTools";
 import PaperSheet from "./PaperSheet";
 import { parseRegionTargetId, readEditableText, } from "./RegionSelectionOverlay";
 type DemoQuestion = Question;
@@ -362,7 +364,7 @@ function createPaperRenderer(manager: QuestionManager, onRegionTargetCommit: (ta
             }} onDrop={manager.handleDrop} onDragEnd={() => {
                 manager.setDraggedId(null);
                 manager.setDragOverId(null);
-            }} dragOverId={manager.dragOverId} editingMarkId={manager.editingMarkId} setEditingMarkId={manager.setEditingMarkId} updateQuestionMark={manager.updateQuestionMark} selectAnswerEnabled={manager.selectAnswerEnabled} answerSelections={manager.answerSelections} setAnswerSelections={manager.setAnswerSelections} pagePart={pagePart} pageIndex={pageIndex} pageCount={pageCount} onDropOnPage={isJoint && !isMeasurement ? manager.handlePageDrop : undefined} onMoveToPage={isJoint && !isMeasurement ? manager.moveQuestionToPage : undefined} activeQuestionId={manager.activeQuestionId} 
+            }} dragOverId={manager.dragOverId} editingMarkId={manager.editingMarkId} setEditingMarkId={manager.setEditingMarkId} updateQuestionMark={manager.updateQuestionMark} selectAnswerEnabled={manager.selectAnswerEnabled} answerSelections={manager.answerSelections} setAnswerSelections={manager.setAnswerSelections} pagePart={pagePart} pageIndex={pageIndex} pageCount={pageCount} onDropOnPage={isJoint && !isMeasurement ? manager.handlePageDrop : undefined} onMoveToPage={isJoint && !isMeasurement ? manager.moveQuestionToPage : undefined} onDeletePage={isJoint && !isMeasurement && manager.jointPageCount > 1 ? () => manager.requestDeleteJointPage(pageIndex) : undefined} activeQuestionId={manager.activeQuestionId} 
         /*
          * DOM Select Area is now active again.
          */
@@ -377,8 +379,80 @@ function createPaperRenderer(manager: QuestionManager, onRegionTargetCommit: (ta
       </div>);
     };
 }
-export default function InteractiveQuestionCanvas({ manager, }: {
+function PageDeleteConfirm({ pageNumber, questionCount, onConfirm, onCancel, }: {
+    pageNumber: number;
+    questionCount: number;
+    onConfirm: () => void;
+    onCancel: () => void;
+}) {
+    const { t } = useQuestionText();
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                onCancel();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onCancel]);
+    return createPortal(<div className="page-font page-delete-backdrop fixed inset-0 z-[120] flex items-center justify-center bg-[#2D2314]/50 p-4 backdrop-blur-[3px] print:hidden" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+                onCancel();
+            }
+        }}>
+      <div role="alertdialog" aria-modal="true" aria-labelledby="page-delete-title" className="page-delete-card w-full max-w-[400px] overflow-hidden rounded-3xl border border-[#E7DCC7] bg-[#FCF8EF] shadow-[0_24px_60px_rgba(45,35,20,0.35)]">
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#D42020] via-[#E8553F] to-[#F29B5B]"/>
+        <div className="px-7 pb-6 pt-7 text-center">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FCE9E6] ring-8 ring-[#FCE9E6]/50">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#E23B2E] to-[#B91C1C] text-white shadow-[0_6px_16px_rgba(185,28,28,0.35)]">
+              <Trash2 size={20}/>
+            </span>
+          </span>
+
+          <h3 id="page-delete-title" className="mt-5 text-[19px] font-extrabold tracking-tight text-[#342B1E]">
+            <T>Delete this page?</T>
+          </h3>
+
+          <p className="mt-2 text-[13.5px] leading-6 text-[#6B5A40]">
+            {t(`Page ${pageNumber} and its ${questionCount} ${questionCount === 1 ? "question" : "questions"} will be removed from your paper.`)}
+          </p>
+
+          <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-[#E7DCC7] bg-white px-3.5 py-1.5 text-[12px] font-bold text-[#51442F] shadow-sm">
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#FCE9E6] text-[10px] font-extrabold text-[#B91C1C]">
+              {pageNumber}
+            </span>
+            <T>{`Page ${pageNumber}`}</T>
+            <span className="text-[#C9B991]">·</span>
+            <span>{questionCount} <T>{questionCount === 1 ? "question" : "questions"}</T></span>
+          </div>
+
+          <p className="mt-3 text-[11.5px] leading-5 text-[#8A795F]">
+            <T>The questions go back to the available list, so you can add them again anytime.</T>
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-2.5">
+            <button type="button" autoFocus onClick={onCancel} className="h-11 rounded-xl border border-[#E3D6B8] bg-white text-[13.5px] font-bold text-[#51442F] transition duration-150 hover:bg-[#F8F0E1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42020]/25 active:scale-[0.98]">
+              <T>Cancel</T>
+            </button>
+            <button type="button" onClick={onConfirm} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#E23B2E] to-[#C42218] text-[13.5px] font-extrabold text-white shadow-[0_8px_18px_rgba(196,34,24,0.32)] transition duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42020]/40 active:scale-[0.98]">
+              <Trash2 size={15}/>
+              <T>Yes, delete page</T>
+            </button>
+          </div>
+
+          <p className="mt-3 text-[10.5px] font-medium text-[#A8987C]">
+            <T>Press Esc to cancel</T>
+          </p>
+        </div>
+      </div>
+    </div>, document.body);
+}
+export default function InteractiveQuestionCanvas({ manager, leftHeader, rightHeader, }: {
     manager: QuestionManager;
+    /** Shown at the top of the left column (large screens). */
+    leftHeader?: ReactNode;
+    /** Shown, sticky, at the top of the right column (large screens). */
+    rightHeader?: ReactNode;
 }) {
     const { t } = useQuestionText();
     const { selectedTab, setSelectedTab, filtersOpen, setFiltersOpen, openFilter, setOpenFilter, selectedClass, setSelectedClass, selectedSubject, setSelectedSubject, selectedChapter, setSelectedChapter, selectedQuestionType, setSelectedQuestionType, searchQuery, setSearchQuery, questionError, questions, loadingQuestions, visibleQuestions, subjects, chapters, loadingSubjects, loadingChapters, totalMarks, selectedQuestions, selectedIds, typeCounts, resultTypeTab, setResultTypeTab, questionSearchQuery, setQuestionSearchQuery, handleClassChange, handleSubjectChange, handleChapterChange, handleFetchQuestions, handleSelectAll, clearSelectedQuestions, toggleSelectQuestion, sectionGroups, sectionMarks, updateSectionMarks, autoCount, setAutoCount, handleAutoCreate, logoInputRef, handleLogoChange, logoUrl, removeLogo, fontScale, setFontScale, handlePageSizeChange, pageSize, setNoEnabled, setNo, setSetNo, shuffleSelected, layoutRef, layoutOpen, setLayoutOpen, layoutColumns, setLayoutColumns, compactSpacing, setCompactSpacing, selectAnswerEnabled, setSelectAnswerEnabled, headerNoteEnabled, setHeaderNoteEnabled, headerNote, setHeaderNote, footerText, setFooterText, timeText, setTimeText, paperStyle, setPaperStyle, canvasTextOverrides, regionSelectMode, setRegionSelectMode, handleRegionTargetCommit: managerHandleRegionTargetCommit, } = manager;
@@ -737,6 +811,8 @@ export default function InteractiveQuestionCanvas({ manager, }: {
                     }
                     : question));
             },
+            // The demo preview is read-only sample data: deleting its pages is a no-op.
+            requestDeleteJointPage: () => undefined,
             setActiveJointPage: manager.setActiveJointPage,
             setDraggedId: manager.setDraggedId,
             setDragOverId: manager.setDragOverId,
@@ -923,35 +999,59 @@ export default function InteractiveQuestionCanvas({ manager, }: {
         <div className="question-workspace-grid grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(220px,0.78fr)_minmax(0,1.22fr)] xl:grid-cols-[minmax(260px,300px)_minmax(420px,1fr)_minmax(310px,360px)] 2xl:grid-cols-[minmax(280px,330px)_minmax(500px,1fr)_minmax(340px,420px)] xl:gap-3">
           {/* Left: question filters with the available question list directly underneath. */}
           <div className="question-workspace-column question-filters-column flex min-w-0 flex-col gap-3">
+            {leftHeader}
             <CanvasSidebar manager={manager} demoMode={demoMode} onExitDemo={exitDemo}/>
             {selectedTab === "browse" ? (
               <FetchedQuestionList manager={manager} onExitDemo={exitDemo}/>
             ) : null}
           </div>
 
-          {/* Center: the selected question paper and its live preview. */}
+          {/* Center: only the live paper preview, centered. */}
           <section className="question-workspace-column question-paper-column flex min-w-0 flex-col gap-3" aria-label="Your question paper">
-            <SelectedQuestionsPanel manager={manager} displaySelectedQuestions={displaySelectedQuestions}/>
             <div className="relative min-w-0">
-              <PrintDuplexLayout key={demoMode ? "demo-question-paper" : "live-question-paper"} manager={displayManager} renderPaper={renderPaper}/>
+              <PrintDuplexLayout key={demoMode ? "demo-question-paper" : "live-question-paper"} manager={displayManager} renderPaper={renderPaper} hideTools/>
               {!demoMode && regionSelectMode ? (<div className="ui-font pointer-events-none fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#342B1E] px-5 py-2.5 text-[13px] font-bold text-[#FCF8EF] shadow-xl"><T>{"Select an area on the question paper\n                "}</T></div>) : null}
             </div>
           </section>
 
-          {/* Right: all paper customization controls. */}
-          <aside className="question-workspace-column question-editor-column min-w-0 lg:col-span-2 xl:col-span-1">
+          {/* Right: question summary, paper tools and customization controls. */}
+          <aside className="question-workspace-column question-editor-column flex min-w-0 flex-col gap-3 lg:col-span-2 xl:col-span-1">
+            {rightHeader}
+            {/* Customize your paper sits right under the PDF download header. */}
             <PaperToolbar manager={manager} demoMode={demoMode} loadDemo={loadDemo} onExitDemo={exitDemo}/>
+            <SelectedQuestionsPanel manager={manager} displaySelectedQuestions={displaySelectedQuestions}/>
+            <PaperSideTools manager={displayManager}/>
           </aside>
         </div>
       </main>
 
+      {manager.pendingPageDelete ? (<PageDeleteConfirm pageNumber={manager.pendingPageDelete.pageIndex + 1} questionCount={manager.pendingPageDelete.questionCount} onConfirm={manager.confirmDeleteJointPage} onCancel={manager.cancelDeleteJointPage}/>) : null}
+
       <style jsx global>{`
+        @keyframes page-delete-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes page-delete-pop {
+          from { opacity: 0; transform: translateY(10px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .page-delete-backdrop {
+          animation: page-delete-fade 160ms ease-out both;
+        }
+
+        .page-delete-card {
+          animation: page-delete-pop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
         @media (min-width: 1280px) {
           .question-filters-column,
           .question-paper-column,
           .question-editor-column {
             min-height: 0;
-            max-height: calc(100vh - 158px);
+            max-height: calc(100vh - 86px);
             overflow-y: auto;
             overscroll-behavior: contain;
             scrollbar-width: thin;
