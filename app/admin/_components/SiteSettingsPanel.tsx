@@ -210,7 +210,7 @@ export default function SiteSettingsPanel() {
       const rawGroupLink = String(footerDraft.whatsappGroupUrl ?? "").trim();
       const groupLink = normalizeGroupLink(rawGroupLink);
       if (rawGroupLink && !groupLink) throw new Error("WhatsApp support group link must be a valid link starting with https://");
-      const payload = { ...draft, footer: { ...footerDraft, whatsappGroupUrl: groupLink } } as SiteSettings;
+      const payload = { ...draft, footer: { ...footerDraft, whatsappGroupUrl: groupLink } } as unknown as SiteSettings;
       const response = await fetch("/api/admin/site-settings", { method: "PUT", credentials: "include", headers: { ...getClientAuthHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ settings: payload }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.success || !data.settings) throw new Error(data?.message || "Could not save changes.");
