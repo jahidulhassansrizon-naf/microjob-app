@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="12-nagad-agent-service-poster" width="210mm" height="297mm" viewBox="0 0 210 297" overflow="visible" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif" data-template="12-nagad-agent-service-poster" data-platform="SebaLagbe.com" data-unit="mm" data-bleed-mm="3" text-rendering="optimizeLegibility" font-kerning="normal">
+<title>Nagad Agent Service Poster A4</title>
+<desc>SebaLagbe.com print-media template. Real SVG text/shapes; all objects with data-editable="true" are user-editable. 1 user unit = 1 mm.</desc>
+<g id="background_layer" data-layer-name="Background" data-editable="false">
+<rect id="bg_page" data-editable="true" data-object-type="shape" data-layer-name="Page Background" x="-3" y="-3" width="216" height="303" fill="#FFFFFF" />
+</g>
+<g id="header_layer" data-layer-name="Header" data-editable="false">
+<rect id="header_bg" data-editable="true" data-object-type="shape" data-layer-name="Header Background" x="-3" y="-3" width="216" height="69" fill="#E4262C" />
+<rect id="header_stripe" data-editable="true" data-object-type="shape" data-layer-name="Header Accent Stripe" x="-3" y="66" width="216" height="3.2" fill="#F7941D" />
+</g>
+<g id="decorative_shapes" data-layer-name="Decorative Shapes" data-editable="false">
+<circle id="deco_circle_1" data-editable="true" data-object-type="shape" data-layer-name="Decor Circle 1" cx="196" cy="8" r="38" fill="#FFFFFF" fill-opacity="0.08"/>
+<circle id="deco_circle_2" data-editable="true" data-object-type="shape" data-layer-name="Decor Circle 2" cx="150" cy="60" r="20" fill="#FFFFFF" fill-opacity="0.07"/>
+<text id="deco_watermark" data-editable="true" data-object-type="text" data-layer-name="Header Watermark Text" x="204" y="63" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="22" font-weight="800" fill="#FFFFFF" text-anchor="end" fill-opacity="0.1">Nagad</text>
+</g>
+<g id="logo_placeholder" data-layer-name="Logo Placeholder" data-editable="false">
+<circle id="shop_logo" data-editable="true" data-object-type="image" data-layer-name="Shop Logo" cx="35" cy="33" r="20" fill="#FFFFFF" stroke="#F7941D" stroke-width="0.5" stroke-dasharray="2 1.5" data-placeholder="true"/>
+<g id="shop_logo_hint" class="placeholder-hint" data-placeholder-hint="true" data-editable="false"><text x="35" y="33.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.4" fill="#9AA3AF" text-anchor="middle">লোগো</text></g>
+</g>
+<g id="title_text" data-layer-name="Shop Identity" data-editable="false">
+<rect id="agent_pill" data-editable="true" data-object-type="shape" data-layer-name="Authorized Agent Pill" x="61" y="12" width="44" height="8.4" rx="4.2" fill="#F7941D" />
+<text id="agent_pill_text" data-editable="true" data-object-type="text" data-layer-name="Authorized Agent Text" x="83" y="17.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.6" font-weight="700" fill="#FFFFFF" text-anchor="middle">অনুমোদিত এজেন্ট</text>
+<text id="shop_name" data-editable="true" data-object-type="text" data-layer-name="Shop Name" x="61" y="34" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="9" font-weight="800" fill="#FFFFFF" text-anchor="start">আপনার দোকানের নাম</text>
+<text id="poster_title" data-editable="true" data-object-type="text" data-layer-name="Poster Title" x="61" y="46" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="8" font-weight="700" fill="#FFFFFF" text-anchor="start">নগদ এজেন্ট পয়েন্ট</text>
+<text id="poster_subtitle" data-editable="true" data-object-type="text" data-layer-name="Poster Subtitle" x="61" y="56.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.6" font-weight="500" fill="#FFFFFF" text-anchor="start" fill-opacity="0.92">এখানে নগদ-এর সকল সেবা পাওয়া যায়</text>
+<rect id="brand_logo" data-editable="true" data-object-type="image" data-layer-name="Brand Logo (upload official logo)" x="163" y="14" width="34" height="26" rx="4" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.5" stroke-dasharray="2 1.5"  data-placeholder="true"/>
+<g id="brand_logo_hint" class="placeholder-hint" data-placeholder-hint="true" data-editable="false"><text x="180" y="33" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.4" fill="#9AA3AF" text-anchor="middle">Nagad লোগো</text></g>
+</g>
+<g id="services_section" data-layer-name="Services" data-editable="false">
+<text id="services_heading" data-editable="true" data-object-type="text" data-layer-name="Services Heading" x="105" y="79" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="6.6" font-weight="800" fill="#A81A1F" text-anchor="middle">আমাদের সেবাসমূহ</text>
+<line id="services_line_l" data-editable="true" data-object-type="shape" data-layer-name="Heading Line Left" x1="14" y1="76.8" x2="62" y2="76.8" stroke="#F9CDA4" stroke-width="0.6"/>
+<line id="services_line_r" data-editable="true" data-object-type="shape" data-layer-name="Heading Line Right" x1="148" y1="76.8" x2="196" y2="76.8" stroke="#F9CDA4" stroke-width="0.6"/>
+<rect id="svc1_card" data-editable="true" data-object-type="shape" data-layer-name="Service 1 Card" x="12" y="85" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc1_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 1 Icon Circle" cx="41" cy="98" r="9.5" fill="#E4262C"/>
+<g id="svc1_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 1 Icon" transform="translate(41 98) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M0 -5 V3 M-3.5 0 L0 3.5 L3.5 0 M-5 6 H5"/></g>
+<text id="svc1_label" data-editable="true" data-object-type="text" data-layer-name="Service 1 Name" x="41" y="115" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">ক্যাশ ইন</text>
+<text id="svc1_sub" data-editable="true" data-object-type="text" data-layer-name="Service 1 Detail" x="41" y="121.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">অ্যাকাউন্টে টাকা জমা দিন</text>
+<rect id="svc2_card" data-editable="true" data-object-type="shape" data-layer-name="Service 2 Card" x="76" y="85" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc2_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 2 Icon Circle" cx="105" cy="98" r="9.5" fill="#E4262C"/>
+<g id="svc2_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 2 Icon" transform="translate(105 98) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M0 3.5 V-4 M-3.5 -0.5 L0 -4 L3.5 -0.5 M-5 6 H5"/></g>
+<text id="svc2_label" data-editable="true" data-object-type="text" data-layer-name="Service 2 Name" x="105" y="115" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">ক্যাশ আউট</text>
+<text id="svc2_sub" data-editable="true" data-object-type="text" data-layer-name="Service 2 Detail" x="105" y="121.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">এজেন্টের কাছে টাকা তুলুন</text>
+<rect id="svc3_card" data-editable="true" data-object-type="shape" data-layer-name="Service 3 Card" x="140" y="85" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc3_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 3 Icon Circle" cx="169" cy="98" r="9.5" fill="#E4262C"/>
+<g id="svc3_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 3 Icon" transform="translate(169 98) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M-5.5 -1 L5.5 -5.5 L2.5 5.5 L-0.5 1.5 Z M-0.5 1.5 L5.5 -5.5"/></g>
+<text id="svc3_label" data-editable="true" data-object-type="text" data-layer-name="Service 3 Name" x="169" y="115" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">সেন্ড মানি</text>
+<text id="svc3_sub" data-editable="true" data-object-type="text" data-layer-name="Service 3 Detail" x="169" y="121.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">যেকোনো নম্বরে টাকা পাঠান</text>
+<rect id="svc4_card" data-editable="true" data-object-type="shape" data-layer-name="Service 4 Card" x="12" y="132" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc4_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 4 Icon Circle" cx="41" cy="145" r="9.5" fill="#E4262C"/>
+<g id="svc4_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 4 Icon" transform="translate(41 145) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M-3 -5.5 H3 A1 1 0 0 1 4 -4.5 V4.5 A1 1 0 0 1 3 5.5 H-3 A1 1 0 0 1 -4 4.5 V-4.5 A1 1 0 0 1 -3 -5.5 Z M-1 3.2 H1 M-1.4 -3.8 H1.4"/></g>
+<text id="svc4_label" data-editable="true" data-object-type="text" data-layer-name="Service 4 Name" x="41" y="162" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">মোবাইল রিচার্জ</text>
+<text id="svc4_sub" data-editable="true" data-object-type="text" data-layer-name="Service 4 Detail" x="41" y="168.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">সব অপারেটরে রিচার্জ</text>
+<rect id="svc5_card" data-editable="true" data-object-type="shape" data-layer-name="Service 5 Card" x="76" y="132" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc5_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 5 Icon Circle" cx="105" cy="145" r="9.5" fill="#E4262C"/>
+<g id="svc5_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 5 Icon" transform="translate(105 145) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M-3.5 -5.5 H3.5 V5.5 L2 4.5 L0.5 5.5 L-1 4.5 L-2.5 5.5 L-3.5 4.5 Z M-1.6 -2 H1.6 M-1.6 1 H1.6"/></g>
+<text id="svc5_label" data-editable="true" data-object-type="text" data-layer-name="Service 5 Name" x="105" y="162" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">বিল পেমেন্ট</text>
+<text id="svc5_sub" data-editable="true" data-object-type="text" data-layer-name="Service 5 Detail" x="105" y="168.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">বিদ্যুৎ, গ্যাস, ইন্টারনেট বিল</text>
+<rect id="svc6_card" data-editable="true" data-object-type="shape" data-layer-name="Service 6 Card" x="140" y="132" width="58" height="41" rx="4" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.5" />
+<circle id="svc6_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Service 6 Icon Circle" cx="169" cy="145" r="9.5" fill="#E4262C"/>
+<g id="svc6_icon" data-editable="true" data-object-type="shape" data-layer-name="Service 6 Icon" transform="translate(169 145) scale(1.1)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M-4 -2.5 H4 L3.5 5.5 H-3.5 Z M-2 -2.5 V-3.6 A2 2 0 0 1 2 -3.6 V-2.5"/></g>
+<text id="svc6_label" data-editable="true" data-object-type="text" data-layer-name="Service 6 Name" x="169" y="162" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.8" font-weight="800" fill="#A81A1F" text-anchor="middle">পেমেন্ট</text>
+<text id="svc6_sub" data-editable="true" data-object-type="text" data-layer-name="Service 6 Detail" x="169" y="168.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.3" font-weight="500" fill="#6B7280" text-anchor="middle">দোকান ও অনলাইনে পেমেন্ট</text>
+</g>
+<g id="rate_section" data-layer-name="Service Charge Table" data-editable="false">
+<rect id="rate_header" data-editable="true" data-object-type="shape" data-layer-name="Charge Table Header" x="12" y="180" width="104" height="10" rx="2" fill="#E4262C" />
+<text id="rate_title" data-editable="true" data-object-type="text" data-layer-name="Charge Table Title" x="16" y="186.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#FFFFFF" text-anchor="start">সার্ভিস চার্জ</text>
+<text id="rate_col_title" data-editable="true" data-object-type="text" data-layer-name="Charge Column Title" x="108" y="186.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.2" font-weight="700" fill="#FFFFFF" text-anchor="end">চার্জ</text>
+<rect id="rate_row1_bg" data-editable="true" data-object-type="shape" data-layer-name="Charge Row 1 Background" x="12" y="190" width="104" height="9.5" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.25" />
+<text id="rate_row1_name" data-editable="true" data-object-type="text" data-layer-name="Charge Row 1 Service" x="16" y="196.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.4" font-weight="700" fill="#3B1512" text-anchor="start">ক্যাশ ইন</text>
+<text id="rate_row1_value" data-editable="true" data-object-type="text" data-layer-name="Charge Row 1 Amount" x="112" y="196.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.1" font-weight="600" fill="#A81A1F" text-anchor="end">ফ্রি</text>
+<rect id="rate_row2_bg" data-editable="true" data-object-type="shape" data-layer-name="Charge Row 2 Background" x="12" y="199.5" width="104" height="9.5" fill="#FFFFFF" stroke="#F9CDA4" stroke-width="0.25" />
+<text id="rate_row2_name" data-editable="true" data-object-type="text" data-layer-name="Charge Row 2 Service" x="16" y="205.8" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.4" font-weight="700" fill="#3B1512" text-anchor="start">ক্যাশ আউট</text>
+<text id="rate_row2_value" data-editable="true" data-object-type="text" data-layer-name="Charge Row 2 Amount" x="112" y="205.8" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.1" font-weight="600" fill="#A81A1F" text-anchor="end">প্রতি হাজারে XX টাকা</text>
+<rect id="rate_row3_bg" data-editable="true" data-object-type="shape" data-layer-name="Charge Row 3 Background" x="12" y="209" width="104" height="9.5" fill="#FFF3EA" stroke="#F9CDA4" stroke-width="0.25" />
+<text id="rate_row3_name" data-editable="true" data-object-type="text" data-layer-name="Charge Row 3 Service" x="16" y="215.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.4" font-weight="700" fill="#3B1512" text-anchor="start">সেন্ড মানি</text>
+<text id="rate_row3_value" data-editable="true" data-object-type="text" data-layer-name="Charge Row 3 Amount" x="112" y="215.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.1" font-weight="600" fill="#A81A1F" text-anchor="end">প্রতি লেনদেনে XX টাকা</text>
+<rect id="rate_row4_bg" data-editable="true" data-object-type="shape" data-layer-name="Charge Row 4 Background" x="12" y="218.5" width="104" height="9.5" fill="#FFFFFF" stroke="#F9CDA4" stroke-width="0.25" />
+<text id="rate_row4_name" data-editable="true" data-object-type="text" data-layer-name="Charge Row 4 Service" x="16" y="224.8" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.4" font-weight="700" fill="#3B1512" text-anchor="start">মোবাইল রিচার্জ</text>
+<text id="rate_row4_value" data-editable="true" data-object-type="text" data-layer-name="Charge Row 4 Amount" x="112" y="224.8" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.1" font-weight="600" fill="#A81A1F" text-anchor="end">ফ্রি / XX টাকা</text>
+</g>
+<g id="agent_info" data-layer-name="Agent Information" data-editable="false">
+<rect id="agent_card_top" data-editable="true" data-object-type="shape" data-layer-name="Agent Number Card" x="122" y="180" width="76" height="26" rx="3.5" fill="#E4262C" />
+<text id="agent_number_label" data-editable="true" data-object-type="text" data-layer-name="Agent Number Label" x="160" y="187.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.4" font-weight="600" fill="#FFFFFF" text-anchor="middle" fill-opacity="0.9">এজেন্ট নম্বর</text>
+<text id="agent_number" data-editable="true" data-object-type="text" data-layer-name="Agent Number" x="160" y="198.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="8.4" font-weight="800" fill="#FFFFFF" text-anchor="middle">০১XXX-XXXXXX</text>
+<rect id="agent_card_bottom" data-editable="true" data-object-type="shape" data-layer-name="Opening Hours Card" x="122" y="209" width="76" height="19" rx="3.5" fill="#FFFFFF" stroke="#E4262C" stroke-width="0.7" />
+<text id="hours_label" data-editable="true" data-object-type="text" data-layer-name="Opening Hours Label" x="160" y="216.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.9" font-weight="600" fill="#6B7280" text-anchor="middle">লেনদেনের সময়</text>
+<text id="hours_value" data-editable="true" data-object-type="text" data-layer-name="Opening Hours" x="160" y="224" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#A81A1F" text-anchor="middle">সকাল ৯টা – রাত ১০টা</text>
+</g>
+<g id="safety_notice" data-layer-name="Safety Notice" data-editable="false">
+<rect id="safety_bg" data-editable="true" data-object-type="shape" data-layer-name="Safety Notice Background" x="12" y="234" width="186" height="21" rx="3.5" fill="#FFF8DB" stroke="#F2C230" stroke-width="0.6" />
+<circle id="safety_icon_bg" data-editable="true" data-object-type="shape" data-layer-name="Safety Icon Circle" cx="24" cy="244.5" r="6.4" fill="#F2A900"/>
+<g id="safety_icon" data-editable="true" data-object-type="shape" data-layer-name="Safety Icon" transform="translate(24 244.7) scale(0.85)" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M0 -5.5 L5.5 4.5 H-5.5 Z M0 -1.5 V1.5 M0 3.2 V3.3"/></g>
+<text id="safety_title" data-editable="true" data-object-type="text" data-layer-name="Safety Title" x="35" y="242.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#8A5A00" text-anchor="start">সতর্কতা</text>
+<text id="safety_text" data-editable="true" data-object-type="text" data-layer-name="Safety Text" x="35" y="249.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.8" font-weight="500" fill="#5C4300" text-anchor="start">আপনার পিন, ওটিপি বা পাসওয়ার্ড কাউকে বলবেন না। কেউ ফোনে পিন চাইলে সাথে সাথে কেটে দিন।</text>
+</g>
+<g id="tagline_layer" data-layer-name="Tagline" data-editable="false">
+<text id="tagline" data-editable="true" data-object-type="text" data-layer-name="Tagline" x="105" y="263.2" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.6" font-weight="700" fill="#A81A1F" text-anchor="middle">আপনার বিশ্বাসই আমাদের শক্তি</text>
+</g>
+<g id="footer_layer" data-layer-name="Footer" data-editable="false">
+<rect id="footer_bg" data-editable="true" data-object-type="shape" data-layer-name="Footer Background" x="-3" y="269" width="216" height="31" fill="#A81A1F" />
+<rect id="footer_stripe" data-editable="true" data-object-type="shape" data-layer-name="Footer Accent Stripe" x="-3" y="269" width="216" height="1.6" fill="#F7941D" />
+</g>
+<g id="contact_information" data-layer-name="Contact Information" data-editable="false">
+<text id="shop_address_label" data-editable="true" data-object-type="text" data-layer-name="Address Label" x="16" y="280" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.6" font-weight="600" fill="#FFFFFF" text-anchor="start" fill-opacity="0.75">ঠিকানা</text>
+<text id="shop_address" data-editable="true" data-object-type="text" data-layer-name="Shop Address" x="16" y="286.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.6" font-weight="700" fill="#FFFFFF" text-anchor="start">দোকান নং, রোড, এলাকা, জেলা</text>
+<text id="shop_phone_label" data-editable="true" data-object-type="text" data-layer-name="Phone Label" x="194" y="280" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.6" font-weight="600" fill="#FFFFFF" text-anchor="end" fill-opacity="0.75">যোগাযোগ</text>
+<text id="shop_phone" data-editable="true" data-object-type="text" data-layer-name="Shop Phone" x="194" y="286.3" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5.4" font-weight="800" fill="#FFFFFF" text-anchor="end">০১XXX-XXXXXX</text>
+<text id="thanks_text" data-editable="true" data-object-type="text" data-layer-name="Thanks Text" x="105" y="294.2" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.8" font-weight="500" fill="#FFFFFF" text-anchor="middle" fill-opacity="0.85">ধন্যবাদ, আবার আসবেন</text>
+</g>
+<g id="print_guides" data-layer-name="Print Guides (hidden - non-printing)" data-editable="false" display="none" data-print="false">
+<rect x="0" y="0" width="210" height="297" fill="none" stroke="#FF00FF" stroke-width="0.3"/>
+<rect x="5" y="5" width="200" height="287" fill="none" stroke="#00B7EB" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<rect x="-3" y="-3" width="216" height="303" fill="none" stroke="#FF8C00" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+</g>
+</svg>

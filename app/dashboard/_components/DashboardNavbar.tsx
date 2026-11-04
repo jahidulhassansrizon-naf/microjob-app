@@ -77,7 +77,7 @@ interface NavConfig {
   };
   /** Round gold PRO badge (same look as the round FREE badge on tool cards). */
   proBadge?: boolean;
-  menu?: string[];
+  menu?: (string | { label: string; href: string })[];
 }
 /* ------------------------------------------------------------------ */
 /* Navbar icons: refined duotone line icons (24px grid, thin round    */
@@ -531,19 +531,15 @@ const aiTemplateItems = [
   "Birthday wishes",
   "Family photo",
 ];
+// Same categories as the filter on the Print Media page (category key = template category).
 const printMediaItems = [
-  "গণঅভ্যুত্থান",
-  "গণঅভ্যুত্থান দিবস",
-  "স্মারকগ্রন্থ",
-  "ঈদ মোবারক পোষ্টার",
-  "নোটিশ",
-  "বিবাহ আমন্ত্রণ",
-  "ভিজিটিং কার্ড",
-  "লেটারহেড",
-  "শহীদ স্মরণ",
-  "শ্রদ্ধাঞ্জলি",
-  "সার্টিফিকেট",
-  "ধন্যবাদ কার্ড",
+  { label: "দোকান ও ব্যবসা", href: "/print-media?category=Shop%20%26%20Business" },
+  { label: "ব্যবসায়িক ফর্ম", href: "/print-media?category=Business%20Forms" },
+  { label: "মোবাইল সার্ভিসিং", href: "/print-media?category=Mobile%20Servicing%20%26%20Electronics" },
+  { label: "মোবাইল ব্যাংকিং", href: "/print-media?category=Mobile%20Banking" },
+  { label: "ব্যানার ও সাইনবোর্ড", href: "/print-media?category=Banner%20%26%20Signboard" },
+  { label: "রেস্টুরেন্ট ও খাবার", href: "/print-media?category=Restaurant%20%26%20Food" },
+  { label: "শিক্ষা প্রতিষ্ঠান", href: "/print-media?category=Education%20%26%20Institution" },
 ];
 const NAV_ITEMS: NavConfig[] = [
   {
@@ -619,7 +615,6 @@ const NAV_ITEMS: NavConfig[] = [
     icon: PrintMediaIcon,
     tone: "cyan",
     match: "/print-media",
-    upcoming: true,
     menu: printMediaItems,
   },
   {
@@ -833,15 +828,20 @@ function NavDropdown({
       {open && item.menu && (
         <div className="absolute left-0 top-full z-[100] w-52 rounded-xl border-2 border-[#DC2626] bg-[#F0DDB5] p-1.5 text-[15px] font-medium shadow-xl animate-in fade-in duration-150">
           <span aria-hidden="true" className="pointer-events-none absolute -top-[7px] left-6 h-3 w-3 rotate-45 border-l-2 border-t-2 border-[#DC2626] bg-[#F0DDB5]" />
-          {item.menu.map((entry, index) => (
-            <Link
-              key={index}
-              href={item.href}
-              className="block rounded-lg px-3 py-2 text-[#5A4A32] transition-colors hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"
-            >
-              {entry}
-            </Link>
-          ))}
+          {item.menu.map((entry, index) => {
+            const label = typeof entry === "string" ? entry : entry.label;
+            const href = typeof entry === "string" ? item.href : entry.href;
+            return (
+              <Link
+                key={index}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="block rounded-lg px-3 py-2 text-[#5A4A32] transition-colors hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"
+              >
+                {label}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

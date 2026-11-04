@@ -22,7 +22,11 @@ const CREATIVE_FILE_CATEGORIES = new Set([
   "bulk-photo-edit",
   "ai-photo-edit",
   "manually-edited",
+  "print-media",
 ]);
+
+// A saved Print Media design keeps its editable SVG so the user can continue later.
+const MAX_DESIGN_SVG_CHARS = 8_000_000;
 
 const UserFileSchema = new mongoose.Schema(
   {
@@ -39,6 +43,9 @@ const UserFileSchema = new mongoose.Schema(
     },
     url: { type: String, default: "" },
     publicId: { type: String, default: "" },
+    // Print Media only: which template the design came from + the editable SVG source.
+    templateId: { type: Number },
+    svgMarkup: { type: String, default: "", select: false },
   },
   { timestamps: true, collection: "userfiles" },
 );
@@ -197,6 +204,37 @@ export async function GET(request: Request) {
     const userId = getUserId(request);
     await connectDB();
     const objectId = new mongoose.Types.ObjectId(userId);
+
+    // GET /api/my-files?id=user-file:<id> -> one saved Print Media design (editable SVG) to continue editing.
+    const requestedId = new URL(request.url).searchParams.get("id");
+    if (requestedId) {
+      const rawId = requestedId.startsWith("user-file:") ? requestedId.slice("user-file:".length) : "";
+      if (!rawId || !mongoose.isValidObjectId(rawId)) {
+        return NextResponse.json({ success: false, error: "Valid file ID is required." }, { status: 400 });
+      }
+      const design: any = await UserFile.findOne({
+        _id: rawId,
+        userId: objectId,
+        category: "print-media",
+        createdAt: { $gte: getRetentionCutoff() },
+      })
+        .select("+svgMarkup _id name templateId url updatedAt")
+        .lean();
+      if (!design || !design.svgMarkup) {
+        return NextResponse.json({ success: false, error: "Saved design not found." }, { status: 404 });
+      }
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: `user-file:${String(design._id)}`,
+          name: design.name,
+          templateId: design.templateId,
+          url: design.url || "",
+          svgMarkup: design.svgMarkup,
+        },
+      });
+    }
+
     // Files older than the retention period (30 days) are never shown, even in the
     // short window before the daily cleanup job physically deletes them.
     const retentionCutoff = getRetentionCutoff();
@@ -222,7 +260,7 @@ export async function GET(request: Request) {
         .limit(50)
         .lean(),
       UserFile.find({ userId: objectId, createdAt: notExpired })
-        .select("_id name category toolName group workspace url createdAt")
+        .select("_id name category toolName group workspace url templateId createdAt updatedAt")
         .sort({ createdAt: -1 })
         .limit(100)
         .lean(),
@@ -257,8 +295,12 @@ export async function GET(request: Request) {
         id: `user-file:${String(item._id)}`,
         name: clean(item.name, "Saved file"),
         category: item.category,
-        createdAt: item.createdAt,
+        // A re-saved Print Media design moves to the top, like "last edited".
+        createdAt: item.category === "print-media" ? item.updatedAt || item.createdAt : item.createdAt,
         url: item.url || "",
+        ...(item.category === "print-media" && Number.isInteger(item.templateId)
+          ? { templateId: item.templateId }
+          : {}),
       })),
     ].sort(
       (a, b) =>
@@ -329,6 +371,8 @@ export async function POST(request: Request) {
     const group = clean(body?.group, "image").slice(0, 40);
     const url = clean(body?.url);
     const publicId = clean(body?.publicId);
+    const svgMarkup = typeof body?.svgMarkup === "string" ? body.svgMarkup : "";
+    const templateId = Number(body?.templateId);
     const requestedWorkspace = clean(body?.workspace).toLowerCase();
     const workspace: FileWorkspace =
       requestedWorkspace === "creative" || requestedWorkspace === "sohoz-tools"
@@ -363,6 +407,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (category === "print-media") {
+      if (!svgMarkup.includes("<svg") || !Number.isInteger(templateId) || templateId <= 0) {
+        return NextResponse.json(
+          { success: false, error: "A print design needs its SVG and template ID." },
+          { status: 400 },
+        );
+      }
+      if (svgMarkup.length > MAX_DESIGN_SVG_CHARS) {
+        return NextResponse.json(
+          { success: false, error: "This design is too large to save. Try removing a large image." },
+          { status: 413 },
+        );
+      }
+    }
+
     await connectDB();
     const created = await UserFile.create({
       userId: new mongoose.Types.ObjectId(userId),
@@ -373,6 +432,7 @@ export async function POST(request: Request) {
       workspace,
       url,
       publicId,
+      ...(category === "print-media" ? { templateId, svgMarkup } : {}),
     });
     return NextResponse.json(
       {
@@ -386,6 +446,7 @@ export async function POST(request: Request) {
           workspace: created.workspace,
           createdAt: created.createdAt,
           url: created.url,
+          ...(category === "print-media" ? { templateId: created.templateId } : {}),
         },
       },
       { status: 201 },
@@ -398,6 +459,79 @@ export async function POST(request: Request) {
   }
 }
 
+/** Re-saving an already saved Print Media design updates the same My Files entry (no duplicates). */
+export async function PUT(request: Request) {
+  try {
+    const toolAccess = await requireToolAccess(request);
+    if (!toolAccess.ok) return toolAccess.response;
+    const userId = getUserId(request);
+    const body = await request.json().catch(() => ({}));
+    const rawId = clean(body?.id);
+    const id = rawId.startsWith("user-file:") ? rawId.slice("user-file:".length) : "";
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ success: false, error: "Valid file ID is required." }, { status: 400 });
+    }
+
+    const url = clean(body?.url);
+    const publicId = clean(body?.publicId);
+    const svgMarkup = typeof body?.svgMarkup === "string" ? body.svgMarkup : "";
+    if (!url || !svgMarkup.includes("<svg")) {
+      return NextResponse.json({ success: false, error: "A preview URL and the design SVG are required." }, { status: 400 });
+    }
+    if (svgMarkup.length > MAX_DESIGN_SVG_CHARS) {
+      return NextResponse.json(
+        { success: false, error: "This design is too large to save. Try removing a large image." },
+        { status: 413 },
+      );
+    }
+
+    await connectDB();
+    const existing: any = await UserFile.findOne({
+      _id: id,
+      userId: new mongoose.Types.ObjectId(userId),
+      category: "print-media",
+    });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "File not found." }, { status: 404 });
+    }
+
+    const oldPublicId = clean(existing.publicId) || publicIdFromCloudinaryUrl(clean(existing.url));
+    existing.url = url;
+    existing.publicId = publicId;
+    existing.svgMarkup = svgMarkup;
+    existing.markModified("svgMarkup");
+    if (clean(body?.name)) existing.name = clean(body.name).slice(0, 180);
+    // Bump updatedAt even when only the preview changed.
+    existing.set("updatedAt", new Date());
+    await existing.save();
+
+    // The old preview image is no longer used; removing it is best-effort.
+    if (oldPublicId && oldPublicId !== publicId) {
+      try {
+        await deleteCloudinaryAsset(oldPublicId);
+      } catch (cleanupError) {
+        console.warn("[my-files] old print preview cleanup failed:", cleanupError);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: `user-file:${String(existing._id)}`,
+        name: existing.name,
+        category: existing.category,
+        templateId: existing.templateId,
+        url: existing.url,
+        createdAt: existing.updatedAt,
+      },
+    });
+  } catch (error) {
+    const response = authError(error);
+    if (response) return response;
+    console.error("[my-files] PUT error:", error);
+    return NextResponse.json({ success: false, error: "Failed to update file." }, { status: 500 });
+  }
+}
 
 export async function DELETE(request: Request) {
   try {

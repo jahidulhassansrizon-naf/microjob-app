@@ -1,0 +1,220 @@
+{
+  "name": "SebaLagbe.com Premium Print Media Templates",
+  "version": "1.0.0",
+  "platform": "SebaLagbe.com",
+  "website": "https://sebalagbe.com",
+  "templateCount": 10,
+  "contactSheet": "previews/contact-sheet.png",
+  "templates": [
+    {
+      "id": "01-shop-signboard",
+      "title": "Premium Shop Signboard",
+      "platform": "SebaLagbe.com",
+      "category": "Shop & Business",
+      "description": "Premium emerald-and-navy storefront signboard with gold framing, large shop-name area, logo medallion, product categories, services and contact strip.",
+      "file": "templates/01-shop-signboard.svg",
+      "manifest": "manifests/01-shop-signboard.json",
+      "preview": "previews/01-shop-signboard.png",
+      "physicalSizeLabel": "10 ft x 3 ft",
+      "physicalWidth": 3048,
+      "physicalHeight": 914.4,
+      "unit": "mm",
+      "aspectRatio": "10:3",
+      "editableObjectCount": 53,
+      "objectTypes": {
+        "shape": 38,
+        "image": 1,
+        "text": 14
+      }
+    },
+    {
+      "id": "02-cash-memo",
+      "title": "Professional Cash Memo",
+      "platform": "SebaLagbe.com",
+      "category": "Shop & Business",
+      "description": "Emerald and navy cash memo with logo header, customer fields and an 11-row billing table with subtotal, discount and grand total.",
+      "file": "templates/02-cash-memo.svg",
+      "manifest": "manifests/02-cash-memo.json",
+      "preview": "previews/02-cash-memo.png",
+      "physicalSizeLabel": "A5 portrait",
+      "physicalWidth": 148,
+      "physicalHeight": 210,
+      "unit": "mm",
+      "aspectRatio": "148:210",
+      "editableObjectCount": 68,
+      "objectTypes": {
+        "shape": 46,
+        "image": 1,
+        "text": 21
+      }
+    },
+    {
+      "id": "03-money-receipt",
+      "title": "Premium Money Receipt",
+      "platform": "SebaLagbe.com",
+      "category": "Business Forms",
+      "description": "Royal blue and gold money receipt with double border, ribbon title, amount box, payment-method checkboxes and seal placeholder.",
+      "file": "templates/03-money-receipt.svg",
+      "manifest": "manifests/03-money-receipt.json",
+      "preview": "previews/03-money-receipt.png",
+      "physicalSizeLabel": "A5 portrait",
+      "physicalWidth": 148,
+      "physicalHeight": 210,
+      "unit": "mm",
+      "aspectRatio": "148:210",
+      "editableObjectCount": 52,
+      "objectTypes": {
+        "shape": 29,
+        "image": 2,
+        "text": 21
+      }
+    },
+    {
+      "id": "04-professional-invoice",
+      "title": "Professional Invoice / Bill",
+      "platform": "SebaLagbe.com",
+      "category": "Business Forms",
+      "description": "Corporate navy and burnt-orange invoice with bill-to and invoice-detail cards, 12-row table, payment details and totals.",
+      "file": "templates/04-professional-invoice.svg",
+      "manifest": "manifests/04-professional-invoice.json",
+      "preview": "previews/04-professional-invoice.png",
+      "physicalSizeLabel": "A4 portrait",
+      "physicalWidth": 210,
+      "physicalHeight": 297,
+      "unit": "mm",
+      "aspectRatio": "210:297",
+      "editableObjectCount": 92,
+      "objectTypes": {
+        "shape": 58,
+        "image": 1,
+        "text": 33
+      }
+    },
+    {
+      "id": "05-delivery-challan",
+      "title": "Delivery Challan",
+      "platform": "SebaLagbe.com",
+      "category": "Business Forms",
+      "description": "Dark blue and emerald delivery challan with sender/receiver panels, delivery address, 9-row item table, remarks and three signature blocks.",
+      "file": "templates/05-delivery-challan.svg",
+      "manifest": "manifests/05-delivery-challan.json",
+      "preview": "previews/05-delivery-challan.png",
+      "physicalSizeLabel": "A4 portrait",
+      "physicalWidth": 210,
+      "physicalHeight": 297,
+      "unit": "mm",
+      "aspectRatio": "210:297",
+      "editableObjectCount": 89,
+      "objectTypes": {
+        "shape": 56,
+        "image": 1,
+        "text": 32
+      }
+    },
+    {
+      "id": "06-mobile-repair-job-card",
+      "title": "Mobile Servicing Job Card",
+      "platform": "SebaLagbe.com",
+      "category": "Mobile Servicing & Electronics",
+      "description": "Matte-black and electric-blue service-centre job card with job ID, condition and accessory checklists, technician report and cost/delivery boxes.",
+      "file": "templates/06-mobile-repair-job-card.svg",
+      "manifest": "manifests/06-mobile-repair-job-card.json",
+      "preview": "previews/06-mobile-repair-job-card.png",
+      "physicalSizeLabel": "A5 portrait",
+      "physicalWidth": 148,
+      "physicalHeight": 210,
+      "unit": "mm",
+      "aspectRatio": "148:210",
+      "editableObjectCount": 87,
+      "objectTypes": {
+        "shape": 47,
+        "image": 1,
+        "text": 39
+      }
+    },
+    {
+      "id": "07-mobile-payment-stand",
+      "title": "Mobile Banking & Bangla QR Payment Stand",
+      "platform": "SebaLagbe.com",
+      "category": "Mobile Banking",
+      "description": "Tabletop merchant payment stand with an EMPTY square for the merchant's own QR image and four neutral payment-service logo placeholders. No payment-brand logos, no QR, no account numbers.",
+      "file": "templates/07-mobile-payment-stand.svg",
+      "manifest": "manifests/07-mobile-payment-stand.json",
+      "preview": "previews/07-mobile-payment-stand.png",
+      "physicalSizeLabel": "A5 portrait",
+      "physicalWidth": 148,
+      "physicalHeight": 210,
+      "unit": "mm",
+      "aspectRatio": "148:210",
+      "editableObjectCount": 29,
+      "objectTypes": {
+        "shape": 16,
+        "image": 6,
+        "text": 7
+      }
+    },
+    {
+      "id": "08-tolet-banner",
+      "title": "House Rent / TO-LET Banner",
+      "platform": "SebaLagbe.com",
+      "category": "Banner & Signboard",
+      "description": "High-visibility yellow/black TO-LET banner with giant headline, building photo placeholder, floor/bed/bath tiles, rent, availability, location and large phone number.",
+      "file": "templates/08-tolet-banner.svg",
+      "manifest": "manifests/08-tolet-banner.json",
+      "preview": "previews/08-tolet-banner.png",
+      "physicalSizeLabel": "3 ft x 2 ft",
+      "physicalWidth": 914.4,
+      "physicalHeight": 609.6,
+      "unit": "mm",
+      "aspectRatio": "3:2",
+      "editableObjectCount": 39,
+      "objectTypes": {
+        "shape": 22,
+        "text": 16,
+        "image": 1
+      }
+    },
+    {
+      "id": "09-restaurant-menu",
+      "title": "Premium Restaurant Menu",
+      "platform": "SebaLagbe.com",
+      "category": "Restaurant & Food",
+      "description": "Matte-black and gold menu with logo header, three category sections, two food-photo placeholders, special-offer badge/ribbon and contact footer.",
+      "file": "templates/09-restaurant-menu.svg",
+      "manifest": "manifests/09-restaurant-menu.json",
+      "preview": "previews/09-restaurant-menu.png",
+      "physicalSizeLabel": "A4 portrait",
+      "physicalWidth": 210,
+      "physicalHeight": 297,
+      "unit": "mm",
+      "aspectRatio": "210:297",
+      "editableObjectCount": 79,
+      "objectTypes": {
+        "shape": 34,
+        "image": 3,
+        "text": 42
+      }
+    },
+    {
+      "id": "10-school-admission-form",
+      "title": "School Admission Form",
+      "platform": "SebaLagbe.com",
+      "category": "Education & Institution",
+      "description": "Royal blue and emerald admission form with student photo box, structured handwriting fields, signatures and an official approval area.",
+      "file": "templates/10-school-admission-form.svg",
+      "manifest": "manifests/10-school-admission-form.json",
+      "preview": "previews/10-school-admission-form.png",
+      "physicalSizeLabel": "A4 portrait",
+      "physicalWidth": 210,
+      "physicalHeight": 297,
+      "unit": "mm",
+      "aspectRatio": "210:297",
+      "editableObjectCount": 72,
+      "objectTypes": {
+        "shape": 37,
+        "image": 2,
+        "text": 33
+      }
+    }
+  ]
+}

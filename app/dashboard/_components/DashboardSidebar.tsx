@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { X, User as UserIcon, LayoutDashboard, FileText, Languages, Wallet, Settings, MessageCircle, PlayCircle, LogOut, Sparkles, PenLine, Images, LayoutTemplate, Printer, Wrench, Users, type LucideIcon, } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
+import { DEFAULT_SUPPORT_GROUP_URL, normalizeGroupLink } from "@/app/_components/FloatingSupportGroup";
 interface UserData {
     fullName?: string;
     phoneNumber?: string;
@@ -43,6 +44,7 @@ interface NavItem {
     icon: LucideIcon;
     tone: Tone;
     badge?: Badge;
+    whatsapp?: boolean;
 }
 interface NavSection {
     title?: string;
@@ -126,9 +128,10 @@ const NAV_SECTIONS: NavSection[] = [
             { label: "Settings", href: "/settings", icon: Settings, tone: "slate" },
             {
                 label: "WhatsApp সাপোর্ট",
-                href: "/whatsapp-support",
+                href: "#whatsapp-support-group",
                 icon: MessageCircle,
                 tone: "emerald",
+                whatsapp: true,
             },
             { label: "Tutorial Video", href: "/tutorial-video", icon: PlayCircle, tone: "rose" },
         ],
@@ -164,9 +167,21 @@ function NavLink({ item, active, onClick, }: {
     const label = item.label === "Seba Lagbe Tools" && settings.branding.siteName !== "Seba Lagbe"
         ? `${settings.branding.siteName} Tools`
         : item.label;
-    return (<Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[15.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${active
+    const linkClass = `relative flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-1.5 text-[15.5px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${active
             ? "bg-[#F6D9A8] text-[#3B2F1E]"
-            : "text-[#3B2F1E] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`}>
+            : "text-[#3B2F1E] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]"}`;
+    if (item.whatsapp) {
+        // Opens the same WhatsApp support group as the floating button (admin can change it in Site Settings).
+        const footerExtra = settings.footer as unknown as {
+            whatsappGroupUrl?: string;
+        };
+        const groupUrl = normalizeGroupLink(footerExtra?.whatsappGroupUrl) || DEFAULT_SUPPORT_GROUP_URL;
+        return (<a href={groupUrl} target="_blank" rel="noopener noreferrer" onClick={onClick} className={linkClass}>
+      <IconChip icon={item.icon} tone={item.tone}/>
+      <span className="flex-1 truncate">{<DT>{label}</DT>}</span>
+    </a>);
+    }
+    return (<Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={linkClass}>
       {active && (<span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#DC2626]"/>)}
       <IconChip icon={item.icon} tone={item.tone}/>
       <span className="flex-1 truncate">{<DT>{label}</DT>}</span>

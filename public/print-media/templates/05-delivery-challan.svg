@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="05-delivery-challan" width="210mm" height="297mm" viewBox="0 0 210 297" overflow="visible" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif" data-template="05-delivery-challan" data-platform="SebaLagbe.com" data-unit="mm" data-bleed-mm="3" text-rendering="optimizeLegibility" font-kerning="normal">
+<title>Delivery Challan A4</title>
+<desc>SebaLagbe.com print-media template. Real SVG text/shapes; all objects with data-editable="true" are user-editable. 1 user unit = 1 mm.</desc>
+<g id="background_layer" data-layer-name="Background" data-editable="false">
+<rect id="bg_page" data-editable="true" data-object-type="shape" data-layer-name="Page Background" x="-3" y="-3" width="216" height="303" fill="#FFFFFF"/>
+</g>
+<g id="header_layer" data-layer-name="Header" data-editable="false">
+<rect id="header_band" data-editable="true" data-object-type="shape" data-layer-name="Header Band" x="-3" y="-3" width="216" height="47" fill="#0D2B5E"/>
+<rect id="header_emerald_strip" data-editable="true" data-object-type="shape" data-layer-name="Header Emerald Strip" x="-3" y="44" width="216" height="3.5" fill="#0A8A5F"/>
+</g>
+<g id="decorative_shapes" data-layer-name="Decorative Shapes" data-editable="false">
+<g id="deco_box" data-editable="true" data-object-type="shape" data-layer-name="Ghost Box Icon"><g transform="translate(150 -6) scale(2.17)" fill="none" stroke="#FFFFFF" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.12"><path d="M3 7.500L12 3l9 4.500v9L12 21l-9-4.500z"/><path d="M3 7.500l9 4.500 9-4.500M12 12v9"/></g></g>
+</g>
+<g id="logo_placeholder" data-layer-name="Logo Placeholder" data-editable="false">
+<g id="logo_image_placeholder_group" data-editable="false" data-layer-name="Company Logo Group">
+<rect id="logo_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="Company Logo" x="14" y="9" width="28" height="28" rx="3" fill="#FFFFFF" stroke="#8793AB" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="logo_image_placeholder_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(24.36 17.54) scale(0.3)" fill="none" stroke="#8793AB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="28" y="29.04" font-size="3.4" fill="#8793AB" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">লোগো</text>
+</g></g>
+</g>
+<g id="title_text" data-layer-name="Company Identity" data-editable="false">
+<text id="company_name_text" data-editable="true" data-object-type="text" data-layer-name="Company Name" x="48" y="20" font-size="7.6" font-weight="800" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="48">আপনার কোম্পানির নাম</tspan></text>
+<text id="company_tagline_text" data-editable="true" data-object-type="text" data-layer-name="Company Tagline" x="48" y="26" font-size="3.5" font-weight="500" fill="#BFD2F2" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="48">পরিবেশক / ব্যবসার ধরন</tspan></text>
+</g>
+<g id="contact_information" data-layer-name="Company Contact" data-editable="false">
+<text id="company_address_text" data-editable="true" data-object-type="text" data-layer-name="Company Address" x="48" y="32" font-size="3.3" font-weight="400" fill="#FFFFFF" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="48">ঠিকানা: রোড, এলাকা, জেলা</tspan></text>
+<text id="company_phone_text" data-editable="true" data-object-type="text" data-layer-name="Company Phone" x="48" y="37.5" font-size="3.3" font-weight="600" fill="#FFFFFF" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="48">মোবাইল: ০১XXX-XXXXXX</tspan></text>
+</g>
+<g id="challan_title" data-layer-name="Challan Title" data-editable="false">
+<text id="challan_title_text" data-editable="true" data-object-type="text" data-layer-name="Challan Title" x="196" y="19" font-size="8.5" font-weight="800" fill="#FFFFFF" text-anchor="end" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="196">ডেলিভারি চালান</tspan></text>
+<text id="challan_subtitle_text" data-editable="true" data-object-type="text" data-layer-name="Challan Subtitle" x="196" y="26" font-size="3.6" font-weight="700" fill="#6FE0B5" text-anchor="end" letter-spacing="1.2" font-family="&quot;Plus Jakarta Sans&quot;, &quot;Inter&quot;, Arial, sans-serif"><tspan x="196">DELIVERY CHALLAN</tspan></text>
+</g>
+<g id="challan_meta" data-layer-name="Challan Meta" data-editable="false">
+<rect id="meta_box_01" data-editable="true" data-object-type="shape" data-layer-name="Meta Box 1" x="14" y="53" width="58" height="13" rx="1.2" fill="#EEF3FA" stroke="#0A8A5F" stroke-width="0.35"/>
+<text id="meta_label_01" data-editable="true" data-object-type="text" data-layer-name="Meta Label 1" x="17" y="58.2" font-size="3.2" font-weight="700" fill="#0A8A5F" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="17">চালান নং</tspan></text>
+<line id="meta_line_01" data-editable="true" data-object-type="shape" data-layer-name="Meta Line 1" x1="17" y1="63.5" x2="69" y2="63.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<rect id="meta_box_02" data-editable="true" data-object-type="shape" data-layer-name="Meta Box 2" x="76" y="53" width="58" height="13" rx="1.2" fill="#EEF3FA" stroke="#0A8A5F" stroke-width="0.35"/>
+<text id="meta_label_02" data-editable="true" data-object-type="text" data-layer-name="Meta Label 2" x="79" y="58.2" font-size="3.2" font-weight="700" fill="#0A8A5F" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="79">তারিখ</tspan></text>
+<line id="meta_line_02" data-editable="true" data-object-type="shape" data-layer-name="Meta Line 2" x1="79" y1="63.5" x2="131" y2="63.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<rect id="meta_box_03" data-editable="true" data-object-type="shape" data-layer-name="Meta Box 3" x="138" y="53" width="58" height="13" rx="1.2" fill="#EEF3FA" stroke="#0A8A5F" stroke-width="0.35"/>
+<text id="meta_label_03" data-editable="true" data-object-type="text" data-layer-name="Meta Label 3" x="141" y="58.2" font-size="3.2" font-weight="700" fill="#0A8A5F" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="141">অর্ডার / রেফারেন্স নং</tspan></text>
+<line id="meta_line_03" data-editable="true" data-object-type="shape" data-layer-name="Meta Line 3" x1="141" y1="63.5" x2="193" y2="63.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+</g>
+<g id="party_details" data-layer-name="Sender &amp; Receiver" data-editable="false">
+<rect id="party_head_01" data-editable="true" data-object-type="shape" data-layer-name="প্রেরকের তথ্য Header" x="14" y="71" width="89" height="7.5" fill="#0D2B5E"/>
+<text id="party_title_01" data-editable="true" data-object-type="text" data-layer-name="প্রেরকের তথ্য Title" x="17" y="76.4" font-size="3.9" font-weight="700" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="17">প্রেরকের তথ্য</tspan></text>
+<rect id="party_box_01" data-editable="true" data-object-type="shape" data-layer-name="প্রেরকের তথ্য Box" x="14" y="78.5" width="89" height="30" fill="none" stroke="#0D2B5E" stroke-width="0.4"/>
+<text id="party1_f1_label" data-editable="true" data-object-type="text" data-layer-name="প্রেরকের তথ্য নাম: Label" x="17" y="86" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="17">নাম:</tspan></text>
+<line id="party1_f1_line" data-editable="true" data-object-type="shape" data-layer-name="প্রেরকের তথ্য নাম: Line" x1="25.61" y1="86.8" x2="100" y2="86.8" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="party1_f2_label" data-editable="true" data-object-type="text" data-layer-name="প্রেরকের তথ্য মোবাইল: Label" x="17" y="94.5" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="17">মোবাইল:</tspan></text>
+<line id="party1_f2_line" data-editable="true" data-object-type="shape" data-layer-name="প্রেরকের তথ্য মোবাইল: Line" x1="29.49" y1="95.3" x2="100" y2="95.3" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="party1_f3_label" data-editable="true" data-object-type="text" data-layer-name="প্রেরকের তথ্য ঠিকানা: Label" x="17" y="103" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="17">ঠিকানা:</tspan></text>
+<line id="party1_f3_line" data-editable="true" data-object-type="shape" data-layer-name="প্রেরকের তথ্য ঠিকানা: Line" x1="27.55" y1="103.8" x2="100" y2="103.8" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<rect id="party_head_02" data-editable="true" data-object-type="shape" data-layer-name="প্রাপকের তথ্য Header" x="107" y="71" width="89" height="7.5" fill="#0A8A5F"/>
+<text id="party_title_02" data-editable="true" data-object-type="text" data-layer-name="প্রাপকের তথ্য Title" x="110" y="76.4" font-size="3.9" font-weight="700" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="110">প্রাপকের তথ্য</tspan></text>
+<rect id="party_box_02" data-editable="true" data-object-type="shape" data-layer-name="প্রাপকের তথ্য Box" x="107" y="78.5" width="89" height="30" fill="none" stroke="#0A8A5F" stroke-width="0.4"/>
+<text id="party2_f1_label" data-editable="true" data-object-type="text" data-layer-name="প্রাপকের তথ্য নাম: Label" x="110" y="86" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="110">নাম:</tspan></text>
+<line id="party2_f1_line" data-editable="true" data-object-type="shape" data-layer-name="প্রাপকের তথ্য নাম: Line" x1="118.61" y1="86.8" x2="193" y2="86.8" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="party2_f2_label" data-editable="true" data-object-type="text" data-layer-name="প্রাপকের তথ্য মোবাইল: Label" x="110" y="94.5" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="110">মোবাইল:</tspan></text>
+<line id="party2_f2_line" data-editable="true" data-object-type="shape" data-layer-name="প্রাপকের তথ্য মোবাইল: Line" x1="122.49" y1="95.3" x2="193" y2="95.3" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="party2_f3_label" data-editable="true" data-object-type="text" data-layer-name="প্রাপকের তথ্য ঠিকানা: Label" x="110" y="103" font-size="3.4" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="110">ঠিকানা:</tspan></text>
+<line id="party2_f3_line" data-editable="true" data-object-type="shape" data-layer-name="প্রাপকের তথ্য ঠিকানা: Line" x1="120.55" y1="103.8" x2="193" y2="103.8" stroke="#9FB0CC" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<rect id="deliv_box" data-editable="true" data-object-type="shape" data-layer-name="Delivery Address Box" x="14" y="112" width="182" height="15" rx="1.2" fill="#EEF3FA" stroke="#0A8A5F" stroke-width="0.35"/>
+<text id="deliv_label" data-editable="true" data-object-type="text" data-layer-name="Delivery Address Label" x="17" y="118" font-size="3.6" font-weight="700" fill="#0A8A5F" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="17">ডেলিভারি ঠিকানা:</tspan></text>
+<line id="deliv_line_1" data-editable="true" data-object-type="shape" data-layer-name="Delivery Line 1" x1="45" y1="118.8" x2="193" y2="118.8" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<line id="deliv_line_2" data-editable="true" data-object-type="shape" data-layer-name="Delivery Line 2" x1="17" y1="124.5" x2="193" y2="124.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+</g>
+<g id="billing_table" data-layer-name="Items Table" data-editable="false">
+<rect id="itm_head" data-editable="true" data-object-type="shape" data-layer-name="Table Header Bar" x="14" y="132" width="182" height="8.5" fill="#0D2B5E"/>
+<text id="itm_head_01" data-editable="true" data-object-type="text" data-layer-name="Column Heading 1" x="19" y="137.58" font-size="3.7" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="19">নং</tspan></text>
+<text id="itm_head_02" data-editable="true" data-object-type="text" data-layer-name="Column Heading 2" x="26.2" y="137.58" font-size="3.7" font-weight="700" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="26.2">পণ্যের বিবরণ</tspan></text>
+<text id="itm_head_03" data-editable="true" data-object-type="text" data-layer-name="Column Heading 3" x="124" y="137.58" font-size="3.7" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="124">একক</tspan></text>
+<text id="itm_head_04" data-editable="true" data-object-type="text" data-layer-name="Column Heading 4" x="149" y="137.58" font-size="3.7" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="149">পরিমাণ</tspan></text>
+<text id="itm_head_05" data-editable="true" data-object-type="text" data-layer-name="Column Heading 5" x="179" y="137.58" font-size="3.7" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="179">মন্তব্য</tspan></text>
+<rect id="itm_zebra_02" data-editable="true" data-object-type="shape" data-layer-name="Zebra Row 2" x="14" y="149.5" width="182" height="9" fill="#F4F7FC"/>
+<rect id="itm_zebra_04" data-editable="true" data-object-type="shape" data-layer-name="Zebra Row 4" x="14" y="167.5" width="182" height="9" fill="#F4F7FC"/>
+<rect id="itm_zebra_06" data-editable="true" data-object-type="shape" data-layer-name="Zebra Row 6" x="14" y="185.5" width="182" height="9" fill="#F4F7FC"/>
+<rect id="itm_zebra_08" data-editable="true" data-object-type="shape" data-layer-name="Zebra Row 8" x="14" y="203.5" width="182" height="9" fill="#F4F7FC"/>
+<line id="itm_row_line_01" data-editable="true" data-object-type="shape" data-layer-name="Row Line 1" x1="14" y1="149.5" x2="196" y2="149.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_02" data-editable="true" data-object-type="shape" data-layer-name="Row Line 2" x1="14" y1="158.5" x2="196" y2="158.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_03" data-editable="true" data-object-type="shape" data-layer-name="Row Line 3" x1="14" y1="167.5" x2="196" y2="167.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_04" data-editable="true" data-object-type="shape" data-layer-name="Row Line 4" x1="14" y1="176.5" x2="196" y2="176.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_05" data-editable="true" data-object-type="shape" data-layer-name="Row Line 5" x1="14" y1="185.5" x2="196" y2="185.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_06" data-editable="true" data-object-type="shape" data-layer-name="Row Line 6" x1="14" y1="194.5" x2="196" y2="194.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_07" data-editable="true" data-object-type="shape" data-layer-name="Row Line 7" x1="14" y1="203.5" x2="196" y2="203.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_08" data-editable="true" data-object-type="shape" data-layer-name="Row Line 8" x1="14" y1="212.5" x2="196" y2="212.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_row_line_09" data-editable="true" data-object-type="shape" data-layer-name="Row Line 9" x1="14" y1="221.5" x2="196" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_col_line_01" data-editable="true" data-object-type="shape" data-layer-name="Column Divider 1" x1="24" y1="140.5" x2="24" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_col_line_02" data-editable="true" data-object-type="shape" data-layer-name="Column Divider 2" x1="112" y1="140.5" x2="112" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_col_line_03" data-editable="true" data-object-type="shape" data-layer-name="Column Divider 3" x1="136" y1="140.5" x2="136" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_col_line_04" data-editable="true" data-object-type="shape" data-layer-name="Column Divider 4" x1="162" y1="140.5" x2="162" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_edge_left" data-editable="true" data-object-type="shape" data-layer-name="Table Left Edge" x1="14" y1="140.5" x2="14" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<line id="itm_edge_right" data-editable="true" data-object-type="shape" data-layer-name="Table Right Edge" x1="196" y1="140.5" x2="196" y2="221.5" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt"/>
+<rect id="itm_outer" data-editable="true" data-object-type="shape" data-layer-name="Table Outer Border" x="14" y="132" width="182" height="89.5" fill="none" stroke="#0D2B5E" stroke-width="0.5"/>
+</g>
+<g id="remarks_section" data-layer-name="Remarks" data-editable="false">
+<text id="remarks_label" data-editable="true" data-object-type="text" data-layer-name="Remarks Label" x="14" y="229.5" font-size="3.6" font-weight="700" fill="#0D2B5E" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="14">বিশেষ মন্তব্য:</tspan></text>
+<line id="remarks_line_01" data-editable="true" data-object-type="shape" data-layer-name="Remarks Line 1" x1="14" y1="237" x2="128" y2="237" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<line id="remarks_line_02" data-editable="true" data-object-type="shape" data-layer-name="Remarks Line 2" x1="14" y1="244" x2="128" y2="244" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<line id="remarks_line_03" data-editable="true" data-object-type="shape" data-layer-name="Remarks Line 3" x1="14" y1="251" x2="128" y2="251" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<rect id="total_box" data-editable="true" data-object-type="shape" data-layer-name="Total Quantity Box" x="138" y="225" width="58" height="22" rx="1.5" fill="#0A8A5F"/>
+<text id="total_label" data-editable="true" data-object-type="text" data-layer-name="Total Quantity Label" x="142" y="232.5" font-size="3.8" font-weight="700" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="142">মোট পরিমাণ</tspan></text>
+<line id="total_line" data-editable="true" data-object-type="shape" data-layer-name="Total Quantity Line" x1="142" y1="242" x2="192" y2="242" stroke="#FFFFFF" stroke-width="0.3" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+</g>
+<g id="signature_area" data-layer-name="Signatures" data-editable="false">
+<line id="sig_line_01" data-editable="true" data-object-type="shape" data-layer-name="প্রস্তুতকারী (Prepared By) Signature Line" x1="14" y1="268" x2="72" y2="268" stroke="#0D2B5E" stroke-width="0.3" stroke-linecap="butt"/>
+<text id="sig_label_01" data-editable="true" data-object-type="text" data-layer-name="প্রস্তুতকারী (Prepared By) Label" x="14" y="272.2" font-size="3" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">প্রস্তুতকারী (Prepared By)</tspan></text>
+<line id="sig_name_line_01" data-editable="true" data-object-type="shape" data-layer-name="প্রস্তুতকারী (Prepared By) Name Line" x1="24" y1="262.8" x2="72" y2="262.8" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="sig_name_label_01" data-editable="true" data-object-type="text" data-layer-name="প্রস্তুতকারী (Prepared By) Name" x="14" y="263.5" font-size="3" font-weight="500" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">নাম:</tspan></text>
+<line id="sig_line_02" data-editable="true" data-object-type="shape" data-layer-name="ডেলিভারিকারী (Delivered By) Signature Line" x1="76" y1="268" x2="134" y2="268" stroke="#0D2B5E" stroke-width="0.3" stroke-linecap="butt"/>
+<text id="sig_label_02" data-editable="true" data-object-type="text" data-layer-name="ডেলিভারিকারী (Delivered By) Label" x="76" y="272.2" font-size="3" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="76">ডেলিভারিকারী (Delivered By)</tspan></text>
+<line id="sig_name_line_02" data-editable="true" data-object-type="shape" data-layer-name="ডেলিভারিকারী (Delivered By) Name Line" x1="86" y1="262.8" x2="134" y2="262.8" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="sig_name_label_02" data-editable="true" data-object-type="text" data-layer-name="ডেলিভারিকারী (Delivered By) Name" x="76" y="263.5" font-size="3" font-weight="500" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="76">নাম:</tspan></text>
+<line id="sig_line_03" data-editable="true" data-object-type="shape" data-layer-name="প্রাপক (Received By) Signature Line" x1="138" y1="268" x2="196" y2="268" stroke="#0D2B5E" stroke-width="0.3" stroke-linecap="butt"/>
+<text id="sig_label_03" data-editable="true" data-object-type="text" data-layer-name="প্রাপক (Received By) Label" x="138" y="272.2" font-size="3" font-weight="600" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="138">প্রাপক (Received By)</tspan></text>
+<line id="sig_name_line_03" data-editable="true" data-object-type="shape" data-layer-name="প্রাপক (Received By) Name Line" x1="148" y1="262.8" x2="196" y2="262.8" stroke="#9FB0CC" stroke-width="0.22" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="sig_name_label_03" data-editable="true" data-object-type="text" data-layer-name="প্রাপক (Received By) Name" x="138" y="263.5" font-size="3" font-weight="500" fill="#14284F" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="138">নাম:</tspan></text>
+</g>
+<g id="footer_layer" data-layer-name="Footer" data-editable="false">
+<rect id="footer_band" data-editable="true" data-object-type="shape" data-layer-name="Footer Band" x="-3" y="280" width="216" height="20" fill="#0A8A5F"/>
+<text id="footer_text" data-editable="true" data-object-type="text" data-layer-name="Footer Note" x="105" y="287.5" font-size="3.8" font-weight="600" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="105">মালামাল বুঝে নিয়ে স্বাক্ষর করুন — ধন্যবাদ</tspan></text>
+</g>
+<g id="print_guides" data-layer-name="Print Guides (hidden - non-printing)" data-editable="false">
+<g id="print_guides_group" display="none" data-editable="false" data-print="false" pointer-events="none"><rect id="guide_trim" x="0" y="0" width="210" height="297" fill="none" stroke="#E5007D" stroke-width="0.3"/><rect id="guide_safe" x="8" y="8" width="194" height="281" fill="none" stroke="#00A3E0" stroke-width="0.3" stroke-dasharray="1.7 1.52"/><rect id="guide_bleed" x="-3" y="-3" width="216" height="303" fill="none" stroke="#FF6A00" stroke-width="0.3" stroke-dasharray="1.7 1.52"/></g>
+</g>
+</svg>

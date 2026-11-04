@@ -61,8 +61,13 @@ type CustomerForm = {
 };
 type Filter = "all" | InvoiceStatus | "Overdue";
 /* ───────────────────────── Helpers ───────────────────────── */
-const CUSTOMER_KEY = "sohozkaj:customers:v1";
-const INVOICE_KEY = "sohozkaj:invoices:v1";
+const CUSTOMER_KEY = "sebalagbe:customers:v1";
+const INVOICE_KEY = "sebalagbe:invoices:v1";
+// Older saves used the previous brand name; they are read once and copied to the new keys.
+const LEGACY_KEYS: Record<string, string> = {
+    [CUSTOMER_KEY]: "sohozkaj:customers:v1",
+    [INVOICE_KEY]: "sohozkaj:invoices:v1",
+};
 const blankCustomer: CustomerForm = {
     name: "",
     phone: "",
@@ -70,7 +75,7 @@ const blankCustomer: CustomerForm = {
     address: "",
     note: "",
 };
-const inputCls = "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400";
+const inputCls = "w-full rounded-xl border border-[#D2C29B] bg-[#FFFBF0] px-3.5 py-2.5 text-sm text-[#2B2113] shadow-sm outline-none transition placeholder:text-[#A99776] hover:border-[#B8A57C] focus:border-[#EF4444] focus:ring-4 focus:ring-[#FDD5D5] disabled:cursor-not-allowed disabled:bg-[#EFE3C8] disabled:text-[#A99776]";
 const uid = () => typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -127,7 +132,8 @@ const dueOf = (inv: Invoice) => inv.status === "Draft"
 // Defensive load: tolerates old/corrupt data and migrates invoices that had no paidAmount.
 function loadList<T>(k: string): T[] {
     try {
-        const v = JSON.parse(localStorage.getItem(key(k)) || "[]");
+        const stored = localStorage.getItem(key(k)) ?? (LEGACY_KEYS[k] ? localStorage.getItem(key(LEGACY_KEYS[k])) : null);
+        const v = JSON.parse(stored || "[]");
         return Array.isArray(v) ? v : [];
     }
     catch {
@@ -160,7 +166,13 @@ function nextInvoiceNumber(invoices: Invoice[]) {
 }
 function downloadCsv(name: string, rows: (string | number)[][]) {
     const csv = rows
-        .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+        .map((r) => r.map((c) => {
+        // Stop spreadsheet formula injection (=, @) from names/notes typed by the user.
+        let v = String(c);
+        if (typeof c === "string" && /^[=@\t\r]/.test(v))
+            v = `'${v}`;
+        return `"${v.replace(/"/g, '""')}"`;
+    }).join(","))
         .join("\r\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -500,6 +512,8 @@ export default function CustomersInvoicesPage() {
         };
     }));
     const markPaid = (i: Invoice) => {
+        if (i.status === "Draft" || i.status === "Paid")
+            return;
         applyPayment(i.id, dueOf(i) || totalsOf(i).total);
         notify(`${i.number} marked as paid.`);
     };
@@ -566,44 +580,52 @@ export default function CustomersInvoicesPage() {
         if (!printInvoice(i, customerMap.get(i.customerId)))
             notify("Allow pop-ups to print the invoice.");
     };
-    return (<div className="min-h-screen bg-[#F8FAFC] font-sans text-[#0F172A]">
+    return (<div className="acct-page min-h-screen bg-[#F1E8D3] text-[#2B2113]">
+      <style>{`
+          .acct-page, .acct-page *:not(svg):not(svg *) {
+            font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+          }
+        `}</style>
       <DashboardNavbar />
       <main className="mx-auto max-w-[1220px] px-4 py-8 sm:px-6 lg:py-10">
         <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Link href="/dashboard" className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600">
+            <Link href="/dashboard" className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[#6B5A40] hover:text-[#DC2626]">
               <ArrowLeft size={14}/><T>{"Back to dashboard\n            "}</T></Link>
             <div className="flex items-center gap-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FEE9E9] text-[#DC2626] ring-1 ring-inset ring-[#FDD5D5]">
                 <Users size={20}/>
               </span>
               <div>
-                <h1 className="text-2xl font-black tracking-tight sm:text-3xl"><T>{"Customers &amp; Invoices\n                "}</T></h1>
-                <p className="mt-1 text-sm font-medium text-slate-500"><T>{"Keep customer details, create invoices, and track what is paid\n                  or due.\n                "}</T></p>
+                <h1 className="text-2xl font-black tracking-tight sm:text-3xl"><T>{"Customers & Invoices\n                "}</T></h1>
+                <p className="mt-1 text-sm font-medium text-[#6B5A40]"><T>{"Keep customer details, create invoices, and track what is paid\n                  or due.\n                "}</T></p>
               </div>
             </div>
           </div>
-          <button type="button" onClick={tab === "customers" ? openNewCustomer : openNewInvoice} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">
+          <button type="button" onClick={tab === "customers" ? openNewCustomer : openNewInvoice} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#B91C1C]">
             <Plus size={15}/>{<T>{" "}</T>}
             {tab === "customers" ? <T>{"Add customer"}</T> : <T>{"Create invoice"}</T>}
           </button>
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <MiniStat label="Customers" value={String(customers.length)} icon={<Users size={18}/>} accent="bg-blue-50 text-blue-600"/>
-          <MiniStat label="Billed" value={money(stats.billed)} icon={<FileText size={18}/>} accent="bg-slate-100 text-slate-600"/>
+          <MiniStat label="Customers" value={String(customers.length)} icon={<Users size={18}/>} accent="bg-[#FEE9E9] text-[#DC2626]"/>
+          <MiniStat label="Billed" value={money(stats.billed)} icon={<FileText size={18}/>} accent="bg-[#EFE3C8] text-[#5A4A32]"/>
           <MiniStat label="Paid" value={money(stats.paid)} tone="text-emerald-600" icon={<CheckCircle2 size={18}/>} accent="bg-emerald-50 text-emerald-600"/>
           <MiniStat label="Due" value={money(stats.due)} tone={stats.due > 0 ? "text-amber-600" : undefined} sub={stats.overdue ? `${stats.overdue} overdue` : undefined} icon={<Banknote size={18}/>} accent="bg-amber-50 text-amber-600"/>
         </div>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex w-fit rounded-xl bg-slate-100 p-1" role="tablist">
+        <section className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-[#EFE3C8] p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex w-fit rounded-xl bg-[#EFE3C8] p-1" role="tablist">
               {(["customers", "invoices"] as const).map((t) => (<button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => {
                 setTab(t);
                 setQuery("");
                 setFilter("all");
-            }} className={`cursor-pointer rounded-lg px-4 py-2 text-xs font-bold capitalize ${tab === t ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+            }} className={`cursor-pointer rounded-lg px-4 py-2 text-xs font-bold capitalize ${tab === t ? "bg-[#FFFBF0] text-[#B91C1C] shadow-sm" : "text-[#6B5A40] hover:text-[#3B2F1E]"}`}>
                   {t}
                   {t === "customers"
             ? <T>{` (${customers.length})`}</T> : <T>{` (${invoices.length})`}</T>}
@@ -611,20 +633,20 @@ export default function CustomersInvoicesPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <div className="relative min-w-0 flex-1 sm:min-w-[280px]">
-                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A99776]"/>
                 <input value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search" placeholder={tab === "customers"
             ? "Search name, phone, email..."
-            : "Search invoice number or customer..."} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-blue-500 focus:bg-white"/>
+            : "Search invoice number or customer..."} className="w-full rounded-xl border border-[#E3D6B8] bg-[#F8EFD6] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#EF4444] focus:bg-[#FFFBF0]"/>
               </div>
-              {tab === "invoices" && (<select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} aria-label="Filter by status" className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold">
+              {tab === "invoices" && (<select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} aria-label="Filter by status" className="cursor-pointer rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-3 py-2 text-xs font-semibold">
                   <option value="all"><T>{"All statuses"}</T></option>
-                  <option><T>{"Draft"}</T></option>
-                  <option><T>{"Unpaid"}</T></option>
-                  <option><T>{"Partial"}</T></option>
-                  <option><T>{"Paid"}</T></option>
-                  <option><T>{"Overdue"}</T></option>
+                  <option value="Draft"><T>{"Draft"}</T></option>
+                  <option value="Unpaid"><T>{"Unpaid"}</T></option>
+                  <option value="Partial"><T>{"Partial"}</T></option>
+                  <option value="Paid"><T>{"Paid"}</T></option>
+                  <option value="Overdue"><T>{"Overdue"}</T></option>
                 </select>)}
-              <button type="button" onClick={exportCsv} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+              <button type="button" onClick={exportCsv} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-3 py-2 text-xs font-bold text-[#5A4A32] hover:bg-[#F8EFD6]">
                 <Download size={14}/><T>{"Export CSV\n              "}</T></button>
             </div>
           </div>
@@ -648,7 +670,7 @@ export default function CustomersInvoicesPage() {
           </form>
         </Modal>)}
       {confirm && (<ConfirmDialog {...confirm} onClose={() => setConfirm(null)}/>)}
-      {toast && (<div role="status" className="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xl">
+      {toast && (<div role="status" className="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 rounded-xl bg-[#2B2113] px-4 py-2.5 text-xs font-semibold text-white shadow-xl">
           {toast}
         </div>)}
     </div>);
@@ -670,7 +692,7 @@ function blankInvoice(customerId: string): InvoiceForm {
 }
 /* ───────────────────────── Tables ───────────────────────── */
 const th = "px-5 py-3 whitespace-nowrap";
-const iconBtn = "cursor-pointer rounded-lg p-2 text-slate-500";
+const iconBtn = "cursor-pointer rounded-lg p-2 text-[#6B5A40]";
 function CustomerTable({ customers, stats, searching, onAdd, onEdit, onDelete, }: {
     onAdd: () => void;
     customers: Customer[];
@@ -684,7 +706,7 @@ function CustomerTable({ customers, stats, searching, onAdd, onEdit, onDelete, }
 }) {
     return (<div className="overflow-x-auto">
       <table className="min-w-full text-left">
-        <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+        <thead className="bg-[#F8EFD6] text-[11px] font-bold uppercase tracking-wide text-[#6B5A40]">
           <tr>
             <th className={th}><T>{"Customer"}</T></th>
             <th className={th}><T>{"Phone"}</T></th>
@@ -694,38 +716,38 @@ function CustomerTable({ customers, stats, searching, onAdd, onEdit, onDelete, }
             <th className={`${th} text-right`}><T>{"Actions"}</T></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#EFE3C8]">
           {customers.map((c) => {
             const s = stats.get(c.id);
-            return (<tr key={c.id} className="hover:bg-slate-50/70">
+            return (<tr key={c.id} className="hover:bg-[#F8EFD6]/70">
                 <td className="px-5 py-3">
-                  <p className="text-sm font-black text-slate-800">{c.name}</p>
-                  <p className="mt-0.5 max-w-[220px] truncate text-[11px] text-slate-400">
+                  <p className="text-sm font-black text-[#2B2113]">{c.name}</p>
+                  <p className="mt-0.5 max-w-[220px] truncate text-[11px] text-[#A99776]">
                     {c.note || "No note"}
                   </p>
                 </td>
-                <td className="px-5 py-3 text-xs font-semibold text-slate-600">
-                  {c.phone ? (<a href={`tel:${normPhone(c.phone)}`} className="hover:text-blue-600">
+                <td className="px-5 py-3 text-xs font-semibold text-[#5A4A32]">
+                  {c.phone ? (<a href={`tel:${normPhone(c.phone)}`} className="hover:text-[#DC2626]">
                       {c.phone}
                     </a>) : <T>{("—")}</T>}
                 </td>
-                <td className="px-5 py-3 text-xs text-slate-600">
-                  {c.email ? (<a href={`mailto:${c.email}`} className="hover:text-blue-600">
+                <td className="px-5 py-3 text-xs text-[#5A4A32]">
+                  {c.email ? (<a href={`mailto:${c.email}`} className="hover:text-[#DC2626]">
                       {c.email}
                     </a>) : <T>{("—")}</T>}
                 </td>
-                <td className="max-w-[260px] px-5 py-3 text-xs text-slate-500">
+                <td className="max-w-[260px] px-5 py-3 text-xs text-[#6B5A40]">
                   {c.address || "—"}
                 </td>
                 <td className="px-5 py-3 text-right text-xs">
-                  <span className="text-slate-500">{s?.count || 0}<T>{"inv"}</T></span>
+                  <span className="text-[#6B5A40]">{s?.count || 0}<T>{"inv"}</T></span>
                   {s && s.due > 0 && (<span className="ml-2 font-black text-amber-600">
                       {money(s.due)}
                     </span>)}
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex justify-end gap-1">
-                    <button type="button" aria-label={`Edit ${c.name}`} title="Edit" onClick={() => onEdit(c)} className={`${iconBtn} hover:bg-blue-50 hover:text-blue-600`}>
+                    <button type="button" aria-label={`Edit ${c.name}`} title="Edit" onClick={() => onEdit(c)} className={`${iconBtn} hover:bg-[#FEE9E9] hover:text-[#DC2626]`}>
                       <Edit3 size={15}/>
                     </button>
                     <button type="button" aria-label={`Delete ${c.name}`} title="Delete" onClick={() => onDelete(c)} className={`${iconBtn} hover:bg-rose-50 hover:text-rose-600`}>
@@ -737,17 +759,17 @@ function CustomerTable({ customers, stats, searching, onAdd, onEdit, onDelete, }
         })}
           {customers.length === 0 && (<tr>
               <td colSpan={6} className="px-5 py-14 text-center">
-                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEE9E9] text-[#DC2626]">
                   <Users size={22}/>
                 </span>
-                <p className="text-sm font-bold text-slate-700">
+                <p className="text-sm font-bold text-[#3B2F1E]">
                   {searching ? <T>{"No matching customers"}</T> : <T>{"No customers yet"}</T>}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[#6B5A40]">
                   {searching
             ? <T>{"Try a different search."}</T> : <T>{"Add your first customer to start creating invoices."}</T>}
                 </p>
-                {!searching && (<button type="button" onClick={onAdd} className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">
+                {!searching && (<button type="button" onClick={onAdd} className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#B91C1C]">
                     <Plus size={14}/><T>{"Add customer\n                  "}</T></button>)}
               </td>
             </tr>)}
@@ -768,7 +790,7 @@ function InvoiceTable({ onAdd, invoices, customers, searching, onEdit, onDelete,
 }) {
     return (<div className="overflow-x-auto">
       <table className="min-w-full text-left">
-        <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+        <thead className="bg-[#F8EFD6] text-[11px] font-bold uppercase tracking-wide text-[#6B5A40]">
           <tr>
             <th className={th}><T>{"Invoice"}</T></th>
             <th className={th}><T>{"Customer"}</T></th>
@@ -779,30 +801,30 @@ function InvoiceTable({ onAdd, invoices, customers, searching, onEdit, onDelete,
             <th className={`${th} text-right`}><T>{"Actions"}</T></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#EFE3C8]">
           {invoices.map((i) => {
             const c = customers.get(i.customerId);
             const open = i.status !== "Paid" && i.status !== "Draft";
-            return (<tr key={i.id} className="hover:bg-slate-50/70">
+            return (<tr key={i.id} className="hover:bg-[#F8EFD6]/70">
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FEE9E9] text-[#DC2626]">
                       <FileText size={15}/>
                     </span>
-                    <span className="text-sm font-black text-slate-800">
+                    <span className="text-sm font-black text-[#2B2113]">
                       {i.number}
                     </span>
                   </div>
                 </td>
                 <td className="px-5 py-3">
-                  <p className="text-sm font-bold text-slate-800">
+                  <p className="text-sm font-bold text-[#2B2113]">
                     {c?.name || "Unknown customer"}
                   </p>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-[#A99776]">
                     {c?.phone || c?.email || ""}
                   </p>
                 </td>
-                <td className="px-5 py-3 text-xs text-slate-500">
+                <td className="px-5 py-3 text-xs text-[#6B5A40]">
                   <div>{i.issueDate}</div>
                   <div className={`mt-0.5 ${isOverdue(i) ? "font-bold text-rose-600" : ""}`}><T>{"Due "}</T>{i.dueDate}
                   </div>
@@ -810,24 +832,24 @@ function InvoiceTable({ onAdd, invoices, customers, searching, onEdit, onDelete,
                 <td className="px-5 py-3">
                   <StatusPill status={isOverdue(i) ? "Overdue" : i.status}/>
                 </td>
-                <td className="px-5 py-3 text-right text-sm font-black text-slate-900">
+                <td className="px-5 py-3 text-right text-sm font-black text-[#2B2113]">
                   {money(totalsOf(i).total)}
                 </td>
-                <td className={`px-5 py-3 text-right text-sm font-bold ${dueOf(i) > 0 ? "text-amber-600" : "text-slate-400"}`}>
+                <td className={`px-5 py-3 text-right text-sm font-bold ${dueOf(i) > 0 ? "text-amber-600" : "text-[#A99776]"}`}>
                   {money(dueOf(i))}
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex justify-end gap-1">
-                    {open && (<button type="button" title="Record payment" aria-label="Record payment" onClick={() => onPay(i)} className={`${iconBtn} hover:bg-violet-50 hover:text-violet-600`}>
+                    {open && (<button type="button" title="Record payment" aria-label="Record payment" onClick={() => onPay(i)} className={`${iconBtn} hover:bg-[#FFF1DC] hover:text-[#B8741F]`}>
                         <Banknote size={15}/>
                       </button>)}
                     {open && (<button type="button" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(i)} className={`${iconBtn} hover:bg-emerald-50 hover:text-emerald-600`}>
                         <CheckCircle2 size={15}/>
                       </button>)}
-                    <button type="button" title="Print / save PDF" aria-label="Print invoice" onClick={() => onPrint(i)} className={`${iconBtn} hover:bg-slate-100 hover:text-slate-800`}>
+                    <button type="button" title="Print / save PDF" aria-label="Print invoice" onClick={() => onPrint(i)} className={`${iconBtn} hover:bg-[#EFE3C8] hover:text-[#2B2113]`}>
                       <Printer size={15}/>
                     </button>
-                    <button type="button" title="Edit" aria-label="Edit invoice" onClick={() => onEdit(i)} className={`${iconBtn} hover:bg-blue-50 hover:text-blue-600`}>
+                    <button type="button" title="Edit" aria-label="Edit invoice" onClick={() => onEdit(i)} className={`${iconBtn} hover:bg-[#FEE9E9] hover:text-[#DC2626]`}>
                       <Edit3 size={15}/>
                     </button>
                     <button type="button" title="Delete" aria-label="Delete invoice" onClick={() => onDelete(i)} className={`${iconBtn} hover:bg-rose-50 hover:text-rose-600`}>
@@ -839,17 +861,17 @@ function InvoiceTable({ onAdd, invoices, customers, searching, onEdit, onDelete,
         })}
           {invoices.length === 0 && (<tr>
               <td colSpan={7} className="px-5 py-14 text-center">
-                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEE9E9] text-[#DC2626]">
                   <FileText size={22}/>
                 </span>
-                <p className="text-sm font-bold text-slate-700">
+                <p className="text-sm font-bold text-[#3B2F1E]">
                   {searching ? <T>{"No matching invoices"}</T> : <T>{"No invoices yet"}</T>}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[#6B5A40]">
                   {searching
             ? <T>{"Try a different search or filter."}</T> : <T>{"Create your first invoice for a customer."}</T>}
                 </p>
-                {!searching && (<button type="button" onClick={onAdd} className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">
+                {!searching && (<button type="button" onClick={onAdd} className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#B91C1C]">
                     <Plus size={14}/><T>{"Create invoice\n                  "}</T></button>)}
               </td>
             </tr>)}
@@ -862,9 +884,9 @@ function StatusPill({ status }: {
     status: InvoiceStatus | "Overdue";
 }) {
     const styles = {
-        Draft: "bg-slate-100 text-slate-600",
+        Draft: "bg-[#EFE3C8] text-[#5A4A32]",
         Unpaid: "bg-amber-50 text-amber-700",
-        Partial: "bg-violet-50 text-violet-700",
+        Partial: "bg-[#FFF1DC] text-[#9A5F14]",
         Paid: "bg-emerald-50 text-emerald-700",
         Overdue: "bg-rose-50 text-rose-700",
     }[status];
@@ -872,7 +894,7 @@ function StatusPill({ status }: {
       {status}
     </span>);
 }
-function MiniStat({ label, value, tone = "text-slate-900", sub, icon, accent, }: {
+function MiniStat({ label, value, tone = "text-[#2B2113]", sub, icon, accent, }: {
     label: string;
     value: string;
     tone?: string;
@@ -880,12 +902,12 @@ function MiniStat({ label, value, tone = "text-slate-900", sub, icon, accent, }:
     icon: ReactNode;
     accent: string;
 }) {
-    return (<div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    return (<div className="flex items-center gap-3 rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] p-4 shadow-sm">
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-500">{label}</p>
+        <p className="text-xs font-bold text-[#6B5A40]">{label}</p>
         <p className={`truncate text-xl font-black ${tone}`}>{value}</p>
         {sub && <p className="text-[11px] font-bold text-rose-600">{sub}</p>}
       </div>
@@ -967,7 +989,7 @@ function InvoiceModal({ form, setForm, error, customers, editing, onClose, onSub
                 </option>))}
             </select>
           </Field>
-          <label className="flex cursor-pointer items-end gap-2 pb-2.5 text-xs font-bold text-slate-700">
+          <label className="flex cursor-pointer items-end gap-2 pb-2.5 text-xs font-bold text-[#3B2F1E]">
             <input type="checkbox" checked={form.draft} onChange={(e) => setForm((f) => ({ ...f, draft: e.target.checked }))} className="h-4 w-4 cursor-pointer"/>{<T>{" "}</T>}<T>{"Save as draft (not counted in totals)\n          "}</T></label>
           <Field label="Issue date">
             <input type="date" value={form.issueDate} onChange={set("issueDate")} className={inputCls}/>
@@ -978,7 +1000,7 @@ function InvoiceModal({ form, setForm, error, customers, editing, onClose, onSub
         </div>
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-black text-slate-800"><T>{"Items"}</T></p>
+            <p className="text-sm font-black text-[#2B2113]"><T>{"Items"}</T></p>
             <button type="button" onClick={() => setForm((f) => ({
             ...f,
             items: [
@@ -990,9 +1012,9 @@ function InvoiceModal({ form, setForm, error, customers, editing, onClose, onSub
                     unitPrice: "",
                 },
             ],
-        }))} className="cursor-pointer text-xs font-bold text-blue-600 hover:text-blue-700"><T>{"+ Add item\n            "}</T></button>
+        }))} className="cursor-pointer text-xs font-bold text-[#DC2626] hover:text-[#B91C1C]"><T>{"+ Add item\n            "}</T></button>
           </div>
-          <div className="hidden gap-2 px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:grid sm:grid-cols-[1fr_80px_110px_100px_38px]">
+          <div className="hidden gap-2 px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#A99776] sm:grid sm:grid-cols-[1fr_80px_110px_100px_38px]">
             <span><T>{"Description"}</T></span>
             <span><T>{"Qty"}</T></span>
             <span><T>{"Unit price"}</T></span>
@@ -1000,17 +1022,17 @@ function InvoiceModal({ form, setForm, error, customers, editing, onClose, onSub
             <span />
           </div>
           <div className="space-y-2">
-            {form.items.map((item, idx) => (<div key={item.id} className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:grid-cols-[1fr_80px_110px_100px_38px] sm:items-center sm:border-0 sm:bg-transparent sm:p-0">
+            {form.items.map((item, idx) => (<div key={item.id} className="grid grid-cols-2 gap-2 rounded-xl border border-[#E3D6B8] bg-[#F8EFD6]/60 p-3 sm:grid-cols-[1fr_80px_110px_100px_38px] sm:items-center sm:border-0 sm:bg-transparent sm:p-0">
                 <input value={item.description} maxLength={120} onChange={(e) => updateItem(item.id, "description", e.target.value)} placeholder={`Item ${idx + 1} (e.g. Banner printing)`} aria-label={`Item ${idx + 1} description`} className={`${inputCls} col-span-2 sm:col-span-1`}/>
                 <input value={item.quantity} onChange={(e) => updateItem(item.id, "quantity", e.target.value)} inputMode="decimal" placeholder="Qty" aria-label="Quantity" className={inputCls}/>
                 <input value={item.unitPrice} onChange={(e) => updateItem(item.id, "unitPrice", e.target.value)} inputMode="decimal" placeholder="Unit price" aria-label="Unit price" className={inputCls}/>
-                <span className="text-right text-xs font-bold text-slate-600">
+                <span className="text-right text-xs font-bold text-[#5A4A32]">
                   {money(num(item.quantity) * num(item.unitPrice))}
                 </span>
                 <button type="button" aria-label="Remove item" disabled={form.items.length === 1} onClick={() => setForm((f) => ({
                 ...f,
                 items: f.items.filter((r) => r.id !== item.id),
-            }))} className="h-[38px] cursor-pointer rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30">
+            }))} className="h-[38px] cursor-pointer rounded-lg border border-[#E3D6B8] text-[#A99776] hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30">
                   <Trash2 size={14} className="mx-auto"/>
                 </button>
               </div>))}
@@ -1023,32 +1045,32 @@ function InvoiceModal({ form, setForm, error, customers, editing, onClose, onSub
           <Field label="Tax (%)">
             <input value={form.taxPercent} onChange={set("taxPercent")} inputMode="decimal" className={inputCls}/>
           </Field>
-          <Field label="Amount paid (৳)" hint={!form.draft && (<button type="button" onClick={() => setForm((f) => ({ ...f, paidAmount: String(t.total) }))} className="cursor-pointer font-bold text-blue-600 hover:text-blue-700"><T>{"Mark fully paid ("}</T>{money(t.total)}<T>{")\n                "}</T></button>)}>
+          <Field label="Amount paid (৳)" hint={!form.draft && (<button type="button" onClick={() => setForm((f) => ({ ...f, paidAmount: String(t.total) }))} className="cursor-pointer font-bold text-[#DC2626] hover:text-[#B91C1C]"><T>{"Mark fully paid ("}</T>{money(t.total)}<T>{")\n                "}</T></button>)}>
             <input value={form.paidAmount} onChange={set("paidAmount")} inputMode="decimal" disabled={form.draft} className={inputCls}/>
           </Field>
         </div>
         <Field label="Notes">
           <textarea maxLength={300} value={form.notes} onChange={set("notes")} rows={2} className={`${inputCls} resize-none`} placeholder="Optional notes (shown on the printed invoice)"/>
         </Field>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-xl border border-[#E3D6B8] bg-[#F8EFD6] p-4">
           <div className="ml-auto grid max-w-xs gap-2 text-sm">
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B5A40]">
               <span><T>{"Subtotal"}</T></span>
               <strong>{money(t.subtotal)}</strong>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B5A40]">
               <span><T>{"Discount"}</T></span>
               <strong><T>{"-"}</T>{money(t.discount)}</strong>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B5A40]">
               <span><T>{"Tax"}</T></span>
               <strong>{money(t.tax)}</strong>
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-2 font-black text-slate-900">
+            <div className="flex justify-between border-t border-[#E3D6B8] pt-2 font-black text-[#2B2113]">
               <span><T>{"Total"}</T></span>
               <strong>{money(t.total)}</strong>
             </div>
-            {!form.draft && (<div className="flex justify-between text-slate-500">
+            {!form.draft && (<div className="flex justify-between text-[#6B5A40]">
                 <span><T>{"Balance due"}</T></span>
                 <strong>
                   {money(Math.max(t.total - num(form.paidAmount), 0))}
@@ -1080,17 +1102,17 @@ function Modal({ title, subtitle, onClose, children, wide = false, }: {
             document.body.style.overflow = prev;
         };
     }, [onClose]);
-    return (<div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={(e) => {
+    return (<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2B2113]/40 p-4 backdrop-blur-sm" onMouseDown={(e) => {
             if (e.target === e.currentTarget)
                 onClose();
         }}>
-      <div role="dialog" aria-modal="true" aria-label={title} className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl ${wide ? "max-w-3xl" : "max-w-lg"}`}>
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
+      <div role="dialog" aria-modal="true" aria-label={title} className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] shadow-2xl ${wide ? "max-w-3xl" : "max-w-lg"}`}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#EFE3C8] bg-[#FFFBF0] px-5 py-4">
           <div>
             <h2 className="text-lg font-black">{title}</h2>
-            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-[#6B5A40]">{subtitle}</p>
           </div>
-          <button type="button" aria-label="Close" onClick={onClose} className="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" aria-label="Close" onClick={onClose} className="cursor-pointer rounded-lg p-2 text-[#A99776] hover:bg-[#EFE3C8] hover:text-[#3B2F1E]">
             <X size={17}/>
           </button>
         </div>
@@ -1110,10 +1132,10 @@ function ConfirmDialog({ title, message, action, onClose, }: {
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600">
           <AlertTriangle size={18}/>
         </span>
-        <p className="pt-1.5 text-sm text-slate-600">{message}</p>
+        <p className="pt-1.5 text-sm text-[#5A4A32]">{message}</p>
       </div>
       <div className="flex justify-end gap-2 pt-5">
-        <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">
+        <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-[#E3D6B8] px-4 py-2.5 text-xs font-bold text-[#5A4A32] hover:bg-[#F8EFD6]">
           {info ? <T>{"OK"}</T> : <T>{"Cancel"}</T>}
         </button>
         {!info && (<button type="button" onClick={() => {
@@ -1127,9 +1149,9 @@ function ModalActions({ onClose, submit, }: {
     onClose: () => void;
     submit: string;
 }) {
-    return (<div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-      <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"><T>{"Cancel\n      "}</T></button>
-      <button type="submit" className="cursor-pointer rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+    return (<div className="flex justify-end gap-2 border-t border-[#EFE3C8] pt-4">
+      <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-[#D2C29B] bg-[#FFFBF0] px-5 py-2.5 text-sm font-bold text-[#5A4A32] hover:bg-[#F8EFD6]"><T>{"Cancel\n      "}</T></button>
+      <button type="submit" className="cursor-pointer rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#B91C1C] focus:outline-none focus:ring-4 focus:ring-[#FBB8B8]">
         {submit}
       </button>
     </div>);
@@ -1149,12 +1171,12 @@ function Field({ label, children, required, hint, className = "", }: {
     className?: string;
 }) {
     return (<label className={`block ${className}`}>
-      <span className="mb-1.5 flex items-center gap-1 text-xs font-bold text-slate-700">
+      <span className="mb-1.5 flex items-center gap-1 text-xs font-bold text-[#3B2F1E]">
         {label}
         {required && <span className="text-rose-500"><T>{"*"}</T></span>}
       </span>
       {children}
-      {hint && (<span className="mt-1.5 block text-[11px] font-medium text-slate-400">
+      {hint && (<span className="mt-1.5 block text-[11px] font-medium text-[#A99776]">
           {hint}
         </span>)}
     </label>);

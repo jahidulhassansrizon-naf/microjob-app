@@ -1,0 +1,151 @@
+{
+  "id": 36,
+  "title": "Food Delivery Package Label",
+  "category": "Restaurant & Food",
+  "slug": "food-delivery-package-label",
+  "format": "SVG + JSON",
+  "aspectRatio": "4:3",
+  "canvas": {
+    "width": 1200,
+    "height": 900,
+    "unit": "px",
+    "printSizeSuggestion": "Custom Label"
+  },
+  "editable": true,
+  "objects": [
+    {
+      "id": "obj-001",
+      "type": "shape",
+      "name": "Decorative corner circle",
+      "x": 1055,
+      "y": -75,
+      "width": 220,
+      "height": 220,
+      "editable": true,
+      "fill": "#E9F0ED",
+      "stroke": null
+    },
+    {
+      "id": "obj-002",
+      "type": "shape",
+      "name": "Decorative corner accent",
+      "x": -60,
+      "y": 790,
+      "width": 170,
+      "height": 170,
+      "editable": true,
+      "fill": "#0F9B80",
+      "stroke": null
+    },
+    {
+      "id": "obj-003",
+      "type": "shape",
+      "name": "Label main frame",
+      "x": 65,
+      "y": 65,
+      "width": 1070,
+      "height": 770,
+      "editable": true,
+      "fill": "#FFFFFF",
+      "stroke": "#235C74",
+      "strokeWidth": 5
+    },
+    {
+      "id": "obj-004",
+      "type": "shape",
+      "name": "Logo placeholder",
+      "x": 560.0,
+      "y": 100,
+      "width": 80,
+      "height": 80,
+      "editable": true,
+      "fill": "#FFFFFF",
+      "stroke": "#235C74",
+      "strokeWidth": 3
+    },
+    {
+      "id": "obj-005",
+      "type": "text",
+      "name": "Logo text placeholder",
+      "x": 600.0,
+      "y": 147.0,
+      "width": 0,
+      "height": 0,
+      "editable": true,
+      "text": "লোগো",
+      "fontSize": 18,
+      "color": "#235C74",
+      "fontWeight": 700,
+      "anchor": "middle"
+    },
+    {
+      "id": "obj-006",
+      "type": "text",
+      "name": "Product name",
+      "x": 600.0,
+      "y": 387.0,
+      "width": 0,
+      "height": 0,
+      "editable": true,
+      "text": "পণ্যের নাম",
+      "fontSize": 28,
+      "color": "#235C74",
+      "fontWeight": 800,
+      "anchor": "middle"
+    },
+    {
+      "id": "obj-007",
+      "type": "text",
+      "name": "Product information",
+      "x": 600.0,
+      "y": 504.0,
+      "width": 0,
+      "height": 0,
+      "editable": true,
+      "text": "মডেল / ব্যাচ / তারিখ",
+      "fontSize": 19,
+      "color": "#252D37",
+      "fontWeight": 500,
+      "anchor": "middle"
+    },
+    {
+      "id": "obj-008",
+      "type": "text",
+      "name": "Code placeholder",
+      "x": 600.0,
+      "y": 630.0,
+      "width": 0,
+      "height": 0,
+      "editable": true,
+      "text": "বারকোড / QR বসানোর স্থান",
+      "fontSize": 17,
+      "color": "#0F9B80",
+      "fontWeight": 600,
+      "anchor": "middle"
+    },
+    {
+      "id": "obj-009",
+      "type": "guide",
+      "name": "Safe area guide",
+      "x": 18,
+      "y": 18,
+      "width": 1164,
+      "height": 864,
+      "editable": false
+    }
+  ],
+  "notes": [
+    "SVG contains individually identified vector elements and editable text placeholders.",
+    "This is a starter layer schema; map object properties to the website editor data model during integration.",
+    "Set final physical print dimensions, bleed, safe margins and color profile before production."
+  ],
+  "editorCompatibility": {
+    "vectorSource": "SVG",
+    "metadata": "JSON",
+    "preview": "PNG",
+    "editableElements": "Individually identified SVG elements"
+  },
+  "svgUrl": "/print-media/templates/04-restaurant-food/36-food-delivery-package-label.svg",
+  "jsonUrl": "/print-media/templates/04-restaurant-food/36-food-delivery-package-label.json",
+  "previewUrl": "/print-media/templates/previews/36-food-delivery-package-label.png"
+}

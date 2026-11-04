@@ -25,6 +25,7 @@ import {
   GraduationCap,
   PanelRightClose,
   Eye,
+  Pencil,
   Trash2,
   Loader2,
   PanelRightOpen,
@@ -76,6 +77,7 @@ const PAGE_BN: Record<string, string> = {
   "Posters, cards and other print designs you create will be saved here.":
     "আপনার তৈরি পোস্টার, কার্ড ও অন্যান্য প্রিন্ট ডিজাইন এখানে সংরক্ষিত হবে।",
   "Browse Print Media": "প্রিন্ট ডিজাইন দেখুন",
+  "Continue editing": "সম্পাদনা চালিয়ে যান",
   "Question Papers": "প্রশ্নপত্র",
   "Search question papers by name": "নাম দিয়ে প্রশ্নপত্র খুঁজুন",
   "No question papers yet": "এখনও কোনো প্রশ্নপত্র নেই",
@@ -204,6 +206,7 @@ interface FileItem {
   category: Exclude<CategoryId, "generated-images">;
   createdAt: string; // ISO date string
   url?: string; // ছবি/ফাইলের লিংক (ডাউনলোডের জন্যও)
+  templateId?: number; // শুধু প্রিন্ট ডিজাইনের জন্য: কোন টেমপ্লেট থেকে, যাতে আবার এডিটরে খোলা যায়
 }
 type ToolGroupId =
   | "all"
@@ -325,6 +328,18 @@ const IMAGE_CATEGORY_IDS: CategoryId[] = [
   "ai-template-generated",
   "bulk-photo-edit",
 ];
+// সেভ করা প্রিন্ট ডিজাইন আবার এডিটরে খোলার লিংক
+function getContinueEditingHref(item: FileItem): string | null {
+  if (item.category !== "print-media" || !item.templateId) return null;
+  return `/print-media/editor/${item.templateId}?file=${encodeURIComponent(item.id)}`;
+}
+// প্রিভিউ দেখানো যাবে এমন ফাইল: জেনারেটেড ছবি + প্রিন্ট ডিজাইনের প্রিভিউ
+function isPreviewableFile(item: FileItem): boolean {
+  return (
+    Boolean(item.url) &&
+    (IMAGE_CATEGORY_IDS.includes(item.category) || item.category === "print-media")
+  );
+}
 function belongsToTab(item: FileItem, tabId: CategoryId): boolean {
   if (tabId === "generated-images")
     return IMAGE_CATEGORY_IDS.includes(item.category);
@@ -777,6 +792,16 @@ export default function MyFilesPage() {
       mounted = false;
     };
   }, []);
+  // /my-files?tab=print-media (সেভ পপআপ থেকে) হলে সরাসরি ওই ট্যাব খুলবে
+  useEffect(() => {
+    try {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      const target = CATEGORY_TABS.find((t) => t.id === tab);
+      if (target) setActiveTab(target.id);
+    } catch {
+      // ignore: the default tab is fine
+    }
+  }, []);
   // সার্চ করলে: বর্তমান ট্যাবে না পেলে, যে ট্যাবে ফাইলটা আছে সেখানে অটো চলে যাবে
   useEffect(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -1105,9 +1130,8 @@ export default function MyFilesPage() {
                   className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:gap-4"
                 >
                   {visibleFiles.map((file, index) => {
-                    const isImage =
-                      Boolean(file.url) &&
-                      IMAGE_CATEGORY_IDS.includes(file.category);
+                    const isImage = isPreviewableFile(file);
+                    const continueHref = getContinueEditingHref(file);
                     const PlaceholderIcon =
                       CATEGORY_TABS.find((t) => t.id === file.category)?.icon ??
                       ImageIcon;
@@ -1190,6 +1214,16 @@ export default function MyFilesPage() {
                               {formatDate(file.createdAt, locale)}
                             </p>
                           </button>
+                          {continueHref && (
+                            <Link
+                              href={continueHref}
+                              aria-label={translatePageText("Continue editing", locale)}
+                              title={translatePageText("Continue editing", locale)}
+                              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#DC2626] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
+                            >
+                              <Pencil size={16} />
+                            </Link>
+                          )}
                           {file.url && (
                             <a
                               href={file.url}
@@ -1492,6 +1526,18 @@ export default function MyFilesPage() {
                   {formatDate(previewFile.createdAt, locale)}
                 </p>
               </div>
+
+              {getContinueEditingHref(previewFile) && (
+                <Link
+                  href={getContinueEditingHref(previewFile) as string}
+                  className={`${secondaryBtn} shrink-0`}
+                >
+                  <Pencil size={15} />
+                  <span className="hidden sm:inline">
+                    <T>{"Continue editing"}</T>
+                  </span>
+                </Link>
+              )}
 
               <a
                 href={previewFile.url}

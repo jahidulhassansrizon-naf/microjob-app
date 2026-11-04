@@ -24,6 +24,10 @@ const COPY = {
       `আপনার ${digitsBn(n)}টি ছবি ‘আমার ফাইল’-এ সেভ হয়েছে। যেকোনো সময় সেখানে গিয়ে ছবিগুলো দেখতে ও ডাউনলোড করতে পারবেন।`,
     cta: "আমার ফাইলে দেখুন",
     close: "বন্ধ করুন",
+    designTitle: "ডিজাইন সেভ হয়েছে!",
+    designDesc:
+      "আপনার প্রিন্ট ডিজাইনটি ‘আমার ফাইল’-এর ‘প্রিন্ট ডিজাইন’ ট্যাবে সেভ হয়েছে। যেকোনো সময় সেখানে গিয়ে ডিজাইনটি খুলে বাকি কাজ শেষ করতে পারবেন।",
+    designCta: "আমার ফাইলে ডিজাইন দেখুন",
   },
   en: {
     title: "Your photo is ready!",
@@ -32,6 +36,10 @@ const COPY = {
       `${n} photos have been saved in My Files. You can open them there any time to view and download them.`,
     cta: "View in My Files",
     close: "Close",
+    designTitle: "Design saved!",
+    designDesc:
+      "Your print design has been saved in the Print Media tab of My Files. Open it there any time to continue where you left off.",
+    designCta: "View design in My Files",
   },
 } as const;
 
@@ -45,6 +53,7 @@ export default function MyFilesSavedPopup() {
   const copy = locale === "bn" ? COPY.bn : COPY.en;
 
   const [count, setCount] = useState(1);
+  const [kind, setKind] = useState<"image" | "design">("image");
   const [visible, setVisible] = useState(false);
   const visibleRef = useRef(false);
   // Bumped on every new event, so the countdown bar restarts for the newest image.
@@ -55,6 +64,7 @@ export default function MyFilesSavedPopup() {
       const detail = (event as CustomEvent<MyFilesSavedDetail>).detail;
       const added = Math.max(1, detail?.count ?? 1);
       // Bulk editing saves photos one by one: while the popup is open, keep adding to its count.
+      setKind(detail?.kind === "design" ? "design" : "image");
       setCount((current) => (visibleRef.current ? current + added : added));
       setRunId((id) => id + 1);
       visibleRef.current = true;
@@ -73,6 +83,8 @@ export default function MyFilesSavedPopup() {
   }, [pathname]);
 
   if (!visible) return null;
+
+  const isDesign = kind === "design";
 
   const close = () => {
     visibleRef.current = false;
@@ -96,21 +108,23 @@ export default function MyFilesSavedPopup() {
             <CheckCircle2 size={22} />
           </span>
           <div className="my-files-popup-text">
-            <p className="my-files-popup-title">{copy.title}</p>
+            <p className="my-files-popup-title">
+              {isDesign ? copy.designTitle : copy.title}
+            </p>
             <p className="my-files-popup-desc">
-              {count > 1 ? copy.many(count) : copy.one}
+              {isDesign ? copy.designDesc : count > 1 ? copy.many(count) : copy.one}
             </p>
           </div>
         </div>
 
         <Link
-          href="/my-files"
+          href={isDesign ? "/my-files?tab=print-media" : "/my-files"}
           className="my-files-popup-cta"
           onClick={close}
           prefetch
         >
           <FolderOpen size={16} aria-hidden="true" />
-          <span>{copy.cta}</span>
+          <span>{isDesign ? copy.designCta : copy.cta}</span>
         </Link>
 
         {/* Countdown bar: the popup closes itself when the bar finishes. */}

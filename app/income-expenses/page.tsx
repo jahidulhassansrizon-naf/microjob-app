@@ -38,7 +38,9 @@ type Toast = {
         onClick: () => void;
     };
 };
-const STORAGE_BASE = "sohozkaj:income-expenses:v1";
+const STORAGE_BASE = "sebalagbe:income-expenses:v1";
+// Older saves used the previous brand name; they are read once and copied to the new key.
+const LEGACY_STORAGE_BASE = "sohozkaj:income-expenses:v1";
 const PAGE_SIZE = 15;
 const MAX_AMOUNT = 999999999.99;
 const MAX_CATEGORY_LENGTH = 40;
@@ -94,9 +96,9 @@ const MONTHS = [
     "Nov",
     "Dec",
 ];
-const inputCls = "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10";
+const inputCls = "h-11 w-full rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-3.5 text-sm font-medium text-[#2B2113] outline-none transition-colors placeholder:text-[#A99776] hover:border-[#D2C29B] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10";
 const inputErrCls = "!border-rose-300 hover:!border-rose-400 focus:!border-rose-500 focus:!ring-rose-500/10";
-const filterFieldCls = "h-10 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-[13px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10";
+const filterFieldCls = "h-10 w-full cursor-pointer appearance-none rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] pl-3 pr-9 text-[13px] font-semibold text-[#3B2F1E] outline-none transition-colors hover:border-[#D2C29B] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10";
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -331,8 +333,17 @@ export default function IncomeExpensesPage() {
         const key = storageKey();
         keyRef.current = key;
         try {
-            const raw = localStorage.getItem(key);
-            lastRawRef.current = raw;
+            let raw = localStorage.getItem(key);
+            let migrated = false;
+            if (raw === null) {
+                const old = localStorage.getItem(`${LEGACY_STORAGE_BASE}:${userScopeKey()}`);
+                if (old !== null) {
+                    raw = old;
+                    migrated = true;
+                }
+            }
+            // null forces the save effect to write the migrated data under the new key
+            lastRawRef.current = migrated ? null : raw;
             if (raw)
                 setEntries(sanitizeEntries(JSON.parse(raw)));
         }
@@ -614,30 +625,38 @@ export default function IncomeExpensesPage() {
     const spentPct = totals.income > 0
         ? Math.round((totals.expense / totals.income) * 100)
         : null;
-    return (<div className="min-h-screen bg-[#F8FAFC] font-sans text-[#0F172A]">
+    return (<div className="acct-page min-h-screen bg-[#F1E8D3] text-[#2B2113]">
+      <style>{`
+          .acct-page, .acct-page *:not(svg):not(svg *) {
+            font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+          }
+        `}</style>
       <DashboardNavbar />
 
       <main className="mx-auto max-w-[1220px] px-4 py-8 sm:px-6 lg:py-10">
         {/* Header */}
         <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Link href="/dashboard" className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-blue-600">
+            <Link href="/dashboard" className="mb-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[#6B5A40] transition-colors hover:text-[#DC2626]">
               <ArrowLeft size={14}/><T>{"Back to dashboard\n            "}</T></Link>
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-100">
                 <Wallet size={21}/>
               </span>
               <div>
-                <h1 className="text-2xl font-black tracking-tight sm:text-3xl"><T>{"Income &amp; Expenses\n                "}</T></h1>
-                <p className="mt-0.5 text-sm font-medium text-slate-500"><T>{"Track money coming in, going out, and your current balance.\n                "}</T></p>
+                <h1 className="text-2xl font-black tracking-tight sm:text-3xl"><T>{"Income & Expenses\n                "}</T></h1>
+                <p className="mt-0.5 text-sm font-medium text-[#6B5A40]"><T>{"Track money coming in, going out, and your current balance.\n                "}</T></p>
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handleExport} disabled={!loaded || entries.length === 0} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-700 shadow-sm outline-none transition-colors hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-[#2563EB]/15 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={handleExport} disabled={!loaded || entries.length === 0} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-4 text-[13px] font-bold text-[#3B2F1E] shadow-sm outline-none transition-colors hover:bg-[#F8EFD6] focus-visible:ring-4 focus-visible:ring-[#DC2626]/15 disabled:cursor-not-allowed disabled:opacity-50">
               <Download size={15}/><T>{"Export CSV\n            "}</T></button>
-            <button type="button" onClick={openCreate} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#2563EB] px-4 text-[13px] font-bold text-white shadow-sm outline-none transition-colors hover:bg-blue-700 focus-visible:ring-4 focus-visible:ring-[#2563EB]/30">
+            <button type="button" onClick={openCreate} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#DC2626] px-4 text-[13px] font-bold text-white shadow-sm outline-none transition-colors hover:bg-[#B91C1C] focus-visible:ring-4 focus-visible:ring-[#DC2626]/30">
               <Plus size={16}/><T>{"Add entry\n            "}</T></button>
           </div>
         </div>
@@ -647,11 +666,11 @@ export default function IncomeExpensesPage() {
             <AlertTriangle size={16} className="mt-0.5 shrink-0"/><T>{"Your latest changes could not be saved. Your browser storage may be\n            full or blocked (for example in private mode). Please export a CSV\n            backup.\n          "}</T></div>)}
 
         {/* ফিল্টার চালু থাকলে জানানো */}
-        {filtersActive && loaded && (<div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+        {filtersActive && loaded && (<div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-[#6B5A40]">
             <span><T>{"Totals are for the "}</T>{filteredEntries.length}<T>{"filtered"}</T>{<T>{" "}</T>}
               {filteredEntries.length === 1 ? <T>{"entry"}</T> : <T>{"entries"}</T>}<T>{"(of"}</T>{<T>{" "}</T>}
               {entries.length}<T>{").\n            "}</T></span>
-            <button type="button" onClick={clearFilters} className="cursor-pointer text-[#2563EB] hover:underline"><T>{"Show all\n            "}</T></button>
+            <button type="button" onClick={clearFilters} className="cursor-pointer text-[#DC2626] hover:underline"><T>{"Show all\n            "}</T></button>
           </div>)}
 
         {/* Summary */}
@@ -660,38 +679,38 @@ export default function IncomeExpensesPage() {
           <SummaryCard label="Total expenses" value={money(totals.expense)} tone="rose" icon={<ArrowUpRight size={18}/>} loading={!loaded}/>
           <SummaryCard label="Current balance" value={money(totals.balance)} tone={totals.balance >= 0 ? "blue" : "rose"} icon={<Wallet size={18}/>} loading={!loaded}>
             {spentPct !== null && (<div className="mt-3">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className={`h-full rounded-full transition-all duration-500 ${spentPct > 100 ? "bg-rose-500" : "bg-blue-500"}`} style={{ width: `${Math.min(100, spentPct)}%` }}/>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EFE3C8]">
+                  <div className={`h-full rounded-full transition-all duration-500 ${spentPct > 100 ? "bg-rose-500" : "bg-[#EF4444]"}`} style={{ width: `${Math.min(100, spentPct)}%` }}/>
                 </div>
-                <p className="mt-1.5 text-[11px] font-semibold text-slate-500"><T>{"Spent "}</T>{spentPct}<T>{"% of income\n                "}</T></p>
+                <p className="mt-1.5 text-[11px] font-semibold text-[#6B5A40]"><T>{"Spent "}</T>{spentPct}<T>{"% of income\n                "}</T></p>
               </div>)}
           </SummaryCard>
           <SummaryCard label={filtersActive ? "Matching entries" : "Total entries"} value={String(filteredEntries.length)} tone="slate" icon={<Filter size={18}/>} loading={!loaded}/>
         </div>
 
         {/* Table section */}
-        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-16px_rgba(15,23,42,0.1)]">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] shadow-[0_1px_2px_rgba(59,47,30,0.04),0_12px_32px_-16px_rgba(59,47,30,0.1)]">
           {/* Filters */}
-          <div className="space-y-3 border-b border-slate-100 p-4">
+          <div className="space-y-3 border-b border-[#EFE3C8] p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="relative min-w-0 flex-1">
-                <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/>
-                <input value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search entries" placeholder="Search category, note, payment method or amount..." className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-9 text-[13px] font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2563EB] focus:bg-white focus:ring-4 focus:ring-[#2563EB]/10"/>
-                {query && (<button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700">
+                <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A99776]"/>
+                <input value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search entries" placeholder="Search category, note, payment method or amount..." className="h-10 w-full rounded-xl border border-[#E3D6B8] bg-[#F8EFD6] pl-10 pr-9 text-[13px] font-medium text-[#2B2113] outline-none transition-colors placeholder:text-[#A99776] hover:border-[#D2C29B] focus:border-[#DC2626] focus:bg-[#FFFBF0] focus:ring-4 focus:ring-[#DC2626]/10"/>
+                {query && (<button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-[#A99776] hover:bg-[#DCCDA7] hover:text-[#3B2F1E]">
                     <X size={13}/>
                   </button>)}
               </div>
 
-              <div role="group" aria-label="Filter by type" className="flex h-10 shrink-0 items-center gap-1 rounded-xl bg-slate-100 p-1">
+              <div role="group" aria-label="Filter by type" className="flex h-10 shrink-0 items-center gap-1 rounded-xl bg-[#EFE3C8] p-1">
                 {([
             ["all", "All"],
             ["income", "Income"],
             ["expense", "Expense"],
         ] as const).map(([value, label]) => {
             const active = typeFilter === value;
-            return (<button key={value} type="button" aria-pressed={active} onClick={() => setTypeFilter(value)} className={`h-full flex-1 cursor-pointer rounded-lg px-4 text-[13px] font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 lg:flex-none ${active
-                    ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70"
-                    : "text-slate-600 hover:text-slate-900"}`}>
+            return (<button key={value} type="button" aria-pressed={active} onClick={() => setTypeFilter(value)} className={`h-full flex-1 cursor-pointer rounded-lg px-4 text-[13px] font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 lg:flex-none ${active
+                    ? "bg-[#FFFBF0] text-[#2B2113] shadow-sm ring-1 ring-[#E3D6B8]/70"
+                    : "text-[#5A4A32] hover:text-[#2B2113]"}`}>
                       {label}
                     </button>);
         })}
@@ -722,18 +741,18 @@ export default function IncomeExpensesPage() {
                   </option>))}
               </SelectBox>
 
-              {filtersActive && (<button type="button" onClick={clearFilters} className="col-span-2 inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold text-[#2563EB] outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 lg:col-span-1 lg:ml-auto">
+              {filtersActive && (<button type="button" onClick={clearFilters} className="col-span-2 inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold text-[#DC2626] outline-none transition-colors hover:bg-[#FEE9E9] focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 lg:col-span-1 lg:ml-auto">
                   <RotateCcw size={14}/><T>{"Clear filters\n                "}</T></button>)}
             </div>
 
             {period === "custom" && (<div className="flex flex-wrap items-end gap-3">
-                <label className="block text-xs font-bold text-slate-600">
+                <label className="block text-xs font-bold text-[#5A4A32]">
                   <span className="mb-1 block"><T>{"From"}</T></span>
-                  <input type="date" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-800 outline-none [color-scheme:light] hover:border-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10"/>
+                  <input type="date" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} className="h-10 rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-3 text-[13px] font-medium text-[#2B2113] outline-none [color-scheme:light] hover:border-[#D2C29B] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"/>
                 </label>
-                <label className="block text-xs font-bold text-slate-600">
+                <label className="block text-xs font-bold text-[#5A4A32]">
                   <span className="mb-1 block"><T>{"To"}</T></span>
-                  <input type="date" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-800 outline-none [color-scheme:light] hover:border-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10"/>
+                  <input type="date" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} className="h-10 rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-3 text-[13px] font-medium text-[#2B2113] outline-none [color-scheme:light] hover:border-[#D2C29B] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"/>
                 </label>
                 {invalidRange && (<p className="pb-2 text-xs font-semibold text-rose-600"><T>{"The start date is after the end date.\n                  "}</T></p>)}
               </div>)}
@@ -743,7 +762,7 @@ export default function IncomeExpensesPage() {
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left">
               <caption className="sr-only"><T>{"Income and expense entries"}</T></caption>
-              <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <thead className="bg-[#F8EFD6] text-[11px] font-bold uppercase tracking-wide text-[#6B5A40]">
                 <tr>
                   <th scope="col" className="px-5 py-3"><T>{"Date\n                  "}</T></th>
                   <th scope="col" className="px-5 py-3"><T>{"Type\n                  "}</T></th>
@@ -754,22 +773,22 @@ export default function IncomeExpensesPage() {
                   <th scope="col" className="px-5 py-3 text-right"><T>{"Actions\n                  "}</T></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#EFE3C8]">
                 {loaded &&
-            pageEntries.map((entry) => (<tr key={entry.id} className="transition-colors hover:bg-slate-50/70">
-                      <td className="whitespace-nowrap px-5 py-3 text-xs font-semibold text-slate-600">
+            pageEntries.map((entry) => (<tr key={entry.id} className="transition-colors hover:bg-[#F8EFD6]/70">
+                      <td className="whitespace-nowrap px-5 py-3 text-xs font-semibold text-[#5A4A32]">
                         {formatDate(entry.date)}
                       </td>
                       <td className="px-5 py-3">
                         <TypeBadge type={entry.type}/>
                       </td>
-                      <td className="max-w-[180px] truncate px-5 py-3 text-sm font-bold text-slate-800" title={entry.category}>
+                      <td className="max-w-[180px] truncate px-5 py-3 text-sm font-bold text-[#2B2113]" title={entry.category}>
                         {entry.category}
                       </td>
-                      <td className="max-w-[280px] truncate px-5 py-3 text-sm text-slate-500" title={entry.description || undefined}>
+                      <td className="max-w-[280px] truncate px-5 py-3 text-sm text-[#6B5A40]" title={entry.description || undefined}>
                         {entry.description || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-xs font-semibold text-slate-500">
+                      <td className="whitespace-nowrap px-5 py-3 text-xs font-semibold text-[#6B5A40]">
                         {entry.paymentMethod}
                       </td>
                       <td className={`whitespace-nowrap px-5 py-3 text-right text-sm font-black tabular-nums ${entry.type === "income"
@@ -794,15 +813,15 @@ export default function IncomeExpensesPage() {
           </div>
 
           {/* মোবাইল: কার্ড লিস্ট */}
-          <ul className="divide-y divide-slate-100 md:hidden">
+          <ul className="divide-y divide-[#EFE3C8] md:hidden">
             {loaded &&
             pageEntries.map((entry) => (<li key={entry.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-800">
+                      <p className="truncate text-sm font-bold text-[#2B2113]">
                         {entry.category}
                       </p>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                      <p className="mt-0.5 line-clamp-2 text-xs text-[#6B5A40]">
                         {entry.description || "No note"}
                       </p>
                     </div>
@@ -816,7 +835,7 @@ export default function IncomeExpensesPage() {
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <TypeBadge type={entry.type}/>
-                      <span className="text-xs font-semibold text-slate-500">
+                      <span className="text-xs font-semibold text-[#6B5A40]">
                         {formatDate(entry.date)}<T>{"\u00B7 "}</T>{entry.paymentMethod}
                       </span>
                     </div>
@@ -834,36 +853,36 @@ export default function IncomeExpensesPage() {
 
           {/* খালি অবস্থা */}
           {loaded && filteredEntries.length === 0 && (<div className="flex flex-col items-center px-5 py-16 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EFE3C8] text-[#6B5A40] ring-1 ring-inset ring-[#E3D6B8]">
                 {entries.length === 0 ? (<Wallet size={26}/>) : (<Search size={26}/>)}
               </span>
-              <p className="mt-4 text-base font-bold text-slate-800">
+              <p className="mt-4 text-base font-bold text-[#2B2113]">
                 {entries.length === 0
             ? <T>{"No entries yet"}</T> : <T>{"No matching entries"}</T>}
               </p>
-              <p className="mt-1 max-w-sm text-[13px] font-medium leading-5 text-slate-500">
+              <p className="mt-1 max-w-sm text-[13px] font-medium leading-5 text-[#6B5A40]">
                 {entries.length === 0
             ? <T>{"Add your first income or expense entry to start tracking."}</T> : <T>{"Try changing or clearing your filters to see more entries."}</T>}
               </p>
-              {entries.length === 0 ? (<button type="button" onClick={openCreate} className="mt-5 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#2563EB] px-4 text-[13px] font-bold text-white shadow-sm hover:bg-blue-700">
-                  <Plus size={15}/><T>{"Add your first entry\n                "}</T></button>) : (<button type="button" onClick={clearFilters} className="mt-5 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-700 hover:bg-slate-50">
+              {entries.length === 0 ? (<button type="button" onClick={openCreate} className="mt-5 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#DC2626] px-4 text-[13px] font-bold text-white shadow-sm hover:bg-[#B91C1C]">
+                  <Plus size={15}/><T>{"Add your first entry\n                "}</T></button>) : (<button type="button" onClick={clearFilters} className="mt-5 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#FFFBF0] px-4 text-[13px] font-bold text-[#3B2F1E] hover:bg-[#F8EFD6]">
                   <RotateCcw size={14}/><T>{"Clear filters\n                "}</T></button>)}
             </div>)}
 
           {/* ফুটার: পেজিনেশন + নোট */}
-          {loaded && (<div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                <Info size={13} className="shrink-0 text-slate-400"/>
+          {loaded && (<div className="flex flex-col gap-3 border-t border-[#EFE3C8] bg-[#F8EFD6]/70 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-center gap-2 text-xs font-medium text-[#6B5A40]">
+                <Info size={13} className="shrink-0 text-[#A99776]"/>
                 {filteredEntries.length > 0
             ? <T>{`Showing ${pageStart + 1}–${pageStart + pageEntries.length} of ${filteredEntries.length}. `}</T> : <T>{""}</T>}<T>{"Entries are saved in this browser on this device.\n              "}</T></p>
 
               {totalPages > 1 && (<nav aria-label="Pagination" className="flex items-center gap-1.5">
-                  <button type="button" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                  <button type="button" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[#E3D6B8] bg-[#FFFBF0] text-[#5A4A32] transition-colors hover:bg-[#F8EFD6] disabled:cursor-not-allowed disabled:opacity-40">
                     <ChevronLeft size={16}/>
                   </button>
-                  <span className="min-w-[88px] text-center text-xs font-semibold text-slate-600"><T>{"Page "}</T>{currentPage}<T>{"of "}</T>{totalPages}
+                  <span className="min-w-[88px] text-center text-xs font-semibold text-[#5A4A32]"><T>{"Page "}</T>{currentPage}<T>{"of "}</T>{totalPages}
                   </span>
-                  <button type="button" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                  <button type="button" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[#E3D6B8] bg-[#FFFBF0] text-[#5A4A32] transition-colors hover:bg-[#F8EFD6] disabled:cursor-not-allowed disabled:opacity-40">
                     <ChevronRight size={16}/>
                   </button>
                 </nav>)}
@@ -873,29 +892,29 @@ export default function IncomeExpensesPage() {
 
       {/* ============ Add / Edit ফর্ম ============ */}
       {showForm && (<Modal titleId="entry-form-title" onClose={closeForm}>
-          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-[#EFE3C8] px-5 py-4">
             <div>
               <h2 id="entry-form-title" className="text-lg font-black">
                 {editingId ? <T>{"Edit entry"}</T> : <T>{"Add entry"}</T>}
               </h2>
-              <p className="mt-0.5 text-xs font-medium text-slate-500"><T>{"Record money in or money out.\n              "}</T></p>
+              <p className="mt-0.5 text-xs font-medium text-[#6B5A40]"><T>{"Record money in or money out.\n              "}</T></p>
             </div>
-            <button type="button" onClick={closeForm} aria-label="Close" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">
+            <button type="button" onClick={closeForm} aria-label="Close" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#A99776] transition-colors hover:bg-[#EFE3C8] hover:text-[#3B2F1E]">
               <X size={18}/>
             </button>
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4 p-5">
             {/* Type: Income / Expense */}
-            <div role="group" aria-label="Entry type" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+            <div role="group" aria-label="Entry type" className="grid grid-cols-2 gap-1 rounded-xl bg-[#EFE3C8] p-1">
               {([
                 ["income", "Income", ArrowDownLeft, "text-emerald-700"],
                 ["expense", "Expense", ArrowUpRight, "text-rose-700"],
             ] as const).map(([value, label, Icon, activeText]) => {
                 const active = form.type === value;
-                return (<button key={value} type="button" aria-pressed={active} onClick={() => changeFormType(value)} className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg text-[13px] font-bold outline-none transition-all focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 ${active
-                        ? `bg-white shadow-sm ring-1 ring-slate-200/70 ${activeText}`
-                        : "text-slate-500 hover:text-slate-800"}`}>
+                return (<button key={value} type="button" aria-pressed={active} onClick={() => changeFormType(value)} className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg text-[13px] font-bold outline-none transition-all focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 ${active
+                        ? `bg-[#FFFBF0] shadow-sm ring-1 ring-[#E3D6B8]/70 ${activeText}`
+                        : "text-[#6B5A40] hover:text-[#2B2113]"}`}>
                     <Icon size={16}/>
                     {label}
                   </button>);
@@ -905,7 +924,7 @@ export default function IncomeExpensesPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="ie-amount" label="Amount (৳)" error={errors.amount}>
                 <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400"><T>{"\u09F3\n                  "}</T></span>
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#A99776]"><T>{"\u09F3\n                  "}</T></span>
                   <input id="ie-amount" data-autofocus inputMode="decimal" autoComplete="off" value={form.amount} onChange={(e) => {
                 setForm({
                     ...form,
@@ -940,8 +959,8 @@ export default function IncomeExpensesPage() {
                         if (errors.category)
                             setErrors({ ...errors, category: undefined });
                     }} className={`h-7 cursor-pointer rounded-full border px-3 text-xs font-semibold transition-colors ${active
-                        ? "border-[#2563EB] bg-blue-50 text-[#1D4ED8]"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}>
+                        ? "border-[#DC2626] bg-[#FEE9E9] text-[#B91C1C]"
+                        : "border-[#E3D6B8] bg-[#FFFBF0] text-[#5A4A32] hover:border-[#D2C29B] hover:text-[#2B2113]"}`}>
                       {name}
                     </button>);
             })}
@@ -960,14 +979,14 @@ export default function IncomeExpensesPage() {
 
             <Field id="ie-description" label="Description (optional)">
               <textarea id="ie-description" value={form.description} maxLength={MAX_DESCRIPTION_LENGTH} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Add a short note" className={`${inputCls} h-auto resize-none py-2.5`}/>
-              <p className="mt-1 text-right text-[11px] font-medium text-slate-400">
+              <p className="mt-1 text-right text-[11px] font-medium text-[#A99776]">
                 {form.description.length}<T>{"/"}</T>{MAX_DESCRIPTION_LENGTH}
               </p>
             </Field>
 
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={closeForm} className="h-11 cursor-pointer rounded-xl border border-slate-200 px-5 text-[13px] font-bold text-slate-600 transition-colors hover:bg-slate-50"><T>{"Cancel\n              "}</T></button>
-              <button type="submit" className="h-11 cursor-pointer rounded-xl bg-[#2563EB] px-5 text-[13px] font-bold text-white shadow-sm outline-none transition-colors hover:bg-blue-700 focus-visible:ring-4 focus-visible:ring-[#2563EB]/30">
+              <button type="button" onClick={closeForm} className="h-11 cursor-pointer rounded-xl border border-[#E3D6B8] px-5 text-[13px] font-bold text-[#5A4A32] transition-colors hover:bg-[#F8EFD6]"><T>{"Cancel\n              "}</T></button>
+              <button type="submit" className="h-11 cursor-pointer rounded-xl bg-[#DC2626] px-5 text-[13px] font-bold text-white shadow-sm outline-none transition-colors hover:bg-[#B91C1C] focus-visible:ring-4 focus-visible:ring-[#DC2626]/30">
                 {editingId ? <T>{"Save changes"}</T> : <T>{"Add entry"}</T>}
               </button>
             </div>
@@ -983,8 +1002,8 @@ export default function IncomeExpensesPage() {
               </span>
               <div className="min-w-0">
                 <h2 id="delete-title" className="text-lg font-black"><T>{"Delete this entry?\n                "}</T></h2>
-                <p className="mt-1 text-[13px] font-medium leading-5 text-slate-500">
-                  <span className="font-bold text-slate-700">
+                <p className="mt-1 text-[13px] font-medium leading-5 text-[#6B5A40]">
+                  <span className="font-bold text-[#3B2F1E]">
                     {deleteTarget.category}
                   </span>{<T>{" "}</T>}<T>{"\u00B7"}</T>{<T>{" "}</T>}
                   <span className={`font-bold ${deleteTarget.type === "income"
@@ -994,11 +1013,11 @@ export default function IncomeExpensesPage() {
                     {money(deleteTarget.amount)}
                   </span>{<T>{" "}</T>}<T>{"\u00B7 "}</T>{formatDate(deleteTarget.date)}
                 </p>
-                <p className="mt-1 text-xs font-medium text-slate-500"><T>{"You can undo this right after deleting.\n                "}</T></p>
+                <p className="mt-1 text-xs font-medium text-[#6B5A40]"><T>{"You can undo this right after deleting.\n                "}</T></p>
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" data-autofocus onClick={() => setDeleteTarget(null)} className="h-11 cursor-pointer rounded-xl border border-slate-200 px-5 text-[13px] font-bold text-slate-600 transition-colors hover:bg-slate-50"><T>{"Cancel\n              "}</T></button>
+              <button type="button" data-autofocus onClick={() => setDeleteTarget(null)} className="h-11 cursor-pointer rounded-xl border border-[#E3D6B8] px-5 text-[13px] font-bold text-[#5A4A32] transition-colors hover:bg-[#F8EFD6]"><T>{"Cancel\n              "}</T></button>
               <button type="button" onClick={confirmDelete} className="h-11 cursor-pointer rounded-xl bg-rose-600 px-5 text-[13px] font-bold text-white shadow-sm outline-none transition-colors hover:bg-rose-700 focus-visible:ring-4 focus-visible:ring-rose-500/30"><T>{"Delete\n              "}</T></button>
             </div>
           </div>
@@ -1006,13 +1025,13 @@ export default function IncomeExpensesPage() {
 
       {/* ============ টোস্ট ============ */}
       <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-5 z-[120] flex justify-center px-4">
-        {toast && (<div key={toast.id} role={toast.tone === "error" ? "alert" : "status"} className="pointer-events-auto flex max-w-md items-center gap-3 rounded-xl bg-slate-900 py-2.5 pl-3.5 pr-2.5 text-[13px] font-semibold text-white shadow-2xl">
+        {toast && (<div key={toast.id} role={toast.tone === "error" ? "alert" : "status"} className="pointer-events-auto flex max-w-md items-center gap-3 rounded-xl bg-[#2B2113] py-2.5 pl-3.5 pr-2.5 text-[13px] font-semibold text-white shadow-2xl">
             {toast.tone === "error" ? (<AlertTriangle size={16} className="shrink-0 text-amber-300"/>) : (<Check size={16} className="shrink-0 text-emerald-300"/>)}
             <span className="min-w-0">{toast.message}</span>
-            {toast.action && (<button type="button" onClick={toast.action.onClick} className="cursor-pointer rounded-lg px-2.5 py-1 text-[13px] font-bold text-sky-300 hover:bg-white/10">
+            {toast.action && (<button type="button" onClick={toast.action.onClick} className="cursor-pointer rounded-lg px-2.5 py-1 text-[13px] font-bold text-[#F6D9A8] hover:bg-white/10">
                 {toast.action.label}
               </button>)}
-            <button type="button" onClick={() => setToast(null)} aria-label="Dismiss" className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white">
+            <button type="button" onClick={() => setToast(null)} aria-label="Dismiss" className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[#A99776] hover:bg-white/10 hover:text-white">
               <X size={14}/>
             </button>
           </div>)}
@@ -1073,11 +1092,11 @@ function Modal({ titleId, onClose, closeOnBackdrop = false, widthClass = "max-w-
             previous?.focus?.();
         };
     }, []);
-    return (<div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={(e) => {
+    return (<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2B2113]/40 p-4 backdrop-blur-sm" onMouseDown={(e) => {
             if (closeOnBackdrop && e.target === e.currentTarget)
                 onClose();
         }}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl ${widthClass}`}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] shadow-2xl ${widthClass}`}>
         {children}
       </div>
     </div>);
@@ -1089,7 +1108,7 @@ function Field({ id, label, error, children, }: {
     children: ReactNode;
 }) {
     return (<div className="block">
-      <label htmlFor={id} className="mb-1.5 block text-xs font-bold text-slate-700">
+      <label htmlFor={id} className="mb-1.5 block text-xs font-bold text-[#3B2F1E]">
         {label}
       </label>
       {children}
@@ -1111,7 +1130,7 @@ function SelectBox({ id, label, value, onChange, className = "", tall = false, c
       <select id={id} aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} className={`${tall ? `${inputCls} cursor-pointer appearance-none pr-9` : filterFieldCls}`}>
         {children}
       </select>
-      <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+      <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#A99776]"/>
     </div>);
 }
 function TypeBadge({ type }: {
@@ -1129,8 +1148,8 @@ function IconButton({ label, tone, onClick, children, }: {
     onClick: () => void;
     children: ReactNode;
 }) {
-    return (<button type="button" onClick={onClick} aria-label={label} title={label} className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 ${tone === "blue"
-            ? "hover:bg-blue-50 hover:text-blue-600"
+    return (<button type="button" onClick={onClick} aria-label={label} title={label} className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#6B5A40] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#DC2626]/30 ${tone === "blue"
+            ? "hover:bg-[#FEE9E9] hover:text-[#DC2626]"
             : "hover:bg-rose-50 hover:text-rose-600"}`}>
       {children}
     </button>);
@@ -1146,15 +1165,15 @@ function SummaryCard({ label, value, tone, icon, loading = false, children, }: {
     const styles = {
         emerald: "bg-emerald-50 text-emerald-700",
         rose: "bg-rose-50 text-rose-700",
-        blue: "bg-blue-50 text-blue-700",
-        slate: "bg-slate-100 text-slate-700",
+        blue: "bg-[#FEE9E9] text-[#B91C1C]",
+        slate: "bg-[#EFE3C8] text-[#3B2F1E]",
     }[tone];
-    return (<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    return (<div className="rounded-2xl border border-[#E3D6B8] bg-[#FFFBF0] p-4 shadow-sm">
       <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${styles}`}>
         {icon}
       </div>
-      <p className="text-xs font-bold text-slate-500">{label}</p>
-      {loading ? (<div className="mt-2 h-7 w-28"/>) : (<p className="mt-1 truncate text-xl font-black tabular-nums text-slate-900" title={value}>
+      <p className="text-xs font-bold text-[#6B5A40]">{label}</p>
+      {loading ? (<div className="mt-2 h-7 w-28"/>) : (<p className="mt-1 truncate text-xl font-black tabular-nums text-[#2B2113]" title={value}>
           {value}
         </p>)}
       {!loading && children}

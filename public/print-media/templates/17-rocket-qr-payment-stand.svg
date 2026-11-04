@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="17-rocket-qr-payment-stand" width="148mm" height="210mm" viewBox="0 0 148 210" overflow="visible" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif" data-template="17-rocket-qr-payment-stand" data-platform="SebaLagbe.com" data-unit="mm" data-bleed-mm="3" text-rendering="optimizeLegibility" font-kerning="normal">
+<title>Rocket QR Payment Stand A5</title>
+<desc>SebaLagbe.com print-media template. Real SVG text/shapes; all objects with data-editable="true" are user-editable. 1 user unit = 1 mm.</desc>
+<g id="background_layer" data-layer-name="Background" data-editable="false">
+<rect id="bg_page" data-editable="true" data-object-type="shape" data-layer-name="Page Background" x="-3" y="-3" width="154" height="216" fill="#FFFFFF" />
+</g>
+<g id="header_layer" data-layer-name="Header" data-editable="false">
+<path id="header_wave_accent" data-editable="true" data-object-type="shape" data-layer-name="Header Accent Wave" d="M-3 -3H151V49C122 58 96 44 66 51S18 58-3 49Z" fill="#F58220"/>
+<path id="header_wave_main" data-editable="true" data-object-type="shape" data-layer-name="Header Main Wave" d="M-3 -3H151V43C122 52 96 38 66 45S18 52-3 43Z" fill="#8C3494"/>
+</g>
+<g id="decorative_shapes" data-layer-name="Decorative Shapes" data-editable="false">
+<circle id="deco_circle_1" data-editable="true" data-object-type="shape" data-layer-name="Decor Circle 1" cx="138" cy="6" r="22" fill="#FFFFFF" fill-opacity="0.08"/>
+<text id="deco_watermark" data-editable="true" data-object-type="text" data-layer-name="Header Watermark Text" x="146" y="38" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="22" font-weight="800" fill="#FFFFFF" text-anchor="end" fill-opacity="0.1">Rocket</text>
+</g>
+<g id="logo_placeholder" data-layer-name="Logo Placeholder" data-editable="false">
+<circle id="shop_logo" data-editable="true" data-object-type="image" data-layer-name="Shop Logo" cx="26" cy="24" r="14" fill="#FFFFFF" stroke="#F58220" stroke-width="0.5" stroke-dasharray="2 1.5" data-placeholder="true"/>
+<g id="shop_logo_hint" class="placeholder-hint" data-placeholder-hint="true" data-editable="false"><text x="26" y="25.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.4" fill="#9AA3AF" text-anchor="middle">লোগো</text></g>
+</g>
+<g id="title_text" data-layer-name="Shop Identity" data-editable="false">
+<text id="shop_name" data-editable="true" data-object-type="text" data-layer-name="Shop Name" x="46" y="21" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="7.4" font-weight="800" fill="#FFFFFF" text-anchor="start">আপনার দোকানের নাম</text>
+<text id="shop_tagline" data-editable="true" data-object-type="text" data-layer-name="Shop Tagline" x="46" y="29.5" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4" font-weight="500" fill="#FFFFFF" text-anchor="start" fill-opacity="0.92">অনুমোদিত রকেট এজেন্ট ও মার্চেন্ট</text>
+</g>
+<g id="payment_instruction" data-layer-name="Payment Instruction" data-editable="false">
+<text id="pay_title" data-editable="true" data-object-type="text" data-layer-name="Payment Title" x="74" y="66" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="8.4" font-weight="800" fill="#5F1F66" text-anchor="middle">QR স্ক্যান করে পেমেন্ট করুন</text>
+<text id="pay_subtitle" data-editable="true" data-object-type="text" data-layer-name="Payment Subtitle" x="74" y="73.6" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="4.1" font-weight="500" fill="#6B7280" text-anchor="middle">রকেট অ্যাপ দিয়ে নিচের QR কোড স্ক্যান করুন</text>
+</g>
+<g id="qr_area" data-layer-name="QR Code Area" data-editable="false">
+<rect id="qr_frame" data-editable="true" data-object-type="shape" data-layer-name="QR Frame" x="37" y="79" width="74" height="74" rx="5" fill="#F7EDF9" stroke="#DDBCE2" stroke-width="0.6" />
+<rect id="qr_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="QR Image Placeholder (upload your QR)" x="41" y="83" width="66" height="66" rx="2" fill="#FFFFFF" stroke="#DDBCE2" stroke-width="0.5" stroke-dasharray="2 1.5"  data-placeholder="true"/>
+<g id="qr_image_placeholder_hint" class="placeholder-hint" data-placeholder-hint="true" data-editable="false"><text x="74" y="117.2" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.4" fill="#9AA3AF" text-anchor="middle">আপনার QR কোড এখানে বসান</text></g>
+<path id="qr_corner_tl" data-editable="true" data-object-type="shape" data-layer-name="QR Corner TL" d="M37 88 V79 H46" fill="none" stroke="#8C3494" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="qr_corner_tr" data-editable="true" data-object-type="shape" data-layer-name="QR Corner TR" d="M111 88 V79 H102" fill="none" stroke="#8C3494" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="qr_corner_bl" data-editable="true" data-object-type="shape" data-layer-name="QR Corner BL" d="M37 144 V153 H46" fill="none" stroke="#8C3494" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="qr_corner_br" data-editable="true" data-object-type="shape" data-layer-name="QR Corner BR" d="M111 144 V153 H102" fill="none" stroke="#8C3494" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="merchant_info" data-layer-name="Merchant Information" data-editable="false">
+<rect id="number_card" data-editable="true" data-object-type="shape" data-layer-name="Merchant Number Card" x="24" y="158" width="100" height="19" rx="4" fill="#8C3494" />
+<text id="number_label" data-editable="true" data-object-type="text" data-layer-name="Merchant Number Label" x="74" y="164.2" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" fill-opacity="0.9">রকেট নম্বর (পার্সোনাল / এজেন্ট / মার্চেন্ট)</text>
+<text id="merchant_number" data-editable="true" data-object-type="text" data-layer-name="Merchant Number" x="74" y="173.6" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="8" font-weight="800" fill="#FFFFFF" text-anchor="middle">০১XXX-XXXXXX</text>
+</g>
+<g id="steps_section" data-layer-name="Payment Steps" data-editable="false">
+<circle id="step1_circle" data-editable="true" data-object-type="shape" data-layer-name="Step 1 Circle" cx="22" cy="187" r="4.6" fill="#F7EDF9" stroke="#8C3494" stroke-width="0.6"/>
+<text id="step1_num" data-editable="true" data-object-type="text" data-layer-name="Step 1 Number" x="22" y="188.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#5F1F66" text-anchor="middle">১</text>
+<text id="step1_text" data-editable="true" data-object-type="text" data-layer-name="Step 1 Text" x="22" y="195.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.1" font-weight="600" fill="#2E1233" text-anchor="middle">অ্যাপ খুলুন</text>
+<circle id="step2_circle" data-editable="true" data-object-type="shape" data-layer-name="Step 2 Circle" cx="56.67" cy="187" r="4.6" fill="#F7EDF9" stroke="#8C3494" stroke-width="0.6"/>
+<text id="step2_num" data-editable="true" data-object-type="text" data-layer-name="Step 2 Number" x="56.67" y="188.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#5F1F66" text-anchor="middle">২</text>
+<text id="step2_text" data-editable="true" data-object-type="text" data-layer-name="Step 2 Text" x="56.67" y="195.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.1" font-weight="600" fill="#2E1233" text-anchor="middle">QR স্ক্যান করুন</text>
+<circle id="step3_circle" data-editable="true" data-object-type="shape" data-layer-name="Step 3 Circle" cx="91.34" cy="187" r="4.6" fill="#F7EDF9" stroke="#8C3494" stroke-width="0.6"/>
+<text id="step3_num" data-editable="true" data-object-type="text" data-layer-name="Step 3 Number" x="91.34" y="188.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#5F1F66" text-anchor="middle">৩</text>
+<text id="step3_text" data-editable="true" data-object-type="text" data-layer-name="Step 3 Text" x="91.34" y="195.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.1" font-weight="600" fill="#2E1233" text-anchor="middle">টাকা লিখুন</text>
+<circle id="step4_circle" data-editable="true" data-object-type="shape" data-layer-name="Step 4 Circle" cx="126.01" cy="187" r="4.6" fill="#F7EDF9" stroke="#8C3494" stroke-width="0.6"/>
+<text id="step4_num" data-editable="true" data-object-type="text" data-layer-name="Step 4 Number" x="126.01" y="188.9" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="5" font-weight="800" fill="#5F1F66" text-anchor="middle">৪</text>
+<text id="step4_text" data-editable="true" data-object-type="text" data-layer-name="Step 4 Text" x="126.01" y="195.4" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.1" font-weight="600" fill="#2E1233" text-anchor="middle">পিন দিন</text>
+</g>
+<g id="footer_layer" data-layer-name="Footer" data-editable="false">
+<rect id="footer_bg" data-editable="true" data-object-type="shape" data-layer-name="Footer Background" x="-3" y="202" width="154" height="14" fill="#5F1F66" />
+<rect id="footer_stripe" data-editable="true" data-object-type="shape" data-layer-name="Footer Accent Stripe" x="-3" y="202" width="154" height="1.2" fill="#F58220" />
+</g>
+<g id="contact_information" data-layer-name="Contact Information" data-editable="false">
+<text id="footer_text" data-editable="true" data-object-type="text" data-layer-name="Footer Text" x="74" y="208.6" font-family="Noto Sans Bengali, Hind Siliguri, sans-serif" font-size="3.8" font-weight="600" fill="#FFFFFF" text-anchor="middle">নিরাপদ ও দ্রুত পেমেন্ট  •  ধন্যবাদ</text>
+</g>
+<g id="print_guides" data-layer-name="Print Guides (hidden - non-printing)" data-editable="false" display="none" data-print="false">
+<rect x="0" y="0" width="148" height="210" fill="none" stroke="#FF00FF" stroke-width="0.3"/>
+<rect x="5" y="5" width="138" height="200" fill="none" stroke="#00B7EB" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<rect x="-3" y="-3" width="154" height="216" fill="none" stroke="#FF8C00" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+</g>
+</svg>

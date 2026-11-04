@@ -37,6 +37,7 @@ const IMAGE_CATEGORIES = new Set([
   "manually-edited",
   "ai-template-generated",
   "bulk-photo-edit",
+  "print-media",
 ]);
 
 let cacheEntry: CacheEntry | null = null;

@@ -5,13 +5,13 @@ import { T } from "@/components/i18n/I18nProvider";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 
 // Shown until the admin saves their own link in Admin → Site Settings → Footer.
-const DEFAULT_SUPPORT_GROUP_URL = "https://chat.whatsapp.com/KaeIxbEHVuwFIve8fTTl9W";
+export const DEFAULT_SUPPORT_GROUP_URL = "https://chat.whatsapp.com/KaeIxbEHVuwFIve8fTTl9W";
 
 /**
  * Cleans a WhatsApp group link: strips tracking params (fbclid, s, p, iam ...) and unwraps
  * Facebook redirect links (l.facebook.com/l.php?u=...). Returns "" if it is not a valid link.
  */
-function normalizeGroupLink(raw?: string): string {
+export function normalizeGroupLink(raw?: string): string {
   let value = (raw || "").trim();
   if (!value) return "";
   try {

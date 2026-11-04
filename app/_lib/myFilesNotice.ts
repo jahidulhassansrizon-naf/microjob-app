@@ -6,6 +6,8 @@ export const MY_FILES_SAVED_EVENT = "sebalagbe:my-files-saved";
 export type MyFilesSavedDetail = {
   /** How many images were saved (bulk editor can save several). Default 1. */
   count?: number;
+  /** "design" = a saved Print Media design (editable later), default = a generated image. */
+  kind?: "image" | "design";
 };
 
 /**
@@ -13,7 +15,7 @@ export type MyFilesSavedDetail = {
  * - drops the in-memory My Files cache, so the new image shows up the moment the user opens My Files
  * - shows the global "saved in My Files" popup (see MyFilesSavedPopup)
  */
-export function notifyMyFilesSaved(count = 1): void {
+export function notifyMyFilesSaved(count = 1, kind: "image" | "design" = "image"): void {
   if (typeof window === "undefined") return;
   try {
     clearMyFilesDataCache();
@@ -22,7 +24,7 @@ export function notifyMyFilesSaved(count = 1): void {
   }
   window.dispatchEvent(
     new CustomEvent<MyFilesSavedDetail>(MY_FILES_SAVED_EVENT, {
-      detail: { count: Math.max(1, Math.floor(count) || 1) },
+      detail: { count: Math.max(1, Math.floor(count) || 1), kind },
     }),
   );
 }
