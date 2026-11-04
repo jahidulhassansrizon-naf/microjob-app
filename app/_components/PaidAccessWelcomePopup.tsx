@@ -7,7 +7,7 @@ import { Crown, Hourglass, X } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 type Kind = "welcome" | "expired";
-type Welcome = { kind: Kind; key: string; months: number; expiresAt: string };
+type Welcome = { kind: Kind; key: string; months: number; planName?: string; expiresAt: string };
 
 const SEEN_STORAGE_KEYS: Record<Kind, string> = {
   welcome: "sebalagbe:paid-welcome-seen",
@@ -164,6 +164,7 @@ export default function PaidAccessWelcomePopup() {
         kind,
         key: data.key,
         months: Number(data.months) || 0,
+        planName: typeof data.planName === "string" ? data.planName : "",
         expiresAt: String(data.expiresAt || ""),
       };
       welcomeRef.current = next;
@@ -232,7 +233,7 @@ export default function PaidAccessWelcomePopup() {
 
   const copy = lang[welcome.kind];
   const expired = welcome.kind === "expired";
-  const plan = planLabel(welcome.months, bn);
+  const plan = welcome.planName || planLabel(welcome.months, bn);
   const until = formatDate(welcome.expiresAt, bn);
   const Icon = expired ? Hourglass : Crown;
 

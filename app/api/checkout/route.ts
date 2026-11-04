@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
-import { SUBSCRIPTION_PLAN_BY_ID, type SubscriptionPlanId } from "@/app/_lib/subscriptionPlans";
+import { getSubscriptionPlan } from "@/app/api/_lib/subscriptionPlans";
 import {
   createPipraPayCheckout,
   getPipraPayConfig,
@@ -21,7 +21,6 @@ const APP_URL = (
 ).trim().replace(/\/+$/, "");
 
 type JwtPayload = { userId?: string; exp?: number };
-type PlanId = SubscriptionPlanId;
 
 function getTokenFromRequest(request: Request) {
   const authorization = request.headers.get("authorization");
@@ -78,9 +77,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => null);
-    const planId = String(body?.planId || body?.plan_id || "") as PlanId;
-    if (!Object.prototype.hasOwnProperty.call(SUBSCRIPTION_PLAN_BY_ID, planId)) {
-      return NextResponse.json({ success: false, message: "Invalid subscription plan." }, { status: 400 });
+    const planId = String(body?.planId || body?.plan_id || "").trim();
+    const plan = await getSubscriptionPlan(planId);
+    if (!plan) {
+      return NextResponse.json({ success: false, message: "Invalid or unavailable subscription plan." }, { status: 400 });
     }
 
     await connectDB();
@@ -98,12 +98,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
     const subscription = await Subscription.create({
       userId: user._id,
       planId,
       planName: plan.name,
       months: plan.months,
+      planDays: plan.days,
       amount: plan.price,
       paymentProvider: "PipraPay",
       paymentMethod: "PipraPay",

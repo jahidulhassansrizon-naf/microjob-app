@@ -270,10 +270,11 @@ function getMetadataValue(metadata: PipraPayRecord, snake: string, camel: string
   return String(metadata?.[snake] ?? metadata?.[camel] ?? "").trim();
 }
 
-function getSubscriptionDurationDays(planId: string) {
-  const plan = SUBSCRIPTION_PLAN_BY_ID[planId as keyof typeof SUBSCRIPTION_PLAN_BY_ID];
+function getSubscriptionDurationDays(planId: string, storedDays?: number) {
+  if (Number.isInteger(storedDays) && Number(storedDays) > 0) return Number(storedDays);
+  const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
   if (plan?.days) return plan.days;
-  // Preserve support for an older 3-month subscription that may still exist in the DB.
+  // Preserve support for older pending 3-month records created before duration snapshots.
   return planId === "3-month" ? 90 : 0;
 }
 
@@ -430,7 +431,7 @@ export async function verifyAndActivateSubscription(
     return { ok: false, httpStatus: 409, message: "This subscription payment is no longer pending.", payment };
   }
 
-  const days = getSubscriptionDurationDays(String(subscription.planId));
+  const days = getSubscriptionDurationDays(String(subscription.planId), Number(subscription.planDays));
   if (!days) {
     return { ok: false, httpStatus: 409, message: "Unknown subscription plan duration.", payment };
   }

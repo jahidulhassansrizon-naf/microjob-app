@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       planId: item.planId,
       planName: item.planName,
       months: Number(item.months || 0),
+      planDays: Number(item.planDays || 0),
       amount: Number(item.amount || 0),
       invoiceId: item.invoiceId || item.providerInvoiceId || "",
       paymentProvider: item.paymentProvider || "",

@@ -12,7 +12,16 @@ const SubscriptionSchema = new Schema(
     planId: {
       type: String,
       required: true,
-      enum: ["1-month", "3-month", "6-month", "1-year"],
+      trim: true,
+      maxlength: 64,
+    },
+
+    // Exact duration snapshot captured when checkout starts. Historical orders
+    // keep their original duration even if an administrator later edits a plan.
+    planDays: {
+      type: Number,
+      min: 0,
+      default: 0,
     },
 
     planName: {

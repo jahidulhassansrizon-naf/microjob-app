@@ -4,10 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
-import {
-  SUBSCRIPTION_PLAN_BY_ID,
-  type SubscriptionPlanId,
-} from "@/app/_lib/subscriptionPlans";
+import { getSubscriptionPlan, getSubscriptionPlans } from "@/app/api/_lib/subscriptionPlans";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +15,6 @@ const WALLET_NUMBERS = {
 };
 
 type AuthClaims = { userId?: string };
-type PlanId = SubscriptionPlanId;
 type WalletMethod = keyof typeof WALLET_NUMBERS;
 
 function getToken(request: Request): string | null {
@@ -69,11 +65,6 @@ function authError() {
   );
 }
 
-function getPlan(planId: string | null) {
-  const id = (planId || "1-month") as PlanId;
-  if (!Object.prototype.hasOwnProperty.call(SUBSCRIPTION_PLAN_BY_ID, id)) return null;
-  return SUBSCRIPTION_PLAN_BY_ID[id];
-}
 
 export async function GET(request: Request) {
   const userId = getUserId(request);
@@ -82,19 +73,38 @@ export async function GET(request: Request) {
   try {
     await connectDB();
     const url = new URL(request.url);
-    const planId = url.searchParams.get("plan") || "1-month";
-    const plan = getPlan(planId);
-    if (!plan) {
-      return NextResponse.json({ success: false, message: "সঠিক সাবস্ক্রিপশন প্ল্যান নির্বাচন করুন।" }, { status: 400 });
-    }
+    const activePlans = await getSubscriptionPlans();
+    const planId = url.searchParams.get("plan")?.trim() || activePlans[0]?.id || "";
 
     const [user, pending] = await Promise.all([
       User.findById(userId).select("fullName email phoneNumber").lean(),
       Subscription.findOne({ userId, paymentStatus: "PENDING", accessStatus: "PENDING", paymentMethod: { $in: ["Nagad", "bKash"] }, transactionId: { $ne: "" } })
         .sort({ createdAt: -1 })
-        .select("planId planName amount paymentMethod transactionId senderNumber submittedAt reviewStatus createdAt")
+        .select("planId planName months planDays amount paymentMethod transactionId senderNumber submittedAt reviewStatus createdAt")
         .lean(),
     ]);
+
+    // Prefer the immutable snapshot when this customer already submitted a payment
+    // for the requested plan. It remains viewable even if the admin later pauses or
+    // removes that plan from the public catalogue.
+    const pendingMatchesPlan = Boolean(pending && String(pending.planId) === planId);
+    const activePlan = activePlans.find((item) => item.id === planId) || null;
+    const plan = pendingMatchesPlan && pending
+      ? {
+          id: String(pending.planId),
+          name: String(pending.planName || "Subscription plan"),
+          duration: Number(pending.planDays) > 0
+            ? `${Number(pending.planDays)} Days`
+            : `${Math.max(1, Number(pending.months) || 1)} Months`,
+          months: Math.max(1, Number(pending.months) || 1),
+          days: Number(pending.planDays) || Math.max(1, Number(pending.months) || 1) * 30,
+          price: Number(pending.amount || 0),
+        }
+      : activePlan;
+
+    if (!plan) {
+      return NextResponse.json({ success: false, message: "সঠিক ও সক্রিয় সাবস্ক্রিপশন প্ল্যান নির্বাচন করুন।" }, { status: 400 });
+    }
 
     if (!user) {
       return NextResponse.json({ success: false, message: "আপনার অ্যাকাউন্টটি পাওয়া যায়নি।" }, { status: 404 });
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
     await connectDB();
     const body = await request.json().catch(() => null);
     const planId = String(body?.planId || "");
-    const plan = getPlan(planId);
+    const plan = await getSubscriptionPlan(planId);
     const method = String(body?.paymentMethod || "") as WalletMethod;
     // MFS TrxIDs are 8–10 alphanumeric characters. Do not silently strip
     // internal spaces or punctuation; reject values that do not match the format.
@@ -190,6 +200,7 @@ export async function POST(request: Request) {
       planId,
       planName: plan.name,
       months: plan.months,
+      planDays: plan.days,
       amount: plan.price,
       paymentProvider: "Manual",
       paymentMethod: method,

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Subscription from "@/models/Subscription";
 import { requireAdmin } from "../../../_lib/adminAuth";
-import { SUBSCRIPTION_PLAN_BY_ID } from "@/app/_lib/subscriptionPlans";
+import { getLegacySubscriptionPlanDays } from "@/app/api/_lib/subscriptionPlans";
 
 export const dynamic = "force-dynamic";
 
@@ -65,10 +65,10 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ success: true, message: "Payment rejected.", subscription: { id: String(rejected._id), paymentStatus: rejected.paymentStatus, accessStatus: rejected.accessStatus, reviewStatus: rejected.reviewStatus } });
     }
 
-    const currentPlan = SUBSCRIPTION_PLAN_BY_ID[subscription.planId as keyof typeof SUBSCRIPTION_PLAN_BY_ID];
-    // Allow an already-submitted legacy 3-month payment to be reviewed even though it is no longer sold.
-    const plan = currentPlan ?? (subscription.planId === "3-month" ? { name: "3 Months", days: 90 } : null);
-    if (!plan || !Number.isFinite(plan.days) || plan.days <= 0) {
+    // New orders carry an immutable planDays snapshot. Only very old records
+    // fall back to the original built-in durations (including legacy 3-month).
+    const planDays = Number(subscription.planDays) || getLegacySubscriptionPlanDays(String(subscription.planId));
+    if (!Number.isInteger(planDays) || planDays <= 0 || planDays > 36_500) {
       return NextResponse.json({ success: false, message: "The subscription plan duration is not supported." }, { status: 409 });
     }
 
@@ -84,7 +84,7 @@ export async function POST(request: Request, context: RouteContext) {
     const currentExpiry = active?.expiresAt ? new Date(active.expiresAt) : null;
     const startedAt = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
     const expiresAt = new Date(startedAt);
-    expiresAt.setDate(expiresAt.getDate() + plan.days);
+    expiresAt.setDate(expiresAt.getDate() + planDays);
 
     const approved = await Subscription.findOneAndUpdate(
       { _id: subscription._id, paymentStatus: "PENDING", accessStatus: "PENDING" },
@@ -107,7 +107,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      message: `Payment approved. ${plan.name} subscription access is active.`,
+      message: `Payment approved. ${subscription.planName} subscription access is active.`,
       subscription: {
         id: String(approved._id),
         paymentStatus: approved.paymentStatus,

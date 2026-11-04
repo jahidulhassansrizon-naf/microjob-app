@@ -27,8 +27,9 @@ import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import BrandName from "@/app/_components/BrandName";
 import OfferVideoFrame from "../_components/OfferVideoFrame";
 import {
-  SUBSCRIPTION_PLANS as plans,
+  SUBSCRIPTION_PLANS as DEFAULT_PLANS,
   SUBSCRIPTION_PLAN_FEATURES as features,
+  type SubscriptionPlan,
 } from "@/app/_lib/subscriptionPlans";
 
 /* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
@@ -62,8 +63,8 @@ const capitalize = (value: string) =>
 
 const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "choose 1 month, 6 months, or 1 year of access to all paid tools. pay once; renew only when you want.":
-    "সব পেইড টুলের জন্য ১ মাস, ৬ মাস অথবা ১ বছরের প্ল্যান বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
+  "choose the access duration that works for you. pay once; renew only when you want.":
+    "আপনার প্রয়োজন অনুযায়ী অ্যাক্সেসের মেয়াদ বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
   "full access to all paid tools for 1 month":
     "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "full access to all paid tools for 6 months":
@@ -547,7 +548,7 @@ const AVATAR_TONES = [
   "from-[#B91C1C] to-[#991B1B]",
 ];
 
-function RecentSubscriptionActivity() {
+function RecentSubscriptionActivity({ plans }: { plans: SubscriptionPlan[] }) {
   const { t, locale } = useSubscriptionText();
   const [activeIndex, setActiveIndex] = useState(0);
   const [toastVisible, setToastVisible] = useState(false);
@@ -590,7 +591,8 @@ function RecentSubscriptionActivity() {
   if (!DEMO_ACTIVITY_ENABLED) return null;
 
   const activePurchase = DEMO_PURCHASES[activeIndex % DEMO_PURCHASES.length];
-  const activePlan = plans[activeIndex % plans.length];
+  const activePlans = plans.length ? plans : DEFAULT_PLANS;
+  const activePlan = activePlans[activeIndex % activePlans.length];
   const tone = AVATAR_TONES[activeIndex % AVATAR_TONES.length];
   // The second card changes together with every new purchase: today -> 1 minute ago -> ... -> 1 hour ago -> ... -> 2 months ago.
   const statIndex = activeIndex % DEMO_BUCKETS.length;
@@ -751,7 +753,9 @@ export default function SubscriptionPage() {
   };
 
   const { t, locale } = useSubscriptionText();
-  const [selectedId, setSelectedId] = useState<string>("1-month");
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string>(DEFAULT_PLANS[0]?.id || "1-month");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPipraPayProcessing, setIsPipraPayProcessing] = useState(false);
   const [isPipraPayEnabled, setIsPipraPayEnabled] = useState(false);
@@ -763,7 +767,7 @@ export default function SubscriptionPage() {
   const [pendingSubscription, setPendingSubscription] =
     useState<PendingSubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
+  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0] ?? DEFAULT_PLANS[0];
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
@@ -807,6 +811,23 @@ export default function SubscriptionPage() {
   useEffect(() => {
     void loadCurrentSubscription();
     const controller = new AbortController();
+    void fetch("/api/subscription/plans", {
+      method: "GET", credentials: "include", cache: "no-store", signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.success === true && Array.isArray(data.plans) && data.plans.length) {
+          const nextPlans = data.plans as SubscriptionPlan[];
+          setPlans(nextPlans);
+          setSelectedId((current) => nextPlans.some((plan) => plan.id === current) ? current : nextPlans[0].id);
+        }
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) console.error("Failed to load subscription plans:", error);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPlansLoading(false);
+      });
     void fetch("/api/payment/piprapay-status", {
       method: "GET",
       credentials: "include",
@@ -851,6 +872,7 @@ export default function SubscriptionPage() {
       isPipraPayProcessing ||
       isUddoktaPayProcessing ||
       isProcessing ||
+      plansLoading ||
       !isPipraPayEnabled
     )
       return;
@@ -897,6 +919,7 @@ export default function SubscriptionPage() {
       isUddoktaPayProcessing ||
       isPipraPayProcessing ||
       isProcessing ||
+      plansLoading ||
       !isUddoktaPayEnabled
     )
       return;
@@ -938,7 +961,7 @@ export default function SubscriptionPage() {
   };
 
   const handleContinue = () => {
-    if (isProcessing) return;
+    if (isProcessing || plansLoading) return;
     setIsProcessing(true);
     setPaymentError("");
     window.location.href = `/payment/manual?plan=${encodeURIComponent(selected.id)}`;
@@ -984,7 +1007,7 @@ export default function SubscriptionPage() {
               <p className="mt-1 text-sm leading-6 text-[#5A4A32] sm:text-[15px]">
                 <T>
                   {
-                    "Choose 1 month, 6 months, or 1 year of access to all paid tools. Pay once; renew only when you want."
+                    "Choose the access duration that works for you. Pay once; renew only when you want."
                   }
                 </T>
               </p>
@@ -1277,6 +1300,7 @@ export default function SubscriptionPage() {
                     <button
                       key={plan.id}
                       type="button"
+                      disabled={plansLoading}
                       role="radio"
                       aria-checked={isSelected}
                       onClick={() => handleSelect(plan.id)}
@@ -1300,24 +1324,28 @@ export default function SubscriptionPage() {
                           <span className="text-sm font-medium text-[#7A6A50]">
                             <T>{plan.duration}</T>
                           </span>
-                          <span className="rounded-full bg-[#DC2626] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                            <T>{plan.badge}</T>
-                          </span>
+                          {plan.badge ? (
+                            <span className="rounded-full bg-[#DC2626] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                              <T>{plan.badge}</T>
+                            </span>
+                          ) : null}
                         </div>
                         <p className="mt-0.5 truncate text-[13px] text-[#5A4A32]">
                           <T>{plan.note}</T>
                         </p>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7A6A50]">
-                          <span>
-                            <T>{"Regular price"}</T>{" "}
-                            <span className="line-through decoration-[#9A8A6C]">
-                              {formatPrice(plan.regularPrice)}
+                        {plan.regularPrice > plan.price ? (
+                          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7A6A50]">
+                            <span>
+                              <T>{"Regular price"}{" "}</T>
+                              <span className="line-through decoration-[#9A8A6C]">
+                                {formatPrice(plan.regularPrice)}
+                              </span>
                             </span>
-                          </span>
-                          <span className="rounded bg-[#FEF2F2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
-                            <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
-                          </span>
-                        </p>
+                            <span className="rounded bg-[#FEF2F2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
+                              <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
+                            </span>
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="shrink-0 text-right">
@@ -1401,7 +1429,8 @@ export default function SubscriptionPage() {
                         disabled={
                           isUddoktaPayProcessing ||
                           isPipraPayProcessing ||
-                          isProcessing
+                          isProcessing ||
+                          plansLoading
                         }
                         className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-[#0F766E] px-5 py-2.5 text-center text-base font-bold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#115E59] hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-600/40 disabled:cursor-not-allowed disabled:opacity-70"
                       >
@@ -1420,7 +1449,8 @@ export default function SubscriptionPage() {
                       disabled={
                         isPipraPayProcessing ||
                         isUddoktaPayProcessing ||
-                        isProcessing
+                        isProcessing ||
+                        plansLoading
                       }
                       className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#166534] px-5 py-2.5 text-center text-[15px] font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#14532D] hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/40 disabled:cursor-not-allowed disabled:opacity-70"
                     >
@@ -1437,7 +1467,8 @@ export default function SubscriptionPage() {
                     disabled={
                       isProcessing ||
                       isPipraPayProcessing ||
-                      isUddoktaPayProcessing
+                      isUddoktaPayProcessing ||
+                      plansLoading
                     }
                     className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 py-2.5 text-center text-[15px] font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 ${isPipraPayEnabled || isUddoktaPayEnabled ? "border border-[#E8DFCC] bg-white text-[#B91C1C] hover:border-[#DC2626]/40 hover:bg-[#FEF2F2]" : "bg-[#DC2626] text-white hover:bg-[#B91C1C]"}`}
                   >
@@ -1490,7 +1521,7 @@ export default function SubscriptionPage() {
                   hideControls
                 />
               </section>
-              <RecentSubscriptionActivity />
+              <RecentSubscriptionActivity plans={plans} />
               <section className="flex-1 rounded-xl border border-[#E8DFCC] bg-white px-4 py-3 shadow-sm">
                 <h2 className="text-base font-bold text-[#2B2116]">
                   <T>{"Included with your subscription"}</T>

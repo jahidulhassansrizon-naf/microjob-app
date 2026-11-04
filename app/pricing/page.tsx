@@ -11,7 +11,7 @@ import { motion, type Variants } from "framer-motion";
 import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
-import { SUBSCRIPTION_PLANS as plans, SUBSCRIPTION_PLAN_FEATURES as features } from "@/app/_lib/subscriptionPlans";
+import { SUBSCRIPTION_PLANS as DEFAULT_PLANS, SUBSCRIPTION_PLAN_FEATURES as features, type SubscriptionPlan } from "@/app/_lib/subscriptionPlans";
 
 /* Subscription plan details are shared with PipraPay checkout via app/_lib/subscriptionPlans.ts. */
 const formatPrice = (value: number) => `৳${Math.round(value).toLocaleString("en-US")}`;
@@ -37,7 +37,7 @@ const capitalize = (value: string) => value ? value.charAt(0).toUpperCase() + va
 
 const SUBSCRIPTION_BN: Record<string, string> = {
   "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "choose 1 month, 6 months, or 1 year of access to all paid tools. pay once; renew only when you want.": "সব পেইড টুলের জন্য ১ মাস, ৬ মাস অথবা ১ বছরের প্ল্যান বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
+  "choose the access duration that works for you. pay once; renew only when you want.": "আপনার প্রয়োজন অনুযায়ী অ্যাক্সেসের মেয়াদ বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
   "full access to all paid tools for 1 month": "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "full access to all paid tools for 6 months": "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
   "full access to all paid tools for 1 year": "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
@@ -283,12 +283,14 @@ export default function PricingPage() {
   const { t, locale } = useSubscriptionText();
   const router = useRouter();
   const toolNavigationInFlightRef = useRef(false);
-  const [selectedId, setSelectedId] = useState<string>("1-month");
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string>(DEFAULT_PLANS[0]?.id || "1-month");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
+  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0] ?? DEFAULT_PLANS[0];
 
   /**
    * Keep tool cards on Pricing in sync with the normal Seba Lagbe access flow:
@@ -365,12 +367,27 @@ export default function PricingPage() {
     }
   }, [router]);
 
-  // Restore the plan selected before the visitor was sent to log in.
+  // Load the same administrator-managed catalogue used by subscription checkout.
   useEffect(() => {
+    const controller = new AbortController();
     const requestedPlan = new URLSearchParams(window.location.search).get("plan");
-    if (requestedPlan && plans.some((plan) => plan.id === requestedPlan)) {
-      setSelectedId(requestedPlan);
-    }
+    void fetch("/api/subscription/plans", {
+      method: "GET", credentials: "include", cache: "no-store", signal: controller.signal,
+    }).then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data?.success === true && Array.isArray(data.plans) && data.plans.length) {
+        const nextPlans = data.plans as SubscriptionPlan[];
+        setPlans(nextPlans);
+        setSelectedId((current) => requestedPlan && nextPlans.some((plan) => plan.id === requestedPlan)
+          ? requestedPlan
+          : nextPlans.some((plan) => plan.id === current) ? current : nextPlans[0].id);
+      }
+    }).catch((error) => {
+      if (!controller.signal.aborted) console.error("Failed to load subscription plans:", error);
+    }).finally(() => {
+      if (!controller.signal.aborted) setPlansLoading(false);
+    });
+    return () => controller.abort();
   }, []);
 
   const formatDate = (value: string | null) => {
@@ -417,7 +434,7 @@ export default function PricingPage() {
   };
 
   const handleContinue = async () => {
-    if (isProcessing) return;
+    if (isProcessing || plansLoading) return;
     setIsProcessing(true);
     setPaymentError("");
 
@@ -486,7 +503,7 @@ export default function PricingPage() {
                 <T>{"Choose your subscription plan"}</T>
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
-                <T>{"Choose 1 month, 6 months, or 1 year of access to all paid tools. Pay once; renew only when you want."}</T>
+                <T>{"Choose the access duration that works for you. Pay once; renew only when you want."}</T>
               </p>
             </div>
           </section>
@@ -608,14 +625,13 @@ export default function PricingPage() {
                 <button
                   key={plan.id}
                   type="button"
+                  disabled={plansLoading}
                   role="radio"
                   aria-checked={isSelected}
                   onClick={() => handleSelect(plan.id)}
                   className={`group relative w-full rounded-2xl border text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 ${isSelected ? "border-[#2563EB] bg-white shadow-[0_16px_44px_-18px_rgba(37,99,235,0.42)] ring-4 ring-[#2563EB]/10" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"}`}
                 >
-                  <span className="absolute -top-3 left-5 rounded-md bg-[#2563EB] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
-                    <T>{plan.badge}</T>
-                  </span>
+                  {plan.badge ? <span className="absolute -top-3 left-5 rounded-md bg-[#2563EB] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm"><T>{plan.badge}</T></span> : null}
                   <span className={`absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#2563EB] bg-[#2563EB]" : "border-slate-300 bg-white"}`}>
                     <Check size={13} strokeWidth={3.5} className={`text-white transition-all ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`} />
                   </span>
@@ -641,17 +657,17 @@ export default function PricingPage() {
                     </div>
 
                     <div className="border-t border-slate-100 pt-4 md:min-w-[210px] md:border-l md:border-t-0 md:pl-8 md:pt-0 md:text-right">
-                      <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
+                      {plan.regularPrice > plan.price ? <p className="flex items-center gap-2 text-xs font-semibold text-slate-400 md:justify-end">
                         <T>{"Regular price"}</T>
                         <span className="text-sm line-through decoration-slate-400">{formatPrice(plan.regularPrice)}</span>
-                      </p>
+                      </p> : null}
                       <div className="mt-1 flex items-baseline gap-2 md:justify-end">
                         <span className="text-4xl font-black leading-none tracking-tight text-[#2563EB] sm:text-5xl">{formatPrice(plan.price)}</span>
                         <span className="text-xs font-semibold text-slate-500"><T>{`/ ${plan.name}`}</T></span>
                       </div>
-                      <span className="mt-3 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                      {plan.regularPrice > plan.price ? <span className="mt-3 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                         <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
-                      </span>
+                      </span> : null}
                     </div>
                   </div>
                 </button>
@@ -673,7 +689,7 @@ export default function PricingPage() {
                   <p className="text-xs font-medium text-slate-500"><T>{"Total"}</T></p>
                   <p className="mt-0.5 text-2xl font-black text-[#0F172A]">{formatPrice(selected.price)}</p>
                 </div>
-                <button type="button" onClick={handleContinue} disabled={isProcessing} className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="button" onClick={handleContinue} disabled={isProcessing || plansLoading} className="cursor-pointer rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2563EB]/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
                   {isProcessing ? <T>{"Redirecting to payment..."}</T> : <T>{`Unlock ${selected.name.toLowerCase()} access for ${formatPrice(selected.price)}`}</T>}
                 </button>
               </div>

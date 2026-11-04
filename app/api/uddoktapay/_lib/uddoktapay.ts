@@ -203,8 +203,9 @@ function parseMetadata(value: unknown): ProviderRecord {
   return {};
 }
 
-function getDurationDays(planId: string): number {
-  const plan = SUBSCRIPTION_PLAN_BY_ID[planId as keyof typeof SUBSCRIPTION_PLAN_BY_ID];
+function getDurationDays(planId: string, storedDays?: number): number {
+  if (Number.isInteger(storedDays) && Number(storedDays) > 0) return Number(storedDays);
+  const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
   if (plan?.days) return plan.days;
   return planId === "3-month" ? 90 : 0;
 }
@@ -303,7 +304,7 @@ export async function verifyAndActivateUddoktaPaySubscription(
     return { ok: false, httpStatus: 409, message: "This subscription payment is no longer pending.", payment };
   }
 
-  const days = getDurationDays(String(subscription.planId));
+  const days = getDurationDays(String(subscription.planId), Number(subscription.planDays));
   if (!days) return { ok: false, httpStatus: 409, message: "Unknown subscription plan duration.", payment };
 
   const now = new Date();

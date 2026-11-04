@@ -28,7 +28,7 @@ export type OverviewInsightsData = {
     activation: { base: number; activated: number };
     sevenDayReturn: { base: number; returned: number };
     churn: { expired: number; notRenewed: number };
-    plans: { planId: string; count: number; revenue: number }[];
+    plans: { planId: string; planName?: string; count: number; revenue: number }[];
   };
   health: {
     aiCostToday: number;
@@ -292,7 +292,7 @@ export default function OverviewInsights({
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {growth.plans.map((p) => (
-                  <Bar key={p.planId} label={planLabel[p.planId] || p.planId} value={p.count} max={planTotal} right={`${p.count} · ${pct(p.count, planTotal)} · ${money(p.revenue)}`} />
+                  <Bar key={p.planId} label={p.planName || planLabel[p.planId] || p.planId} value={p.count} max={planTotal} right={`${p.count} · ${pct(p.count, planTotal)} · ${money(p.revenue)}`} />
                 ))}
               </div>
             )}

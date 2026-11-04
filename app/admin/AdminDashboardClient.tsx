@@ -58,10 +58,11 @@ import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPan
 import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import SmtpSettingsPanel from "./_components/SmtpSettingsPanel";
 import MailCampaignPanel from "./_components/MailCampaignPanel";
+import SubscriptionPlansPanel from "./_components/SubscriptionPlansPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -102,7 +103,15 @@ type UserRow = {
     expiresAt?: string | null;
   };
 };
-function subscriptionDurationLabel(planId: string, months: number) {
+function subscriptionDurationLabel(planId: string, months: number, planDays = 0) {
+  if (Number.isInteger(planDays) && planDays > 0) {
+    if (planDays === 365 && months === 12) return "1 year";
+    if (planDays === 180 && months === 6) return "6 months";
+    if (planDays === 30 && months === 1) return "1 month";
+    if (planDays % 365 === 0) return `${planDays / 365} years`;
+    if (planDays % 30 === 0) return `${planDays / 30} months`;
+    return `${planDays} ${planDays === 1 ? "day" : "days"}`;
+  }
   if (planId === "1-year" || months === 12) return "1 year";
   if (planId === "6-month" || months === 6) return "6 months";
   if (planId === "1-month" || months === 1) return "1 month";
@@ -115,6 +124,7 @@ type SubscriptionRow = {
   planId: string;
   planName: string;
   months: number;
+  planDays?: number;
   amount: number;
   invoiceId: string;
   paymentProvider?: string;
@@ -553,6 +563,7 @@ export default function AdminDashboardClient() {
   const [reviewingSubscriptionId, setReviewingSubscriptionId] = useState("");
   const [subscriptionActionBusyId, setSubscriptionActionBusyId] = useState("");
   const [subscriptionDeleteBusyId, setSubscriptionDeleteBusyId] = useState("");
+  const [subscriptionPlansRefreshKey, setSubscriptionPlansRefreshKey] = useState(0);
   const [subscriptionPagination, setSubscriptionPagination] =
     useState<ApiPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
 
@@ -1129,6 +1140,12 @@ export default function AdminDashboardClient() {
         icon: Mail,
         badgeCount: 0,
       },
+      {
+        key: "subscription-plans" as const,
+        label: "Subscription Plans",
+        icon: Percent,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -1147,7 +1164,9 @@ export default function AdminDashboardClient() {
               ? "Payment gateway configuration"
               : tab === "smtp"
                 ? "Email & SMTP"
-                : "Website settings";
+                : tab === "subscription-plans"
+                  ? "Subscription plan controls"
+                  : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -1161,6 +1180,7 @@ export default function AdminDashboardClient() {
       await loadSubscriptions(subscriptionPagination.page);
     else if (tab === "chats") setChatRefreshKey((current) => current + 1);
     else if (tab === "settings") router.refresh();
+    else if (tab === "subscription-plans") setSubscriptionPlansRefreshKey((current) => current + 1);
     else await loadOverview();
     setRefreshing(false);
   };
@@ -1444,7 +1464,7 @@ export default function AdminDashboardClient() {
             {rows.map((item) => {
               const { active, paymentTone, accessTone } =
                 subscriptionTones(item);
-              const duration = subscriptionDurationLabel(item.planId, item.months);
+              const duration = subscriptionDurationLabel(item.planId, item.months, item.planDays);
               const sameAsPlan =
                 duration.toLowerCase().replace(/\s/g, "") ===
                 (item.planName || "").toLowerCase().replace(/\s/g, "");
@@ -2346,6 +2366,7 @@ export default function AdminDashboardClient() {
           {tab === "settings" && <SiteSettingsPanel />}
           {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
           {tab === "smtp" && <div className="space-y-6"><SmtpSettingsPanel /><MailCampaignPanel /></div>}
+          {tab === "subscription-plans" && <SubscriptionPlansPanel key={subscriptionPlansRefreshKey} />}
 
           {accessModalUser && (
             <div

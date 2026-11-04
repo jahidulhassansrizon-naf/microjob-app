@@ -72,8 +72,8 @@ export async function buildInsights(ctx: Ctx) {
     safe(Subscription.countDocuments({ paymentStatus: { $in: ["ERROR", "REJECTED"] }, updatedAt: { $gte: new Date(now.getTime() - DAY) } }), 0),
     safe(User.countDocuments({ ...databaseUserFilter, lastSeenAt: { $gte: startOfToday } }), 0),
     safe(User.countDocuments({ ...databaseUserFilter, lastSeenAt: { $gte: thirtyDaysAgo } }), 0),
-    safe(Subscription.find({ ...activeSubscriptionFilter, ...realPaymentMatch }).select("planId amount").lean(), [] as any[]),
-    safe(Subscription.aggregate([{ $match: realPaymentMatch }, { $group: { _id: "$planId", count: { $sum: 1 }, revenue: { $sum: "$amount" } } }]), [] as any[]),
+    safe(Subscription.find({ ...activeSubscriptionFilter, ...realPaymentMatch }).select("planId amount months planDays").lean(), [] as any[]),
+    safe(Subscription.aggregate([{ $match: realPaymentMatch }, { $sort: { createdAt: -1 } }, { $group: { _id: "$planId", planName: { $first: "$planName" }, count: { $sum: 1 }, revenue: { $sum: "$amount" } } }]), [] as any[]),
     safe(
       GenerationLog.aggregate([
         { $match: { outcome: "allowed", createdAt: { $gte: sevenDaysAgo } } },
@@ -113,9 +113,16 @@ export async function buildInsights(ctx: Ctx) {
     safe(Otp.countDocuments({ createdAt: { $gte: startOfToday } }), 0),
   ]);
 
-  // MRR: every active plan's price spread over its months.
+  // MRR: convert each active subscription price to a 30-day equivalent.
+  // The immutable day snapshot supports custom plans without relying on fixed IDs.
   const mrr = Math.round(
-    (activeSubs as any[]).reduce((sum, sub) => sum + Number(sub.amount || 0) / (PLAN_MONTHS[sub.planId] || 1), 0),
+    (activeSubs as any[]).reduce((sum, sub) => {
+      const days = Number(sub.planDays || 0);
+      const months = days > 0
+        ? (days % 365 === 0 ? (days / 365) * 12 : days / 30)
+        : Number(sub.months || PLAN_MONTHS[sub.planId] || 1);
+      return sum + Number(sub.amount || 0) / Math.max(months, 1 / 30);
+    }, 0),
   );
 
   // Tools
@@ -206,7 +213,7 @@ export async function buildInsights(ctx: Ctx) {
       activation: { base: signupIds.length, activated: activatedIds.length },
       sevenDayReturn: { base: returnBase, returned: returnedCount },
       churn: { expired: expiredUnique.length, notRenewed },
-      plans: (planRows as any[]).map((r) => ({ planId: String(r._id || "unknown"), count: r.count, revenue: Number(r.revenue || 0) })),
+      plans: (planRows as any[]).map((r) => ({ planId: String(r._id || "unknown"), planName: String(r.planName || ""), count: r.count, revenue: Number(r.revenue || 0) })),
     },
     health: {
       aiCostToday,

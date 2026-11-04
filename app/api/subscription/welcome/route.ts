@@ -80,7 +80,7 @@ function toMs(value: unknown): number {
   return Number.isFinite(ms) ? ms : 0;
 }
 
-type Grant = { key: string; startedAtMs: number; expiresAtMs: number; months: number };
+type Grant = { key: string; startedAtMs: number; expiresAtMs: number; months: number; planName?: string };
 
 type GrantLookup = {
   /** Access that is active right now (null when the user has none). */
@@ -106,7 +106,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
       expiresAt: { $gt: nowDate },
     })
       .sort({ startedAt: -1, expiresAt: -1 })
-      .select("_id months startedAt expiresAt createdAt")
+      .select("_id months planName startedAt expiresAt createdAt")
       .lean(),
     // Paid plans that ended by running out (not refunded / admin-disabled ones).
     Subscription.findOne({
@@ -118,7 +118,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
       ],
     })
       .sort({ expiresAt: -1 })
-      .select("_id months startedAt expiresAt createdAt")
+      .select("_id months planName startedAt expiresAt createdAt")
       .lean(),
     // Raw collection read: the "seen" fields are not part of the Mongoose schema.
     User.collection.findOne(
@@ -160,6 +160,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
       startedAtMs: toMs(subscription.startedAt) || toMs(subscription.createdAt),
       expiresAtMs: toMs(subscription.expiresAt),
       months: Math.round(Number(subscription.months || 0)),
+      planName: String(subscription.planName || "").trim(),
     });
   }
 
@@ -181,6 +182,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
         startedAtMs: toMs(expiredSubscription.startedAt) || toMs(expiredSubscription.createdAt),
         expiresAtMs: toMs(expiredSubscription.expiresAt),
         months: Math.round(Number(expiredSubscription.months || 0)),
+        planName: String(expiredSubscription.planName || "").trim(),
       });
     }
     if (manualOn && manualExpiresMs <= now) {
@@ -227,6 +229,7 @@ export async function GET(request: Request) {
           kind: "expired",
           key: expired.key,
           months: expired.months,
+          planName: expired.planName || "",
           expiresAt: new Date(expired.expiresAtMs).toISOString(),
         },
         { headers: NO_STORE },
@@ -248,6 +251,7 @@ export async function GET(request: Request) {
         kind: "welcome",
         key: grant.key,
         months: grant.months,
+        planName: grant.planName || "",
         expiresAt: new Date(grant.expiresAtMs).toISOString(),
       },
       { headers: NO_STORE },

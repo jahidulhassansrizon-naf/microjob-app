@@ -60,7 +60,7 @@ function formatMoney(amount: number) {
 }
 
 export default function ManualPaymentPage() {
-  const [planId, setPlanId] = useState("1-month");
+  const [planId, setPlanId] = useState("");
   const [info, setInfo] = useState<PaymentInfo | null>(null);
   const [method, setMethod] = useState<WalletMethod>("Nagad");
   const [senderNumber, setSenderNumber] = useState("");
@@ -84,6 +84,7 @@ export default function ManualPaymentPage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.success) throw new Error(data?.message || "পেমেন্টের তথ্য লোড করা যায়নি।");
       setInfo(data as PaymentInfo);
+      if (typeof data?.plan?.id === "string") setPlanId(data.plan.id);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "পেমেন্টের তথ্য লোড করা যায়নি।");
     } finally {
@@ -92,8 +93,9 @@ export default function ManualPaymentPage() {
   }, []);
 
   useEffect(() => {
-    const requestedPlanId = new URLSearchParams(window.location.search).get("plan") || "1-month";
+    const requestedPlanId = new URLSearchParams(window.location.search).get("plan") || "";
     setPlanId(requestedPlanId);
+    // When no plan is specified, let the server choose the first currently active admin-managed plan.
     void loadInfo(requestedPlanId);
   }, [loadInfo]);
 

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
-import { SUBSCRIPTION_PLAN_BY_ID, type SubscriptionPlanId } from "@/app/_lib/subscriptionPlans";
+import { getSubscriptionPlan } from "@/app/api/_lib/subscriptionPlans";
 import { createUddoktaPayCheckout, getUddoktaPayConfig } from "@/app/api/uddoktapay/_lib/uddoktapay";
 
 export const runtime = "nodejs";
@@ -37,8 +37,9 @@ export async function POST(request: Request) {
     if (!decoded.userId) return NextResponse.json({ success: false, message: "Invalid login token." }, { status: 401 });
 
     const body = await request.json().catch(() => null);
-    const planId = String(body?.planId || body?.plan_id || "") as SubscriptionPlanId;
-    if (!Object.prototype.hasOwnProperty.call(SUBSCRIPTION_PLAN_BY_ID, planId)) return NextResponse.json({ success: false, message: "Invalid subscription plan." }, { status: 400 });
+    const planId = String(body?.planId || body?.plan_id || "").trim();
+    const plan = await getSubscriptionPlan(planId);
+    if (!plan) return NextResponse.json({ success: false, message: "Invalid or unavailable subscription plan." }, { status: 400 });
 
     await connectDB();
     const user = await User.findById(decoded.userId).select("fullName email phoneNumber");
@@ -46,12 +47,12 @@ export async function POST(request: Request) {
     const email = String(user.email || "").trim();
     if (!email) return NextResponse.json({ success: false, message: "Add an email address to your profile before paying with UddoktaPay." }, { status: 400 });
 
-    const plan = SUBSCRIPTION_PLAN_BY_ID[planId];
     const subscription = await Subscription.create({
       userId: user._id,
       planId,
       planName: plan.name,
       months: plan.months,
+      planDays: plan.days,
       amount: plan.price,
       paymentProvider: "UddoktaPay",
       paymentMethod: "UddoktaPay",

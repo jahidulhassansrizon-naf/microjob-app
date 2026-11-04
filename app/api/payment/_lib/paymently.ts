@@ -234,7 +234,12 @@ export async function verifyAndActivateSubscription(
     };
   }
 
-  const days = DURATION_BY_PLAN_ID[String(subscription.planId)];
+  // New orders retain the exact duration selected at checkout, even if an admin
+  // later edits or removes that plan from the public catalogue.
+  const storedDays = Number(subscription.planDays);
+  const days = Number.isInteger(storedDays) && storedDays > 0
+    ? storedDays
+    : DURATION_BY_PLAN_ID[String(subscription.planId)];
 
   if (!days) {
     return {
