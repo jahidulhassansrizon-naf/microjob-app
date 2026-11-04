@@ -205,10 +205,10 @@ const hiddenPrefixes = [
 /* --------------------------- Small helpers --------------------------- */
 
 const navTrigger = (active: boolean) =>
-  `relative flex h-9 items-center gap-1 rounded-full px-3.5 text-[14px] font-semibold transition-colors cursor-pointer ${
+  `relative flex h-10 items-center gap-1 rounded-xl border px-3.5 text-[13px] font-bold transition-all duration-200 cursor-pointer ${
     active
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+      ? "border-blue-100 bg-blue-50/90 text-blue-700 shadow-sm"
+      : "border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-slate-50 hover:text-slate-950"
   }`;
 
 const Chevron = ({ open }: { open: boolean }) => (
@@ -366,22 +366,22 @@ export default function Navbar() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className={`sticky top-0 z-[999] w-full border-b transition-all duration-300 ${
           scrolled
-            ? "border-slate-200/70 bg-white/85 shadow-[0_10px_30px_-15px_rgba(15,23,42,0.18)] backdrop-blur-xl"
-            : "border-transparent bg-white/70 backdrop-blur-md"
+            ? "border-slate-200 bg-white/95 shadow-[0_8px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur-2xl"
+            : "border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.025)] backdrop-blur-xl"
         }`}
       >
         <div
-          className={`relative mx-auto flex max-w-[1400px] items-center justify-between px-4 transition-all duration-300 sm:px-6 md:px-12 ${
-            scrolled ? "h-14 md:h-16" : "h-16 md:h-[76px]"
+          className={`relative mx-auto flex max-w-[1480px] items-center justify-between px-4 transition-all duration-300 sm:px-6 lg:px-8 ${
+            scrolled ? "h-14 md:h-[64px]" : "h-[66px] md:h-[74px]"
           }`}
         >
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center">
-            <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
+          <Link href="/" className="flex shrink-0 items-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4">
+            <SiteBrandLogo width={148} height={46} className="h-[43px] w-auto" />
           </Link>
 
           {/* Center: Navigation (Desktop) */}
-          <nav className="hidden h-full items-center gap-1 lg:flex">
+          <nav className="hidden h-full items-center gap-1.5 lg:flex">
             {/* Our Services */}
             <div
               className="relative flex h-full items-center"
@@ -647,7 +647,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right: Language, Login, Hamburger */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageToggle
               layoutId="lang-pill-desktop"
               className="hidden sm:flex"
@@ -656,7 +656,7 @@ export default function Navbar() {
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2 text-xs font-semibold tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:shadow-xl hover:shadow-indigo-500/40 sm:gap-2 sm:px-6 sm:text-[14px]"
+                className="flex h-10 items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 text-xs font-bold tracking-wide text-white shadow-md shadow-indigo-500/25 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/35 sm:gap-2 sm:px-6 sm:text-[13px]"
               >
                 <LogIn size={16} strokeWidth={2.2} />
                 <T>{"Login"}</T>

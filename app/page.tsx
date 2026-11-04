@@ -1,8 +1,7 @@
 // app/page.tsx
 "use client";
 import { useEffect } from "react";
-import Hero from "@/components/Hero";
-import HeroFeatures from "@/components/HeroFeatures";
+import FeaturedToolsShowcase from "@/components/FeaturedToolsShowcase";
 import AiEditorSection from "@/components/AiEditorSection";
 import DocumentSection from "@/components/DocumentSection";
 import PrintMediaSection from "@/components/PrintMediaSection";
@@ -36,8 +35,7 @@ export default function Home() {
   }, []);
   return (
     <div className="min-h-screen bg-white overflow-x-clip">
-      <Hero />
-      <HeroFeatures />
+      <FeaturedToolsShowcase />
       <AiEditorSection />
       <DocumentSection />
       <PrintMediaSection />
