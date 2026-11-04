@@ -12,10 +12,11 @@
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // First one is tried first. Override with GEMINI_MODEL in .env.local if you like.
+// (gemini-2.5-flash was retired by Google on 20 Oct 2026, so it is no longer a fallback.)
 const DEFAULT_MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
-  "gemini-2.5-flash",
+  "gemini-3.5-flash",
 ];
 
 export class GeminiError extends Error {
@@ -160,4 +161,9 @@ export async function generateJsonText(options: GenerateJsonOptions): Promise<st
   }
 
   throw new GeminiError(errors.join(" | "));
+}
+
+/** True when the failure was Google rate-limiting / quota (HTTP 429), so routes can answer "busy" instead of "broken". */
+export function isGeminiRateLimited(error: unknown): boolean {
+  return error instanceof GeminiError && (error.status === 429 || /\b429\b/.test(error.message));
 }

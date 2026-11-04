@@ -1,6 +1,10 @@
 import { hasVerifiedRequestSession } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
-import { generateJsonText } from "../_lib/gemini";
+import { generateJsonText, isGeminiRateLimited } from "../_lib/gemini";
+import { cachedAsync } from "../_lib/memoryCache";
+
+const CHAPTERS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const EMPTY_RESULT = "EMPTY_RESULT";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -216,24 +220,36 @@ Subject = ${subjectName}
 Use those values exactly as the requested context.
 `;
 
-    let rawChapters: unknown[];
+    let chapters: ReturnType<typeof normalizeChapters>;
 
     try {
-      rawChapters = await generateChapters(apiKey, prompt);
+      // Chapters of a class + subject almost never change: cache for 24h.
+      chapters = await cachedAsync(
+        `chapters:${className.toLowerCase()}:${subjectName.toLowerCase()}`,
+        CHAPTERS_CACHE_TTL_MS,
+        async () => {
+          const list = normalizeChapters(await generateChapters(apiKey, prompt));
+          if (!list.length) throw new Error(EMPTY_RESULT);
+          return list;
+        },
+      );
     } catch (error) {
+      if (error instanceof Error && error.message === EMPTY_RESULT) {
+        console.error("[get-chapters] Gemini returned no usable chapters.");
+        return errorResponse(
+          "No usable chapters were found for this subject. Please try again.",
+          502,
+        );
+      }
       console.error("[get-chapters] Gemini generation failed:", error);
+      if (isGeminiRateLimited(error)) {
+        return errorResponse(
+          "The AI service is busy right now. Please wait a minute and try again.",
+          429,
+        );
+      }
       return errorResponse(
         "Could not load chapters right now. Please try again.",
-        502,
-      );
-    }
-
-    const chapters = normalizeChapters(rawChapters);
-
-    if (!chapters.length) {
-      console.error("[get-chapters] Gemini returned no usable chapters.");
-      return errorResponse(
-        "No usable chapters were found for this subject. Please try again.",
         502,
       );
     }

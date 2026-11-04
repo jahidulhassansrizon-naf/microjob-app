@@ -42,6 +42,11 @@ export default function FloatingSupportGroup() {
   const isAdminWorkspace = pathname === "/admin" || pathname.startsWith("/admin/");
   if (isMobileQrUpload || isAdminWorkspace) return null;
 
+  // The AI editor has content (settings, preview, recent photos) running along the bottom-left
+  // edge of the screen, so the full-size button would sit on top of it. There it is docked
+  // against the left edge: only a small sliver shows, and it slides fully out on hover / focus.
+  const isAiEditor = pathname === "/ai-editor" || pathname.startsWith("/ai-editor/");
+
   const footerExtra = settings.footer as unknown as { whatsappGroupUrl?: string };
   const href = normalizeGroupLink(footerExtra?.whatsappGroupUrl) || DEFAULT_SUPPORT_GROUP_URL;
   if (!href) return null;
@@ -53,12 +58,20 @@ export default function FloatingSupportGroup() {
       rel="noopener noreferrer"
       aria-label="WhatsApp Support Group"
       title="WhatsApp Support Group"
-      className="group fixed bottom-4 left-4 z-[60] flex items-center gap-2 sm:bottom-6 sm:left-6"
+      className={
+        isAiEditor
+          ? "group fixed bottom-3 left-0 z-[60] flex -translate-x-[55%] items-center gap-2 opacity-90 transition-transform duration-300 hover:translate-x-2 hover:opacity-100 focus-visible:translate-x-2 focus-visible:opacity-100 sm:bottom-4"
+          : "group fixed bottom-4 left-4 z-[60] flex items-center gap-2 sm:bottom-6 sm:left-6"
+      }
       style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45)] transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
-        <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-[#25D366]/40" />
-        <svg className="relative h-6 w-6 fill-current sm:h-7 sm:w-7" viewBox="0 0 24 24" aria-hidden>
+      <span
+        className={`relative flex items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45)] transition-transform duration-300 group-hover:scale-105 ${
+          isAiEditor ? "h-10 w-10" : "h-12 w-12 sm:h-14 sm:w-14"
+        }`}
+      >
+        {!isAiEditor && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-[#25D366]/40" />}
+        <svg className={`relative fill-current ${isAiEditor ? "h-5 w-5" : "h-6 w-6 sm:h-7 sm:w-7"}`} viewBox="0 0 24 24" aria-hidden>
           <path d={WA_PATH} />
         </svg>
       </span>
