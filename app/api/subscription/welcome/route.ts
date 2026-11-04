@@ -89,6 +89,8 @@ type GrantLookup = {
   expired: Grant | null;
   seenKey: string;
   expiredSeenKey: string;
+  /** Database accounts with role = "admin" (sub-admins) never get paid-access popups. */
+  isAdmin: boolean;
 };
 
 async function findCurrentGrant(userId: string): Promise<GrantLookup> {
@@ -129,6 +131,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
           manualAccessGrantedAt: 1,
           manualAccessTotalMonths: 1,
           manualAccessMonths: 1,
+          role: 1,
           [SEEN_FIELD]: 1,
           [EXPIRED_SEEN_FIELD]: 1,
         },
@@ -136,6 +139,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
     ),
   ]);
 
+  const isAdmin = user?.role === "admin";
   const seenKey = typeof user?.[SEEN_FIELD] === "string" ? (user[SEEN_FIELD] as string) : "";
   const expiredSeenKey =
     typeof user?.[EXPIRED_SEEN_FIELD] === "string" ? (user[EXPIRED_SEEN_FIELD] as string) : "";
@@ -188,7 +192,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
       });
     }
     ended.sort((a, b) => b.expiresAtMs - a.expiresAtMs);
-    return { grant: null, expired: ended[0] ?? null, seenKey, expiredSeenKey };
+    return { grant: null, expired: ended[0] ?? null, seenKey, expiredSeenKey, isAdmin };
   }
 
   // The most recently started grant is the one the user just received.
@@ -196,7 +200,7 @@ async function findCurrentGrant(userId: string): Promise<GrantLookup> {
   const grant = candidates[0];
   // Show the real end of access (a paid plan and an admin grant may overlap).
   grant.expiresAtMs = Math.max(...candidates.map((c) => c.expiresAtMs));
-  return { grant, expired: null, seenKey, expiredSeenKey };
+  return { grant, expired: null, seenKey, expiredSeenKey, isAdmin };
 }
 
 export async function GET(request: Request) {
@@ -207,8 +211,11 @@ export async function GET(request: Request) {
     if (auth.impersonating) return NextResponse.json({ success: true, show: false }, { headers: NO_STORE });
 
     await connectDB();
-    const { grant, expired, seenKey, expiredSeenKey } = await findCurrentGrant(auth.userId);
+    const { grant, expired, seenKey, expiredSeenKey, isAdmin } = await findCurrentGrant(auth.userId);
     const hidden = () => NextResponse.json({ success: true, show: false }, { headers: NO_STORE });
+
+    // Admins (database role = "admin") are staff, not customers: no welcome / expired popup.
+    if (isAdmin) return hidden();
 
     // 1) Access ended: tell the user once, and point them to the subscription page.
     if (!grant) {
@@ -264,6 +271,12 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
+    // Admin accounts never see the popup, so there is nothing to store for them.
+    const account = await User.collection.findOne(
+      { _id: new mongoose.Types.ObjectId(auth.userId) },
+      { projection: { role: 1 } },
+    );
+    if (account?.role === "admin") return NextResponse.json({ success: true }, { headers: NO_STORE });
     // The key is format-checked above. Worst case a user can only silence their own popup.
     await User.collection.updateOne(
       { _id: new mongoose.Types.ObjectId(auth.userId) },
