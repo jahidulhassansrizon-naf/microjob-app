@@ -70,15 +70,15 @@ export function validateSubscriptionPlans(input: unknown): { plans: Subscription
   if (!Array.isArray(input) || input.length < 1 || input.length > 100) {
     return { plans: null, message: "Add between 1 and 100 subscription plans." };
   }
-  const plans = input.map((item, index) => normalizePlan(item, index));
-  if (plans.some((item) => !item)) {
+  const plans = input.map((item: unknown, index: number) => normalizePlan(item, index));
+  if (plans.some((item: SubscriptionPlan | null) => !item)) {
     return { plans: null, message: "One or more plans have invalid names, durations, prices, or settings. Check each plan and try again." };
   }
   const validPlans = plans as SubscriptionPlan[];
-  if (new Set(validPlans.map((item) => item.id)).size !== validPlans.length) {
+  if (new Set(validPlans.map((item: SubscriptionPlan) => item.id)).size !== validPlans.length) {
     return { plans: null, message: "Every plan must have a unique plan ID." };
   }
-  if (!validPlans.some((item) => item.active)) {
+  if (!validPlans.some((item: SubscriptionPlan) => item.active)) {
     return { plans: null, message: "At least one subscription plan must remain active." };
   }
   return { plans: validPlans.sort((a, b) => a.sortOrder - b.sortOrder) };
@@ -94,12 +94,12 @@ export async function getSubscriptionPlans(options?: { includeInactive?: boolean
     .map((item: any, index: number) => normalizePlan(item, index))
     .filter((item: SubscriptionPlan | null): item is SubscriptionPlan => Boolean(item))
     .sort((a: SubscriptionPlan, b: SubscriptionPlan) => a.sortOrder - b.sortOrder);
-  return options?.includeInactive ? plans : plans.filter((item) => item.active);
+  return options?.includeInactive ? plans : plans.filter((item: SubscriptionPlan) => item.active);
 }
 
 export async function getSubscriptionPlan(planId: string): Promise<SubscriptionPlan | null> {
   const plans = await getSubscriptionPlans();
-  return plans.find((item) => item.id === planId) || null;
+  return plans.find((item: SubscriptionPlan) => item.id === planId) || null;
 }
 
 export async function saveSubscriptionPlans(input: unknown, updatedBy: string) {
@@ -117,6 +117,6 @@ export async function saveSubscriptionPlans(input: unknown, updatedBy: string) {
 /** Backward-compatibility duration for old pending orders created before plan snapshots existed. */
 export function getLegacySubscriptionPlanDays(planId: string): number {
   if (planId === "3-month") return 90;
-  const fallback = SUBSCRIPTION_PLANS.find((item) => item.id === planId);
+  const fallback = SUBSCRIPTION_PLANS.find((item: SubscriptionPlan) => item.id === planId);
   return fallback?.days || 0;
 }
