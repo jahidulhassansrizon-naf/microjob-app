@@ -795,9 +795,16 @@ function sendGenerationError(res, error, label) {
     res.set("Retry-After", String(error.retryAfter));
   }
 
+  // Only our own HttpError messages are written for visitors. Anything else
+  // (Playwright / Gemini page details) gets a plain friendly message.
+  const isSafe = error instanceof HttpError || statusCode < 500;
+  const publicMessage = isSafe && error instanceof Error
+    ? error.message
+    : "Image generation is taking longer than usual. Please wait a moment and try again.";
+
   return res.status(statusCode).json({
     success: false,
-    error: error instanceof Error ? error.message : String(error),
+    error: publicMessage,
     code: error && error.code ? error.code : undefined,
   });
 }
@@ -1169,7 +1176,15 @@ async function runGeminiWithSession({
       }
     }
 
-    throw new Error(`${message}${pageInfo}`);
+    // Debug details (page URL, button names) stay on the server only.
+    // They must never travel inside the message that is sent to the visitor.
+    if (pageInfo) {
+      console.log(`[debug]${pageInfo}`);
+    }
+
+    const wrapped = new Error(message);
+    wrapped.pageInfo = pageInfo;
+    throw wrapped;
   } finally {
     if (signal && onAbort) {
       signal.removeEventListener("abort", onAbort);
@@ -1297,7 +1312,9 @@ async function runGeminiGeneration(options) {
         throw error;
       }
 
-      const failMessage = error instanceof Error ? error.message : String(error);
+      const failMessage =
+        (error instanceof Error ? error.message : String(error)) +
+        ((error && error.pageInfo) || "");
 
       // Logged-out / expired session: skip it for 6 hours and try the next one,
       // so one dead account never blocks the others.

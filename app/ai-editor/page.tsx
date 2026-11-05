@@ -1425,7 +1425,13 @@ export default function PhotoEditorPage() {
                     window.dispatchEvent(new Event("sohozkaj:subscription-required"));
                     throw new Error("SUBSCRIPTION_REQUIRED");
                 }
-                const message = result?.error || `AI image editing failed (${response.status}).`;
+                // Never show raw technical text (bot page URL, button lists, stack info).
+                const rawMessage = typeof result?.error === "string" ? result.error : "";
+                const looksTechnical = rawMessage.length > 300 ||
+                    /\[page:|signInVisible|buttons:|playwright|gemini\.google|https?:\/\//i.test(rawMessage);
+                const message = !rawMessage || looksTechnical
+                    ? "একটু অপেক্ষা করুন, ছবিটি তৈরি হতে সাধারণের চেয়ে বেশি সময় লাগছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"
+                    : rawMessage;
                 throw new Error(message);
             }
 

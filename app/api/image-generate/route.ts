@@ -57,12 +57,14 @@ function combineSignals(...signals: Array<AbortSignal | undefined>): AbortSignal
   return controller.signal;
 }
 
+// Only messages we wrote ourselves (ServiceError) are shown to visitors.
+// Any other error (network, parsing, bot internals) becomes a friendly line.
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
+  if (error instanceof ServiceError) {
     return error.message;
   }
 
-  return "Image generation failed.";
+  return "Please wait a moment and try again.";
 }
 
 function extractCloudinaryPublicId(imageUrl: string): string | null {
@@ -306,7 +308,16 @@ async function callRenderService(
         ? response.status
         : 500;
 
-    throw new ServiceError(detail, status, retryAfter);
+    // Technical details from the bot stay in the server log only.
+    // 503 messages are already written for visitors; everything else is generic.
+    console.error("Image service failure:", response.status, detail);
+    throw new ServiceError(
+      status === 503 && data?.error
+        ? data.error
+        : "Please wait a moment, the photo is taking longer than usual. Try again in a little while.",
+      status,
+      retryAfter,
+    );
   }
 
   return data.image;
