@@ -23,6 +23,10 @@ interface ImageEditSidebarProps {
     selectedAspect?: string;
     setSelectedAspect?: (aspect: string) => void;
     onReset: () => void;
+    /** Render as a normal in-flow block (dropdown inside a panel) instead of the absolute side drawer. */
+    inline?: boolean;
+    /** Values "Reset All" restores. Defaults to DEFAULT_FILTERS. */
+    resetFilters?: FilterState;
 }
 export const DEFAULT_FILTERS: FilterState = {
     brightness: 100,
@@ -32,6 +36,21 @@ export const DEFAULT_FILTERS: FilterState = {
     grayscale: 0,
     sepia: 0,
 };
+export function filterString(filters: FilterState) {
+    return [
+        `brightness(${filters.brightness}%)`,
+        `contrast(${filters.contrast}%)`,
+        `saturate(${filters.saturate}%)`,
+        `blur(${filters.blur}px)`,
+        `grayscale(${filters.grayscale}%)`,
+        `sepia(${filters.sepia}%)`,
+    ].join(" ");
+}
+export function isNeutralFilters(filters: FilterState) {
+    return (Object.keys(DEFAULT_FILTERS) as (keyof FilterState)[]).every((key) => filters[key] === DEFAULT_FILTERS[key]);
+}
+/** Slightly brighter starting point for a freshly generated photo. The user can change it freely. */
+export const RESULT_DEFAULT_FILTERS: FilterState = { ...DEFAULT_FILTERS, brightness: 108 };
 export const PRESETS: {
     name: string;
     filters: FilterState;
@@ -110,7 +129,7 @@ const CONTROLS = [
     { label: "Sepia", key: "sepia", min: 0, max: 100, unit: "%" },
 ] as const;
 export default function ImageEditSidebar({
-    isOpen, onClose, filters, setFilters, selectedAspect = "original", setSelectedAspect, onReset,
+    isOpen, onClose, filters, setFilters, selectedAspect = "original", setSelectedAspect, onReset, inline = false, resetFilters,
 }: ImageEditSidebarProps) {
     const { t } = useAiEditorText();
     const [activeTab, setActiveTab] = useState<"adjust" | "crop">("adjust");
@@ -121,9 +140,29 @@ export default function ImageEditSidebar({
         setFilters((previous) => ({ ...previous, [key]: value }));
     };
     const handleReset = () => {
-        setFilters(DEFAULT_FILTERS);
+        setFilters(resetFilters ?? DEFAULT_FILTERS);
         onReset();
     };
+    if (inline) {
+        return (<div className="rounded-xl bg-[#3B2F1E] text-white px-3.5 py-3 shadow-inner" role="group" aria-label={t("Image editing tools")}>
+        <span className="text-[13px] font-medium text-stone-300 block mb-2"><AiT>{"Manual Controls"}</AiT></span>
+        <div className="space-y-2">
+          {CONTROLS.map((control) => (<label key={control.key} className="block">
+              <div className="flex justify-between text-[13px] leading-tight text-stone-300 mb-1">
+                <span><AiT>{control.label}</AiT></span>
+                <span className="font-mono text-stone-400 tabular-nums">
+                  {filters[control.key]}
+                  {control.unit}
+                </span>
+              </div>
+              <input type="range" min={control.min} max={control.max} step={control.key === "blur" ? 0.5 : 1} value={filters[control.key]} onChange={(event) => handleChange(control.key, Number(event.target.value))} className="block w-full h-1.5 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-[#DC2626]"/>
+            </label>))}
+        </div>
+        <button type="button" onClick={handleReset} className="mt-3 w-full bg-white/10 hover:bg-white/20 text-[13px] py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer">
+          <RotateCcw size={13}/><AiT>{"Reset All"}</AiT>
+        </button>
+      </div>);
+    }
     return (<aside className="absolute right-0 top-0 bottom-0 w-[min(320px,88vw)] bg-[#3B2F1E]/95 backdrop-blur-md border-l border-stone-700 text-white p-5 flex flex-col z-20 shadow-2xl" aria-label={t("Image editing tools")}>
       <div className="overflow-y-auto pr-1">
         <div className="flex items-center justify-between border-b border-stone-700 pb-3 mb-4">

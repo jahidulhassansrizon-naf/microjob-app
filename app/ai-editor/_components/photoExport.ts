@@ -256,6 +256,41 @@ export async function loadImageElement(src: string): Promise<HTMLImageElement> {
     return img;
 }
 /**
+ * Returns a copy of the photo with CSS-style filters (brightness, contrast, ...) baked into its pixels.
+ * The original object is returned untouched when no filter is set, so unedited photos export exactly as before.
+ */
+export async function applyFiltersToExportable<T extends ExportableImage>(image: T, filterCss: string | null | undefined): Promise<T> {
+    if (!filterCss)
+        return image;
+    const img = await loadImageElement(image.url);
+    const width = img.naturalWidth || img.width;
+    const height = img.naturalHeight || img.height;
+    if (!width || !height)
+        throw new Error("Invalid image dimensions.");
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    try {
+        const ctx = canvas.getContext("2d");
+        if (!ctx)
+            throw new Error("Canvas is not supported by this browser.");
+        ctx.filter = filterCss;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
+        const keepAlpha = image.bgColor === "transparent";
+        const url = keepAlpha ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.97);
+        return { ...image, url };
+    }
+    finally {
+        canvas.width = 0;
+        canvas.height = 0;
+        img.onload = null;
+        img.onerror = null;
+        img.src = "";
+    }
+}
+/**
  * Renders a generated photo at its exact export size (no filters / crop edits).
  * Mirrors what the Recent Generations preview modal exports for an unedited photo.
  */

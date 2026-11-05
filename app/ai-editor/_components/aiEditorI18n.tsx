@@ -687,6 +687,7 @@ const AI_EDITOR_BN: Record<string, string> = {
 
 /** Additional UI strings (kept separate so they can never clash with keys above). */
 const AI_EDITOR_BN_EXTRA: Record<string, string> = {
+  "Print directly from here": "এখান থেকেই প্রিন্ট করুন",
   "Passport": "পাসপোর্ট", "Dual": "ডুয়াল", "E-Pass": "ই-পাস", "Visa": "ভিসা", "Birth": "জন্ম নিবন্ধন",
   "BACKGROUND": "ব্যাকগ্রাউন্ড", "PNG": "PNG", "selected": "টি নির্বাচিত", "Done": "সম্পন্ন", "Cancel": "বাতিল",
   "Close": "বন্ধ করুন", "Locked": "লক করা", "Clothing": "পোশাক", "Default Clothing": "ডিফল্ট পোশাক",

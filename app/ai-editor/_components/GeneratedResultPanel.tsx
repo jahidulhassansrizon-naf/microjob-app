@@ -1,9 +1,10 @@
 "use client";
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Download, Edit3, FileImage, Grid, Info, Loader2, Printer, Trash2, X, } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, Download, Edit3, FileImage, Grid, Info, Loader2, Printer, Trash2, X, } from "lucide-react";
 import { CLOTHING_NAMES } from "./clothingStyles";
-import { buildPrintStudioPayload, downloadPhotoFormat, downloadPhotoPrintSheet, } from "./photoExport";
+import { applyFiltersToExportable, buildPrintStudioPayload, downloadPhotoFormat, downloadPhotoPrintSheet, } from "./photoExport";
+import ImageEditSidebar, { FilterState, RESULT_DEFAULT_FILTERS, filterString, isNeutralFilters, } from "./ImageEditSidebar";
 
 export interface GeneratedResultItem {
     id?: string;
@@ -25,28 +26,44 @@ export interface PrintSession {
 
 interface GeneratedResultPanelProps {
     item: GeneratedResultItem;
-    onEdit: (item: GeneratedResultItem) => void;
+    /** Kept for compatibility; editing now happens in the inline dropdown. */
+    onEdit?: (item: GeneratedResultItem) => void;
     onDelete: (item: GeneratedResultItem) => void;
     onPrint: (session: PrintSession) => void;
     onClose: () => void;
+    /** Current brightness / contrast / ... values (owned by the page so the main preview can follow them live). */
+    filters: FilterState;
+    onFiltersChange: React.Dispatch<React.SetStateAction<FilterState>>;
+    /** Changes every time a photo has just been generated; the edit dropdown opens automatically. */
+    autoOpenToken?: number;
 }
 
 /**
  * Right-hand panel that opens as soon as a photo has been generated.
  * Same actions as the Recent Generations preview: Edit, Delete, Print, Download.
  */
-export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, onClose, }: GeneratedResultPanelProps) {
+export default function GeneratedResultPanel({ item, onDelete, onPrint, onClose, filters, onFiltersChange, autoOpenToken = 0, }: GeneratedResultPanelProps) {
     const { t } = useAiEditorText();
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [isEditOpen, setIsEditOpen] = useState(true);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setShowDownloadMenu(false);
         setMessage(null);
     }, [item.id, item.url]);
+
+    // A freshly generated photo opens the edit dropdown right away.
+    useEffect(() => {
+        setIsEditOpen(true);
+    }, [autoOpenToken]);
+
+    // Every export / print uses the photo exactly as the user sees it (filters baked in).
+    const currentFilterCss = isNeutralFilters(filters) ? null : filterString(filters);
+    const getEditedItem = () => applyFiltersToExportable(item, currentFilterCss);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -85,7 +102,7 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
         setMessage(null);
         setIsPreparingPrint(true);
         try {
-            const payload = await buildPrintStudioPayload(item);
+            const payload = await buildPrintStudioPayload(await getEditedItem());
             onPrint({ image: payload.dataUrl, preset: payload.preset });
         }
         catch (error) {
@@ -97,9 +114,9 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
         }
     };
 
-    return (<aside className="w-full xl:w-[280px] max-w-[320px] xl:max-w-[280px]" aria-label={t("Photo actions")}>
-      <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-        <div className="flex items-start justify-between gap-2 mb-3">
+    return (<aside className="w-full xl:w-[280px] max-w-[320px] xl:max-w-[280px] xl:h-full xl:flex xl:flex-col" aria-label={t("Photo actions")}>
+      <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] xl:flex-1 xl:min-h-0 xl:flex xl:flex-col xl:overflow-y-auto">
+        <div className="flex items-start justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2 min-w-0">
             <CheckCircle2 size={18} className="text-[#10B981] shrink-0"/>
             <h3 className="text-sm font-semibold text-[#3B2F1E] leading-snug"><AiT>{"Photo ready"}</AiT></h3>
@@ -109,25 +126,46 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
           </button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {/* Edit */}
-          <button type="button" onClick={() => onEdit(item)} className="w-full bg-stone-200 hover:bg-stone-300 text-[#3B2F1E] px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer">
-            <Edit3 size={15}/><AiT>{"Edit"}</AiT>
-          </button>
+        <div className="flex flex-col gap-1.5 xl:flex-1">
+          {/* Edit: opens a dropdown right here under the button */}
+          <div>
+            <button type="button" onClick={() => setIsEditOpen((previous) => !previous)} aria-expanded={isEditOpen} className={`w-full px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer ${isEditOpen ? "bg-[#3B2F1E] text-white" : "bg-stone-200 hover:bg-stone-300 text-[#3B2F1E]"}`}>
+              <Edit3 size={15}/><span className="flex-1 text-left"><AiT>{"Edit"}</AiT></span>
+              <ChevronDown size={15} className={`transition-transform duration-300 ${isEditOpen ? "rotate-180" : ""}`}/>
+            </button>
+            <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isEditOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`} aria-hidden={!isEditOpen}>
+              <div className="overflow-hidden min-h-0">
+                <div className="pt-1.5">
+                  <ImageEditSidebar inline isOpen filters={filters} setFilters={onFiltersChange} resetFilters={RESULT_DEFAULT_FILTERS} onClose={() => setIsEditOpen(false)} onReset={() => setMessage(null)}/>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Delete */}
-          <button type="button" onClick={() => onDelete(item)} className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer">
+          <button type="button" onClick={() => onDelete(item)} className="w-full xl:mt-auto bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer">
             <Trash2 size={15}/><AiT>{"Delete"}</AiT>
           </button>
 
-          {/* Print */}
-          <button type="button" onClick={handlePrint} disabled={isPreparingPrint} className="w-full bg-stone-200 hover:bg-stone-300 disabled:opacity-60 text-[#3B2F1E] px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer">
-            {isPreparingPrint ? <Loader2 size={15} className="animate-spin"/> : <Printer size={15}/>}<AiT>{"Print"}</AiT>
-          </button>
+          {/* Print: the highlighted main action */}
+          <div className="relative my-1">
+            <span aria-hidden="true" className="pointer-events-none absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 opacity-60 blur-md animate-pulse"/>
+            <button type="button" onClick={handlePrint} disabled={isPreparingPrint} className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 px-3 py-3 text-white ring-2 ring-white/80 shadow-[0_6px_18px_rgba(234,88,12,0.45)] flex items-center gap-3 transition hover:scale-[1.02] hover:brightness-110 active:scale-[0.99] disabled:opacity-70 cursor-pointer">
+              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-white/30 blur-sm animate-[pulse_2.2s_ease-in-out_infinite]"/>
+              <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white/25 ring-1 ring-white/50">
+                {isPreparingPrint ? <Loader2 size={22} className="animate-spin"/> : <Printer size={24}/>}
+              </span>
+              <span className="relative flex-1 text-left leading-tight">
+                <span className="block text-[17px] font-extrabold tracking-wide drop-shadow-sm"><AiT>{"Print"}</AiT></span>
+                <span className="block text-[11.5px] font-medium text-white/95"><AiT>{"Print directly from here"}</AiT></span>
+              </span>
+              <ArrowRight size={18} className="relative shrink-0 animate-pulse"/>
+            </button>
+          </div>
 
           {/* Download */}
           <div className="relative" ref={menuRef}>
-            <button type="button" onClick={() => setShowDownloadMenu((previous) => !previous)} disabled={isDownloading} className="w-full bg-[#10B981] hover:bg-emerald-600 disabled:opacity-60 text-white px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer shadow-md">
+            <button type="button" onClick={() => setShowDownloadMenu((previous) => !previous)} disabled={isDownloading} className="w-full bg-[#10B981] hover:bg-emerald-600 disabled:opacity-60 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition cursor-pointer shadow-md">
               {isDownloading ? <Loader2 size={15} className="animate-spin"/> : <Download size={15}/>}
               <span className="flex-1 text-left">{isDownloading ? <AiT>{"Downloading..."}</AiT> : <AiT>{"Download"}</AiT>}</span>
               <ChevronDown size={15} className={`transition-transform ${showDownloadMenu ? "rotate-180" : ""}`}/>
@@ -135,14 +173,14 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
 
             {showDownloadMenu && (<div className="mt-2 w-full bg-[#F2E8D2] text-[#3B2F1E] rounded-xl shadow-lg border border-stone-300 py-2 text-sm">
                 <div className="px-3 py-1.5 border-b border-stone-200 font-semibold text-stone-500 text-[12px] uppercase"><AiT>{"Select Format"}</AiT></div>
-                <button type="button" onClick={() => runDownload(() => downloadPhotoFormat(item, "jpg"))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
+                <button type="button" onClick={() => runDownload(async () => downloadPhotoFormat(await getEditedItem(), "jpg"))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
                   <div className="p-1.5 bg-[#10B981]/20 text-[#10B981] rounded-lg shrink-0"><FileImage size={16}/></div>
                   <div>
                     <div className="font-semibold"><AiT>{"Standard JPG"}</AiT></div>
                     <div className="text-[12px] text-stone-500"><AiT>{"Recommended for Passport & Visa"}</AiT></div>
                   </div>
                 </button>
-                <button type="button" onClick={() => runDownload(() => downloadPhotoFormat(item, "png"))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
+                <button type="button" onClick={() => runDownload(async () => downloadPhotoFormat(await getEditedItem(), "png"))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
                   <div className="p-1.5 bg-[#DC2626]/20 text-[#DC2626] rounded-lg shrink-0"><FileImage size={16}/></div>
                   <div>
                     <div className="font-semibold"><AiT>{"HD PNG Image"}</AiT></div>
@@ -152,7 +190,7 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
                   </div>
                 </button>
                 <div className="my-1 border-t border-stone-200"/>
-                <button type="button" onClick={() => runDownload(() => downloadPhotoPrintSheet(item))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
+                <button type="button" onClick={() => runDownload(async () => downloadPhotoPrintSheet(await getEditedItem()))} className="w-full text-left px-3 py-2.5 hover:bg-stone-100 flex items-center gap-2.5 transition cursor-pointer">
                   <div className="p-1.5 bg-[#DC2626]/20 text-[#DC2626] rounded-lg shrink-0"><Grid size={16}/></div>
                   <div>
                     <div className="font-semibold"><AiT>{"Print Sheet (4×6\")"}</AiT></div>
@@ -165,30 +203,6 @@ export default function GeneratedResultPanel({ item, onEdit, onDelete, onPrint, 
 
         {message && (<p className="mt-3 text-[12px] text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">{message}</p>)}
 
-        {/* Generation info */}
-        <div className="mt-4 pt-3 border-t border-stone-300">
-          <div className="flex items-center gap-2 mb-2">
-            <Info size={14} className="text-[#DC2626]"/>
-            <h4 className="text-[12px] font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Generation Info"}</AiT></h4>
-          </div>
-          <div className="space-y-1.5 text-[13px] text-stone-700">
-            <div className="flex justify-between items-center bg-white/60 px-2.5 py-1.5 rounded-lg border border-stone-200">
-              <span className="text-stone-500"><AiT>{"Photo Size:"}</AiT></span>
-              <span className="font-bold text-[#DC2626]">{item.size || "35×45 mm"}</span>
-            </div>
-            <div className="flex justify-between items-center bg-white/60 px-2.5 py-1.5 rounded-lg border border-stone-200">
-              <span className="text-stone-500"><AiT>{"Background:"}</AiT></span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full border border-stone-300" style={isTransparent ? undefined : { backgroundColor: bgHex }}/>
-                <span className="font-medium text-[#3B2F1E]">{isTransparent ? <AiT>{"Transparent"}</AiT> : bgHex}</span>
-              </span>
-            </div>
-            <div className="flex justify-between items-center bg-white/60 px-2.5 py-1.5 rounded-lg border border-stone-200">
-              <span className="text-stone-500"><AiT>{"Clothing:"}</AiT></span>
-              <span className="font-medium text-[#3B2F1E] truncate max-w-[110px]"><AiT>{clothingInfo}</AiT></span>
-            </div>
-          </div>
-        </div>
       </div>
     </aside>);
 }

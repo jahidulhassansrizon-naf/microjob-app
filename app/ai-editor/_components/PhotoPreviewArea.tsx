@@ -32,6 +32,10 @@ interface PhotoPreviewAreaProps {
     /** Dual mode: the single combined image (left person | right person). */
     dualResultImage?: string | null;
     setDualResultImage?: React.Dispatch<React.SetStateAction<string | null>>;
+    /** CSS filter string applied live to the generated photo (single or dual result) while it is being edited. */
+    resultFilter?: string;
+    /** Details of the generated photo (size, background, clothing) shown under the photo. */
+    resultInfo?: { size: string; bgColor: string; clothing: string } | null;
 }
 const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)",
@@ -490,7 +494,8 @@ function EmptyUploadBox({ title, subtitle, onUpload, }: {
         <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>
     </div>);
 }
-function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = true, isScanning = false, }: {
+function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = true, isScanning = false, filter, }: {
+    filter?: string;
     image: string | null;
     label: string;
     boxInfo: BoxInfo;
@@ -507,7 +512,7 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
 
       <FitFrame info={boxInfo} imageSrc={image} className={`overflow-hidden rounded-2xl shadow-xl ${showBorder ? "border-2 border-[#E3D6B8]" : ""}`} style={getBackgroundStyle(background)}>
         {image ? (<div className="group relative h-full w-full">
-            <img src={image} alt={t(label)} className="h-full w-full object-contain"/>
+            <img src={image} alt={t(label)} className="h-full w-full object-contain" style={filter ? { filter } : undefined}/>
 
             <button type="button" onClick={onRemove} aria-label={t(`Remove ${label}`)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100">
               <X size={14}/>
@@ -522,8 +527,27 @@ function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = t
       </FitFrame>
     </div>);
 }
+function ResultInfoChips({ info }: { info: { size: string; bgColor: string; clothing: string } }) {
+    const transparent = info.bgColor === "transparent";
+    const chip = "flex items-center gap-1.5 rounded-lg border border-[#E3D6B8] bg-white/60 px-2.5 py-1 text-[12px] text-[#3B2F1E]";
+    return (<div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
+      <div className={chip}>
+        <span className="text-stone-500"><AiT>{"Photo Size:"}</AiT></span>
+        <span className="font-bold text-[#DC2626]">{info.size}</span>
+      </div>
+      <div className={chip}>
+        <span className="text-stone-500"><AiT>{"Background:"}</AiT></span>
+        <span className="h-3 w-3 rounded-full border border-stone-300" style={transparent ? undefined : { backgroundColor: info.bgColor }}/>
+        <span className="font-medium">{transparent ? <AiT>{"Transparent"}</AiT> : info.bgColor}</span>
+      </div>
+      <div className={chip}>
+        <span className="text-stone-500"><AiT>{"Clothing:"}</AiT></span>
+        <span className="max-w-[140px] truncate font-medium"><AiT>{info.clothing}</AiT></span>
+      </div>
+    </div>);
+}
 export default function PhotoPreviewArea({
-    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage,
+    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage, resultFilter, resultInfo = null,
 }: PhotoPreviewAreaProps) {
     const { t } = useAiEditorText();
     const handleRemoveSingle = () => {
@@ -555,12 +579,12 @@ export default function PhotoPreviewArea({
           {isDualPreviewActive && originalImageForDual ? (<div className="grid w-full max-w-[1000px] grid-cols-1 gap-6 md:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)] xl:gap-4">
               <PhotoCard image={originalImageForDual} label="Real Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={() => setOriginalImageForDual(null)} isScanning={isGenerating}/>
 
-              <PhotoCard image={uploadedImage} label="Edited Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={handleRemoveSingle} isScanning={isGenerating}/>
+              <PhotoCard image={uploadedImage} label="Edited Photo" boxInfo={activeBoxInfo} background={currentBgColorValue} onRemove={handleRemoveSingle} isScanning={isGenerating} filter={resultFilter}/>
             </div>) : (<FitFrame info={activeBoxInfo} imageSrc={uploadedImage} className={`overflow-hidden rounded-2xl shadow-xl ${uploadedImage
                     ? "border-2 border-transparent"
                     : "border-2 border-dashed border-[#DC2626]/40"}`}>
               {uploadedImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
-                  <img src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain"/>
+                  <img src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>
 
                   <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label={t("Remove current photo")}>
                     <X size={14}/>
@@ -576,13 +600,15 @@ export default function PhotoPreviewArea({
 
           {!isDualPreviewActive && (<button type="button" onClick={enableDualMode} className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#E3D6B8]/60 px-4 py-2 text-sm font-medium text-[#3B2F1E] shadow-sm transition hover:bg-[#E3D6B8]">
               <ImageIcon size={14} className="text-[#DC2626]"/><AiT>{"Upload 2 separate images\n            "}</AiT></button>)}
+
+          {resultInfo && !isGenerating && <ResultInfoChips info={resultInfo}/>}
         </div>) : (dualResultImage || isGenerating) ? (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <span className="shrink-0 text-center text-sm font-semibold uppercase tracking-wider text-[#3B2F1E]"><AiT>{"Dual Photo\n          "}</AiT></span>
 
           {/* ONE wide frame and ONE gate: both photos fall in together, one group photo comes out. */}
           <FitFrame info={{ text: "90×55 mm", style: { width: "540px", height: "330px" } }} imageSrc={dualResultImage || leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
             <div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
-              {dualResultImage ? (<img src={dualResultImage} alt={t("Dual photo")} className="h-full w-full object-contain"/>) : (<div className="flex h-full w-full">
+              {dualResultImage ? (<img src={dualResultImage} alt={t("Dual photo")} className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>) : (<div className="flex h-full w-full">
                   <div className="h-full w-1/2" style={getBackgroundStyle(currentBgColorValue)}>
                     {leftImage && (<img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>)}
                   </div>
@@ -607,6 +633,8 @@ export default function PhotoPreviewArea({
             }} className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100">
               <RefreshCw size={14}/><AiT>{"Exit dual mode\n            "}</AiT></button>
           </div>)}
+
+          {resultInfo && !isGenerating && <ResultInfoChips info={resultInfo}/>}
         </div>) : (<div className="flex w-full max-w-[1000px] flex-col items-center gap-5 xl:min-h-0 xl:flex-1 xl:gap-3">
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">

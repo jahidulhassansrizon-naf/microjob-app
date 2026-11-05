@@ -13,7 +13,8 @@ import QrCodeSidebar from "./_components/QrCodeSidebar";
 import PhotoSetupWizard, { type WizardResult } from "./_components/PhotoSetupWizard";
 import RecentGenerations from "./_components/RecentGenerations";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
-import { buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
+import { applyFiltersToExportable, buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
+import { DEFAULT_FILTERS, RESULT_DEFAULT_FILTERS, filterString, isNeutralFilters, type FilterState } from "./_components/ImageEditSidebar";
 import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -62,6 +63,17 @@ export default function PhotoEditorPage() {
     const [previewModalImage, setPreviewModalImage] = useState<any>(null);
     // Photo that was just generated: drives the right-side actions panel and the inline print studio.
     const [resultItem, setResultItem] = useState<GeneratedResultItem | null>(null);
+    // Live edit values (brightness etc.) for the generated photo. A new photo starts slightly brighter and the edit dropdown opens by itself.
+    const [resultFilters, setResultFilters] = useState<FilterState>(RESULT_DEFAULT_FILTERS);
+    const [resultEditToken, setResultEditToken] = useState(0);
+    // The exact image the main preview shows for the current result (the saved record may carry a different URL string).
+    const [resultPreviewUrl, setResultPreviewUrl] = useState<string | null>(null);
+    const showGeneratedResult = (item: GeneratedResultItem, previewUrl: string) => {
+        setResultPreviewUrl(previewUrl);
+        setResultFilters(RESULT_DEFAULT_FILTERS);
+        setResultEditToken((token) => token + 1);
+        setResultItem(item);
+    };
     const [printSession, setPrintSession] = useState<PrintSession | null>(null);
     const [bulkPrintSources, setBulkPrintSources] = useState<Array<{ image: string; sourceKey?: string; preset: { id?: string; label?: string; widthMm: number; heightMm: number } }> | null>(null);
     // Print layouts the user kept when closing the print studio (stored in this browser).
@@ -975,6 +987,9 @@ export default function PhotoEditorPage() {
             setResultItem((prev) => prev && prev.id === updatedId
                 ? { ...prev, ...(savedItem || {}), url: finalUrl }
                 : prev);
+            // The saved file already contains the edits, so the dropdown values start neutral again.
+            if (resultItem && resultItem.id === updatedId)
+                setResultFilters(DEFAULT_FILTERS);
         }
         catch (error) {
             console.error("Error updating edited image in MongoDB:", error);
@@ -1147,6 +1162,13 @@ export default function PhotoEditorPage() {
         const studioPose = plan.appliedLabels.includes("Studio Straight Pose");
         const skinRule = plan.skinTone ? buildSkinToneRule(plan.skinTone) : plan.appliedLabels.includes("Fair & Bright Skin") ? SKIN_RETOUCH_RULE : KEEP_SKIN_COLOR_RETOUCH_RULE;
 
+        // Head cloth (dupatta / scarf / veil) belongs to the OLD clothing. When the user picked new clothing that does not cover
+        // the head, it must go away (same as a normal edit); only a head-covering style or "keep my clothes" keeps it.
+        const poseClothingName = typeof payload.clothing === "number" && CLOTHING_NAMES[payload.clothing] ? CLOTHING_NAMES[payload.clothing] : "";
+        const poseKeepsHeadCover = !poseClothingName || ["Hijab", "Burqa", "Niqab", "Khimar"].includes(poseClothingName);
+        const poseHeadCoverRule = poseKeepsHeadCover
+            ? "HEAD COVERING: keep the person's own hijab, scarf or head covering (same color, style and fabric), re-draped symmetrically on both sides of the face."
+            : "HEAD COVERING (must follow): the person's old clothes are being replaced, so any cloth on or around the head or over the shoulders in the input (dupatta, scarf, shawl, hijab, veil, wrap) must be completely REMOVED and NOT redrawn. The head is uncovered, the real hair is visible naturally, and only the newly chosen clothing appears on the body, exactly like a normal passport edit. Do not keep, copy or re-drape the old head cloth.";
         const instructions = [
             flags.restoration
                 ? hasSelectedPhotoSize
@@ -1191,6 +1213,9 @@ export default function PhotoEditorPage() {
             // redraw the person's OWN clothing as an identical copy on the straightened body.
             instructions.push("CLOTHING REDRAW (required for the straight pose): the person keeps their own clothing, but you must REDRAW it from scratch on the newly straightened body, as if replacing the clothes with a perfect identical copy. The copy must be exactly the same garment type, the same exact colors and shades (for example orange stays the same orange, black stays black), the same print or pattern, the same fabric look, the same neckline and collar, and the same head covering (hijab, scarf, burqa, cap) in the same style and color, now hanging neatly and symmetrically on both sides. Do not change the clothing design or color in any way, and do not copy the old slanted shoulder line or the old crooked folds.");
         }
+        if (studioPose && !poseKeepsHeadCover) {
+            instructions.push(poseHeadCoverRule);
+        }
         if (studioPose) {
             instructions.push("SKIN COLOR LOCK FOR THE RE-POSE (very important): the skin of the face, neck and hands must keep EXACTLY the same color, shade, depth and undertone as in the original input photo. Re-posing or redrawing the clothing must not darken, tan, redden, yellow, whiten or tint the skin, and colored clothing or head covering must not cast any color onto it. A fair skin stays fair, a wheatish skin stays wheatish, a dark skin stays dark.");
         }
@@ -1225,7 +1250,8 @@ export default function PhotoEditorPage() {
                 "TOP PRIORITY TASK: STRAIGHTEN THE PERSON INTO A STRICT FRONTAL STUDIO PASSPORT POSE.",
                 "The input photo was taken crooked: the head is tilted or leaning to one side, the neck is slanted, the shoulders are uneven or turned, and the body is not square to the camera. The output must NOT keep that crooked pose. Re-pose the person as if they had sat down on a studio stool in front of a passport photographer and been photographed straight-on.",
                 "Measurable requirements for the output: (1) an imaginary vertical line through the middle of the forehead, the nose, the center of the lips and the chin is perfectly vertical; (2) an imaginary line through the outer corners of both eyes is perfectly horizontal, and both eyes are the same height; (3) the ears are at the same height and both sides of the face are equally visible, with no head turn to the left or right; (4) the neck is straight and vertical, centered between the shoulders; (5) both shoulders are at exactly the same height, square to the camera, symmetrical about the center line, with the torso facing the camera directly; (6) the chin is level, neither raised nor lowered; (7) both eyes look straight into the camera lens.",
-                "How to do it: do NOT merely rotate or deskew the whole picture. Redraw the head, neck and shoulders in the corrected frontal orientation. A head that leans must be brought upright, a turned head must be turned to face the camera, and a raised shoulder must be lowered. Any head covering (hijab, scarf, cap) must be re-draped so it hangs symmetrically on both sides of the face, keeping its same color, fabric and style. The final image must visibly differ from the input in head angle and shoulder line.",
+                "How to do it: do NOT merely rotate or deskew the whole picture. Redraw the head, neck and shoulders in the corrected frontal orientation. A head that leans must be brought upright, a turned head must be turned to face the camera, and a raised shoulder must be lowered. The final image must visibly differ from the input in head angle and shoulder line.",
+                poseHeadCoverRule,
                 "Identity rule for this task: identity means the face itself (facial features, face shape, skin color, eyebrows, eye shape, nose, lips, moles/marks as specified below, apparent age). Changing the head orientation and body pose is explicitly ALLOWED and REQUIRED here, and it does not violate any instruction to keep the person unchanged. The same real person must be recognizable, just sitting straight.",
             ].join("\n"));
         }
@@ -1527,7 +1553,7 @@ export default function PhotoEditorPage() {
                         ...dualDocData,
                     };
                     setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
-                    setResultItem({ ...dualDocData, ...updatedItem } as GeneratedResultItem);
+                    showGeneratedResult({ ...dualDocData, ...updatedItem } as GeneratedResultItem, combinedUrl);
                 }
                 else {
                     const response = await fetch("/api/ai-generations", {
@@ -1547,7 +1573,7 @@ export default function PhotoEditorPage() {
                     if (createdItem) {
                         setRecentList((prev) => [createdItem, ...prev]);
                     }
-                    setResultItem({ ...dualDocData, ...(createdItem || {}) } as GeneratedResultItem);
+                    showGeneratedResult({ ...dualDocData, ...(createdItem || {}) } as GeneratedResultItem, combinedUrl);
                 }
                 generationSucceeded = true;
                 return;
@@ -1602,7 +1628,7 @@ export default function PhotoEditorPage() {
                     ...newDocData,
                 };
                 setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
-                setResultItem({ ...newDocData, ...updatedItem } as GeneratedResultItem);
+                showGeneratedResult({ ...newDocData, ...updatedItem } as GeneratedResultItem, generatedUrl);
             }
             else {
                 const response = await fetch("/api/ai-generations", {
@@ -1624,7 +1650,7 @@ export default function PhotoEditorPage() {
                 if (createdItem) {
                     setRecentList((prev) => [createdItem, ...prev]);
                 }
-                setResultItem({ ...newDocData, ...(createdItem || {}) } as GeneratedResultItem);
+                showGeneratedResult({ ...newDocData, ...(createdItem || {}) } as GeneratedResultItem, generatedUrl);
             }
             generationSucceeded = true;
         }
@@ -1815,6 +1841,20 @@ export default function PhotoEditorPage() {
         setShowColorPicker(false);
         setIsDualMode(false);
     };
+    // Live preview of the edit dropdown, only while the shown photo is the generated result.
+    const liveResultFilter = resultItem && !isGenerating && !isNeutralFilters(resultFilters) && !!resultPreviewUrl && (resultPreviewUrl === uploadedImage || resultPreviewUrl === dualResultImage)
+        ? filterString(resultFilters)
+        : undefined;
+    const resultInfo = resultItem && !isGenerating && resultPreviewUrl && (resultPreviewUrl === uploadedImage || resultPreviewUrl === dualResultImage)
+        ? (() => {
+            const styleMatch = /^Style (\d+)$/.exec(resultItem.clothingStyle || "");
+            return {
+                size: resultItem.size || "35×45 mm",
+                bgColor: resultItem.bgColor || "#FFFFFF",
+                clothing: styleMatch ? (CLOTHING_NAMES[Number(styleMatch[1])] || "Default Clothing") : (resultItem.clothingStyle || "Default Clothing"),
+            };
+        })()
+        : null;
     const handleEditingGuidesChange = (guides: string[]) => {
         setEditingGuides(guides);
     };
@@ -2061,7 +2101,7 @@ export default function PhotoEditorPage() {
 
       <AiPrintStudioModal open={!!printSession || !!bulkPrintSources?.length} image={bulkPrintSources?.[0]?.image ?? printSession?.image ?? null} preset={bulkPrintSources?.[0]?.preset ?? printSession?.preset ?? null} images={bulkPrintSources ?? undefined} recentImages={recentPrintImages} onResolveRecent={resolveRecentForPrint} onSaveSession={handleSavePrintSession} initialSnapshot={savedSnapshot} onClose={() => { setPrintSession(null); setBulkPrintSources(null); setSavedSnapshot(null); setActiveSavedId(null); }} onPrintSingle={!bulkPrintSources && resultItem ? async () => {
         try {
-            await printSinglePhoto(resultItem);
+            await printSinglePhoto(await applyFiltersToExportable(resultItem, isNeutralFilters(resultFilters) ? null : filterString(resultFilters)));
         }
         catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "Could not print this image.");
@@ -2080,11 +2120,11 @@ export default function PhotoEditorPage() {
             <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0">
               {/* Photo preview (kept mounted, hidden while the print section is open) */}
               <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
-                <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage}/>
+                <PhotoPreviewArea isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage} resultFilter={liveResultFilter} resultInfo={resultInfo}/>
               </div>
               {/* Options appear right beside the generated photo */}
               {resultItem && !printSession && !bulkPrintSources && (<div className="flex justify-center xl:block xl:shrink-0">
-                  <GeneratedResultPanel item={resultItem} onClose={() => setResultItem(null)} onEdit={(item) => { setPreviewStartWithEdit(true); setPreviewModalImage(item); }} onDelete={handleDeleteImage} onPrint={(session) => { setBulkPrintSources(null); setPrintSession(session); }}/>
+                  <GeneratedResultPanel item={resultItem} onClose={() => setResultItem(null)} filters={resultFilters} onFiltersChange={setResultFilters} autoOpenToken={resultEditToken} onDelete={handleDeleteImage} onPrint={(session) => { setBulkPrintSources(null); setPrintSession(session); }}/>
                 </div>)}
             </div>
           </div>
