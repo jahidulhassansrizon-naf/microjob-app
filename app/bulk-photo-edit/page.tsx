@@ -16,6 +16,19 @@ import { TOOL_PRESETS } from "./components/toolCatalog";
 import RetentionNotice from "@/app/_components/RetentionNotice";
 import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import type { ApplyMode, PhotoItem, PhotoProcessingStatus, PhotoToolsMap, SelectedTools, } from "./components/types";
+
+// Never show raw server/bot text (it can mention Gemini, Playwright, page URLs...).
+// Same wording as the AI Editor page.
+const FRIENDLY_AI_ERROR =
+    "একটু অপেক্ষা করুন, ছবিটি তৈরি হতে সাধারণের চেয়ে বেশি সময় লাগছে। কিছুক্ষণ পর আবার চেষ্টা করুন।";
+function toFriendlyAiError(raw: unknown): string {
+    const text = typeof raw === "string" ? raw : raw instanceof Error ? raw.message : "";
+    const looksTechnical = !text ||
+        text.length > 300 ||
+        /gemini|google|playwright|failed to fetch|networkerror|unreadable response|ai service|ai editing failed|\[page:|signInVisible|buttons:|\bsession\b|\bbot\b|https?:\/\//i.test(text);
+    return looksTechnical ? FRIENDLY_AI_ERROR : text;
+}
+
 const PAGE_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
@@ -497,8 +510,7 @@ export default function BulkPhotoEditPage() {
                         subscriptionBlocked = true;
                         window.dispatchEvent(new Event("sohozkaj:subscription-required"));
                     }
-                    throw new Error(data.error ||
-                        `AI editing failed for photo ${index + 1} (${response.status}).`);
+                    throw new Error(toFriendlyAiError(data.error));
                 }
                 updatePhoto(photo.id, {
                     status: "success",
@@ -509,9 +521,7 @@ export default function BulkPhotoEditPage() {
                 successCount += 1;
             }
             catch (error) {
-                const errorMessage = error instanceof Error
-                    ? error.message
-                    : "Unknown AI editing error.";
+                const errorMessage = toFriendlyAiError(error);
                 updatePhoto(photo.id, {
                     status: "error",
                     resultUrl: null,
@@ -639,7 +649,7 @@ export default function BulkPhotoEditPage() {
                 if (response.status === 403 && data.code === "SUBSCRIPTION_REQUIRED") {
                     window.dispatchEvent(new Event("sohozkaj:subscription-required"));
                 }
-                throw new Error(data.error || `AI editing failed (${response.status}).`);
+                throw new Error(toFriendlyAiError(data.error));
             }
             updatePhoto(photo.id, {
                 status: "success",
@@ -650,9 +660,7 @@ export default function BulkPhotoEditPage() {
             setMessage(`${photo.file.name} was edited successfully.`);
         }
         catch (error) {
-            const errorMessage = error instanceof Error
-                ? error.message
-                : "Unknown AI editing error.";
+            const errorMessage = toFriendlyAiError(error);
             updatePhoto(photo.id, {
                 status: "error",
                 resultUrl: null,

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "react-image-crop/dist/ReactCrop.css";
+
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import { getClientSession } from "@/lib/clientAuth";
 import SubscriptionLock from "./components/SubscriptionLock";
@@ -30,6 +31,10 @@ import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
 import RetentionNotice from "@/app/_components/RetentionNotice";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
+
+// Same wording as the AI Editor page: never mention the AI provider to users.
+const FRIENDLY_GENERATION_ERROR =
+  "একটু অপেক্ষা করুন, ছবিটি তৈরি হতে সাধারণের চেয়ে বেশি সময় লাগছে। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
 async function persistGeneratedFile(
   image: string,
@@ -398,9 +403,23 @@ export default function AITemplatePage() {
       window.dispatchEvent(new Event("sohozkaj:generation-finished"));
       if (response.status === 403 && data?.code === "SUBSCRIPTION_REQUIRED") {
         window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+        // The subscription dialog already explains the next step; no red error.
+        if (generationAbortRef.current === controller) setGenerationError("");
+        return;
       }
-      if (!response.ok || !data?.success || !data.image)
-        throw new Error(data?.error || "Template image generation failed.");
+      if (!response.ok || !data?.success || !data.image) {
+        // Never show raw server/bot text (it can mention Gemini, Playwright,
+        // page URLs, button lists...). Show one friendly Bangla message instead.
+        const rawMessage = typeof data?.error === "string" ? data.error : "";
+        const looksTechnical =
+          rawMessage.length > 300 ||
+          /gemini|google|playwright|\[page:|signInVisible|buttons:|\bsession\b|\bbot\b|https?:\/\//i.test(rawMessage);
+        throw new Error(
+          !rawMessage || looksTechnical
+            ? FRIENDLY_GENERATION_ERROR
+            : rawMessage,
+        );
+      }
       if (generationAbortRef.current !== controller) return;
       setGeneratedImage(data.image);
       void persistGeneratedFile(
@@ -417,12 +436,17 @@ export default function AITemplatePage() {
         setGenerationError(
           "Generation took too long. Please try again in a moment.",
         );
-      else
-        setGenerationError(
-          error instanceof Error
-            ? error.message
-            : "Template image generation failed.",
-        );
+      else {
+        console.error("Template generation error:", error);
+        const raw = error instanceof Error ? error.message : "";
+        // Network failures ("Failed to fetch") and any leaked technical text
+        // are replaced by the same friendly message.
+        const looksTechnical =
+          !raw ||
+          raw.length > 300 ||
+          /gemini|google|playwright|failed to fetch|networkerror|\[page:|signInVisible|buttons:|\bsession\b|\bbot\b|https?:\/\//i.test(raw);
+        setGenerationError(looksTechnical ? FRIENDLY_GENERATION_ERROR : raw);
+      }
     } finally {
       window.clearTimeout(timeoutId);
       if (generationAbortRef.current === controller) {
