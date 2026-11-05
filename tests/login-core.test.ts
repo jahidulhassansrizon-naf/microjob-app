@@ -16,9 +16,9 @@ function deps(over: Partial<LoginDeps<U>> = {}, calls: { find: number } = { find
     findUser: async (filter) => {
       calls.find += 1;
       const [{ phoneNumber }, { email }] = filter.$or;
-      assert.equal(typeof phoneNumber, "string");
+      assert.ok(Array.isArray(phoneNumber.$in));
       assert.equal(typeof email, "string");
-      return db.find((u) => u.phoneNumber === phoneNumber || u.email === email) ?? null;
+      return db.find((u) => phoneNumber.$in.includes(u.phoneNumber) || u.email === email) ?? null;
     },
     comparePassword: async (plain, hash) => hashOf(plain) === hash,
     ...over,
