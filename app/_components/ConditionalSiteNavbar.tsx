@@ -18,13 +18,16 @@ export default function ConditionalSiteNavbar({ children }: { children: ReactNod
   const isDashboardSubscription = pathname === "/subscription";
   // The global components/Navbar.tsx should stay hidden on the manual payment page.
   const isManualPaymentPage = pathname === "/payment/manual";
+  // The payment result page renders the dashboard navbar itself.
+  const isPaymentResultPage = pathname === "/payment/success";
 
   if (
     isMobileQrUpload ||
     isAdminWorkspace ||
     isAuthPage ||
     isDashboardSubscription ||
-    isManualPaymentPage
+    isManualPaymentPage ||
+    isPaymentResultPage
   ) {
     return null;
   }
