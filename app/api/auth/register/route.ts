@@ -5,8 +5,9 @@ import User from "@/models/User";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
-import { validatePhoneNumber } from "@/lib/phoneValidation";
+import { getPhoneLookupVariants, normalizePhoneNumber, validatePhoneNumber } from "@/lib/phoneValidation";
 import { ensureUniqueFullNameIndex, findDuplicateFullName, normalizeFullName } from "@/app/api/_lib/userIdentity";
+import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
 import {
   attemptsQuery,
   constantTimeOtpMatch,
@@ -58,8 +59,10 @@ export async function POST(req: Request) {
     const fullName = typeof body.fullName === "string" ? body.fullName.normalize("NFKC").trim().replace(/\s+/gu, " ") : "";
     const rawEmail = typeof body.email === "string" ? body.email : "";
     const cleanEmail = rawEmail.trim().toLowerCase();
-    const cleanPhone = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
+    const rawPhone = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
     const country = typeof body.country === "string" ? body.country.trim().slice(0, 80) : "";
+    const effectiveCountry = country || "Bangladesh";
+    const cleanPhone = normalizePhoneNumber(effectiveCountry, rawPhone) || "";
     const district = typeof body.district === "string" ? body.district.trim().slice(0, 100) : "";
     const password = typeof body.password === "string" ? body.password : "";
     const cleanOtp = typeof body.otp === "string" ? body.otp.trim() : String(body.otp ?? "").trim();
@@ -67,12 +70,10 @@ export async function POST(req: Request) {
     if (!fullName || fullName.length > 100) return json({ message: "Enter your name (up to 100 characters)." }, 400);
     if (!isValidEmail(cleanEmail)) return json({ message: "Enter a valid email address." }, 400);
     if (isConfiguredAdminEmail(cleanEmail)) return json({ message: "This email is reserved for the Main Administrator." }, 409);
-    if (!cleanPhone || !/^\d{5,15}$/.test(cleanPhone)) return json({ message: "Enter a valid phone number." }, 400);
-    const phoneError = validatePhoneNumber(country, cleanPhone);
-    if (phoneError) return json({ message: phoneError }, 400);
-    if (password.length < 8 || password.length > 128) {
-      return json({ message: "Password must be between 8 and 128 characters long." }, 400);
-    }
+    const phoneError = validatePhoneNumber(effectiveCountry, rawPhone);
+    if (phoneError || !cleanPhone) return json({ message: phoneError || "Enter a valid phone number." }, 400);
+    const passwordValidation = validateNewPassword(password);
+    if (!passwordValidation.valid) return json({ message: newPasswordErrorMessage(passwordValidation) }, 400);
     if (!/^\d{6}$/.test(cleanOtp)) return json({ message: "Enter a valid 6-digit OTP code." }, 400);
 
     await connectDB();
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
     await ensureUniqueFullNameIndex();
     const [existingEmail, existingPhone, existingName] = await Promise.all([
       User.findOne({ email: cleanEmail }).select("_id").lean(),
-      User.findOne({ phoneNumber: cleanPhone }).select("_id").lean(),
+      User.findOne({ phoneNumber: { $in: getPhoneLookupVariants(cleanPhone) } }).select("_id").lean(),
       findDuplicateFullName(fullName),
     ]);
     if (existingEmail) return json({ message: "This email is already registered!" }, 409);
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
     let newUser;
     try {
       newUser = await User.create({
-        country: country || "Bangladesh",
+        country: effectiveCountry,
         phoneNumber: cleanPhone,
         email: cleanEmail,
         fullName,

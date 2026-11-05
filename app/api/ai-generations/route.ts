@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -10,7 +11,7 @@ import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 
 export const runtime = "nodejs";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 const CLOUDINARY_FOLDER = "sohozkaj-ai-photos";
 
@@ -78,7 +79,7 @@ function getUserIdFromRequest(request: Request): string {
 
   if (!token) throw new Error("AUTH_REQUIRED");
 
-  const decoded = jwt.verify(token, JWT_SECRET) as {
+  const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as {
     userId?: string;
     [key: string]: unknown;
   };

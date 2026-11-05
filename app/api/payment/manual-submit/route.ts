@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -8,7 +9,7 @@ import { getSubscriptionPlan, getSubscriptionPlans } from "@/app/api/_lib/subscr
 
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const WALLET_NUMBERS = {
   Nagad: process.env.NAGAD_PAYMENT_NUMBER?.trim() || "",
   "bKash": process.env.BKASH_PAYMENT_NUMBER?.trim() || "",
@@ -37,7 +38,7 @@ function getUserId(request: Request): string | null {
   const token = getToken(request);
   if (!token || !JWT_SECRET) return null;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthClaims;
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as AuthClaims;
     return decoded.userId && mongoose.isValidObjectId(decoded.userId)
       ? decoded.userId
       : null;

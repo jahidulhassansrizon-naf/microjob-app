@@ -1,3 +1,4 @@
+import { getJwtSecret } from "./jwtSecurity";
 import type { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -14,7 +15,7 @@ import jwt from "jsonwebtoken";
  * click instead of logging in twice.
  */
 
-export const JWT_SECRET = process.env.JWT_SECRET || "";
+export const JWT_SECRET = getJwtSecret();
 
 // The cookie's own lifetime, refreshed on every impersonated request while
 // the admin is actively working (see refreshImpersonationCookieIfNeeded).
@@ -61,7 +62,7 @@ export function nextImpersonationTtlSeconds(sessionStartedAt: number): number {
 }
 
 export function signImpersonationToken(claims: ImpersonationClaims, ttlSeconds: number): string {
-  return jwt.sign(claims, JWT_SECRET, { expiresIn: ttlSeconds });
+  return jwt.sign(claims, JWT_SECRET, { expiresIn: ttlSeconds, algorithm: "HS256" });
 }
 
 function cookieOptions(maxAgeSeconds: number) {

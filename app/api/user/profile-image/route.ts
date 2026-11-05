@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
@@ -8,7 +9,7 @@ import User from "@/models/User";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
     let decoded: { userId?: string };
 
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+      decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId?: string };
     } catch {
       return NextResponse.json(
         { success: false, message: "Your login session has expired." },
@@ -223,7 +224,7 @@ export async function DELETE(request: Request) {
     let decoded: { userId?: string };
 
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+      decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId?: string };
     } catch {
       return NextResponse.json(
         { success: false, message: "Your login session has expired." },

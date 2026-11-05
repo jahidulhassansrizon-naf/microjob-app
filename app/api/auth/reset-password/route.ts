@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
@@ -38,9 +39,8 @@ export async function POST(req: Request) {
     if (!isValidEmail(cleanEmail) || !/^\d{6}$/.test(cleanOtp) || !newPassword) {
       return json({ message: "Email, a valid 6-digit OTP code, and a new password are required." }, 400);
     }
-    if (newPassword.length < 8 || newPassword.length > 128) {
-      return json({ message: "Password must be between 8 and 128 characters long." }, 400);
-    }
+    const passwordValidation = validateNewPassword(newPassword);
+    if (!passwordValidation.valid) return json({ message: newPasswordErrorMessage(passwordValidation) }, 400);
 
     if (isConfiguredAdminEmail(cleanEmail)) return invalidOtpResponse();
 

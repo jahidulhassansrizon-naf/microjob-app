@@ -4,20 +4,14 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import LoginSuccessCard from "@/app/_components/LoginSuccessCard";
+import { getSafeLocalPostLoginTarget, resolvePostLoginPath } from "@/app/login/_lib/resolvePostLoginPath";
 function LoginSuccessContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const nextPath = useMemo(() => {
-        const raw = searchParams.get("next") || "/dashboard";
-        try {
-            const decoded = decodeURIComponent(raw);
-            return decoded.startsWith("/") && !decoded.startsWith("//")
-                ? decoded
-                : "/dashboard";
-        }
-        catch {
-            return "/dashboard";
-        }
+        // URLSearchParams already decodes the query value once. Never decode it
+        // again: double-decoding can turn an encoded backslash into a redirect.
+        return getSafeLocalPostLoginTarget(searchParams.get("next") || "/dashboard") || "/dashboard";
     }, [searchParams]);
     useEffect(() => {
         let active = true;
@@ -30,12 +24,8 @@ function LoginSuccessContent() {
                 .then(async (response) => {
                     const data = await response.json().catch(() => ({}));
                     if (!active) return;
-                    const isAdmin = response.ok && data?.user?.role === "admin";
-                    const isAdminTarget = /^\/admin(?:[/?#]|$)/i.test(nextPath);
-                    const destination = isAdmin
-                        ? (isAdminTarget ? nextPath : "/admin")
-                        : (isAdminTarget ? "/dashboard" : nextPath);
-                    router.replace(destination);
+                    const role = response.ok && data?.user?.role === "admin" ? "admin" : "user";
+                    router.replace(resolvePostLoginPath(role, nextPath));
                 })
                 .catch(() => {
                     if (active) router.replace(nextPath);

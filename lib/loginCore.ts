@@ -1,3 +1,5 @@
+import { getPhoneLookupVariants } from "./phoneValidation";
+
 /**
  * Pure login decision logic. It has no framework, database or bcrypt imports so
  * it can be unit-tested directly; the login route injects the real dependencies.
@@ -10,10 +12,16 @@ export type LoginUserRecord = {
   [key: string]: unknown;
 };
 
+export type LoginLookupFilter = {
+  $or: [{ phoneNumber: { $in: string[] } }, { email: string }];
+};
+
 export type LoginDeps<U extends LoginUserRecord> = {
-  /** Called with a strictly string-valued filter, never with client objects. */
-  findUser: (filter: { $or: [{ phoneNumber: string }, { email: string }] }) => Promise<U | null>;
+  /** Called with server-built string filters, never client-provided Mongo operators. */
+  findUser: (filter: LoginLookupFilter) => Promise<U | null>;
   comparePassword: (plain: string, hash: string) => Promise<boolean>;
+  /** A fixed cost-12 bcrypt hash used to equalize unknown-user timing. */
+  dummyPasswordHash?: string;
 };
 
 export type LoginFailureCategory =
@@ -69,10 +77,17 @@ export async function authenticateLogin<U extends LoginUserRecord>(
     return { kind: "bad_request" };
   }
 
-  const user = await deps.findUser({ $or: [{ phoneNumber: identifier }, { email: identifier }] });
-  if (!user) return { kind: "invalid_credentials", category: "user_not_found" };
+  const phoneVariants = identifier.includes("@") ? [] : getPhoneLookupVariants(identifier);
+  const user = await deps.findUser({
+    $or: [{ phoneNumber: { $in: phoneVariants } }, { email: identifier }],
+  });
+  if (!user) {
+    if (deps.dummyPasswordHash) await deps.comparePassword(password, deps.dummyPasswordHash);
+    return { kind: "invalid_credentials", category: "user_not_found" };
+  }
 
   if (typeof user.password !== "string" || !user.password) {
+    if (deps.dummyPasswordHash) await deps.comparePassword(password, deps.dummyPasswordHash);
     return { kind: "invalid_credentials", category: "missing_password_hash" };
   }
 

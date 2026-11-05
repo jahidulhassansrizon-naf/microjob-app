@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    jwt.verify(adminReturnToken, JWT_SECRET);
+    jwt.verify(adminReturnToken, JWT_SECRET, { algorithms: ["HS256"] });
   } catch {
     return NextResponse.json({ success: false, message: "Your admin session has expired. Please sign in again." }, { status: 401 });
   }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   // the admin inside the impersonated session.
   if (currentToken) {
     try {
-      const decoded = jwt.verify(currentToken, JWT_SECRET) as { impersonation?: boolean; logId?: string };
+      const decoded = jwt.verify(currentToken, JWT_SECRET, { algorithms: ["HS256"] }) as { impersonation?: boolean; logId?: string };
       if (decoded?.impersonation && decoded.logId) {
         await connectDB();
         await ImpersonationLog.updateOne(

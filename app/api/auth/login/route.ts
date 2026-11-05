@@ -1,5 +1,7 @@
 import { bumpEnvAdminSession } from "@/lib/adminSession";
 import { randomUUID } from "node:crypto";
+import { getJwtSecret } from "@/lib/jwtSecurity";
+import { normalizePhoneRateLimitIdentity } from "@/lib/phoneValidation";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -8,6 +10,7 @@ import { authenticateLogin, normalizeLoginIdentifier, pickSubmittedIdentifier } 
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
+import { checkAuthRateLimit, clearAuthRateLimit, recordAuthRateLimitFailure } from "../../_lib/authRateLimit";
 import {
   ENV_ADMIN_USER_ID,
   getAdminCredentialVersion,
@@ -15,7 +18,12 @@ import {
   safeSecretEquals,
 } from "@/lib/adminCredentials";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
+const LOGIN_ACCOUNT_LIMIT = 10;
+const LOGIN_ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_IP_LIMIT = 150;
+const LOGIN_IP_WINDOW_MS = 10 * 60 * 1000;
+const DUMMY_PASSWORD_HASH = "$2b$12$UwCKAIUdT4rrPktvtkcpK.LYsY50khtCvCdqBkpFnHs1ms/Yqw2cq";
 const NO_STORE_HEADERS = { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache" };
 
 function loginCookie(response: NextResponse, token: string) {
@@ -29,6 +37,33 @@ function loginCookie(response: NextResponse, token: string) {
 }
 
 function requestId() { return randomUUID(); }
+
+function loginRateLimitIdentity(identifier: string): string {
+  return identifier.includes("@") ? identifier.trim().toLowerCase() : normalizePhoneRateLimitIdentity(identifier);
+}
+
+async function loginRateLimitStatus(req: Request, identifier: string) {
+  const subject = loginRateLimitIdentity(identifier);
+  const [account, ip] = await Promise.all([
+    checkAuthRateLimit(req, "login-failed-account", LOGIN_ACCOUNT_LIMIT, LOGIN_ACCOUNT_WINDOW_MS, subject),
+    checkAuthRateLimit(req, "login-failed-ip", LOGIN_IP_LIMIT, LOGIN_IP_WINDOW_MS),
+  ]);
+  if (!account.allowed) return account;
+  if (!ip.allowed) return ip;
+  return { allowed: true } as const;
+}
+
+async function recordLoginFailure(req: Request, identifier: string) {
+  const subject = loginRateLimitIdentity(identifier);
+  await Promise.all([
+    recordAuthRateLimitFailure(req, "login-failed-account", LOGIN_ACCOUNT_WINDOW_MS, subject),
+    recordAuthRateLimitFailure(req, "login-failed-ip", LOGIN_IP_WINDOW_MS),
+  ]);
+}
+
+async function resetLoginAccountFailures(req: Request, identifier: string) {
+  await clearAuthRateLimit(req, "login-failed-account", LOGIN_ACCOUNT_WINDOW_MS, loginRateLimitIdentity(identifier));
+}
 
 function fail(message: string, status: number, id: string, code: string) {
   return NextResponse.json({ message, code, requestId: id }, { status, headers: { ...NO_STORE_HEADERS, "X-Request-Id": id } });
@@ -53,10 +88,16 @@ export async function POST(req: Request) {
       return fail("Enter a valid email/phone number and password.", 400, id, "BAD_REQUEST");
     }
 
-    // Login itself is not rate-limited so the same account can authenticate
-    // from multiple devices without sharing an IP/account attempt counter.
-    // Database connectivity is still required for database-backed accounts.
+    // Failed attempts are counted per account identifier and per IP. Successful
+    // logins never increment either counter, so multiple devices remain unaffected.
     await connectDB();
+    const rateLimit = await loginRateLimitStatus(req, identifier);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "Too many login attempts. Please wait before trying again.", retryAfterSeconds: rateLimit.retryAfterSeconds, code: "LOGIN_RATE_LIMITED", requestId: id },
+        { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(rateLimit.retryAfterSeconds), "X-Request-Id": id } },
+      );
+    }
 
     // The configured Main Admin identity is synthetic and takes precedence over
     // any legacy MongoDB account using the same email. A wrong ENV password never
@@ -67,11 +108,15 @@ export async function POST(req: Request) {
         return fail("Main administrator login is not configured on the server.", 503, id, "ADMIN_CREDENTIALS_NOT_CONFIGURED");
       }
       if (!safeSecretEquals(password, configuredAdmin.password)) {
+        // Keep the failure path's work comparable to database-user bcrypt checks.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        await recordLoginFailure(req, identifier);
         console.warn(`[auth-login] requestId=${id} category=env_admin_password_mismatch`);
         return fail("The phone/email or password is incorrect. Please try again.", 401, id, "INVALID_CREDENTIALS");
       }
 
       // One device at a time: this login signs out the Main Admin on every other device.
+      await resetLoginAccountFailures(req, identifier);
       const adminSessionVersion = await bumpEnvAdminSession();
       const token = jwt.sign(
         {
@@ -83,7 +128,7 @@ export async function POST(req: Request) {
           adminSessionVersion,
         },
         JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "7d", algorithm: "HS256" },
       );
       const response = NextResponse.json(
         {
@@ -123,6 +168,7 @@ export async function POST(req: Request) {
           .lean()
           .exec() as Promise<any>,
         comparePassword: (plain, hash) => bcrypt.compare(plain, hash),
+        dummyPasswordHash: DUMMY_PASSWORD_HASH,
       },
       body,
     );
@@ -131,11 +177,13 @@ export async function POST(req: Request) {
       return fail("Enter a valid email/phone number and password.", 400, id, "BAD_REQUEST");
     }
     if (outcome.kind === "invalid_credentials") {
+      await recordLoginFailure(req, identifier);
       console.warn(`[auth-login] requestId=${id} category=${outcome.category}`);
       return fail("The phone/email or password is incorrect. Please try again.", 401, id, "INVALID_CREDENTIALS");
     }
 
     const user = outcome.user as Record<string, any>;
+    await resetLoginAccountFailures(req, identifier);
     const role = user.role === "admin" ? "admin" as const : "user" as const;
     const loginAt = new Date();
     // One device at a time: bumping sessionVersion signs this account out everywhere else,
@@ -155,7 +203,7 @@ export async function POST(req: Request) {
         sessionVersion: newSessionVersion,
       },
       JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d", algorithm: "HS256" },
     );
 
     const response = NextResponse.json(

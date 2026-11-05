@@ -115,3 +115,79 @@ export async function releaseAuthCooldown(scope: string, identifier: string, lea
     .slice(0, 40);
   await AuthRateLimit.deleteOne({ key: `cooldown:${scope}:${fingerprint}`, leaseToken });
 }
+
+
+async function rateLimitKeyParts(
+  request: Request,
+  scope: string,
+  windowMs: number,
+  subject?: string,
+) {
+  const now = Date.now();
+  const windowStart = Math.floor(now / windowMs);
+  const windowEnd = (windowStart + 1) * windowMs;
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const remoteIp = request.headers.get("x-real-ip")?.trim() || forwarded || "unknown";
+  const secret = getRateLimitSecret();
+  const identity = typeof subject === "string" && subject.trim()
+    ? `subject:${subject.trim().toLowerCase()}`
+    : `ip:${remoteIp}`;
+  const fingerprint = createHash("sha256")
+    .update(`${secret}\u0000${scope}\u0000${identity}`)
+    .digest("hex")
+    .slice(0, 40);
+  return { key: `${scope}:${fingerprint}:${windowStart}`, now, windowEnd };
+}
+
+/** Check a counter without incrementing it; used before password verification. */
+export async function checkAuthRateLimit(
+  request: Request,
+  scope: string,
+  limit: number,
+  windowMs: number,
+  subject?: string,
+): Promise<RateLimitResult> {
+  const parts = await rateLimitKeyParts(request, scope, windowMs, subject);
+  const record = await AuthRateLimit.findOne({ key: parts.key }).select("count").lean();
+  const count = Number(record?.count || 0);
+  if (count < limit) return { allowed: true };
+  return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((parts.windowEnd - parts.now) / 1000)) };
+}
+
+/** Persist one failed authentication attempt (never called on successful login). */
+export async function recordAuthRateLimitFailure(
+  request: Request,
+  scope: string,
+  windowMs: number,
+  subject?: string,
+): Promise<number> {
+  const parts = await rateLimitKeyParts(request, scope, windowMs, subject);
+  const expiresAt = new Date(parts.windowEnd + windowMs);
+  try {
+    const record = await AuthRateLimit.findOneAndUpdate(
+      { key: parts.key },
+      { $setOnInsert: { key: parts.key, expiresAt }, $inc: { count: 1 } },
+      { upsert: true, new: true },
+    ).select("count").lean();
+    return Number(record?.count || 0);
+  } catch (error) {
+    if (!error || typeof error !== "object" || (error as { code?: unknown }).code !== 11000) throw error;
+    const record = await AuthRateLimit.findOneAndUpdate(
+      { key: parts.key },
+      { $inc: { count: 1 } },
+      { new: true },
+    ).select("count").lean();
+    return Number(record?.count || 0);
+  }
+}
+
+/** Reset only the current account-identity window after a successful login. */
+export async function clearAuthRateLimit(
+  request: Request,
+  scope: string,
+  windowMs: number,
+  subject?: string,
+): Promise<void> {
+  const parts = await rateLimitKeyParts(request, scope, windowMs, subject);
+  await AuthRateLimit.deleteOne({ key: parts.key });
+}

@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
@@ -10,8 +11,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 function getTokenFromRequest(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     let decoded: { userId?: string };
 
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+      decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId?: string };
     } catch {
       return NextResponse.json(
         {

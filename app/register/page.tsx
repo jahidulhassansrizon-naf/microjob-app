@@ -26,6 +26,7 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { replaceSiteNameInText } from "@/lib/siteSettings";
+import { getSafeLocalPostLoginTarget } from "@/app/login/_lib/resolvePostLoginPath";
 
 interface Country {
   name: string;
@@ -331,9 +332,7 @@ export default function RegisterPage() {
     setIsSuccessModalOpen(false);
     const params = new URLSearchParams(window.location.search);
     const requestedTarget = params.get("callbackUrl") || params.get("redirect") || "";
-    const safeTarget = requestedTarget.startsWith("/") && !requestedTarget.startsWith("//") && !/^\/(?:login|register)(?:[/?#]|$)/i.test(requestedTarget)
-      ? requestedTarget
-      : "";
+    const safeTarget = getSafeLocalPostLoginTarget(requestedTarget) || "";
     router.push(safeTarget ? `/login?callbackUrl=${encodeURIComponent(safeTarget)}` : "/login");
   };
 

@@ -68,6 +68,15 @@ export async function POST(req: Request) {
     if (!cooldown.allowed) return json({ message: genericMessage, expiresInSeconds: 300 });
     cooldownLease = cooldown.leaseToken;
 
+    // Share one hourly quota across registration and password-reset emails.
+    const emailQuota = await enforceAuthRateLimit(req, "otp-email-hourly", 5, 60 * 60 * 1000, cleanEmail);
+    if (!emailQuota.allowed) {
+      await releaseAuthCooldown("password-reset-email-otp", cooldownIdentifier, cooldownLease);
+      cooldownLease = null;
+      // Preserve the endpoint's generic response to avoid email-account enumeration.
+      return json({ message: genericMessage, expiresInSeconds: 300 });
+    }
+
     const otpCode = createSixDigitOtp();
     const pending = await Otp.create({
       identifier: cleanEmail,

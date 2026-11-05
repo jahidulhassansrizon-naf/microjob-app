@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
@@ -8,7 +9,7 @@ import { createUddoktaPayCheckout, getUddoktaPayConfig } from "@/app/api/uddokta
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "").trim().replace(/\/+$/, "");
 type JwtPayload = { userId?: string; exp?: number };
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     const token = getTokenFromRequest(request);
     if (!token) return NextResponse.json({ success: false, message: "Please log in before starting a payment." }, { status: 401 });
     let decoded: JwtPayload;
-    try { decoded = jwt.verify(token, JWT_SECRET) as JwtPayload; } catch { return NextResponse.json({ success: false, message: "Your login session has expired. Please log in again." }, { status: 401 }); }
+    try { decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload; } catch { return NextResponse.json({ success: false, message: "Your login session has expired. Please log in again." }, { status: 401 }); }
     if (!decoded.userId) return NextResponse.json({ success: false, message: "Invalid login token." }, { status: 401 });
 
     const body = await request.json().catch(() => null);

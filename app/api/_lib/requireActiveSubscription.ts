@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -7,8 +8,7 @@ import Subscription from "@/models/Subscription";
 import User from "@/models/User";
 import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 type JwtPayload = {
   userId?: string;
@@ -51,6 +51,7 @@ export function createSubscriptionAccessToken(
     JWT_SECRET,
     {
       expiresIn: Math.max(1, Math.floor((tokenExpiryMs - Date.now()) / 1000)),
+      algorithm: "HS256",
     },
   );
 }
@@ -61,7 +62,7 @@ export function getUserIdFromSubscriptionAccessToken(
   if (!token) return null;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload & {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload & {
       subscriptionExpiresAt?: number;
       type?: string;
     };
@@ -134,7 +135,7 @@ export function getUserIdFromToken(token: string | null): string | null {
   if (!token) return null;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload;
     const userId = typeof decoded.userId === "string" ? decoded.userId : "";
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
@@ -201,7 +202,7 @@ export async function requireToolAccess(request: Request): Promise<ToolAccessRes
 
   let decoded: JwtPayload;
   try {
-    decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload;
   } catch {
     return {
       ok: false,

@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
@@ -6,7 +7,7 @@ import { ENV_ADMIN_USER_ID, getAdminCredentials, isCurrentAdminToken, type Admin
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 type AdminClaims = AdminTokenClaims & { userId?: string; sessionVersion?: number };
 
 function getToken(request: Request): string | null {
@@ -29,7 +30,7 @@ export async function requireAdmin(request: Request): Promise<{ admin: AdminIden
   if (!token) return { admin: null, response: NextResponse.json({ success: false, message: "Please log in to continue." }, { status: 401 }) };
 
   let decoded: AdminClaims;
-  try { decoded = jwt.verify(token, JWT_SECRET) as AdminClaims; }
+  try { decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as AdminClaims; }
   catch { return { admin: null, response: NextResponse.json({ success: false, message: "Your login session is invalid or expired." }, { status: 401 }) }; }
 
   const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;

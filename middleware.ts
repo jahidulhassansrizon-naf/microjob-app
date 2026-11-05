@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -52,7 +53,7 @@ async function isCurrentEnvAdminSession(claims: SessionClaims, jwtSecret: string
 }
 
 async function verifySessionToken(token: string): Promise<SessionClaims | null> {
-  const jwtSecret = process.env.JWT_SECRET?.trim();
+  const jwtSecret = getJwtSecret();
   if (!jwtSecret) return null;
   const parts = token.split(".");
   if (parts.length !== 3 || parts.some((part) => !part)) return null;

@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
@@ -23,7 +24,7 @@ export const revalidate = 0;
  * new key, so the popup appears again exactly once for it.
  */
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const SEEN_FIELD = "paidAccessWelcomeSeenKey";
 const EXPIRED_SEEN_FIELD = "paidAccessExpiredSeenKey";
 /**
@@ -65,7 +66,7 @@ function authenticate(request: Request): { userId: string; impersonating: boolea
   const token = getToken(request);
   if (!token) return null;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenClaims;
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as TokenClaims;
     if (decoded.admin === true) return null; // the env admin has no personal subscription
     if (typeof decoded.userId !== "string" || !mongoose.isValidObjectId(decoded.userId)) return null;
     return { userId: decoded.userId, impersonating: decoded.impersonation === true };

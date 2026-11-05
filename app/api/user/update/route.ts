@@ -5,6 +5,7 @@ import { getVerifiedRequestSession } from "@/lib/serverAuth";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import { ensureUniqueFullNameIndex, findDuplicateFullName, normalizeFullName } from "@/app/api/_lib/userIdentity";
 import { isValidEmail, NO_STORE_HEADERS } from "@/app/api/_lib/otpSecurity";
+import { getPhoneLookupVariants, normalizePhoneNumber } from "@/lib/phoneValidation";
 
 const ALLOWED_FIELDS = [
   "fullName",
@@ -72,8 +73,14 @@ async function updateProfile(req: Request) {
         return NextResponse.json({ message: "This email is reserved for the Main Administrator." }, { status: 409, headers: NO_STORE_HEADERS });
       }
     }
-    if (updateData.phoneNumber !== undefined && !/^\d{5,15}$/.test(updateData.phoneNumber)) {
-      return NextResponse.json({ message: "Enter a valid phone number using digits only." }, { status: 400, headers: NO_STORE_HEADERS });
+    if (updateData.phoneNumber !== undefined) {
+      const currentIdentity = await User.findById(session.userId).select("country").lean();
+      const countryForPhone = updateData.country?.trim() || String(currentIdentity?.country || "Bangladesh");
+      const normalizedPhone = normalizePhoneNumber(countryForPhone, updateData.phoneNumber);
+      if (!normalizedPhone) {
+        return NextResponse.json({ message: "Enter a valid phone number for the selected country." }, { status: 400, headers: NO_STORE_HEADERS });
+      }
+      updateData.phoneNumber = normalizedPhone;
     }
 
     // Uniqueness is checked server-side before mutation; MongoDB unique indexes
@@ -85,7 +92,7 @@ async function updateProfile(req: Request) {
       }));
     }
     if (updateData.phoneNumber !== undefined) {
-      identityChecks.push(User.findOne({ phoneNumber: updateData.phoneNumber, _id: { $ne: session.userId } }).select("_id").lean().then((row) => {
+      identityChecks.push(User.findOne({ phoneNumber: { $in: getPhoneLookupVariants(updateData.phoneNumber) }, _id: { $ne: session.userId } }).select("_id").lean().then((row) => {
         if (row) throw new Error("DUPLICATE_PROFILE_PHONE");
       }));
     }

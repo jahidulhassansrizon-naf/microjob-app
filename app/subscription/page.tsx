@@ -350,12 +350,8 @@ function ManualPaymentGuide({ amount }: { amount: number }) {
   );
 }
 
-/**
- * DEMO / PRACTICE ONLY.
- * These are made-up names, not real purchases. The whole block renders only when
- * NEXT_PUBLIC_DEMO_ACTIVITY="true". For production, feed it real subscription records instead.
- */
-const DEMO_ACTIVITY_ENABLED = process.env.NEXT_PUBLIC_DEMO_ACTIVITY === "true";
+/** Recent subscription activity block. No env variable needed; total buyers is set from Admin > Subscription Activity. */
+// Default only. The real number is set by the admin (Admin > Subscription Activity) and loaded from the database.
 const DEMO_TOTAL_BUYERS = 850;
 // Demo sales history. Every period gets a random-looking but FIXED count (seeded by today's date)
 // and all periods together add up to DEMO_TOTAL_BUYERS. Longest period is 2 months.
@@ -390,15 +386,15 @@ function demoHash(str: string) {
   return (h >>> 0) % 100000;
 }
 /** One count per DEMO_BUCKETS entry; the sum is always DEMO_TOTAL_BUYERS. */
-function buildDemoCounts(): number[] {
+function buildDemoCounts(total: number): number[] {
   const d = new Date();
   const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-  let left = DEMO_TOTAL_BUYERS;
+  const scale = total / DEMO_TOTAL_BUYERS;
+  let left = total;
   return DEMO_BUCKETS.map((b, i) => {
     const isLast = i === DEMO_BUCKETS.length - 1;
-    const c = isLast
-      ? left
-      : b.min + (demoHash(`${dayKey}-${i}`) % (b.max - b.min + 1));
+    const base = b.min + (demoHash(`${dayKey}-${i}`) % (b.max - b.min + 1));
+    const c = isLast ? Math.max(0, left) : Math.max(1, Math.round(base * scale));
     left -= c;
     return c;
   });
@@ -554,12 +550,12 @@ function RecentSubscriptionActivity({ plans }: { plans: SubscriptionPlan[] }) {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastDismissed, setToastDismissed] = useState(false);
   const [dayCounts, setDayCounts] = useState<number[] | null>(null);
+  const [totalBuyers, setTotalBuyers] = useState<number | null>(null);
   const dismissedUntilRef = useRef(0);
   const isBn = Boolean(locale?.toLowerCase().startsWith("bn"));
   const numberLocale = isBn ? "bn-BD" : "en-US";
 
   useEffect(() => {
-    if (!DEMO_ACTIVITY_ENABLED) return;
     let hideTimer: number | undefined;
     const showToast = () => {
       if (Date.now() < dismissedUntilRef.current) return;
@@ -585,10 +581,23 @@ function RecentSubscriptionActivity({ plans }: { plans: SubscriptionPlan[] }) {
 
   // Built on the client only (uses today's date), so server and browser markup never differ.
   useEffect(() => {
-    setDayCounts(buildDemoCounts());
+    let cancelled = false;
+    const apply = (total: number) => {
+      if (cancelled) return;
+      setTotalBuyers(total);
+      setDayCounts(buildDemoCounts(total));
+    };
+    fetch("/api/subscription/activity-settings", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const total = Number(data?.totalBuyers);
+        apply(Number.isFinite(total) && total >= 100 ? Math.floor(total) : DEMO_TOTAL_BUYERS);
+      })
+      .catch(() => apply(DEMO_TOTAL_BUYERS));
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  if (!DEMO_ACTIVITY_ENABLED) return null;
 
   const activePurchase = DEMO_PURCHASES[activeIndex % DEMO_PURCHASES.length];
   const activePlans = plans.length ? plans : DEFAULT_PLANS;
@@ -636,8 +645,8 @@ function RecentSubscriptionActivity({ plans }: { plans: SubscriptionPlan[] }) {
               {t("Total buyers")}
             </p>
             <p className="mt-0.5 text-2xl font-extrabold leading-none tabular-nums text-[#DC2626]">
-              {DEMO_TOTAL_BUYERS.toLocaleString(numberLocale)}
-              <span className="text-xl">+</span>
+              {totalBuyers === null ? "–" : totalBuyers.toLocaleString(numberLocale)}
+              {totalBuyers !== null && <span className="text-xl">+</span>}
             </p>
           </div>
           <div className="rounded-lg bg-[#FCFAF5] px-3 py-2 ring-1 ring-inset ring-[#EEE6D3]">

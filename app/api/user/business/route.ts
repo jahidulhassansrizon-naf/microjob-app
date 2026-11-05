@@ -1,10 +1,11 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 const ALLOWED_BUSINESS_FIELDS = [
   "businessName",
@@ -39,7 +40,7 @@ async function updateBusinessInfo(req: Request) {
     }
 
     // 3. Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as {
       userId?: string;
     };
 

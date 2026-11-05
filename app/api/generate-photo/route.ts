@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -11,7 +12,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 function getTokenFromRequest(request: Request): string | null {
   const authorization = request.headers.get("authorization");
@@ -40,7 +41,7 @@ async function requireActiveSubscription(request: Request) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId?: string };
 
     if (!decoded?.userId || !mongoose.isValidObjectId(decoded.userId)) {
       return NextResponse.json(

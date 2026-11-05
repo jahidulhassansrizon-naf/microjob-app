@@ -59,10 +59,11 @@ import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import SmtpSettingsPanel from "./_components/SmtpSettingsPanel";
 import MailCampaignPanel from "./_components/MailCampaignPanel";
 import SubscriptionPlansPanel from "./_components/SubscriptionPlansPanel";
+import SubscriptionActivityPanel from "./_components/SubscriptionActivityPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans" | "subscription-activity";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -1146,6 +1147,12 @@ export default function AdminDashboardClient() {
         icon: Percent,
         badgeCount: 0,
       },
+      {
+        key: "subscription-activity" as const,
+        label: "Subscription Activity",
+        icon: Users,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -1166,7 +1173,9 @@ export default function AdminDashboardClient() {
                 ? "Email & SMTP"
                 : tab === "subscription-plans"
                   ? "Subscription plan controls"
-                  : "Website settings";
+                  : tab === "subscription-activity"
+                    ? "Subscription activity"
+                    : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -2367,6 +2376,7 @@ export default function AdminDashboardClient() {
           {tab === "payment-gateway" && <div className="space-y-6"><PaymentGatewaySettingsPanel /><UddoktaPaySettingsPanel /></div>}
           {tab === "smtp" && <div className="space-y-6"><SmtpSettingsPanel /><MailCampaignPanel /></div>}
           {tab === "subscription-plans" && <SubscriptionPlansPanel key={subscriptionPlansRefreshKey} />}
+          {tab === "subscription-activity" && <SubscriptionActivityPanel />}
 
           {accessModalUser && (
             <div

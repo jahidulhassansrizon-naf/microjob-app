@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -9,7 +10,7 @@ import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscriptio
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 type JwtPayload = { userId?: string; exp?: number };
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     let decoded: JwtPayload;
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+      decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload;
     } catch {
       return NextResponse.json({ success: false, message: "Your login session has expired." }, { status: 401 });
     }

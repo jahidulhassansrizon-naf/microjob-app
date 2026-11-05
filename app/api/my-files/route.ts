@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
@@ -13,7 +14,7 @@ import { getRetentionCutoff } from "@/app/_lib/retentionConfig";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 type FileWorkspace = "creative" | "sohoz-tools";
 
@@ -73,7 +74,7 @@ function getUserId(request: Request) {
   const match = cookie.match(/(?:^|;\s*)token=([^;]+)/);
   const token = bearer || (match ? decodeURIComponent(match[1]) : "");
   if (!token) throw new Error("AUTH_REQUIRED");
-  const decoded = jwt.verify(token, JWT_SECRET) as { userId?: string };
+  const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId?: string };
   if (!decoded.userId || !mongoose.isValidObjectId(decoded.userId)) throw new Error("INVALID_USER_ID");
   return decoded.userId;
 }

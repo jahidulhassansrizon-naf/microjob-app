@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -12,12 +13,12 @@ export const dynamic = "force-dynamic";
 type AdminPageClaims = AdminTokenClaims & { userId?: string; sessionVersion?: number };
 
 export default async function AdminPage() {
-  const secret = process.env.JWT_SECRET?.trim();
+  const secret = getJwtSecret();
   const token = (await cookies()).get("token")?.value;
   if (!secret || !token) redirect("/login?redirect=%2Fadmin");
 
   let decoded: AdminPageClaims;
-  try { decoded = jwt.verify(token, secret) as AdminPageClaims; }
+  try { decoded = jwt.verify(token, secret, { algorithms: ["HS256"] }) as AdminPageClaims; }
   catch { redirect("/login?redirect=%2Fadmin"); }
 
   const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;

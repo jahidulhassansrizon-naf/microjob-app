@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
 import Otp from "@/models/Otp";
-import { validatePhoneNumber } from "@/lib/phoneValidation";
+import { getPhoneLookupVariants, normalizePhoneNumber, validatePhoneNumber } from "@/lib/phoneValidation";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
 import { sendTransactionalEmail } from "@/app/api/_lib/emailDelivery";
 import { claimAuthCooldown, enforceAuthRateLimit, releaseAuthCooldown } from "@/app/api/_lib/authRateLimit";
@@ -50,9 +50,11 @@ export async function POST(req: Request) {
         ? body.identifier
         : "";
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
+    const rawPhone = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
     const fullName = typeof body.fullName === "string" ? body.fullName.normalize("NFKC").trim().replace(/\s+/gu, " ") : "";
     const country = typeof body.country === "string" ? body.country.trim().slice(0, 80) : "";
+    const effectiveCountry = country || "Bangladesh";
+    const cleanPhone = normalizePhoneNumber(effectiveCountry, rawPhone) || "";
 
     if (!fullName || fullName.length > 100) {
       return json({ message: "Enter your name (up to 100 characters)." }, 400);
@@ -63,11 +65,8 @@ export async function POST(req: Request) {
     if (isConfiguredAdminEmail(cleanEmail)) {
       return json({ message: "This email is reserved for the Main Administrator." }, 409);
     }
-    if (!/^\d{5,15}$/.test(cleanPhone)) {
-      return json({ message: "Enter a valid phone number." }, 400);
-    }
-    const phoneError = validatePhoneNumber(country, cleanPhone);
-    if (phoneError) return json({ message: phoneError }, 400);
+    const phoneError = validatePhoneNumber(effectiveCountry, rawPhone);
+    if (phoneError || !cleanPhone) return json({ message: phoneError || "Enter a valid phone number." }, 400);
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(req, "register-email-otp", 30, 10 * 60 * 1000);
@@ -82,7 +81,7 @@ export async function POST(req: Request) {
     await ensureUniqueFullNameIndex();
     const [existingEmail, existingPhone, existingName] = await Promise.all([
       User.findOne({ email: cleanEmail }).select("_id").lean(),
-      User.findOne({ phoneNumber: cleanPhone }).select("_id").lean(),
+      User.findOne({ phoneNumber: { $in: getPhoneLookupVariants(cleanPhone) } }).select("_id").lean(),
       findDuplicateFullName(fullName),
     ]);
     if (existingEmail) return json({ message: "This email is already registered!" }, 409);
@@ -98,6 +97,16 @@ export async function POST(req: Request) {
       );
     }
     cooldownLease = cooldown.leaseToken;
+
+    const emailQuota = await enforceAuthRateLimit(req, "otp-email-hourly", 5, 60 * 60 * 1000, cleanEmail);
+    if (!emailQuota.allowed) {
+      await releaseAuthCooldown("register-email-otp", cooldownIdentifier, cooldownLease);
+      cooldownLease = null;
+      return NextResponse.json(
+        { message: "This email has reached the verification-code limit. Please try again later.", retryAfterSeconds: emailQuota.retryAfterSeconds },
+        { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(emailQuota.retryAfterSeconds) } },
+      );
+    }
 
     const otpCode = createSixDigitOtp();
     const pending = await Otp.create({

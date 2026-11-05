@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   let claims: ImpersonationClaims;
   try {
-    claims = jwt.verify(token, JWT_SECRET) as ImpersonationClaims;
+    claims = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as ImpersonationClaims;
   } catch {
     return NextResponse.json({ success: false, message: "Session expired." }, { status: 401 });
   }

@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
@@ -8,7 +9,7 @@ import { ENV_ADMIN_USER_ID, isCurrentAdminToken, type AdminTokenClaims } from "@
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const HEADERS = { "Cache-Control": "no-store, max-age=0" };
 
 function getToken(request: Request) {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   const token = getToken(request);
   if (!token || !JWT_SECRET.trim()) return NextResponse.json({ success: false, message: "Not signed in." }, { status: 401, headers: HEADERS });
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AdminTokenClaims & { userId?: string; sessionVersion?: number };
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as AdminTokenClaims & { userId?: string; sessionVersion?: number };
     const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
     if (isEnvAdmin) {
       if (!isCurrentAdminToken(decoded)) return NextResponse.json({ success: false, message: "Main Admin session is no longer valid." }, { status: 401, headers: HEADERS });

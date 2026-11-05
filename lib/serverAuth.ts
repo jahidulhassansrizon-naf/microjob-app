@@ -1,3 +1,4 @@
+import { getJwtSecret } from "./jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -28,12 +29,12 @@ function extractRequestToken(request: Request): string | null {
 }
 
 export async function getVerifiedRequestSession(request: Request): Promise<VerifiedRequestSession | null> {
-  const secret = process.env.JWT_SECRET?.trim();
+  const secret = getJwtSecret();
   const token = extractRequestToken(request);
   if (!secret || !token) return null;
 
   let claims: SessionClaims;
-  try { claims = jwt.verify(token, secret) as SessionClaims; } catch { return null; }
+  try { claims = jwt.verify(token, secret, { algorithms: ["HS256"] }) as SessionClaims; } catch { return null; }
 
   const isEnvAdmin = claims.admin === true || claims.userId === ENV_ADMIN_USER_ID;
   if (isEnvAdmin) {

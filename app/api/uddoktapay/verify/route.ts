@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -8,7 +9,7 @@ import { setSubscriptionAccessCookie } from "@/app/api/_lib/requireActiveSubscri
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 type JwtPayload = { userId?: string; exp?: number };
 function getToken(request: Request) {
   const pair = request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("token="));
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     const token = getToken(request);
     if (!token) return NextResponse.json({ success: false, message: "Please log in before verifying this payment." }, { status: 401 });
     let decoded: JwtPayload;
-    try { decoded = jwt.verify(token, JWT_SECRET) as JwtPayload; } catch { return NextResponse.json({ success: false, message: "Your login session has expired." }, { status: 401 }); }
+    try { decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload; } catch { return NextResponse.json({ success: false, message: "Your login session has expired." }, { status: 401 }); }
     if (!decoded.userId) return NextResponse.json({ success: false, message: "Invalid login token." }, { status: 401 });
 
     const body = await request.json().catch(() => null);

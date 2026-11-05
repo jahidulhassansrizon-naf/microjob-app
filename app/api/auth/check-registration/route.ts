@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
-import { validatePhoneNumber } from "@/lib/phoneValidation";
+import { getPhoneLookupVariants, normalizePhoneNumber, validatePhoneNumber } from "@/lib/phoneValidation";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { ensureUniqueFullNameIndex, findDuplicateFullName } from "@/app/api/_lib/userIdentity";
 import { isValidEmail, NO_STORE_HEADERS } from "@/app/api/_lib/otpSecurity";
@@ -25,15 +25,16 @@ export async function POST(request: Request) {
       ? body.fullName.normalize("NFKC").trim().replace(/\s+/gu, " ")
       : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const phoneNumber = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
+    const rawPhone = typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
     const country = typeof body.country === "string" ? body.country.trim().slice(0, 80) : "";
+    const effectiveCountry = country || "Bangladesh";
+    const phoneNumber = normalizePhoneNumber(effectiveCountry, rawPhone) || "";
 
     if (!fullName || fullName.length > 100) return json({ message: "Enter your name (up to 100 characters)." }, 400);
     if (!isValidEmail(email)) return json({ message: "Enter a valid email address." }, 400);
     if (isConfiguredAdminEmail(email)) return json({ message: "This email is reserved for the Main Administrator." }, 409);
-    if (!/^\d{5,15}$/.test(phoneNumber)) return json({ message: "Enter a valid phone number." }, 400);
-    const phoneError = validatePhoneNumber(country, phoneNumber);
-    if (phoneError) return json({ message: phoneError }, 400);
+    const phoneError = validatePhoneNumber(effectiveCountry, rawPhone);
+    if (phoneError || !phoneNumber) return json({ message: phoneError || "Enter a valid phone number." }, 400);
 
     await connectDB();
     const rateLimit = await enforceAuthRateLimit(request, "register-preflight", 40, 10 * 60 * 1000);
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     await ensureUniqueFullNameIndex();
     const [existingEmail, existingPhone, existingName] = await Promise.all([
       User.findOne({ email }).select("_id").lean(),
-      User.findOne({ phoneNumber }).select("_id").lean(),
+      User.findOne({ phoneNumber: { $in: getPhoneLookupVariants(phoneNumber) } }).select("_id").lean(),
       findDuplicateFullName(fullName),
     ]);
 

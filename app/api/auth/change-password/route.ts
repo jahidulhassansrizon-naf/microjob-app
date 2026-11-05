@@ -1,5 +1,7 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
@@ -7,7 +9,7 @@ import User from "@/models/User";
 import { ENV_ADMIN_USER_ID, isCurrentAdminToken } from "@/lib/adminCredentials";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 
 export async function PUT(req: NextRequest) {
   try {
@@ -44,7 +46,7 @@ export async function PUT(req: NextRequest) {
     }
     let decoded: any;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     } catch {
       return NextResponse.json(
         { error: "Your login session is invalid or expired. Please sign in again." },
@@ -73,9 +75,10 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    if (newPassword.length < 8 || newPassword.length > 128) {
+    const passwordValidation = validateNewPassword(newPassword);
+    if (!passwordValidation.valid) {
       return NextResponse.json(
-        { error: "New password must be between 8 and 128 characters long." },
+        { error: newPasswordErrorMessage(passwordValidation) },
         { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } },
       );
     }

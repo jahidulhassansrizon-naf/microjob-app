@@ -1,3 +1,4 @@
+import { getJwtSecret } from "@/lib/jwtSecurity";
 import { isEnvAdminSessionCurrent } from "@/lib/adminSession";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
@@ -8,7 +9,7 @@ import { ENV_ADMIN_USER_ID, getAdminCredentials, isCurrentAdminToken, type Admin
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = getJwtSecret();
 const NO_STORE = { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache" };
 
 function getToken(req: Request) {
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
       impersonation?: boolean;
       impersonatedByEmail?: string;
     };
-    try { decoded = jwt.verify(token, JWT_SECRET) as typeof decoded; }
+    try { decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as typeof decoded; }
     catch { return NextResponse.json({ message: "Invalid or expired token!" }, { status: 401, headers: NO_STORE }); }
 
     const isEnvAdmin = decoded.admin === true || decoded.userId === ENV_ADMIN_USER_ID;
