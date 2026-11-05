@@ -392,7 +392,30 @@ const LIMIT_TEXT_REGEX =
 
 // Gemini sometimes gives up and writes this instead of making the image.
 // The bot stops right away (no 3-minute wait) and the visitor is asked to retry.
-const REFUSAL_TEXT_REGEX = /hard time fulfilling your request/i;
+// Known texts are caught instantly; unknown texts are caught by isReplyFinished() below.
+const REFUSAL_TEXT_REGEX =
+  /hard time fulfilling your request|encountered an error doing what you asked|couldn'?t (generate|create) (the |that |this )?image|unable to (generate|create) (the |that |this )?image|can'?t (generate|create|edit) (the |that |this )?(image|photo)/i;
+
+// True when Gemini has finished writing its reply (the "Good response" feedback
+// button is there and the "Stop response" button is gone). If no download button
+// exists at that point, Gemini answered with text only and no image will come.
+async function isReplyFinished(page) {
+  const feedback = await page
+    .getByRole("button", { name: /good response/i })
+    .last()
+    .isVisible()
+    .catch(() => false);
+
+  if (!feedback) return false;
+
+  const stopVisible = await page
+    .getByRole("button", { name: /stop (response|generating)/i })
+    .first()
+    .isVisible()
+    .catch(() => false);
+
+  return !stopVisible;
+}
 
 class GeminiLimitError extends Error {
   constructor(message, resetAt) {
@@ -1074,6 +1097,7 @@ async function runGeminiWithSession({
     let downloadButton = null;
     let printedButtons = false;
     const waitStartedAt = Date.now();
+    let replyFinishedSince = 0;
 
     while (true) {
       throwIfAborted(signal);
@@ -1085,6 +1109,20 @@ async function runGeminiWithSession({
       }
 
       await throwIfLimitShown(page);
+
+      // Gemini finished its reply but gave no image (whatever text it wrote):
+      // waiting longer is pointless. Give it a few seconds in case the image is
+      // still loading, then stop and ask the visitor to press Generate again.
+      if (await isReplyFinished(page)) {
+        if (!replyFinishedSince) {
+          replyFinishedSince = Date.now();
+        } else if (Date.now() - replyFinishedSince > 6000) {
+          step("Gemini finished its reply without an image, asking the visitor to retry");
+          throw new GeminiRefusedError();
+        }
+      } else {
+        replyFinishedSince = 0;
+      }
 
       // After 45s without a download button, print what buttons exist so
       // we can see if Gemini renamed it.
