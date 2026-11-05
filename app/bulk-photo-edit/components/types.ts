@@ -30,3 +30,8 @@ export type ToolPreset = {
 };
 
 export type SelectedTools = Record<string, string[]>;
+
+export type ApplyMode = "all" | "each";
+
+// Tool selection kept separately for every photo (keyed by photo id) in "each" mode.
+export type PhotoToolsMap = Record<string, SelectedTools>;

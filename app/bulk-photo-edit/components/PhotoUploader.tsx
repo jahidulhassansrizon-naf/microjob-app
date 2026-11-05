@@ -11,9 +11,14 @@ interface PhotoUploaderProps {
     onClearPhotos: () => void;
     disabled: boolean;
     maxPhotos?: number;
+    /** In "each" mode a thumbnail can be clicked to pick which photo the tool panel edits. */
+    selectable?: boolean;
+    activePhotoId?: string | null;
+    onSelectPhoto?: (id: string) => void;
+    toolCounts?: Record<string, number>;
 }
 
-export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onClearPhotos, disabled, maxPhotos = 20, }: PhotoUploaderProps) {
+export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onClearPhotos, disabled, maxPhotos = 20, selectable = false, activePhotoId = null, onSelectPhoto, toolCounts = {}, }: PhotoUploaderProps) {
     const { t } = useBulkPhotoText();
     const [showPhoneUpload, setShowPhoneUpload] = useState(false);
     const [dragging, setDragging] = useState(false);
@@ -88,12 +93,18 @@ export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onCl
           <p className="text-[14.5px] font-semibold text-[#5A4A32]"><BulkT>{"No photos added yet"}</BulkT></p>
           <p className="mt-1 max-w-[220px] text-[12.5px] leading-[1.6] text-[#6B5A40]"><BulkT>{"Bulk editing needs at least two photos in the queue."}</BulkT></p>
         </div>) : (<div className="scroll mt-2 grid max-h-[300px] min-h-0 grid-cols-3 content-start gap-2 overflow-y-auto pr-1 xl:max-h-none xl:flex-1">
-          {photos.map((photo, index) => (<div key={photo.id} className="group relative overflow-hidden rounded-lg border border-[#E3D6B8] bg-[#F6EEDB]">
+          {photos.map((photo, index) => {
+            const isActive = selectable && photo.id === activePhotoId;
+            const toolCount = toolCounts[photo.id] ?? 0;
+            return (<div key={photo.id} role={selectable ? "button" : undefined} tabIndex={selectable && !disabled ? 0 : undefined} aria-pressed={selectable ? isActive : undefined} onClick={selectable && !disabled ? () => onSelectPhoto?.(photo.id) : undefined} onKeyDown={selectable && !disabled ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelectPhoto?.(photo.id); } } : undefined} className={`group relative overflow-hidden rounded-lg border bg-[#F6EEDB] ${selectable && !disabled ? "cursor-pointer" : ""} ${isActive ? "border-[#DC2626] ring-2 ring-[#DC2626]/40" : "border-[#E3D6B8]"}`}>
               <img src={photo.preview} alt={t(`Selected photo ${index + 1}`)} className="aspect-square w-full object-cover"/>
 
               <span className="absolute left-1 top-1 rounded-full bg-[#3B2F1E]/80 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">
                 {index + 1}
               </span>
+
+              {selectable && photo.status === "pending" && (<span className={`absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10.5px] font-bold text-white ${toolCount > 0 ? "bg-emerald-600/95" : "bg-amber-600/95"}`}>
+                  {toolCount > 0 ? <><CheckCircle2 size={10}/>{toolCount}</> : <BulkT>{"Pick tools"}</BulkT>}</span>)}
 
               {photo.status === "processing" && (<span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-[#DC2626]/95 px-1.5 py-0.5 text-[10.5px] font-bold text-white">
                   <LoaderCircle size={10} className="animate-spin"/><BulkT>{"AI"}</BulkT></span>)}
@@ -104,10 +115,11 @@ export default function PhotoUploader({ photos, onAddPhotos, onRemovePhoto, onCl
               {photo.status === "error" && (<span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-red-600/95 px-1.5 py-0.5 text-[10.5px] font-bold text-white">
                   <AlertCircle size={10}/><BulkT>{"Error"}</BulkT></span>)}
 
-              <button type="button" onClick={() => onRemovePhoto(photo.id)} aria-label={t(`Remove photo ${index + 1}`)} disabled={disabled} className="absolute right-1 top-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#FBF6E8]/95 text-[#5A4A32] opacity-0 shadow-sm transition duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 hover:text-red-600 active:scale-[0.95] disabled:cursor-not-allowed">
+              <button type="button" onClick={(event) => { event.stopPropagation(); onRemovePhoto(photo.id); }} aria-label={t(`Remove photo ${index + 1}`)} disabled={disabled} className="absolute right-1 top-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#FBF6E8]/95 text-[#5A4A32] opacity-0 shadow-sm transition duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 hover:text-red-600 active:scale-[0.95] disabled:cursor-not-allowed">
                 <X size={11}/>
               </button>
-            </div>))}
+            </div>);
+          })}
         </div>)}
 
       {photos.length === 1 && (<div className="mt-2.5 shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] font-medium leading-[1.55] text-amber-700"><BulkT>{"Add at least one more photo before bulk enhancement can run."}</BulkT></div>)}

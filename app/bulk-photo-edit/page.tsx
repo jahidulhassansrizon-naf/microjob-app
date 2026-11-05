@@ -11,10 +11,11 @@ import BulkPhotoStage from "./components/BulkPhotoStage";
 import PhotoUploader from "./components/PhotoUploader";
 import PresetPanel from "./components/PresetPanel";
 import BulkStepper from "./components/BulkStepper";
+import BulkSetupWizard, { type BulkWizardResult } from "./components/BulkSetupWizard";
 import { TOOL_PRESETS } from "./components/toolCatalog";
 import RetentionNotice from "@/app/_components/RetentionNotice";
 import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
-import type { PhotoItem, PhotoProcessingStatus, SelectedTools, } from "./components/types";
+import type { ApplyMode, PhotoItem, PhotoProcessingStatus, PhotoToolsMap, SelectedTools, } from "./components/types";
 const PAGE_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
@@ -33,6 +34,9 @@ const PAGE_STYLES = `
 `;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const MAX_PHOTOS = 20;
+const WIZARD_DISABLED_KEY = "bulk-photo-edit-wizard-disabled";
+const makeEmptyTools = (): SelectedTools => Object.fromEntries(TOOL_PRESETS.map((preset) => [preset.name, []]));
+const countTools = (tools: SelectedTools | undefined) => Object.values(tools ?? {}).reduce((sum, names) => sum + names.length, 0);
 const buildBulkPrompt = (selectedTools: SelectedTools) => {
     const groups = TOOL_PRESETS.map((preset) => {
         const names = selectedTools[preset.name] ?? [];
@@ -120,7 +124,25 @@ export default function BulkPhotoEditPage() {
     const [loading, setLoading] = useState<boolean>(false);
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
     const [expandedPreset, setExpandedPreset] = useState<string | null>("face-enhance");
-    const [selectedTools, setSelectedTools] = useState<SelectedTools>(() => Object.fromEntries(TOOL_PRESETS.map((preset) => [preset.name, []])));
+    const [selectedTools, setSelectedTools] = useState<SelectedTools>(makeEmptyTools);
+    // "all": one tool set for every photo. "each": guided, photo-by-photo tool choice.
+    const [applyMode, setApplyMode] = useState<ApplyMode>("all");
+    const [photoTools, setPhotoTools] = useState<PhotoToolsMap>({});
+    const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
+    const [showWizard, setShowWizard] = useState<boolean>(false);
+    const [wizardDisabled, setWizardDisabled] = useState<boolean>(false);
+    const [startToken, setStartToken] = useState<number>(0);
+    const wizardDisabledRef = useRef<boolean>(false);
+    useEffect(() => {
+        try {
+            const disabled = window.localStorage.getItem(WIZARD_DISABLED_KEY) === "1";
+            wizardDisabledRef.current = disabled;
+            setWizardDisabled(disabled);
+        }
+        catch {
+            /* ignore blocked storage */
+        }
+    }, []);
     const [message, setMessage] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const [processedCount, setProcessedCount] = useState<number>(0);
@@ -284,6 +306,10 @@ export default function BulkPhotoEditPage() {
         cropWarningRef.current = "";
         if (completedFiles.length) commitPhotos(completedFiles);
         if (warning) setMessage(warning);
+        // Friendly first-time flow: once there are 2+ photos, guide the user through what to apply.
+        if (completedFiles.length && photosRef.current.length + completedFiles.length >= 2 && !wizardDisabledRef.current) {
+            setShowWizard(true);
+        }
     }, [commitPhotos, openCropSession]);
 
     const handleBulkCropApplied = useCallback((blob: Blob) => {
@@ -321,6 +347,13 @@ export default function BulkPhotoEditPage() {
                 URL.revokeObjectURL(target.preview);
             return current.filter((photo) => photo.id !== id);
         });
+        setPhotoTools((current) => {
+            if (!(id in current))
+                return current;
+            const { [id]: _removed, ...rest } = current;
+            return rest;
+        });
+        setActivePhotoId((current) => (current === id ? null : current));
         setMessage("");
     }, [isProcessing]);
     const clearPhotos = useCallback(() => {
@@ -330,33 +363,77 @@ export default function BulkPhotoEditPage() {
             current.forEach((photo) => URL.revokeObjectURL(photo.preview));
             return [];
         });
+        setPhotoTools({});
+        setActivePhotoId(null);
         setProcessedCount(0);
         setMessage("");
     }, [isProcessing]);
     const togglePreset = useCallback((presetId: string) => {
         setExpandedPreset((current) => (current === presetId ? null : presetId));
     }, []);
+    const activePhoto = useMemo(() => photos.find((photo) => photo.id === activePhotoId) ?? photos[0] ?? null, [photos, activePhotoId]);
+    const activeIndex = activePhoto ? photos.findIndex((photo) => photo.id === activePhoto.id) : -1;
+    // The tool set a given photo will really be processed with.
+    const getToolsFor = useCallback((photoId: string): SelectedTools => (applyMode === "all" ? selectedTools : photoTools[photoId] ?? makeEmptyTools()), [applyMode, selectedTools, photoTools]);
+    // The tool set the panel is currently editing.
+    const panelTools = useMemo<SelectedTools>(() => applyMode === "all" ? selectedTools : (activePhoto ? photoTools[activePhoto.id] ?? makeEmptyTools() : makeEmptyTools()), [applyMode, selectedTools, photoTools, activePhoto]);
+    const updatePanelTools = useCallback((updater: (current: SelectedTools) => SelectedTools) => {
+        if (applyMode === "all") {
+            setSelectedTools((current) => updater(current));
+            return;
+        }
+        if (!activePhoto)
+            return;
+        const targetId = activePhoto.id;
+        setPhotoTools((current) => ({ ...current, [targetId]: updater(current[targetId] ?? makeEmptyTools()) }));
+    }, [applyMode, activePhoto]);
     const toggleTool = useCallback((presetName: string, toolName: string) => {
-        setSelectedTools((current) => {
+        updatePanelTools((current) => {
             const selected = current[presetName] || [];
             const next = selected.includes(toolName)
                 ? selected.filter((name) => name !== toolName)
                 : [...selected, toolName];
-            return {
-                ...current,
-                [presetName]: next,
-            };
+            return { ...current, [presetName]: next };
         });
         setMessage("");
-    }, []);
+    }, [updatePanelTools]);
     const clearPreset = useCallback((presetName: string) => {
-        setSelectedTools((current) => ({
-            ...current,
-            [presetName]: [],
-        }));
+        updatePanelTools((current) => ({ ...current, [presetName]: [] }));
         setMessage("");
-    }, []);
-    const selectedTotal = useMemo(() => Object.values(selectedTools).reduce((sum, tools) => sum + tools.length, 0), [selectedTools]);
+    }, [updatePanelTools]);
+    const changeApplyMode = useCallback((mode: ApplyMode) => {
+        if (isProcessing)
+            return;
+        setApplyMode(mode);
+        setMessage("");
+    }, [isProcessing]);
+    const selectPhoto = useCallback((photoId: string) => {
+        if (isProcessing)
+            return;
+        setActivePhotoId(photoId);
+    }, [isProcessing]);
+    const goToPhoto = useCallback((offset: number) => {
+        if (activeIndex < 0)
+            return;
+        const target = photosRef.current[activeIndex + offset];
+        if (target)
+            setActivePhotoId(target.id);
+    }, [activeIndex]);
+    // Copy the tools chosen for the current photo to every other photo.
+    const copyToolsToAll = useCallback(() => {
+        if (!activePhoto)
+            return;
+        const source = photoTools[activePhoto.id] ?? makeEmptyTools();
+        setPhotoTools(Object.fromEntries(photosRef.current.map((photo) => [photo.id, Object.fromEntries(Object.entries(source).map(([name, tools]) => [name, [...tools]]))])));
+        setMessage("");
+    }, [activePhoto, photoTools]);
+    // Tool totals: in "all" mode the shared set, in "each" mode the sum across photos.
+    const selectedTotal = useMemo(() => applyMode === "all"
+        ? countTools(selectedTools)
+        : photos.reduce((sum, photo) => sum + countTools(photoTools[photo.id]), 0), [applyMode, selectedTools, photos, photoTools]);
+    const photoToolCounts = useMemo<Record<string, number>>(() => Object.fromEntries(photos.map((photo) => [photo.id, countTools(applyMode === "all" ? selectedTools : photoTools[photo.id])])), [applyMode, selectedTools, photos, photoTools]);
+    const photosWithTools = photos.filter((photo) => (photoToolCounts[photo.id] ?? 0) > 0).length;
+    const toolsReady = photos.length > 0 && photosWithTools === photos.length;
     const updatePhoto = useCallback((id: string, patch: Partial<Pick<PhotoItem, "status" | "resultUrl" | "error">>) => {
         setPhotos((current) => current.map((photo) => photo.id === id ? { ...photo, ...patch } : photo));
     }, []);
@@ -367,11 +444,12 @@ export default function BulkPhotoEditPage() {
             setMessage("Bulk editing requires at least 2 photos.");
             return;
         }
-        if (selectedTotal === 0) {
-            setMessage("Choose at least one AI tool before enhancing.");
+        if (!toolsReady) {
+            setMessage(applyMode === "each"
+                ? "Choose at least one AI tool for every photo before enhancing."
+                : "Choose at least one AI tool before enhancing.");
             return;
         }
-        const prompt = buildBulkPrompt(selectedTools);
         setIsProcessing(true);
         setProcessedCount(0);
         setMessage(`Starting AI bulk editing for ${photos.length} photos. Each photo is processed separately to preserve its own identity and details.`);
@@ -386,6 +464,7 @@ export default function BulkPhotoEditPage() {
         let subscriptionBlocked = false;
         for (let index = 0; index < photos.length; index += 1) {
             const photo = photos[index];
+            const prompt = buildBulkPrompt(getToolsFor(photo.id));
             updatePhoto(photo.id, {
                 status: "processing",
                 resultUrl: null,
@@ -465,10 +544,43 @@ export default function BulkPhotoEditPage() {
     }, [
         isProcessing,
         photos,
-        selectedTotal,
-        selectedTools,
+        toolsReady,
+        applyMode,
+        getToolsFor,
         updatePhoto,
     ]);
+    const handleEnhanceRef = useRef<() => void | Promise<void>>(() => undefined);
+    useEffect(() => {
+        handleEnhanceRef.current = handleEnhance;
+    }, [handleEnhance]);
+    // Runs after the wizard's choices have been committed to state, so the batch uses them.
+    useEffect(() => {
+        if (startToken > 0)
+            void handleEnhanceRef.current();
+    }, [startToken]);
+    const closeWizard = useCallback((dontShowAgain: boolean) => {
+        setShowWizard(false);
+        if (dontShowAgain) {
+            wizardDisabledRef.current = true;
+            setWizardDisabled(true);
+            try {
+                window.localStorage.setItem(WIZARD_DISABLED_KEY, "1");
+            }
+            catch {
+                /* ignore blocked storage */
+            }
+        }
+    }, []);
+    const applyWizard = useCallback((result: BulkWizardResult, options: { start: boolean }) => {
+        setApplyMode(result.mode);
+        setSelectedTools(result.common);
+        setPhotoTools(result.perPhoto);
+        setActivePhotoId(null);
+        setShowWizard(false);
+        setMessage("");
+        if (options.start)
+            setStartToken((current) => current + 1);
+    }, []);
     const downloadResult = useCallback((photo: PhotoItem) => {
         if (!photo.resultUrl)
             return;
@@ -487,12 +599,17 @@ export default function BulkPhotoEditPage() {
         });
     }, [downloadResult]);
     const retryFailedPhoto = useCallback(async (photoId: string) => {
-        if (isProcessing || selectedTotal === 0)
+        if (isProcessing)
             return;
         const photo = photos.find((item) => item.id === photoId);
         if (!photo)
             return;
-        const prompt = buildBulkPrompt(selectedTools);
+        const photoSelection = getToolsFor(photo.id);
+        if (countTools(photoSelection) === 0) {
+            setMessage("Choose at least one AI tool before enhancing.");
+            return;
+        }
+        const prompt = buildBulkPrompt(photoSelection);
         setIsProcessing(true);
         setMessage(`Retrying ${photo.file.name} with the same selected AI tools...`);
         updatePhoto(photo.id, { status: "processing", error: null });
@@ -546,7 +663,7 @@ export default function BulkPhotoEditPage() {
         finally {
             setIsProcessing(false);
         }
-    }, [isProcessing, photos, selectedTools, selectedTotal, updatePhoto]);
+    }, [isProcessing, photos, getToolsFor, updatePhoto]);
     const completedCount = photos.filter((photo) => photo.status === "success").length;
     const processingCount = photos.filter((photo) => photo.status === "processing").length;
     const failedCount = photos.filter((photo) => photo.status === "error").length;
@@ -591,7 +708,7 @@ export default function BulkPhotoEditPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <BulkStepper photosCount={photos.length} selectedTotal={selectedTotal} completedCount={completedCount} isProcessing={isProcessing}/>
+              <BulkStepper photosCount={photos.length} toolsReady={toolsReady} completedCount={completedCount} isProcessing={isProcessing}/>
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded-full border px-2.5 py-1 text-[12.5px] font-bold ${photos.length >= 2
@@ -618,10 +735,13 @@ export default function BulkPhotoEditPage() {
           </div>
         </header>
 
-        <RetentionNotice variant="compact" className="shrink-0" />
+        <div className="flex shrink-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+          <RetentionNotice variant="compact" className="min-w-0 flex-1" />
+          <GenerationQuotaNotice />
+        </div>
 
         <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap xl:min-h-0 xl:flex-1 xl:flex-nowrap">
-          <PhotoUploader photos={photos} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} onClearPhotos={clearPhotos} disabled={isProcessing} maxPhotos={MAX_PHOTOS}/>
+          <PhotoUploader photos={photos} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} onClearPhotos={clearPhotos} disabled={isProcessing} maxPhotos={MAX_PHOTOS} selectable={applyMode === "each"} activePhotoId={activePhoto?.id ?? null} onSelectPhoto={selectPhoto} toolCounts={photoToolCounts}/>
 
           <main ref={resultsRef} className="relative order-3 flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-[#F2E8D2] shadow-sm lg:w-full lg:flex-none xl:order-2 xl:w-auto xl:min-h-0 xl:flex-1 scroll-mt-16">
             <BulkPhotoStage photos={photos} onAddPhotos={addPhotos} onDownloadResult={downloadResult} onDownloadAll={downloadAllResults} onRetryPhoto={retryFailedPhoto} isProcessing={isProcessing} processedCount={processedCount}/>
@@ -637,10 +757,10 @@ export default function BulkPhotoEditPage() {
               </div>)}
           </main>
 
-          <div className="px-3 pt-3 lg:px-0"><GenerationQuotaNotice /></div>
-          <PresetPanel selectedTools={selectedTools} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
+          <PresetPanel selectedTools={panelTools} applyMode={applyMode} onApplyModeChange={changeApplyMode} photos={photos} activePhotoId={activePhoto?.id ?? null} activeIndex={activeIndex} photoToolCounts={photoToolCounts} photosWithTools={photosWithTools} toolsReady={toolsReady} onSelectPhoto={selectPhoto} onGoToPhoto={goToPhoto} onCopyToAll={copyToolsToAll} onOpenGuide={() => setShowWizard(true)} expandedPreset={expandedPreset} onTogglePreset={togglePreset} onToggleTool={toggleTool} onClearPreset={clearPreset} onCloseDropdown={() => setExpandedPreset(null)} photosCount={photos.length} onEnhance={handleEnhance} isProcessing={isProcessing} processedCount={processedCount}/>
         </div>
       </div>
+      <BulkSetupWizard open={showWizard && !cropSession} photos={photos.map((photo) => ({ id: photo.id, preview: photo.preview, name: photo.file.name }))} initial={{ mode: applyMode, common: selectedTools, perPhoto: photoTools }} onApply={applyWizard} onClose={closeWizard}/>
       {cropSession && (
         <PhotoCropWorkspace
           key={cropSession.preview}

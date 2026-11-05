@@ -4,14 +4,14 @@ import { BulkT } from "./bulkPhotoI18n";
 
 interface BulkStepperProps {
   photosCount: number;
-  selectedTotal: number;
+  toolsReady: boolean;
   completedCount: number;
   isProcessing: boolean;
 }
 
-export default function BulkStepper({ photosCount, selectedTotal, completedCount, isProcessing }: BulkStepperProps) {
+export default function BulkStepper({ photosCount, toolsReady, completedCount, isProcessing }: BulkStepperProps) {
   const step1Done = photosCount >= 2;
-  const step2Done = selectedTotal > 0;
+  const step2Done = toolsReady;
   const step3Done = completedCount > 0 && !isProcessing;
   const current = !step1Done ? 1 : !step2Done ? 2 : 3;
 

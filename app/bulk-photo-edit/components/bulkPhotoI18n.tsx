@@ -155,6 +155,17 @@ const BULK_PHOTO_BN: Record<string, string> = {
   "download results": "ফলাফল ডাউনলোড করুন",
   "each photo is edited separately and saved to my files.": "প্রতিটি ছবি আলাদাভাবে সম্পাদিত হয় এবং আমার ফাইলে সেভ হয়।",
 
+  "guide me step by step": "ধাপে ধাপে গাইড করুন",
+  // Per-photo guided tool selection.
+  "same for all photos": "সব ছবিতে একই",
+  "different for each photo": "প্রতিটি ছবিতে আলাদা",
+  "go photo by photo and choose exactly what to apply to each one.": "ছবি ধরে ধরে বেছে নিন প্রতিটি ছবিতে ঠিক কী প্রয়োগ হবে।",
+  "what should we apply to this photo?": "এই ছবিতে কী প্রয়োগ করতে চান?",
+  "next photo": "পরের ছবি",
+  "copy to all photos": "সব ছবিতে কপি করুন",
+  "pick tools": "টুল বাছুন",
+  "choose at least one ai tool for every photo before enhancing.": "উন্নত সম্পাদনা শুরু করার আগে প্রতিটি ছবির জন্য অন্তত একটি এআই টুল নির্বাচন করুন।",
+
   // Catalog: preset names and descriptions.
   "face enhance": "মুখের উন্নতিসাধন",
   "ai retouching for face, skin and facial details.": "মুখ, ত্বক ও মুখের সূক্ষ্ম বিবরণ উন্নত করার জন্য এআই সম্পাদনা।",
@@ -300,6 +311,15 @@ function translateBulkPhotoText(value: string, locale: string | undefined): stri
 
   let match = key.match(/^(\d+)\s+selected$/i);
   if (match) return `${match[1]}টি নির্বাচিত`;
+
+  match = key.match(/^(\d+)\/(\d+)\s+photos ready$/i);
+  if (match) return `${match[1]}/${match[2]}টি ছবি প্রস্তুত`;
+
+  match = key.match(/^photo (\d+) ai operations$/i);
+  if (match) return `ছবি ${match[1]}-এর এআই কাজ`;
+
+  match = key.match(/^every photo has at least 1 tool \((\d+)\/(\d+)\)$/i);
+  if (match) return `প্রতিটি ছবিতে কমপক্ষে ১টি টুল আছে (${match[1]}/${match[2]})`;
 
   match = key.match(/^(\d+)\s+photos?$/i);
   if (match) return `${match[1]}টি ছবি`;
