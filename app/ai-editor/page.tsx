@@ -676,6 +676,17 @@ export default function PhotoEditorPage() {
         const timer = window.setTimeout(() => setErrorMessage(null), 7000);
         return () => window.clearTimeout(timer);
     }, [errorMessage]);
+    // Shows a friendly "please wait" popup if a photo takes longer than usual
+    // (for example while the server switches to another Gemini session).
+    const [showSlowNotice, setShowSlowNotice] = useState(false);
+    useEffect(() => {
+        if (!isGenerating) {
+            setShowSlowNotice(false);
+            return;
+        }
+        const timer = window.setTimeout(() => setShowSlowNotice(true), 50000);
+        return () => window.clearTimeout(timer);
+    }, [isGenerating]);
     const openImageForCrop = (file: File) => {
         if (!file.type.startsWith("image/")) {
             setErrorMessage("Please select a valid image file.");
@@ -1440,7 +1451,7 @@ export default function PhotoEditorPage() {
         }
         catch (error) {
             if (error instanceof DOMException && error.name === "AbortError") {
-                throw new Error("AI image editing timed out. Please try again with a smaller photo.");
+                throw new Error("Image generation took too long. Please try again.");
             }
             throw error;
         }
@@ -1999,6 +2010,10 @@ export default function PhotoEditorPage() {
 
       {errorMessage && (<div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-red-700 shadow-xl">
           <AiT>{errorMessage}</AiT>
+        </div>)}
+
+      {showSlowNotice && isGenerating && !errorMessage && (<div role="status" className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-amber-300 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-amber-800 shadow-xl">
+          <AiT>Heavy demand right now, so your photo is taking a little longer. Please wait and do not close this page.</AiT>
         </div>)}
 
       {showCropModal && (<div className="fixed inset-0 z-[999] flex flex-col overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] ai-editor-font">

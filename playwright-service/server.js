@@ -390,6 +390,10 @@ const DEFAULT_LIMIT_PARK_MS = 60 * 60 * 1000; // used if reset time can't be rea
 const LIMIT_TEXT_REGEX =
   /limit resets|your limit resets|reached your (daily |usage )?limit|can create more images as soon as/i;
 
+// Gemini sometimes gives up and writes this instead of making the image.
+// The bot stops right away (no 3-minute wait) and the visitor is asked to retry.
+const REFUSAL_TEXT_REGEX = /hard time fulfilling your request/i;
+
 class GeminiLimitError extends Error {
   constructor(message, resetAt) {
     super(message);
@@ -440,6 +444,32 @@ function listSessions() {
 
 function isSessionUsable(session) {
   return Date.now() >= session.usableAt;
+}
+
+// "Current session" pointer: the session being used right now. It stays on
+// one session until that one runs out of limit, then moves 1 -> 2 -> 3 -> ...
+// and wraps around to 1 again. It is saved in session-limits.json too.
+function getCurrentSlot(sessions) {
+  const saved = Number(limitState.current) || 0;
+  return sessions.some((s) => s.slot === saved) ? saved : sessions[0].slot;
+}
+
+function setCurrentSlot(slot) {
+  if (limitState.current !== slot) {
+    limitState.current = slot;
+    saveLimitState();
+    console.log(`Current Gemini session is now ${slot}.`);
+  }
+}
+
+// Sessions in circular order, starting at startSlot.
+function circularFrom(sessions, startSlot) {
+  const index = Math.max(
+    0,
+    sessions.findIndex((s) => s.slot === startSlot),
+  );
+
+  return [...sessions.slice(index), ...sessions.slice(0, index)];
 }
 
 function markSessionLimited(slot, resetAt) {
@@ -586,6 +616,17 @@ class HttpError extends Error {
     this.name = "HttpError";
     this.statusCode = statusCode;
     this.retryAfter = extra.retryAfter || 0;
+    this.code = extra.code || "";
+  }
+}
+
+// Gemini refused / failed to make this image. Not a limit and not a broken session.
+class GeminiRefusedError extends HttpError {
+  constructor() {
+    super("Gemini could not create this image this time. Please try again.", 422, {
+      code: "GEMINI_REFUSED",
+    });
+    this.name = "GeminiRefusedError";
   }
 }
 
@@ -757,6 +798,7 @@ function sendGenerationError(res, error, label) {
   return res.status(statusCode).json({
     success: false,
     error: error instanceof Error ? error.message : String(error),
+    code: error && error.code ? error.code : undefined,
   });
 }
 
@@ -1021,7 +1063,7 @@ async function runGeminiWithSession({
     // 6. Wait for the generated image (or a limit message)
     step("message sent, waiting for the generated image");
 
-    const waitDeadline = Date.now() + 180000;
+    const waitDeadline = Date.now() + 150000;
     let downloadButton = null;
     let printedButtons = false;
     const waitStartedAt = Date.now();
@@ -1098,7 +1140,7 @@ async function runGeminiWithSession({
     }
 
     // Limit reached: pass it up unchanged so the next session can be tried.
-    if (error instanceof GeminiLimitError) {
+    if (error instanceof GeminiLimitError || error instanceof GeminiRefusedError) {
       throw error;
     }
 
@@ -1202,27 +1244,37 @@ async function throwIfLimitShown(page) {
       parseResetTime(bodyText),
     );
   }
+
+  if (REFUSAL_TEXT_REGEX.test(bodyText)) {
+    throw new GeminiRefusedError();
+  }
 }
 
 // Tries session 1, then 2, then 3. The user only sees an error
 // if every session is out of limit (or missing).
 async function runGeminiGeneration(options) {
-  const sessions = listSessions();
-
-  if (sessions.length === 0) {
+  if (listSessions().length === 0) {
     throw new Error("Session file not found on server.");
   }
 
-  let lastResetAt = 0;
+  // Slots this job already tried, so one job can never loop forever.
+  const triedSlots = new Set();
   let triedAny = false;
 
-  for (const session of sessions) {
-    if (!isSessionUsable(session)) {
-      lastResetAt = Math.min(lastResetAt || Infinity, session.usableAt);
-      continue;
+  while (true) {
+    const sessions = listSessions();
+    const order = circularFrom(sessions, getCurrentSlot(sessions));
+    const session = order.find(
+      (s) => isSessionUsable(s) && !triedSlots.has(s.slot),
+    );
+
+    if (!session) {
+      break;
     }
 
+    triedSlots.add(session.slot);
     triedAny = true;
+    setCurrentSlot(session.slot);
     console.log(`Using Gemini session ${session.slot}.`);
 
     try {
@@ -1234,12 +1286,15 @@ async function runGeminiGeneration(options) {
     } catch (error) {
       if (error instanceof GeminiLimitError) {
         markSessionLimited(session.slot, error.resetAt);
-        lastResetAt = Math.min(
-          lastResetAt || Infinity,
-          Number(limitState[session.slot]) || 0,
-        );
-        console.log(`Session ${session.slot} is out of limit, trying the next one...`);
+        console.log(`Session ${session.slot} is out of limit, moving to the next one...`);
         continue;
+      }
+
+      if (error instanceof GeminiRefusedError) {
+        console.log(
+          `Session ${session.slot}: Gemini refused this image ("hard time fulfilling your request"). Asking the visitor to retry.`,
+        );
+        throw error;
       }
 
       const failMessage = error instanceof Error ? error.message : String(error);
@@ -1263,10 +1318,14 @@ async function runGeminiGeneration(options) {
   }
 
   // Every session is parked or just hit its limit.
-  const waitSeconds =
-    lastResetAt && lastResetAt !== Infinity
-      ? Math.max(60, Math.ceil((lastResetAt - Date.now()) / 1000))
-      : 900;
+  const nextBackAt = listSessions()
+    .map((x) => x.usableAt)
+    .filter((t) => t > Date.now())
+    .sort((x, y) => x - y)[0];
+
+  const waitSeconds = nextBackAt
+    ? Math.max(60, Math.ceil((nextBackAt - Date.now()) / 1000))
+    : 900;
 
   console.log(
     `All Gemini sessions are out of limit (${triedAny ? "just checked" : "already parked"}).`,
@@ -1335,6 +1394,7 @@ app.get("/health", (req, res) => {
       maxConcurrent: MAX_CONCURRENT_GENERATIONS,
       maxQueue: MAX_QUEUE_LENGTH,
     },
+    currentSession: Number(limitState.current) || null,
     sessions: listSessions().map((x) => ({
       slot: x.slot,
       usable: isSessionUsable(x),

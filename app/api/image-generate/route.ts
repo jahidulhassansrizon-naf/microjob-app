@@ -272,7 +272,12 @@ async function callRenderService(
     throw error;
   }
 
-  let data: { success?: boolean; image?: string; error?: string } | null = null;
+  let data: {
+    success?: boolean;
+    image?: string;
+    error?: string;
+    code?: string;
+  } | null = null;
 
   try {
     data = JSON.parse(rawText);
@@ -284,6 +289,14 @@ async function callRenderService(
     const detail =
       data?.error ||
       `Image service returned ${response.status}. ${rawText.slice(0, 200)}`;
+
+    // Gemini gave up on this image: ask the visitor to simply try again.
+    if (data?.code === "GEMINI_REFUSED") {
+      throw new ServiceError(
+        "We could not create this photo this time. This is not your fault, it sometimes happens. Please press Generate again.",
+        422,
+      );
+    }
 
     // 503 / 504 from the image server mean "busy" or "took too long".
     // Keep that status so the website can show a friendly retry message.
